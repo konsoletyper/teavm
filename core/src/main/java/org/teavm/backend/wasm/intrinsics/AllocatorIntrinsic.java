@@ -21,7 +21,6 @@ import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmMangling;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.interop.Address;
 import org.teavm.model.MethodReference;
 import org.teavm.runtime.Allocator;
 
@@ -35,9 +34,11 @@ public class AllocatorIntrinsic implements WasmIntrinsic {
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
         switch (invocation.getMethod().getName()) {
-            case "fillZero": {
-                WasmCall call = new WasmCall(WasmMangling.mangleMethod(new MethodReference(WasmRuntime.class,
-                        "fillZero", Address.class, int.class, void.class)));
+            case "fillZero":
+            case "moveMemoryBlock": {
+                MethodReference delegateMetod = new MethodReference(WasmRuntime.class.getName(),
+                        invocation.getMethod().getDescriptor());
+                WasmCall call = new WasmCall(WasmMangling.mangleMethod(delegateMetod));
                 call.getArguments().addAll(invocation.getArguments().stream().map(manager::generate)
                         .collect(Collectors.toList()));
                 return call;

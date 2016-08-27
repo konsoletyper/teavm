@@ -15,10 +15,17 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
+import java.util.stream.Collectors;
+import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.WasmRuntime;
+import org.teavm.backend.wasm.generate.WasmClassGenerator;
+import org.teavm.backend.wasm.generate.WasmMangling;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
@@ -36,7 +43,13 @@ import org.teavm.interop.Address;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class WasmAddressIntrinsic implements WasmIntrinsic {
+public class AddressIntrinsic implements WasmIntrinsic {
+    private WasmClassGenerator classGenerator;
+
+    public AddressIntrinsic(WasmClassGenerator classGenerator) {
+        this.classGenerator = classGenerator;
+    }
+
     @Override
     public boolean isApplicable(MethodReference methodReference) {
         return methodReference.getClassName().equals(Address.class.getName());
@@ -61,11 +74,24 @@ public class WasmAddressIntrinsic implements WasmIntrinsic {
             }
             case "add": {
                 WasmExpression base = manager.generate(invocation.getArguments().get(0));
-                WasmExpression offset = manager.generate(invocation.getArguments().get(1));
-                if (invocation.getMethod().parameterType(0) == ValueType.LONG) {
-                    offset = new WasmConversion(WasmType.INT64, WasmType.INT32, false, offset);
+                if (invocation.getMethod().parameterCount() == 1) {
+                    WasmExpression offset = manager.generate(invocation.getArguments().get(1));
+                    if (invocation.getMethod().parameterType(0) == ValueType.LONG) {
+                        offset = new WasmConversion(WasmType.INT64, WasmType.INT32, false, offset);
+                    }
+                    return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, base, offset);
+                } else {
+                    WasmExpression offset = manager.generate(invocation.getArguments().get(2));
+                    Object type = ((ConstantExpr) invocation.getArguments().get(1)).getValue();
+                    String className = ((ValueType.Object) type).getClassName();
+                    int size = classGenerator.getClassSize(className);
+                    int alignment = classGenerator.getClassAlignment(className);
+                    size = WasmClassGenerator.align(size, alignment);
+
+                    offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL, offset,
+                            new WasmInt32Constant(size));
+                    return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, base, offset);
                 }
-                return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, base, offset);
             }
             case "getByte":
                 return new WasmLoadInt32(1, manager.generate(invocation.getArguments().get(0)),
@@ -120,6 +146,17 @@ public class WasmAddressIntrinsic implements WasmIntrinsic {
                 WasmExpression address = manager.generate(invocation.getArguments().get(0));
                 WasmExpression value = manager.generate(invocation.getArguments().get(1));
                 return new WasmStoreFloat64(8, address, value);
+            }
+            case "sizeOf":
+                return new WasmInt32Constant(4);
+            case "align": {
+                MethodReference delegate = new MethodReference(WasmRuntime.class.getName(),
+                        invocation.getMethod().getDescriptor());
+                WasmCall call = new WasmCall(WasmMangling.mangleMethod(delegate));
+                call.getArguments().addAll(invocation.getArguments().stream()
+                        .map(arg -> manager.generate(arg))
+                        .collect(Collectors.toSet()));
+                return call;
             }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());

@@ -59,4 +59,10 @@ public final class Address {
     public static native Address fromLong(long value);
 
     public static native Address ofObject(Object obj);
+
+    public static native Address align(Address address, int alignment);
+
+    public static native int sizeOf();
+
+    public native Address add(Class<? extends Structure> type, int offset);
 }

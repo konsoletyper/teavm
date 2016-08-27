@@ -83,9 +83,8 @@ public class WasmGenerator {
                     new WasmInt32Constant(RuntimeClass.INITIALIZED));
 
             WasmConditional conditional = new WasmConditional(initFlag);
-            MethodReference clinit = new MethodReference(method.getOwnerName(),
-                    "<clinit>", ValueType.VOID);
-            conditional.getThenBlock().getBody().add(new WasmCall(WasmMangling.mangleMethod(clinit)));
+            conditional.getThenBlock().getBody().add(new WasmCall(
+                    WasmMangling.mangleInitializer(method.getOwnerName())));
             function.getBody().add(conditional);
         }
 

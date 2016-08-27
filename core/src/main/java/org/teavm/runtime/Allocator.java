@@ -51,4 +51,6 @@ public final class Allocator {
     }
 
     public static native void fillZero(Address address, int count);
+
+    public static native void moveMemoryBlock(Address source, Address target, int count);
 }

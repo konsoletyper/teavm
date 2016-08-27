@@ -26,10 +26,6 @@ import org.teavm.platform.metadata.ClassResource;
 import org.teavm.platform.metadata.StaticFieldResource;
 import org.teavm.platform.plugin.PlatformGenerator;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class Platform {
     private Platform() {
     }

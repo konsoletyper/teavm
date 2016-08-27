@@ -202,6 +202,13 @@ public class WasmClassGenerator {
         return data.size;
     }
 
+    public int getClassAlignment(String className) {
+        ValueType type = ValueType.object(className);
+        addClass(type);
+        ClassBinaryData data = binaryDataMap.get(type);
+        return data.alignment;
+    }
+
     public boolean isStructure(String className) {
         ValueType type = ValueType.object(className);
         addClass(type);
@@ -217,11 +224,13 @@ public class WasmClassGenerator {
             addClass(ValueType.object(cls.getParent()));
             ClassBinaryData parentData = binaryDataMap.get(ValueType.object(cls.getParent()));
             data.size = parentData.size;
+            data.alignment = parentData.alignment;
             if (parentData.start == -1) {
                 data.start = -1;
             }
         } else {
             data.size = 4;
+            data.alignment = 4;
         }
 
         for (FieldReader field : cls.getFields()) {
@@ -233,6 +242,9 @@ public class WasmClassGenerator {
                 int offset = align(data.size, desiredAlignment);
                 data.fieldLayout.put(field.getName(), offset);
                 data.size = offset + desiredAlignment;
+            }
+            if (data.alignment == 0) {
+                data.alignment = desiredAlignment;
             }
         }
     }
@@ -259,7 +271,7 @@ public class WasmClassGenerator {
         return DataPrimitives.ADDRESS;
     }
 
-    private static int align(int base, int alignment) {
+    public static int align(int base, int alignment) {
         if (base == 0) {
             return 0;
         }
@@ -312,6 +324,7 @@ public class WasmClassGenerator {
     private class ClassBinaryData {
         ValueType type;
         int size;
+        int alignment;
         int start;
         ObjectIntMap<String> fieldLayout = new ObjectIntOpenHashMap<>();
         DataValue data;

@@ -32,6 +32,7 @@ public final class Example {
         testLazyInitialization();
         testHashCode();
         testArrayList();
+        //testArrayCopy();
     }
 
     private static void testFibonacci() {
@@ -99,6 +100,25 @@ public final class Example {
         for (int item : list) {
             println("list[i] = " + item);
         }
+    }
+
+    private static void testArrayCopy() {
+        byte[] array = new byte[100];
+        byte[] negatives = new byte[100];
+        for (int i = 0; i < array.length; ++i) {
+            array[i] = (byte) i;
+            negatives[i] = (byte) -i;
+        }
+        System.arraycopy(negatives, 4, array, 0, 12);
+        System.arraycopy(negatives, 1, array, 21, 12);
+        System.arraycopy(negatives, 2, array, 35, 12);
+        System.arraycopy(negatives, 1, array, 8, 3);
+        System.arraycopy(array, 50, array, 54, 12);
+        StringBuilder sb = new StringBuilder("arrayCopy result:");
+        for (int i = 0; i < array.length; ++i) {
+            sb.append(" ").append(array[i]);
+        }
+        println(sb.toString());
     }
 
     private static Base instance(int index) {

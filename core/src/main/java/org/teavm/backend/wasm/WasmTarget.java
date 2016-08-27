@@ -33,13 +33,13 @@ import org.teavm.backend.wasm.generate.WasmGenerationContext;
 import org.teavm.backend.wasm.generate.WasmGenerator;
 import org.teavm.backend.wasm.generate.WasmMangling;
 import org.teavm.backend.wasm.generate.WasmStringPool;
+import org.teavm.backend.wasm.intrinsics.AddressIntrinsic;
 import org.teavm.backend.wasm.intrinsics.AllocatorIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ClassIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformClassIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformClassMetadataIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformObjectIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmAddressIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmRuntimeIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmStructureIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -196,7 +196,7 @@ public class WasmTarget implements TeaVMTarget {
         WasmGenerationContext context = new WasmGenerationContext(classes, controller.getDiagnostics(),
                 vtableProvider, tagRegistry, stringPool);
 
-        context.addIntrinsic(new WasmAddressIntrinsic());
+        context.addIntrinsic(new AddressIntrinsic(classGenerator));
         context.addIntrinsic(new WasmStructureIntrinsic(classGenerator));
         context.addIntrinsic(new WasmRuntimeIntrinsic());
         context.addIntrinsic(new AllocatorIntrinsic());
@@ -293,7 +293,7 @@ public class WasmTarget implements TeaVMTarget {
             if (clinit == null) {
                 continue;
             }
-            initFunction.getBody().add(new WasmCall(WasmMangling.mangleMethod(clinit.getReference())));
+            initFunction.getBody().add(new WasmCall(WasmMangling.mangleInitializer(className)));
         }
         module.add(initFunction);
         module.setStartFunction(initFunction);

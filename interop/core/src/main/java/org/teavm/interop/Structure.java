@@ -21,6 +21,4 @@ public class Structure {
     public final native Address toAddress();
 
     public static native int sizeOf(Class<? extends Structure> type);
-
-    public static native <T extends Structure> T add(T base, int offset);
 }
