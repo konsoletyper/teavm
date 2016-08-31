@@ -33,6 +33,7 @@ public final class Example {
         testHashCode();
         testArrayList();
         testArrayCopy();
+        testArrayIsObject();
     }
 
     private static void testFibonacci() {
@@ -119,6 +120,15 @@ public final class Example {
             sb.append(" ").append(array[i]);
         }
         println(sb.toString());
+    }
+
+    private static void testArrayIsObject() {
+        byte[] array = new byte[] { 1, 2, 3 };
+        byte[] copy = array.clone();
+        println("array.hashCode() = " + array.hashCode());
+        println("copy.hashCode() = " + copy.hashCode());
+        println("array.equals(array) = " + array.equals(array));
+        println("array.equals(copy) = " + array.equals(copy));
     }
 
     private static Base instance(int index) {

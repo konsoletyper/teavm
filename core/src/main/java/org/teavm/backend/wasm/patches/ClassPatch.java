@@ -37,7 +37,6 @@ public class ClassPatch implements ClassHolderTransformer {
         if (!cls.getName().equals("java.lang.Class")) {
             return;
         }
-        
         for (MethodHolder method : cls.getMethods()) {
             patchProgram(method.getProgram());
         }

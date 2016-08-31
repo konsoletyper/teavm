@@ -643,6 +643,11 @@ class DependencyGraphBuilder {
                 arrayNode.addConsumer(receiverNode::propagate);
                 arrayNode.getArrayItem().connect(receiverNode.getArrayItem());
             }
+            MethodDependency cloneDep = dependencyChecker.linkMethod(
+                    new MethodReference(Object.class, "clone", Object.class),
+                    new CallLocation(caller.getMethod(), currentLocation));
+            arrayNode.connect(cloneDep.getVariable(0));
+            cloneDep.use();
         }
 
         @Override

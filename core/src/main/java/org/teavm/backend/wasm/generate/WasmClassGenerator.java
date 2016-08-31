@@ -123,11 +123,20 @@ public class WasmClassGenerator {
             addClass(itemType);
             ClassBinaryData itemBinaryData = binaryDataMap.get(itemType);
 
+            VirtualTable vtable = vtableProvider.lookup("java.lang.Object");
+            int vtableSize = vtable != null ? vtable.getEntries().size() : 0;
+            DataType arrayType = new DataArray(DataPrimitives.INT, vtableSize);
+            DataValue wrapper = new DataStructure((byte) 0, classStructure, arrayType).createValue();
+
+            if (vtableSize > 0) {
+                fillVirtualTable(vtable, wrapper.getValue(1));
+            }
+
             binaryData.size = 4;
-            binaryData.data = classStructure.createValue();
+            binaryData.data = wrapper.getValue(0);
             binaryData.data.setInt(1, 4);
             binaryData.data.setAddress(5, itemBinaryData.start);
-            binaryData.start = binaryWriter.append(binaryData.data);
+            binaryData.start = binaryWriter.append(vtableSize > 0 ? wrapper : binaryData.data);
 
             itemBinaryData.data.setAddress(6, binaryData.start);
         }
@@ -161,10 +170,15 @@ public class WasmClassGenerator {
         int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
         header.setInt(3, tag);
         header.setInt(4, RuntimeClass.computeCanary(binaryData.size, tag));
-        if (vtable == null) {
-            return header;
+
+        if (vtable != null) {
+            fillVirtualTable(vtable, array);
         }
 
+        return vtable != null ? wrapper : header;
+    }
+
+    private void fillVirtualTable(VirtualTable vtable, DataValue array) {
         int index = 0;
         for (VirtualTableEntry vtableEntry : vtable.getEntries().values()) {
             int methodIndex;
@@ -180,8 +194,6 @@ public class WasmClassGenerator {
 
             array.setInt(index++, methodIndex);
         }
-
-        return wrapper;
     }
 
     public int getClassPointer(ValueType type) {

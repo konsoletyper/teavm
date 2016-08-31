@@ -121,7 +121,7 @@ public class WasmCRenderer {
             indent();
             for (int i = 0; i < module.getFunctionTable().size() - 1; ++i) {
                 WasmFunction function = module.getFunctionTable().get(i);
-                line(function.getName() + ",");
+                line((function != null ? function.getName() : "unknown") + ",");
             }
             line(module.getFunctionTable().get(module.getFunctionTable().size() - 1).getName());
             outdent();

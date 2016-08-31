@@ -31,6 +31,7 @@ import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmDependencyListener;
 import org.teavm.backend.wasm.generate.WasmGenerationContext;
 import org.teavm.backend.wasm.generate.WasmGenerator;
+import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.generate.WasmMangling;
 import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.intrinsics.AddressIntrinsic;
@@ -43,13 +44,16 @@ import org.teavm.backend.wasm.intrinsics.PlatformObjectIntrinsic;
 import org.teavm.backend.wasm.intrinsics.StructureIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmRuntimeIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmGetLocal;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
@@ -59,7 +63,6 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.patches.ClassPatch;
-import org.teavm.backend.wasm.patches.ObjectPatch;
 import org.teavm.backend.wasm.render.WasmCRenderer;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyChecker;
@@ -124,7 +127,6 @@ public class WasmTarget implements TeaVMTarget {
     @Override
     public List<ClassHolderTransformer> getTransformers() {
         List<ClassHolderTransformer> transformers = new ArrayList<>();
-        transformers.add(new ObjectPatch());
         transformers.add(new ClassPatch());
         transformers.add(new WasmDependencyListener());
         return transformers;
@@ -257,7 +259,11 @@ public class WasmTarget implements TeaVMTarget {
                 if (implementor.getProgram() == null || implementor.getProgram().basicBlockCount() == 0) {
                     continue;
                 }
-                module.add(generator.generate(method.getReference(), implementor));
+                if (method == implementor) {
+                    module.add(generator.generate(method.getReference(), implementor));
+                } else {
+                    module.add(generateStub(method, implementor));
+                }
                 if (controller.wasCancelled()) {
                     return;
                 }
@@ -326,6 +332,33 @@ public class WasmTarget implements TeaVMTarget {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private WasmFunction generateStub(MethodHolder method, MethodHolder implementor) {
+        WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(method.getReference()));
+        if (!method.hasModifier(ElementModifier.STATIC)) {
+            function.getParameters().add(WasmType.INT32);
+        }
+        ValueType[] parameterTypes = method.getParameterTypes();
+        for (ValueType parameterType : parameterTypes) {
+            function.getParameters().add(WasmGeneratorUtil.mapType(parameterType));
+        }
+
+        WasmCall call = new WasmCall(WasmMangling.mangleMethod(implementor.getReference()));
+        for (WasmType param : function.getParameters()) {
+            WasmLocal local = new WasmLocal(param);
+            function.add(local);
+            call.getArguments().add(new WasmGetLocal(local));
+        }
+
+        function.setResult(WasmGeneratorUtil.mapType(method.getResultType()));
+
+        if (method.getResultType() == ValueType.VOID) {
+            function.getBody().add(new WasmDrop(call));
+        } else {
+            function.getBody().add(new WasmReturn(call));
+        }
+        return function;
     }
 
     private void renderClinit(ListableClassReaderSource classes, WasmClassGenerator classGenerator,
