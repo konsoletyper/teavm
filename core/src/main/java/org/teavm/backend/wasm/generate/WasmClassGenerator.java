@@ -29,6 +29,7 @@ import org.teavm.backend.wasm.binary.DataStructure;
 import org.teavm.backend.wasm.binary.DataType;
 import org.teavm.backend.wasm.binary.DataValue;
 import org.teavm.interop.Address;
+import org.teavm.interop.Function;
 import org.teavm.interop.Structure;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -63,7 +64,8 @@ public class WasmClassGenerator {
             DataPrimitives.INT, /* tag */
             DataPrimitives.INT, /* canary */
             DataPrimitives.ADDRESS, /* item type */
-            DataPrimitives.ADDRESS  /* array type */);
+            DataPrimitives.ADDRESS, /* array type */
+            DataPrimitives.INT /* isInstance function */);
 
     public WasmClassGenerator(ClassReaderSource classSource, VirtualTableProvider vtableProvider,
             TagRegistry tagRegistry, BinaryWriter binaryWriter) {
@@ -216,10 +218,22 @@ public class WasmClassGenerator {
         return data.start < 0;
     }
 
+    public boolean isFunctionClass(String className) {
+        ValueType type = ValueType.object(className);
+        addClass(type);
+        return binaryDataMap.get(type).function;
+    }
+
     private void calculateLayout(ClassReader cls, ClassBinaryData data) {
         if (cls.getName().equals(Structure.class.getName()) || cls.getName().equals(Address.class.getName())) {
             data.size = 0;
             data.start = -1;
+            return;
+        } else if (cls.getName().equals(Function.class.getName())) {
+            data.size = 0;
+            data.start = -1;
+            data.function = true;
+            return;
         } else if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
             addClass(ValueType.object(cls.getParent()));
             ClassBinaryData parentData = binaryDataMap.get(ValueType.object(cls.getParent()));
@@ -227,6 +241,10 @@ public class WasmClassGenerator {
             data.alignment = parentData.alignment;
             if (parentData.start == -1) {
                 data.start = -1;
+            }
+            if (parentData.function) {
+                data.function = true;
+                return;
             }
         } else {
             data.size = 4;
@@ -328,5 +346,6 @@ public class WasmClassGenerator {
         int start;
         ObjectIntMap<String> fieldLayout = new ObjectIntOpenHashMap<>();
         DataValue data;
+        boolean function;
     }
 }

@@ -15,40 +15,41 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
+import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.interop.Address;
+import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class WasmStructureIntrinsic implements WasmIntrinsic {
+public class FunctionIntrinsic implements WasmIntrinsic {
     private WasmClassGenerator classGenerator;
 
-    public WasmStructureIntrinsic(WasmClassGenerator classGenerator) {
+    public FunctionIntrinsic(WasmClassGenerator classGenerator) {
         this.classGenerator = classGenerator;
     }
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        return !methodReference.getClassName().equals(Address.class.getName())
-                && classGenerator.getClassPointer(ValueType.object(methodReference.getClassName())) < 0;
+        return classGenerator.isFunctionClass(methodReference.getClassName());
     }
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
-        switch (invocation.getMethod().getName()) {
-            case "toAddress":
-            case "cast":
-                return manager.generate(invocation.getArguments().get(0));
-            case "sizeOf": {
-                ValueType.Object type = (ValueType.Object) ((ConstantExpr) invocation.getArguments().get(0)).getValue();
-                return new WasmInt32Constant(classGenerator.getClassSize(type.getClassName()));
-            }
-            default:
-                throw new IllegalArgumentException(invocation.getMethod().toString());
+        WasmExpression selector = manager.generate(invocation.getArguments().get(0));
+        WasmIndirectCall call = new WasmIndirectCall(selector);
+
+        for (ValueType type : invocation.getMethod().getParameterTypes()) {
+            call.getParameterTypes().add(WasmGeneratorUtil.mapType(type));
         }
+        if (invocation.getMethod().getReturnType() != ValueType.VOID) {
+            call.setReturnType(WasmGeneratorUtil.mapType(invocation.getMethod().getReturnType()));
+        }
+        for (int i = 1; i < invocation.getArguments().size(); ++i) {
+            call.getArguments().add(manager.generate(invocation.getArguments().get(i)));
+        }
+
+        return call;
     }
 }

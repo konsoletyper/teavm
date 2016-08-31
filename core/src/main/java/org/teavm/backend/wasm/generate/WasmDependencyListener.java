@@ -18,13 +18,19 @@ package org.teavm.backend.wasm.generate;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.DelegateTo;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 
-public class WasmDependencyListener extends AbstractDependencyListener {
+public class WasmDependencyListener extends AbstractDependencyListener implements ClassHolderTransformer {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         AnnotationReader delegateAnnot = method.getMethod().getAnnotations().get(DelegateTo.class.getName());
@@ -37,6 +43,17 @@ public class WasmDependencyListener extends AbstractDependencyListener {
                         agent.linkMethod(delegate.getReference(), location).use();
                     }
                 }
+            }
+        }
+    }
+
+    @Override
+    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+        for (MethodHolder method : cls.getMethods()) {
+            AnnotationReader delegateAnnot = method.getAnnotations().get(DelegateTo.class.getName());
+            if (delegateAnnot != null) {
+                method.setProgram(null);
+                method.getModifiers().add(ElementModifier.NATIVE);
             }
         }
     }

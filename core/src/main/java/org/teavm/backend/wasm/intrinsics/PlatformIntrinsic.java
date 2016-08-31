@@ -17,6 +17,7 @@ package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class PlatformIntrinsic implements WasmIntrinsic {
@@ -24,7 +25,18 @@ public class PlatformIntrinsic implements WasmIntrinsic {
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        return methodReference.getClassName().equals(PLATFORM);
+        return methodReference.getClassName().equals(PLATFORM)
+                && isApplicableToMethod(methodReference.getDescriptor());
+    }
+
+    private boolean isApplicableToMethod(MethodDescriptor methodDescriptor) {
+        switch (methodDescriptor.getName()) {
+            case "getPlatformObject":
+            case "asJavaClass":
+                return true;
+            default:
+                return false;
+        }
     }
 
     @Override

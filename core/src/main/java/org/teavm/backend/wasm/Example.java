@@ -32,7 +32,7 @@ public final class Example {
         testLazyInitialization();
         testHashCode();
         testArrayList();
-        //testArrayCopy();
+        testArrayCopy();
     }
 
     private static void testFibonacci() {

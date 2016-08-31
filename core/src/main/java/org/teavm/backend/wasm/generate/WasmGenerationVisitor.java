@@ -572,6 +572,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         } else if (expr.getValue() instanceof String) {
             String str = (String) expr.getValue();
             result = new WasmInt32Constant(context.getStringPool().getStringPointer(str));
+        } else if (expr.getValue() instanceof ValueType) {
+            int pointer = classGenerator.getClassPointer((ValueType) expr.getValue());
+            result = new WasmInt32Constant(pointer);
         } else {
             throw new IllegalArgumentException("Constant unsupported: " + expr.getValue());
         }

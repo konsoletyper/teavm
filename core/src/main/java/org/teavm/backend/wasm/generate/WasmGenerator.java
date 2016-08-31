@@ -109,13 +109,16 @@ public class WasmGenerator {
     public WasmFunction generateNative(MethodReference methodReference) {
         WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(methodReference));
         for (int i = 0; i < methodReference.parameterCount(); ++i) {
-            function.getParameters().add(WasmGeneratorUtil.mapType(methodReference.parameterType(i)));
+            WasmType paramType = WasmGeneratorUtil.mapType(methodReference.parameterType(i));
+            function.getParameters().add(paramType);
         }
 
         WasmGenerationContext.ImportedMethod importedMethod = context.getImportedMethod(methodReference);
         if (importedMethod != null) {
             function.setImportName(importedMethod.name);
             function.setImportModule(importedMethod.module);
+        } else {
+            function.setImportName("<unknown>");
         }
 
         return function;

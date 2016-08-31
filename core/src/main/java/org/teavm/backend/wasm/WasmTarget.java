@@ -36,12 +36,12 @@ import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.intrinsics.AddressIntrinsic;
 import org.teavm.backend.wasm.intrinsics.AllocatorIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ClassIntrinsic;
+import org.teavm.backend.wasm.intrinsics.FunctionIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformClassIntrinsic;
-import org.teavm.backend.wasm.intrinsics.PlatformClassMetadataIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformObjectIntrinsic;
+import org.teavm.backend.wasm.intrinsics.StructureIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmRuntimeIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmStructureIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -88,6 +88,7 @@ import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableProvider;
+import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.runtime.Allocator;
@@ -125,6 +126,7 @@ public class WasmTarget implements TeaVMTarget {
         List<ClassHolderTransformer> transformers = new ArrayList<>();
         transformers.add(new ObjectPatch());
         transformers.add(new ClassPatch());
+        transformers.add(new WasmDependencyListener());
         return transformers;
     }
 
@@ -158,6 +160,8 @@ public class WasmTarget implements TeaVMTarget {
                 Address.class, void.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "fillZero", Address.class, int.class,
                 void.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "moveMemoryBlock", Address.class,
+                Address.class, int.class, void.class), null).use();
 
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class), null).use();
@@ -188,7 +192,8 @@ public class WasmTarget implements TeaVMTarget {
         VirtualTableProvider vtableProvider = createVirtualTableProvider(classes);
         TagRegistry tagRegistry = new TagRegistry(classes);
         BinaryWriter binaryWriter = new BinaryWriter(256);
-        WasmClassGenerator classGenerator = new WasmClassGenerator(classes, vtableProvider, tagRegistry, binaryWriter);
+        WasmClassGenerator classGenerator = new WasmClassGenerator(
+                classes, vtableProvider, tagRegistry, binaryWriter);
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>());
@@ -197,12 +202,12 @@ public class WasmTarget implements TeaVMTarget {
                 vtableProvider, tagRegistry, stringPool);
 
         context.addIntrinsic(new AddressIntrinsic(classGenerator));
-        context.addIntrinsic(new WasmStructureIntrinsic(classGenerator));
+        context.addIntrinsic(new StructureIntrinsic(classGenerator));
+        context.addIntrinsic(new FunctionIntrinsic(classGenerator));
         context.addIntrinsic(new WasmRuntimeIntrinsic());
         context.addIntrinsic(new AllocatorIntrinsic());
         context.addIntrinsic(new PlatformIntrinsic());
         context.addIntrinsic(new PlatformClassIntrinsic());
-        context.addIntrinsic(new PlatformClassMetadataIntrinsic());
         context.addIntrinsic(new PlatformObjectIntrinsic(classGenerator));
         context.addIntrinsic(new ClassIntrinsic());
 
@@ -393,6 +398,8 @@ public class WasmTarget implements TeaVMTarget {
                             if (invoke.getType() == InvocationType.VIRTUAL) {
                                 virtualMethods.add(invoke.getMethod());
                             }
+                        } else if (insn instanceof CloneArrayInstruction) {
+                            virtualMethods.add(new MethodReference(Object.class, "clone", Object.class));
                         }
                     }
                 }

@@ -21,10 +21,14 @@ import java.util.Map;
 import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
+import org.teavm.interop.Address;
+import org.teavm.interop.DelegateTo;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.metadata.ClassResource;
 import org.teavm.platform.metadata.ClassScopedMetadataProvider;
+import org.teavm.runtime.RuntimeClass;
+import org.teavm.runtime.RuntimeObject;
 
 public class TClass<T> extends TObject implements TAnnotatedElement {
     TString name;
@@ -93,11 +97,11 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     public boolean isPrimitive() {
-        return platformClass.getMetadata().isPrimitive();
+        return Platform.isPrimitive(platformClass);
     }
 
     public boolean isArray() {
-        return platformClass.getMetadata().getArrayItem() != null;
+        return Platform.getArrayItem(platformClass) != null;
     }
 
     public boolean isEnum() {
@@ -105,7 +109,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     public TClass<?> getComponentType() {
-        return getClass(platformClass.getMetadata().getArrayItem());
+        return getClass(Platform.getArrayItem(platformClass));
     }
 
     public boolean desiredAssertionStatus() {

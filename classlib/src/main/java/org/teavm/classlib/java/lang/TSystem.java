@@ -80,7 +80,7 @@ public final class TSystem extends TObject {
     private static native void doArrayCopy(Object src, int srcPos, Object dest, int destPos, int length);
 
     static void doArrayCopyLowLevel(RuntimeArray src, int srcPos, RuntimeArray dest, int destPos, int length) {
-        RuntimeClass type = Address.fromInt(src.classReference << 3).toStructure();
+        RuntimeClass type = RuntimeClass.getClass(src);
         int itemSize = type.itemType.size;
         if ((type.itemType.flags & RuntimeClass.PRIMITIVE) == 0) {
             itemSize = Address.sizeOf();

@@ -15,30 +15,36 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
+import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.ast.QualificationExpr;
+import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.model.FieldReference;
+import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.interop.Structure;
 import org.teavm.model.MethodReference;
-import org.teavm.runtime.RuntimeClass;
+import org.teavm.model.ValueType;
 
-public class PlatformClassMetadataIntrinsic implements WasmIntrinsic {
-    private static final String PLATFORM_CLASS_METADATA_NAME = "org.teavm.platform.PlatformClassMetadata";
+public class StructureIntrinsic implements WasmIntrinsic {
+    private WasmClassGenerator classGenerator;
+
+    public StructureIntrinsic(WasmClassGenerator classGenerator) {
+        this.classGenerator = classGenerator;
+    }
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        return methodReference.getClassName().equals(PLATFORM_CLASS_METADATA_NAME);
+        return methodReference.getClassName().equals(Structure.class.getName());
     }
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
         switch (invocation.getMethod().getName()) {
-            case "getArrayItem": {
-                QualificationExpr expr = new QualificationExpr();
-                expr.setQualified(invocation.getArguments().get(0));
-                expr.setField(new FieldReference(RuntimeClass.class.getName(), "itemType"));
-                expr.setLocation(invocation.getLocation());
-                return manager.generate(expr);
+            case "toAddress":
+            case "cast":
+                return manager.generate(invocation.getArguments().get(0));
+            case "sizeOf": {
+                ValueType.Object type = (ValueType.Object) ((ConstantExpr) invocation.getArguments().get(0)).getValue();
+                return new WasmInt32Constant(classGenerator.getClassSize(type.getClassName()));
             }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());

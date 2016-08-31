@@ -21,13 +21,25 @@ import org.teavm.interop.DelegateTo;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.platform.PlatformClass;
 import org.teavm.runtime.Allocator;
+import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
 public final class TArray extends TObject {
     @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayNativeGenerator.class)
+    @DelegateTo("getLengthLowLevel")
     public static native int getLength(TObject array) throws TIllegalArgumentException;
+
+    @SuppressWarnings("unused")
+    private static int getLengthLowLevel(RuntimeObject obj) {
+        RuntimeClass cls = RuntimeClass.getClass(obj);
+        if (cls.itemType == null) {
+            throw new TIllegalArgumentException();
+        }
+        RuntimeArray array = (RuntimeArray) obj;
+        return array.size;
+    }
 
     public static TObject newInstance(TClass<?> componentType, int length) throws TNegativeArraySizeException {
         if (componentType == null) {

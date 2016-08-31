@@ -27,8 +27,16 @@ import org.teavm.runtime.Allocator;
 public class AllocatorIntrinsic implements WasmIntrinsic {
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        return methodReference.getClassName().equals(Allocator.class.getName())
-                && methodReference.getName().equals("fillZero");
+        if (!methodReference.getClassName().equals(Allocator.class.getName())) {
+            return false;
+        }
+        switch (methodReference.getName()) {
+            case "fillZero":
+            case "moveMemoryBlock":
+                return true;
+            default:
+                return false;
+        }
     }
 
     @Override
@@ -39,7 +47,8 @@ public class AllocatorIntrinsic implements WasmIntrinsic {
                 MethodReference delegateMetod = new MethodReference(WasmRuntime.class.getName(),
                         invocation.getMethod().getDescriptor());
                 WasmCall call = new WasmCall(WasmMangling.mangleMethod(delegateMetod));
-                call.getArguments().addAll(invocation.getArguments().stream().map(manager::generate)
+                call.getArguments().addAll(invocation.getArguments().stream()
+                        .map(manager::generate)
                         .collect(Collectors.toList()));
                 return call;
             }
