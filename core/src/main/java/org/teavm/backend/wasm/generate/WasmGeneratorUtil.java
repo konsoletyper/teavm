@@ -54,6 +54,8 @@ public final class WasmGeneratorUtil {
                 case DOUBLE:
                     return WasmType.FLOAT64;
             }
+        } else if (type == ValueType.VOID) {
+            return null;
         }
         return WasmType.INT32;
     }
