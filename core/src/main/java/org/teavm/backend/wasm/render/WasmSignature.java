@@ -16,12 +16,13 @@
 package org.teavm.backend.wasm.render;
 
 import java.util.Arrays;
+import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmType;
 
-class WasmSignature {
+final class WasmSignature {
     WasmType[] types;
 
-    public WasmSignature(WasmType[] types) {
+    WasmSignature(WasmType[] types) {
         this.types = types;
     }
 
@@ -40,5 +41,14 @@ class WasmSignature {
     @Override
     public int hashCode() {
         return Arrays.hashCode(types);
+    }
+
+    public static WasmSignature fromFunction(WasmFunction function) {
+        WasmType[] types = new WasmType[function.getParameters().size() + 1];
+        types[0] = function.getResult();
+        for (int i = 0; i < function.getParameters().size(); ++i) {
+            types[i + 1] = function.getParameters().get(i);
+        }
+        return new WasmSignature(types);
     }
 }

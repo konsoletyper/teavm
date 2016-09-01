@@ -20,7 +20,6 @@ import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
-import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 
 public class WasmRenderer {
@@ -143,23 +142,14 @@ public class WasmRenderer {
     }
 
     private void renderSignature(WasmFunction function) {
-        WasmSignature signature = signatureFromFunction(function);
+        WasmSignature signature = WasmSignature.fromFunction(function);
         visitor.append(" ").open().append("type $type" + visitor.getSignatureIndex(signature)).close();
     }
 
-    private WasmSignature signatureFromFunction(WasmFunction function) {
-        WasmType[] types = new WasmType[function.getParameters().size() + 1];
-        types[0] = function.getResult();
-        for (int i = 0; i < function.getParameters().size(); ++i) {
-            types[i + 1] = function.getParameters().get(i);
-        }
-        return new WasmSignature(types);
-    }
-
     private void renderTypes(WasmModule module) {
-        WasmSignatureCollector signatureCollector = new WasmSignatureCollector(visitor);
+        WasmSignatureCollector signatureCollector = new WasmSignatureCollector(visitor::getSignatureIndex);
         for (WasmFunction function : module.getFunctions().values()) {
-            visitor.getSignatureIndex(signatureFromFunction(function));
+            visitor.getSignatureIndex(WasmSignature.fromFunction(function));
             for (WasmExpression part : function.getBody()) {
                 part.acceptVisitor(signatureCollector);
             }

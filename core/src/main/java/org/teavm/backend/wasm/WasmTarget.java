@@ -17,8 +17,6 @@ package org.teavm.backend.wasm;
 
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,7 +64,8 @@ import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.patches.ClassPatch;
-import org.teavm.backend.wasm.render.WasmCRenderer;
+import org.teavm.backend.wasm.render.WasmBinaryRenderer;
+import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyListener;
@@ -272,14 +271,13 @@ public class WasmTarget implements TeaVMTarget {
             module.getFunctionTable().add(module.getFunctions().get(function));
         }
 
-        WasmCRenderer renderer = new WasmCRenderer();
-        renderer.setOutputLineNumbers(debugging);
+        WasmBinaryWriter writer = new WasmBinaryWriter();
+        WasmBinaryRenderer renderer = new WasmBinaryRenderer(writer);
         renderer.render(module);
 
         try {
-            Writer writer = new OutputStreamWriter(output, "UTF-8");
-            writer.append(renderer.toString());
-            writer.flush();
+            output.write(writer.getData());
+            output.flush();
         } catch (IOException e) {
             throw new RuntimeException(e);
         }

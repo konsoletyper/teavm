@@ -15,15 +15,16 @@
  */
 package org.teavm.backend.wasm.render;
 
+import java.util.function.Consumer;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
 import org.teavm.backend.wasm.model.expression.WasmIndirectCall;
 
 class WasmSignatureCollector extends WasmDefaultExpressionVisitor {
-    WasmRenderingVisitor renderingVisitor;
+    private Consumer<WasmSignature> consumer;
 
-    public WasmSignatureCollector(WasmRenderingVisitor renderingVisitor) {
-        this.renderingVisitor = renderingVisitor;
+    public WasmSignatureCollector(Consumer<WasmSignature> consumer) {
+        this.consumer = consumer;
     }
 
     @Override
@@ -34,6 +35,6 @@ class WasmSignatureCollector extends WasmDefaultExpressionVisitor {
             types[i + 1] = expression.getParameterTypes().get(i);
         }
 
-        renderingVisitor.getSignatureIndex(new WasmSignature(types));
+        consumer.accept(new WasmSignature(types));
     }
 }
