@@ -262,14 +262,14 @@ public final class WasmRuntime {
                     alignedTargetStart.putInt(alignedSourceStart.getInt());
                     break;
                 case 1:
-                    alignedTargetStart.add(3).putByte(alignedSourceStart.add(3).getByte());
+                    alignedTargetStart.add(1).putByte(alignedSourceStart.add(1).getByte());
+                    alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
                     break;
                 case 2:
                     alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
                     break;
                 case 3:
-                    alignedTargetStart.add(1).putByte(alignedSourceStart.add(1).getByte());
-                    alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
+                    alignedTargetStart.add(3).putByte(alignedSourceStart.add(3).getByte());
                     break;
             }
 
@@ -282,7 +282,7 @@ public final class WasmRuntime {
                 alignedTargetStart = alignedTargetStart.add(4);
             }
 
-            switch (source.getInt() + count - alignedSourceEnd.getInt()) {
+            switch (source.toInt() + count - alignedSourceEnd.toInt()) {
                 case 0:
                     break;
                 case 1:
@@ -297,7 +297,7 @@ public final class WasmRuntime {
                     break;
             }
         } else {
-            switch (source.getInt() + count - alignedSourceEnd.getInt()) {
+            switch (source.toInt() + count - alignedSourceEnd.toInt()) {
                 case 0:
                     break;
                 case 1:
@@ -312,7 +312,7 @@ public final class WasmRuntime {
                     break;
             }
 
-            while (alignedSourceEnd.toInt() > alignedTargetEnd.toInt()) {
+            while (alignedSourceEnd.toInt() > alignedSourceStart.toInt()) {
                 alignedTargetEnd.putInt(alignedSourceEnd.getInt());
                 alignedSourceEnd = alignedSourceEnd.add(-4);
                 alignedTargetEnd = alignedTargetEnd.add(-4);

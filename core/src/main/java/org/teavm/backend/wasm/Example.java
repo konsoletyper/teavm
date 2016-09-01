@@ -110,9 +110,9 @@ public final class Example {
         byte[] negatives = new byte[100];
         for (int i = 0; i < array.length; ++i) {
             array[i] = (byte) i;
-            negatives[i] = (byte) -i;
+            negatives[i] = (byte) (-i - 1);
         }
-        System.arraycopy(negatives, 4, array, 0, 12);
+        System.arraycopy(negatives, 0, array, 4, 12);
         System.arraycopy(negatives, 1, array, 21, 12);
         System.arraycopy(negatives, 2, array, 35, 12);
         System.arraycopy(negatives, 1, array, 8, 3);
