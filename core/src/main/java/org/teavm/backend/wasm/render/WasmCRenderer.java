@@ -64,6 +64,7 @@ public class WasmCRenderer {
 
         renderFunctionDeclarations(module);
         line("static int8_t *wasm_heap;");
+        line("static int32_t wasm_heap_size;");
         renderFunctionTable(module);
 
         for (WasmFunction function : module.getFunctions().values()) {
@@ -91,7 +92,8 @@ public class WasmCRenderer {
     }
 
     private void renderHeap(WasmModule module) {
-        line("wasm_heap = malloc(" + 65535 * module.getMemorySize() + ");");
+        line("wasm_heap_size = " + 65536 * module.getMemorySize() + ";");
+        line("wasm_heap = malloc(" + 65536 * module.getMemorySize() + ");");
         for (WasmMemorySegment segment : module.getSegments()) {
             line("memcpy(wasm_heap + " + segment.getOffset() + ",");
             indent();

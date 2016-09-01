@@ -18,6 +18,7 @@ package org.teavm.backend.wasm;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.teavm.model.ValueType;
 
 public final class Example {
     private Example() {
@@ -34,6 +35,7 @@ public final class Example {
         testArrayList();
         testArrayCopy();
         testArrayIsObject();
+        testIsAssignableFrom();
     }
 
     private static void testFibonacci() {
@@ -129,6 +131,15 @@ public final class Example {
         println("copy.hashCode() = " + copy.hashCode());
         println("array.equals(array) = " + array.equals(array));
         println("array.equals(copy) = " + array.equals(copy));
+    }
+
+    private static void testIsAssignableFrom() {
+        println("Object.isAssignableFrom(byte[]) = " + Object.class.isAssignableFrom(new byte[0].getClass()));
+        println("Object[].isAssignableFrom(Integer[]) = " + Object[].class.isAssignableFrom(new Integer[0].getClass()));
+        println("Object[].isAssignableFrom(Integer) = " + Object[].class.isAssignableFrom(Integer.class));
+        println("byte[].isAssignableFrom(Object) = " + byte[].class.isAssignableFrom(ValueType.Object.class));
+        println("Base.isAssignableFrom(Derived1) = " + Base.class.isAssignableFrom(Derived1.class));
+        println("Base.isAssignableFrom(A) = " + Base.class.isAssignableFrom(A.class));
     }
 
     private static Base instance(int index) {

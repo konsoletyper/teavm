@@ -24,6 +24,10 @@ public final class WasmMangling {
     private WasmMangling() {
     }
 
+    public static String mangeIsSupertype(ValueType type) {
+        return "isSupertype$" + mangleType(type);
+    }
+
     public static String mangleMethod(MethodReference method) {
         String className = method.getClassName().length() + mangleString(method.getClassName());
         StringBuilder sb = new StringBuilder("method$" + className + "_");

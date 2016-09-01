@@ -22,6 +22,7 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -51,6 +52,7 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.backend.wasm.model.expression.WasmBranch;
 import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmGetLocal;
@@ -61,6 +63,7 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
+import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.patches.ClassPatch;
 import org.teavm.backend.wasm.render.WasmCRenderer;
@@ -216,60 +219,8 @@ public class WasmTarget implements TeaVMTarget {
         WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator);
 
         module.setMemorySize(64);
-
-        for (String className : classes.getClassNames()) {
-            ClassHolder cls = classes.get(className);
-            for (MethodHolder method : cls.getMethods()) {
-                if (method.getOwnerName().equals(Allocator.class.getName())
-                        && method.getName().equals("initialize")) {
-                    continue;
-                }
-                if (context.getIntrinsic(method.getReference()) != null) {
-                    continue;
-                }
-
-                MethodHolder implementor = method;
-                AnnotationHolder delegateAnnot = method.getAnnotations().get(DelegateTo.class.getName());
-                if (delegateAnnot != null) {
-                    String methodName = delegateAnnot.getValue("value").getString();
-                    boolean found = false;
-                    for (MethodHolder candidate : cls.getMethods()) {
-                        if (candidate.getName().equals(methodName)) {
-                            if (found) {
-                                controller.getDiagnostics().error(new CallLocation(method.getReference()),
-                                        "Method is delegated to " + methodName + " but several implementations "
-                                        + "found");
-                                break;
-                            }
-                            implementor = candidate;
-                            found = true;
-                        }
-                    }
-                }
-
-                if (implementor.hasModifier(ElementModifier.NATIVE)) {
-                    if (context.getImportedMethod(method.getReference()) == null) {
-                        CallLocation location = new CallLocation(method.getReference());
-                        controller.getDiagnostics().error(location, "Method {{m0}} is native but "
-                                + "has no {{c1}} annotation on it", method.getReference(), Import.class.getName());
-                    }
-                    module.add(generator.generateNative(method.getReference()));
-                    continue;
-                }
-                if (implementor.getProgram() == null || implementor.getProgram().basicBlockCount() == 0) {
-                    continue;
-                }
-                if (method == implementor) {
-                    module.add(generator.generate(method.getReference(), implementor));
-                } else {
-                    module.add(generateStub(method, implementor));
-                }
-                if (controller.wasCancelled()) {
-                    return;
-                }
-            }
-        }
-
+        generateMethods(classes, context, generator, module);
+        generateIsSupertypeFunctions(tagRegistry, module, classGenerator);
         classGenerator.postProcess();
 
         WasmMemorySegment dataSegment = new WasmMemorySegment();
@@ -334,6 +285,163 @@ public class WasmTarget implements TeaVMTarget {
         }
     }
 
+    private void generateMethods(ListableClassHolderSource classes, WasmGenerationContext context,
+            WasmGenerator generator, WasmModule module) {
+        for (String className : classes.getClassNames()) {
+            ClassHolder cls = classes.get(className);
+            for (MethodHolder method : cls.getMethods()) {
+                if (method.getOwnerName().equals(Allocator.class.getName())
+                        && method.getName().equals("initialize")) {
+                    continue;
+                }
+                if (context.getIntrinsic(method.getReference()) != null) {
+                    continue;
+                }
+
+                MethodHolder implementor = method;
+                AnnotationHolder delegateAnnot = method.getAnnotations().get(DelegateTo.class.getName());
+                if (delegateAnnot != null) {
+                    String methodName = delegateAnnot.getValue("value").getString();
+                    boolean found = false;
+                    for (MethodHolder candidate : cls.getMethods()) {
+                        if (candidate.getName().equals(methodName)) {
+                            if (found) {
+                                controller.getDiagnostics().error(new CallLocation(method.getReference()),
+                                        "Method is delegated to " + methodName + " but several implementations "
+                                                + "found");
+                                break;
+                            }
+                            implementor = candidate;
+                            found = true;
+                        }
+                    }
+                }
+
+                if (implementor.hasModifier(ElementModifier.NATIVE)) {
+                    if (context.getImportedMethod(method.getReference()) == null) {
+                        CallLocation location = new CallLocation(method.getReference());
+                        controller.getDiagnostics().error(location, "Method {{m0}} is native but "
+                                + "has no {{c1}} annotation on it", method.getReference(), Import.class.getName());
+                    }
+                    module.add(generator.generateNative(method.getReference()));
+                    continue;
+                }
+                if (implementor.getProgram() == null || implementor.getProgram().basicBlockCount() == 0) {
+                    continue;
+                }
+                if (method == implementor) {
+                    module.add(generator.generate(method.getReference(), implementor));
+                } else {
+                    module.add(generateStub(method, implementor));
+                }
+                if (controller.wasCancelled()) {
+                    return;
+                }
+            }
+        }
+    }
+
+    private void generateIsSupertypeFunctions(TagRegistry tagRegistry, WasmModule module,
+            WasmClassGenerator classGenerator) {
+        for (ValueType type : classGenerator.getRegisteredClasses()) {
+            WasmFunction function = new WasmFunction(WasmMangling.mangeIsSupertype(type));
+            function.getParameters().add(WasmType.INT32);
+            function.setResult(WasmType.INT32);
+            module.add(function);
+
+            WasmLocal subtypeVar = new WasmLocal(WasmType.INT32, "subtype");
+            function.add(subtypeVar);
+
+            if (type instanceof ValueType.Object) {
+                String className = ((ValueType.Object) type).getClassName();
+                generateIsClass(subtypeVar, classGenerator, tagRegistry, className, function.getBody());
+            } else if (type instanceof ValueType.Array) {
+                ValueType itemType = ((ValueType.Array) type).getItemType();
+                generateIsArray(subtypeVar, classGenerator, itemType, function.getBody());
+            } else {
+                int expected = classGenerator.getClassPointer(type);
+                WasmExpression condition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ,
+                        new WasmGetLocal(subtypeVar), new WasmInt32Constant(expected));
+                function.getBody().add(new WasmReturn(condition));
+            }
+        }
+    }
+
+    private void generateIsClass(WasmLocal subtypeVar, WasmClassGenerator classGenerator, TagRegistry tagRegistry,
+            String className, List<WasmExpression> body) {
+        List<TagRegistry.Range> ranges = tagRegistry.getRanges(className);
+        if (ranges.isEmpty()) {
+            body.add(new WasmReturn(new WasmInt32Constant(0)));
+            return;
+        }
+
+        int tagOffset = classGenerator.getFieldOffset(new FieldReference(RuntimeClass.class.getName(), "tag"));
+
+        WasmExpression tagExpression = new WasmGetLocal(subtypeVar);
+        tagExpression = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, tagExpression,
+                new WasmInt32Constant(tagOffset));
+        tagExpression = new WasmLoadInt32(4, tagExpression, WasmInt32Subtype.INT32);
+        body.add(new WasmSetLocal(subtypeVar, tagExpression));
+
+        Collections.sort(ranges, Comparator.comparingInt(range -> range.lower));
+
+        int lower = ranges.get(0).lower;
+        int upper = ranges.get(ranges.size() - 1).upper;
+
+        WasmExpression lowerCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
+                new WasmGetLocal(subtypeVar), new WasmInt32Constant(lower));
+        WasmConditional testLower = new WasmConditional(lowerCondition);
+        testLower.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(0)));
+        body.add(testLower);
+
+        WasmExpression upperCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED,
+                new WasmGetLocal(subtypeVar), new WasmInt32Constant(upper));
+        WasmConditional testUpper = new WasmConditional(upperCondition);
+        testUpper.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(0)));
+        body.add(testUpper);
+
+        for (int i = 1; i < ranges.size(); ++i) {
+            int lowerHole = ranges.get(i - 1).upper;
+            int upperHole = ranges.get(i).lower;
+
+            lowerCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED,
+                    new WasmGetLocal(subtypeVar), new WasmInt32Constant(lowerHole));
+            testLower = new WasmConditional(lowerCondition);
+            body.add(testLower);
+
+            upperCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
+                    new WasmGetLocal(subtypeVar), new WasmInt32Constant(upperHole));
+            testUpper = new WasmConditional(upperCondition);
+            testUpper.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(0)));
+
+            testLower.getThenBlock().getBody().add(testUpper);
+        }
+
+        body.add(new WasmReturn(new WasmInt32Constant(1)));
+    }
+
+    private void generateIsArray(WasmLocal subtypeVar, WasmClassGenerator classGenerator, ValueType itemType,
+            List<WasmExpression> body) {
+        int itemOffset = classGenerator.getFieldOffset(new FieldReference(RuntimeClass.class.getName(), "itemType"));
+
+        WasmExpression itemExpression = new WasmGetLocal(subtypeVar);
+        itemExpression = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, itemExpression,
+                new WasmInt32Constant(itemOffset));
+        itemExpression = new WasmLoadInt32(4, itemExpression, WasmInt32Subtype.INT32);
+        body.add(new WasmSetLocal(subtypeVar, itemExpression));
+
+        WasmExpression itemCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ,
+                new WasmGetLocal(subtypeVar), new WasmInt32Constant(0));
+        WasmConditional itemTest = new WasmConditional(itemCondition);
+        itemTest.getThenBlock().getBody().add(new WasmInt32Constant(0));
+
+        WasmCall delegateToItem = new WasmCall(WasmMangling.mangeIsSupertype(itemType));
+        delegateToItem.getArguments().add(new WasmGetLocal(subtypeVar));
+        itemTest.getElseBlock().getBody().add(delegateToItem);
+
+        body.add(new WasmReturn(itemTest));
+    }
+
     private WasmFunction generateStub(MethodHolder method, MethodHolder implementor) {
         WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(method.getReference()));
         if (!method.hasModifier(ElementModifier.STATIC)) {
@@ -363,7 +471,11 @@ public class WasmTarget implements TeaVMTarget {
 
     private void renderClinit(ListableClassReaderSource classes, WasmClassGenerator classGenerator,
             WasmModule module) {
-        for (String className : classes.getClassNames()) {
+        for (ValueType type : classGenerator.getRegisteredClasses()) {
+            if (!(type instanceof ValueType.Object)) {
+                continue;
+            }
+            String className = ((ValueType.Object) type).getClassName();
             if (classGenerator.isStructure(className)) {
                 continue;
             }

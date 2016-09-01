@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.generate;
 import com.carrotsearch.hppc.ObjectIntMap;
 import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -53,6 +54,7 @@ public class WasmClassGenerator {
     private List<String> functionTable = new ArrayList<>();
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
+    private boolean isSubtypeGenerated;
     private DataStructure objectStructure = new DataStructure((byte) 0,
             DataPrimitives.INT, /* class */
             DataPrimitives.ADDRESS /* monitor/hash code */);
@@ -105,10 +107,10 @@ public class WasmClassGenerator {
                     break;
             }
 
-            binaryData.data = createPrimitiveClassData(size);
+            binaryData.data = createPrimitiveClassData(size, type);
             binaryData.start = binaryWriter.append(binaryData.data);
         } else if (type == ValueType.VOID) {
-            binaryData.data = createPrimitiveClassData(0);
+            binaryData.data = createPrimitiveClassData(0, type);
             binaryData.start = binaryWriter.append(binaryData.data);
         } else if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
@@ -136,16 +138,20 @@ public class WasmClassGenerator {
             binaryData.data = wrapper.getValue(0);
             binaryData.data.setInt(1, 4);
             binaryData.data.setAddress(5, itemBinaryData.start);
+            binaryData.data.setInt(7, functionTable.size());
+            functionTable.add(WasmMangling.mangeIsSupertype(type));
             binaryData.start = binaryWriter.append(vtableSize > 0 ? wrapper : binaryData.data);
 
             itemBinaryData.data.setAddress(6, binaryData.start);
         }
     }
 
-    private DataValue createPrimitiveClassData(int size) {
+    private DataValue createPrimitiveClassData(int size, ValueType type) {
         DataValue value = classStructure.createValue();
         value.setInt(1, size);
         value.setInt(2, RuntimeClass.PRIMITIVE);
+        value.setInt(7, functionTable.size());
+        functionTable.add(WasmMangling.mangeIsSupertype(type));
         return value;
     }
 
@@ -170,6 +176,8 @@ public class WasmClassGenerator {
         int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
         header.setInt(3, tag);
         header.setInt(4, RuntimeClass.computeCanary(binaryData.size, tag));
+        header.setInt(7, functionTable.size());
+        functionTable.add(WasmMangling.mangeIsSupertype(ValueType.object(name)));
 
         if (vtable != null) {
             fillVirtualTable(vtable, array);
@@ -194,6 +202,10 @@ public class WasmClassGenerator {
 
             array.setInt(index++, methodIndex);
         }
+    }
+
+    public Collection<ValueType> getRegisteredClasses() {
+        return binaryDataMap.keySet();
     }
 
     public int getClassPointer(ValueType type) {
