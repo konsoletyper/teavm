@@ -160,8 +160,8 @@ public class WasmTarget implements TeaVMTarget {
             dependencyChecker.linkMethod(method, null).use();
         }
 
-        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "decodeData", Address.class,
-                Address.class, void.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "align", Address.class, int.class,
+                Address.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "fillZero", Address.class, int.class,
                 void.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "moveMemoryBlock", Address.class,
@@ -226,18 +226,6 @@ public class WasmTarget implements TeaVMTarget {
         dataSegment.setData(binaryWriter.getData());
         dataSegment.setOffset(256);
         module.getSegments().add(dataSegment);
-
-        WasmMemorySegment metadataSegment = new WasmMemorySegment();
-        metadataSegment.setData(binaryWriter.getMetadata());
-        metadataSegment.setOffset(binaryWriter.getAddress());
-        module.getSegments().add(metadataSegment);
-
-        MethodReference initData = new MethodReference(WasmRuntime.class, "decodeData", Address.class,
-                Address.class, void.class);
-        WasmCall initDataCall = new WasmCall(WasmMangling.mangleMethod(initData));
-        initDataCall.getArguments().add(new WasmInt32Constant(256));
-        initDataCall.getArguments().add(new WasmInt32Constant(binaryWriter.getAddress()));
-        initFunction.getBody().add(initDataCall);
 
         renderAllocatorInit(module, binaryWriter.getAddress());
         renderClinit(classes, classGenerator, module);

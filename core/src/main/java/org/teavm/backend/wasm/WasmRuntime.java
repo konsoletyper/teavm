@@ -19,8 +19,6 @@ import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 
 public final class WasmRuntime {
-    private static Address offset;
-
     private WasmRuntime() {
     }
 
@@ -64,108 +62,6 @@ public final class WasmRuntime {
 
     private static native boolean gt(double a, double b);
 
-    public static void decodeData(Address data, Address metadata) {
-        offset = metadata;
-        int count = decodeLeb();
-
-        while (count-- > 0) {
-            data = decodeDataRec(data);
-        }
-    }
-
-    private static Address decodeDataRec(Address data) {
-        Address metadata = offset;
-        int type = metadata.getByte();
-        metadata = metadata.add(1);
-
-        switch (type) {
-            case 0:
-                data = data.add(1);
-                break;
-            case 1: {
-                data = align(data, 2);
-                byte a = data.getByte();
-                byte b = data.add(1).getByte();
-                int value = (a << 8) | b;
-                data.putShort((short) value);
-                data = data.add(2);
-                break;
-            }
-            case 2:
-            case 4:
-            case 6: {
-                data = align(data, 4);
-                int value = getInt(data);
-                data.putInt(value);
-                data = data.add(4);
-                break;
-            }
-            case 3:
-            case 5: {
-                data = align(data, 8);
-                data.putLong(getLong(data));
-                data = data.add(8);
-                break;
-            }
-            case 7: {
-                offset = metadata;
-                int size = decodeLeb();
-                metadata = offset;
-                while (size-- > 0) {
-                    offset = metadata;
-                    data = decodeDataRec(data);
-                }
-                metadata = offset;
-                break;
-            }
-            case 8: {
-                int alignment = metadata.getByte();
-                offset = metadata.add(1);
-                int size = decodeLeb();
-                if (alignment > 0) {
-                    data = align(data, alignment);
-                }
-                while (size-- > 0) {
-                    data = decodeDataRec(data);
-                }
-                metadata = offset;
-                break;
-            }
-            case 9: {
-                Address start = metadata.add(-1);
-                offset = metadata;
-                int back = decodeLeb();
-                metadata = offset;
-                offset = start.add(-back);
-                data = decodeDataRec(data);
-                break;
-            }
-        }
-
-        offset = metadata;
-        return data;
-    }
-
-    private static int getInt(Address data) {
-        int a = data.getByte() & 0xFF;
-        int b = data.add(1).getByte() & 0xFF;
-        int c = data.add(2).getByte() & 0xFF;
-        int d = data.add(3).getByte() & 0xFF;
-        return (a << 24) | (b << 16) | (c << 8) | d;
-    }
-
-    private static long getLong(Address data) {
-        long a = data.getByte() & 0xFF;
-        long b = data.add(1).getByte() & 0xFF;
-        long c = data.add(2).getByte() & 0xFF;
-        long d = data.add(3).getByte() & 0xFF;
-        long e = data.add(4).getByte() & 0xFF;
-        long f = data.add(5).getByte() & 0xFF;
-        long g = data.add(6).getByte() & 0xFF;
-        long h = data.add(7).getByte() & 0xFF;
-        return (a << 56) | (b << 48) | (c << 40) | (d << 32) | (e << 24) | (f << 16) | (g << 8) | h;
-    }
-
     public static Address align(Address address, int alignment) {
         int value = address.toInt();
         if (value == 0) {
@@ -173,21 +69,6 @@ public final class WasmRuntime {
         }
         value = ((value - 1) / alignment + 1) * alignment;
         return Address.fromInt(value);
-    }
-
-    private static int decodeLeb() {
-        Address index = offset;
-        int result = 0;
-        int shift = 0;
-        int value;
-        do {
-            value = index.getByte();
-            index = index.add(1);
-            result |= (value & 0x7F) << shift;
-            shift += 7;
-        } while ((value & 0x80) != 0);
-        offset = index;
-        return result;
     }
 
     @Import(name = "print", module = "spectest")

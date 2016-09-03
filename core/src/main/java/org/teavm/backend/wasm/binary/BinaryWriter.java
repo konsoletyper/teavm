@@ -120,8 +120,8 @@ public class BinaryWriter {
         } else if (type == DataPrimitives.SHORT) {
             offset = align(offset, 2);
             short v = value.getShort(0);
-            result[offset++] = (byte) (v >> 8);
             result[offset++] = (byte) v;
+            result[offset++] = (byte) (v >> 8);
         } else if (type == DataPrimitives.INT) {
             offset = writeInt(offset, result, value.getInt(0));
         } else if (type == DataPrimitives.LONG) {
@@ -154,10 +154,10 @@ public class BinaryWriter {
 
     private int writeInt(int offset, byte[] result, int v) {
         offset = align(offset, 4);
-        result[offset++] = (byte) (v >> 24);
-        result[offset++] = (byte) (v >> 16);
-        result[offset++] = (byte) (v >> 8);
         result[offset++] = (byte) v;
+        result[offset++] = (byte) (v >> 8);
+        result[offset++] = (byte) (v >> 16);
+        result[offset++] = (byte) (v >> 24);
         return offset;
     }
 
@@ -172,11 +172,5 @@ public class BinaryWriter {
         result[offset++] = (byte) (v >> 8);
         result[offset++] = (byte) v;
         return offset;
-    }
-
-    public byte[] getMetadata() {
-        MetadataWriter writer = new MetadataWriter();
-        writer.write(values.stream().map(value -> value.getType()).toArray(DataType[]::new));
-        return writer.getData();
     }
 }
