@@ -94,7 +94,7 @@ public class WasmBinaryWriter {
         while (true) {
             int digit = (!negative ? v : (v << 25 >> 25)) & 0x7F;
             int next = v >>> 7;
-            boolean last = next == 0;
+            boolean last = next == 0 && (negative || (digit & 0x40) == 0);
             if (!last) {
                 digit |= 0xFFFFFF80;
             }
@@ -138,6 +138,22 @@ public class WasmBinaryWriter {
                 break;
             }
             v = next;
+        }
+    }
+
+    public void writeFixed(int v) {
+        alloc(4);
+        for (int i = 0; i < 4; ++i) {
+            data[pointer++] = (byte) v;
+            v >>>= 8;
+        }
+    }
+
+    public void writeFixed(long v) {
+        alloc(8);
+        for (int i = 0; i < 8; ++i) {
+            data[pointer++] = (byte) v;
+            v >>>= 8;
         }
     }
 

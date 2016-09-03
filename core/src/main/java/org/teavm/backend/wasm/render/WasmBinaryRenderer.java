@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmMemorySegment;
 import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.backend.wasm.model.WasmType;
@@ -49,6 +50,7 @@ public class WasmBinaryRenderer {
         renderStart(module);
         renderCode(module);
         renderData(module);
+        renderNames(module);
     }
 
     private void renderSignatures(WasmModule module) {
@@ -198,13 +200,15 @@ public class WasmBinaryRenderer {
 
         section.writeLEB(functions.size());
         for (WasmFunction function : functions) {
-            if (function.getLocalVariables().isEmpty()) {
+            List<WasmLocal> localVariables = function.getLocalVariables();
+            localVariables = localVariables.subList(function.getParameters().size(), localVariables.size());
+            if (localVariables.isEmpty()) {
                 section.writeLEB(0);
             } else {
                 List<LocalEntry> localEntries = new ArrayList<>();
-                LocalEntry currentEntry = new LocalEntry(function.getLocalVariables().get(0).getType());
-                for (int i = 1; i < function.getLocalVariables().size(); ++i) {
-                    WasmType type = function.getLocalVariables().get(i).getType();
+                LocalEntry currentEntry = new LocalEntry(localVariables.get(0).getType());
+                for (int i = 1; i < localVariables.size(); ++i) {
+                    WasmType type = localVariables.get(i).getType();
                     if (currentEntry.type == type) {
                         currentEntry.count++;
                     } else {
@@ -220,8 +224,6 @@ public class WasmBinaryRenderer {
                     section.writeType(entry.type);
                 }
             }
-
-            System.out.println(function.getName() + ": " + (output.getPosition() + section.getPosition()));
 
             byte[] body = renderFunction(function);
             section.writeLEB(body.length);
@@ -262,6 +264,23 @@ public class WasmBinaryRenderer {
         }
 
         writeSection("data", section.getData());
+    }
+
+    private void renderNames(WasmModule module) {
+        WasmBinaryWriter section = new WasmBinaryWriter();
+
+        List<WasmFunction> functions = module.getFunctions().values().stream()
+                .filter(function -> function.getImportName() == null)
+                .collect(Collectors.toList());
+
+        section.writeLEB(functions.size());
+
+        for (WasmFunction function : functions) {
+            section.writeAsciiString(function.getName());
+            section.writeLEB(0);
+        }
+
+        writeSection("name", section.getData());
     }
 
     static class LocalEntry {
