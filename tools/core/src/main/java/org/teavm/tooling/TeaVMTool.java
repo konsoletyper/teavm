@@ -330,6 +330,8 @@ public class TeaVMTool implements BaseTeaVMTool {
     private WasmTarget prepareWebAssemblyTarget() {
         webAssemblyTarget = new WasmTarget();
         webAssemblyTarget.setDebugging(debugInformationGenerated);
+        webAssemblyTarget.setCEmitted(debugInformationGenerated);
+        webAssemblyTarget.setWastEmitted(debugInformationGenerated);
         return webAssemblyTarget;
     }
 

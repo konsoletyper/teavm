@@ -38,11 +38,7 @@ import org.teavm.model.ClassHolderTransformer;
 import org.teavm.tooling.BaseTeaVMTool;
 import org.teavm.tooling.sources.SourceFileProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
-public abstract class AbstractJavascriptMojo extends AbstractMojo {
+public abstract class AbstractTeaVMMojo extends AbstractMojo {
     @Component
     protected MavenProject project;
 
@@ -180,7 +176,7 @@ public abstract class AbstractJavascriptMojo extends AbstractMojo {
             }
             log.info("Using the following classpath for JavaScript generation: " + classpath);
             classLoader = new URLClassLoader(urls.toArray(new URL[urls.size()]),
-                    AbstractJavascriptMojo.class.getClassLoader());
+                    AbstractTeaVMMojo.class.getClassLoader());
             return classLoader;
         } catch (MalformedURLException e) {
             throw new MojoExecutionException("Error gathering classpath information", e);

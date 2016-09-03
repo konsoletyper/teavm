@@ -27,19 +27,17 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.teavm.tooling.ClassAlias;
 import org.teavm.tooling.MethodAlias;
 import org.teavm.tooling.RuntimeCopyOperation;
+import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
 import org.teavm.tooling.sources.DirectorySourceFileProvider;
 import org.teavm.tooling.sources.SourceFileProvider;
+import org.teavm.vm.TeaVMOptimizationLevel;
 
-/**
- *
- * @author Alexey Andreev
- */
 @Mojo(name = "compile", requiresDependencyResolution = ResolutionScope.COMPILE_PLUS_RUNTIME,
         requiresDependencyCollection = ResolutionScope.COMPILE_PLUS_RUNTIME,
         defaultPhase = LifecyclePhase.PROCESS_CLASSES)
-public class BuildJavascriptMojo extends AbstractJavascriptMojo {
+public class TeaVMCompileMojo extends AbstractTeaVMMojo {
     @Parameter(defaultValue = "${project.build.directory}/javascript")
     private File targetDirectory;
 
@@ -47,7 +45,7 @@ public class BuildJavascriptMojo extends AbstractJavascriptMojo {
     private File sourceDirectory;
 
     @Parameter
-    private String targetFileName = "classes.js";
+    private String targetFileName = "";
 
     @Parameter
     private String mainClass;
@@ -66,6 +64,12 @@ public class BuildJavascriptMojo extends AbstractJavascriptMojo {
 
     @Parameter
     protected RuntimeCopyOperation runtime = RuntimeCopyOperation.SEPARATE;
+
+    @Parameter
+    private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.SIMPLE;
+
+    @Parameter
+    private TeaVMTargetType targetType = TeaVMTargetType.JAVASCRIPT;
 
     @Parameter(defaultValue = "${project.build.directory}/teavm-cache")
     protected File cacheDirectory;
@@ -86,7 +90,10 @@ public class BuildJavascriptMojo extends AbstractJavascriptMojo {
             tool.setMainClass(mainClass);
             tool.setMainPageIncluded(mainPageIncluded);
             tool.setRuntime(runtime);
-            tool.setTargetFileName(targetFileName);
+            if (!targetFileName.isEmpty()) {
+                tool.setTargetFileName(targetFileName);
+            }
+            tool.setOptimizationLevel(optimizationLevel);
             if (classAliases != null) {
                 tool.getClassAliases().addAll(Arrays.asList(classAliases));
             }
@@ -94,6 +101,7 @@ public class BuildJavascriptMojo extends AbstractJavascriptMojo {
                 tool.getMethodAliases().addAll(Arrays.asList(methodAliases));
             }
             tool.setCacheDirectory(cacheDirectory);
+            tool.setTargetType(targetType);
             tool.generate();
             if (stopOnErrors && !tool.getProblemProvider().getSevereProblems().isEmpty()) {
                 throw new MojoExecutionException("Build error");
