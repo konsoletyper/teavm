@@ -20,6 +20,7 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
@@ -106,6 +107,10 @@ import org.teavm.vm.RenderingException;
 public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext {
     private static final String variableNames = "abcdefghijkmnopqrstuvwxyz";
     private static final String variablePartNames = "abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final Set<String> keywords = new HashSet<>(Arrays.asList("break", "case", "catch",
+            "class", "const", "continue", "debugger", "default", "delete", "do", "else", "export",
+            "extends", "finally", "for", "function", "if", "import", "in", "instanceof", "new", "return",
+            "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield"));
     private final NamingStrategy naming;
     private final SourceWriter writer;
     private final ListableClassHolderSource classSource;
@@ -127,6 +132,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private Precedence precedence;
     private final Map<String, String> blockIdMap = new HashMap<>();
     private final List<String> cachedVariableNames = new ArrayList<>();
+    private final Set<String> usedVariableNames = new HashSet<>();
     private MethodNode currentMethod;
     private boolean end;
     private int currentPart;
@@ -654,6 +660,7 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
     private void renderBody(MethodNode method, boolean inner) throws IOException {
         currentMethod = method;
         cachedVariableNames.clear();
+        usedVariableNames.clear();
         blockIdMap.clear();
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
@@ -1252,24 +1259,32 @@ public class Renderer implements ExprVisitor, StatementVisitor, RenderingContext
             return minifying ? "$t" : "$this";
         }
 
-        StringBuilder sb = new StringBuilder();
-        --index;
-        if (index < variableNames.length()) {
-            sb.append(Character.toString(variableNames.charAt(index)));
-        } else {
-            sb.append(Character.toString(variableNames.charAt(index % variableNames.length()))
-                    + index / variableNames.length());
-        }
         if (!minifying) {
             VariableNode variable = index < currentMethod.getVariables().size()
                     ? currentMethod.getVariables().get(index)
                     : null;
             if (variable != null && variable.getName() != null) {
-                sb.setLength(0);
-                sb.append(escapeName(variable.getName()));
+                String result = escapeName(variable.getName());
+                if (keywords.contains(result) || !usedVariableNames.add(result)) {
+                    String base = result;
+                    int suffix = 0;
+                    do {
+                        result = base + "_" + suffix++;
+                    } while (!usedVariableNames.add(result));
+                }
+                return result;
+            } else {
+                return "var$" + index;
+            }
+        } else {
+            --index;
+            if (index < variableNames.length()) {
+                return Character.toString(variableNames.charAt(index));
+            } else {
+                return Character.toString(variableNames.charAt(index % variableNames.length()))
+                        + index / variableNames.length();
             }
         }
-        return sb.toString();
     }
 
     private static String escapeName(String name) {
