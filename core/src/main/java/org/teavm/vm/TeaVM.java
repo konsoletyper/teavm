@@ -16,10 +16,7 @@
 package org.teavm.vm;
 
 import java.io.File;
-import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -329,11 +326,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * actual generation happens and no exceptions thrown, but you can further call
      * {@link #getProblemProvider()} to learn the build state.</p>
      *
-     * @param output where to generate JavaScript. Should not be null.
      * @param buildTarget where to generate additional resources. Can be null, but if there are
-     * plugins or inteceptors that generate additional resources, the build process will fail.
+     * plugins or interceptors that generate additional resources, the build process will fail.
+     * @param outputName name of output file within buildTarget. Should not be null.
      */
-    public void build(OutputStream output, BuildTarget buildTarget) {
+    public void build(BuildTarget buildTarget, String outputName) {
         target.setController(targetController);
 
         // Check dependencies
@@ -381,7 +378,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         // Render
-        target.emit(classSet, output, buildTarget);
+        try {
+            target.emit(classSet, buildTarget, outputName);
+        } catch (IOException e) {
+            throw new RuntimeException("Error generating output files", e);
+        }
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -513,13 +514,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     public void build(File dir, String fileName) {
-        try (OutputStream output = new FileOutputStream(new File(dir, fileName))) {
-            build(output, new DirectoryBuildTarget(dir));
-        } catch (UnsupportedEncodingException e) {
-            throw new RuntimeException("Platform does not support UTF-8", e);
-        } catch (IOException e) {
-            throw new RenderingException("IO error occurred", e);
-        }
+        build(new DirectoryBuildTarget(dir), fileName);
     }
 
     /**

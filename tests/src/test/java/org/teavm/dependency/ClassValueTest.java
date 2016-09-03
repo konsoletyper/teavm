@@ -78,7 +78,7 @@ public class ClassValueTest {
         TeaVM vm = new TeaVMBuilder(new JavaScriptTarget()).build();
         vm.installPlugins();
         vm.entryPoint(new MethodReference(getClass().getName(), methodName, ValueType.VOID));
-        vm.build(new ByteArrayOutputStream(), null);
+        vm.build(fileName -> new ByteArrayOutputStream(), "tmp");
         if (!vm.getProblemProvider().getSevereProblems().isEmpty()) {
             fail("Code compiled with errors:\n" + describeProblems(vm));
         }

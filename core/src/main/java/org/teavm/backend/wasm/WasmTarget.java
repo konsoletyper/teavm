@@ -17,6 +17,8 @@ package org.teavm.backend.wasm;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -66,6 +68,8 @@ import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.patches.ClassPatch;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
+import org.teavm.backend.wasm.render.WasmCRenderer;
+import org.teavm.backend.wasm.render.WasmRenderer;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyListener;
@@ -110,6 +114,8 @@ import org.teavm.vm.spi.TeaVMHostExtension;
 public class WasmTarget implements TeaVMTarget {
     private TeaVMTargetController controller;
     private boolean debugging;
+    private boolean wastEmitted;
+    private boolean cEmitted;
 
     @Override
     public void setController(TeaVMTargetController controller) {
@@ -147,6 +153,22 @@ public class WasmTarget implements TeaVMTarget {
 
     public void setDebugging(boolean debugging) {
         this.debugging = debugging;
+    }
+
+    public boolean isWastEmitted() {
+        return wastEmitted;
+    }
+
+    public void setWastEmitted(boolean wastEmitted) {
+        this.wastEmitted = wastEmitted;
+    }
+
+    public boolean isCEmitted() {
+        return cEmitted;
+    }
+
+    public void setCEmitted(boolean cEmitted) {
+        this.cEmitted = cEmitted;
     }
 
     @Override
@@ -189,7 +211,8 @@ public class WasmTarget implements TeaVMTarget {
     }
 
     @Override
-    public void emit(ListableClassHolderSource classes, OutputStream output, BuildTarget buildTarget) {
+    public void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName)
+            throws IOException {
         WasmModule module = new WasmModule();
         WasmFunction initFunction = new WasmFunction("__start__");
 
@@ -263,11 +286,41 @@ public class WasmTarget implements TeaVMTarget {
         WasmBinaryRenderer renderer = new WasmBinaryRenderer(writer);
         renderer.render(module);
 
-        try {
+        try (OutputStream output = buildTarget.createResource(outputName)) {
             output.write(writer.getData());
             output.flush();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+        }
+
+        if (wastEmitted) {
+            emitWast(module, buildTarget, getBaseName(outputName) + ".wast");
+        }
+        if (cEmitted) {
+            emitC(module, buildTarget, getBaseName(outputName) + ".c");
+        }
+    }
+
+    private String getBaseName(String name) {
+        int index = name.lastIndexOf('.');
+        return index < 0 ? name : name.substring(0, index);
+    }
+
+    private void emitWast(WasmModule module, BuildTarget buildTarget, String outputName) throws IOException {
+        WasmRenderer renderer = new WasmRenderer();
+        renderer.setLineNumbersEmitted(debugging);
+        renderer.render(module);
+        try (OutputStream output = buildTarget.createResource(outputName);
+                Writer writer = new OutputStreamWriter(output, "UTF-8")) {
+            writer.write(renderer.toString());
+        }
+    }
+
+    private void emitC(WasmModule module, BuildTarget buildTarget, String outputName) throws IOException {
+        WasmCRenderer renderer = new WasmCRenderer();
+        renderer.setLineNumbersEmitted(debugging);
+        renderer.render(module);
+        try (OutputStream output = buildTarget.createResource(outputName);
+                Writer writer = new OutputStreamWriter(output, "UTF-8")) {
+            writer.write(renderer.toString());
         }
     }
 

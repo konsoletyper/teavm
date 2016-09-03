@@ -15,7 +15,6 @@
  */
 package org.teavm.tooling;
 
-import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -406,44 +405,46 @@ public class TeaVMTool implements BaseTeaVMTool {
                 }
             }
             targetDirectory.mkdirs();
-            try (OutputStream output = new BufferedOutputStream(
-                    new FileOutputStream(new File(targetDirectory, getResolvedTargetFileName())), 65536)) {
-                Writer writer = new OutputStreamWriter(output, "UTF-8");
-                if (runtime == RuntimeCopyOperation.MERGED) {
-                    javaScriptTarget.add(runtimeInjector);
-                }
-                vm.build(output, new DirectoryBuildTarget(targetDirectory));
-                if (vm.wasCancelled()) {
-                    log.info("Build cancelled");
-                    cancelled = true;
-                    return;
-                }
 
-                ProblemProvider problemProvider = vm.getProblemProvider();
-                if (problemProvider.getProblems().isEmpty()) {
-                    log.info("Output file successfully built");
-                } else if (problemProvider.getSevereProblems().isEmpty()) {
-                    log.info("Output file built with warnings");
-                    TeaVMProblemRenderer.describeProblems(vm, log);
-                } else {
-                    log.info("Output file built with errors");
-                    TeaVMProblemRenderer.describeProblems(vm, log);
-                }
+            if (runtime == RuntimeCopyOperation.MERGED) {
+                javaScriptTarget.add(runtimeInjector);
+            }
+            BuildTarget buildTarget = new DirectoryBuildTarget(targetDirectory);
+            String outputName = getResolvedTargetFileName();
+            vm.build(buildTarget, outputName);
+            if (vm.wasCancelled()) {
+                log.info("Build cancelled");
+                cancelled = true;
+                return;
+            }
 
-                if (targetType == TeaVMTargetType.JAVASCRIPT) {
+            ProblemProvider problemProvider = vm.getProblemProvider();
+            if (problemProvider.getProblems().isEmpty()) {
+                log.info("Output file successfully built");
+            } else if (problemProvider.getSevereProblems().isEmpty()) {
+                log.info("Output file built with warnings");
+                TeaVMProblemRenderer.describeProblems(vm, log);
+            } else {
+                log.info("Output file built with errors");
+                TeaVMProblemRenderer.describeProblems(vm, log);
+            }
+
+            if (targetType == TeaVMTargetType.JAVASCRIPT) {
+                try (OutputStream output = buildTarget.createResource(outputName)) {
+                    Writer writer = new OutputStreamWriter(output, "UTF-8");
                     additionalJavaScriptOutput(writer);
                 }
+            }
 
-                if (incremental) {
-                    programCache.flush();
-                    if (astCache != null) {
-                        astCache.flush();
-                    }
-                    cachedClassSource.flush();
-                    symbolTable.flush();
-                    fileTable.flush();
-                    log.info("Cache updated");
+            if (incremental) {
+                programCache.flush();
+                if (astCache != null) {
+                    astCache.flush();
                 }
+                cachedClassSource.flush();
+                symbolTable.flush();
+                fileTable.flush();
+                log.info("Cache updated");
             }
         } catch (IOException e) {
             throw new TeaVMToolException("IO error occurred", e);

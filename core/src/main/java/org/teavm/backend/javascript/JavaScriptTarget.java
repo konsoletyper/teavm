@@ -198,8 +198,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     @Override
-    public void emit(ListableClassHolderSource classes, OutputStream output, BuildTarget target) {
-        try (Writer writer = new OutputStreamWriter(output, "UTF-8")) {
+    public void emit(ListableClassHolderSource classes, BuildTarget target, String outputName) {
+        try (OutputStream output = target.createResource(outputName);
+                Writer writer = new OutputStreamWriter(output, "UTF-8")) {
             emit(classes, writer, target);
         } catch (IOException e) {
             throw new RenderingException(e);

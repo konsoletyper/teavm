@@ -45,6 +45,14 @@ public class WasmRenderer {
         return this;
     }
 
+    public boolean isLineNumbersEmitted() {
+        return visitor.lineNumbersEmitted;
+    }
+
+    public void setLineNumbersEmitted(boolean value) {
+        visitor.lineNumbersEmitted = value;
+    }
+
     public void render(WasmModule module) {
         visitor.open().append("module");
         renderMemory(module);

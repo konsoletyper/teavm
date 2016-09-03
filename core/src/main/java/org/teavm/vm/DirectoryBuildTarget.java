@@ -15,15 +15,12 @@
  */
 package org.teavm.vm;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DirectoryBuildTarget implements BuildTarget {
     private File directory;
 
@@ -40,6 +37,6 @@ public class DirectoryBuildTarget implements BuildTarget {
                 dir.mkdirs();
             }
         }
-        return new FileOutputStream(new File(directory, fileName));
+        return new BufferedOutputStream(new FileOutputStream(new File(directory, fileName)), 65536);
     }
 }

@@ -67,6 +67,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     private Map<WasmBlock, String> blockIdentifiers = new HashMap<>();
     private int indentLevel;
     private boolean lfDeferred;
+    boolean lineNumbersEmitted;
     List<WasmSignature> signatureList = new ArrayList<>();
     Map<WasmSignature, Integer> signatureMap = new HashMap<>();
 
@@ -97,7 +98,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     }
 
     WasmRenderingVisitor line(WasmExpression expression) {
-        if (expression.getLocation() != null) {
+        if (expression.getLocation() != null && lineNumbersEmitted) {
             lf().append(";; " + expression.getLocation().getFileName() + ":" + expression.getLocation().getLine());
         }
         lf().append(expression);

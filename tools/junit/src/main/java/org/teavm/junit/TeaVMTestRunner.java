@@ -360,16 +360,14 @@ public class TeaVMTestRunner extends Runner {
         applyProperties(method.getDeclaringClass(), properties);
         vm.setProperties(properties);
 
-        try (OutputStream innerWriter = new FileOutputStream(outputFile)) {
-            MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",
-                    Throwable.class, String.class);
-            vm.entryPoint("runTest", new MethodReference(TestEntryPoint.class, "run", void.class)).async();
-            vm.entryPoint("extractException", exceptionMsg);
-            vm.build(innerWriter, new DirectoryBuildTarget(outputDir));
-            if (!vm.getProblemProvider().getProblems().isEmpty()) {
-                result.success = false;
-                result.errorMessage = buildErrorMessage(vm);
-            }
+        MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",
+                Throwable.class, String.class);
+        vm.entryPoint("runTest", new MethodReference(TestEntryPoint.class, "run", void.class)).async();
+        vm.entryPoint("extractException", exceptionMsg);
+        vm.build(new DirectoryBuildTarget(outputFile.getParentFile()), outputFile.getName());
+        if (!vm.getProblemProvider().getProblems().isEmpty()) {
+            result.success = false;
+            result.errorMessage = buildErrorMessage(vm);
         }
 
         return result;

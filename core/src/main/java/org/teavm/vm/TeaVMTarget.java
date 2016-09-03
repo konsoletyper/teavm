@@ -15,7 +15,7 @@
  */
 package org.teavm.vm;
 
-import java.io.OutputStream;
+import java.io.IOException;
 import java.util.List;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyListener;
@@ -36,5 +36,5 @@ public interface TeaVMTarget {
 
     void contributeDependencies(DependencyChecker dependencyChecker);
 
-    void emit(ListableClassHolderSource classes, OutputStream output, BuildTarget buildTarget);
+    void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException;
 }

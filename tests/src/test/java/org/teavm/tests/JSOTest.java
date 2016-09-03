@@ -99,7 +99,7 @@ public class JSOTest {
         TeaVM vm = new TeaVMBuilder(new JavaScriptTarget()).build();
         vm.installPlugins();
         vm.entryPoint("org/teavm/metaprogramming/test", new MethodReference(JSOTest.class, methodName, void.class));
-        vm.build(new ByteArrayOutputStream(), null);
+        vm.build(name -> new ByteArrayOutputStream(), "tmp");
         return vm.getProblemProvider().getSevereProblems();
     }
 }

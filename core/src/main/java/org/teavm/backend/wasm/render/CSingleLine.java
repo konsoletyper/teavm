@@ -45,7 +45,7 @@ class CSingleLine extends CLine {
 
     @Override
     void render(WasmCRenderer target) {
-        if (target.outputLineNumbers) {
+        if (target.lineNumbersEmitted) {
             TextLocation location = this.location;
             if (location == null) {
                 location = target.lastReportedLocation;

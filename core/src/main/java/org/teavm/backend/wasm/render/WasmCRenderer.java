@@ -29,15 +29,15 @@ public class WasmCRenderer {
     private int indentLevel;
     String currentFile = "";
     int currentLine = -1;
-    boolean outputLineNumbers;
+    boolean lineNumbersEmitted;
     TextLocation lastReportedLocation;
 
-    public boolean isOutputLineNumbers() {
-        return outputLineNumbers;
+    public boolean isLineNumbersEmitted() {
+        return lineNumbersEmitted;
     }
 
-    public void setOutputLineNumbers(boolean outputLineNumbers) {
-        this.outputLineNumbers = outputLineNumbers;
+    public void setLineNumbersEmitted(boolean value) {
+        this.lineNumbersEmitted = value;
     }
 
     void indent() {
