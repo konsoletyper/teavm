@@ -69,6 +69,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmBlock expression) {
         depth += expression.isLoop() ? 2 : 1;
+        //depth++;
         blockDepths.put(expression, depth);
         writer.writeByte(expression.isLoop() ? 0x02 : 0x01);
         for (WasmExpression part : expression.getBody()) {
@@ -77,6 +78,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         writer.writeByte(0x0F);
         blockDepths.remove(expression);
         depth -= expression.isLoop() ? 2 : 1;
+        //depth--;
     }
 
     @Override
@@ -106,8 +108,12 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         writer.writeByte(0x08);
         writer.writeByte(0);
         writer.writeLEB(expression.getTargets().size());
-        expression.getTargets().forEach(this::writeLabel);
-        writeLabel(expression.getDefaultTarget());
+        for (WasmBlock target : expression.getTargets()) {
+            int targetDepth = blockDepths.get(target);
+            writer.writeFixed(depth - targetDepth);
+        }
+        int defaultDepth = blockDepths.get(expression.getDefaultTarget());
+        writer.writeFixed(depth - defaultDepth);
     }
 
     @Override
@@ -163,13 +169,13 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmFloat32Constant expression) {
-        writer.writeByte(0x12);
+        writer.writeByte(0x13);
         writer.writeFixed(Float.floatToRawIntBits(expression.getValue()));
     }
 
     @Override
     public void visit(WasmFloat64Constant expression) {
-        writer.writeByte(0x13);
+        writer.writeByte(0x12);
         writer.writeFixed(Double.doubleToRawLongBits(expression.getValue()));
     }
 
@@ -659,7 +665,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 writer.writeByte(0x2A);
                 break;
         }
-        writer.writeByte(expression.getAlignment());
+        writer.writeByte(alignment(expression.getAlignment()));
         writer.writeByte(0);
     }
 
@@ -689,7 +695,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 writer.writeByte(0x2B);
                 break;
         }
-        writer.writeByte(expression.getAlignment());
+        writer.writeByte(alignment(expression.getAlignment()));
         writer.writeByte(0);
     }
 
@@ -697,7 +703,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmLoadFloat32 expression) {
         expression.getIndex().acceptVisitor(this);
         writer.writeByte(0x2C);
-        writer.writeByte(expression.getAlignment());
+        writer.writeByte(alignment(expression.getAlignment()));
         writer.writeByte(0);
     }
 
@@ -705,7 +711,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmLoadFloat64 expression) {
         expression.getIndex().acceptVisitor(this);
         writer.writeByte(0x2D);
-        writer.writeByte(expression.getAlignment());
+        writer.writeByte(alignment(expression.getAlignment()));
         writer.writeByte(0);
     }
 
@@ -726,7 +732,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 writer.writeByte(0x33);
                 break;
         }
-        writer.writeByte(expression.getAlignment());
+        writer.writeByte(alignment(expression.getAlignment()));
         writer.writeByte(0);
     }
 
@@ -751,7 +757,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 writer.writeByte(0x34);
                 break;
         }
-        writer.writeByte(expression.getAlignment());
+        writer.writeByte(alignment(expression.getAlignment()));
         writer.writeByte(0);
     }
 
@@ -760,7 +766,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
         writer.writeByte(0x35);
-        writer.writeByte(expression.getAlignment());
+        writer.writeByte(alignment(expression.getAlignment()));
         writer.writeByte(0);
     }
 
@@ -769,8 +775,12 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
         writer.writeByte(0x36);
-        writer.writeByte(expression.getAlignment());
+        writer.writeByte(alignment(expression.getAlignment()));
         writer.writeByte(0);
+    }
+
+    private int alignment(int value) {
+        return 31 - Integer.numberOfLeadingZeros(Math.max(1, value));
     }
 
     private void writeLabel(WasmBlock target) {

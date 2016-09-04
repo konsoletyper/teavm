@@ -200,31 +200,6 @@ public class WasmBinaryRenderer {
 
         section.writeLEB(functions.size());
         for (WasmFunction function : functions) {
-            List<WasmLocal> localVariables = function.getLocalVariables();
-            localVariables = localVariables.subList(function.getParameters().size(), localVariables.size());
-            if (localVariables.isEmpty()) {
-                section.writeLEB(0);
-            } else {
-                List<LocalEntry> localEntries = new ArrayList<>();
-                LocalEntry currentEntry = new LocalEntry(localVariables.get(0).getType());
-                for (int i = 1; i < localVariables.size(); ++i) {
-                    WasmType type = localVariables.get(i).getType();
-                    if (currentEntry.type == type) {
-                        currentEntry.count++;
-                    } else {
-                        localEntries.add(currentEntry);
-                        currentEntry = new LocalEntry(type);
-                    }
-                }
-                localEntries.add(currentEntry);
-
-                section.writeLEB(localEntries.size());
-                for (LocalEntry entry : localEntries) {
-                    section.writeLEB(entry.count);
-                    section.writeType(entry.type);
-                }
-            }
-
             byte[] body = renderFunction(function);
             section.writeLEB(body.length);
             section.writeBytes(body);
@@ -235,6 +210,31 @@ public class WasmBinaryRenderer {
 
     private byte[] renderFunction(WasmFunction function) {
         WasmBinaryWriter code = new WasmBinaryWriter();
+
+        List<WasmLocal> localVariables = function.getLocalVariables();
+        localVariables = localVariables.subList(function.getParameters().size(), localVariables.size());
+        if (localVariables.isEmpty()) {
+            code.writeLEB(0);
+        } else {
+            List<LocalEntry> localEntries = new ArrayList<>();
+            LocalEntry currentEntry = new LocalEntry(localVariables.get(0).getType());
+            for (int i = 1; i < localVariables.size(); ++i) {
+                WasmType type = localVariables.get(i).getType();
+                if (currentEntry.type == type) {
+                    currentEntry.count++;
+                } else {
+                    localEntries.add(currentEntry);
+                    currentEntry = new LocalEntry(type);
+                }
+            }
+            localEntries.add(currentEntry);
+
+            code.writeLEB(localEntries.size());
+            for (LocalEntry entry : localEntries) {
+                code.writeLEB(entry.count);
+                code.writeType(entry.type);
+            }
+        }
 
         WasmBinaryRenderingVisitor visitor = new WasmBinaryRenderingVisitor(code, functionIndexes, importIndexes,
                 signatureIndexes);

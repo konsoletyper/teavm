@@ -90,11 +90,10 @@ public class WasmBinaryWriter {
 
     public void writeSignedLEB(int v) {
         alloc(5);
-        boolean negative = v < 0;
         while (true) {
-            int digit = (!negative ? v : (v << 25 >> 25)) & 0x7F;
-            int next = v >>> 7;
-            boolean last = next == 0 && (negative || (digit & 0x40) == 0);
+            int digit = v & 0x7F;
+            v >>= 7;
+            boolean last = (v == 0 && (digit & 0x40) == 0) || (v == -1 && (digit & 0x40) != 0);
             if (!last) {
                 digit |= 0xFFFFFF80;
             }
@@ -102,7 +101,6 @@ public class WasmBinaryWriter {
             if (last) {
                 break;
             }
-            v = next;
         }
     }
 
@@ -124,12 +122,11 @@ public class WasmBinaryWriter {
     }
 
     public void writeSignedLEB(long v) {
-        alloc(10);
-        boolean negative = v < 0;
+        alloc(5);
         while (true) {
-            int digit = (int) ((!negative ? v : (v << 25 >> 25)) & 0x7F);
-            long next = v >>> 7;
-            boolean last = next == 0;
+            int digit = (int) (v & 0x7F);
+            v >>= 7;
+            boolean last = (v == 0 && (digit & 0x40) == 0) || (v == -1 && (digit & 0x40) != 0);
             if (!last) {
                 digit |= 0xFFFFFF80;
             }
@@ -137,7 +134,6 @@ public class WasmBinaryWriter {
             if (last) {
                 break;
             }
-            v = next;
         }
     }
 
