@@ -122,7 +122,7 @@ public class WasmBinaryWriter {
     }
 
     public void writeSignedLEB(long v) {
-        alloc(5);
+        alloc(10);
         while (true) {
             int digit = (int) (v & 0x7F);
             v >>= 7;
