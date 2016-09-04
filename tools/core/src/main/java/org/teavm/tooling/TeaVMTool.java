@@ -459,7 +459,7 @@ public class TeaVMTool implements BaseTeaVMTool {
                 case JAVASCRIPT:
                     return "classes.js";
                 case WEBASSEMBLY:
-                    return "classes.wast";
+                    return "classes.wasm";
                 default:
                     return "classes";
             }
