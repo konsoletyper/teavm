@@ -21,23 +21,16 @@ import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmCall;
-import org.teavm.backend.wasm.model.expression.WasmConditional;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
-import org.teavm.backend.wasm.model.expression.WasmIntBinary;
-import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
-import org.teavm.backend.wasm.model.expression.WasmIntType;
-import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
+import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ElementModifier;
-import org.teavm.model.FieldReference;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
 import org.teavm.model.ValueType;
-import org.teavm.runtime.RuntimeClass;
+import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.lowlevel.ClassInitializerTransformer;
 
 public class WasmGenerator {
     private Decompiler decompiler;
@@ -56,6 +49,16 @@ public class WasmGenerator {
     public WasmFunction generate(MethodReference methodReference, MethodHolder bodyMethod) {
         ClassHolder cls = classSource.get(methodReference.getClassName());
         MethodHolder method = cls.getMethod(methodReference.getDescriptor());
+        Program program = bodyMethod.getProgram();
+
+        if (needsClinitCall(method) && classGenerator.hasClinit(method.getOwnerName())) {
+            BasicBlock entryBlock = program.basicBlockAt(0);
+            InitClassInstruction initInsn = new InitClassInstruction();
+            initInsn.setClassName(bodyMethod.getOwnerName());
+            entryBlock.getInstructions().add(0, initInsn);
+        }
+
+        new ClassInitializerTransformer().transform(program);
 
         RegularMethodNode methodAst = decompiler.decompileRegular(bodyMethod);
         WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(methodReference));
@@ -73,19 +76,6 @@ public class WasmGenerator {
         }
         if (methodReference.getReturnType() != ValueType.VOID) {
             function.setResult(WasmGeneratorUtil.mapType(methodReference.getReturnType()));
-        }
-
-        if (needsClinitCall(method) && classGenerator.hasClinit(method.getOwnerName())) {
-            int index = classGenerator.getClassPointer(ValueType.object(method.getOwnerName()))
-                    + classGenerator.getFieldOffset(new FieldReference(RuntimeClass.class.getName(), "flags"));
-            WasmExpression initFlag = new WasmLoadInt32(4, new WasmInt32Constant(index), WasmInt32Subtype.INT32);
-            initFlag = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND, initFlag,
-                    new WasmInt32Constant(RuntimeClass.INITIALIZED));
-
-            WasmConditional conditional = new WasmConditional(initFlag);
-            conditional.getThenBlock().getBody().add(new WasmCall(
-                    WasmMangling.mangleInitializer(method.getOwnerName())));
-            function.getBody().add(conditional);
         }
 
         WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, function, methodReference,

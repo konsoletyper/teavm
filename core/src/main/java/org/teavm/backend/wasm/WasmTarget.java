@@ -232,7 +232,7 @@ public class WasmTarget implements TeaVMTarget {
         context.addIntrinsic(new StructureIntrinsic(classGenerator));
         context.addIntrinsic(new FunctionIntrinsic(classGenerator));
         context.addIntrinsic(new WasmRuntimeIntrinsic());
-        context.addIntrinsic(new AllocatorIntrinsic());
+        context.addIntrinsic(new AllocatorIntrinsic(classGenerator));
         context.addIntrinsic(new PlatformIntrinsic());
         context.addIntrinsic(new PlatformClassIntrinsic());
         context.addIntrinsic(new PlatformObjectIntrinsic(classGenerator));
