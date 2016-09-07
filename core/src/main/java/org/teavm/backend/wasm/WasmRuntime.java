@@ -84,14 +84,14 @@ public final class WasmRuntime {
                 address.putInt(0);
                 break;
             case 1:
-                address.add(3).putByte((byte) 0);
+                address.add(1).putByte((byte) 0);
+                address.add(2).putShort((short) 0);
                 break;
             case 2:
                 address.add(2).putShort((short) 0);
                 break;
             case 3:
-                address.add(1).putByte((byte) 0);
-                address.add(2).putShort((short) 0);
+                address.add(3).putByte((byte) 0);
                 break;
         }
 
@@ -204,14 +204,14 @@ public final class WasmRuntime {
                     alignedTargetStart.putInt(alignedSourceStart.getInt());
                     break;
                 case 1:
-                    alignedTargetStart.add(3).putByte(alignedSourceStart.add(3).getByte());
+                    alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
+                    alignedTargetStart.add(1).putByte(alignedSourceStart.add(1).getByte());
                     break;
                 case 2:
                     alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
                     break;
                 case 3:
-                    alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
-                    alignedTargetStart.add(1).putByte(alignedSourceStart.add(1).getByte());
+                    alignedTargetStart.add(3).putByte(alignedSourceStart.add(3).getByte());
                     break;
             }
         }
