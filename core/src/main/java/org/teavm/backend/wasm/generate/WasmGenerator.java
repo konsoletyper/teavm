@@ -30,6 +30,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 
 public class WasmGenerator {
@@ -58,6 +59,7 @@ public class WasmGenerator {
             entryBlock.getInstructions().add(0, initInsn);
         }
 
+        new ClassInitializerEliminator(classSource).apply(program);
         new ClassInitializerTransformer().transform(program);
 
         RegularMethodNode methodAst = decompiler.decompileRegular(bodyMethod);
