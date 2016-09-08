@@ -36,6 +36,7 @@ public final class Example {
         testArrayCopy();
         testArrayIsObject();
         testIsAssignableFrom();
+        testGC();
     }
 
     private static void testFibonacci() {
@@ -140,6 +141,17 @@ public final class Example {
         println("byte[].isAssignableFrom(Object) = " + byte[].class.isAssignableFrom(ValueType.Object.class));
         println("Base.isAssignableFrom(Derived1) = " + Base.class.isAssignableFrom(Derived1.class));
         println("Base.isAssignableFrom(A) = " + Base.class.isAssignableFrom(A.class));
+    }
+
+    private static void testGC() {
+        List<Integer> list = new ArrayList<>();
+        for (int i = 0; i < 100000; ++i) {
+            list.add(i);
+            if (list.size() == 1000) {
+                list = new ArrayList<>();
+            }
+        }
+        print("GC complete");
     }
 
     private static Base instance(int index) {

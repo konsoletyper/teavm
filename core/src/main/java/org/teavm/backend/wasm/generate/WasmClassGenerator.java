@@ -226,7 +226,7 @@ public class WasmClassGenerator {
     private List<FieldReference> getReferenceFields(ClassReader cls) {
         return cls.getFields().stream()
                 .filter(field -> !field.hasModifier(ElementModifier.STATIC))
-                .filter(field -> !(field.getType() instanceof ValueType.Primitive))
+                .filter(field -> isReferenceType(field.getType()))
                 .map(field -> field.getReference())
                 .collect(Collectors.toList());
     }
@@ -234,9 +234,35 @@ public class WasmClassGenerator {
     private List<FieldReference> getStaticReferenceFields(ClassReader cls) {
         return cls.getFields().stream()
                 .filter(field -> field.hasModifier(ElementModifier.STATIC))
-                .filter(field -> !(field.getType() instanceof ValueType.Primitive))
+                .filter(field -> isReferenceType(field.getType()))
                 .map(field -> field.getReference())
                 .collect(Collectors.toList());
+    }
+
+    private boolean isReferenceType(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            return false;
+        } else if (type instanceof ValueType.Object) {
+            ClassReader cls = classSource.get(((ValueType.Object) type).getClassName());
+            if (cls == null) {
+                return true;
+            }
+            if (cls.getName().equals(Address.class.getName())) {
+                return true;
+            }
+            while (cls != null) {
+                if (cls.getName().equals(Structure.class.getName()) || cls.getName().equals(Function.class.getName())) {
+                    return false;
+                }
+                if (cls.getParent() == null || cls.getParent().equals(cls.getName())) {
+                    return true;
+                }
+                cls = classSource.get(cls.getParent());
+            }
+            return true;
+        } else {
+            return true;
+        }
     }
 
     private void fillVirtualTable(VirtualTable vtable, DataValue array) {
