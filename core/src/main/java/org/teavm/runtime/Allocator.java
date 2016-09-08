@@ -16,6 +16,7 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Address;
+import org.teavm.interop.NoGC;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
 
@@ -24,24 +25,17 @@ public final class Allocator {
     private Allocator() {
     }
 
-    static Address address = initialize();
-
-    private static native Address initialize();
-
     public static Address allocate(RuntimeClass tag) {
-        Address result = address;
-        address = result.add(tag.size);
-        fillZero(result, tag.size);
-        RuntimeObject object = result.toStructure();
+        RuntimeObject object = GC.alloc(tag.size);
+        fillZero(object.toAddress(), tag.size);
         object.classReference = tag.toAddress().toInt() >> 3;
-        return result;
+        return object.toAddress();
     }
 
     public static Address allocateArray(RuntimeClass tag, int size) {
-        Address result = address;
         int sizeInBytes = tag.itemType.size * size + Structure.sizeOf(RuntimeArray.class);
         sizeInBytes = Address.align(Address.fromInt(sizeInBytes), 4).toInt();
-        address = result.add(sizeInBytes);
+        Address result = GC.alloc(sizeInBytes).toAddress();
         fillZero(result, sizeInBytes);
 
         RuntimeArray array = result.toStructure();
@@ -51,19 +45,12 @@ public final class Allocator {
         return result;
     }
 
+    @NoGC
     public static native void fillZero(Address address, int count);
 
+    @NoGC
     public static native void moveMemoryBlock(Address source, Address target, int count);
 
+    @NoGC
     public static native boolean isInitialized(Class<?> cls);
-
-    public static native void allocStack(int size);
-
-    public static native void registerGcRoot(int index, Object object);
-
-    public static native void removeGcRoot(int index);
-
-    public static native void releaseStack(int size);
-
-    public static native Address getStaticGcRoots();
 }

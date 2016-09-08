@@ -22,6 +22,8 @@ public final class Address {
 
     public native Address add(long offset);
 
+    public native boolean isLessThan(Address other);
+
     public native int toInt();
 
     public native long toLong();
@@ -55,6 +57,10 @@ public final class Address {
     public native double getDouble();
 
     public native void putDouble(double value);
+
+    public native Address getAddress();
+
+    public native void putAddress(Address value);
 
     public static native Address fromInt(int value);
 
