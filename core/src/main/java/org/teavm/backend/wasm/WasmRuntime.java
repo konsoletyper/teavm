@@ -244,9 +244,10 @@ public final class WasmRuntime {
     }
 
     public static Address allocStack(int size) {
-        Address result = stack;
-        stack = stack.add((size + 1) << 2);
-        stack.add(-4).putInt(size);
+        Address result = stack.add(4);
+        stack = result.add(size << 2);
+        fillZero(result, size << 2);
+        stack.putInt(size);
         return result;
     }
 
@@ -256,7 +257,11 @@ public final class WasmRuntime {
 
     public static Address getNextStackRoots(Address address) {
         int size = address.getInt() + 1;
-        return address.add(-size * 4);
+        Address result = address.add(-size * 4);
+        if (result == initStack()) {
+            result = null;
+        }
+        return result;
     }
 
     public static int getStackRootCount(Address address) {

@@ -906,8 +906,10 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         int offset = classGenerator.getFieldOffset(new FieldReference(WasmRuntime.class.getName(), "stack"));
-        result = new WasmStoreInt32(4, new WasmInt32Constant(offset), new WasmGetLocal(stackVariable),
-                WasmInt32Subtype.INT32);
+        WasmExpression oldValue = new WasmGetLocal(stackVariable);
+        oldValue = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB, oldValue,
+                new WasmInt32Constant(4));
+        result = new WasmStoreInt32(4, new WasmInt32Constant(offset), oldValue, WasmInt32Subtype.INT32);
     }
 
     private void generateRegisterGcRoot(Expr slotExpr, Expr gcRootExpr) {

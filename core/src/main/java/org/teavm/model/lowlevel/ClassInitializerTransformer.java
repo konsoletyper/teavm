@@ -98,8 +98,7 @@ public class ClassInitializerTransformer {
 
         InvokeInstruction checkInitialized = new InvokeInstruction();
         checkInitialized.setType(InvocationType.SPECIAL);
-        checkInitialized.setMethod(new MethodReference(Allocator.class, "isInitialized",
-                Class.class, boolean.class));
+        checkInitialized.setMethod(new MethodReference(Allocator.class, "isInitialized", Class.class, boolean.class));
         checkInitialized.getArguments().add(clsVariable);
         checkInitialized.setReceiver(initializedVariable);
         block.getInstructions().add(checkInitialized);
