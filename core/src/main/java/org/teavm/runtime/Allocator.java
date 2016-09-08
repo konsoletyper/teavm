@@ -24,7 +24,7 @@ public final class Allocator {
     private Allocator() {
     }
 
-    private static Address address = initialize();
+    static Address address = initialize();
 
     private static native Address initialize();
 
@@ -64,4 +64,6 @@ public final class Allocator {
     public static native void removeGcRoot(int index);
 
     public static native void releaseStack(int size);
+
+    public static native Address getStaticGcRoots();
 }

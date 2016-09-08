@@ -30,6 +30,7 @@ import org.teavm.backend.wasm.binary.DataPrimitives;
 import org.teavm.backend.wasm.binary.DataStructure;
 import org.teavm.backend.wasm.binary.DataType;
 import org.teavm.backend.wasm.binary.DataValue;
+import org.teavm.common.IntegerArray;
 import org.teavm.interop.Address;
 import org.teavm.interop.Function;
 import org.teavm.interop.Structure;
@@ -70,6 +71,8 @@ public class WasmClassGenerator {
             DataPrimitives.INT, /* isInstance function */
             DataPrimitives.ADDRESS, /* parent */
             DataPrimitives.ADDRESS  /* layout */);
+    private IntegerArray staticGcRoots = new IntegerArray(1);
+    private int staticGcRootsAddress;
 
     private static final int CLASS_SIZE = 1;
     private static final int CLASS_FLAGS = 2;
@@ -203,15 +206,18 @@ public class WasmClassGenerator {
 
         List<FieldReference> fields = getReferenceFields(binaryData.cls);
         if (!fields.isEmpty()) {
-            header.setAddress(CLASS_LAYOUT, binaryWriter.getAddress());
             DataValue layoutSize = DataPrimitives.SHORT.createValue();
             layoutSize.setShort(0, (short) fields.size());
-            binaryWriter.append(layoutSize);
+            header.setAddress(CLASS_LAYOUT, binaryWriter.append(layoutSize));
             for (FieldReference field : fields) {
                 DataValue layoutElement = DataPrimitives.SHORT.createValue();
                 layoutElement.setShort(0, (short) binaryData.fieldLayout.get(field.getFieldName()));
                 binaryWriter.append(layoutElement);
             }
+        }
+
+        for (FieldReference field : getStaticReferenceFields(binaryData.cls)) {
+            staticGcRoots.add(binaryData.fieldLayout.get(field.getFieldName()));
         }
 
         return vtable != null ? wrapper : header;
@@ -220,6 +226,14 @@ public class WasmClassGenerator {
     private List<FieldReference> getReferenceFields(ClassReader cls) {
         return cls.getFields().stream()
                 .filter(field -> !field.hasModifier(ElementModifier.STATIC))
+                .filter(field -> !(field.getType() instanceof ValueType.Primitive))
+                .map(field -> field.getReference())
+                .collect(Collectors.toList());
+    }
+
+    private List<FieldReference> getStaticReferenceFields(ClassReader cls) {
+        return cls.getFields().stream()
+                .filter(field -> field.hasModifier(ElementModifier.STATIC))
                 .filter(field -> !(field.getType() instanceof ValueType.Primitive))
                 .map(field -> field.getReference())
                 .collect(Collectors.toList());
@@ -391,6 +405,22 @@ public class WasmClassGenerator {
                     classData.data.getValue(0).setInt(0, tag);
                 }
             }
+        }
+        writeStaticGcRoots();
+    }
+
+    public int getStaticGcRootsAddress() {
+        return staticGcRootsAddress;
+    }
+
+    private void writeStaticGcRoots() {
+        DataValue sizeValue = DataPrimitives.LONG.createValue();
+        sizeValue.setLong(0, staticGcRoots.size());
+        staticGcRootsAddress = binaryWriter.append(sizeValue);
+        for (int gcRoot : staticGcRoots.getAll()) {
+            DataValue value = DataPrimitives.ADDRESS.createValue();
+            value.setAddress(0, gcRoot);
+            binaryWriter.append(value);
         }
     }
 
