@@ -21,6 +21,9 @@ import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.ListableClassReaderSource;
+import org.teavm.model.MethodReader;
+import org.teavm.model.Program;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
 public interface TeaVMTarget {
@@ -35,6 +38,8 @@ public interface TeaVMTarget {
     boolean requiresRegisterAllocation();
 
     void contributeDependencies(DependencyChecker dependencyChecker);
+
+    void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource);
 
     void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException;
 }

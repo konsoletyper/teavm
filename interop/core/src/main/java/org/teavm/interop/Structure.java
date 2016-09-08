@@ -15,6 +15,7 @@
  */
 package org.teavm.interop;
 
+@NoGC
 public class Structure {
     public final native <T extends Structure> T cast();
 

@@ -17,10 +17,18 @@ package org.teavm.backend.wasm;
 
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
+import org.teavm.interop.NoGC;
+import org.teavm.interop.StaticInit;
 
+@StaticInit
+@NoGC
 public final class WasmRuntime {
+    public static Address stack = initStack();
+
     private WasmRuntime() {
     }
+
+    private static native Address initStack();
 
     public static int compare(int a, int b) {
         return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
@@ -233,5 +241,12 @@ public final class WasmRuntime {
                 target.putByte(source.getByte());
             }
         }
+    }
+
+    public static Address allocStack(int size) {
+        Address result = stack;
+        stack = stack.add((size + 1) << 2);
+        stack.add(-4).putInt(size);
+        return result;
     }
 }

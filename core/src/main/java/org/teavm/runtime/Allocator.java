@@ -40,6 +40,7 @@ public final class Allocator {
     public static Address allocateArray(RuntimeClass tag, int size) {
         Address result = address;
         int sizeInBytes = tag.itemType.size * size + Structure.sizeOf(RuntimeArray.class);
+        sizeInBytes = Address.align(Address.fromInt(sizeInBytes), 4).toInt();
         address = result.add(sizeInBytes);
         fillZero(result, sizeInBytes);
 
@@ -55,4 +56,12 @@ public final class Allocator {
     public static native void moveMemoryBlock(Address source, Address target, int count);
 
     public static native boolean isInitialized(Class<?> cls);
+
+    public static native void allocStack(int size);
+
+    public static native void registerGcRoot(int index, Object object);
+
+    public static native void removeGcRoot(int index);
+
+    public static native void releaseStack(int size);
 }

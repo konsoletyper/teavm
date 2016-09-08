@@ -21,17 +21,12 @@ import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
-import org.teavm.model.Program;
 import org.teavm.model.ValueType;
-import org.teavm.model.instructions.InitClassInstruction;
-import org.teavm.model.lowlevel.ClassInitializerEliminator;
-import org.teavm.model.lowlevel.ClassInitializerTransformer;
 
 public class WasmGenerator {
     private Decompiler decompiler;
@@ -39,8 +34,8 @@ public class WasmGenerator {
     private WasmGenerationContext context;
     private WasmClassGenerator classGenerator;
 
-    public WasmGenerator(Decompiler decompiler, ClassHolderSource classSource, WasmGenerationContext context,
-            WasmClassGenerator classGenerator) {
+    public WasmGenerator(Decompiler decompiler, ClassHolderSource classSource,
+            WasmGenerationContext context, WasmClassGenerator classGenerator) {
         this.decompiler = decompiler;
         this.classSource = classSource;
         this.context = context;
@@ -50,17 +45,6 @@ public class WasmGenerator {
     public WasmFunction generate(MethodReference methodReference, MethodHolder bodyMethod) {
         ClassHolder cls = classSource.get(methodReference.getClassName());
         MethodHolder method = cls.getMethod(methodReference.getDescriptor());
-        Program program = bodyMethod.getProgram();
-
-        if (needsClinitCall(method) && classGenerator.hasClinit(method.getOwnerName())) {
-            BasicBlock entryBlock = program.basicBlockAt(0);
-            InitClassInstruction initInsn = new InitClassInstruction();
-            initInsn.setClassName(bodyMethod.getOwnerName());
-            entryBlock.getInstructions().add(0, initInsn);
-        }
-
-        new ClassInitializerEliminator(classSource).apply(program);
-        new ClassInitializerTransformer().transform(program);
 
         RegularMethodNode methodAst = decompiler.decompileRegular(bodyMethod);
         WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(methodReference));
@@ -86,16 +70,6 @@ public class WasmGenerator {
         function.getBody().add(visitor.result);
 
         return function;
-    }
-
-    private static boolean needsClinitCall(MethodHolder method) {
-        if (method.getName().equals("<clinit>")) {
-            return false;
-        }
-        if (method.getName().equals("<init>")) {
-            return true;
-        }
-        return method.hasModifier(ElementModifier.STATIC);
     }
 
     public WasmFunction generateNative(MethodReference methodReference) {

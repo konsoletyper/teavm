@@ -52,7 +52,9 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassHolderSource;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
@@ -205,6 +207,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         } catch (IOException e) {
             throw new RenderingException(e);
         }
+    }
+
+    @Override
+    public void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
     }
 
     private void emit(ListableClassHolderSource classes, Writer writer, BuildTarget target) {

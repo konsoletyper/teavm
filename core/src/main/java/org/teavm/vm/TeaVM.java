@@ -455,7 +455,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         for (String className : classSource.getClassNames()) {
             ClassHolder cls = classSource.get(className);
             for (MethodHolder method : cls.getMethods()) {
-                processMethod(method);
+                processMethod(method, classSource);
             }
             if (wasCancelled()) {
                 return;
@@ -463,7 +463,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
-    private void processMethod(MethodHolder method) {
+    private void processMethod(MethodHolder method, ListableClassReaderSource classSource) {
         if (method.getProgram() == null) {
             return;
         }
@@ -482,6 +482,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     }
                 } while (changed);
 
+                target.afterOptimizations(optimizedProgram, method, classSource);
                 if (target.requiresRegisterAllocation()) {
                     RegisterAllocator allocator = new RegisterAllocator();
                     allocator.allocateRegisters(method, optimizedProgram);

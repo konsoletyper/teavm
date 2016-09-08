@@ -16,7 +16,6 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import java.util.stream.Collectors;
-import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
@@ -31,17 +30,14 @@ import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeClass;
 
 public class AllocatorIntrinsic implements WasmIntrinsic {
     private static final FieldReference flagsField = new FieldReference(RuntimeClass.class.getName(), "flags");
-    private WasmClassGenerator classGenerator;
     private int flagsFieldOffset;
 
     public AllocatorIntrinsic(WasmClassGenerator classGenerator) {
-        this.classGenerator = classGenerator;
         flagsFieldOffset = classGenerator.getFieldOffset(flagsField);
     }
 
@@ -74,10 +70,14 @@ public class AllocatorIntrinsic implements WasmIntrinsic {
                 return call;
             }
             case "isInitialized": {
-                ConstantExpr argument = (ConstantExpr) invocation.getArguments().get(0);
-                ValueType type = (ValueType) argument.getValue();
-                int pointer = classGenerator.getClassPointer(type) + flagsFieldOffset;
-                WasmExpression flags = new WasmLoadInt32(4, new WasmInt32Constant(pointer), WasmInt32Subtype.INT32);
+                WasmExpression pointer = manager.generate(invocation.getArguments().get(0));
+                if (pointer instanceof WasmInt32Constant) {
+                    pointer = new WasmInt32Constant(((WasmInt32Constant) pointer).getValue() + flagsFieldOffset);
+                } else {
+                    pointer = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, pointer,
+                            new WasmInt32Constant(flagsFieldOffset));
+                }
+                WasmExpression flags = new WasmLoadInt32(4, pointer, WasmInt32Subtype.INT32);
                 WasmExpression flag = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.AND, flags,
                         new WasmInt32Constant(RuntimeClass.INITIALIZED));
                 return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, flag, new WasmInt32Constant(0));

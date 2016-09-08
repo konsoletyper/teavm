@@ -13,12 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.runtime;
+package org.teavm.interop;
 
-import org.teavm.interop.Function;
-import org.teavm.interop.NoGC;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public abstract class IsSupertypeFunction extends Function {
-    @NoGC
-    public abstract boolean apply(RuntimeClass superType);
+@Retention(RetentionPolicy.RUNTIME)
+@Target({ ElementType.METHOD, ElementType.TYPE })
+public @interface NoGC {
 }

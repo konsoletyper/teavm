@@ -98,8 +98,12 @@ import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.lowlevel.ClassInitializerEliminator;
+import org.teavm.model.lowlevel.ClassInitializerTransformer;
+import org.teavm.model.lowlevel.GcRootMaintainingTransformer;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
@@ -116,10 +120,17 @@ public class WasmTarget implements TeaVMTarget {
     private boolean debugging;
     private boolean wastEmitted;
     private boolean cEmitted;
+    private ClassInitializerEliminator classInitializerEliminator;
+    private ClassInitializerTransformer classInitializerTransformer;
+    private GcRootMaintainingTransformer gcRootMaintainingTransformer;
+    private MethodDescriptor clinitDescriptor = new MethodDescriptor("<clinit>", void.class);
 
     @Override
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
+        classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
+        classInitializerTransformer = new ClassInitializerTransformer();
+        gcRootMaintainingTransformer = new GcRootMaintainingTransformer(controller.getUnprocessedClassSource());
     }
 
     @Override
@@ -188,6 +199,8 @@ public class WasmTarget implements TeaVMTarget {
                 void.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "moveMemoryBlock", Address.class,
                 Address.class, int.class, void.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "allocStack",
+                int.class, Address.class), null).use();
 
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class), null).use();
@@ -208,6 +221,32 @@ public class WasmTarget implements TeaVMTarget {
                 dependencyChecker.linkField(field.getReference(), null);
             }
         }
+    }
+
+    @Override
+    public void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classes) {
+        ClassReader cls = classes.get(method.getOwnerName());
+        boolean hasClinit = cls.getMethod(clinitDescriptor) != null;
+        if (needsClinitCall(method) && hasClinit) {
+            BasicBlock entryBlock = program.basicBlockAt(0);
+            InitClassInstruction initInsn = new InitClassInstruction();
+            initInsn.setClassName(method.getOwnerName());
+            entryBlock.getInstructions().add(0, initInsn);
+        }
+
+        classInitializerEliminator.apply(program);
+        classInitializerTransformer.transform(program);
+        gcRootMaintainingTransformer.apply(program, method);
+    }
+
+    private static boolean needsClinitCall(MethodReader method) {
+        if (method.getName().equals("<clinit>")) {
+            return false;
+        }
+        if (method.getName().equals("<init>")) {
+            return true;
+        }
+        return method.hasModifier(ElementModifier.STATIC);
     }
 
     @Override
@@ -238,7 +277,8 @@ public class WasmTarget implements TeaVMTarget {
         context.addIntrinsic(new PlatformObjectIntrinsic(classGenerator));
         context.addIntrinsic(new ClassIntrinsic());
 
-        WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator);
+        WasmGenerator generator = new WasmGenerator(decompiler, classes,
+                context, classGenerator);
 
         module.setMemorySize(64);
         generateMethods(classes, context, generator, module);
@@ -250,7 +290,8 @@ public class WasmTarget implements TeaVMTarget {
         dataSegment.setOffset(256);
         module.getSegments().add(dataSegment);
 
-        renderAllocatorInit(module, binaryWriter.getAddress());
+        int address = renderStackInit(module, binaryWriter.getAddress());
+        renderAllocatorInit(module, address);
         renderClinit(classes, classGenerator, module);
         if (controller.wasCancelled()) {
             return;
@@ -331,6 +372,10 @@ public class WasmTarget implements TeaVMTarget {
             for (MethodHolder method : cls.getMethods()) {
                 if (method.getOwnerName().equals(Allocator.class.getName())
                         && method.getName().equals("initialize")) {
+                    continue;
+                }
+                if (method.getOwnerName().equals(WasmRuntime.class.getName())
+                        && method.getName().equals("initStack")) {
                     continue;
                 }
                 if (context.getIntrinsic(method.getReference()) != null) {
@@ -555,13 +600,23 @@ public class WasmTarget implements TeaVMTarget {
     }
 
     private void renderAllocatorInit(WasmModule module, int address) {
-        address = (((address - 1) / 4096) + 1) * 4096;
-
         WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(new MethodReference(
                 Allocator.class, "initialize", Address.class)));
         function.setResult(WasmType.INT32);
         function.getBody().add(new WasmReturn(new WasmInt32Constant(address)));
         module.add(function);
+    }
+
+    private int renderStackInit(WasmModule module, int address) {
+        address = (((address - 1) / 256) + 1) * 256;
+
+        WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(new MethodReference(
+                WasmRuntime.class, "initStack", Address.class)));
+        function.setResult(WasmType.INT32);
+        function.getBody().add(new WasmReturn(new WasmInt32Constant(address)));
+        module.add(function);
+
+        return address + 65536;
     }
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {

@@ -129,6 +129,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private Map<IdentifiedStatement, WasmBlock> continueTargets = new HashMap<>();
     private Set<WasmBlock> usedBlocks = new HashSet<>();
     private List<Deque<WasmLocal>> temporaryVariablesByType = new ArrayList<>();
+    private WasmLocal stackVariable;
     WasmExpression result;
 
     WasmGenerationVisitor(WasmGenerationContext context, WasmClassGenerator classGenerator,
@@ -780,6 +781,23 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(InvocationExpr expr) {
+        if (expr.getMethod().getClassName().equals(Allocator.class.getName())) {
+            switch (expr.getMethod().getName()) {
+                case "allocStack":
+                    generateAllocStack(expr.getArguments().get(0));
+                    return;
+                case "releaseStack":
+                    generateReleaseStack();
+                    return;
+                case "registerGcRoot":
+                    generateRegisterGcRoot(expr.getArguments().get(0), expr.getArguments().get(1));
+                    return;
+                case "removeGcRoot":
+                    generateRemoveGcRoot(expr.getArguments().get(0));
+                    return;
+            }
+        }
+
         WasmIntrinsic intrinsic = context.getIntrinsic(expr.getMethod());
         if (intrinsic != null) {
             result = intrinsic.apply(expr, intrinsicManager);
@@ -863,6 +881,63 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             releaseTemporary(instanceVar);
             result = block;
         }
+    }
+
+    private void generateAllocStack(Expr sizeExpr) {
+        if (stackVariable != null) {
+            throw new IllegalStateException("Call to Allocator.allocStack must be done only once");
+        }
+        stackVariable = getTemporary(WasmType.INT32);
+        stackVariable.setName("__stack__");
+        InvocationExpr expr = new InvocationExpr();
+        expr.setType(InvocationType.SPECIAL);
+        expr.setMethod(new MethodReference(WasmRuntime.class, "allocStack", int.class, Address.class));
+        expr.getArguments().add(sizeExpr);
+        expr.acceptVisitor(this);
+
+        result = new WasmSetLocal(stackVariable, result);
+    }
+
+    private void generateReleaseStack() {
+        if (stackVariable == null) {
+            throw new IllegalStateException("Call to Allocator.releaseStack must be dominated by "
+                    + "Allocator.allocStack");
+        }
+
+        int offset = classGenerator.getFieldOffset(new FieldReference(WasmRuntime.class.getName(), "stack"));
+        result = new WasmStoreInt32(4, new WasmInt32Constant(offset), new WasmGetLocal(stackVariable),
+                WasmInt32Subtype.INT32);
+    }
+
+    private void generateRegisterGcRoot(Expr slotExpr, Expr gcRootExpr) {
+        if (stackVariable == null) {
+            throw new IllegalStateException("Call to Allocator.registerGcRoot must be dominated by "
+                    + "Allocator.allocStack");
+        }
+
+        slotExpr.acceptVisitor(this);
+        WasmExpression slot = result;
+        WasmExpression address = new WasmGetLocal(stackVariable);
+        address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, address, slot);
+
+        gcRootExpr.acceptVisitor(this);
+        WasmExpression gcRoot = result;
+
+        result = new WasmStoreInt32(4, address, gcRoot, WasmInt32Subtype.INT32);
+    }
+
+    private void generateRemoveGcRoot(Expr slotExpr) {
+        if (stackVariable == null) {
+            throw new IllegalStateException("Call to Allocator.removeGcRoot must be dominated by "
+                    + "Allocator.allocStack");
+        }
+
+        slotExpr.acceptVisitor(this);
+        WasmExpression slot = result;
+        WasmExpression address = new WasmGetLocal(stackVariable);
+        address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, address, slot);
+
+        result = new WasmStoreInt32(4, address, new WasmInt32Constant(0), WasmInt32Subtype.INT32);
     }
 
     @Override

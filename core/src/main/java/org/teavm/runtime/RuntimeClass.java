@@ -16,6 +16,7 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Address;
+import org.teavm.interop.NoGC;
 
 public class RuntimeClass extends RuntimeJavaObject {
     public static final int INITIALIZED = 1;
@@ -29,14 +30,17 @@ public class RuntimeClass extends RuntimeJavaObject {
     public RuntimeClass arrayType;
     public IsSupertypeFunction isSupertypeOf;
 
+    @NoGC
     public static int computeCanary(int size, int tag) {
         return size ^ (tag << 8) ^ (tag >>> 24) ^ 0xAAAAAAAA;
     }
 
+    @NoGC
     public int computeCanary() {
         return computeCanary(size, tag);
     }
 
+    @NoGC
     public static RuntimeClass getClass(RuntimeObject object) {
         return Address.fromInt(object.classReference << 3).toStructure();
     }
