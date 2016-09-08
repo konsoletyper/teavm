@@ -31,7 +31,9 @@ public final class GC {
     static FreeChunkHolder currentChunkPointer;
     static int freeChunks;
 
-    private static native Address gcStorageAddress();
+    static native Address gcStorageAddress();
+
+    static native int gcStorageSize();
 
     private static native Address heapAddress();
 
@@ -39,14 +41,14 @@ public final class GC {
 
     private static native int regionMaxCount();
 
-    private static native int availableBytes();
+    private static native long availableBytes();
 
     private static native int regionSize();
 
     static {
         currentChunk = heapAddress().toStructure();
         currentChunk.classReference = 0;
-        currentChunk.size = availableBytes();
+        currentChunk.size = (int) availableBytes();
         currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
         currentChunkPointer = gcStorageAddress().toStructure();
         currentChunkPointer.value = currentChunk;
@@ -90,7 +92,8 @@ public final class GC {
 
     private static boolean collectGarbage(int size) {
         mark();
-        return false;
+        sweep();
+        return true;
     }
 
     private static void mark() {
@@ -155,6 +158,150 @@ public final class GC {
                     }
                 }
                 cls = cls.parent;
+            }
+        }
+    }
+
+    private static void sweep() {
+        FreeChunkHolder freeChunkPtr = gcStorageAddress().toStructure();
+        freeChunks = 0;
+
+        RuntimeObject object = heapAddress().toStructure();
+        FreeChunk lastFreeSpace = null;
+        long heapSize = availableBytes();
+        long reclaimedSpace = 0;
+        long maxFreeChunk = 0;
+        int currentRegionIndex = 0;
+        int regionsCount = (int) ((heapSize - 1) / regionSize()) + 1;
+        Address currentRegionEnd = object.toAddress().add(regionSize());
+        Address limit = heapAddress().add(heapSize);
+
+        loop: while (object.toAddress().isLessThan(limit)) {
+            int tag = object.classReference;
+            boolean free;
+            if (tag == 0) {
+                free = true;
+            } else {
+                free = (tag & RuntimeObject.GC_MARKED) == 0;
+                if (!free) {
+                    tag &= ~RuntimeObject.GC_MARKED;
+                }
+                object.classReference = tag;
+            }
+
+            if (free) {
+                if (lastFreeSpace == null) {
+                    lastFreeSpace = (FreeChunk) object;
+                }
+
+                if (!object.toAddress().isLessThan(currentRegionEnd)) {
+                    currentRegionIndex = (int) ((object.toAddress().toLong() - heapAddress().toLong()) / regionSize());
+                    Region currentRegion = regionsAddress().toAddress().add(Region.class, currentRegionIndex)
+                            .toStructure();
+                    if (currentRegion.start == 0) {
+                        do {
+                            if (++currentRegionIndex == regionsCount) {
+                                object = limit.toStructure();
+                                break loop;
+                            }
+                            currentRegion = regionsAddress().toAddress().add(Region.class, currentRegionIndex)
+                                    .toStructure();
+                        } while (currentRegion.start == 0);
+                    }
+                    currentRegionEnd = currentRegion.toAddress().add(regionSize());
+                }
+            } else {
+                if (lastFreeSpace != null) {
+                    lastFreeSpace.size = (int) (object.toAddress().toLong() - lastFreeSpace.toAddress().toLong());
+                    freeChunkPtr.value = lastFreeSpace;
+                    freeChunkPtr = freeChunkPtr.toAddress().add(FreeChunkHolder.class, 1).toStructure();
+                    freeChunks++;
+                    reclaimedSpace += lastFreeSpace.size;
+                    if (maxFreeChunk < lastFreeSpace.size) {
+                        maxFreeChunk = lastFreeSpace.size;
+                    }
+                    lastFreeSpace = null;
+                }
+            }
+
+            int size = objectSize(object);
+            object = object.toAddress().add(size).toStructure();
+        }
+
+        if (lastFreeSpace != null) {
+            int freeSize = (int) (object.toAddress().toLong() - lastFreeSpace.toAddress().toLong());
+            lastFreeSpace.size = freeSize;
+            freeChunkPtr.value = lastFreeSpace;
+            freeChunkPtr = freeChunkPtr.toAddress().add(FreeChunkHolder.class, 1).toStructure();
+            freeChunks++;
+            reclaimedSpace += freeSize;
+            if (maxFreeChunk < freeSize) {
+                maxFreeChunk = freeSize;
+            }
+        }
+
+        currentChunkPointer = heapAddress().toStructure();
+        sortFreeChunks(0, freeChunks - 1);
+    }
+
+    private static void sortFreeChunks(int lower, int upper) {
+        int start = lower;
+        int end = upper;
+        int mid = (lower + upper) / 2;
+
+        FreeChunk midChunk = getFreeChunk(mid).value;
+        outer: while (true) {
+            while (true) {
+                if (lower == upper) {
+                    break outer;
+                }
+                if (getFreeChunk(lower).value.size <= midChunk.size) {
+                    break;
+                }
+                ++lower;
+            }
+            while (true) {
+                if (lower == upper) {
+                    break outer;
+                }
+                if (getFreeChunk(upper).value.size > midChunk.size) {
+                    break;
+                }
+                --upper;
+            }
+            FreeChunk tmp = getFreeChunk(lower).value;
+            getFreeChunk(lower).value = getFreeChunk(upper).value;
+            getFreeChunk(upper).value = tmp;
+        }
+
+        if (lower - start > 0) {
+            sortFreeChunks(start, lower);
+        }
+        if (end - lower - 1 > 0) {
+            sortFreeChunks(lower + 1, end);
+        }
+    }
+
+    private static FreeChunkHolder getFreeChunk(int index) {
+        return currentChunkPointer.toAddress().add(FreeChunkHolder.class, index).toStructure();
+    }
+
+    private static int objectSize(RuntimeObject object) {
+        if (object.classReference == 0) {
+            return ((FreeChunk) object).size;
+        } else {
+            RuntimeClass cls = RuntimeClass.getClass(object);
+            if (cls.itemType == null) {
+                return cls.size;
+            } else {
+                int itemSize = (cls.itemType.flags & RuntimeClass.PRIMITIVE) == 0
+                        ? Address.sizeOf()
+                        : cls.itemType.size;
+                RuntimeArray array = (RuntimeArray) object;
+                Address address = Address.fromInt(Structure.sizeOf(RuntimeArray.class));
+                address = Address.align(address, itemSize);
+                address = address.add(itemSize * array.size);
+                return address.toInt();
             }
         }
     }

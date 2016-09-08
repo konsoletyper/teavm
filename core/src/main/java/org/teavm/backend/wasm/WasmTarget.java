@@ -39,6 +39,7 @@ import org.teavm.backend.wasm.intrinsics.AddressIntrinsic;
 import org.teavm.backend.wasm.intrinsics.AllocatorIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ClassIntrinsic;
 import org.teavm.backend.wasm.intrinsics.FunctionIntrinsic;
+import org.teavm.backend.wasm.intrinsics.GCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformClassIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformObjectIntrinsic;
@@ -101,6 +102,7 @@ import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.MutatorIntrinsic;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.GcRootMaintainingTransformer;
@@ -201,6 +203,14 @@ public class WasmTarget implements TeaVMTarget {
                 Address.class, int.class, void.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "allocStack",
                 int.class, Address.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "getStackGcRoots", Address.class),
+                null) .use();
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "getNextStackRoots", Address.class,
+                Address.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "getStackRootCount", Address.class,
+                int.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "getStackRootPointer", Address.class,
+                Address.class), null).use();
 
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class), null).use();
@@ -270,12 +280,17 @@ public class WasmTarget implements TeaVMTarget {
         context.addIntrinsic(new AddressIntrinsic(classGenerator));
         context.addIntrinsic(new StructureIntrinsic(classGenerator));
         context.addIntrinsic(new FunctionIntrinsic(classGenerator));
-        context.addIntrinsic(new WasmRuntimeIntrinsic());
+        WasmRuntimeIntrinsic wasmRuntimeIntrinsic = new WasmRuntimeIntrinsic();
+        context.addIntrinsic(wasmRuntimeIntrinsic);
         context.addIntrinsic(new AllocatorIntrinsic(classGenerator));
         context.addIntrinsic(new PlatformIntrinsic());
         context.addIntrinsic(new PlatformClassIntrinsic());
         context.addIntrinsic(new PlatformObjectIntrinsic(classGenerator));
         context.addIntrinsic(new ClassIntrinsic());
+        GCIntrinsic gcIntrinsic = new GCIntrinsic();
+        context.addIntrinsic(gcIntrinsic);
+        MutatorIntrinsic mutatorIntrinsic = new MutatorIntrinsic();
+        context.addIntrinsic(mutatorIntrinsic);
 
         WasmGenerator generator = new WasmGenerator(decompiler, classes,
                 context, classGenerator);
@@ -284,14 +299,14 @@ public class WasmTarget implements TeaVMTarget {
         generateMethods(classes, context, generator, module);
         generateIsSupertypeFunctions(tagRegistry, module, classGenerator);
         classGenerator.postProcess();
+        mutatorIntrinsic.setStaticGcRootsAddress(classGenerator.getStaticGcRootsAddress());
 
         WasmMemorySegment dataSegment = new WasmMemorySegment();
         dataSegment.setData(binaryWriter.getData());
         dataSegment.setOffset(256);
         module.getSegments().add(dataSegment);
 
-        int address = renderStackInit(module, binaryWriter.getAddress());
-        renderAllocatorInit(module, address);
+        renderMemoryLayout(module, binaryWriter.getAddress(), gcIntrinsic, wasmRuntimeIntrinsic);
         renderClinit(classes, classGenerator, module);
         if (controller.wasCancelled()) {
             return;
@@ -370,14 +385,6 @@ public class WasmTarget implements TeaVMTarget {
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
             for (MethodHolder method : cls.getMethods()) {
-                if (method.getOwnerName().equals(Allocator.class.getName())
-                        && method.getName().equals("initialize")) {
-                    continue;
-                }
-                if (method.getOwnerName().equals(WasmRuntime.class.getName())
-                        && method.getName().equals("initStack")) {
-                    continue;
-                }
                 if (context.getIntrinsic(method.getReference()) != null) {
                     continue;
                 }
@@ -599,24 +606,30 @@ public class WasmTarget implements TeaVMTarget {
         }
     }
 
-    private void renderAllocatorInit(WasmModule module, int address) {
-        WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(new MethodReference(
-                Allocator.class, "initialize", Address.class)));
-        function.setResult(WasmType.INT32);
-        function.getBody().add(new WasmReturn(new WasmInt32Constant(address)));
-        module.add(function);
-    }
-
-    private int renderStackInit(WasmModule module, int address) {
+    private void renderMemoryLayout(WasmModule module, int address, GCIntrinsic gcIntrinsic,
+            WasmRuntimeIntrinsic runtimeIntrinsic) {
         address = (((address - 1) / 256) + 1) * 256;
 
-        WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(new MethodReference(
-                WasmRuntime.class, "initStack", Address.class)));
-        function.setResult(WasmType.INT32);
-        function.getBody().add(new WasmReturn(new WasmInt32Constant(address)));
-        module.add(function);
+        runtimeIntrinsic.setStackAddress(address);
+        address += 65536;
 
-        return address + 65536;
+        int gcMemory = module.getMemorySize() * 65536 - address;
+        int storageSize = (gcMemory >> 6) >> 2 << 2;
+        gcIntrinsic.setGCStorageAddress(address);
+        gcIntrinsic.setGCStorageSize(storageSize);
+
+        gcMemory -= storageSize;
+        address += storageSize;
+        int regionSize = 32768;
+        int regionCount = gcMemory / (2 + regionSize) + 1;
+        gcIntrinsic.setRegionSize(regionSize);
+        gcIntrinsic.setRegionsAddress(address);
+        gcIntrinsic.setRegionMaxCount(regionCount);
+
+        gcMemory -= regionCount * 2;
+        address += regionCount * 2;
+        gcIntrinsic.setHeapAddress(address);
+        gcIntrinsic.setAvailableBytes(address);
     }
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {

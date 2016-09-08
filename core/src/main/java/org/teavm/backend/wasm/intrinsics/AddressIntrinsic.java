@@ -102,6 +102,7 @@ public class AddressIntrinsic implements WasmIntrinsic {
             case "getChar":
                 return new WasmLoadInt32(2, manager.generate(invocation.getArguments().get(0)),
                         WasmInt32Subtype.UINT16);
+            case "getAddress":
             case "getInt":
                 return new WasmLoadInt32(4, manager.generate(invocation.getArguments().get(0)),
                         WasmInt32Subtype.INT32);
@@ -122,6 +123,7 @@ public class AddressIntrinsic implements WasmIntrinsic {
                 WasmExpression value = manager.generate(invocation.getArguments().get(1));
                 return new WasmStoreInt32(2, address, value, WasmInt32Subtype.INT16);
             }
+            case "putAddress":
             case "putChar": {
                 WasmExpression address = manager.generate(invocation.getArguments().get(0));
                 WasmExpression value = manager.generate(invocation.getArguments().get(1));
@@ -157,6 +159,11 @@ public class AddressIntrinsic implements WasmIntrinsic {
                         .map(arg -> manager.generate(arg))
                         .collect(Collectors.toSet()));
                 return call;
+            }
+            case "isLessThan": {
+                return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_UNSIGNED,
+                        manager.generate(invocation.getArguments().get(0)),
+                        manager.generate(invocation.getArguments().get(1)));
             }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());

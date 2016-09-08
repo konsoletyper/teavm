@@ -48,7 +48,7 @@ import org.teavm.model.util.LivenessAnalyzer;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.TypeInferer;
 import org.teavm.model.util.VariableType;
-import org.teavm.runtime.Allocator;
+import org.teavm.runtime.Mutator;
 
 public class GcRootMaintainingTransformer {
     private ClassReaderSource classSource;
@@ -158,7 +158,7 @@ public class GcRootMaintainingTransformer {
 
             InvokeInstruction registerInvocation = new InvokeInstruction();
             registerInvocation.setType(InvocationType.SPECIAL);
-            registerInvocation.setMethod(new MethodReference(Allocator.class, "registerGcRoot", int.class,
+            registerInvocation.setMethod(new MethodReference(Mutator.class, "registerGcRoot", int.class,
                     Object.class, void.class));
             registerInvocation.getArguments().add(slotVar);
             registerInvocation.getArguments().add(program.variableAt(liveVar));
@@ -177,7 +177,7 @@ public class GcRootMaintainingTransformer {
 
             InvokeInstruction clearInvocation = new InvokeInstruction();
             clearInvocation.setType(InvocationType.SPECIAL);
-            clearInvocation.setMethod(new MethodReference(Allocator.class, "removeGcRoot", int.class, void.class));
+            clearInvocation.setMethod(new MethodReference(Mutator.class, "removeGcRoot", int.class, void.class));
             clearInvocation.getArguments().add(slotVar);
             clearInvocation.setLocation(callInstruction.getLocation());
             instructionsToAdd.add(clearInvocation);
@@ -200,7 +200,7 @@ public class GcRootMaintainingTransformer {
 
         InvokeInstruction invocation = new InvokeInstruction();
         invocation.setType(InvocationType.SPECIAL);
-        invocation.setMethod(new MethodReference(Allocator.class, "allocStack", int.class, void.class));
+        invocation.setMethod(new MethodReference(Mutator.class, "allocStack", int.class, void.class));
         invocation.getArguments().add(sizeVariable);
         instructionsToAdd.add(invocation);
 
@@ -261,7 +261,7 @@ public class GcRootMaintainingTransformer {
 
         InvokeInstruction invocation = new InvokeInstruction();
         invocation.setType(InvocationType.SPECIAL);
-        invocation.setMethod(new MethodReference(Allocator.class, "releaseStack", int.class, void.class));
+        invocation.setMethod(new MethodReference(Mutator.class, "releaseStack", int.class, void.class));
         invocation.getArguments().add(sizeVariable);
         instructionsToAdd.add(invocation);
 

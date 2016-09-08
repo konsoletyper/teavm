@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
@@ -23,39 +25,61 @@ import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
+import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.model.MethodReference;
 
 public class WasmRuntimeIntrinsic implements WasmIntrinsic {
+    private List<WasmInt32Constant> stackExpressions = new ArrayList<>();
+
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        return methodReference.getClassName().equals(WasmRuntime.class.getName())
-                && (methodReference.getName().equals("lt") || methodReference.getName().equals("gt"));
+        if (!methodReference.getClassName().equals(WasmRuntime.class.getName())) {
+            return false;
+        }
+        switch (methodReference.getName()) {
+            case "gt":
+            case "lt":
+            case "initStack":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    public void setStackAddress(int stackAddress) {
+        for (WasmInt32Constant constant : stackExpressions) {
+            constant.setValue(stackAddress);
+        }
     }
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
+        switch (invocation.getMethod().getName()) {
+            case "lt":
+                return comparison(WasmIntBinaryOperation.LT_SIGNED, WasmFloatBinaryOperation.LT,
+                        invocation, manager);
+            case "gt":
+                return comparison(WasmIntBinaryOperation.GT_SIGNED, WasmFloatBinaryOperation.GT,
+                        invocation, manager);
+            case "initStack": {
+                WasmInt32Constant constant = new WasmInt32Constant(0);
+                stackExpressions.add(constant);
+                return constant;
+            }
+            default:
+                throw new IllegalArgumentException(invocation.getMethod().getName());
+        }
+    }
+
+    private static WasmExpression comparison(WasmIntBinaryOperation intOp, WasmFloatBinaryOperation floatOp,
+            InvocationExpr invocation, WasmIntrinsicManager manager) {
         WasmType type = WasmGeneratorUtil.mapType(invocation.getMethod().parameterType(0));
 
         WasmExpression first = manager.generate(invocation.getArguments().get(0));
         WasmExpression second = manager.generate(invocation.getArguments().get(1));
-
-        WasmIntBinaryOperation intOp;
-        WasmFloatBinaryOperation floatOp;
-        switch (invocation.getMethod().getName()) {
-            case "lt":
-                intOp = WasmIntBinaryOperation.LT_SIGNED;
-                floatOp = WasmFloatBinaryOperation.LT;
-                break;
-            case "gt":
-                intOp = WasmIntBinaryOperation.GT_SIGNED;
-                floatOp = WasmFloatBinaryOperation.GT;
-                break;
-            default:
-                throw new IllegalArgumentException(invocation.getMethod().getName());
-        }
 
         switch (type) {
             case INT32:
@@ -66,8 +90,8 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
                 return new WasmFloatBinary(WasmFloatType.FLOAT32, floatOp, first, second);
             case FLOAT64:
                 return new WasmFloatBinary(WasmFloatType.FLOAT64, floatOp, first, second);
+            default:
+                throw new IllegalArgumentException(type.toString());
         }
-
-        return null;
     }
 }

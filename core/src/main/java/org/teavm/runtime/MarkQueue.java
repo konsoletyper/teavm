@@ -23,26 +23,24 @@ final class MarkQueue {
 
     private static int head;
     private static int tail;
+    private static int limit;
 
     static void init() {
         head = 0;
         tail = 0;
+        limit = GC.gcStorageSize() / Address.sizeOf();
     }
 
-    private static native Address getBase();
-
-    private static native int getSize();
-
     static void enqueue(RuntimeObject object) {
-        getBase().add(Address.sizeOf() * tail).putAddress(object.toAddress());
-        if (++tail >= getSize()) {
+        GC.gcStorageAddress().add(Address.sizeOf() * tail).putAddress(object.toAddress());
+        if (++tail >= limit) {
             tail = 0;
         }
     }
 
     static RuntimeObject dequeue() {
-        Address result = getBase().add(Address.sizeOf() * head).getAddress();
-        if (++head >= getSize()) {
+        Address result = GC.gcStorageAddress().add(Address.sizeOf() * head).getAddress();
+        if (++head >= limit) {
             head = 0;
         }
         return result.toStructure();

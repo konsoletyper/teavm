@@ -249,4 +249,22 @@ public final class WasmRuntime {
         stack.add(-4).putInt(size);
         return result;
     }
+
+    public static Address getStackGcRoots() {
+        return stack;
+    }
+
+    public static Address getNextStackRoots(Address address) {
+        int size = address.getInt() + 1;
+        return address.add(-size * 4);
+    }
+
+    public static int getStackRootCount(Address address) {
+        return address.getInt();
+    }
+
+    public static Address getStackRootPointer(Address address) {
+        int size = address.getInt();
+        return address.add(-size * 4);
+    }
 }

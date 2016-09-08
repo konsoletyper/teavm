@@ -113,6 +113,7 @@ import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.runtime.Allocator;
+import org.teavm.runtime.Mutator;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 
@@ -781,7 +782,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(InvocationExpr expr) {
-        if (expr.getMethod().getClassName().equals(Allocator.class.getName())) {
+        if (expr.getMethod().getClassName().equals(Mutator.class.getName())) {
             switch (expr.getMethod().getName()) {
                 case "allocStack":
                     generateAllocStack(expr.getArguments().get(0));
@@ -885,7 +886,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void generateAllocStack(Expr sizeExpr) {
         if (stackVariable != null) {
-            throw new IllegalStateException("Call to Allocator.allocStack must be done only once");
+            throw new IllegalStateException("Call to Mutator.allocStack must be done only once");
         }
         stackVariable = getTemporary(WasmType.INT32);
         stackVariable.setName("__stack__");
@@ -900,8 +901,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void generateReleaseStack() {
         if (stackVariable == null) {
-            throw new IllegalStateException("Call to Allocator.releaseStack must be dominated by "
-                    + "Allocator.allocStack");
+            throw new IllegalStateException("Call to Mutator.releaseStack must be dominated by "
+                    + "Mutator.allocStack");
         }
 
         int offset = classGenerator.getFieldOffset(new FieldReference(WasmRuntime.class.getName(), "stack"));
@@ -911,8 +912,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void generateRegisterGcRoot(Expr slotExpr, Expr gcRootExpr) {
         if (stackVariable == null) {
-            throw new IllegalStateException("Call to Allocator.registerGcRoot must be dominated by "
-                    + "Allocator.allocStack");
+            throw new IllegalStateException("Call to Mutator.registerGcRoot must be dominated by "
+                    + "Mutator.allocStack");
         }
 
         slotExpr.acceptVisitor(this);
@@ -928,8 +929,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void generateRemoveGcRoot(Expr slotExpr) {
         if (stackVariable == null) {
-            throw new IllegalStateException("Call to Allocator.removeGcRoot must be dominated by "
-                    + "Allocator.allocStack");
+            throw new IllegalStateException("Call to Mutator.removeGcRoot must be dominated by "
+                    + "Mutator.allocStack");
         }
 
         slotExpr.acceptVisitor(this);
