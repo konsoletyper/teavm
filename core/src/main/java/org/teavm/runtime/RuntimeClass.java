@@ -29,6 +29,8 @@ public class RuntimeClass extends RuntimeJavaObject {
     public RuntimeClass itemType;
     public RuntimeClass arrayType;
     public IsSupertypeFunction isSupertypeOf;
+    public RuntimeClass parent;
+    public Address layout;
 
     @NoGC
     public static int computeCanary(int size, int tag) {

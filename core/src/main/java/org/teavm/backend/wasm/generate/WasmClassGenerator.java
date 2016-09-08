@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.binary.DataArray;
 import org.teavm.backend.wasm.binary.DataPrimitives;
@@ -54,7 +55,6 @@ public class WasmClassGenerator {
     private List<String> functionTable = new ArrayList<>();
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
-    private boolean isSubtypeGenerated;
     private DataStructure objectStructure = new DataStructure((byte) 0,
             DataPrimitives.INT, /* class */
             DataPrimitives.ADDRESS /* monitor/hash code */);
@@ -67,7 +67,19 @@ public class WasmClassGenerator {
             DataPrimitives.INT, /* canary */
             DataPrimitives.ADDRESS, /* item type */
             DataPrimitives.ADDRESS, /* array type */
-            DataPrimitives.INT /* isInstance function */);
+            DataPrimitives.INT, /* isInstance function */
+            DataPrimitives.ADDRESS, /* parent */
+            DataPrimitives.ADDRESS  /* layout */);
+
+    private static final int CLASS_SIZE = 1;
+    private static final int CLASS_FLAGS = 2;
+    private static final int CLASS_TAG = 3;
+    private static final int CLASS_CANARY = 4;
+    private static final int CLASS_ITEM_TYPE = 5;
+    private static final int CLASS_ARRAY_TYPE = 6;
+    private static final int CLASS_IS_INSTANCE = 7;
+    private static final int CLASS_PARENT = 8;
+    private static final int CLASS_LAYOUT = 9;
 
     public WasmClassGenerator(ClassReaderSource classSource, VirtualTableProvider vtableProvider,
             TagRegistry tagRegistry, BinaryWriter binaryWriter) {
@@ -136,21 +148,21 @@ public class WasmClassGenerator {
 
             binaryData.size = 4;
             binaryData.data = wrapper.getValue(0);
-            binaryData.data.setInt(1, 4);
-            binaryData.data.setAddress(5, itemBinaryData.start);
-            binaryData.data.setInt(7, functionTable.size());
+            binaryData.data.setInt(CLASS_SIZE, 4);
+            binaryData.data.setAddress(CLASS_ITEM_TYPE, itemBinaryData.start);
+            binaryData.data.setInt(CLASS_IS_INSTANCE, functionTable.size());
             functionTable.add(WasmMangling.mangeIsSupertype(type));
             binaryData.start = binaryWriter.append(vtableSize > 0 ? wrapper : binaryData.data);
 
-            itemBinaryData.data.setAddress(6, binaryData.start);
+            itemBinaryData.data.setAddress(CLASS_ARRAY_TYPE, binaryData.start);
         }
     }
 
     private DataValue createPrimitiveClassData(int size, ValueType type) {
         DataValue value = classStructure.createValue();
-        value.setInt(1, size);
-        value.setInt(2, RuntimeClass.PRIMITIVE);
-        value.setInt(7, functionTable.size());
+        value.setInt(CLASS_SIZE, size);
+        value.setInt(CLASS_FLAGS, RuntimeClass.PRIMITIVE);
+        value.setInt(CLASS_IS_INSTANCE, functionTable.size());
         functionTable.add(WasmMangling.mangeIsSupertype(type));
         return value;
     }
@@ -160,6 +172,11 @@ public class WasmClassGenerator {
     }
 
     private DataValue createStructure(ClassBinaryData binaryData) {
+        String parent = binaryData.cls.getParent();
+        int parentPtr = !binaryData.isInferface && parent != null
+                ? getClassPointer(ValueType.object(binaryData.cls.getParent()))
+                : 0;
+
         String name = ((ValueType.Object) binaryData.type).getClassName();
 
         VirtualTable vtable = vtableProvider.lookup(name);
@@ -171,19 +188,41 @@ public class WasmClassGenerator {
         DataValue header = wrapper.getValue(0);
         binaryData.data = header;
 
-        header.setInt(1, binaryData.size);
+        header.setInt(CLASS_SIZE, binaryData.size);
         List<TagRegistry.Range> ranges = tagRegistry.getRanges(name);
         int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
-        header.setInt(3, tag);
-        header.setInt(4, RuntimeClass.computeCanary(binaryData.size, tag));
-        header.setInt(7, functionTable.size());
+        header.setInt(CLASS_TAG, tag);
+        header.setInt(CLASS_CANARY, RuntimeClass.computeCanary(binaryData.size, tag));
+        header.setInt(CLASS_IS_INSTANCE, functionTable.size());
         functionTable.add(WasmMangling.mangeIsSupertype(ValueType.object(name)));
+        header.setAddress(CLASS_PARENT, parentPtr);
 
         if (vtable != null) {
             fillVirtualTable(vtable, array);
         }
 
+        List<FieldReference> fields = getReferenceFields(binaryData.cls);
+        if (!fields.isEmpty()) {
+            header.setAddress(CLASS_LAYOUT, binaryWriter.getAddress());
+            DataValue layoutSize = DataPrimitives.SHORT.createValue();
+            layoutSize.setShort(0, (short) fields.size());
+            binaryWriter.append(layoutSize);
+            for (FieldReference field : fields) {
+                DataValue layoutElement = DataPrimitives.SHORT.createValue();
+                layoutElement.setShort(0, (short) binaryData.fieldLayout.get(field.getFieldName()));
+                binaryWriter.append(layoutElement);
+            }
+        }
+
         return vtable != null ? wrapper : header;
+    }
+
+    private List<FieldReference> getReferenceFields(ClassReader cls) {
+        return cls.getFields().stream()
+                .filter(field -> !field.hasModifier(ElementModifier.STATIC))
+                .filter(field -> !(field.getType() instanceof ValueType.Primitive))
+                .map(field -> field.getReference())
+                .collect(Collectors.toList());
     }
 
     private void fillVirtualTable(VirtualTable vtable, DataValue array) {
@@ -274,6 +313,9 @@ public class WasmClassGenerator {
             data.size = 4;
             data.alignment = 4;
         }
+
+        data.isInferface = cls.hasModifier(ElementModifier.INTERFACE);
+        data.cls = cls;
 
         for (FieldReader field : cls.getFields()) {
             int desiredAlignment = getDesiredAlignment(field.getType());
@@ -368,8 +410,10 @@ public class WasmClassGenerator {
         int size;
         int alignment;
         int start;
+        boolean isInferface;
         ObjectIntMap<String> fieldLayout = new ObjectIntOpenHashMap<>();
         DataValue data;
+        ClassReader cls;
         boolean function;
     }
 }
