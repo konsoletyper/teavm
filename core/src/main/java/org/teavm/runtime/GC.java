@@ -97,7 +97,6 @@ public final class GC {
     }
 
     private static void mark() {
-        MarkQueue.init();
         Allocator.fillZero(regionsAddress().toAddress(), regionMaxCount() * Structure.sizeOf(Region.class));
 
         Address staticRoots = Mutator.getStaticGcRoots();
@@ -127,6 +126,7 @@ public final class GC {
             return;
         }
 
+        MarkQueue.init();
         MarkQueue.enqueue(object);
         while (!MarkQueue.isEmpty()) {
             object = MarkQueue.dequeue();
@@ -144,20 +144,34 @@ public final class GC {
             }
 
             RuntimeClass cls = RuntimeClass.getClass(object);
-            while (cls != null) {
-                Address layout = cls.layout;
-                if (layout != null) {
-                    short fieldCount = layout.getShort();
-                    while (fieldCount-- > 0) {
-                        layout = layout.add(2);
-                        int fieldOffset = layout.getShort();
-                        RuntimeObject reference = object.toAddress().add(fieldOffset).toStructure();
+            if (cls.itemType == null) {
+                while (cls != null) {
+                    Address layout = cls.layout;
+                    if (layout != null) {
+                        short fieldCount = layout.getShort();
+                        while (fieldCount-- > 0) {
+                            layout = layout.add(2);
+                            int fieldOffset = layout.getShort();
+                            RuntimeObject reference = object.toAddress().add(fieldOffset).toStructure();
+                            if (reference != null && !isMarked(reference)) {
+                                MarkQueue.enqueue(reference);
+                            }
+                        }
+                    }
+                    cls = cls.parent;
+                }
+            } else {
+                if ((cls.itemType.flags & RuntimeClass.PRIMITIVE) == 0) {
+                    RuntimeArray array = (RuntimeArray) object;
+                    Address base = Address.align(array.toAddress().add(RuntimeArray.class, 1), 4);
+                    for (int i = 0; i < array.size; ++i) {
+                        RuntimeObject reference = base.getAddress().toStructure();
                         if (reference != null && !isMarked(reference)) {
                             MarkQueue.enqueue(reference);
                         }
+                        base = base.add(4);
                     }
                 }
-                cls = cls.parent;
             }
         }
     }
@@ -240,8 +254,10 @@ public final class GC {
             }
         }
 
-        currentChunkPointer = heapAddress().toStructure();
+        currentChunkPointer = gcStorageAddress().toStructure();
         sortFreeChunks(0, freeChunks - 1);
+        currentChunk = currentChunkPointer.value;
+        currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
     }
 
     private static void sortFreeChunks(int lower, int upper) {

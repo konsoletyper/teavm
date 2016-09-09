@@ -123,12 +123,12 @@ public class AddressIntrinsic implements WasmIntrinsic {
                 WasmExpression value = manager.generate(invocation.getArguments().get(1));
                 return new WasmStoreInt32(2, address, value, WasmInt32Subtype.INT16);
             }
-            case "putAddress":
             case "putChar": {
                 WasmExpression address = manager.generate(invocation.getArguments().get(0));
                 WasmExpression value = manager.generate(invocation.getArguments().get(1));
                 return new WasmStoreInt32(2, address, value, WasmInt32Subtype.UINT16);
             }
+            case "putAddress":
             case "putInt": {
                 WasmExpression address = manager.generate(invocation.getArguments().get(0));
                 WasmExpression value = manager.generate(invocation.getArguments().get(1));
