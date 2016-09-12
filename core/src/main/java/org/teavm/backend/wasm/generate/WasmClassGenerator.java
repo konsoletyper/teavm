@@ -47,6 +47,7 @@ import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.runtime.RuntimeClass;
+import org.teavm.runtime.RuntimeObject;
 
 public class WasmClassGenerator {
     private ClassReaderSource classSource;
@@ -425,7 +426,7 @@ public class WasmClassGenerator {
     public void postProcess() {
         ClassBinaryData classClassData = binaryDataMap.get(ValueType.object("java.lang.Class"));
         if (classClassData != null) {
-            int tag = classClassData.start >> 3;
+            int tag = (classClassData.start >> 3) | RuntimeObject.GC_MARKED;
             for (ClassBinaryData classData : binaryDataMap.values()) {
                 if (classData.data != null) {
                     classData.data.getValue(0).setInt(0, tag);

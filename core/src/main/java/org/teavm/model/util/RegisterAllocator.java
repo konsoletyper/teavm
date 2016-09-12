@@ -68,30 +68,22 @@ public class RegisterAllocator {
         }
         int[] categories = getVariableCategories(program, method.getReference());
         String[] names = getVariableNames(program);
-        int[] classCategories = new int[maxClass];
-        String[] classNames = new String[maxClass];
-        for (int i = 0; i < categories.length; ++i) {
-            classCategories[classArray[i]] = categories[i];
-            if (names[i] != null) {
-                classNames[classArray[i]] = names[i];
-            }
-        }
-        colorer.colorize(interferenceGraph, colors, classCategories, classNames);
+        colorer.colorize(interferenceGraph, colors, categories, names);
 
         int maxColor = 0;
         for (int i = 0; i < colors.length; ++i) {
             program.variableAt(i).setRegister(colors[i]);
-            maxColor = Math.max(maxClass, colors[i]);
+            maxColor = Math.max(maxColor, colors[i] + 1);
         }
 
         String[] namesByRegister = new String[maxColor];
-        for (int i = 0; i < colors.length; ++i) {
+        for (int i = 0; i < program.variableCount(); ++i) {
             Variable var = program.variableAt(i);
             if (var.getDebugName() != null && var.getRegister() >= 0) {
-                namesByRegister[var.getRegister()] = classNames[i];
+                namesByRegister[var.getRegister()] = names[i];
             }
         }
-        for (int i = 0; i < colors.length; ++i) {
+        for (int i = 0; i < program.variableCount(); ++i) {
             Variable var = program.variableAt(i);
             if (var.getRegister() >= 0) {
                 var.setDebugName(namesByRegister[var.getRegister()]);

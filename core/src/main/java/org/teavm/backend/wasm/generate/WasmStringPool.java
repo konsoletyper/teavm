@@ -23,6 +23,7 @@ import org.teavm.backend.wasm.binary.DataPrimitives;
 import org.teavm.backend.wasm.binary.DataStructure;
 import org.teavm.backend.wasm.binary.DataValue;
 import org.teavm.model.ValueType;
+import org.teavm.runtime.RuntimeObject;
 
 public class WasmStringPool {
     private WasmClassGenerator classGenerator;
@@ -51,7 +52,8 @@ public class WasmStringPool {
             DataValue header = wrapper.getValue(0);
             DataValue characters = wrapper.getValue(1);
 
-            header.setInt(0, classGenerator.getClassPointer(ValueType.arrayOf(ValueType.CHARACTER)));
+            int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(ValueType.CHARACTER));
+            header.setInt(0, (classPointer >>> 3) | RuntimeObject.GC_MARKED);
             header.setInt(2, str.length());
             for (int i = 0; i < str.length(); ++i) {
                 characters.setShort(i, (short) str.charAt(i));
@@ -59,7 +61,8 @@ public class WasmStringPool {
 
             DataValue stringObject = stringType.createValue();
             int stringPointer = binaryWriter.append(stringObject);
-            stringObject.setInt(0, classGenerator.getClassPointer(ValueType.object(String.class.getName())));
+            classPointer = classGenerator.getClassPointer(ValueType.object(String.class.getName()));
+            stringObject.setInt(0, (classPointer >>> 3) | RuntimeObject.GC_MARKED);
             stringObject.setAddress(2, binaryWriter.append(wrapper));
 
             return stringPointer;
