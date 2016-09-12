@@ -252,7 +252,7 @@ public final class WasmRuntime {
     }
 
     public static Address getStackGcRoots() {
-        return stack;
+        return stack != initStack() ? stack : null;
     }
 
     public static Address getNextStackRoots(Address address) {
