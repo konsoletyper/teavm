@@ -76,6 +76,8 @@ public class MavenSourceFileProviderLookup {
                         artifact.getArtifactId(), artifact.getVersion(), artifact.getType(), "sources"));
             }
         }
+
+        artifacts.addAll(initialArtifacts);
         List<SourceFileProvider> providers = new ArrayList<>();
         for (Artifact artifact : artifacts) {
             ArtifactResolutionRequest request = new ArtifactResolutionRequest()
