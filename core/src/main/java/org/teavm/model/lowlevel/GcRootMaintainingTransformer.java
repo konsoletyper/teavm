@@ -47,6 +47,7 @@ import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.LivenessAnalyzer;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.TypeInferer;
+import org.teavm.model.util.UsageExtractor;
 import org.teavm.model.util.VariableType;
 import org.teavm.runtime.Mutator;
 
@@ -78,6 +79,7 @@ public class GcRootMaintainingTransformer {
         LivenessAnalyzer livenessAnalyzer = new LivenessAnalyzer();
         livenessAnalyzer.analyze(program);
         DefinitionExtractor defExtractor = new DefinitionExtractor();
+        UsageExtractor useExtractor = new UsageExtractor();
 
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -90,6 +92,10 @@ public class GcRootMaintainingTransformer {
             for (int j = block.getInstructions().size() - 1; j >= 0; --j) {
                 Instruction insn = block.getInstructions().get(j);
                 insn.acceptVisitor(defExtractor);
+                insn.acceptVisitor(useExtractor);
+                for (Variable usedVar : useExtractor.getUsedVariables()) {
+                    currentLiveOut.set(usedVar.getIndex());
+                }
                 for (Variable definedVar : defExtractor.getDefinedVariables()) {
                     currentLiveOut.clear(definedVar.getIndex());
                 }

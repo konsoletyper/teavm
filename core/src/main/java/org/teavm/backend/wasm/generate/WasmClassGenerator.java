@@ -155,6 +155,7 @@ public class WasmClassGenerator {
             binaryData.data.setInt(CLASS_SIZE, 4);
             binaryData.data.setAddress(CLASS_ITEM_TYPE, itemBinaryData.start);
             binaryData.data.setInt(CLASS_IS_INSTANCE, functionTable.size());
+            binaryData.data.setInt(CLASS_CANARY, RuntimeClass.computeCanary(4, 0));
             functionTable.add(WasmMangling.mangeIsSupertype(type));
             binaryData.start = binaryWriter.append(vtableSize > 0 ? wrapper : binaryData.data);
 
@@ -212,7 +213,8 @@ public class WasmClassGenerator {
             header.setAddress(CLASS_LAYOUT, binaryWriter.append(layoutSize));
             for (FieldReference field : fields) {
                 DataValue layoutElement = DataPrimitives.SHORT.createValue();
-                layoutElement.setShort(0, (short) binaryData.fieldLayout.get(field.getFieldName()));
+                int offset = binaryData.fieldLayout.get(field.getFieldName());
+                layoutElement.setShort(0, (short) offset);
                 binaryWriter.append(layoutElement);
             }
         }
@@ -228,6 +230,8 @@ public class WasmClassGenerator {
         return cls.getFields().stream()
                 .filter(field -> !field.hasModifier(ElementModifier.STATIC))
                 .filter(field -> isReferenceType(field.getType()))
+                .filter(field -> !field.getOwnerName().equals("java.lang.Object")
+                        && !field.getName().equals("monitor"))
                 .map(field -> field.getReference())
                 .collect(Collectors.toList());
     }

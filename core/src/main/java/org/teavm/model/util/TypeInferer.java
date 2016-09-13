@@ -64,7 +64,7 @@ public class TypeInferer {
 
         IntegerStack stack = new IntegerStack(sz);
         Graph graph = builder.build();
-        Graph arrayElemGraph = builder.build();
+        Graph arrayElemGraph = arrayElemBuilder.build();
         for (int i = 0; i < sz; ++i) {
             if ((i >= graph.size() || graph.incomingEdgesCount(i) == 0)
                     && (i >= arrayElemGraph.size() || arrayElemGraph.incomingEdgesCount(i) == 0)) {
@@ -217,7 +217,7 @@ public class TypeInferer {
     InstructionReader reader = new InstructionReader() {
         @Override
         public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
-            types[receiver.getIndex()] = convert(elementType);
+            builder.addEdge(array.getIndex(), receiver.getIndex());
         }
 
         @Override
@@ -396,24 +396,7 @@ public class TypeInferer {
         @Override
         public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
                 NumericOperandType type) {
-            switch (op) {
-                case ADD:
-                case SUBTRACT:
-                case MULTIPLY:
-                case DIVIDE:
-                case MODULO:
-                case AND:
-                case OR:
-                case XOR:
-                case SHIFT_LEFT:
-                case SHIFT_RIGHT:
-                case SHIFT_RIGHT_UNSIGNED:
-                    types[receiver.getIndex()] = convert(type);
-                    break;
-                case COMPARE:
-                    types[receiver.getIndex()] = VariableType.INT;
-                    break;
-            }
+            types[receiver.getIndex()] = convert(type);
         }
 
         @Override
