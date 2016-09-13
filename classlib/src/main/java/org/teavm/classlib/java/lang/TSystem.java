@@ -23,6 +23,7 @@ import org.teavm.dependency.PluggableDependency;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.NoGC;
 import org.teavm.interop.Structure;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
@@ -79,6 +80,7 @@ public final class TSystem extends TObject {
     @DelegateTo("doArrayCopyLowLevel")
     private static native void doArrayCopy(Object src, int srcPos, Object dest, int destPos, int length);
 
+    @NoGC
     static void doArrayCopyLowLevel(RuntimeArray src, int srcPos, RuntimeArray dest, int destPos, int length) {
         RuntimeClass type = RuntimeClass.getClass(src);
         int itemSize = type.itemType.size;

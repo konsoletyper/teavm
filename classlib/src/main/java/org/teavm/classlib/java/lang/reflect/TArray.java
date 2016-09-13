@@ -19,6 +19,7 @@ import org.teavm.classlib.java.lang.*;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.DelegateTo;
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.interop.NoGC;
 import org.teavm.platform.PlatformClass;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
@@ -60,6 +61,7 @@ public final class TArray extends TObject {
     private static native TObject newInstanceImpl(PlatformClass componentType, int length);
 
     @SuppressWarnings("unused")
+    @NoGC
     private static RuntimeObject newInstanceLowLevel(RuntimeClass cls, int length) {
         return Allocator.allocateArray(cls.arrayType, length).toStructure();
     }
