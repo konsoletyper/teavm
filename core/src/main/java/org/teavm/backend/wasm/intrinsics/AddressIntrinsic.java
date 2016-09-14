@@ -157,7 +157,7 @@ public class AddressIntrinsic implements WasmIntrinsic {
                 WasmCall call = new WasmCall(WasmMangling.mangleMethod(delegate));
                 call.getArguments().addAll(invocation.getArguments().stream()
                         .map(arg -> manager.generate(arg))
-                        .collect(Collectors.toSet()));
+                        .collect(Collectors.toList()));
                 return call;
             }
             case "isLessThan": {

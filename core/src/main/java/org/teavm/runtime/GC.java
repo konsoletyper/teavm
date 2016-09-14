@@ -317,6 +317,7 @@ public final class GC {
                 Address address = Address.fromInt(Structure.sizeOf(RuntimeArray.class));
                 address = Address.align(address, itemSize);
                 address = address.add(itemSize * array.size);
+                address = Address.align(address, 4);
                 return address.toInt();
             }
         }

@@ -169,8 +169,6 @@ public class GcRootMaintainingTransformer {
             registerInvocation.getArguments().add(slotVar);
             registerInvocation.getArguments().add(program.variableAt(liveVar));
             instructionsToAdd.add(registerInvocation);
-
-            ++slot;
         }
 
         while (slot < maxDepth) {

@@ -919,9 +919,9 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         slotExpr.acceptVisitor(this);
-        WasmExpression slot = result;
+        WasmExpression slotOffset = getSlotOffset(result);
         WasmExpression address = new WasmGetLocal(stackVariable);
-        address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, address, slot);
+        address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, address, slotOffset);
 
         gcRootExpr.acceptVisitor(this);
         WasmExpression gcRoot = result;
@@ -936,11 +936,20 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         slotExpr.acceptVisitor(this);
-        WasmExpression slot = result;
+        WasmExpression slotOffset = getSlotOffset(result);
         WasmExpression address = new WasmGetLocal(stackVariable);
-        address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, address, slot);
+        address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, address, slotOffset);
 
         result = new WasmStoreInt32(4, address, new WasmInt32Constant(0), WasmInt32Subtype.INT32);
+    }
+
+    private WasmExpression getSlotOffset(WasmExpression slot) {
+        if (slot instanceof WasmInt32Constant) {
+            int slotConstant = ((WasmInt32Constant) slot).getValue();
+            return new WasmInt32Constant(slotConstant << 2);
+        } else {
+            return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, slot, new WasmInt32Constant(2));
+        }
     }
 
     @Override
