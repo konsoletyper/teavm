@@ -23,6 +23,7 @@ import org.teavm.dependency.PluggableDependency;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.Import;
 import org.teavm.interop.NoGC;
 import org.teavm.interop.Structure;
 import org.teavm.runtime.Allocator;
@@ -98,7 +99,15 @@ public final class TSystem extends TObject {
     }
 
     @GeneratedBy(SystemNativeGenerator.class)
+    @DelegateTo(("currentTimeMillisLowLevel"))
     public static native long currentTimeMillis();
+
+    private static long currentTimeMillisLowLevel() {
+        return (long) currentTimeMillisImpl();
+    }
+
+    @Import(name = "currentTimeMillis", module = "runtime")
+    private static native double currentTimeMillisImpl();
 
     public static TString getProperty(@SuppressWarnings("unused") TString key) {
         // TODO: make implementation

@@ -163,14 +163,14 @@ public class BinaryWriter {
 
     private int writeLong(int offset, byte[] result, long v) {
         offset = align(offset, 8);
-        result[offset++] = (byte) (v >> 56);
-        result[offset++] = (byte) (v >> 48);
-        result[offset++] = (byte) (v >> 40);
-        result[offset++] = (byte) (v >> 32);
-        result[offset++] = (byte) (v >> 24);
-        result[offset++] = (byte) (v >> 16);
-        result[offset++] = (byte) (v >> 8);
         result[offset++] = (byte) v;
+        result[offset++] = (byte) (v >> 8);
+        result[offset++] = (byte) (v >> 16);
+        result[offset++] = (byte) (v >> 24);
+        result[offset++] = (byte) (v >> 32);
+        result[offset++] = (byte) (v >> 40);
+        result[offset++] = (byte) (v >> 48);
+        result[offset++] = (byte) (v >> 56);
         return offset;
     }
 }

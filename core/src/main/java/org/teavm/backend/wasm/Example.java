@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm;
 
+import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,7 +37,31 @@ public final class Example {
         testArrayCopy();
         testArrayIsObject();
         testIsAssignableFrom();
+        testBigInteger();
         testGC();
+    }
+
+    private static void testBigInteger() {
+        BigInteger result = BigInteger.ONE;
+        for (int j = 0; j < 100; ++j) {
+            long start = System.currentTimeMillis();
+
+            for (int k = 0; k < 5000; ++k) {
+                BigInteger a = BigInteger.ZERO;
+                BigInteger b = BigInteger.ONE;
+                for (int i = 0; i < 1000; ++i) {
+                    BigInteger c = a.add(b);
+                    a = b;
+                    b = c;
+                }
+                result = a;
+            }
+
+            long end = System.currentTimeMillis();
+
+            println("Operation took " + (end - start) + " milliseconds");
+        }
+        println(result.toString());
     }
 
     private static void testFibonacci() {

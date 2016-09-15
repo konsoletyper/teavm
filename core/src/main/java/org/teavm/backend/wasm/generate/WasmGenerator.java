@@ -78,6 +78,7 @@ public class WasmGenerator {
             WasmType paramType = WasmGeneratorUtil.mapType(methodReference.parameterType(i));
             function.getParameters().add(paramType);
         }
+        function.setResult(WasmGeneratorUtil.mapType(methodReference.getReturnType()));
 
         WasmGenerationContext.ImportedMethod importedMethod = context.getImportedMethod(methodReference);
         if (importedMethod != null) {

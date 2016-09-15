@@ -59,15 +59,18 @@ public final class GC {
     public static RuntimeObject alloc(int size) {
         FreeChunk current = currentChunk;
         Address next = currentChunk.toAddress().add(size);
-        if (!next.add(Structure.sizeOf(FreeChunk.class) + 1).isLessThan(currentChunkLimit)) {
+        if (!next.add(Structure.sizeOf(FreeChunk.class)).isLessThan(currentChunkLimit)) {
             getAvailableChunk(size);
             current = currentChunk;
             next = currentChunk.toAddress().add(size);
         }
-        int oldSize = current.size;
+        int freeSize = current.size;
         currentChunk = next.toStructure();
-        currentChunk.classReference = 0;
-        currentChunk.size = oldSize - size;
+        freeSize -= size;
+        if (freeSize > 0) {
+            currentChunk.classReference = 0;
+            currentChunk.size = freeSize;
+        }
         return current;
     }
 
@@ -80,7 +83,13 @@ public final class GC {
     }
 
     private static boolean getAvailableChunkIfPossible(int size) {
-        while (!currentChunk.toAddress().add(size).isLessThan(currentChunkLimit)) {
+        while (true) {
+            if (currentChunk.toAddress().add(size) == currentChunkLimit) {
+                break;
+            }
+            if (currentChunk.toAddress().add(size + Structure.sizeOf(FreeChunk.class)).isLessThan(currentChunkLimit)) {
+                break;
+            }
             if (--freeChunks == 0) {
                 return false;
             }
@@ -104,10 +113,11 @@ public final class GC {
         int staticCount = staticRoots.getInt();
         staticRoots.add(8);
         while (staticCount-- > 0) {
-            RuntimeObject object = staticRoots.getAddress().toStructure();
+            RuntimeObject object = staticRoots.getAddress().getAddress().toStructure();
             if (object != null) {
                 mark(object);
             }
+            staticRoots = staticRoots.add(Address.sizeOf());
         }
 
         for (Address stackRoots = Mutator.getStackGcRoots(); stackRoots != null;
