@@ -193,11 +193,15 @@ public class WasmClassGenerator {
         DataValue header = wrapper.getValue(0);
         binaryData.data = header;
 
-        header.setInt(CLASS_SIZE, binaryData.size);
+        int occupiedSize = binaryData.size;
+        if ((occupiedSize & 3) != 0) {
+            occupiedSize = occupiedSize >> 2 << 2 + 1;
+        }
+        header.setInt(CLASS_SIZE, occupiedSize);
         List<TagRegistry.Range> ranges = tagRegistry.getRanges(name);
         int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
         header.setInt(CLASS_TAG, tag);
-        header.setInt(CLASS_CANARY, RuntimeClass.computeCanary(binaryData.size, tag));
+        header.setInt(CLASS_CANARY, RuntimeClass.computeCanary(occupiedSize, tag));
         header.setInt(CLASS_IS_INSTANCE, functionTable.size());
         functionTable.add(WasmMangling.mangeIsSupertype(ValueType.object(name)));
         header.setAddress(CLASS_PARENT, parentPtr);

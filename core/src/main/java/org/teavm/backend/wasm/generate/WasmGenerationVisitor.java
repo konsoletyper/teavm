@@ -1194,6 +1194,14 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(TryCatchStatement statement) {
+        WasmBlock block = new WasmBlock(false);
+        for (Statement bodyPart : statement.getProtectedBody()) {
+            accept(bodyPart);
+            if (result != null) {
+                block.getBody().add(result);
+            }
+        }
+        result = block;
     }
 
     @Override

@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -73,6 +74,9 @@ public class VirtualTableProvider {
         }
 
         for (MethodReader method : cls.getMethods()) {
+            if (method.hasModifier(ElementModifier.ABSTRACT)) {
+                continue;
+            }
             VirtualTableEntry entry = table.entries.get(method.getDescriptor());
             if (entry != null) {
                 entry.implementor = method.getReference();

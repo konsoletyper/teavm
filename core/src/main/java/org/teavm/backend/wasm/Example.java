@@ -42,6 +42,7 @@ public final class Example {
     }
 
     private static void testBigInteger() {
+        System.out.println("Running BigInteger benchmark");
         BigInteger result = BigInteger.ONE;
         for (int j = 0; j < 100; ++j) {
             long start = System.currentTimeMillis();
@@ -59,51 +60,51 @@ public final class Example {
 
             long end = System.currentTimeMillis();
 
-            println("Operation took " + (end - start) + " milliseconds");
+            System.out.println("Operation took " + (end - start) + " milliseconds");
         }
-        println(result.toString());
+        System.out.println(result.toString());
     }
 
     private static void testFibonacci() {
         int a = 0;
         int b = 1;
-        println("Fibonacci numbers:");
+        System.out.println("Fibonacci numbers:");
         for (int i = 0; i < 30; ++i) {
             int c = a + b;
             a = b;
             b = c;
-            println(String.valueOf(a));
+            System.out.println(String.valueOf(a));
         }
     }
 
     private static void testClasses() {
-        println("A(2) + A(3) = " + (new A(2).getValue() + new A(3).getValue()));
+        System.out.println("A(2) + A(3) = " + (new A(2).getValue() + new A(3).getValue()));
     }
 
     private static void testVirtualCall() {
         for (int i = 0; i < 4; ++i) {
-            println("instance(" + i + ") = " + instance(i).foo());
+            System.out.println("instance(" + i + ") = " + instance(i).foo());
         }
 
         Base[] array = { new Derived1(), new Derived2() };
-        println("array.length = " + array.length);
+        System.out.println("array.length = " + array.length);
         for (Base elem : array) {
-            println("array[i] = " + elem.foo());
+            System.out.println("array[i] = " + elem.foo());
         }
     }
 
     private static void testInstanceOf() {
-        println("Derived2 instanceof Base = " + (new Derived2() instanceof Base));
-        println("Derived3 instanceof Base = " + (new Derived3() instanceof Base));
-        println("Derived2 instanceof Derived1 = " + ((Object) new Derived2() instanceof Derived1));
-        println("Derived2 instanceof A = " + ((Object) new Derived2() instanceof A));
-        println("A instanceof Base = " + (new A(23) instanceof Base));
+        System.out.println("Derived2 instanceof Base = " + (new Derived2() instanceof Base));
+        System.out.println("Derived3 instanceof Base = " + (new Derived3() instanceof Base));
+        System.out.println("Derived2 instanceof Derived1 = " + ((Object) new Derived2() instanceof Derived1));
+        System.out.println("Derived2 instanceof A = " + ((Object) new Derived2() instanceof A));
+        System.out.println("A instanceof Base = " + (new A(23) instanceof Base));
     }
 
     private static void testPrimitiveArray() {
         byte[] bytes = { 5, 6, 10, 15 };
         for (byte bt : bytes) {
-            println("bytes[i] = " + bt);
+            System.out.println("bytes[i] = " + bt);
         }
     }
 
@@ -115,10 +116,10 @@ public final class Example {
 
     private static void testHashCode() {
         Object o = new Object();
-        println("hashCode1 = " + o.hashCode());
-        println("hashCode1 = " + o.hashCode());
-        println("hashCode2 = " + new Object().hashCode());
-        println("hashCode3 = " + new Object().hashCode());
+        System.out.println("hashCode1 = " + o.hashCode());
+        System.out.println("hashCode1 = " + o.hashCode());
+        System.out.println("hashCode2 = " + new Object().hashCode());
+        System.out.println("hashCode3 = " + new Object().hashCode());
     }
 
     private static void testArrayList() {
@@ -127,7 +128,7 @@ public final class Example {
         list.remove((Integer) 444);
 
         for (int item : list) {
-            println("list[i] = " + item);
+            System.out.println("list[i] = " + item);
         }
     }
 
@@ -147,25 +148,31 @@ public final class Example {
         for (int i = 0; i < array.length; ++i) {
             sb.append(" ").append(array[i]);
         }
-        println(sb.toString());
+        System.out.println(sb.toString());
     }
 
     private static void testArrayIsObject() {
         byte[] array = new byte[] { 1, 2, 3 };
         byte[] copy = array.clone();
-        println("array.hashCode() = " + array.hashCode());
-        println("copy.hashCode() = " + copy.hashCode());
-        println("array.equals(array) = " + array.equals(array));
-        println("array.equals(copy) = " + array.equals(copy));
+        System.out.println("array.hashCode() = " + array.hashCode());
+        System.out.println("copy.hashCode() = " + copy.hashCode());
+        System.out.println("array.equals(array) = " + array.equals(array));
+        System.out.println("array.equals(copy) = " + array.equals(copy));
     }
 
     private static void testIsAssignableFrom() {
-        println("Object.isAssignableFrom(byte[]) = " + Object.class.isAssignableFrom(new byte[0].getClass()));
-        println("Object[].isAssignableFrom(Integer[]) = " + Object[].class.isAssignableFrom(new Integer[0].getClass()));
-        println("Object[].isAssignableFrom(Integer) = " + Object[].class.isAssignableFrom(Integer.class));
-        println("byte[].isAssignableFrom(Object) = " + byte[].class.isAssignableFrom(ValueType.Object.class));
-        println("Base.isAssignableFrom(Derived1) = " + Base.class.isAssignableFrom(Derived1.class));
-        println("Base.isAssignableFrom(A) = " + Base.class.isAssignableFrom(A.class));
+        System.out.println("Object.isAssignableFrom(byte[]) = "
+                + Object.class.isAssignableFrom(new byte[0].getClass()));
+        System.out.println("Object[].isAssignableFrom(Integer[]) = "
+                + Object[].class.isAssignableFrom(new Integer[0].getClass()));
+        System.out.println("Object[].isAssignableFrom(Integer) = "
+                + Object[].class.isAssignableFrom(Integer.class));
+        System.out.println("byte[].isAssignableFrom(Object) = "
+                + byte[].class.isAssignableFrom(ValueType.Object.class));
+        System.out.println("Base.isAssignableFrom(Derived1) = "
+                + Base.class.isAssignableFrom(Derived1.class));
+        System.out.println("Base.isAssignableFrom(A) = "
+                + Base.class.isAssignableFrom(A.class));
     }
 
     private static void testGC() {
@@ -176,7 +183,7 @@ public final class Example {
                 list = new ArrayList<>();
             }
         }
-        print("GC complete");
+        System.out.println("GC complete");
     }
 
     private static Base instance(int index) {
@@ -234,22 +241,11 @@ public final class Example {
 
     static class Initialized {
         static {
-            println("Initialized.<clinit>()");
+            System.out.println("Initialized.<clinit>()");
         }
 
         public static void foo() {
-            println("Initialized.foo()");
+            System.out.println("Initialized.foo()");
         }
-    }
-
-    static void print(String value) {
-        for (int i = 0; i < value.length(); ++i) {
-            WasmRuntime.print(value.charAt(i));
-        }
-    }
-
-    static void println(String value) {
-        print(value);
-        WasmRuntime.print('\n');
     }
 }

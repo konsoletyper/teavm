@@ -17,6 +17,8 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TIOException;
 import org.teavm.classlib.java.io.TOutputStream;
+import org.teavm.interop.DelegateTo;
+import org.teavm.interop.Import;
 import org.teavm.platform.Platform;
 
 /**
@@ -25,7 +27,15 @@ import org.teavm.platform.Platform;
  */
 class TConsoleOutputStreamStderr extends TOutputStream {
     @Override
+    @DelegateTo("writeLowLevel")
     public void write(int b) throws TIOException {
         Platform.getConsole().error(b);
     }
+
+    private void writeLowLevel(int b) {
+        writeImpl(b);
+    }
+
+    @Import(name = "putchar", module = "runtime")
+    static native void writeImpl(int b);
 }
