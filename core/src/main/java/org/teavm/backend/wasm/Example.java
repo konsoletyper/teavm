@@ -145,7 +145,7 @@ public final class Example {
 
     private static void testGC() {
         List<Integer> list = new ArrayList<>();
-        for (int i = 0; i < 100000; ++i) {
+        for (int i = 0; i < 4000000; ++i) {
             list.add(i);
             if (list.size() == 1000) {
                 list = new ArrayList<>();

@@ -629,7 +629,7 @@ public class WasmTarget implements TeaVMTarget {
         gcMemory -= regionCount * 2;
         address += regionCount * 2;
         gcIntrinsic.setHeapAddress(address);
-        gcIntrinsic.setAvailableBytes(address);
+        gcIntrinsic.setAvailableBytes(gcMemory);
     }
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {

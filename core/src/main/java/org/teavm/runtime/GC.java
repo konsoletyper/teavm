@@ -61,13 +61,14 @@ public final class GC {
         Address next = currentChunk.toAddress().add(size);
         if (!next.add(Structure.sizeOf(FreeChunk.class) + 1).isLessThan(currentChunkLimit)) {
             getAvailableChunk(size);
+            current = currentChunk;
+            next = currentChunk.toAddress().add(size);
         }
         int oldSize = current.size;
-        Address result = current.toAddress();
         currentChunk = next.toStructure();
         currentChunk.classReference = 0;
         currentChunk.size = oldSize - size;
-        return result.toStructure();
+        return current;
     }
 
     private static void getAvailableChunk(int size) {
@@ -80,14 +81,14 @@ public final class GC {
 
     private static boolean getAvailableChunkIfPossible(int size) {
         while (!currentChunk.toAddress().add(size).isLessThan(currentChunkLimit)) {
-            if (--size == 0) {
+            if (--freeChunks == 0) {
                 return false;
             }
             currentChunkPointer = currentChunkPointer.toAddress().add(FreeChunkHolder.class, 1).toStructure();
             currentChunk = currentChunkPointer.value;
             currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
         }
-        return false;
+        return true;
     }
 
     private static boolean collectGarbage(int size) {
@@ -152,7 +153,7 @@ public final class GC {
                         while (fieldCount-- > 0) {
                             layout = layout.add(2);
                             int fieldOffset = layout.getShort();
-                            RuntimeObject reference = object.toAddress().add(fieldOffset).toStructure();
+                            RuntimeObject reference = object.toAddress().add(fieldOffset).getAddress().toStructure();
                             if (reference != null && !isMarked(reference)) {
                                 MarkQueue.enqueue(reference);
                             }
