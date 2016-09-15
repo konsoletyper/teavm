@@ -40,6 +40,14 @@ public class WasmModule {
         function.module = this;
     }
 
+    public void remove(WasmFunction function) {
+        if (function.getModule() != this) {
+            return;
+        }
+        function.module = null;
+        functions.remove(function.getName());
+    }
+
     public Map<String, WasmFunction> getFunctions() {
         return readonlyFunctions;
     }

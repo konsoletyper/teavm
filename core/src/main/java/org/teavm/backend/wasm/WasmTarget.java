@@ -66,6 +66,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
+import org.teavm.backend.wasm.optimization.UnusedFunctionElimination;
 import org.teavm.backend.wasm.patches.ClassPatch;
 import org.teavm.backend.wasm.render.WasmBinaryRenderer;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
@@ -337,6 +338,8 @@ public class WasmTarget implements TeaVMTarget {
         for (String function : classGenerator.getFunctionTable()) {
             module.getFunctionTable().add(module.getFunctions().get(function));
         }
+
+        new UnusedFunctionElimination(module).apply();
 
         WasmBinaryWriter writer = new WasmBinaryWriter();
         WasmBinaryRenderer renderer = new WasmBinaryRenderer(writer);
