@@ -16,7 +16,7 @@
 package org.teavm.vm.spi;
 
 import java.io.IOException;
-import org.teavm.backend.javascript.rendering.RenderingContext;
+import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.vm.BuildTarget;
 
 /**
@@ -24,7 +24,7 @@ import org.teavm.vm.BuildTarget;
  * @author Alexey Andreev
  */
 public interface RendererListener {
-    void begin(RenderingContext context, BuildTarget buildTarget) throws IOException;
+    void begin(RenderingManager context, BuildTarget buildTarget) throws IOException;
 
     void complete() throws IOException;
 }

@@ -15,13 +15,13 @@
  */
 package org.teavm.jso.impl;
 
+import static org.teavm.backend.javascript.rendering.RenderingUtil.escapeString;
 import java.io.IOException;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.Precedence;
-import org.teavm.backend.javascript.rendering.Renderer;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.Injector;
@@ -122,7 +122,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                     if (context.getArgument(0) instanceof ConstantExpr) {
                         ConstantExpr constant = (ConstantExpr) context.getArgument(0);
                         if (constant.getValue() instanceof String) {
-                            writer.append('"').append(Renderer.escapeString((String) constant.getValue())).append('"');
+                            writer.append('"').append(escapeString((String) constant.getValue())).append('"');
                             break;
                         }
                     }

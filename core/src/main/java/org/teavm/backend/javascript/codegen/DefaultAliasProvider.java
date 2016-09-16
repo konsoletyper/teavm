@@ -56,10 +56,16 @@ public class DefaultAliasProvider implements AliasProvider {
     @Override
     public String getMethodAlias(MethodDescriptor method) {
         String alias = method.getName();
-        if (alias.equals("<init>")) {
-            alias = "$init";
-        } else if (alias.equals("<clinit>")) {
-            alias = "$clinit";
+        switch (alias) {
+            case "<init>":
+                alias = "$_init_";
+                break;
+            case "<clinit>":
+                alias = "$_clinit_";
+                break;
+            default:
+                alias = "$" + alias;
+                break;
         }
         return makeUnique(knownVirtualAliases, alias);
     }
@@ -67,10 +73,13 @@ public class DefaultAliasProvider implements AliasProvider {
     @Override
     public String getStaticMethodAlias(MethodReference method) {
         String alias = method.getDescriptor().getName();
-        if (alias.equals("<init>")) {
-            alias = "$init";
-        } else if (alias.equals("<clinit>")) {
-            alias = "$clinit";
+        switch (alias) {
+            case "<init>":
+                alias = "_init_";
+                break;
+            case "<clinit>":
+                alias = "_clinit_";
+                break;
         }
 
         return makeUnique(knownAliases, getClassAlias(method.getClassName()) + "_" + alias);
@@ -78,7 +87,7 @@ public class DefaultAliasProvider implements AliasProvider {
 
     @Override
     public String getFieldAlias(FieldReference field) {
-        return makeUnique(knownVirtualAliases, field.getFieldName());
+        return makeUnique(knownVirtualAliases, "$" + field.getFieldName());
     }
 
     @Override

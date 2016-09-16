@@ -20,10 +20,16 @@ import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.rendering.Renderer;
+import org.teavm.backend.javascript.rendering.RenderingUtil;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
-import org.teavm.model.*;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.platform.metadata.ClassScopedMetadataGenerator;
 import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 import org.teavm.platform.metadata.Resource;
@@ -80,7 +86,7 @@ public class ClassScopedMetadataProviderNativeGenerator implements Generator {
                 context.getClassLoader(), context.getProperties(), context);
 
         Map<String, Resource> resourceMap = generator.generateMetadata(metadataContext, methodRef);
-        writer.append("var p").ws().append("=").ws().append("\"" + Renderer.escapeString("$$res_"
+        writer.append("var p").ws().append("=").ws().append("\"" + RenderingUtil.escapeString("$$res_"
                 + writer.getNaming().getFullNameFor(methodRef)) + "\"").append(";").softNewLine();
         for (Map.Entry<String, Resource> entry : resourceMap.entrySet()) {
             writer.appendClass(entry.getKey()).append("[p]").ws().append("=").ws();

@@ -20,10 +20,17 @@ import java.util.List;
 import net.java.html.js.JavaScriptBody;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.rendering.Renderer;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
-import org.teavm.model.*;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class JavaScriptBodyGenerator implements Generator {
     @Override
@@ -35,7 +42,8 @@ public class JavaScriptBodyGenerator implements Generator {
         List<AnnotationValue> args = annot.getValue("args").getList();
         AnnotationValue javacall = annot.getValue("javacall");
         if (javacall != null && javacall.getBoolean()) {
-            GeneratorJsCallback callbackGen = new GeneratorJsCallback(context.getClassSource(), writer.getNaming());
+            GeneratorJsCallback callbackGen = new GeneratorJsCallback(context, context.getClassSource(),
+                    writer.getNaming());
             body = callbackGen.parse(body);
         }
         writer.append("var result = (function(");
@@ -55,7 +63,7 @@ public class JavaScriptBodyGenerator implements Generator {
         }
         writer.append(");").softNewLine();
         writer.append("return ");
-        unwrapValue(writer, method.getResultType(), "result");
+        unwrapValue(context, writer, method.getResultType(), "result");
         writer.append(";").softNewLine();
     }
 
@@ -64,16 +72,19 @@ public class JavaScriptBodyGenerator implements Generator {
         writer.append("(").append(param).append(")");
     }
 
-    private void unwrapValue(SourceWriter writer, ValueType type, String param) throws IOException {
+    private void unwrapValue(GeneratorContext context, SourceWriter writer, ValueType type, String param)
+            throws IOException {
         writer.appendMethodBody(JavaScriptConvGenerator.fromJsMethod);
-        writer.append("(").append(param).append(",").ws().append(Renderer.typeToClsString(writer.getNaming(), type))
+        writer.append("(").append(param).append(",").ws().append(context.typeToClassString(type))
                 .append(")");
     }
 
     private static class GeneratorJsCallback extends JsCallback {
+        private GeneratorContext context;
         private ClassReaderSource classSource;
         private NamingStrategy naming;
-        public GeneratorJsCallback(ClassReaderSource classSource, NamingStrategy naming) {
+        public GeneratorJsCallback(GeneratorContext context, ClassReaderSource classSource, NamingStrategy naming) {
+            this.context = context;
             this.classSource = classSource;
             this.naming = naming;
         }
@@ -105,7 +116,7 @@ public class JavaScriptBodyGenerator implements Generator {
                 ValueType paramType = simplifyParamType(reader.parameterType(i));
                 sb.append(naming.getFullNameFor(JavaScriptConvGenerator.fromJsMethod)).append("(p").append(i)
                         .append(", ")
-                        .append(Renderer.typeToClsString(naming, paramType)).append(")");
+                        .append(context.typeToClassString(paramType)).append(")");
             }
             sb.append(")); })(");
             if (ident != null) {

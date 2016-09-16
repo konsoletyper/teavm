@@ -23,7 +23,7 @@ import java.util.HashSet;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.rendering.RenderingContext;
+import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.spi.AbstractRendererListener;
 
@@ -34,16 +34,16 @@ import org.teavm.vm.spi.AbstractRendererListener;
 public class ResourcesInterceptor extends AbstractRendererListener {
     private final Set<String> processed = new HashSet<>();
     @Override
-    public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
+    public void begin(RenderingManager manager, BuildTarget buildTarget) throws IOException {
         boolean hasOneResource = false;
-        for (String className : context.getClassSource().getClassNames()) {
+        for (String className : manager.getClassSource().getClassNames()) {
             final int lastDot = className.lastIndexOf('.');
             if (lastDot == -1) {
                 continue;
             }
             String packageName = className.substring(0, lastDot);
             String resourceName = packageName.replace('.', '/') + "/" + "jvm.txt";
-            try (InputStream input = context.getClassLoader().getResourceAsStream(resourceName)) {
+            try (InputStream input = manager.getClassLoader().getResourceAsStream(resourceName)) {
                 if (input == null || !processed.add(resourceName)) {
                     continue;
                 }
@@ -51,7 +51,7 @@ public class ResourcesInterceptor extends AbstractRendererListener {
                 IOUtils.copy(input, arr);
                 String base64 = Base64.getEncoder().encodeToString(arr.toByteArray());
                 input.close();
-                final SourceWriter w = context.getWriter();
+                final SourceWriter w = manager.getWriter();
                 w.append("// Resource " + resourceName + " included by " + className).newLine();
                 w.append("if (!window.teaVMResources) window.teaVMResources = {};").newLine();
                 w.append("window.teaVMResources['" + resourceName + "'] = '");
@@ -60,7 +60,7 @@ public class ResourcesInterceptor extends AbstractRendererListener {
             hasOneResource = true;
         }
         if (hasOneResource) {
-            context.getWriter().append("// TeaVM generated classes").newLine();
+            manager.getWriter().append("// TeaVM generated classes").newLine();
         }
     }
 }

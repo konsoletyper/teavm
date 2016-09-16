@@ -18,7 +18,7 @@ package org.teavm.jso.impl;
 import java.io.IOException;
 import java.util.Map;
 import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.backend.javascript.rendering.RenderingContext;
+import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.jso.impl.JSDependencyListener.ExposedClass;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -41,7 +41,7 @@ class JSAliasRenderer implements RendererListener {
     }
 
     @Override
-    public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
+    public void begin(RenderingManager context, BuildTarget buildTarget) throws IOException {
         writer = context.getWriter();
         classSource = context.getClassSource();
     }

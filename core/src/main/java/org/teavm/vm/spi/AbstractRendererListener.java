@@ -16,16 +16,12 @@
 package org.teavm.vm.spi;
 
 import java.io.IOException;
-import org.teavm.backend.javascript.rendering.RenderingContext;
+import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.vm.BuildTarget;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class AbstractRendererListener implements RendererListener {
     @Override
-    public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
+    public void begin(RenderingManager manager, BuildTarget buildTarget) throws IOException {
     }
 
     @Override

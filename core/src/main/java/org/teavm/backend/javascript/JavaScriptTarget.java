@@ -37,11 +37,13 @@ import org.teavm.backend.javascript.codegen.MinifyingAliasProvider;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
 import org.teavm.backend.javascript.rendering.Renderer;
+import org.teavm.backend.javascript.rendering.RenderingContext;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.debugging.information.DebugInformationEmitter;
+import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyListener;
@@ -225,8 +227,14 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         builder.setMinified(minifying);
         SourceWriter sourceWriter = builder.build(writer);
 
-        Renderer renderer = new Renderer(sourceWriter, classes, controller.getClassLoader(), controller.getServices(),
-                asyncMethods, asyncFamilyMethods, controller.getDiagnostics());
+        DebugInformationEmitter debugEmitterToUse = debugEmitter;
+        if (debugEmitterToUse == null) {
+            debugEmitterToUse = new DummyDebugInformationEmitter();
+        }
+        RenderingContext renderingContext = new RenderingContext(debugEmitterToUse, classes,
+                controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming);
+        Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
+                controller.getDiagnostics(), renderingContext);
         renderer.setProperties(controller.getProperties());
         renderer.setMinifying(minifying);
         if (debugEmitter != null) {
@@ -245,7 +253,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         }
         renderer.getDebugEmitter().setLocationProvider(sourceWriter);
         for (Map.Entry<MethodReference, Injector> entry : methodInjectors.entrySet()) {
-            renderer.addInjector(entry.getKey(), entry.getValue());
+            renderingContext.addInjector(entry.getKey(), entry.getValue());
         }
         try {
             for (RendererListener listener : rendererListeners) {

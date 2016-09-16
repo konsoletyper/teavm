@@ -34,7 +34,7 @@ import java.util.Properties;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
 import org.teavm.backend.javascript.JavaScriptTarget;
-import org.teavm.backend.javascript.rendering.RenderingContext;
+import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.cache.DiskCachedClassHolderSource;
 import org.teavm.cache.DiskProgramCache;
@@ -525,11 +525,11 @@ public class TeaVMTool implements BaseTeaVMTool {
 
     private AbstractRendererListener runtimeInjector = new AbstractRendererListener() {
         @Override
-        public void begin(RenderingContext context, BuildTarget buildTarget) throws IOException {
+        public void begin(RenderingManager manager, BuildTarget buildTarget) throws IOException {
             StringWriter writer = new StringWriter();
             resourceToWriter("org/teavm/backend/javascript/runtime.js", writer);
             writer.close();
-            context.getWriter().append(writer.toString()).newLine();
+            manager.getWriter().append(writer.toString()).newLine();
         }
     };
 

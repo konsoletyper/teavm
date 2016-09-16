@@ -13,31 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.javascript.spi;
+package org.teavm.backend.javascript.rendering;
 
 import java.util.Properties;
+import org.teavm.backend.javascript.codegen.NamingStrategy;
+import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.common.ServiceRepository;
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ListableClassReaderSource;
-import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 
-public interface GeneratorContext extends ServiceRepository {
-    String getParameterName(int index);
+public interface RenderingManager extends ServiceRepository {
+    NamingStrategy getNaming();
+
+    SourceWriter getWriter();
+
+    boolean isMinifying();
 
     ListableClassReaderSource getClassSource();
 
     ClassLoader getClassLoader();
 
     Properties getProperties();
-
-    boolean isAsync();
-
-    boolean isAsync(MethodReference method);
-
-    boolean isAsyncFamily(MethodReference method);
-
-    Diagnostics getDiagnostics();
-
-    String typeToClassString(ValueType type);
 }
