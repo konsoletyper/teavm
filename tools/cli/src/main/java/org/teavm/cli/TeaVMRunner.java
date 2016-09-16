@@ -80,11 +80,11 @@ public final class TeaVMRunner {
         options.addOption(OptionBuilder
                 .withDescription("Generate debug information")
                 .withLongOpt("debug")
-                .create('D'));
+                .create('g'));
         options.addOption(OptionBuilder
                 .withDescription("Generate source maps")
                 .withLongOpt("sourcemaps")
-                .create('S'));
+                .create('G'));
         options.addOption(OptionBuilder
                 .withDescription("Incremental build")
                 .withLongOpt("incremental")

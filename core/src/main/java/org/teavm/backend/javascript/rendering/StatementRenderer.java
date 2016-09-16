@@ -454,8 +454,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     }
 
     private String generateVariableName(int index) {
-        if (index == 0) {
-            return minifying ? "$t" : "$this";
+        if (index == 0 && minifying) {
+            return "$t";
         }
 
         if (!minifying) {
