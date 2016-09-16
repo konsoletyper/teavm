@@ -147,7 +147,7 @@ public class Renderer implements RenderingManager {
         try {
             for (PostponedFieldInitializer initializer : postponedFieldInitializers) {
                 writer.appendStaticField(initializer.field).ws().append("=").ws()
-                        .append(constantToString(initializer.value)).append(";").softNewLine();
+                        .append(context.constantToString(initializer.value)).append(";").softNewLine();
             }
         } catch (IOException e) {
             throw new RenderingException("IO error", e);
@@ -331,7 +331,7 @@ public class Renderer implements RenderingManager {
                 }
                 FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
                 if (value instanceof String) {
-                    constantToString(value);
+                    context.constantToString(value);
                     postponedFieldInitializers.add(new PostponedFieldInitializer(fieldRef, (String) value));
                     value = null;
                 }

@@ -49,7 +49,6 @@ import org.teavm.model.Phi;
 import org.teavm.model.PrimitiveType;
 import org.teavm.model.Program;
 import org.teavm.model.ReferenceCache;
-import org.teavm.model.TryCatchJoint;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
@@ -122,12 +121,10 @@ public class Parser {
                     debugNames = newDebugNames;
                 }
                 for (Variable definedVar : defExtractor.getDefinedVariables()) {
-                    /*
                     int sourceVar = phiUpdater.getSourceVariable(definedVar.getIndex());
                     if (sourceVar >= 0) {
                         varMap.put(sourceVar, definedVar.getIndex());
                     }
-                    */
                 }
                 for (Map.Entry<Integer, String> debugName : debugNames.entrySet()) {
                     int receiver = varMap.getOrDefault(debugName.getKey(), -1);
@@ -175,12 +172,10 @@ public class Parser {
 
             for (Phi phi : block.getPhis()) {
                 int receiver = phi.getReceiver().getIndex();
-                /*
                 int sourceVar = phiUpdater.getSourceVariable(receiver);
                 if (sourceVar >= 0) {
                     varMap.put(sourceVar, receiver);
                 }
-                */
             }
 
             result[node] = new IntIntOpenHashMap(varMap);
@@ -188,12 +183,10 @@ public class Parser {
             for (Instruction insn : block.getInstructions()) {
                 insn.acceptVisitor(defExtractor);
                 for (Variable definedVar : defExtractor.getDefinedVariables()) {
-                    /*
                     int sourceVar = phiUpdater.getSourceVariable(definedVar.getIndex());
                     if (sourceVar >= 0) {
                         varMap.put(sourceVar, definedVar.getIndex());
                     }
-                    */
                 }
             }
 

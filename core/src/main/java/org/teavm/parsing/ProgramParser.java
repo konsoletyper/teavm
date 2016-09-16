@@ -1682,13 +1682,21 @@ public class ProgramParser {
                     break;
                 }
                 case Opcodes.GETSTATIC: {
-                    ValueType type = referenceCache.parseValueTypeCached(desc);
-                    int value = desc.equals("D") || desc.equals("J") ? pushDouble() : pushSingle();
-                    GetFieldInstruction insn = new GetFieldInstruction();
-                    insn.setField(referenceCache.getCached(new FieldReference(ownerCls, name)));
-                    insn.setFieldType(type);
-                    insn.setReceiver(getVariable(value));
-                    addInstruction(insn);
+                    ValueType primitiveClassLiteral = getPrimitiveTypeField(owner + "." + name);
+                    if (primitiveClassLiteral != null) {
+                        ClassConstantInstruction insn = new ClassConstantInstruction();
+                        insn.setConstant(primitiveClassLiteral);
+                        insn.setReceiver(getVariable(pushSingle()));
+                        addInstruction(insn);
+                    } else {
+                        ValueType type = referenceCache.parseValueTypeCached(desc);
+                        int value = desc.equals("D") || desc.equals("J") ? pushDouble() : pushSingle();
+                        GetFieldInstruction insn = new GetFieldInstruction();
+                        insn.setField(referenceCache.getCached(new FieldReference(ownerCls, name)));
+                        insn.setFieldType(type);
+                        insn.setReceiver(getVariable(value));
+                        addInstruction(insn);
+                    }
                     break;
                 }
                 case Opcodes.PUTSTATIC: {
@@ -1761,6 +1769,31 @@ public class ProgramParser {
                         MethodDescriptor.parseSignature(handle.getDesc()));
             default:
                 throw new IllegalArgumentException("Unknown handle tag: " + handle.getTag());
+        }
+    }
+
+    private static ValueType getPrimitiveTypeField(String fieldName) {
+        switch (fieldName) {
+            case "java/lang/Boolean.TYPE":
+                return ValueType.BOOLEAN;
+            case "java/lang/Byte.TYPE":
+                return ValueType.BYTE;
+            case "java/lang/Short.TYPE":
+                return ValueType.SHORT;
+            case "java/lang/Character.TYPE":
+                return ValueType.CHARACTER;
+            case "java/lang/Integer.TYPE":
+                return ValueType.INTEGER;
+            case "java/lang/Long.TYPE":
+                return ValueType.LONG;
+            case "java/lang/Float.TYPE":
+                return ValueType.FLOAT;
+            case "java/lang/Double.TYPE":
+                return ValueType.DOUBLE;
+            case "java/lang/Void.TYPE":
+                return ValueType.VOID;
+            default:
+                return null;
         }
     }
 }
