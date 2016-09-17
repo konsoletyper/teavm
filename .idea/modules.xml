@@ -2,6 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
+      <module fileurl="file://$PROJECT_DIR$/all-deps/all-deps.iml" filepath="$PROJECT_DIR$/all-deps/all-deps.iml" />
       <module fileurl="file://$PROJECT_DIR$/teavm.iml" filepath="$PROJECT_DIR$/teavm.iml" />
       <module fileurl="file://$PROJECT_DIR$/tools/chrome-rdp/teavm-chrome-rdp.iml" filepath="$PROJECT_DIR$/tools/chrome-rdp/teavm-chrome-rdp.iml" />
       <module fileurl="file://$PROJECT_DIR$/classlib/teavm-classlib.iml" filepath="$PROJECT_DIR$/classlib/teavm-classlib.iml" />

@@ -163,7 +163,7 @@ public final class TeaVMRunner {
         if (commandLine.hasOption("mainpage")) {
             tool.setMainPageIncluded(true);
         }
-        if (commandLine.hasOption('D')) {
+        if (commandLine.hasOption('g')) {
             tool.setDebugInformationGenerated(true);
         }
 
