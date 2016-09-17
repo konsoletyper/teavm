@@ -1049,7 +1049,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         String result = localVariableNames[local.getIndex()];
         if (result == null) {
             if (local.getName() != null) {
-                result = local.getName();
+                result = "_" + local.getName();
             } else {
                 result = "localVar" + local.getIndex();
             }

@@ -83,7 +83,7 @@ public class WasmCRenderer {
 
         for (WasmFunction function : module.getFunctions().values()) {
             if (function.getExportName() != null && function.getExportName().equals("main")) {
-                line(function.getName() + "(0);");
+                line(function.getName() + "(1);");
             }
         }
 

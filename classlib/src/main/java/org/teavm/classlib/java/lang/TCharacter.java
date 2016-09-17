@@ -16,6 +16,8 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
+import org.teavm.interop.DelegateTo;
+import org.teavm.interop.Import;
 import org.teavm.platform.Platform;
 import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.StringResource;
@@ -231,17 +233,33 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return (char) toLowerCase((int) ch);
     }
 
+    @DelegateTo("toLowerCaseLowLevel")
     public static int toLowerCase(int ch) {
         return Platform.stringFromCharCode(ch).toLowerCase().charCodeAt(0);
     }
+
+    private static int toLowerCaseLowLevel(int codePoint) {
+        return toLowerCaseSystem(codePoint);
+    }
+
+    @Import(module = "runtime", name = "towlower")
+    private static native int toLowerCaseSystem(int codePoint);
 
     public static char toUpperCase(char ch) {
         return (char) toUpperCase((int) ch);
     }
 
+    @DelegateTo("toUpperCaseLowLevel")
     public static int toUpperCase(int codePoint) {
         return Platform.stringFromCharCode(codePoint).toUpperCase().charCodeAt(0);
     }
+
+    private static int toUpperCaseLowLevel(int codePoint) {
+        return toUpperCaseSystem(codePoint);
+    }
+
+    @Import(module = "runtime", name = "towupper")
+    private static native int toUpperCaseSystem(int codePoint);
 
     public static int digit(char ch, int radix) {
         return digit((int) ch, radix);
