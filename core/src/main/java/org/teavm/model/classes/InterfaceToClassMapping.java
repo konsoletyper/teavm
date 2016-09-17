@@ -84,7 +84,7 @@ public class InterfaceToClassMapping {
             }
         }
 
-        return a;
+        return firstPath.get(0);
     }
 
     private static List<String> pathToRoot(ClassReaderSource classSource, String className) {
