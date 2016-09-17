@@ -24,4 +24,8 @@
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-runtime:1.0.3" level="project" />
     <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.0.3" level="project" />
   </component>
+  <component name="teavm">
+    <option name="mainClass" value="" />
+    <option name="targetDirectory" value="" />
+  </component>
 </module>

@@ -10,11 +10,15 @@
     <orderEntry type="module-library" exported="">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../jps-plugin/lib/teavm-all.jar!/" />
+          <root url="jar://$MODULE_DIR$/lib/teavm-all.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
       </library>
     </orderEntry>
+  </component>
+  <component name="teavm">
+    <option name="mainClass" value="" />
+    <option name="targetDirectory" value="" />
   </component>
 </module>

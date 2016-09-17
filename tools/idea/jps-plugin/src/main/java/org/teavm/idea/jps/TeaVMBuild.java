@@ -451,6 +451,8 @@ class TeaVMBuild {
                 return "Resolving method invocations";
             case DECOMPILATION:
                 return "Compiling classes";
+            case OPTIMIZATION:
+                return "Optimizing code";
             case RENDERING:
                 return "Building JS file";
             default:
