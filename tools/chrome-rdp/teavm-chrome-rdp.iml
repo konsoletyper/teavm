@@ -4,6 +4,7 @@
     <facet type="Osmorc" name="OSGi">
       <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="teavm-chrome-rdp-1.0.0-SNAPSHOT.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="" bundleSymbolicName="teavm-chrome-rdp" bundleVersion="1.0.0.SNAPSHOT" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
         <additionalProperties>
+          <property key="Bundle-Description" value="TeaVM debugging backend for Google Chrome RDP" />
           <property key="Export-Package" value="org.teavm.chromerdp" />
           <property key="Bundle-Name" value="TeaVM debugging backend for Google Chrome RDP" />
         </additionalProperties>

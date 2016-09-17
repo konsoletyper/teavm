@@ -4,6 +4,7 @@
     <facet type="Osmorc" name="OSGi">
       <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="teavm-platform-1.0.0-SNAPSHOT.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="" bundleSymbolicName="teavm-platform" bundleVersion="1.0.0.SNAPSHOT" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
         <additionalProperties>
+          <property key="Bundle-Description" value="A low-level classes that help to implement Java class library" />
           <property key="Export-Package" value="org.teavm.platform.*" />
           <property key="Bundle-Name" value="TeaVM platform" />
           <property key="Include-Resource" value="META-INF/services/org.teavm.vm.spi.TeaVMPlugin=$MODULE_DIR$/src/main/resources/META-INF/services/org.teavm.vm.spi.TeaVMPlugin" />

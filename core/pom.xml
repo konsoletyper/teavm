@@ -29,6 +29,10 @@
   <name>TeaVM core</name>
   <description>TeaVM compiler and SPI</description>
 
+  <properties>
+    <kotlin.version>1.0.3</kotlin.version>
+  </properties>
+
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
@@ -63,6 +67,11 @@
       <artifactId>objenesis</artifactId>
       <version>2.4</version>
     </dependency>
+    <dependency>
+      <groupId>org.jetbrains.kotlin</groupId>
+      <artifactId>kotlin-stdlib</artifactId>
+      <version>${kotlin.version}</version>
+    </dependency>
   </dependencies>
 
   <build>
@@ -92,6 +101,20 @@
             <Bundle-SymbolicName>teavm-core</Bundle-SymbolicName>
           </instructions>
         </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.jetbrains.kotlin</groupId>
+        <artifactId>kotlin-maven-plugin</artifactId>
+        <version>${kotlin.version}</version>
+        <executions>
+          <execution>
+            <id>compile</id>
+            <phase>process-sources</phase>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

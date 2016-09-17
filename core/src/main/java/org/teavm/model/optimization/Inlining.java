@@ -241,7 +241,8 @@ public class Inlining {
                 }
 
                 MethodReader invokedMethod = getMethod(classSource, invoke.getMethod());
-                if (invokedMethod.getProgram() == null || invokedMethod.getProgram().basicBlockCount() == 0) {
+                if (invokedMethod == null || invokedMethod.getProgram() == null
+                        || invokedMethod.getProgram().basicBlockCount() == 0) {
                     continue;
                 }
 

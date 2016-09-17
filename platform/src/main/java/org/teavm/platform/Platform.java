@@ -166,4 +166,9 @@ public final class Platform {
     private static RuntimeClass getArrayItemLowLevel(RuntimeClass cls) {
         return cls.itemType;
     }
+
+    @DelegateTo("getNameLowLevel")
+    public static String getName(PlatformClass cls) {
+        return cls.getMetadata().getName();
+    }
 }

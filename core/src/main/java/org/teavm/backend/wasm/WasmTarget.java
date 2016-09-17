@@ -575,6 +575,9 @@ public class WasmTarget implements TeaVMTarget {
             }
 
             ClassReader cls = classes.get(className);
+            if (cls == null) {
+                continue;
+            }
             MethodReader method = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
             if (method == null) {
                 continue;

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2016 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package org.teavm.samples.kotlin
 
-import org.teavm.jso.browser.*
-
 fun main(args : Array<String>) {
-    val document = Window.current().document
-
-    document.getElementById("hello-kotlin").addEventListener("click") { Window.alert("Hello, developer!") }
+    println("Hello from Kotlin")
 }

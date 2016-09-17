@@ -21,14 +21,10 @@ import java.util.Map;
 import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
-import org.teavm.interop.Address;
-import org.teavm.interop.DelegateTo;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.metadata.ClassResource;
 import org.teavm.platform.metadata.ClassScopedMetadataProvider;
-import org.teavm.runtime.RuntimeClass;
-import org.teavm.runtime.RuntimeObject;
 
 public class TClass<T> extends TObject implements TAnnotatedElement {
     TString name;
@@ -67,7 +63,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
     public TString getName() {
         if (name == null) {
-            name = TString.wrap(platformClass.getMetadata().getName());
+            name = TString.wrap(Platform.getName(platformClass));
         }
         return name;
     }
@@ -78,7 +74,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
                 simpleName = getComponentType().getSimpleName().concat(TString.wrap("[]"));
                 return simpleName;
             }
-            String name = platformClass.getMetadata().getName();
+            String name = Platform.getName(platformClass);
             int lastDollar = name.lastIndexOf('$');
             if (lastDollar != -1) {
                 name = name.substring(lastDollar + 1);

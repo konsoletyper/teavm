@@ -613,12 +613,17 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         for (WasmExpression argument : expression.getArguments()) {
             argument.acceptVisitor(this);
         }
+        Integer functionIndex = !expression.isImported()
+                ? functionIndexes.get(expression.getFunctionName())
+                : importedIndexes.get(expression.getFunctionName());
+        if (functionIndex == null) {
+            writer.writeByte(0x0A);
+            return;
+        }
+
         writer.writeByte(!expression.isImported() ? 0x16 : 0x18);
         writer.writeLEB(expression.getArguments().size());
-        writer.writeLEB(!expression.isImported()
-                ? functionIndexes.get(expression.getFunctionName())
-                : importedIndexes.get(expression.getFunctionName()));
-
+        writer.writeLEB(functionIndex);
     }
 
     @Override

@@ -132,9 +132,11 @@ public class WasmClassGenerator {
             String className = ((ValueType.Object) type).getClassName();
             ClassReader cls = classSource.get(className);
 
-            calculateLayout(cls, binaryData);
-            if (binaryData.start >= 0) {
-                binaryData.start = binaryWriter.append(createStructure(binaryData));
+            if (cls != null) {
+                calculateLayout(cls, binaryData);
+                if (binaryData.start >= 0) {
+                    binaryData.start = binaryWriter.append(createStructure(binaryData));
+                }
             }
         } else if (type instanceof ValueType.Array) {
             ValueType itemType = ((ValueType.Array) type).getItemType();

@@ -4,6 +4,7 @@
     <facet type="Osmorc" name="OSGi">
       <configuration manifestGenerationMode="OsmorcControlled" manifestLocation="" jarfileLocation="teavm-core-1.0.0-SNAPSHOT.jar" outputPathType="CompilerOutputPath" bndFileLocation="" bundlorFileLocation="" bundleActivator="" bundleSymbolicName="teavm-core" bundleVersion="1.0.0.SNAPSHOT" ignoreFilePattern="" useProjectDefaultManifestFileLocation="true" alwaysRebuildBundleJAR="false" doNotSynchronizeWithMaven="false">
         <additionalProperties>
+          <property key="Bundle-Description" value="TeaVM compiler and SPI" />
           <property key="Export-Package" value="org.teavm.*" />
           <property key="Bundle-Name" value="TeaVM core" />
           <property key="Include-Resource" value="org/teavm/backend/javascript/runtime.js=$MODULE_DIR$/src/main/resources/org/teavm/backend/javascript/runtime.js" />

@@ -10,7 +10,10 @@
       <module fileurl="file://$PROJECT_DIR$/core/teavm-core.iml" filepath="$PROJECT_DIR$/core/teavm-core.iml" />
       <module fileurl="file://$PROJECT_DIR$/extras-slf4j/teavm-extras-slf4j.iml" filepath="$PROJECT_DIR$/extras-slf4j/teavm-extras-slf4j.iml" />
       <module fileurl="file://$PROJECT_DIR$/html4j/teavm-html4j.iml" filepath="$PROJECT_DIR$/html4j/teavm-html4j.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tools/idea/teavm-idea-plugin.iml" filepath="$PROJECT_DIR$/tools/idea/teavm-idea-plugin.iml" />
       <module fileurl="file://$PROJECT_DIR$/interop/core/teavm-interop.iml" filepath="$PROJECT_DIR$/interop/core/teavm-interop.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tools/idea/jps-common/teavm-jps-common.iml" filepath="$PROJECT_DIR$/tools/idea/jps-common/teavm-jps-common.iml" />
+      <module fileurl="file://$PROJECT_DIR$/tools/idea/jps-plugin/teavm-jps-plugin.iml" filepath="$PROJECT_DIR$/tools/idea/jps-plugin/teavm-jps-plugin.iml" />
       <module fileurl="file://$PROJECT_DIR$/jso/core/teavm-jso.iml" filepath="$PROJECT_DIR$/jso/core/teavm-jso.iml" />
       <module fileurl="file://$PROJECT_DIR$/jso/apis/teavm-jso-apis.iml" filepath="$PROJECT_DIR$/jso/apis/teavm-jso-apis.iml" />
       <module fileurl="file://$PROJECT_DIR$/jso/impl/teavm-jso-impl.iml" filepath="$PROJECT_DIR$/jso/impl/teavm-jso-impl.iml" />

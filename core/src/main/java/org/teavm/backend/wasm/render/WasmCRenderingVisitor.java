@@ -660,12 +660,17 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmCall expression) {
+        WasmFunction function = module.getFunctions().get(expression.getFunctionName());
+        if (function == null) {
+            value = new CExpression("0");
+            return;
+        }
+
         CExpression result = new CExpression();
         WasmType type = requiredType;
 
         StringBuilder sb = new StringBuilder();
         sb.append(expression.getFunctionName()).append('(');
-        WasmFunction function = module.getFunctions().get(expression.getFunctionName());
         translateArguments(expression.getArguments(), function.getParameters(), result, sb);
         sb.append(')');
         result.setText(sb.toString());

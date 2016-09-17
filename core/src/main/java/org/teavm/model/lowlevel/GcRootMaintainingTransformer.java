@@ -185,8 +185,6 @@ public class GcRootMaintainingTransformer {
             clearInvocation.getArguments().add(slotVar);
             clearInvocation.setLocation(callInstruction.getLocation());
             instructionsToAdd.add(clearInvocation);
-
-            ++slot;
         }
 
         instructions.addAll(index, instructionsToAdd);
