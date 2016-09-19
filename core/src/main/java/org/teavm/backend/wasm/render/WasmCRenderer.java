@@ -30,6 +30,7 @@ public class WasmCRenderer {
     String currentFile = "";
     int currentLine = -1;
     boolean lineNumbersEmitted;
+    boolean memoryAccessChecked;
     TextLocation lastReportedLocation;
 
     public boolean isLineNumbersEmitted() {
@@ -38,6 +39,14 @@ public class WasmCRenderer {
 
     public void setLineNumbersEmitted(boolean value) {
         this.lineNumbersEmitted = value;
+    }
+
+    public boolean isMemoryAccessChecked() {
+        return memoryAccessChecked;
+    }
+
+    public void setMemoryAccessChecked(boolean memoryAccessChecked) {
+        this.memoryAccessChecked = memoryAccessChecked;
     }
 
     void indent() {
@@ -141,6 +150,7 @@ public class WasmCRenderer {
     private void renderFunction(WasmFunction function) {
         WasmCRenderingVisitor visitor = new WasmCRenderingVisitor(function.getResult(),
                 function.getLocalVariables().size(), function.getModule());
+        visitor.setMemoryAccessChecked(memoryAccessChecked);
 
         StringBuilder declaration = new StringBuilder();
         renderFunctionModifiers(declaration, function);

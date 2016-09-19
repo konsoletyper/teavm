@@ -71,11 +71,20 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
     private WasmModule module;
     private String[] localVariableNames;
     private Set<String> usedVariableNames = new HashSet<>();
+    private boolean memoryAccessChecked;
 
     WasmCRenderingVisitor(WasmType functionType, int variableCount, WasmModule module) {
         localVariableNames = new String[variableCount];
         this.functionType = functionType;
         this.module = module;
+    }
+
+    public boolean isMemoryAccessChecked() {
+        return memoryAccessChecked;
+    }
+
+    public void setMemoryAccessChecked(boolean memoryAccessChecked) {
+        this.memoryAccessChecked = memoryAccessChecked;
     }
 
     public CExpression getValue() {
@@ -699,8 +708,8 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
         requiredType = WasmType.INT32;
         expression.getSelector().acceptVisitor(this);
-        value = cacheIfNeeded(WasmType.INT32, value, result);
         result.getLines().addAll(value.getLines());
+        value = cacheIfNeeded(WasmType.INT32, value, result);
         sb.append("wasm_table[" + value.getText() + "])(");
         translateArguments(expression.getArguments(), expression.getParameterTypes(), result, sb);
         sb.append(")");
@@ -761,7 +770,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
         requiredType = WasmType.INT32;
         expression.getIndex().acceptVisitor(this);
-        CExpression index = value;
+        CExpression index = checkAddress(value);
         if (type == null) {
             value = index;
             return;
@@ -796,7 +805,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
         requiredType = WasmType.INT32;
         expression.getIndex().acceptVisitor(this);
-        CExpression index = value;
+        CExpression index = checkAddress(value);
         if (type == null) {
             value = index;
             return;
@@ -837,7 +846,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
         requiredType = WasmType.INT32;
         expression.getIndex().acceptVisitor(this);
-        CExpression index = value;
+        CExpression index = checkAddress(value);
         if (type == null) {
             value = index;
             return;
@@ -856,7 +865,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
         requiredType = WasmType.INT32;
         expression.getIndex().acceptVisitor(this);
-        CExpression index = value;
+        CExpression index = checkAddress(value);
         if (type == null) {
             value = index;
             return;
@@ -874,7 +883,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
         requiredType = WasmType.INT32;
         expression.getIndex().acceptVisitor(this);
-        CExpression index = value;
+        CExpression index = checkAddress(value);
 
         requiredType = WasmType.INT32;
         expression.getValue().acceptVisitor(this);
@@ -914,7 +923,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
         requiredType = WasmType.INT32;
         expression.getIndex().acceptVisitor(this);
-        CExpression index = value;
+        CExpression index = checkAddress(value);
 
         requiredType = WasmType.INT64;
         expression.getValue().acceptVisitor(this);
@@ -961,7 +970,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
         requiredType = WasmType.INT32;
         expression.getIndex().acceptVisitor(this);
-        CExpression index = value;
+        CExpression index = checkAddress(value);
 
         requiredType = WasmType.FLOAT32;
         expression.getValue().acceptVisitor(this);
@@ -982,7 +991,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
         requiredType = WasmType.INT32;
         expression.getIndex().acceptVisitor(this);
-        CExpression index = value;
+        CExpression index = checkAddress(value);
 
         requiredType = WasmType.FLOAT64;
         expression.getValue().acceptVisitor(this);
@@ -995,6 +1004,27 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
                 expression.getLocation());
 
         value = result;
+    }
+
+    private CExpression checkAddress(CExpression index) {
+        if (!memoryAccessChecked) {
+            return index;
+        }
+
+        CExpression checked = new CExpression();
+        checked.getLines().addAll(index.getLines());
+        String var;
+        if (!index.isRelocatable()) {
+            var = "tmp_" + temporaryIndex++;
+            checked.addLine("int32_t " + var + " = " + index.getText() + ";");
+        } else {
+            var = index.getText();
+        }
+        checked.addLine("assert(" + var + " < " + module.getMemorySize() * 65536 + ");");
+        checked.setText(var);
+        checked.setRelocatable(index.isRelocatable());
+
+        return checked;
     }
 
     private CLine declareVariable(String name, WasmType type) {

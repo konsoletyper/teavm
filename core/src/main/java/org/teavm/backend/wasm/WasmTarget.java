@@ -375,7 +375,8 @@ public class WasmTarget implements TeaVMTarget {
 
     private void emitC(WasmModule module, BuildTarget buildTarget, String outputName) throws IOException {
         WasmCRenderer renderer = new WasmCRenderer();
-        //renderer.setLineNumbersEmitted(debugging);
+        renderer.setLineNumbersEmitted(Boolean.parseBoolean(System.getProperty("wasm.c.lineNumbers", "false")));
+        renderer.setMemoryAccessChecked(Boolean.parseBoolean(System.getProperty("wasm.c.assertMemory", "false")));
         renderer.render(module);
         try (OutputStream output = buildTarget.createResource(outputName);
                 Writer writer = new OutputStreamWriter(output, "UTF-8")) {
