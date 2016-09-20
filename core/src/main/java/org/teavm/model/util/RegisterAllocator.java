@@ -68,7 +68,7 @@ public class RegisterAllocator {
         }
         int[] categories = getVariableCategories(program, method.getReference());
         String[] names = getVariableNames(program);
-        colorer.colorize(interferenceGraph, colors, categories, names);
+        colorer.colorize(MutableGraphNode.toGraph(interferenceGraph), colors, categories, names);
 
         int maxColor = 0;
         for (int i = 0; i < colors.length; ++i) {

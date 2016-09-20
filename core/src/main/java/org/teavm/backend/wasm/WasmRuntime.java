@@ -246,7 +246,6 @@ public final class WasmRuntime {
     public static Address allocStack(int size) {
         Address result = stack.add(4);
         stack = result.add(size << 2);
-        fillZero(result, size << 2);
         stack.putInt(size);
         return result;
     }

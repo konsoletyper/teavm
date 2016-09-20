@@ -18,16 +18,15 @@ package org.teavm.model.util;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import org.teavm.common.Graph;
 import org.teavm.common.IntegerArray;
-import org.teavm.common.MutableGraphEdge;
-import org.teavm.common.MutableGraphNode;
 
-class GraphColorer {
-    public void colorize(List<MutableGraphNode> graph, int[] colors) {
+public class GraphColorer {
+    public void colorize(Graph graph, int[] colors) {
         colorize(graph, colors, new int[graph.size()], new String[graph.size()]);
     }
 
-    public void colorize(List<MutableGraphNode> graph, int[] colors, int[] categories, String[] names) {
+    public void colorize(Graph graph, int[] colors, int[] categories, String[] names) {
         IntegerArray colorCategories = new IntegerArray(graph.size());
         List<String> colorNames = new ArrayList<>();
         for (int i = 0; i < colors.length; ++i) {
@@ -51,8 +50,7 @@ class GraphColorer {
             }
             usedColors.clear();
             usedColors.set(0);
-            for (MutableGraphEdge edge : graph.get(v).getEdges()) {
-                int succ = edge.getSecond().getTag();
+            for (int succ : graph.outgoingEdges(v)) {
                 if (colors[succ] >= 0) {
                     usedColors.set(colors[succ]);
                 }
@@ -82,7 +80,7 @@ class GraphColorer {
         }
     }
 
-    private int[] getOrdering(List<MutableGraphNode> graph) {
+    private int[] getOrdering(Graph graph) {
         boolean[] visited = new boolean[graph.size()];
         int[] ordering = new int[graph.size()];
         int index = 0;
@@ -104,8 +102,7 @@ class GraphColorer {
                 }
                 visited[v] = true;
                 ordering[index++] = v;
-                for (MutableGraphEdge edge : graph.get(v).getEdges()) {
-                    int succ = edge.getSecond().getTag();
+                for (int succ : graph.outgoingEdges(v)) {
                     if (visited[succ]) {
                         continue;
                     }

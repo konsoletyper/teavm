@@ -15,10 +15,6 @@
  */
 package org.teavm.common;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface Graph {
     int size();
 
