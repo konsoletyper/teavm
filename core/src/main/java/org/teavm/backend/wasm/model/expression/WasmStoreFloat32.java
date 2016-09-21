@@ -17,7 +17,7 @@ package org.teavm.backend.wasm.model.expression;
 
 import java.util.Objects;
 
-public class WasmStoreFloat32 extends WasmExpression {
+public class WasmStoreFloat32 extends WasmExpression implements WasmMemoryAccess {
     private int alignment;
     private WasmExpression index;
     private WasmExpression value;
@@ -38,10 +38,12 @@ public class WasmStoreFloat32 extends WasmExpression {
         this.alignment = alignment;
     }
 
+    @Override
     public WasmExpression getIndex() {
         return index;
     }
 
+    @Override
     public void setIndex(WasmExpression index) {
         Objects.requireNonNull(index);
         this.index = index;
