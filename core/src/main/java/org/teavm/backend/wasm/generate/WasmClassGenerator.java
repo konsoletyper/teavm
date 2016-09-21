@@ -259,7 +259,7 @@ public class WasmClassGenerator {
                 return true;
             }
             if (cls.getName().equals(Address.class.getName())) {
-                return true;
+                return false;
             }
             while (cls != null) {
                 if (cls.getName().equals(Structure.class.getName()) || cls.getName().equals(Function.class.getName())) {
