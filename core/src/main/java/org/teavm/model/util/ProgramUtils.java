@@ -78,14 +78,20 @@ public final class ProgramUtils {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             BasicBlock blockCopy = copy.basicBlockAt(i);
-            if (block.getExceptionVariable() != null) {
-                blockCopy.setExceptionVariable(copy.variableAt(block.getExceptionVariable().getIndex()));
-            }
-            blockCopy.getInstructions().addAll(copyInstructions(block, 0, block.instructionCount(), copy));
-            blockCopy.getPhis().addAll(copyPhis(block, copy));
-            blockCopy.getTryCatchBlocks().addAll(copyTryCatches(block, copy));
+            copyBasicBlock(block, blockCopy);
         }
         return copy;
+    }
+
+    public static void copyBasicBlock(BasicBlockReader block, BasicBlock target) {
+        Program targetProgram = target.getProgram();
+
+        if (block.getExceptionVariable() != null) {
+            target.setExceptionVariable(targetProgram.variableAt(block.getExceptionVariable().getIndex()));
+        }
+        target.getInstructions().addAll(copyInstructions(block, 0, block.instructionCount(), targetProgram));
+        target.getPhis().addAll(copyPhis(block, targetProgram));
+        target.getTryCatchBlocks().addAll(copyTryCatches(block, targetProgram));
     }
 
     public static List<Instruction> copyInstructions(BasicBlockReader block, int from, int to, Program target) {

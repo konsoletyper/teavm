@@ -15,17 +15,16 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.java.io.TConsole;
 import org.teavm.classlib.java.io.TInputStream;
 import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.lang.reflect.TArray;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
-import org.teavm.interop.NoGC;
-import org.teavm.interop.Structure;
+import org.teavm.interop.Unmanaged;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
@@ -81,7 +80,7 @@ public final class TSystem extends TObject {
     @DelegateTo("doArrayCopyLowLevel")
     private static native void doArrayCopy(Object src, int srcPos, Object dest, int destPos, int length);
 
-    @NoGC
+    @Unmanaged
     static void doArrayCopyLowLevel(RuntimeArray src, int srcPos, RuntimeArray dest, int destPos, int length) {
         RuntimeClass type = RuntimeClass.getClass(src);
         int itemSize = type.itemType.size;
@@ -99,7 +98,7 @@ public final class TSystem extends TObject {
     }
 
     @GeneratedBy(SystemNativeGenerator.class)
-    @DelegateTo(("currentTimeMillisLowLevel"))
+    @DelegateTo("currentTimeMillisLowLevel")
     public static native long currentTimeMillis();
 
     private static long currentTimeMillisLowLevel() {

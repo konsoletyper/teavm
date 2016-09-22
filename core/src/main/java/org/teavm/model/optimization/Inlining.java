@@ -29,8 +29,6 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
-import org.teavm.model.TryCatchBlock;
-import org.teavm.model.TryCatchJoint;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BranchingInstruction;
@@ -42,7 +40,6 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.util.BasicBlockMapper;
-import org.teavm.model.util.InstructionCopyReader;
 import org.teavm.model.util.InstructionTransitionExtractor;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ProgramUtils;
@@ -82,7 +79,7 @@ public class Inlining {
         List<Instruction> instructionsToMove = new ArrayList<>(movedInstructions);
         movedInstructions.clear();
         splitBlock.getInstructions().addAll(instructionsToMove);
-        copyTryCatchBlocks(block, splitBlock);
+        splitBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
 
         block.getInstructions().remove(block.getInstructions().size() - 1);
         if (invoke.getInstance() == null || invoke.getMethod().getName().equals("<init>")) {
@@ -97,7 +94,7 @@ public class Inlining {
         for (int i = 0; i < inlineProgram.basicBlockCount(); ++i) {
             BasicBlock blockToInline = inlineProgram.basicBlockAt(i);
             BasicBlock inlineBlock = program.basicBlockAt(firstInlineBlock.getIndex() + i);
-            copyInlinedBlock(blockToInline, inlineBlock);
+            ProgramUtils.copyBasicBlock(blockToInline, inlineBlock);
         }
 
         BasicBlockMapper blockMapper = new BasicBlockMapper(index -> index + firstInlineBlock.getIndex());
@@ -116,7 +113,7 @@ public class Inlining {
             BasicBlock mappedBlock = program.basicBlockAt(firstInlineBlock.getIndex() + i);
             blockMapper.transform(mappedBlock);
             variableMapper.apply(mappedBlock);
-            copyTryCatchBlocks(block, mappedBlock);
+            mappedBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
             Instruction lastInsn = mappedBlock.getLastInstruction();
             if (lastInsn instanceof ExitInstruction) {
                 ExitInstruction exit = (ExitInstruction) lastInsn;
@@ -163,58 +160,6 @@ public class Inlining {
         }
 
         execPlan(program, planEntry.innerPlan, firstInlineBlock.getIndex());
-    }
-
-    private void copyInlinedBlock(BasicBlock source, BasicBlock target) {
-        if (source.getExceptionVariable() != null) {
-            target.setExceptionVariable(source.getExceptionVariable());
-        }
-
-        InstructionCopyReader insnCopier = new InstructionCopyReader(target.getProgram());
-        for (int i = 0; i < source.instructionCount(); ++i) {
-            source.readInstruction(i, insnCopier);
-            Instruction insn = insnCopier.getCopy();
-            target.getInstructions().add(insn);
-        }
-
-        for (Phi phi : source.getPhis()) {
-            Phi phiCopy = new Phi();
-            phiCopy.setReceiver(phi.getReceiver());
-            for (Incoming incoming : phi.getIncomings()) {
-                Incoming incomingCopy = new Incoming();
-                int sourceIndex = incoming.getSource().getIndex();
-                incomingCopy.setSource(target.getProgram().basicBlockAt(sourceIndex));
-                incomingCopy.setValue(incoming.getValue());
-                phiCopy.getIncomings().add(incomingCopy);
-            }
-            target.getPhis().add(phiCopy);
-        }
-
-        for (TryCatchBlock tryCatch : source.getTryCatchBlocks()) {
-            TryCatchBlock tryCatchCopy = new TryCatchBlock();
-            int handler = tryCatch.getHandler().getIndex();
-            tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
-            tryCatchCopy.setHandler(target.getProgram().basicBlockAt(handler));
-            target.getTryCatchBlocks().add(tryCatchCopy);
-
-            for (TryCatchJoint joint : tryCatch.getJoints()) {
-                TryCatchJoint jointCopy = new TryCatchJoint();
-                jointCopy.setReceiver(joint.getReceiver());
-                jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
-                tryCatchCopy.getJoints().add(joint);
-            }
-        }
-    }
-
-    private void copyTryCatchBlocks(BasicBlock source, BasicBlock target) {
-        List<TryCatchBlock> copiedTryCatches = new ArrayList<>();
-        for (TryCatchBlock tryCatch : source.getTryCatchBlocks()) {
-            TryCatchBlock tryCatchCopy = new TryCatchBlock();
-            tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
-            tryCatchCopy.setHandler(tryCatch.getHandler());
-            copiedTryCatches.add(tryCatchCopy);
-        }
-        target.getTryCatchBlocks().addAll(copiedTryCatches);
     }
 
     private List<PlanEntry> buildPlan(Program program, ClassReaderSource classSource, int depth) {

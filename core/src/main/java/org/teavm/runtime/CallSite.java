@@ -15,31 +15,13 @@
  */
 package org.teavm.runtime;
 
-import org.teavm.interop.Address;
 import org.teavm.interop.StaticInit;
+import org.teavm.interop.Structure;
 import org.teavm.interop.Unmanaged;
 
 @Unmanaged
 @StaticInit
-public final class Mutator {
-    private Mutator() {
-    }
-
-    public static native void allocStack(int size);
-
-    public static native void registerGcRoot(int index, Object object);
-
-    public static native void removeGcRoot(int index);
-
-    public static native void releaseStack(int size);
-
-    public static native Address getStaticGcRoots();
-
-    public static native Address getStackGcRoots();
-
-    public static native Address getNextStackRoots(Address address);
-
-    public static native int getStackRootCount(Address address);
-
-    public static native Address getStackRootPointer(Address address);
+public class CallSite extends Structure {
+    public int handlerCount;
+    public ExceptionHandler firstHandler;
 }

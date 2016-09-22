@@ -16,11 +16,11 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Address;
-import org.teavm.interop.NoGC;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
+import org.teavm.interop.Unmanaged;
 
-@NoGC
+@Unmanaged
 @StaticInit
 public final class GC {
     private GC() {
@@ -93,7 +93,7 @@ public final class GC {
             if (--freeChunks == 0) {
                 return false;
             }
-            currentChunkPointer = currentChunkPointer.toAddress().add(FreeChunkHolder.class, 1).toStructure();
+            currentChunkPointer = Structure.add(FreeChunkHolder.class, currentChunkPointer, 1);
             currentChunk = currentChunkPointer.value;
             currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
         }
@@ -147,8 +147,7 @@ public final class GC {
             object.classReference |= RuntimeObject.GC_MARKED;
 
             long offset = object.toAddress().toLong() - heapAddress().toLong();
-            Region region = regionsAddress().toAddress().add(Region.class, (int) (offset /  regionSize()))
-                    .toStructure();
+            Region region = Structure.add(Region.class, regionsAddress(), (int) (offset /  regionSize()));
             short relativeOffset = (short) (offset % regionSize() + 1);
             if (region.start == 0 || region.start > relativeOffset) {
                 region.start = relativeOffset;
@@ -221,16 +220,14 @@ public final class GC {
 
                 if (!object.toAddress().isLessThan(currentRegionEnd)) {
                     currentRegionIndex = (int) ((object.toAddress().toLong() - heapAddress().toLong()) / regionSize());
-                    Region currentRegion = regionsAddress().toAddress().add(Region.class, currentRegionIndex)
-                            .toStructure();
+                    Region currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
                     if (currentRegion.start == 0) {
                         do {
                             if (++currentRegionIndex == regionsCount) {
                                 object = limit.toStructure();
                                 break loop;
                             }
-                            currentRegion = regionsAddress().toAddress().add(Region.class, currentRegionIndex)
-                                    .toStructure();
+                            currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
                         } while (currentRegion.start == 0);
                     }
                     currentRegionEnd = currentRegion.toAddress().add(regionSize());
@@ -239,7 +236,7 @@ public final class GC {
                 if (lastFreeSpace != null) {
                     lastFreeSpace.size = (int) (object.toAddress().toLong() - lastFreeSpace.toAddress().toLong());
                     freeChunkPtr.value = lastFreeSpace;
-                    freeChunkPtr = freeChunkPtr.toAddress().add(FreeChunkHolder.class, 1).toStructure();
+                    freeChunkPtr = Structure.add(FreeChunkHolder.class, freeChunkPtr, 1);
                     freeChunks++;
                     reclaimedSpace += lastFreeSpace.size;
                     if (maxFreeChunk < lastFreeSpace.size) {
@@ -257,7 +254,7 @@ public final class GC {
             int freeSize = (int) (object.toAddress().toLong() - lastFreeSpace.toAddress().toLong());
             lastFreeSpace.size = freeSize;
             freeChunkPtr.value = lastFreeSpace;
-            freeChunkPtr = freeChunkPtr.toAddress().add(FreeChunkHolder.class, 1).toStructure();
+            freeChunkPtr = Structure.add(FreeChunkHolder.class, freeChunkPtr, 1);
             freeChunks++;
             reclaimedSpace += freeSize;
             if (maxFreeChunk < freeSize) {
@@ -310,7 +307,7 @@ public final class GC {
     }
 
     private static FreeChunkHolder getFreeChunk(int index) {
-        return currentChunkPointer.toAddress().add(FreeChunkHolder.class, index).toStructure();
+        return Structure.add(FreeChunkHolder.class, currentChunkPointer, index);
     }
 
     private static int objectSize(RuntimeObject object) {

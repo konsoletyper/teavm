@@ -20,6 +20,9 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.backend.wasm.model.expression.WasmIntBinary;
+import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.interop.Structure;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -45,6 +48,19 @@ public class StructureIntrinsic implements WasmIntrinsic {
             case "sizeOf": {
                 ValueType.Object type = (ValueType.Object) ((ConstantExpr) invocation.getArguments().get(0)).getValue();
                 return new WasmInt32Constant(classGenerator.getClassSize(type.getClassName()));
+            }
+            case "add": {
+                WasmExpression base = manager.generate(invocation.getArguments().get(1));
+                WasmExpression offset = manager.generate(invocation.getArguments().get(2));
+                Object type = ((ConstantExpr) invocation.getArguments().get(0)).getValue();
+                String className = ((ValueType.Object) type).getClassName();
+                int size = classGenerator.getClassSize(className);
+                int alignment = classGenerator.getClassAlignment(className);
+                size = WasmClassGenerator.align(size, alignment);
+
+                offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL, offset,
+                        new WasmInt32Constant(size));
+                return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, base, offset);
             }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());

@@ -17,11 +17,11 @@ package org.teavm.backend.wasm;
 
 import org.teavm.interop.Address;
 import org.teavm.interop.Import;
-import org.teavm.interop.NoGC;
 import org.teavm.interop.StaticInit;
+import org.teavm.interop.Unmanaged;
 
 @StaticInit
-@NoGC
+@Unmanaged
 public final class WasmRuntime {
     public static Address stack = initStack();
 
@@ -245,7 +245,7 @@ public final class WasmRuntime {
 
     public static Address allocStack(int size) {
         Address result = stack.add(4);
-        stack = result.add(size << 2);
+        stack = result.add((size << 2) + 4);
         stack.putInt(size);
         return result;
     }
@@ -255,7 +255,7 @@ public final class WasmRuntime {
     }
 
     public static Address getNextStackRoots(Address address) {
-        int size = address.getInt() + 1;
+        int size = address.getInt() + 2;
         Address result = address.add(-size * 4);
         if (result == initStack()) {
             result = null;

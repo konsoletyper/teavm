@@ -38,6 +38,7 @@ import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.intrinsics.AddressIntrinsic;
 import org.teavm.backend.wasm.intrinsics.AllocatorIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ClassIntrinsic;
+import org.teavm.backend.wasm.intrinsics.ExceptionHandlingIntrinsic;
 import org.teavm.backend.wasm.intrinsics.FunctionIntrinsic;
 import org.teavm.backend.wasm.intrinsics.GCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformClassIntrinsic;
@@ -107,7 +108,7 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.MutatorIntrinsic;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
-import org.teavm.model.lowlevel.GcRootMaintainingTransformer;
+import org.teavm.model.lowlevel.ShadowStackTransformer;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
@@ -126,7 +127,7 @@ public class WasmTarget implements TeaVMTarget {
     private boolean cEmitted;
     private ClassInitializerEliminator classInitializerEliminator;
     private ClassInitializerTransformer classInitializerTransformer;
-    private GcRootMaintainingTransformer gcRootMaintainingTransformer;
+    private ShadowStackTransformer shadowStackTransformer;
     private MethodDescriptor clinitDescriptor = new MethodDescriptor("<clinit>", void.class);
 
     @Override
@@ -134,7 +135,7 @@ public class WasmTarget implements TeaVMTarget {
         this.controller = controller;
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
-        gcRootMaintainingTransformer = new GcRootMaintainingTransformer(controller.getUnprocessedClassSource());
+        shadowStackTransformer = new ShadowStackTransformer(controller.getUnprocessedClassSource());
     }
 
     @Override
@@ -248,7 +249,7 @@ public class WasmTarget implements TeaVMTarget {
 
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
-        gcRootMaintainingTransformer.apply(program, method);
+        shadowStackTransformer.apply(program, method);
     }
 
     private static boolean needsClinitCall(MethodReader method) {
@@ -293,6 +294,7 @@ public class WasmTarget implements TeaVMTarget {
         context.addIntrinsic(gcIntrinsic);
         MutatorIntrinsic mutatorIntrinsic = new MutatorIntrinsic();
         context.addIntrinsic(mutatorIntrinsic);
+        context.addIntrinsic(new ExceptionHandlingIntrinsic());
 
         WasmGenerator generator = new WasmGenerator(decompiler, classes,
                 context, classGenerator);
@@ -326,12 +328,13 @@ public class WasmTarget implements TeaVMTarget {
             initFunction.getBody().add(new WasmCall(WasmMangling.mangleInitializer(className)));
         }
         module.add(initFunction);
-        module.setStartFunction(initFunction);
+        //module.setStartFunction(initFunction);
 
         for (TeaVMEntryPoint entryPoint : controller.getEntryPoints().values()) {
             String mangledName = WasmMangling.mangleMethod(entryPoint.getReference());
             WasmFunction function = module.getFunctions().get(mangledName);
             if (function != null) {
+                function.getBody().add(0, new WasmCall(initFunction.getName()));
                 function.setExportName(entryPoint.getPublicName());
             }
         }

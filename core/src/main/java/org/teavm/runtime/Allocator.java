@@ -16,9 +16,9 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Address;
-import org.teavm.interop.NoGC;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
+import org.teavm.interop.Unmanaged;
 
 @StaticInit
 public final class Allocator {
@@ -47,12 +47,12 @@ public final class Allocator {
         return result;
     }
 
-    @NoGC
+    @Unmanaged
     public static native void fillZero(Address address, int count);
 
-    @NoGC
+    @Unmanaged
     public static native void moveMemoryBlock(Address source, Address target, int count);
 
-    @NoGC
+    @Unmanaged
     public static native boolean isInitialized(Class<?> cls);
 }

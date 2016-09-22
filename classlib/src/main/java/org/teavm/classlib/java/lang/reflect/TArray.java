@@ -15,11 +15,16 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import org.teavm.classlib.java.lang.*;
+import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.classlib.java.lang.TArrayIndexOutOfBoundsException;
+import org.teavm.classlib.java.lang.TClass;
+import org.teavm.classlib.java.lang.TIllegalArgumentException;
+import org.teavm.classlib.java.lang.TNegativeArraySizeException;
+import org.teavm.classlib.java.lang.TNullPointerException;
+import org.teavm.classlib.java.lang.TObject;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.DelegateTo;
-import org.teavm.backend.javascript.spi.GeneratedBy;
-import org.teavm.interop.NoGC;
+import org.teavm.interop.Unmanaged;
 import org.teavm.platform.PlatformClass;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
@@ -61,7 +66,7 @@ public final class TArray extends TObject {
     private static native TObject newInstanceImpl(PlatformClass componentType, int length);
 
     @SuppressWarnings("unused")
-    @NoGC
+    @Unmanaged
     private static RuntimeObject newInstanceLowLevel(RuntimeClass cls, int length) {
         return Allocator.allocateArray(cls.arrayType, length).toStructure();
     }

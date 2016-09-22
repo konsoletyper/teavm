@@ -16,7 +16,7 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Address;
-import org.teavm.interop.NoGC;
+import org.teavm.interop.Unmanaged;
 
 public class RuntimeClass extends RuntimeJavaObject {
     public static final int INITIALIZED = 1;
@@ -32,17 +32,17 @@ public class RuntimeClass extends RuntimeJavaObject {
     public RuntimeClass parent;
     public Address layout;
 
-    @NoGC
+    @Unmanaged
     public static int computeCanary(int size, int tag) {
         return size ^ (tag << 8) ^ (tag >>> 24) ^ 0xAAAAAAAA;
     }
 
-    @NoGC
+    @Unmanaged
     public int computeCanary() {
         return computeCanary(size, tag);
     }
 
-    @NoGC
+    @Unmanaged
     public static RuntimeClass getClass(RuntimeObject object) {
         return Address.fromInt(object.classReference << 3).toStructure();
     }

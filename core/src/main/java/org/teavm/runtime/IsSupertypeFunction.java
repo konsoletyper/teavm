@@ -16,9 +16,9 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Function;
-import org.teavm.interop.NoGC;
+import org.teavm.interop.Unmanaged;
 
 public abstract class IsSupertypeFunction extends Function {
-    @NoGC
+    @Unmanaged
     public abstract boolean apply(RuntimeClass superType);
 }

@@ -30,10 +30,7 @@ import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.common.GraphUtils;
-import org.teavm.interop.NoGC;
 import org.teavm.model.BasicBlock;
-import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReader;
@@ -44,12 +41,10 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
-import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
-import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.GraphColorer;
@@ -60,17 +55,14 @@ import org.teavm.model.util.UsageExtractor;
 import org.teavm.model.util.VariableType;
 import org.teavm.runtime.Mutator;
 
-public class GcRootMaintainingTransformer {
-    private ClassReaderSource classSource;
+public class GCShadowStackContributor {
+    private ManagedMethodRepository managedMethodRepository;
 
-    public GcRootMaintainingTransformer(ClassReaderSource classSource) {
-        this.classSource = classSource;
+    public GCShadowStackContributor(ManagedMethodRepository managedMethodRepository) {
+        this.managedMethodRepository = managedMethodRepository;
     }
 
-    public void apply(Program program, MethodReader method) {
-        if (!requiresGC(method.getReference())) {
-            return;
-        }
+    public int contribute(Program program, MethodReader method) {
         List<IntObjectMap<BitSet>> liveInInformation = findCallSiteLiveIns(program, method);
 
         Graph interferenceGraph = buildInterferenceGraph(liveInInformation, program);
@@ -87,7 +79,7 @@ public class GcRootMaintainingTransformer {
             }
         }
         if (usedColors == 0) {
-            return;
+            return 0;
         }
 
         // If a variable is spilled to stack, then phi which input this variable also spilled to stack
@@ -103,8 +95,8 @@ public class GcRootMaintainingTransformer {
         List<IntObjectMap<int[]>> liveInStores = reduceGcRootStores(program, usedColors, liveInInformation,
                 colors, autoSpilled);
         putLiveInGcRoots(program, liveInStores);
-        addStackAllocation(program, usedColors);
-        addStackRelease(program, usedColors);
+
+        return usedColors;
     }
 
     private void findAutoSpilledPhis(boolean[] spilled, List<Set<Phi>> destinationPhis, int[] inputCount,
@@ -158,7 +150,8 @@ public class GcRootMaintainingTransformer {
                 if (insn instanceof InvokeInstruction || insn instanceof InitClassInstruction
                         || insn instanceof ConstructInstruction || insn instanceof ConstructArrayInstruction
                         || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction) {
-                    if (insn instanceof InvokeInstruction && !requiresGC(((InvokeInstruction) insn).getMethod())) {
+                    if (insn instanceof InvokeInstruction
+                            && !managedMethodRepository.isManaged(((InvokeInstruction) insn).getMethod())) {
                         continue;
                     }
 
@@ -379,86 +372,6 @@ public class GcRootMaintainingTransformer {
         instructions.addAll(index, instructionsToAdd);
     }
 
-    private void addStackAllocation(Program program, int maxDepth) {
-        BasicBlock block = program.basicBlockAt(0);
-        List<Instruction> instructionsToAdd = new ArrayList<>();
-        Variable sizeVariable = program.createVariable();
-
-        IntegerConstantInstruction sizeConstant = new IntegerConstantInstruction();
-        sizeConstant.setReceiver(sizeVariable);
-        sizeConstant.setConstant(maxDepth);
-        instructionsToAdd.add(sizeConstant);
-
-        InvokeInstruction invocation = new InvokeInstruction();
-        invocation.setType(InvocationType.SPECIAL);
-        invocation.setMethod(new MethodReference(Mutator.class, "allocStack", int.class, void.class));
-        invocation.getArguments().add(sizeVariable);
-        instructionsToAdd.add(invocation);
-
-        block.getInstructions().addAll(0, instructionsToAdd);
-    }
-
-    private void addStackRelease(Program program, int maxDepth) {
-        List<BasicBlock> blocks = new ArrayList<>();
-        boolean hasResult = false;
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            Instruction instruction = block.getLastInstruction();
-            if (instruction instanceof ExitInstruction) {
-                blocks.add(block);
-                if (((ExitInstruction) instruction).getValueToReturn() != null) {
-                    hasResult = true;
-                }
-            }
-        }
-
-        BasicBlock exitBlock;
-        if (blocks.size() == 1) {
-            exitBlock = blocks.get(0);
-        } else {
-            exitBlock = program.createBasicBlock();
-            ExitInstruction exit = new ExitInstruction();
-            exitBlock.getInstructions().add(exit);
-
-            if (hasResult) {
-                Phi phi = new Phi();
-                phi.setReceiver(program.createVariable());
-                exitBlock.getPhis().add(phi);
-                exit.setValueToReturn(phi.getReceiver());
-
-                for (BasicBlock block : blocks) {
-                    ExitInstruction oldExit = (ExitInstruction) block.getLastInstruction();
-                    Incoming incoming = new Incoming();
-                    incoming.setSource(block);
-                    incoming.setValue(oldExit.getValueToReturn());
-                    phi.getIncomings().add(incoming);
-
-                    JumpInstruction jumpToExit = new JumpInstruction();
-                    jumpToExit.setTarget(exitBlock);
-                    jumpToExit.setLocation(oldExit.getLocation());
-
-                    block.getInstructions().set(block.getInstructions().size() - 1, jumpToExit);
-                }
-            }
-        }
-
-        List<Instruction> instructionsToAdd = new ArrayList<>();
-        Variable sizeVariable = program.createVariable();
-
-        IntegerConstantInstruction sizeConstant = new IntegerConstantInstruction();
-        sizeConstant.setReceiver(sizeVariable);
-        sizeConstant.setConstant(maxDepth);
-        instructionsToAdd.add(sizeConstant);
-
-        InvokeInstruction invocation = new InvokeInstruction();
-        invocation.setType(InvocationType.SPECIAL);
-        invocation.setMethod(new MethodReference(Mutator.class, "releaseStack", int.class, void.class));
-        invocation.getArguments().add(sizeVariable);
-        instructionsToAdd.add(invocation);
-
-        exitBlock.getInstructions().addAll(exitBlock.getInstructions().size() - 1, instructionsToAdd);
-    }
-
     private boolean isReference(TypeInferer typeInferer, int var) {
         VariableType liveType = typeInferer.typeOf(var);
         switch (liveType) {
@@ -475,17 +388,5 @@ public class GcRootMaintainingTransformer {
             default:
                 return false;
         }
-    }
-
-    private boolean requiresGC(MethodReference methodReference) {
-        ClassReader cls = classSource.get(methodReference.getClassName());
-        if (cls == null) {
-            return true;
-        }
-        if (cls.getAnnotations().get(NoGC.class.getName()) != null) {
-            return false;
-        }
-        MethodReader method = cls.getMethod(methodReference.getDescriptor());
-        return method.getAnnotations().get(NoGC.class.getName()) == null;
     }
 }

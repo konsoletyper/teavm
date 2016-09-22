@@ -13,15 +13,24 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.interop;
+package org.teavm.model.lowlevel;
 
-@Unmanaged
-public class Structure {
-    public final native <T extends Structure> T cast();
+import java.util.ArrayList;
+import java.util.List;
 
-    public final native Address toAddress();
+public class CallSiteDescriptor {
+    private int id;
+    private List<ExceptionHandlerDescriptor> handlers = new ArrayList<>();
 
-    public static native int sizeOf(Class<? extends Structure> type);
+    public CallSiteDescriptor(int id) {
+        this.id = id;
+    }
 
-    public static native <T extends Structure> T add(Class<T> type, T base, int offset);
+    public int getId() {
+        return id;
+    }
+
+    public List<ExceptionHandlerDescriptor> getHandlers() {
+        return handlers;
+    }
 }

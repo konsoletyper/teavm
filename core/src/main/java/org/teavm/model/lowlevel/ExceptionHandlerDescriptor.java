@@ -13,15 +13,18 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.interop;
+package org.teavm.model.lowlevel;
 
-@Unmanaged
-public class Structure {
-    public final native <T extends Structure> T cast();
+public class ExceptionHandlerDescriptor {
+    private int id;
+    private String className;
 
-    public final native Address toAddress();
+    public ExceptionHandlerDescriptor(int id, String className) {
+        this.id = id;
+        this.className = className;
+    }
 
-    public static native int sizeOf(Class<? extends Structure> type);
-
-    public static native <T extends Structure> T add(Class<T> type, T base, int offset);
+    public int getId() {
+        return id;
+    }
 }

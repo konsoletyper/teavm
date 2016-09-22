@@ -16,7 +16,7 @@
 package org.teavm.interop;
 
 @StaticInit
-@NoGC
+@Unmanaged
 public final class Address {
     public native Address add(int offset);
 

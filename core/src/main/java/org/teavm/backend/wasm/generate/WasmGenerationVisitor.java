@@ -113,6 +113,7 @@ import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.runtime.Allocator;
+import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.Mutator;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
@@ -797,6 +798,15 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                     generateRemoveGcRoot(expr.getArguments().get(0));
                     return;
             }
+        } else if (expr.getMethod().getClassName().equals(ExceptionHandling.class.getName())) {
+            switch (expr.getMethod().getName()) {
+                case "registerCallSite":
+                    generateRegisterCallSite(expr.getArguments().get(0));
+                    return;
+                case "getHandlerId":
+                    generateGetHandlerId();
+                    return;
+            }
         }
 
         WasmIntrinsic intrinsic = context.getIntrinsic(expr.getMethod());
@@ -912,6 +922,27 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         result = new WasmStoreInt32(4, new WasmInt32Constant(offset), oldValue, WasmInt32Subtype.INT32);
     }
 
+    private void generateRegisterCallSite(Expr callSiteExpr) {
+        if (stackVariable == null) {
+            throw new IllegalStateException("Call to ExceptionHandling.registerCallSite must be dominated by "
+                    + "Mutator.allocStack");
+        }
+
+        callSiteExpr.acceptVisitor(this);
+        WasmExpression callSite = result;
+
+        result = new WasmStoreInt32(4, new WasmGetLocal(stackVariable), callSite, WasmInt32Subtype.INT32);
+    }
+
+    private void generateGetHandlerId() {
+        if (stackVariable == null) {
+            throw new IllegalStateException("Call to ExceptionHandling.getHandlerId must be dominated by "
+                    + "Mutator.allocStack");
+        }
+
+        result = new WasmLoadInt32(4, new WasmGetLocal(stackVariable), WasmInt32Subtype.INT32);
+    }
+
     private void generateRegisterGcRoot(Expr slotExpr, Expr gcRootExpr) {
         if (stackVariable == null) {
             throw new IllegalStateException("Call to Mutator.registerGcRoot must be dominated by "
@@ -946,9 +977,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private WasmExpression getSlotOffset(WasmExpression slot) {
         if (slot instanceof WasmInt32Constant) {
             int slotConstant = ((WasmInt32Constant) slot).getValue();
-            return new WasmInt32Constant(slotConstant << 2);
+            return new WasmInt32Constant((slotConstant << 2) + 4);
         } else {
-            return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, slot, new WasmInt32Constant(2));
+            slot = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, slot, new WasmInt32Constant(2));
+            slot = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, slot, new WasmInt32Constant(4));
+            return slot;
         }
     }
 
