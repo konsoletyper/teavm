@@ -50,6 +50,7 @@ import org.teavm.model.instructions.SwitchTableEntry;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.runtime.ExceptionHandling;
+import org.teavm.runtime.ShadowStack;
 
 public class ExceptionHandlingShadowStackContributor {
     private ManagedMethodRepository managedMethodRepository;
@@ -194,8 +195,7 @@ public class ExceptionHandlingShadowStackContributor {
         instructions.add(idInsn);
 
         InvokeInstruction registerInsn = new InvokeInstruction();
-        registerInsn.setMethod(new MethodReference(ExceptionHandling.class, "registerCallSite",
-                int.class, void.class));
+        registerInsn.setMethod(new MethodReference(ShadowStack.class, "registerCallSite", int.class, void.class));
         registerInsn.setType(InvocationType.SPECIAL);
         registerInsn.getArguments().add(idVariable);
         instructions.add(registerInsn);
@@ -219,7 +219,7 @@ public class ExceptionHandlingShadowStackContributor {
 
         Variable handlerIdVariable = program.createVariable();
         InvokeInstruction getHandlerIdInsn = new InvokeInstruction();
-        getHandlerIdInsn.setMethod(new MethodReference(ExceptionHandling.class, "getHandlerId", int.class));
+        getHandlerIdInsn.setMethod(new MethodReference(ShadowStack.class, "getExceptionHandlerId", int.class));
         getHandlerIdInsn.setType(InvocationType.SPECIAL);
         getHandlerIdInsn.setReceiver(handlerIdVariable);
         instructions.add(getHandlerIdInsn);

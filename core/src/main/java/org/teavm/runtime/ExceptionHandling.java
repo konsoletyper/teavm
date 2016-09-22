@@ -26,20 +26,6 @@ public final class ExceptionHandling {
     private ExceptionHandling() {
     }
 
-    public static native void registerCallSite(int id);
-
-    public static native int callSiteResult();
-
-    public static native Address getStackTop();
-
-    public static native Address getNextStackFrame(Address stackFrame);
-
-    public static native int getCallSiteId(Address stackFrame);
-
-    public static native void setHandlerId(Address stackFrame, int id);
-
-    public static native int getHandlerId();
-
     public static native CallSite findCallSiteById(int id);
 
     public static void throwException(Throwable exception) {
@@ -47,23 +33,23 @@ public final class ExceptionHandling {
         RuntimeClass exceptionClass = RuntimeClass.getClass(exceptionPtr);
         IsSupertypeFunction isExceptionSupertype = exceptionClass.isSupertypeOf;
 
-        Address stackFrame = getStackTop();
+        Address stackFrame = ShadowStack.getStackTop();
         stackLoop: while (stackFrame != null) {
-            int callSiteId = getCallSiteId(stackFrame);
+            int callSiteId = ShadowStack.getCallSiteId(stackFrame);
             CallSite callSite = findCallSiteById(callSiteId);
             ExceptionHandler handler = callSite.firstHandler;
 
             for (int i = 0; i < callSite.handlerCount; ++i) {
                 if (isExceptionSupertype.apply(handler.exceptionClass)) {
-                    setHandlerId(stackFrame, handler.id);
+                    ShadowStack.setExceptionHandlerId(stackFrame, handler.id);
                     break stackLoop;
                 }
 
                 handler = Structure.add(ExceptionHandler.class, handler, 1);
             }
 
-            setHandlerId(stackFrame, callSiteId - 1);
-            stackFrame = getNextStackFrame(stackFrame);
+            ShadowStack.setExceptionHandlerId(stackFrame, callSiteId - 1);
+            stackFrame = ShadowStack.getNextStackFrame(stackFrame);
         }
     }
 }

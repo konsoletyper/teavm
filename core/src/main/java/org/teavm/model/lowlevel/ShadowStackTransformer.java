@@ -31,7 +31,7 @@ import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
-import org.teavm.runtime.Mutator;
+import org.teavm.runtime.ShadowStack;
 
 public class ShadowStackTransformer {
     private ManagedMethodRepository managedMethodRepository;
@@ -70,7 +70,7 @@ public class ShadowStackTransformer {
 
         InvokeInstruction invocation = new InvokeInstruction();
         invocation.setType(InvocationType.SPECIAL);
-        invocation.setMethod(new MethodReference(Mutator.class, "allocStack", int.class, void.class));
+        invocation.setMethod(new MethodReference(ShadowStack.class, "allocStack", int.class, void.class));
         invocation.getArguments().add(sizeVariable);
         instructionsToAdd.add(invocation);
 
@@ -135,7 +135,7 @@ public class ShadowStackTransformer {
 
         InvokeInstruction invocation = new InvokeInstruction();
         invocation.setType(InvocationType.SPECIAL);
-        invocation.setMethod(new MethodReference(Mutator.class, "releaseStack", int.class, void.class));
+        invocation.setMethod(new MethodReference(ShadowStack.class, "releaseStack", int.class, void.class));
         invocation.getArguments().add(sizeVariable);
         instructionsToAdd.add(invocation);
 

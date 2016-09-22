@@ -16,33 +16,37 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.InvocationExpr;
+import org.teavm.ast.InvocationType;
+import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.model.MethodReference;
-import org.teavm.runtime.ExceptionHandling;
+import org.teavm.runtime.ShadowStack;
 
-public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
+public class ShadowStackIntrinsic implements WasmIntrinsic {
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        if (!methodReference.getClassName().equals(ExceptionHandling.class.getName())) {
+        if (!methodReference.getClassName().equals(ShadowStack.class.getName())) {
             return false;
         }
-
         switch (methodReference.getName()) {
-            case "registerCallSite":
-            case "getHandlerId":
+            case "getStackTop":
+            case "getNextStackFrame":
+            case "getStackRootCount":
+            case "getStackRootPointer":
                 return true;
+            default:
+                return false;
         }
-
-        return false;
     }
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
-        switch (invocation.getMethod().getName()) {
-            case "registerCallSite":
-                break;
-        }
-
-        throw new IllegalArgumentException(invocation.getMethod().toString());
+        InvocationExpr expr = new InvocationExpr();
+        MethodReference method = new MethodReference(WasmRuntime.class.getName(),
+                invocation.getMethod().getDescriptor());
+        expr.setMethod(method);
+        expr.setType(InvocationType.SPECIAL);
+        expr.getArguments().addAll(invocation.getArguments());
+        return manager.generate(expr);
     }
 }

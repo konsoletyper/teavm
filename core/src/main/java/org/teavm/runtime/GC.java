@@ -109,7 +109,7 @@ public final class GC {
     private static void mark() {
         Allocator.fillZero(regionsAddress().toAddress(), regionMaxCount() * Structure.sizeOf(Region.class));
 
-        Address staticRoots = Mutator.getStaticGcRoots();
+        Address staticRoots = Mutator.getStaticGCRoots();
         int staticCount = staticRoots.getInt();
         staticRoots.add(8);
         while (staticCount-- > 0) {
@@ -120,10 +120,10 @@ public final class GC {
             staticRoots = staticRoots.add(Address.sizeOf());
         }
 
-        for (Address stackRoots = Mutator.getStackGcRoots(); stackRoots != null;
-                stackRoots = Mutator.getNextStackRoots(stackRoots)) {
-            int count = Mutator.getStackRootCount(stackRoots);
-            Address stackRootsPtr = Mutator.getStackRootPointer(stackRoots);
+        for (Address stackRoots = ShadowStack.getStackTop(); stackRoots != null;
+             stackRoots = ShadowStack.getNextStackFrame(stackRoots)) {
+            int count = ShadowStack.getStackRootCount(stackRoots);
+            Address stackRootsPtr = ShadowStack.getStackRootPointer(stackRoots);
             while (count-- > 0) {
                 RuntimeObject obj = stackRootsPtr.getAddress().toStructure();
                 mark(obj);

@@ -13,15 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.instructions;
+package org.teavm.backend.wasm.intrinsics;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.teavm.ast.*;
-import org.teavm.ast.InvocationType;
-import org.teavm.backend.wasm.WasmRuntime;
-import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
-import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
+import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.model.MethodReference;
@@ -30,23 +26,6 @@ import org.teavm.runtime.Mutator;
 public class MutatorIntrinsic implements WasmIntrinsic {
     private List<WasmInt32Constant> staticGcRootsExpressions = new ArrayList<>();
 
-    @Override
-    public boolean isApplicable(MethodReference methodReference) {
-        if (!methodReference.getClassName().equals(Mutator.class.getName())) {
-            return false;
-        }
-        switch (methodReference.getName()) {
-            case "getStaticGcRoots":
-            case "getStackGcRoots":
-            case "getNextStackRoots":
-            case "getStackRootCount":
-            case "getStackRootPointer":
-                return true;
-            default:
-                return false;
-        }
-    }
-
     public void setStaticGcRootsAddress(int address) {
         for (WasmInt32Constant constant : staticGcRootsExpressions) {
             constant.setValue(address);
@@ -54,22 +33,27 @@ public class MutatorIntrinsic implements WasmIntrinsic {
     }
 
     @Override
+    public boolean isApplicable(MethodReference methodReference) {
+        if (!methodReference.getClassName().equals(Mutator.class.getName())) {
+            return false;
+        }
+        switch (methodReference.getName()) {
+            case "getStaticGCRoots":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
         switch (invocation.getMethod().getName()) {
-            case "getStaticGcRoots": {
+            case "getStaticGCRoots": {
                 WasmInt32Constant constant = new WasmInt32Constant(0);
                 staticGcRootsExpressions.add(constant);
                 return constant;
             }
-            default: {
-                InvocationExpr expr = new InvocationExpr();
-                MethodReference method = new MethodReference(WasmRuntime.class.getName(),
-                        invocation.getMethod().getDescriptor());
-                expr.setMethod(method);
-                expr.setType(InvocationType.SPECIAL);
-                expr.getArguments().addAll(invocation.getArguments());
-                return manager.generate(expr);
-            }
         }
+        throw new IllegalArgumentException(invocation.getMethod().toString());
     }
 }

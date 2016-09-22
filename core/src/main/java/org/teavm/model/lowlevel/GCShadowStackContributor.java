@@ -53,7 +53,7 @@ import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.TypeInferer;
 import org.teavm.model.util.UsageExtractor;
 import org.teavm.model.util.VariableType;
-import org.teavm.runtime.Mutator;
+import org.teavm.runtime.ShadowStack;
 
 public class GCShadowStackContributor {
     private ManagedMethodRepository managedMethodRepository;
@@ -92,9 +92,9 @@ public class GCShadowStackContributor {
             findAutoSpilledPhis(spilled, destinationPhis, inputCount, autoSpilled, i);
         }
 
-        List<IntObjectMap<int[]>> liveInStores = reduceGcRootStores(program, usedColors, liveInInformation,
+        List<IntObjectMap<int[]>> liveInStores = reduceGCRootStores(program, usedColors, liveInInformation,
                 colors, autoSpilled);
-        putLiveInGcRoots(program, liveInStores);
+        putLiveInGCRoots(program, liveInStores);
 
         return usedColors;
     }
@@ -241,7 +241,7 @@ public class GCShadowStackContributor {
         return inputCount;
     }
 
-    private List<IntObjectMap<int[]>> reduceGcRootStores(Program program, int usedColors,
+    private List<IntObjectMap<int[]>> reduceGCRootStores(Program program, int usedColors,
             List<IntObjectMap<BitSet>> liveInInformation, int[] colors, boolean[] autoSpilled) {
         class Step {
             private final int node;
@@ -322,7 +322,7 @@ public class GCShadowStackContributor {
         return comparison;
     }
 
-    private void putLiveInGcRoots(Program program, List<IntObjectMap<int[]>> updateInformation) {
+    private void putLiveInGCRoots(Program program, List<IntObjectMap<int[]>> updateInformation) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             IntObjectMap<int[]> updatesByIndex = updateInformation.get(i);
@@ -359,11 +359,11 @@ public class GCShadowStackContributor {
             registerInvocation.setType(InvocationType.SPECIAL);
             registerInvocation.getArguments().add(slotVar);
             if (var >= 0) {
-                registerInvocation.setMethod(new MethodReference(Mutator.class, "registerGcRoot", int.class,
+                registerInvocation.setMethod(new MethodReference(ShadowStack.class, "registerGCRoot", int.class,
                         Object.class, void.class));
                 registerInvocation.getArguments().add(program.variableAt(var));
             } else {
-                registerInvocation.setMethod(new MethodReference(Mutator.class, "removeGcRoot", int.class,
+                registerInvocation.setMethod(new MethodReference(ShadowStack.class, "removeGCRoot", int.class,
                         void.class));
             }
             instructionsToAdd.add(registerInvocation);

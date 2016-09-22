@@ -113,10 +113,9 @@ import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.runtime.Allocator;
-import org.teavm.runtime.ExceptionHandling;
-import org.teavm.runtime.Mutator;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
+import org.teavm.runtime.ShadowStack;
 
 class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private static FieldReference tagField = new FieldReference(RuntimeClass.class.getName(), "tag");
@@ -783,7 +782,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(InvocationExpr expr) {
-        if (expr.getMethod().getClassName().equals(Mutator.class.getName())) {
+        if (expr.getMethod().getClassName().equals(ShadowStack.class.getName())) {
             switch (expr.getMethod().getName()) {
                 case "allocStack":
                     generateAllocStack(expr.getArguments().get(0));
@@ -791,19 +790,16 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 case "releaseStack":
                     generateReleaseStack();
                     return;
-                case "registerGcRoot":
+                case "registerGCRoot":
                     generateRegisterGcRoot(expr.getArguments().get(0), expr.getArguments().get(1));
                     return;
-                case "removeGcRoot":
+                case "removeGCRoot":
                     generateRemoveGcRoot(expr.getArguments().get(0));
                     return;
-            }
-        } else if (expr.getMethod().getClassName().equals(ExceptionHandling.class.getName())) {
-            switch (expr.getMethod().getName()) {
                 case "registerCallSite":
                     generateRegisterCallSite(expr.getArguments().get(0));
                     return;
-                case "getHandlerId":
+                case "getExceptionHandlerId":
                     generateGetHandlerId();
                     return;
             }
@@ -896,7 +892,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void generateAllocStack(Expr sizeExpr) {
         if (stackVariable != null) {
-            throw new IllegalStateException("Call to Mutator.allocStack must be done only once");
+            throw new IllegalStateException("Call to ShadowStack.allocStack must be done only once");
         }
         stackVariable = getTemporary(WasmType.INT32);
         stackVariable.setName("__stack__");
@@ -911,7 +907,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void generateReleaseStack() {
         if (stackVariable == null) {
-            throw new IllegalStateException("Call to Mutator.releaseStack must be dominated by "
+            throw new IllegalStateException("Call to ShadowStack.releaseStack must be dominated by "
                     + "Mutator.allocStack");
         }
 
@@ -924,7 +920,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void generateRegisterCallSite(Expr callSiteExpr) {
         if (stackVariable == null) {
-            throw new IllegalStateException("Call to ExceptionHandling.registerCallSite must be dominated by "
+            throw new IllegalStateException("Call to ShadowStack.registerCallSite must be dominated by "
                     + "Mutator.allocStack");
         }
 
@@ -936,7 +932,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void generateGetHandlerId() {
         if (stackVariable == null) {
-            throw new IllegalStateException("Call to ExceptionHandling.getHandlerId must be dominated by "
+            throw new IllegalStateException("Call to ShadowStack.getHandlerId must be dominated by "
                     + "Mutator.allocStack");
         }
 
@@ -945,7 +941,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void generateRegisterGcRoot(Expr slotExpr, Expr gcRootExpr) {
         if (stackVariable == null) {
-            throw new IllegalStateException("Call to Mutator.registerGcRoot must be dominated by "
+            throw new IllegalStateException("Call to ShadowStack.registerGCRoot must be dominated by "
                     + "Mutator.allocStack");
         }
 
@@ -962,7 +958,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void generateRemoveGcRoot(Expr slotExpr) {
         if (stackVariable == null) {
-            throw new IllegalStateException("Call to Mutator.removeGcRoot must be dominated by "
+            throw new IllegalStateException("Call to ShadowStack.removeGCRoot must be dominated by "
                     + "Mutator.allocStack");
         }
 
