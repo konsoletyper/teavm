@@ -21,10 +21,6 @@ import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MutableDirectedGraph implements Graph {
     private List<IntSet> successors = new ArrayList<>();
     private List<IntSet> predecessors = new ArrayList<>();
