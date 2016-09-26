@@ -158,7 +158,7 @@ public class WasmClassGenerator {
             binaryData.data.setAddress(CLASS_ITEM_TYPE, itemBinaryData.start);
             binaryData.data.setInt(CLASS_IS_INSTANCE, functionTable.size());
             binaryData.data.setInt(CLASS_CANARY, RuntimeClass.computeCanary(4, 0));
-            functionTable.add(WasmMangling.mangeIsSupertype(type));
+            functionTable.add(WasmMangling.mangleIsSupertype(type));
             binaryData.start = binaryWriter.append(vtableSize > 0 ? wrapper : binaryData.data);
 
             itemBinaryData.data.setAddress(CLASS_ARRAY_TYPE, binaryData.start);
@@ -170,7 +170,7 @@ public class WasmClassGenerator {
         value.setInt(CLASS_SIZE, size);
         value.setInt(CLASS_FLAGS, RuntimeClass.PRIMITIVE);
         value.setInt(CLASS_IS_INSTANCE, functionTable.size());
-        functionTable.add(WasmMangling.mangeIsSupertype(type));
+        functionTable.add(WasmMangling.mangleIsSupertype(type));
         return value;
     }
 
@@ -205,7 +205,7 @@ public class WasmClassGenerator {
         header.setInt(CLASS_TAG, tag);
         header.setInt(CLASS_CANARY, RuntimeClass.computeCanary(occupiedSize, tag));
         header.setInt(CLASS_IS_INSTANCE, functionTable.size());
-        functionTable.add(WasmMangling.mangeIsSupertype(ValueType.object(name)));
+        functionTable.add(WasmMangling.mangleIsSupertype(ValueType.object(name)));
         header.setAddress(CLASS_PARENT, parentPtr);
 
         if (vtable != null) {

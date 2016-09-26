@@ -43,6 +43,10 @@ public class ShadowStackTransformer {
         gcContributor = new GCShadowStackContributor(managedMethodRepository);
     }
 
+    public List<CallSiteDescriptor> getCallSites() {
+        return callSites;
+    }
+
     public void apply(Program program, MethodReader method) {
         if (!managedMethodRepository.isManaged(method.getReference())) {
             return;

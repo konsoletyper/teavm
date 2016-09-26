@@ -42,6 +42,7 @@ import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
@@ -61,6 +62,7 @@ public class ExceptionHandlingShadowStackContributor {
     private DominatorTree dom;
     private BasicBlock[] variableDefinitionPlaces;
     private Phi[] jointPhis;
+    private boolean hasExceptionHandlers;
 
     public ExceptionHandlingShadowStackContributor(ManagedMethodRepository managedMethodRepository,
             List<CallSiteDescriptor> callSites, MethodReference method, Program program) {
@@ -76,7 +78,6 @@ public class ExceptionHandlingShadowStackContributor {
     }
 
     public boolean contribute() {
-        boolean hasExceptionHandlers = false;
         int[] blockMapping = new int[program.basicBlockCount()];
         for (int i = 0; i < blockMapping.length; ++i) {
             blockMapping[i] = i;
@@ -132,35 +133,47 @@ public class ExceptionHandlingShadowStackContributor {
             Instruction insn = instructions.get(i);
 
             if (isCallInstruction(insn)) {
-                BasicBlock next = program.createBasicBlock();
-                next.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
-                block.getTryCatchBlocks().clear();
+                BasicBlock next;
+                boolean last = false;
+                if (insn instanceof RaiseInstruction) {
+                    InvokeInstruction raise = new InvokeInstruction();
+                    raise.setMethod(new MethodReference(ExceptionHandling.class, "throwException", Throwable.class,
+                            void.class));
+                    raise.setType(InvocationType.SPECIAL);
+                    raise.getArguments().add(((RaiseInstruction) insn).getException());
+                    raise.setLocation(insn.getLocation());
+                    instructions.set(i, raise);
+                    next = null;
+                } else if (i < instructions.size() - 1 && instructions.get(i + 1) instanceof JumpInstruction) {
+                    next = ((JumpInstruction) instructions.get(i + 1)).getTarget();
+                    instructions.remove(i + 1);
+                    last = true;
+                } else {
+                    next = program.createBasicBlock();
+                    next.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
+                    block.getTryCatchBlocks().clear();
 
-                List<Instruction> remainingInstructions = instructions.subList(i + 1, instructions.size());
-                List<Instruction> instructionsToMove = new ArrayList<>(remainingInstructions);
-                remainingInstructions.clear();
-                next.getInstructions().addAll(instructionsToMove);
+                    List<Instruction> remainingInstructions = instructions.subList(i + 1, instructions.size());
+                    List<Instruction> instructionsToMove = new ArrayList<>(remainingInstructions);
+                    remainingInstructions.clear();
+                    next.getInstructions().addAll(instructionsToMove);
+                }
 
                 CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size());
                 callSites.add(callSite);
                 List<Instruction> pre = setLocation(getInstructionsBeforeCallSite(callSite), insn.getLocation());
-                List<Instruction> post = setLocation(
-                        getInstructionsAfterCallSite(block, next, callSite, currentJointSources),
-                        insn.getLocation());
+                List<Instruction> post = getInstructionsAfterCallSite(block, next, callSite, currentJointSources);
+                post = setLocation(post, insn.getLocation());
                 instructions.addAll(instructions.size() - 1, pre);
                 instructions.addAll(post);
+                hasExceptionHandlers = true;
 
+                if (next == null || last) {
+                    break;
+                }
                 block = next;
                 instructions = block.getInstructions();
                 i = 0;
-            } else if (insn instanceof RaiseInstruction) {
-                InvokeInstruction raise = new InvokeInstruction();
-                raise.setMethod(new MethodReference(ExceptionHandling.class, "throwException", Throwable.class,
-                        void.class));
-                raise.setType(InvocationType.SPECIAL);
-                raise.getArguments().add(((RaiseInstruction) insn).getException());
-                raise.setLocation(insn.getLocation());
-                instructions.add(i++, raise);
             }
 
             insn.acceptVisitor(defExtractor);
@@ -177,12 +190,22 @@ public class ExceptionHandlingShadowStackContributor {
 
     private boolean isCallInstruction(Instruction insn) {
         if (insn instanceof InitClassInstruction || insn instanceof ConstructInstruction
-                || insn instanceof ConstructArrayInstruction || insn instanceof CloneArrayInstruction) {
+                || insn instanceof ConstructArrayInstruction || insn instanceof CloneArrayInstruction
+                || insn instanceof RaiseInstruction) {
             return true;
         } else if (insn instanceof InvokeInstruction) {
             return managedMethodRepository.isManaged(((InvokeInstruction) insn).getMethod());
         }
         return false;
+    }
+
+    private List<Instruction> setLocation(List<Instruction> instructions, TextLocation location) {
+        if (location != null) {
+            for (Instruction instruction : instructions) {
+                instruction.setLocation(location);
+            }
+        }
+        return instructions;
     }
 
     private List<Instruction> getInstructionsBeforeCallSite(CallSiteDescriptor callSite) {
@@ -203,15 +226,6 @@ public class ExceptionHandlingShadowStackContributor {
         return instructions;
     }
 
-    private List<Instruction> setLocation(List<Instruction> instructions, TextLocation location) {
-        if (location != null) {
-            for (Instruction instruction : instructions) {
-                instruction.setLocation(location);
-            }
-        }
-        return instructions;
-    }
-
     private List<Instruction> getInstructionsAfterCallSite(BasicBlock block, BasicBlock next,
             CallSiteDescriptor callSite, int[] currentJointSources) {
         Program program = block.getProgram();
@@ -226,11 +240,14 @@ public class ExceptionHandlingShadowStackContributor {
 
         SwitchInstruction switchInsn = new SwitchInstruction();
         switchInsn.setCondition(handlerIdVariable);
-        SwitchTableEntry continueExecutionEntry = new SwitchTableEntry();
-        continueExecutionEntry.setCondition(callSite.getId());
-        continueExecutionEntry.setTarget(next);
-        switchInsn.getEntries().add(continueExecutionEntry);
         instructions.add(switchInsn);
+
+        if (next != null) {
+            SwitchTableEntry continueExecutionEntry = new SwitchTableEntry();
+            continueExecutionEntry.setCondition(callSite.getId());
+            continueExecutionEntry.setTarget(next);
+            switchInsn.getEntries().add(continueExecutionEntry);
+        }
 
         boolean defaultExists = false;
         int nextHandlerId = callSite.getId();

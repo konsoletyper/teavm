@@ -38,6 +38,7 @@ import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.intrinsics.AddressIntrinsic;
 import org.teavm.backend.wasm.intrinsics.AllocatorIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ClassIntrinsic;
+import org.teavm.backend.wasm.intrinsics.ExceptionHandlingIntrinsic;
 import org.teavm.backend.wasm.intrinsics.FunctionIntrinsic;
 import org.teavm.backend.wasm.intrinsics.GCIntrinsic;
 import org.teavm.backend.wasm.intrinsics.MutatorIntrinsic;
@@ -110,6 +111,7 @@ import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
 import org.teavm.runtime.Allocator;
+import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeJavaObject;
@@ -222,6 +224,9 @@ public class WasmTarget implements TeaVMTarget {
 
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class), null).use();
 
+        dependencyChecker.linkMethod(new MethodReference(ExceptionHandling.class, "throwException",
+                Throwable.class, void.class), null).use();
+
         dependencyChecker.linkField(new FieldReference("java.lang.Object", "monitor"), null);
 
         ClassDependency runtimeClassDep = dependencyChecker.linkClass(RuntimeClass.class.getName(), null);
@@ -295,12 +300,16 @@ public class WasmTarget implements TeaVMTarget {
         MutatorIntrinsic mutatorIntrinsic = new MutatorIntrinsic();
         context.addIntrinsic(mutatorIntrinsic);
         context.addIntrinsic(new ShadowStackIntrinsic());
+        ExceptionHandlingIntrinsic exceptionHandlingIntrinsic = new ExceptionHandlingIntrinsic(binaryWriter,
+                classGenerator);
+        context.addIntrinsic(exceptionHandlingIntrinsic);
 
         WasmGenerator generator = new WasmGenerator(decompiler, classes,
                 context, classGenerator);
 
         module.setMemorySize(64);
         generateMethods(classes, context, generator, module);
+        exceptionHandlingIntrinsic.postProcess(shadowStackTransformer.getCallSites());
         generateIsSupertypeFunctions(tagRegistry, module, classGenerator);
         classGenerator.postProcess();
         mutatorIntrinsic.setStaticGcRootsAddress(classGenerator.getStaticGcRootsAddress());
@@ -339,8 +348,10 @@ public class WasmTarget implements TeaVMTarget {
             }
         }
 
-        for (String function : classGenerator.getFunctionTable()) {
-            module.getFunctionTable().add(module.getFunctions().get(function));
+        for (String functionName : classGenerator.getFunctionTable()) {
+            WasmFunction function = module.getFunctions().get(functionName);
+            assert function != null : "Function referenced from function table not found: " + functionName;
+            module.getFunctionTable().add(function);
         }
 
         new UnusedFunctionElimination(module).apply();
@@ -447,7 +458,7 @@ public class WasmTarget implements TeaVMTarget {
     private void generateIsSupertypeFunctions(TagRegistry tagRegistry, WasmModule module,
             WasmClassGenerator classGenerator) {
         for (ValueType type : classGenerator.getRegisteredClasses()) {
-            WasmFunction function = new WasmFunction(WasmMangling.mangeIsSupertype(type));
+            WasmFunction function = new WasmFunction(WasmMangling.mangleIsSupertype(type));
             function.getParameters().add(WasmType.INT32);
             function.setResult(WasmType.INT32);
             module.add(function);
@@ -538,7 +549,7 @@ public class WasmTarget implements TeaVMTarget {
         WasmConditional itemTest = new WasmConditional(itemCondition);
         itemTest.getThenBlock().getBody().add(new WasmInt32Constant(0));
 
-        WasmCall delegateToItem = new WasmCall(WasmMangling.mangeIsSupertype(itemType));
+        WasmCall delegateToItem = new WasmCall(WasmMangling.mangleIsSupertype(itemType));
         delegateToItem.getArguments().add(new WasmGetLocal(subtypeVar));
         itemTest.getElseBlock().getBody().add(delegateToItem);
 

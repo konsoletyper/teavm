@@ -254,21 +254,29 @@ public final class WasmRuntime {
         return stack != initStack() ? stack : null;
     }
 
-    public static Address getNextStackFrame(Address address) {
-        int size = address.getInt() + 2;
-        Address result = address.add(-size * 4);
+    public static Address getNextStackFrame(Address stackFrame) {
+        int size = stackFrame.getInt() + 2;
+        Address result = stackFrame.add(-size * 4);
         if (result == initStack()) {
             result = null;
         }
         return result;
     }
 
-    public static int getStackRootCount(Address address) {
-        return address.getInt();
+    public static int getStackRootCount(Address stackFrame) {
+        return stackFrame.getInt();
     }
 
-    public static Address getStackRootPointer(Address address) {
-        int size = address.getInt();
-        return address.add(-size * 4);
+    public static Address getStackRootPointer(Address stackFrame) {
+        int size = stackFrame.getInt();
+        return stackFrame.add(-size * 4);
+    }
+
+    public static int getCallSiteId(Address stackFrame) {
+        return getStackRootPointer(stackFrame).getInt();
+    }
+
+    public static void setExceptionHandlerId(Address stackFrame, int id) {
+        getStackRootPointer(stackFrame).putInt(id);
     }
 }

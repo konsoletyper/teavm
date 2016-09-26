@@ -27,4 +27,8 @@ public class ExceptionHandlerDescriptor {
     public int getId() {
         return id;
     }
+
+    public String getClassName() {
+        return className;
+    }
 }

@@ -24,7 +24,7 @@ public final class WasmMangling {
     private WasmMangling() {
     }
 
-    public static String mangeIsSupertype(ValueType type) {
+    public static String mangleIsSupertype(ValueType type) {
         return "isSupertype$" + mangleType(type);
     }
 
