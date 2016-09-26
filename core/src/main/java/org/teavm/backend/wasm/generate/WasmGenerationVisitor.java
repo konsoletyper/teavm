@@ -96,6 +96,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
+import org.teavm.backend.wasm.model.expression.WasmMemoryAccess;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -472,34 +473,41 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         WasmExpression address = getAddress(qualified, field, location);
         ValueType type = context.getFieldType(field);
         accept(value);
+
+        WasmMemoryAccess resultExpr;
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
                 case BYTE:
-                    result = new WasmStoreInt32(1, address, result, WasmInt32Subtype.INT8);
+                    resultExpr = new WasmStoreInt32(1, address, result, WasmInt32Subtype.INT8);
                     break;
                 case SHORT:
-                    result = new WasmStoreInt32(2, address, result, WasmInt32Subtype.INT16);
+                    resultExpr = new WasmStoreInt32(2, address, result, WasmInt32Subtype.INT16);
                     break;
                 case CHARACTER:
-                    result = new WasmStoreInt32(2, address, result, WasmInt32Subtype.UINT16);
+                    resultExpr = new WasmStoreInt32(2, address, result, WasmInt32Subtype.UINT16);
                     break;
                 case INTEGER:
-                    result = new WasmStoreInt32(4, address, result, WasmInt32Subtype.INT32);
+                    resultExpr = new WasmStoreInt32(4, address, result, WasmInt32Subtype.INT32);
                     break;
                 case LONG:
-                    result = new WasmStoreInt64(8, address, result, WasmInt64Subtype.INT64);
+                    resultExpr = new WasmStoreInt64(8, address, result, WasmInt64Subtype.INT64);
                     break;
                 case FLOAT:
-                    result = new WasmStoreFloat32(4, address, result);
+                    resultExpr = new WasmStoreFloat32(4, address, result);
                     break;
                 case DOUBLE:
-                    result = new WasmStoreFloat64(8, address, result);
+                    resultExpr = new WasmStoreFloat64(8, address, result);
                     break;
+                default:
+                    throw new AssertionError(type.toString());
             }
         } else {
-            result = new WasmStoreInt32(4, address, result, WasmInt32Subtype.INT32);
+            resultExpr = new WasmStoreInt32(4, address, result, WasmInt32Subtype.INT32);
         }
+
+        resultExpr.setOffset(getOffset(qualified, field));
+        result = (WasmExpression) resultExpr;
         result.setLocation(location);
     }
 
@@ -948,12 +956,18 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         slotExpr.acceptVisitor(this);
         WasmExpression slotOffset = getSlotOffset(result);
         WasmExpression address = new WasmGetLocal(stackVariable);
-        address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, address, slotOffset);
+        if (!(slotOffset instanceof WasmInt32Constant)) {
+            address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, address, slotOffset);
+        }
 
         gcRootExpr.acceptVisitor(this);
         WasmExpression gcRoot = result;
 
-        result = new WasmStoreInt32(4, address, gcRoot, WasmInt32Subtype.INT32);
+        WasmStoreInt32 store = new WasmStoreInt32(4, address, gcRoot, WasmInt32Subtype.INT32);
+        if (slotOffset instanceof WasmInt32Constant) {
+            store.setOffset(((WasmInt32Constant) slotOffset).getValue());
+        }
+        result = store;
     }
 
     private void generateRemoveGcRoot(Expr slotExpr) {
@@ -965,9 +979,15 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         slotExpr.acceptVisitor(this);
         WasmExpression slotOffset = getSlotOffset(result);
         WasmExpression address = new WasmGetLocal(stackVariable);
-        address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, address, slotOffset);
+        if (!(slotOffset instanceof WasmInt32Constant)) {
+            address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, address, slotOffset);
+        }
 
-        result = new WasmStoreInt32(4, address, new WasmInt32Constant(0), WasmInt32Subtype.INT32);
+        WasmStoreInt32 store = new WasmStoreInt32(4, address, new WasmInt32Constant(0), WasmInt32Subtype.INT32);
+        if (slotOffset instanceof WasmInt32Constant) {
+            store.setOffset(((WasmInt32Constant) slotOffset).getValue());
+        }
+        result = store;
     }
 
     private WasmExpression getSlotOffset(WasmExpression slot) {
@@ -1008,56 +1028,59 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         WasmExpression address = getAddress(expr.getQualified(), expr.getField(), expr.getLocation());
 
         ValueType type = context.getFieldType(expr.getField());
+        WasmMemoryAccess resultExpr;
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
                 case BYTE:
-                    result = new WasmLoadInt32(1, address, WasmInt32Subtype.INT8);
+                    resultExpr = new WasmLoadInt32(1, address, WasmInt32Subtype.INT8);
                     break;
                 case SHORT:
-                    result = new WasmLoadInt32(2, address, WasmInt32Subtype.INT16);
+                    resultExpr = new WasmLoadInt32(2, address, WasmInt32Subtype.INT16);
                     break;
                 case CHARACTER:
-                    result = new WasmLoadInt32(2, address, WasmInt32Subtype.UINT16);
+                    resultExpr = new WasmLoadInt32(2, address, WasmInt32Subtype.UINT16);
                     break;
                 case INTEGER:
-                    result = new WasmLoadInt32(4, address, WasmInt32Subtype.INT32);
+                    resultExpr = new WasmLoadInt32(4, address, WasmInt32Subtype.INT32);
                     break;
                 case LONG:
-                    result = new WasmLoadInt64(8, address, WasmInt64Subtype.INT64);
+                    resultExpr = new WasmLoadInt64(8, address, WasmInt64Subtype.INT64);
                     break;
                 case FLOAT:
-                    result = new WasmLoadFloat32(4, address);
+                    resultExpr = new WasmLoadFloat32(4, address);
                     break;
                 case DOUBLE:
-                    result = new WasmLoadFloat64(8, address);
+                    resultExpr = new WasmLoadFloat64(8, address);
                     break;
+                default:
+                    throw new AssertionError(type.toString());
             }
         } else {
-            result = new WasmLoadInt32(4, address, WasmInt32Subtype.INT32);
+            resultExpr = new WasmLoadInt32(4, address, WasmInt32Subtype.INT32);
         }
+
+        resultExpr.setOffset(getOffset(expr.getQualified(), expr.getField()));
+        result = (WasmExpression) resultExpr;
     }
 
     private WasmExpression getAddress(Expr qualified, FieldReference field, TextLocation location) {
-        int offset = classGenerator.getFieldOffset(field);
         if (qualified == null) {
+            int offset = classGenerator.getFieldOffset(field);
             WasmExpression result = new WasmInt32Constant(offset);
             result.setLocation(location);
             return result;
         } else {
             accept(qualified);
-            if (offset != 0) {
-                WasmExpression offsetExpr = new WasmInt32Constant(offset);
-                offsetExpr.setLocation(qualified.getLocation());
-
-                WasmExpression address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                        result, offsetExpr);
-                address.setLocation(location);
-                return address;
-            } else {
-                return result;
-            }
+            return result;
         }
+    }
+
+    private int getOffset(Expr qualified, FieldReference field) {
+        if (qualified == null) {
+            return 0;
+        }
+        return classGenerator.getFieldOffset(field);
     }
 
     @Override

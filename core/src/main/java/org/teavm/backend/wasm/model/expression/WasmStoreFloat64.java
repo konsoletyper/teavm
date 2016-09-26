@@ -21,6 +21,7 @@ public class WasmStoreFloat64 extends WasmExpression implements WasmMemoryAccess
     private int alignment;
     private WasmExpression index;
     private WasmExpression value;
+    private int offset;
 
     public WasmStoreFloat64(int alignment, WasmExpression index, WasmExpression value) {
         Objects.requireNonNull(index);
@@ -36,6 +37,16 @@ public class WasmStoreFloat64 extends WasmExpression implements WasmMemoryAccess
 
     public void setAlignment(int alignment) {
         this.alignment = alignment;
+    }
+
+    @Override
+    public int getOffset() {
+        return offset;
+    }
+
+    @Override
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
 
     @Override

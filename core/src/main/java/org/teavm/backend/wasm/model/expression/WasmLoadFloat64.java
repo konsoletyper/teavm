@@ -20,6 +20,7 @@ import java.util.Objects;
 public class WasmLoadFloat64 extends WasmExpression implements WasmMemoryAccess {
     private int alignment;
     private WasmExpression index;
+    private int offset;
 
     public WasmLoadFloat64(int alignment, WasmExpression index) {
         Objects.requireNonNull(index);
@@ -33,6 +34,16 @@ public class WasmLoadFloat64 extends WasmExpression implements WasmMemoryAccess 
 
     public void setAlignment(int alignment) {
         this.alignment = alignment;
+    }
+
+    @Override
+    public int getOffset() {
+        return offset;
+    }
+
+    @Override
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
 
     @Override

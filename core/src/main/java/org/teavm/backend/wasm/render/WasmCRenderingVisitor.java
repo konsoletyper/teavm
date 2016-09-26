@@ -777,21 +777,22 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         }
 
         result.getLines().addAll(index.getLines());
+        String base = "&wasm_heap[" + index.getText() + " + " + expression.getOffset() + "]";
         switch (expression.getConvertFrom()) {
             case INT8:
-                result.setText("(int32_t) (int8_t) wasm_heap[" + index.getText() + "]");
+                result.setText("(int32_t) (int8_t) " + base.substring(1));
                 break;
             case UINT8:
-                result.setText("(int32_t) (uint8_t) wasm_heap[" + index.getText() + "]");
+                result.setText("(int32_t) (uint8_t) " + base.substring(1));
                 break;
             case INT16:
-                result.setText("(int32_t) *((int16_t *) &wasm_heap[" + index.getText() + "])");
+                result.setText("(int32_t) *((int16_t *) " + base + ")");
                 break;
             case UINT16:
-                result.setText("(int32_t) *((uint16_t *) &wasm_heap[" + index.getText() + "])");
+                result.setText("(int32_t) *((uint16_t *) " + base + ")");
                 break;
             case INT32:
-                result.setText("*((int32_t *) &wasm_heap[" + index.getText() + "])");
+                result.setText("*((int32_t *) " + base + ")");
                 break;
         }
 
@@ -812,27 +813,28 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         }
 
         result.getLines().addAll(index.getLines());
+        String base = "&wasm_heap[" + index.getText() + " + " + expression.getOffset() + "]";
         switch (expression.getConvertFrom()) {
             case INT8:
-                result.setText("(int64_t) (int8_t) wasm_heap[" + index.getText() + "]");
+                result.setText("(int64_t) (int8_t) " + base.substring(1));
                 break;
             case UINT8:
-                result.setText("(int64_t) (uint8_t) wasm_heap[" + index.getText() + "]");
+                result.setText("(int64_t) (uint8_t) " + base.substring(1));
                 break;
             case INT16:
-                result.setText("(int64_t) *((int16_t *) &wasm_heap[" + index.getText() + "])");
+                result.setText("(int64_t) *((int16_t *) " + base + ")");
                 break;
             case UINT16:
-                result.setText("(int64_t) *((uint16_t *) &wasm_heap[" + index.getText() + "])");
+                result.setText("(int64_t) *((uint16_t *) " + base + ")");
                 break;
             case INT32:
-                result.setText("(int64_t) *((int32_t *) &wasm_heap[" + index.getText() + "])");
+                result.setText("(int64_t) *((int32_t *) " + base + ")");
                 break;
             case UINT32:
-                result.setText("(int64_t) *((uint32_t *) &wasm_heap[" + index.getText() + "])");
+                result.setText("(int64_t) *((uint32_t *) " + base + ")");
                 break;
             case INT64:
-                result.setText("*((int64_t *) &wasm_heap[" + index.getText() + "])");
+                result.setText("*((int64_t *) " + base + ")");
                 break;
         }
 
@@ -853,7 +855,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         }
 
         result.getLines().addAll(index.getLines());
-        result.setText("*((float *) &wasm_heap[" + index.getText() + "])");
+        result.setText("*((float *) &wasm_heap[" + index.getText() + " + " + expression.getOffset() + "])");
 
         value = result;
     }
@@ -872,7 +874,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         }
 
         result.getLines().addAll(index.getLines());
-        result.setText("*((double *) &wasm_heap[" + index.getText() + "])");
+        result.setText("*((double *) &wasm_heap[" + index.getText() + " + " + expression.getOffset() + "])");
 
         value = result;
     }
@@ -893,21 +895,22 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().addAll(valueToStore.getLines());
 
         String line;
+        String base = "&wasm_heap[" + index.getText() + " + " + expression.getOffset() + "]";
         switch (expression.getConvertTo()) {
             case INT8:
-                line = "wasm_heap[" + index.getText() + "] = " + valueToStore.getText() + ";";
+                line = base.substring(1) + " = " + valueToStore.getText() + ";";
                 break;
             case UINT8:
-                line = "*((uint8_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                line = "*((uint8_t *) " + base + ") = " + valueToStore.getText() + ";";
                 break;
             case INT16:
-                line = "*((int16_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                line = "*((int16_t *) " + base + ") = " + valueToStore.getText() + ";";
                 break;
             case UINT16:
-                line = "*((uint16_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                line = "*((uint16_t *) " + base + ") = " + valueToStore.getText() + ";";
                 break;
             case INT32:
-                line = "*((int32_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                line = "*((int32_t *) " + base + ") = " + valueToStore.getText() + ";";
                 break;
             default:
                 throw new AssertionError(expression.getConvertTo().toString());
@@ -933,27 +936,28 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().addAll(valueToStore.getLines());
 
         String line;
+        String base = "&wasm_heap[" + index.getText() + " + " + expression.getOffset() + "]";
         switch (expression.getConvertTo()) {
             case INT8:
-                line = "wasm_heap[" + index.getText() + "] = " + valueToStore.getText();
+                line = base.substring(1) + " = " + valueToStore.getText();
                 break;
             case UINT8:
-                line = "*((uint8_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                line = "*((uint8_t *) " + base + ") = " + valueToStore.getText() + ";";
                 break;
             case INT16:
-                line = "*((int16_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                line = "*((int16_t *) " + base + ") = " + valueToStore.getText() + ";";
                 break;
             case UINT16:
-                line = "*((uint16_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                line = "*((uint16_t *) " + base + ") = " + valueToStore.getText() + ";";
                 break;
             case INT32:
-                line = "*((int32_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                line = "*((int32_t *) " + base + ") = " + valueToStore.getText() + ";";
                 break;
             case UINT32:
-                line = "*((uint32_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                line = "*((uint32_t *) " + base + ") = " + valueToStore.getText() + ";";
                 break;
             case INT64:
-                line = "*((int64_t *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";";
+                line = "*((int64_t *) " + base + ") = " + valueToStore.getText() + ";";
                 break;
             default:
                 throw new AssertionError();
@@ -979,8 +983,8 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().addAll(index.getLines());
         result.getLines().addAll(valueToStore.getLines());
 
-        result.addLine("*((float *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";",
-                expression.getLocation());
+        result.addLine("*((float *) &wasm_heap[" + index.getText() + " + " + expression.getOffset() + "]) = "
+                + valueToStore.getText() + ";", expression.getLocation());
 
         value = result;
     }
@@ -1000,8 +1004,8 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         result.getLines().addAll(index.getLines());
         result.getLines().addAll(valueToStore.getLines());
 
-        result.addLine("*((double *) &wasm_heap[" + index.getText() + "]) = " + valueToStore.getText() + ";",
-                expression.getLocation());
+        result.addLine("*((double *) &wasm_heap[" + index.getText() + " + " + expression.getOffset() + "]) = "
+                + valueToStore.getText() + ";", expression.getLocation());
 
         value = result;
     }

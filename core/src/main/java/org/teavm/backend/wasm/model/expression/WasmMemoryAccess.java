@@ -19,4 +19,8 @@ public interface WasmMemoryAccess {
     WasmExpression getIndex();
 
     void setIndex(WasmExpression index);
+
+    int getOffset();
+
+    void setOffset(int offset);
 }

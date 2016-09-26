@@ -669,7 +669,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 break;
         }
         writer.writeByte(alignment(expression.getAlignment()));
-        writer.writeByte(0);
+        writer.writeLEB(expression.getOffset());
     }
 
     @Override
@@ -699,7 +699,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 break;
         }
         writer.writeByte(alignment(expression.getAlignment()));
-        writer.writeByte(0);
+        writer.writeLEB(expression.getOffset());
     }
 
     @Override
@@ -707,7 +707,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getIndex().acceptVisitor(this);
         writer.writeByte(0x2C);
         writer.writeByte(alignment(expression.getAlignment()));
-        writer.writeByte(0);
+        writer.writeLEB(expression.getOffset());
     }
 
     @Override
@@ -715,7 +715,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getIndex().acceptVisitor(this);
         writer.writeByte(0x2D);
         writer.writeByte(alignment(expression.getAlignment()));
-        writer.writeByte(0);
+        writer.writeLEB(expression.getOffset());
     }
 
     @Override
@@ -736,7 +736,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 break;
         }
         writer.writeByte(alignment(expression.getAlignment()));
-        writer.writeByte(0);
+        writer.writeLEB(expression.getOffset());
     }
 
     @Override
@@ -761,7 +761,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 break;
         }
         writer.writeByte(alignment(expression.getAlignment()));
-        writer.writeByte(0);
+        writer.writeLEB(expression.getOffset());
     }
 
     @Override
@@ -770,7 +770,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getValue().acceptVisitor(this);
         writer.writeByte(0x35);
         writer.writeByte(alignment(expression.getAlignment()));
-        writer.writeByte(0);
+        writer.writeLEB(expression.getOffset());
     }
 
     @Override
@@ -779,7 +779,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         expression.getValue().acceptVisitor(this);
         writer.writeByte(0x36);
         writer.writeByte(alignment(expression.getAlignment()));
-        writer.writeByte(0);
+        writer.writeLEB(expression.getOffset());
     }
 
     private int alignment(int value) {

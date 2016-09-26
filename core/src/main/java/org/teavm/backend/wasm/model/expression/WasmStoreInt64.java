@@ -22,6 +22,7 @@ public class WasmStoreInt64 extends WasmExpression implements WasmMemoryAccess {
     private WasmExpression index;
     private WasmExpression value;
     private WasmInt64Subtype convertTo;
+    private int offset;
 
     public WasmStoreInt64(int alignment, WasmExpression index, WasmExpression value,
             WasmInt64Subtype convertTo) {
@@ -40,6 +41,16 @@ public class WasmStoreInt64 extends WasmExpression implements WasmMemoryAccess {
 
     public void setAlignment(int alignment) {
         this.alignment = alignment;
+    }
+
+    @Override
+    public int getOffset() {
+        return offset;
+    }
+
+    @Override
+    public void setOffset(int offset) {
+        this.offset = offset;
     }
 
     @Override
