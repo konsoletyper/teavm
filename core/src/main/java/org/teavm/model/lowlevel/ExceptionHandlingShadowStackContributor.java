@@ -32,6 +32,8 @@ import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchJoint;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.BinaryBranchingCondition;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
@@ -240,7 +242,6 @@ public class ExceptionHandlingShadowStackContributor {
 
         SwitchInstruction switchInsn = new SwitchInstruction();
         switchInsn.setCondition(handlerIdVariable);
-        instructions.add(switchInsn);
 
         if (next != null) {
             SwitchTableEntry continueExecutionEntry = new SwitchTableEntry();
@@ -278,6 +279,24 @@ public class ExceptionHandlingShadowStackContributor {
 
         if (!defaultExists) {
             switchInsn.setDefaultTarget(getDefaultExceptionHandler());
+        }
+
+        if (switchInsn.getEntries().size() == 1) {
+            SwitchTableEntry entry = switchInsn.getEntries().get(0);
+
+            IntegerConstantInstruction singleTestConstant = new IntegerConstantInstruction();
+            singleTestConstant.setConstant(entry.getCondition());
+            singleTestConstant.setReceiver(program.createVariable());
+            instructions.add(singleTestConstant);
+
+            BinaryBranchingInstruction branching = new BinaryBranchingInstruction(BinaryBranchingCondition.EQUAL);
+            branching.setConsequent(entry.getTarget());
+            branching.setAlternative(switchInsn.getDefaultTarget());
+            branching.setFirstOperand(switchInsn.getCondition());
+            branching.setSecondOperand(singleTestConstant.getReceiver());
+            instructions.add(branching);
+        } else {
+            instructions.add(switchInsn);
         }
 
         return instructions;

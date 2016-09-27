@@ -216,6 +216,10 @@ public class WasmTarget implements TeaVMTarget {
                 int.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "getStackRootPointer", Address.class,
                 Address.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "setExceptionHandlerId", Address.class,
+                int.class, void.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(WasmRuntime.class, "getCallSiteId", Address.class,
+                int.class), null).use();
 
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class), null).use();
