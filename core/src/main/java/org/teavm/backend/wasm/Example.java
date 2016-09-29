@@ -37,6 +37,7 @@ public final class Example {
         testArrayCopy();
         testArrayIsObject();
         testIsAssignableFrom();
+        testExceptions();
         testBigInteger();
         testGC();
     }
@@ -184,6 +185,47 @@ public final class Example {
             }
         }
         System.out.println("GC complete");
+    }
+
+    private static void testExceptions() {
+        try {
+            throwsException();
+        } catch (IllegalStateException e) {
+            System.out.println("Caught 1: " + e.getMessage());
+        }
+
+        int x = 0;
+        try {
+            x = 1;
+            doesNotThrow();
+            x = 2;
+            throwsException();
+            x = 3;
+        } catch (IllegalStateException e) {
+            System.out.println("Caught 2: " + e.getMessage());
+            System.out.println("x = " + x);
+        }
+
+        try {
+            throwsWithFinally();
+        } catch (IllegalStateException e) {
+            System.out.println("Caught 3: " + e.getMessage());
+        }
+    }
+
+    private static void doesNotThrow() {
+    }
+
+    private static void throwsWithFinally() {
+        try {
+            throwsException();
+        } finally {
+            System.out.println("Finally reached");
+        }
+    }
+
+    private static void throwsException() {
+        throw new IllegalStateException("exception message");
     }
 
     private static Base instance(int index) {

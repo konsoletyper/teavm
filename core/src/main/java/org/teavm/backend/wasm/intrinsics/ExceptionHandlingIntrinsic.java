@@ -23,6 +23,9 @@ import org.teavm.backend.wasm.generate.CallSiteBinaryGenerator;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.backend.wasm.model.expression.WasmIntBinary;
+import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.model.MethodReference;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.runtime.ExceptionHandling;
@@ -59,6 +62,11 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
         WasmInt32Constant constant = new WasmInt32Constant(0);
         constant.setLocation(invocation.getLocation());
         constants.add(constant);
-        return constant;
+
+        WasmExpression id = manager.generate(invocation.getArguments().get(0));
+        WasmExpression offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL,
+                id, new WasmInt32Constant(3));
+
+        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, constant, offset);
     }
 }

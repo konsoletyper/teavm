@@ -356,6 +356,7 @@ public class GCShadowStackContributor {
             instructionsToAdd.add(slotConstant);
 
             InvokeInstruction registerInvocation = new InvokeInstruction();
+            registerInvocation.setLocation(callInstruction.getLocation());
             registerInvocation.setType(InvocationType.SPECIAL);
             registerInvocation.getArguments().add(slotVar);
             if (var >= 0) {

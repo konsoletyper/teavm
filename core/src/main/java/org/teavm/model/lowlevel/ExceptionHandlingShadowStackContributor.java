@@ -85,9 +85,25 @@ public class ExceptionHandlingShadowStackContributor {
             blockMapping[i] = i;
         }
 
+        List<Phi> allPhis = new ArrayList<>();
         int blockCount = program.basicBlockCount();
         for (int i = 0; i < blockCount; ++i) {
+            allPhis.addAll(program.basicBlockAt(i).getPhis());
+        }
+
+        for (int i = 0; i < blockCount; ++i) {
             BasicBlock block = program.basicBlockAt(i);
+
+            if (block.getExceptionVariable() != null) {
+                InvokeInstruction catchCall = new InvokeInstruction();
+                catchCall.setType(InvocationType.SPECIAL);
+                catchCall.setMethod(new MethodReference(ExceptionHandling.class, "catchException",
+                        Throwable.class));
+                catchCall.setReceiver(block.getExceptionVariable());
+                block.getInstructions().add(0, catchCall);
+                block.setExceptionVariable(null);
+            }
+
             int newIndex = contributeToBasicBlock(block);
             if (newIndex != i) {
                 blockMapping[i] = newIndex;
@@ -95,13 +111,10 @@ public class ExceptionHandlingShadowStackContributor {
             }
         }
 
-        for (int i = 0; i < blockCount; ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            for (Phi phi : block.getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    int mappedSource = blockMapping[incoming.getSource().getIndex()];
-                    incoming.setSource(program.basicBlockAt(mappedSource));
-                }
+        for (Phi phi : allPhis) {
+            for (Incoming incoming : phi.getIncomings()) {
+                int mappedSource = blockMapping[incoming.getSource().getIndex()];
+                incoming.setSource(program.basicBlockAt(mappedSource));
             }
         }
 
@@ -130,6 +143,8 @@ public class ExceptionHandlingShadowStackContributor {
         }
 
         DefinitionExtractor defExtractor = new DefinitionExtractor();
+        List<BasicBlock> blocksToClearHandlers = new ArrayList<>();
+        blocksToClearHandlers.add(block);
 
         for (int i = 0; i < instructions.size(); ++i) {
             Instruction insn = instructions.get(i);
@@ -153,7 +168,7 @@ public class ExceptionHandlingShadowStackContributor {
                 } else {
                     next = program.createBasicBlock();
                     next.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
-                    block.getTryCatchBlocks().clear();
+                    blocksToClearHandlers.add(next);
 
                     List<Instruction> remainingInstructions = instructions.subList(i + 1, instructions.size());
                     List<Instruction> instructionsToMove = new ArrayList<>(remainingInstructions);
@@ -175,7 +190,7 @@ public class ExceptionHandlingShadowStackContributor {
                 }
                 block = next;
                 instructions = block.getInstructions();
-                i = 0;
+                i = -1;
             }
 
             insn.acceptVisitor(defExtractor);
@@ -185,7 +200,9 @@ public class ExceptionHandlingShadowStackContributor {
             }
         }
 
-        block.getTryCatchBlocks().clear();
+        for (BasicBlock blockToClear : blocksToClearHandlers) {
+            blockToClear.getTryCatchBlocks().clear();
+        }
 
         return block.getIndex();
     }
@@ -253,14 +270,14 @@ public class ExceptionHandlingShadowStackContributor {
         boolean defaultExists = false;
         int nextHandlerId = callSite.getId();
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+            ExceptionHandlerDescriptor handler = new ExceptionHandlerDescriptor(++nextHandlerId,
+                    tryCatch.getExceptionType());
+            callSite.getHandlers().add(handler);
+
             if (tryCatch.getExceptionType() == null) {
                 defaultExists = true;
                 switchInsn.setDefaultTarget(tryCatch.getHandler());
             } else {
-                ExceptionHandlerDescriptor handler = new ExceptionHandlerDescriptor(++nextHandlerId,
-                        tryCatch.getExceptionType());
-                callSite.getHandlers().add(handler);
-
                 SwitchTableEntry catchEntry = new SwitchTableEntry();
                 catchEntry.setTarget(tryCatch.getHandler());
                 catchEntry.setCondition(handler.getId());

@@ -231,6 +231,9 @@ public class WasmTarget implements TeaVMTarget {
         dependencyChecker.linkMethod(new MethodReference(ExceptionHandling.class, "throwException",
                 Throwable.class, void.class), null).use();
 
+        dependencyChecker.linkMethod(new MethodReference(ExceptionHandling.class, "catchException",
+                Throwable.class), null).use();
+
         dependencyChecker.linkField(new FieldReference("java.lang.Object", "monitor"), null);
 
         ClassDependency runtimeClassDep = dependencyChecker.linkClass(RuntimeClass.class.getName(), null);
@@ -501,7 +504,7 @@ public class WasmTarget implements TeaVMTarget {
         tagExpression = new WasmLoadInt32(4, tagExpression, WasmInt32Subtype.INT32);
         body.add(new WasmSetLocal(subtypeVar, tagExpression));
 
-        Collections.sort(ranges, Comparator.comparingInt(range -> range.lower));
+        ranges.sort(Comparator.comparingInt(range -> range.lower));
 
         int lower = ranges.get(0).lower;
         int upper = ranges.get(ranges.size() - 1).upper;

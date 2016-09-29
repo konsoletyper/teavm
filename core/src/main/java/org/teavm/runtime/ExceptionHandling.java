@@ -28,7 +28,17 @@ public final class ExceptionHandling {
 
     public static native CallSite findCallSiteById(int id);
 
+    private static Throwable thrownException;
+
+    public static Throwable catchException() {
+        Throwable exception = thrownException;
+        thrownException = null;
+        return exception;
+    }
+
     public static void throwException(Throwable exception) {
+        thrownException = exception;
+
         RuntimeObject exceptionPtr = Address.ofObject(exception).toStructure();
         RuntimeClass exceptionClass = RuntimeClass.getClass(exceptionPtr);
         IsSupertypeFunction isExceptionSupertype = exceptionClass.isSupertypeOf;
@@ -40,7 +50,7 @@ public final class ExceptionHandling {
             ExceptionHandler handler = callSite.firstHandler;
 
             for (int i = 0; i < callSite.handlerCount; ++i) {
-                if (isExceptionSupertype.apply(handler.exceptionClass)) {
+                if (handler.exceptionClass == null || isExceptionSupertype.apply(handler.exceptionClass)) {
                     ShadowStack.setExceptionHandlerId(stackFrame, handler.id);
                     break stackLoop;
                 }

@@ -272,11 +272,16 @@ public final class WasmRuntime {
         return stackFrame.add(-size * 4);
     }
 
+    private static Address getExceptionHandlerPtr(Address stackFrame) {
+        int size = stackFrame.getInt();
+        return stackFrame.add(-size * 4 - 4);
+    }
+
     public static int getCallSiteId(Address stackFrame) {
-        return getStackRootPointer(stackFrame).getInt();
+        return getExceptionHandlerPtr(stackFrame).getInt();
     }
 
     public static void setExceptionHandlerId(Address stackFrame, int id) {
-        getStackRootPointer(stackFrame).putInt(id);
+        getExceptionHandlerPtr(stackFrame).putInt(id);
     }
 }

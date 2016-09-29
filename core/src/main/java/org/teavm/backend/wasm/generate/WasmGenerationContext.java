@@ -42,7 +42,7 @@ public class WasmGenerationContext {
     private WasmStringPool stringPool;
     private Map<MethodReference, ImportedMethod> importedMethods = new HashMap<>();
     private List<WasmIntrinsic> intrinsics = new ArrayList<>();
-    private Map<MethodReference, WasmIntrinsic> intrinsicCache = new HashMap<>();
+    private Map<MethodReference, WasmIntrinsicHolder> intrinsicCache = new HashMap<>();
 
     public WasmGenerationContext(ClassReaderSource classSource, Diagnostics diagnostics,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, WasmStringPool stringPool) {
@@ -58,9 +58,18 @@ public class WasmGenerationContext {
     }
 
     public WasmIntrinsic getIntrinsic(MethodReference method) {
-        return intrinsicCache.computeIfAbsent(method, key -> intrinsics.stream()
+        return intrinsicCache.computeIfAbsent(method, key -> new WasmIntrinsicHolder(intrinsics.stream()
                 .filter(intrinsic -> intrinsic.isApplicable(key))
-                .findFirst().orElse(null));
+                .findFirst().orElse(null)))
+                .value;
+    }
+
+    private static class WasmIntrinsicHolder {
+        WasmIntrinsic value;
+
+        public WasmIntrinsicHolder(WasmIntrinsic value) {
+            this.value = value;
+        }
     }
 
     public ImportedMethod getImportedMethod(MethodReference reference) {
