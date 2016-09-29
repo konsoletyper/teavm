@@ -155,7 +155,7 @@ public class WasmBinaryRenderer {
 
         section.writeLEB(module.getMemorySize());
         section.writeLEB(module.getMemorySize());
-        section.writeByte(0);
+        section.writeByte(1);
 
         writeSection("memory", section.getData());
     }

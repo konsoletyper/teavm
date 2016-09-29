@@ -153,29 +153,6 @@ public class TypeInferer {
         }
     }
 
-    VariableType convert(ArrayElementType type) {
-        switch (type) {
-            case BYTE:
-                return VariableType.BYTE_ARRAY;
-            case CHAR:
-                return VariableType.CHAR_ARRAY;
-            case SHORT:
-                return VariableType.SHORT_ARRAY;
-            case INT:
-                return VariableType.INT_ARRAY;
-            case LONG:
-                return VariableType.LONG_ARRAY;
-            case FLOAT:
-                return VariableType.FLOAT_ARRAY;
-            case DOUBLE:
-                return VariableType.DOUBLE_ARRAY;
-            case OBJECT:
-                return VariableType.OBJECT_ARRAY;
-            default:
-                throw new AssertionError();
-        }
-    }
-
     VariableType convert(NumericOperandType type) {
         switch (type) {
             case INT:
@@ -396,7 +373,15 @@ public class TypeInferer {
         @Override
         public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
                 NumericOperandType type) {
-            types[receiver.getIndex()] = convert(type);
+            switch (op) {
+                case COMPARE:
+                    types[receiver.getIndex()] = VariableType.INT;
+                    break;
+                default:
+                    types[receiver.getIndex()] = convert(type);
+                    break;
+            }
+
         }
 
         @Override

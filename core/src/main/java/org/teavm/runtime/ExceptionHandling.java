@@ -16,6 +16,7 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Address;
+import org.teavm.interop.Export;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Unmanaged;
@@ -30,6 +31,7 @@ public final class ExceptionHandling {
 
     private static Throwable thrownException;
 
+    @Export(name = "sys$catchException")
     public static Throwable catchException() {
         Throwable exception = thrownException;
         thrownException = null;

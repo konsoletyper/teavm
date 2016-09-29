@@ -38,12 +38,17 @@ public class VirtualTableProvider {
         this.classSource = classSource;
         interfaceMapping = new InterfaceToClassMapping(classSource);
 
+        Set<String> classNames = new HashSet<>(classSource.getClassNames());
         for (MethodReference virtualMethod : virtualMethods) {
             String cls = interfaceMapping.mapClass(virtualMethod.getClassName());
+            if (cls == null) {
+                cls = virtualMethod.getClassName();
+            }
+            classNames.add(cls);
             virtualMethodMap.computeIfAbsent(cls, c -> new HashSet<>()).add(virtualMethod.getDescriptor());
         }
 
-        for (String className : classSource.getClassNames()) {
+        for (String className : classNames) {
             fillClass(className);
         }
     }

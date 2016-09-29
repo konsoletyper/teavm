@@ -46,6 +46,12 @@
       <scope>provided</scope>
     </dependency>
     <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-interop</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
       <groupId>org.jbox2d</groupId>
       <artifactId>jbox2d-library</artifactId>
       <version>2.2.1.1</version>
@@ -141,6 +147,19 @@
               <runtime>SEPARATE</runtime>
               <minifying>true</minifying>
               <debugInformationGenerated>true</debugInformationGenerated>
+              <optimizationLevel>FULL</optimizationLevel>
+            </configuration>
+          </execution>
+          <execution>
+            <id>wasm-client</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <targetDirectory>${project.build.directory}/generated/wasm/teavm-wasm</targetDirectory>
+              <mainClass>org.teavm.samples.benchmark.teavm.WasmBenchmarkStarter</mainClass>
+              <debugInformationGenerated>true</debugInformationGenerated>
+              <targetType>WEBASSEMBLY</targetType>
               <optimizationLevel>FULL</optimizationLevel>
             </configuration>
           </execution>

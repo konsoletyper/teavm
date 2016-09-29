@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.interop.Import;
 import org.teavm.jso.JSBody;
 
 public class TFloat extends TNumber implements TComparable<TFloat> {
@@ -89,12 +90,19 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     }
 
     @JSBody(params = "v", script = "return isNaN(v);")
+    @Import(module = "runtime", name = "isNaN")
     public static native boolean isNaN(float v);
 
-    @JSBody(params = "v", script = "return !isFinite(v);")
-    public static native boolean isInfinite(float v);
+    public static boolean isInfinite(float v) {
+        return !isFinite(v);
+    }
+
+    @JSBody(params = "v", script = "return isFinite(v);")
+    @Import(module = "runtime", name = "isFinite")
+    private static native boolean isFinite(float v);
 
     @JSBody(params = {}, script = "return NaN;")
+    @Import(module = "runtime", name = "getNaN")
     private static native float getNaN();
 
     public static float parseFloat(TString string) throws TNumberFormatException {

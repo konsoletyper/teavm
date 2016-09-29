@@ -30,10 +30,6 @@ import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.samples.benchmark.shared.Scene;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class BenchmarkStarter {
     private static HTMLDocument document = Window.current().getDocument();
     private static HTMLCanvasElement canvas = (HTMLCanvasElement) document.getElementById("benchmark-canvas");

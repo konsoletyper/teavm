@@ -21,6 +21,8 @@ import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.interop.Export;
+import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ElementModifier;
@@ -64,10 +66,15 @@ public class WasmGenerator {
             function.setResult(WasmGeneratorUtil.mapType(methodReference.getReturnType()));
         }
 
-        WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, function, methodReference,
+        WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, function,
                 firstVariable);
         methodAst.getBody().acceptVisitor(visitor);
         function.getBody().add(visitor.result);
+
+        AnnotationReader exportAnnot = method.getAnnotations().get(Export.class.getName());
+        if (exportAnnot != null) {
+            function.setExportName(exportAnnot.getValue("name").getString());
+        }
 
         return function;
     }

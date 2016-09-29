@@ -18,7 +18,6 @@ package org.teavm.backend.wasm.generate;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
@@ -106,7 +105,6 @@ import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.interop.Address;
-import org.teavm.model.CallLocation;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
@@ -123,7 +121,6 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private WasmGenerationContext context;
     private WasmClassGenerator classGenerator;
     private WasmFunction function;
-    private MethodReference method;
     private int firstVariable;
     private IdentifiedStatement currentContinueTarget;
     private IdentifiedStatement currentBreakTarget;
@@ -135,11 +132,10 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     WasmExpression result;
 
     WasmGenerationVisitor(WasmGenerationContext context, WasmClassGenerator classGenerator,
-            WasmFunction function, MethodReference method, int firstVariable) {
+            WasmFunction function, int firstVariable) {
         this.context = context;
         this.classGenerator = classGenerator;
         this.function = function;
-        this.method = method;
         this.firstVariable = firstVariable;
         int typeCount = WasmType.values().length;
         for (int i = 0; i < typeCount; ++i) {
@@ -862,15 +858,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             int vtableOffset = classGenerator.getClassSize(RuntimeClass.class.getName());
             VirtualTableEntry vtableEntry = context.getVirtualTableProvider().lookup(expr.getMethod());
             if (vtableEntry == null) {
-                result = new WasmInt32Constant(0);
-                TextLocation insnLocation = null;
-                if (expr.getLocation() != null) {
-                    insnLocation = new TextLocation(expr.getLocation().getFileName(),
-                            expr.getLocation().getLine());
-                }
-                CallLocation location = new CallLocation(method, insnLocation);
-                context.getDiagnostics().error(location, "Can't generate WebAssembly to call {{m0}} method",
-                        expr.getMethod());
+                result = new WasmUnreachable();
                 return;
             }
             WasmExpression methodIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
@@ -1160,7 +1148,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         if (expr.getType() instanceof ValueType.Object) {
             ValueType.Object cls = (ValueType.Object) expr.getType();
             List<TagRegistry.Range> ranges = context.getTagRegistry().getRanges(cls.getClassName());
-            Collections.sort(ranges, Comparator.comparingInt(range -> range.lower));
+            ranges.sort(Comparator.comparingInt(range -> range.lower));
 
             WasmBlock block = new WasmBlock(false);
             block.setLocation(expr.getLocation());
@@ -1187,11 +1175,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                         WasmIntBinaryOperation.GT_SIGNED, new WasmGetLocal(tagVar),
                         new WasmInt32Constant(ranges.get(i - 1).upper));
                 WasmConditional conditional = new WasmConditional(upperThanExcluded);
-                WasmExpression lowerThanExluded = new WasmIntBinary(WasmIntType.INT32,
+                WasmExpression lowerThanExcluded = new WasmIntBinary(WasmIntType.INT32,
                         WasmIntBinaryOperation.LT_SIGNED, new WasmGetLocal(tagVar),
                         new WasmInt32Constant(ranges.get(i).lower));
 
-                WasmBranch branch = new WasmBranch(lowerThanExluded, block);
+                WasmBranch branch = new WasmBranch(lowerThanExcluded, block);
                 branch.setResult(new WasmInt32Constant(0));
                 conditional.getThenBlock().getBody().add(branch);
 

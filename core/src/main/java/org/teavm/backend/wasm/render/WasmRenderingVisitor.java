@@ -398,10 +398,10 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                 append("i32.load");
                 break;
         }
-        append(" align=" + expression.getAlignment());
         if (expression.getOffset() > 0) {
             append(" offset=" + expression.getOffset());
         }
+        append(" align=" + expression.getAlignment());
         line(expression.getIndex());
         close();
     }
@@ -432,30 +432,32 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                 append("i64.load");
                 break;
         }
-        append(" align=" + expression.getAlignment());
         if (expression.getOffset() > 0) {
             append(" offset=" + expression.getOffset());
         }
+        append(" align=" + expression.getAlignment());
         line(expression.getIndex());
         close();
     }
 
     @Override
     public void visit(WasmLoadFloat32 expression) {
-        open().append("f32.load align=" + expression.getAlignment());
+        open().append("f32.load");
         if (expression.getOffset() > 0) {
             append(" offset=" + expression.getOffset());
         }
+        append(" align=" + expression.getAlignment());
         line(expression.getIndex());
         close();
     }
 
     @Override
     public void visit(WasmLoadFloat64 expression) {
-        open().append("f64.load align=" + expression.getAlignment());
+        open().append("f64.load");
         if (expression.getOffset() > 0) {
             append(" offset=" + expression.getOffset());
         }
+        append(" align=" + expression.getAlignment());
         line(expression.getIndex());
         close();
     }
@@ -476,10 +478,10 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                 append("i32.store");
                 break;
         }
-        append(" align=" + expression.getAlignment());
         if (expression.getOffset() > 0) {
             append(" offset=" + expression.getOffset());
         }
+        append(" align=" + expression.getAlignment());
         line(expression.getIndex());
         line(expression.getValue());
         close();
@@ -505,10 +507,10 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                 append("i64.store");
                 break;
         }
-        append(" align=" + expression.getAlignment());
         if (expression.getOffset() > 0) {
             append(" offset=" + expression.getOffset());
         }
+        append(" align=" + expression.getAlignment());
         line(expression.getIndex());
         line(expression.getValue());
         close();
@@ -516,10 +518,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmStoreFloat32 expression) {
-        open().append("f32.store align=" + expression.getAlignment());
+        open().append("f32.store");
         if (expression.getOffset() > 0) {
             append(" offset=" + expression.getOffset());
         }
+        append(" align=" + expression.getAlignment());
         line(expression.getIndex());
         line(expression.getValue());
         close();
@@ -527,10 +530,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmStoreFloat64 expression) {
-        open().append("f64.store align=" + expression.getAlignment());
+        open().append("f64.store");
         if (expression.getOffset() > 0) {
             append(" offset=" + expression.getOffset());
         }
+        append(" align=" + expression.getAlignment());
         line(expression.getIndex());
         line(expression.getValue());
         close();
