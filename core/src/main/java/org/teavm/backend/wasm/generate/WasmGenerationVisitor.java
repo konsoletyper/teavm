@@ -158,10 +158,10 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 generateBinary(WasmIntBinaryOperation.ADD, WasmFloatBinaryOperation.ADD, expr);
                 break;
             case SUBTRACT:
-                generateBinary(WasmIntBinaryOperation.SUB, WasmFloatBinaryOperation.ADD, expr);
+                generateBinary(WasmIntBinaryOperation.SUB, WasmFloatBinaryOperation.SUB, expr);
                 break;
             case MULTIPLY:
-                generateBinary(WasmIntBinaryOperation.MUL, WasmFloatBinaryOperation.ADD, expr);
+                generateBinary(WasmIntBinaryOperation.MUL, WasmFloatBinaryOperation.MUL, expr);
                 break;
             case DIVIDE:
                 generateBinary(WasmIntBinaryOperation.DIV_SIGNED, WasmFloatBinaryOperation.DIV, expr);
