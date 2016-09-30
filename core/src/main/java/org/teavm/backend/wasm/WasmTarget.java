@@ -661,6 +661,7 @@ public class WasmTarget implements TeaVMTarget {
 
         gcMemory -= regionCount * 2;
         address += regionCount * 2;
+        address = (address + 4) >> 2 << 2;
         gcIntrinsic.setHeapAddress(address);
         gcIntrinsic.setAvailableBytes(gcMemory);
     }
