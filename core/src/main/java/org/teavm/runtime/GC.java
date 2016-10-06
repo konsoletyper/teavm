@@ -30,6 +30,7 @@ public final class GC {
     static FreeChunk currentChunk;
     static FreeChunkHolder currentChunkPointer;
     static int freeChunks;
+    static int freeMemory = (int) availableBytes();
 
     static native Address gcStorageAddress();
 
@@ -41,9 +42,13 @@ public final class GC {
 
     private static native int regionMaxCount();
 
-    private static native long availableBytes();
+    public static native long availableBytes();
 
     private static native int regionSize();
+
+    public static int getFreeMemory() {
+        return freeMemory;
+    }
 
     static {
         currentChunk = heapAddress().toStructure();
@@ -71,6 +76,7 @@ public final class GC {
             currentChunk.classReference = 0;
             currentChunk.size = freeSize;
         }
+        freeMemory -= size;
         return current;
     }
 
@@ -93,6 +99,7 @@ public final class GC {
             if (--freeChunks == 0) {
                 return false;
             }
+            freeMemory -= currentChunk.size;
             currentChunkPointer = Structure.add(FreeChunkHolder.class, currentChunkPointer, 1);
             currentChunk = currentChunkPointer.value;
             currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
@@ -100,9 +107,10 @@ public final class GC {
         return true;
     }
 
-    private static boolean collectGarbage(int size) {
+    public static boolean collectGarbage(int size) {
         mark();
         sweep();
+        updateFreeMemory();
         return true;
     }
 
@@ -266,6 +274,15 @@ public final class GC {
         sortFreeChunks(0, freeChunks - 1);
         currentChunk = currentChunkPointer.value;
         currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
+    }
+
+    private static void updateFreeMemory() {
+        freeMemory = 0;
+        FreeChunkHolder freeChunkPtr = currentChunkPointer;
+        for (int i = 0; i < freeChunks; ++i) {
+            freeMemory += freeChunkPtr.value.size;
+            freeChunkPtr = Structure.add(FreeChunkHolder.class, freeChunkPtr, 1);
+        }
     }
 
     private static void sortFreeChunks(int lower, int upper) {

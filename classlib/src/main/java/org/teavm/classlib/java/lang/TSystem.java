@@ -26,6 +26,7 @@ import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
 import org.teavm.interop.Unmanaged;
 import org.teavm.runtime.Allocator;
+import org.teavm.runtime.GC;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 
@@ -126,8 +127,13 @@ public final class TSystem extends TObject {
     @PluggableDependency(SystemNativeGenerator.class)
     public static native void setOut(TPrintStream err);
 
+    @DelegateTo("gcLowLevel")
     public static void gc() {
         // Do nothing
+    }
+
+    private static void gcLowLevel() {
+        GC.collectGarbage(0);
     }
 
     public static void runFinalization() {

@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.interop.DelegateTo;
+import org.teavm.runtime.GC;
+
 /**
  * A dummy class for compatibility.  Currently these methods don't actually
  * do anything.
@@ -35,8 +38,13 @@ public class TRuntime {
      * Returns the amount of free memory in the system. Calling the gc method
      * may result in increasing the value returned by freeMemory.
      */
+    @DelegateTo("freeMemoryLowLevel")
     public long freeMemory() {
         return Integer.MAX_VALUE;
+    }
+
+    private long freeMemoryLowLevel() {
+        return GC.getFreeMemory();
     }
 
     /**
@@ -51,6 +59,7 @@ public class TRuntime {
      * means of invoking this method.
      */
     public void gc() {
+        System.gc();
     }
 
     /**
@@ -68,7 +77,12 @@ public class TRuntime {
      * environment. Note that the amount of memory required to hold an object of
      * any given type may be implementation-dependent.
      */
+    @DelegateTo("totalMemoryLowLevel")
     public long totalMemory() {
         return Integer.MAX_VALUE;
+    }
+
+    private long totalMemoryLowLevel() {
+        return GC.availableBytes();
     }
 }
