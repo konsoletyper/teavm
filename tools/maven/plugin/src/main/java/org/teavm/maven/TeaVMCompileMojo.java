@@ -24,6 +24,7 @@ import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
+import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.ClassAlias;
 import org.teavm.tooling.MethodAlias;
 import org.teavm.tooling.RuntimeCopyOperation;
@@ -76,6 +77,9 @@ public class TeaVMCompileMojo extends AbstractTeaVMMojo {
 
     private TeaVMTool tool = new TeaVMTool();
 
+    @Parameter
+    private WasmBinaryVersion wasmVersion;
+
     @Override
     protected File getTargetDirectory() {
         return targetDirectory;
@@ -102,6 +106,7 @@ public class TeaVMCompileMojo extends AbstractTeaVMMojo {
             }
             tool.setCacheDirectory(cacheDirectory);
             tool.setTargetType(targetType);
+            tool.setWasmVersion(wasmVersion);
             tool.generate();
             if (stopOnErrors && !tool.getProblemProvider().getSevereProblems().isEmpty()) {
                 throw new MojoExecutionException("Build error");

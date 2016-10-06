@@ -52,15 +52,17 @@ import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 
 class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     private WasmBinaryWriter writer;
+    private WasmBinaryVersion version;
     private Map<String, Integer> functionIndexes;
     private Map<String, Integer> importedIndexes;
     private Map<WasmSignature, Integer> signatureIndexes;
     private int depth;
     private Map<WasmBlock, Integer> blockDepths = new HashMap<>();
 
-    WasmBinaryRenderingVisitor(WasmBinaryWriter writer, Map<String, Integer> functionIndexes,
+    WasmBinaryRenderingVisitor(WasmBinaryWriter writer, WasmBinaryVersion version, Map<String, Integer> functionIndexes,
             Map<String, Integer> importedIndexes, Map<WasmSignature, Integer> signatureIndexes) {
         this.writer = writer;
+        this.version = version;
         this.functionIndexes = functionIndexes;
         this.importedIndexes = importedIndexes;
         this.signatureIndexes = signatureIndexes;
@@ -71,12 +73,19 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         depth += expression.isLoop() ? 2 : 1;
         blockDepths.put(expression, depth);
         writer.writeByte(expression.isLoop() ? 0x02 : 0x01);
+        writeBlockType(expression.getType());
         for (WasmExpression part : expression.getBody()) {
             part.acceptVisitor(this);
         }
         writer.writeByte(0x0F);
         blockDepths.remove(expression);
         depth -= expression.isLoop() ? 2 : 1;
+    }
+
+    private void writeBlockType(WasmType type) {
+        if (version == WasmBinaryVersion.V_0xC) {
+            writer.writeType(type);
+        }
     }
 
     @Override
@@ -86,7 +95,9 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
         expression.getCondition().acceptVisitor(this);
         writer.writeByte(0x07);
-        writer.writeByte(expression.getResult() != null ? 1 : 0);
+        if (version == WasmBinaryVersion.V_0xB) {
+            writer.writeByte(expression.getResult() != null ? 1 : 0);
+        }
         writeLabel(expression.getTarget());
     }
 
@@ -96,7 +107,9 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             expression.getResult().acceptVisitor(this);
         }
         writer.writeByte(0x06);
-        writer.writeByte(expression.getResult() != null ? 1 : 0);
+        if (version == WasmBinaryVersion.V_0xB) {
+            writer.writeByte(expression.getResult() != null ? 1 : 0);
+        }
         writeLabel(expression.getTarget());
     }
 
@@ -104,20 +117,33 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmSwitch expression) {
         expression.getSelector().acceptVisitor(this);
         writer.writeByte(0x08);
-        writer.writeByte(0);
+        if (version == WasmBinaryVersion.V_0xB) {
+            writer.writeByte(0);
+        }
         writer.writeLEB(expression.getTargets().size());
         for (WasmBlock target : expression.getTargets()) {
             int targetDepth = blockDepths.get(target);
-            writer.writeFixed(depth - targetDepth);
+            int relativeDepth = depth - targetDepth;
+            if (version == WasmBinaryVersion.V_0xC) {
+                writer.writeLEB(relativeDepth);
+            } else {
+                writer.writeFixed(relativeDepth);
+            }
         }
         int defaultDepth = blockDepths.get(expression.getDefaultTarget());
-        writer.writeFixed(depth - defaultDepth);
+        int relativeDepth = depth - defaultDepth;
+        if (version == WasmBinaryVersion.V_0xC) {
+            writer.writeLEB(relativeDepth);
+        } else {
+            writer.writeFixed(relativeDepth);
+        }
     }
 
     @Override
     public void visit(WasmConditional expression) {
         expression.getCondition().acceptVisitor(this);
         writer.writeByte(0x03);
+        writeBlockType(expression.getType());
 
         ++depth;
         blockDepths.put(expression.getThenBlock(), depth);
@@ -145,12 +171,18 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             expression.getValue().acceptVisitor(this);
         }
         writer.writeByte(0x09);
-        writer.writeByte(expression.getValue() != null ? 1 : 0);
+        if (version == WasmBinaryVersion.V_0xB) {
+            writer.writeByte(expression.getValue() != null ? 1 : 0);
+        }
     }
 
     @Override
     public void visit(WasmUnreachable expression) {
-        writer.writeByte(0x0A);
+        if (version == WasmBinaryVersion.V_0xB) {
+            writer.writeByte(0x0A);
+        } else {
+            writer.writeByte(0x0);
+        }
     }
 
     @Override
@@ -613,7 +645,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         for (WasmExpression argument : expression.getArguments()) {
             argument.acceptVisitor(this);
         }
-        Integer functionIndex = !expression.isImported()
+        Integer functionIndex = !expression.isImported() || version == WasmBinaryVersion.V_0xC
                 ? functionIndexes.get(expression.getFunctionName())
                 : importedIndexes.get(expression.getFunctionName());
         if (functionIndex == null) {
@@ -621,8 +653,12 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             return;
         }
 
-        writer.writeByte(!expression.isImported() ? 0x16 : 0x18);
-        writer.writeLEB(expression.getArguments().size());
+        if (version == WasmBinaryVersion.V_0xB) {
+            writer.writeByte(!expression.isImported() ? 0x16 : 0x18);
+            writer.writeLEB(expression.getArguments().size());
+        } else {
+            writer.writeByte(0x16);
+        }
         writer.writeLEB(functionIndex);
     }
 
@@ -633,7 +669,9 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             argument.acceptVisitor(this);
         }
         writer.writeByte(0x17);
-        writer.writeLEB(expression.getArguments().size());
+        if (version == WasmBinaryVersion.V_0xB) {
+            writer.writeLEB(expression.getArguments().size());
+        }
 
         WasmType[] signatureTypes = new WasmType[expression.getParameterTypes().size() + 1];
         signatureTypes[0] = expression.getReturnType();
@@ -646,6 +684,9 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmDrop expression) {
         expression.getOperand().acceptVisitor(this);
+        if (version == WasmBinaryVersion.V_0xC) {
+            writer.writeByte(0x0B);
+        }
     }
 
     @Override

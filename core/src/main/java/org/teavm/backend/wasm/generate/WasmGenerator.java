@@ -47,12 +47,30 @@ public class WasmGenerator {
         this.binaryWriter = binaryWriter;
     }
 
+    public WasmFunction generateDefinition(MethodReference methodReference) {
+        ClassHolder cls = classSource.get(methodReference.getClassName());
+        MethodHolder method = cls.getMethod(methodReference.getDescriptor());
+        WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(method.getReference()));
+
+        if (!method.hasModifier(ElementModifier.STATIC)) {
+            function.getParameters().add(WasmType.INT32);
+        }
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            function.getParameters().add(WasmGeneratorUtil.mapType(method.parameterType(i)));
+        }
+        if (method.getResultType() != ValueType.VOID) {
+            function.setResult(WasmGeneratorUtil.mapType(method.getResultType()));
+        }
+
+        return function;
+    }
+
     public WasmFunction generate(MethodReference methodReference, MethodHolder bodyMethod) {
         ClassHolder cls = classSource.get(methodReference.getClassName());
         MethodHolder method = cls.getMethod(methodReference.getDescriptor());
 
         RegularMethodNode methodAst = decompiler.decompileRegular(bodyMethod);
-        WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(methodReference));
+        WasmFunction function = context.getFunction(WasmMangling.mangleMethod(methodReference));
         int firstVariable = method.hasModifier(ElementModifier.STATIC) ? 1 : 0;
         for (int i = firstVariable; i < methodAst.getVariables().size(); ++i) {
             VariableNode variable = methodAst.getVariables().get(i);
@@ -60,13 +78,6 @@ public class WasmGenerator {
                     ? WasmGeneratorUtil.mapType(variable.getType())
                     : WasmType.INT32;
             function.add(new WasmLocal(type, variable.getName()));
-        }
-
-        for (int i = firstVariable; i <= methodReference.parameterCount(); ++i) {
-            function.getParameters().add(function.getLocalVariables().get(i - firstVariable).getType());
-        }
-        if (methodReference.getReturnType() != ValueType.VOID) {
-            function.setResult(WasmGeneratorUtil.mapType(methodReference.getReturnType()));
         }
 
         WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, binaryWriter, function,
@@ -83,12 +94,7 @@ public class WasmGenerator {
     }
 
     public WasmFunction generateNative(MethodReference methodReference) {
-        WasmFunction function = new WasmFunction(WasmMangling.mangleMethod(methodReference));
-        for (int i = 0; i < methodReference.parameterCount(); ++i) {
-            WasmType paramType = WasmGeneratorUtil.mapType(methodReference.parameterType(i));
-            function.getParameters().add(paramType);
-        }
-        function.setResult(WasmGeneratorUtil.mapType(methodReference.getReturnType()));
+        WasmFunction function = context.getFunction(WasmMangling.mangleMethod(methodReference));
 
         WasmGenerationContext.ImportedMethod importedMethod = context.getImportedMethod(methodReference);
         if (importedMethod != null) {

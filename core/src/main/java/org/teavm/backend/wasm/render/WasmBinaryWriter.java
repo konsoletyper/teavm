@@ -28,6 +28,10 @@ public class WasmBinaryWriter {
     }
 
     public void writeType(WasmType type) {
+        if (type == null) {
+            writeByte(0);
+            return;
+        }
         switch (type) {
             case INT32:
                 writeByte(1);

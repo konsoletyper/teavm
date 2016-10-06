@@ -16,11 +16,13 @@
 package org.teavm.backend.wasm.model.expression;
 
 import java.util.Objects;
+import org.teavm.backend.wasm.model.WasmType;
 
 public class WasmConditional extends WasmExpression {
     private WasmExpression condition;
     private WasmBlock thenBlock = new WasmBlock(false);
     private WasmBlock elseBlock = new WasmBlock(false);
+    private WasmType type;
 
     public WasmConditional(WasmExpression condition) {
         Objects.requireNonNull(condition);
@@ -42,6 +44,14 @@ public class WasmConditional extends WasmExpression {
 
     public WasmBlock getElseBlock() {
         return elseBlock;
+    }
+
+    public WasmType getType() {
+        return type;
+    }
+
+    public void setType(WasmType type) {
+        this.type = type;
     }
 
     @Override

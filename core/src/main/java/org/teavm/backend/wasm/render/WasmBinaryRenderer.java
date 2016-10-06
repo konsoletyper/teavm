@@ -28,19 +28,43 @@ import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 
 public class WasmBinaryRenderer {
+    private static final int SECTION_UNKNOWN = 0;
+    private static final int SECTION_TYPE = 1;
+    private static final int SECTION_IMPORT = 2;
+    private static final int SECTION_FUNCTION = 3;
+    private static final int SECTION_TABLE = 4;
+    private static final int SECTION_MEMORY = 5;
+    private static final int SECTION_EXPORT = 7;
+    private static final int SECTION_START = 8;
+    private static final int SECTION_ELEMENT = 9;
+    private static final int SECTION_CODE = 10;
+    private static final int SECTION_DATA = 11;
+
+    private static final int EXTERNAL_KIND_FUNCTION = 0;
+
     private WasmBinaryWriter output;
+    private WasmBinaryVersion version;
     private List<WasmSignature> signatures = new ArrayList<>();
     private Map<WasmSignature, Integer> signatureIndexes = new HashMap<>();
     private Map<String, Integer> importIndexes = new HashMap<>();
     private Map<String, Integer> functionIndexes = new HashMap<>();
 
-    public WasmBinaryRenderer(WasmBinaryWriter output) {
+    public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version) {
         this.output = output;
+        this.version = version;
     }
 
     public void render(WasmModule module) {
         output.writeInt32(0x6d736100);
-        output.writeInt32(11);
+        switch (version) {
+            case V_0xB:
+                output.writeInt32(0xB);
+                break;
+            case V_0xC:
+                output.writeInt32(0xC);
+                break;
+        }
+
         renderSignatures(module);
         renderImports(module);
         renderFunctions(module);
@@ -48,6 +72,7 @@ public class WasmBinaryRenderer {
         renderMemory(module);
         renderExport(module);
         renderStart(module);
+        renderElement(module);
         renderCode(module);
         renderData(module);
         renderNames(module);
@@ -79,7 +104,7 @@ public class WasmBinaryRenderer {
             }
         }
 
-        writeSection("type", section.getData());
+        writeSection(SECTION_TYPE, "type", section.getData());
     }
 
     private void renderImports(WasmModule module) {
@@ -90,7 +115,11 @@ public class WasmBinaryRenderer {
                 continue;
             }
             functions.add(function);
-            importIndexes.put(function.getName(), index++);
+            if (version == WasmBinaryVersion.V_0xB) {
+                importIndexes.put(function.getName(), index++);
+            } else {
+                functionIndexes.put(function.getName(), functions.size());
+            }
         }
         if (functions.isEmpty()) {
             return;
@@ -101,7 +130,10 @@ public class WasmBinaryRenderer {
         section.writeLEB(functions.size());
         for (WasmFunction function : functions) {
             WasmSignature signature = WasmSignature.fromFunction(function);
-            section.writeLEB(signatureIndexes.get(signature));
+            int signatureIndex = signatureIndexes.get(signature);
+            if (version == WasmBinaryVersion.V_0xB) {
+                section.writeLEB(signatureIndex);
+            }
 
             String moduleName = function.getImportModule();
             if (moduleName == null) {
@@ -110,9 +142,14 @@ public class WasmBinaryRenderer {
             section.writeAsciiString(moduleName);
 
             section.writeAsciiString(function.getImportName());
+
+            if (version == WasmBinaryVersion.V_0xC) {
+                section.writeByte(EXTERNAL_KIND_FUNCTION);
+                section.writeLEB(signatureIndex);
+            }
         }
 
-        writeSection("import", section.getData());
+        writeSection(SECTION_IMPORT, "import", section.getData());
     }
 
     private void renderFunctions(WasmModule module) {
@@ -132,7 +169,7 @@ public class WasmBinaryRenderer {
             section.writeLEB(signatureIndexes.get(signature));
         }
 
-        writeSection("function", section.getData());
+        writeSection(SECTION_FUNCTION, "function", section.getData());
     }
 
     private void renderTable(WasmModule module) {
@@ -142,22 +179,35 @@ public class WasmBinaryRenderer {
 
         WasmBinaryWriter section = new WasmBinaryWriter();
 
-        section.writeLEB(module.getFunctionTable().size());
-        for (WasmFunction function : module.getFunctionTable()) {
-            section.writeLEB(functionIndexes.get(function.getName()));
+        if (version == WasmBinaryVersion.V_0xB) {
+            section.writeLEB(module.getFunctionTable().size());
+            for (WasmFunction function : module.getFunctionTable()) {
+                section.writeLEB(functionIndexes.get(function.getName()));
+            }
+        } else {
+            section.writeByte(1);
+            section.writeByte(0x20);
+            section.writeByte(1);
+            section.writeLEB(functionIndexes.size());
+            //section.writeLEB(functionIndexes.size());
         }
-
-        writeSection("table", section.getData());
+        writeSection(SECTION_TABLE, "table", section.getData());
     }
 
     private void renderMemory(WasmModule module) {
         WasmBinaryWriter section = new WasmBinaryWriter();
 
+        if (version == WasmBinaryVersion.V_0xC) {
+            section.writeByte(1);
+            section.writeByte(3);
+        }
         section.writeLEB(module.getMemorySize());
         section.writeLEB(module.getMemorySize());
-        section.writeByte(1);
+        if (version == WasmBinaryVersion.V_0xB) {
+            section.writeByte(1);
+        }
 
-        writeSection("memory", section.getData());
+        writeSection(SECTION_MEMORY, "memory", section.getData());
     }
 
     private void renderExport(WasmModule module) {
@@ -172,12 +222,20 @@ public class WasmBinaryRenderer {
 
         section.writeLEB(functions.size());
         for (WasmFunction function : functions) {
-            section.writeLEB(functionIndexes.get(function.getName()));
+            int functionIndex = functionIndexes.get(function.getName());
+            if (version == WasmBinaryVersion.V_0xB) {
+                section.writeLEB(functionIndex);
+            }
 
             section.writeAsciiString(function.getExportName());
+
+            if (version == WasmBinaryVersion.V_0xC) {
+                section.writeByte(EXTERNAL_KIND_FUNCTION);
+                section.writeLEB(functionIndex);
+            }
         }
 
-        writeSection("export", section.getData());
+        writeSection(SECTION_EXPORT, "export", section.getData());
     }
 
     private void renderStart(WasmModule module) {
@@ -188,7 +246,28 @@ public class WasmBinaryRenderer {
         WasmBinaryWriter section = new WasmBinaryWriter();
         section.writeLEB(functionIndexes.get(module.getStartFunction().getName()));
 
-        writeSection("start", section.getData());
+        writeSection(SECTION_START, "start", section.getData());
+    }
+
+    private void renderElement(WasmModule module) {
+        if (module.getFunctionTable().isEmpty() || version != WasmBinaryVersion.V_0xC) {
+            return;
+        }
+
+        WasmBinaryWriter section = new WasmBinaryWriter();
+        section.writeLEB(1);
+        section.writeLEB(0);
+
+        section.writeByte(0x10);
+        section.writeLEB(0);
+        section.writeByte(0x0F);
+
+        section.writeLEB(module.getFunctionTable().size());
+        for (WasmFunction function : module.getFunctionTable()) {
+            section.writeLEB(functionIndexes.get(function.getName()));
+        }
+
+        writeSection(SECTION_ELEMENT, "element", section.getData());
     }
 
     private void renderCode(WasmModule module) {
@@ -205,7 +284,7 @@ public class WasmBinaryRenderer {
             section.writeBytes(body);
         }
 
-        writeSection("code", section.getData());
+        writeSection(SECTION_CODE, "code", section.getData());
     }
 
     private byte[] renderFunction(WasmFunction function) {
@@ -236,8 +315,8 @@ public class WasmBinaryRenderer {
             }
         }
 
-        WasmBinaryRenderingVisitor visitor = new WasmBinaryRenderingVisitor(code, functionIndexes, importIndexes,
-                signatureIndexes);
+        WasmBinaryRenderingVisitor visitor = new WasmBinaryRenderingVisitor(code, version, functionIndexes,
+                importIndexes, signatureIndexes);
         for (WasmExpression part : function.getBody()) {
             part.acceptVisitor(visitor);
         }
@@ -263,7 +342,7 @@ public class WasmBinaryRenderer {
             }
         }
 
-        writeSection("data", section.getData());
+        writeSection(SECTION_DATA, "data", section.getData());
     }
 
     private void renderNames(WasmModule module) {
@@ -280,7 +359,7 @@ public class WasmBinaryRenderer {
             section.writeLEB(0);
         }
 
-        writeSection("name", section.getData());
+        writeSection(SECTION_UNKNOWN, "name", section.getData());
     }
 
     static class LocalEntry {
@@ -300,10 +379,22 @@ public class WasmBinaryRenderer {
         });
     }
 
-    private void writeSection(String id, byte[] data) {
-        output.writeAsciiString(id);
+    private void writeSection(int id, String name, byte[] data) {
+        if (version == WasmBinaryVersion.V_0xC) {
+            output.writeByte(id);
+            int length = data.length;
+            if (id == 0) {
+                length += name.length() + 1;
+            }
+            output.writeLEB(length);
+            if (id == 0) {
+                output.writeAsciiString(name);
+            }
+        } else {
+            output.writeAsciiString(name);
+            output.writeLEB(data.length);
+        }
 
-        output.writeLEB(data.length);
         output.writeBytes(data);
     }
 }

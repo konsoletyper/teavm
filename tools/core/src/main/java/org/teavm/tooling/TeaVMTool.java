@@ -36,6 +36,7 @@ import org.apache.commons.io.IOUtils;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.backend.wasm.WasmTarget;
+import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.cache.DiskCachedClassHolderSource;
 import org.teavm.cache.DiskProgramCache;
 import org.teavm.cache.DiskRegularMethodNodeCache;
@@ -98,6 +99,7 @@ public class TeaVMTool implements BaseTeaVMTool {
     private DebugInformationBuilder debugEmitter;
     private JavaScriptTarget javaScriptTarget;
     private WasmTarget webAssemblyTarget;
+    private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0xC;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -245,6 +247,14 @@ public class TeaVMTool implements BaseTeaVMTool {
         this.classLoader = classLoader;
     }
 
+    public WasmBinaryVersion getWasmVersion() {
+        return wasmVersion;
+    }
+
+    public void setWasmVersion(WasmBinaryVersion wasmVersion) {
+        this.wasmVersion = wasmVersion;
+    }
+
     public void setProgressListener(TeaVMProgressListener progressListener) {
         this.progressListener = progressListener;
     }
@@ -332,6 +342,7 @@ public class TeaVMTool implements BaseTeaVMTool {
         webAssemblyTarget.setDebugging(debugInformationGenerated);
         webAssemblyTarget.setCEmitted(debugInformationGenerated);
         webAssemblyTarget.setWastEmitted(debugInformationGenerated);
+        webAssemblyTarget.setVersion(wasmVersion);
         return webAssemblyTarget;
     }
 

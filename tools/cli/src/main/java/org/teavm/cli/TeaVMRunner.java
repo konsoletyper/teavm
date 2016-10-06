@@ -20,6 +20,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import org.apache.commons.cli.*;
+import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
@@ -105,6 +106,12 @@ public final class TeaVMRunner {
                 .withDescription("Additional classpath that will be reloaded by TeaVM each time in wait mode")
                 .withLongOpt("classpath")
                 .create('p'));
+        options.addOption(OptionBuilder
+                .withArgName("wasm-version")
+                .hasArg()
+                .withDescription("WebAssembly binary version (11, 12)")
+                .withLongOpt("version")
+                .create());
 
         if (args.length == 0) {
             printUsage(options);
@@ -209,6 +216,8 @@ public final class TeaVMRunner {
         }
 
         boolean interactive = commandLine.hasOption('w');
+        setupWasm(tool, commandLine, options);
+
         args = commandLine.getArgs();
         if (args.length > 1) {
             System.err.println("Unexpected arguments");
@@ -273,6 +282,29 @@ public final class TeaVMRunner {
         tool.generate();
         reportPhaseComplete();
         System.out.println("Build complete for " + ((System.currentTimeMillis() - startTime) / 1000.0) + " seconds");
+    }
+
+    private static void setupWasm(TeaVMTool tool, CommandLine commandLine, Options options) {
+        if (commandLine.hasOption("wasm-version")) {
+            String value = commandLine.getOptionValue("wasm-version");
+            try {
+                int version = Integer.parseInt(value);
+                switch (version) {
+                    case 11:
+                        tool.setWasmVersion(WasmBinaryVersion.V_0xB);
+                        break;
+                    case 12:
+                        tool.setWasmVersion(WasmBinaryVersion.V_0xC);
+                        break;
+                    default:
+                        System.err.print("Wrong version value");
+                        printUsage(options);
+                }
+            } catch (NumberFormatException e) {
+                System.err.print("Wrong version value");
+                printUsage(options);
+            }
+        }
     }
 
     private static void resetClassLoader(TeaVMTool tool) {

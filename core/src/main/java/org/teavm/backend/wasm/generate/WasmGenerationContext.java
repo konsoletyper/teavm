@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
+import org.teavm.backend.wasm.model.WasmFunction;
+import org.teavm.backend.wasm.model.WasmModule;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Import;
 import org.teavm.model.AnnotationReader;
@@ -36,6 +38,7 @@ import org.teavm.model.classes.VirtualTableProvider;
 
 public class WasmGenerationContext {
     private ClassReaderSource classSource;
+    private WasmModule module;
     private Diagnostics diagnostics;
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
@@ -44,9 +47,10 @@ public class WasmGenerationContext {
     private List<WasmIntrinsic> intrinsics = new ArrayList<>();
     private Map<MethodReference, WasmIntrinsicHolder> intrinsicCache = new HashMap<>();
 
-    public WasmGenerationContext(ClassReaderSource classSource, Diagnostics diagnostics,
+    public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, Diagnostics diagnostics,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, WasmStringPool stringPool) {
         this.classSource = classSource;
+        this.module = module;
         this.diagnostics = diagnostics;
         this.vtableProvider = vtableProvider;
         this.tagRegistry = tagRegistry;
@@ -95,6 +99,10 @@ public class WasmGenerationContext {
             }
             return new ImportedMethod(name, module);
         });
+    }
+
+    public WasmFunction getFunction(String name) {
+        return module.getFunctions().get(name);
     }
 
     public ClassReaderSource getClassSource() {
