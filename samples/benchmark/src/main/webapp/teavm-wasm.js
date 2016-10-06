@@ -19,17 +19,17 @@ var Benchmark = function() {
         this.canvas = canvas;
         this.module = null;
         this.line = "";
+        this.resultTableBody = document.getElementById("result-table-body");
     }
     Benchmark.prototype.runAll = function() {
         load(this, function() { this.module.exports.main(); }.bind(this));
-    }
+    };
 
     function tick(benchmark) {
         var exports = benchmark.module.exports;
         exports.tick();
-        console.log("tick");
         var exception = exports.sys$catchException();
-        if (exception != null) {
+        if (exception !== 0) {
             console.log("Exception: " + exception);
         }
     }
@@ -49,41 +49,79 @@ var Benchmark = function() {
 
     function load(benchmark, callback) {
         var xhr = new XMLHttpRequest();
+        xhr.responseType = "arraybuffer";
         xhr.open("GET", "teavm-wasm/classes.wasm");
-        xhr.onreadystatechange = function() {
+        xhr.onload = function() {
             var response = xhr.response;
             if (!response) {
                 return;
             }
+            var canvas = benchmark.canvas;
             var importObj = {
                 runtime: {
                     currentTimeMillis: currentTimeMillis,
                     isNaN: isNaN,
                     isFinite: isFinite,
                     getNaN: function() { return NaN; },
-                    putchar: function() { putchar(benchmark); }
+                    putchar: function(code) { putchar(benchmark, code); }
                 },
                 benchmark: {
                     performanceTime: function() { return window.performance.now() || 0; },
                     reportPerformance: function(second, timeSpentComputing) {
-                        console.log("Second: " + second + ", time: " + timeSpentComputing);
+                        var row = document.createElement("tr");
+                        benchmark.resultTableBody.appendChild(row);
+                        var secondCell = document.createElement("td");
+                        row.appendChild(secondCell);
+                        secondCell.appendChild(document.createTextNode(second.toString()));
+                        var timeCell = document.createElement("td");
+                        row.appendChild(timeCell);
+                        timeCell.appendChild(document.createTextNode(timeSpentComputing.toString()));
                     },
                     repeatAfter: function(time) {
-                        console.log("repeatAfter");
-                        setTimeout(tick.bind(benchmark), time);
+                        setTimeout(tick.bind(null, benchmark), time);
                     },
                     setupCanvas: function() {
-                        var canvas = benchmark.canvas;
-                        canvas.setFillStyle("white");
-                        context.setStrokeStyle("grey");
+                        canvas.fillStyle = "white";
+                        canvas.strokeStyle = "grey";
                         canvas.fillRect(0, 0, 600, 600);
                         canvas.translate(0, 600);
                         canvas.scale(1, -1);
                         canvas.scale(100, 100);
-                        canvas.setLineWidth(0.01);
+                        canvas.lineWidth = 0.01;
                     }
                 },
-                canvas: benchmark.canvas,
+                canvas: {
+                    save: function() {
+                        canvas.save();
+                    },
+                    restore: function() {
+                        canvas.restore();
+                    },
+                    beginPath: function() {
+                        canvas.beginPath();
+                    },
+                    closePath: function() {
+                        canvas.closePath();
+                    },
+                    stroke: function() {
+                        canvas.stroke();
+                    },
+                    moveTo: function(x, y) {
+                        canvas.moveTo(x, y);
+                    },
+                    lineTo: function(x, y) {
+                        canvas.lineTo(x, y);
+                    },
+                    translate: function(x, y) {
+                        canvas.translate(x, y);
+                    },
+                    rotate: function(angle) {
+                        canvas.rotate(angle);
+                    },
+                    arc: function(cx, cy, radius, startAngle, endAngle, counterClockwise) {
+                        canvas.arc(cx, cy, radius, startAngle, endAngle, counterClockwise);
+                    }
+                },
                 math: Math,
                 debug: {
                     traceMemoryAccess: function(callSite, address) {
@@ -94,8 +132,10 @@ var Benchmark = function() {
                     }
                 }
             };
-            benchmark.module = Wasm.instantiateModule(new Uint8Array(response), importObj)
-            callback();
+            WebAssembly.compile(response).then(function(module) {
+                benchmark.module = new WebAssembly.Instance(module, importObj);
+                callback();
+            });
         };
         xhr.send();
     }

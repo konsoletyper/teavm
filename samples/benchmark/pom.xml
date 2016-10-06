@@ -103,6 +103,9 @@
             <resource>
               <directory>${project.build.directory}/generated/js</directory>
             </resource>
+            <resource>
+              <directory>${project.build.directory}/generated/wasm</directory>
+            </resource>
           </webResources>
         </configuration>
       </plugin>
@@ -126,6 +129,7 @@
               <excludes>
                 <exclude>**/gwt/*</exclude>
                 <exclude>**/teavm/*</exclude>
+                <exclude>**/benchmark/jvm/*</exclude>
               </excludes>
             </configuration>
           </execution>

@@ -37,6 +37,7 @@ import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
@@ -209,8 +210,8 @@ public class ExceptionHandlingShadowStackContributor {
 
     private boolean isCallInstruction(Instruction insn) {
         if (insn instanceof InitClassInstruction || insn instanceof ConstructInstruction
-                || insn instanceof ConstructArrayInstruction || insn instanceof CloneArrayInstruction
-                || insn instanceof RaiseInstruction) {
+                || insn instanceof ConstructArrayInstruction || insn instanceof ConstructMultiArrayInstruction
+                || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction) {
             return true;
         } else if (insn instanceof InvokeInstruction) {
             return managedMethodRepository.isManaged(((InvokeInstruction) insn).getMethod());

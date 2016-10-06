@@ -30,7 +30,7 @@ public final class WasmBenchmarkStarter {
     private static Scene scene = new Scene();
     private static int currentSecond;
     private static long startMillisecond;
-    private static int timeSpentCalculating;
+    private static double timeSpentCalculating;
 
     private WasmBenchmarkStarter() {
     }
@@ -43,17 +43,15 @@ public final class WasmBenchmarkStarter {
     @Export(name = "tick")
     public static void tick() {
         double start = performanceTime();
-        System.out.println("About to calculate frame");
         scene.calculate();
-        System.out.println("Frame calculated successfully");
         double end = performanceTime();
         int second = (int) ((System.currentTimeMillis() - startMillisecond) / 1000);
         if (second > currentSecond) {
-            reportPerformance(second, timeSpentCalculating);
+            reportPerformance(second, (int) timeSpentCalculating);
             timeSpentCalculating = 0;
             currentSecond = second;
         }
-        timeSpentCalculating += (int) (end - start);
+        timeSpentCalculating += end - start;
         render();
         repeatAfter(scene.timeUntilNextStep());
     }

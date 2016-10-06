@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.generate;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
 import org.teavm.ast.decompilation.Decompiler;
+import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
@@ -35,13 +36,15 @@ public class WasmGenerator {
     private ClassHolderSource classSource;
     private WasmGenerationContext context;
     private WasmClassGenerator classGenerator;
+    private BinaryWriter binaryWriter;
 
     public WasmGenerator(Decompiler decompiler, ClassHolderSource classSource,
-            WasmGenerationContext context, WasmClassGenerator classGenerator) {
+            WasmGenerationContext context, WasmClassGenerator classGenerator, BinaryWriter binaryWriter) {
         this.decompiler = decompiler;
         this.classSource = classSource;
         this.context = context;
         this.classGenerator = classGenerator;
+        this.binaryWriter = binaryWriter;
     }
 
     public WasmFunction generate(MethodReference methodReference, MethodHolder bodyMethod) {
@@ -66,7 +69,7 @@ public class WasmGenerator {
             function.setResult(WasmGeneratorUtil.mapType(methodReference.getReturnType()));
         }
 
-        WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, function,
+        WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, binaryWriter, function,
                 firstVariable);
         methodAst.getBody().acceptVisitor(visitor);
         function.getBody().add(visitor.result);

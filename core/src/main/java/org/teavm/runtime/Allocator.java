@@ -47,6 +47,21 @@ public final class Allocator {
         return result;
     }
 
+    public static RuntimeArray allocateMultiArray(RuntimeClass tag, Address dimensions, int dimensionCount) {
+        int size = dimensions.getInt();
+        RuntimeArray array = allocateArray(tag, dimensions.getInt()).toStructure();
+        if (dimensionCount > 1) {
+            Address arrayData = Structure.add(RuntimeArray.class, array, 1).toAddress();
+            arrayData = Address.align(arrayData, Address.sizeOf());
+            for (int i = 0; i < size; ++i) {
+                RuntimeArray innerArray = allocateMultiArray(tag.itemType, dimensions.add(4), dimensionCount - 1);
+                arrayData.putAddress(innerArray.toAddress());
+                arrayData = arrayData.add(Address.sizeOf());
+            }
+        }
+        return array;
+    }
+
     @Unmanaged
     public static native void fillZero(Address address, int count);
 

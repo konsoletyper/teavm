@@ -64,6 +64,8 @@ import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
 import org.teavm.backend.wasm.WasmRuntime;
+import org.teavm.backend.wasm.binary.BinaryWriter;
+import org.teavm.backend.wasm.binary.DataPrimitives;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -129,12 +131,14 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     private Set<WasmBlock> usedBlocks = new HashSet<>();
     private List<Deque<WasmLocal>> temporaryVariablesByType = new ArrayList<>();
     private WasmLocal stackVariable;
+    private BinaryWriter binaryWriter;
     WasmExpression result;
 
     WasmGenerationVisitor(WasmGenerationContext context, WasmClassGenerator classGenerator,
-            WasmFunction function, int firstVariable) {
+            BinaryWriter binaryWriter, WasmFunction function, int firstVariable) {
         this.context = context;
         this.classGenerator = classGenerator;
+        this.binaryWriter = binaryWriter;
         this.function = function;
         this.firstVariable = firstVariable;
         int typeCount = WasmType.values().length;
@@ -1128,6 +1132,31 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
+        ValueType type = expr.getType();
+
+        WasmBlock block = new WasmBlock(false);
+        int dimensionList = -1;
+        for (Expr dimension : expr.getDimensions()) {
+            int dimensionAddress = binaryWriter.append(DataPrimitives.INT.createValue());
+            if (dimensionList < 0) {
+                dimensionList = dimensionAddress;
+            }
+            accept(dimension);
+            block.getBody().add(new WasmStoreInt32(4, new WasmInt32Constant(dimensionAddress), result,
+                    WasmInt32Subtype.INT32));
+        }
+
+        int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
+        String allocName = WasmMangling.mangleMethod(new MethodReference(Allocator.class, "allocateMultiArray",
+                RuntimeClass.class, Address.class, int.class, RuntimeArray.class));
+        WasmCall call = new WasmCall(allocName);
+        call.getArguments().add(new WasmInt32Constant(classPointer));
+        call.getArguments().add(new WasmInt32Constant(dimensionList));
+        call.getArguments().add(new WasmInt32Constant(expr.getDimensions().size()));
+        call.setLocation(expr.getLocation());
+
+        block.getBody().add(call);
+        result = block;
     }
 
     @Override

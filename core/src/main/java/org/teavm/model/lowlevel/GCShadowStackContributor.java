@@ -41,6 +41,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
@@ -149,6 +150,7 @@ public class GCShadowStackContributor {
                 }
                 if (insn instanceof InvokeInstruction || insn instanceof InitClassInstruction
                         || insn instanceof ConstructInstruction || insn instanceof ConstructArrayInstruction
+                        || insn instanceof ConstructMultiArrayInstruction
                         || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction) {
                     if (insn instanceof InvokeInstruction
                             && !managedMethodRepository.isManaged(((InvokeInstruction) insn).getMethod())) {

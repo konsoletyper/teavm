@@ -225,6 +225,8 @@ public class WasmTarget implements TeaVMTarget {
                 RuntimeClass.class, Address.class), null).use();
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocateArray",
                 RuntimeClass.class, int.class, Address.class), null).use();
+        dependencyChecker.linkMethod(new MethodReference(Allocator.class, "allocateMultiArray",
+                RuntimeClass.class, Address.class, int.class, RuntimeArray.class), null).use();
 
         dependencyChecker.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class), null).use();
 
@@ -311,10 +313,9 @@ public class WasmTarget implements TeaVMTarget {
                 classGenerator);
         context.addIntrinsic(exceptionHandlingIntrinsic);
 
-        WasmGenerator generator = new WasmGenerator(decompiler, classes,
-                context, classGenerator);
+        WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator, binaryWriter);
 
-        module.setMemorySize(64);
+        module.setMemorySize(128);
         generateMethods(classes, context, generator, module);
         exceptionHandlingIntrinsic.postProcess(shadowStackTransformer.getCallSites());
         generateIsSupertypeFunctions(tagRegistry, module, classGenerator);
