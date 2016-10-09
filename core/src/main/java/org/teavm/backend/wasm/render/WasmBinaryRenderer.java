@@ -155,12 +155,11 @@ public class WasmBinaryRenderer {
     private void renderFunctions(WasmModule module) {
         WasmBinaryWriter section = new WasmBinaryWriter();
 
-        int index = 0;
         List<WasmFunction> functions = module.getFunctions().values().stream()
                 .filter(function -> function.getImportName() == null)
                 .collect(Collectors.toList());
         for (WasmFunction function : functions) {
-            functionIndexes.put(function.getName(), index++);
+            functionIndexes.put(function.getName(), functionIndexes.size());
         }
 
         section.writeLEB(functions.size());
@@ -187,9 +186,8 @@ public class WasmBinaryRenderer {
         } else {
             section.writeByte(1);
             section.writeByte(0x20);
-            section.writeByte(1);
+            section.writeByte(0);
             section.writeLEB(functionIndexes.size());
-            //section.writeLEB(functionIndexes.size());
         }
         writeSection(SECTION_TABLE, "table", section.getData());
     }
@@ -320,6 +318,9 @@ public class WasmBinaryRenderer {
         for (WasmExpression part : function.getBody()) {
             part.acceptVisitor(visitor);
         }
+        if (version == WasmBinaryVersion.V_0xC) {
+            code.writeByte(0x0F);
+        }
 
         return code.getData();
     }
@@ -333,7 +334,15 @@ public class WasmBinaryRenderer {
 
         section.writeLEB(module.getSegments().size());
         for (WasmMemorySegment segment : module.getSegments()) {
-            section.writeLEB(segment.getOffset());
+            if (version == WasmBinaryVersion.V_0xB) {
+                section.writeLEB(segment.getOffset());
+            } else {
+                section.writeByte(0);
+                section.writeByte(0x10);
+                section.writeLEB(segment.getOffset());
+                section.writeByte(0xF);
+            }
+
             section.writeLEB(segment.getLength());
             int chunkSize = 65536;
             for (int i = 0; i < segment.getLength(); i += chunkSize) {

@@ -107,10 +107,10 @@ public final class TeaVMRunner {
                 .withLongOpt("classpath")
                 .create('p'));
         options.addOption(OptionBuilder
-                .withArgName("wasm-version")
+                .withLongOpt("wasm-version")
+                .withArgName("version")
                 .hasArg()
                 .withDescription("WebAssembly binary version (11, 12)")
-                .withLongOpt("version")
                 .create());
 
         if (args.length == 0) {
