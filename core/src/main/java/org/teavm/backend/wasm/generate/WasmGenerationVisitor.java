@@ -340,7 +340,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         branch.setResult(new WasmInt32Constant(0));
         branch.setLocation(expr.getLocation());
         branch.getResult().setLocation(expr.getLocation());
-        block.getBody().add(branch);
+        block.getBody().add(new WasmDrop(branch));
 
         accept(expr.getSecondOperand());
         block.getBody().add(result);
@@ -359,7 +359,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         branch.setResult(new WasmInt32Constant(1));
         branch.setLocation(expr.getLocation());
         branch.getResult().setLocation(expr.getLocation());
-        block.getBody().add(branch);
+        block.getBody().add(new WasmDrop(branch));
 
         accept(expr.getSecondOperand());
         block.getBody().add(result);
@@ -1213,13 +1213,13 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                     new WasmGetLocal(tagVar), new WasmInt32Constant(ranges.get(0).lower));
             WasmBranch lowerThanMin = new WasmBranch(lowerThanMinCond, block);
             lowerThanMin.setResult(new WasmInt32Constant(0));
-            block.getBody().add(lowerThanMin);
+            block.getBody().add(new WasmDrop(lowerThanMin));
 
             WasmExpression upperThanMaxCond = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED,
                     new WasmGetLocal(tagVar), new WasmInt32Constant(ranges.get(ranges.size() - 1).upper));
             WasmBranch upperThanMax = new WasmBranch(upperThanMaxCond, block);
             upperThanMax.setResult(new WasmInt32Constant(0));
-            block.getBody().add(upperThanMax);
+            block.getBody().add(new WasmDrop(upperThanMax));
 
             for (int i = 1; i < ranges.size(); ++i) {
                 WasmExpression upperThanExcluded = new WasmIntBinary(WasmIntType.INT32,
@@ -1233,7 +1233,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
                 WasmBranch branch = new WasmBranch(lowerThanExcluded, block);
                 branch.setResult(new WasmInt32Constant(0));
-                conditional.getThenBlock().getBody().add(branch);
+                conditional.getThenBlock().getBody().add(new WasmDrop(branch));
 
                 block.getBody().add(conditional);
             }

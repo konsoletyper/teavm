@@ -528,14 +528,12 @@ public class WasmTarget implements TeaVMTarget {
         WasmExpression lowerCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
                 new WasmGetLocal(subtypeVar), new WasmInt32Constant(lower));
         WasmConditional testLower = new WasmConditional(lowerCondition);
-        testLower.setType(WasmType.INT32);
         testLower.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(0)));
         body.add(testLower);
 
         WasmExpression upperCondition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED,
                 new WasmGetLocal(subtypeVar), new WasmInt32Constant(upper));
         WasmConditional testUpper = new WasmConditional(upperCondition);
-        testLower.setType(WasmType.INT32);
         testUpper.getThenBlock().getBody().add(new WasmReturn(new WasmInt32Constant(0)));
         body.add(testUpper);
 

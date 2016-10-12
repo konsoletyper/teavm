@@ -645,7 +645,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         for (WasmExpression argument : expression.getArguments()) {
             argument.acceptVisitor(this);
         }
-        Integer functionIndex = !expression.isImported() || version == WasmBinaryVersion.V_0xC
+        Integer functionIndex = !expression.isImported()
                 ? functionIndexes.get(expression.getFunctionName())
                 : importedIndexes.get(expression.getFunctionName());
         if (functionIndex == null) {
@@ -664,9 +664,14 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmIndirectCall expression) {
-        expression.getSelector().acceptVisitor(this);
+        if (version == WasmBinaryVersion.V_0xB) {
+            expression.getSelector().acceptVisitor(this);
+        }
         for (WasmExpression argument : expression.getArguments()) {
             argument.acceptVisitor(this);
+        }
+        if (version == WasmBinaryVersion.V_0xC) {
+            expression.getSelector().acceptVisitor(this);
         }
         writer.writeByte(0x17);
         if (version == WasmBinaryVersion.V_0xB) {

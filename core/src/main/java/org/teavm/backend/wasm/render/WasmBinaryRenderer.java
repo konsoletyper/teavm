@@ -114,12 +114,12 @@ public class WasmBinaryRenderer {
             if (function.getImportName() == null) {
                 continue;
             }
-            functions.add(function);
             if (version == WasmBinaryVersion.V_0xB) {
                 importIndexes.put(function.getName(), index++);
             } else {
                 functionIndexes.put(function.getName(), functions.size());
             }
+            functions.add(function);
         }
         if (functions.isEmpty()) {
             return;
@@ -186,7 +186,8 @@ public class WasmBinaryRenderer {
         } else {
             section.writeByte(1);
             section.writeByte(0x20);
-            section.writeByte(0);
+            section.writeByte(3);
+            section.writeLEB(functionIndexes.size());
             section.writeLEB(functionIndexes.size());
         }
         writeSection(SECTION_TABLE, "table", section.getData());
@@ -313,6 +314,10 @@ public class WasmBinaryRenderer {
             }
         }
 
+        Map<String, Integer> importIndexes = this.importIndexes;
+        if (version == WasmBinaryVersion.V_0xC) {
+            importIndexes = this.functionIndexes;
+        }
         WasmBinaryRenderingVisitor visitor = new WasmBinaryRenderingVisitor(code, version, functionIndexes,
                 importIndexes, signatureIndexes);
         for (WasmExpression part : function.getBody()) {
