@@ -1226,7 +1226,6 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                         WasmIntBinaryOperation.GT_SIGNED, new WasmGetLocal(tagVar),
                         new WasmInt32Constant(ranges.get(i - 1).upper));
                 WasmConditional conditional = new WasmConditional(upperThanExcluded);
-                conditional.setType(WasmType.INT32);
                 WasmExpression lowerThanExcluded = new WasmIntBinary(WasmIntType.INT32,
                         WasmIntBinaryOperation.LT_SIGNED, new WasmGetLocal(tagVar),
                         new WasmInt32Constant(ranges.get(i).lower));

@@ -70,16 +70,17 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmBlock expression) {
-        depth += expression.isLoop() ? 2 : 1;
+        int blockDepth = expression.isLoop() & version == WasmBinaryVersion.V_0xB ? 2 : 1;
+        depth += blockDepth;
         blockDepths.put(expression, depth);
-        writer.writeByte(expression.isLoop() ? 0x02 : 0x01);
+        writer.writeByte(expression.isLoop()  ? 0x02 : 0x01);
         writeBlockType(expression.getType());
         for (WasmExpression part : expression.getBody()) {
             part.acceptVisitor(this);
         }
         writer.writeByte(0x0F);
         blockDepths.remove(expression);
-        depth -= expression.isLoop() ? 2 : 1;
+        depth -= blockDepth;
     }
 
     private void writeBlockType(WasmType type) {

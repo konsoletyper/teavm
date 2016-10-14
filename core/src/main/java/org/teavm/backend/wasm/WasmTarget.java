@@ -353,13 +353,12 @@ public class WasmTarget implements TeaVMTarget {
             initFunction.getBody().add(new WasmCall(WasmMangling.mangleInitializer(className)));
         }
         module.add(initFunction);
-        //module.setStartFunction(initFunction);
+        module.setStartFunction(initFunction);
 
         for (TeaVMEntryPoint entryPoint : controller.getEntryPoints().values()) {
             String mangledName = WasmMangling.mangleMethod(entryPoint.getReference());
             WasmFunction function = module.getFunctions().get(mangledName);
             if (function != null) {
-                function.getBody().add(0, new WasmCall(initFunction.getName()));
                 function.setExportName(entryPoint.getPublicName());
             }
         }
