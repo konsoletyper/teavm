@@ -20,8 +20,11 @@ import java.lang.invoke.LambdaMetafactory;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ServiceLoader;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
+import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.unicode.CLDRReader;
 import org.teavm.classlib.java.lang.reflect.AnnotationDependencyListener;
@@ -60,5 +63,13 @@ public class JCLPlugin implements TeaVMPlugin {
         host.add(new ScalaHacks());
 
         host.add(new NumericClassTransformer());
+
+        List<ReflectionSupplier> reflectionSuppliers = new ArrayList<>();
+        for (ReflectionSupplier supplier : ServiceLoader.load(ReflectionSupplier.class, host.getClassLoader())) {
+            reflectionSuppliers.add(supplier);
+        }
+        ReflectionDependencyListener reflection = new ReflectionDependencyListener(reflectionSuppliers);
+        host.registerService(ReflectionDependencyListener.class, reflection);
+        host.add(reflection);
     }
 }

@@ -15,15 +15,56 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.teavm.classlib.java.lang.TClass;
+import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 
 public interface TAnnotatedElement {
-    boolean isAnnotationPresent(TClass<? extends TAnnotation> annotationClass);
+    default boolean isAnnotationPresent(TClass<? extends TAnnotation> annotationClass) {
+        return getAnnotation(annotationClass) != null;
+    }
 
     <T extends TAnnotation> T getAnnotation(TClass<T> annotationClass);
 
     TAnnotation[] getAnnotations();
 
     TAnnotation[] getDeclaredAnnotations();
+
+    default <T extends TAnnotation> T[] getAnnotationsByType(TClass<T> annotationClass) {
+        List<T> result = new ArrayList<>();
+        Object classAsObject = annotationClass;
+        for (TAnnotation annot : getAnnotations()) {
+            if (annot.annotationType() == classAsObject) {
+                result.add(annotationClass.cast((TObject) annot));
+            }
+        }
+        @SuppressWarnings("unchecked")
+        T[] array = (T[]) (Object) TArray.newInstance(annotationClass, result.size());
+        return result.toArray(array);
+    }
+
+    default <T extends TAnnotation> T getDeclaredAnnotation(TClass<T> annotationClass) {
+        Object classAsObject = annotationClass;
+        for (TAnnotation annot : getDeclaredAnnotations()) {
+            if (annot.annotationType() == classAsObject) {
+                return annotationClass.cast((TObject) annot);
+            }
+        }
+        return null;
+    }
+
+    default <T extends TAnnotation> T[] getDeclaredAnnotationsByType(TClass<T> annotationClass) {
+        List<T> result = new ArrayList<>();
+        Object classAsObject = annotationClass;
+        for (TAnnotation annot : getDeclaredAnnotations()) {
+            if (annot.annotationType() == classAsObject) {
+                result.add(annotationClass.cast((TObject) annot));
+            }
+        }
+        @SuppressWarnings("unchecked")
+        T[] array = (T[]) (Object) TArray.newInstance(annotationClass, result.size());
+        return result.toArray(array);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,30 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform;
+package org.teavm.classlib;
 
-import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
+import java.util.Collection;
 
-public interface PlatformClassMetadata extends JSObject {
-    @JSProperty("item")
-    PlatformClass getArrayItem();
-
-    @JSProperty
-    PlatformSequence<PlatformClass> getSupertypes();
-
-    @JSProperty
-    PlatformClass getSuperclass();
-
-    @JSProperty
-    String getName();
-
-    @JSProperty
-    boolean isPrimitive();
-
-    @JSProperty
-    boolean isEnum();
-
-    @JSProperty
-    int getFlags();
+public interface ReflectionSupplier {
+    Collection<String> getAccessibleFields(ReflectionContext context, String className);
 }
