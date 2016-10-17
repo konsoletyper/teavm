@@ -186,8 +186,7 @@ public class WasmBinaryRenderer {
         } else {
             section.writeByte(1);
             section.writeByte(0x20);
-            section.writeByte(3);
-            section.writeLEB(functionIndexes.size());
+            section.writeByte(0);
             section.writeLEB(functionIndexes.size());
         }
         writeSection(SECTION_TABLE, "table", section.getData());
@@ -198,7 +197,7 @@ public class WasmBinaryRenderer {
 
         if (version == WasmBinaryVersion.V_0xC) {
             section.writeByte(1);
-            section.writeByte(3);
+            section.writeByte(1);
         }
         section.writeLEB(module.getMemorySize());
         section.writeLEB(module.getMemorySize());
