@@ -22,6 +22,8 @@ import org.teavm.classlib.ReflectionContext;
 import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReader;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
 
 public class ReflectionSupplierImpl implements ReflectionSupplier {
     @Override
@@ -34,5 +36,17 @@ public class ReflectionSupplierImpl implements ReflectionSupplier {
             }
         }
         return fields;
+    }
+
+    @Override
+    public Collection<MethodDescriptor> getAccessibleMethods(ReflectionContext context, String className) {
+        ClassReader cls = context.getClassSource().get(className);
+        Set<MethodDescriptor> methods = new HashSet<>();
+        for (MethodReader method : cls.getMethods()) {
+            if (method.getAnnotations().get(Reflectable.class.getName()) != null) {
+                methods.add(method.getDescriptor());
+            }
+        }
+        return methods;
     }
 }

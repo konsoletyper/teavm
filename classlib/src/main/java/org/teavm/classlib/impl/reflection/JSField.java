@@ -15,20 +15,10 @@
  */
 package org.teavm.classlib.impl.reflection;
 
-import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.platform.PlatformClass;
 
-public interface JSField extends JSObject {
-    @JSProperty
-    String getName();
-
-    @JSProperty
-    int getModifiers();
-
-    @JSProperty
-    int getAccessLevel();
-
+public interface JSField extends JSMember {
     @JSProperty
     PlatformClass getType();
 

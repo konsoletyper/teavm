@@ -13,22 +13,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.reflection;
+package org.teavm.classlib.java.lang.reflect;
 
-import org.teavm.backend.javascript.spi.InjectedBy;
-import org.teavm.platform.PlatformObject;
-import org.teavm.platform.PlatformSequence;
+import org.teavm.classlib.java.lang.TReflectiveOperationException;
+import org.teavm.classlib.java.lang.TString;
+import org.teavm.classlib.java.lang.TThrowable;
 
-public final class Converter {
-    private Converter() {
+public class TInvocationTargetException extends TReflectiveOperationException {
+    protected TInvocationTargetException() {
     }
 
-    @InjectedBy(ConverterInjector.class)
-    public static native Object toJava(PlatformObject jsObject);
+    public TInvocationTargetException(TThrowable target) {
+        super(null, target);
+    }
 
-    @InjectedBy(ConverterInjector.class)
-    public static native PlatformObject fromJava(Object object);
+    public TInvocationTargetException(TThrowable target, TString s) {
+        super(s, target);
+    }
 
-    @InjectedBy(ConverterInjector.class)
-    public static native PlatformSequence<PlatformObject> arrayFromJava(Object[] objects);
+    public TThrowable getTargetException() {
+        return getCause();
+    }
 }

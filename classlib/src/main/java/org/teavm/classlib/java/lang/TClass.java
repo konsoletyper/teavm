@@ -53,7 +53,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     private Map<TClass<?>, TAnnotation> annotationsByType;
     private TField[] declaredFields;
     private TField[] fields;
-    private static boolean jsFieldsInitialized;
+    private static boolean reflectionInitialized;
 
     private TClass(PlatformClass platformClass) {
         this.platformClass = platformClass;
@@ -142,7 +142,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
     public TField[] getDeclaredFields() throws TSecurityException {
         if (declaredFields == null) {
-            initJsFields();
+            initReflection();
             JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
             JSArray<JSField> jsFields = jsClass.getFields();
             declaredFields = new TField[jsFields.getLength()];
@@ -156,15 +156,15 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return declaredFields;
     }
 
-    private static void initJsFields() {
-        if (!jsFieldsInitialized) {
-            jsFieldsInitialized = true;
-            createJsFields();
+    private static void initReflection() {
+        if (!reflectionInitialized) {
+            reflectionInitialized = true;
+            createMetadata();
         }
     }
 
     @GeneratedBy(ClassGenerator.class)
-    private static native void createJsFields();
+    private static native void createMetadata();
 
     public TField[] getFields() throws TSecurityException {
         if (fields == null) {

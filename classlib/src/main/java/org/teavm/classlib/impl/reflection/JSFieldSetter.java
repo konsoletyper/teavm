@@ -21,5 +21,5 @@ import org.teavm.platform.PlatformObject;
 
 @JSFunctor
 public interface JSFieldSetter extends JSObject {
-    void set(PlatformObject instance, JSObject value);
+    void set(PlatformObject instance, PlatformObject value);
 }

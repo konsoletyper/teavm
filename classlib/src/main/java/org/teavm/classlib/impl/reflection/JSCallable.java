@@ -15,20 +15,12 @@
  */
 package org.teavm.classlib.impl.reflection;
 
-import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
 import org.teavm.platform.PlatformObject;
 import org.teavm.platform.PlatformSequence;
 
-public final class Converter {
-    private Converter() {
-    }
-
-    @InjectedBy(ConverterInjector.class)
-    public static native Object toJava(PlatformObject jsObject);
-
-    @InjectedBy(ConverterInjector.class)
-    public static native PlatformObject fromJava(Object object);
-
-    @InjectedBy(ConverterInjector.class)
-    public static native PlatformSequence<PlatformObject> arrayFromJava(Object[] objects);
+@JSFunctor
+public interface JSCallable extends JSObject {
+    PlatformObject call(PlatformObject object, PlatformSequence<PlatformObject> arguments);
 }

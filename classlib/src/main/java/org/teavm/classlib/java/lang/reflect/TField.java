@@ -23,8 +23,8 @@ import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TIllegalAccessException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.jso.JSObject;
 import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformObject;
 
 public class TField extends TAccessibleObject implements TMember {
     private TClass<?> declaringClass;
@@ -90,7 +90,7 @@ public class TField extends TAccessibleObject implements TMember {
             throw new TIllegalAccessException();
         }
         checkInstance(obj);
-        JSObject result = getter.get(Platform.getPlatformObject(obj));
+        PlatformObject result = getter.get(Platform.getPlatformObject(obj));
         return Converter.toJava(result);
     }
 

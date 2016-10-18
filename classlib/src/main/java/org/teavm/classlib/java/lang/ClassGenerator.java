@@ -25,6 +25,7 @@ import org.teavm.classlib.impl.ReflectionDependencyListener;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
+import org.teavm.model.MemberReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -32,20 +33,23 @@ public class ClassGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
-            case "createJsFields":
-                generateCreateJsFields(context, writer);
+            case "createMetadata":
+                generateCreateMetadata(context, writer);
                 break;
         }
     }
 
-    private void generateCreateJsFields(GeneratorContext context, SourceWriter writer) throws IOException {
+    private void generateCreateMetadata(GeneratorContext context, SourceWriter writer) throws IOException {
         ReflectionDependencyListener reflection = context.getService(ReflectionDependencyListener.class);
         for (String className : reflection.getClassesWithReflectableFields()) {
-            generateCreateJsFieldsForClass(context, writer, className);
+            generateCreateFieldsForClass(context, writer, className);
+        }
+        for (String className : reflection.getClassesWithReflectableMethods()) {
+            generateCreateMethodsForClass(context, writer, className);
         }
     }
 
-    private void generateCreateJsFieldsForClass(GeneratorContext context, SourceWriter writer, String className)
+    private void generateCreateFieldsForClass(GeneratorContext context, SourceWriter writer, String className)
             throws IOException {
         ReflectionDependencyListener reflection = context.getService(ReflectionDependencyListener.class);
         Set<String> accessibleFields = reflection.getAccessibleFields(className);
@@ -53,8 +57,43 @@ public class ClassGenerator implements Generator {
         ClassReader cls = context.getClassSource().get(className);
         writer.appendClass(className).append(".$meta.fields").ws().append('=').ws().append('[').indent();
 
+        generateCreateMembers(writer, cls.getFields(), field -> {
+            appendProperty(writer, "type", false, () -> writer.append(context.typeToClassString(field.getType())));
+
+            appendProperty(writer, "getter", false, () -> {
+                if (accessibleFields != null && accessibleFields.contains(field.getName())) {
+                    renderGetter(writer, field);
+                } else {
+                    writer.append("null");
+                }
+            });
+
+            appendProperty(writer, "setter", false, () -> {
+                if (accessibleFields != null && accessibleFields.contains(field.getName())) {
+                    renderSetter(writer, field);
+                } else {
+                    writer.append("null");
+                }
+            });
+        });
+
+        writer.outdent().append("];").softNewLine();
+    }
+
+    private void generateCreateMethodsForClass(GeneratorContext context, SourceWriter writer, String className)
+            throws IOException {
+        ReflectionDependencyListener reflection = context.getService(ReflectionDependencyListener.class);
+
+        ClassReader cls = context.getClassSource().get(className);
+        writer.appendClass(className).append(".$meta.methods").ws().append('=').ws().append('[').indent();
+
+        writer.outdent().append("];").softNewLine();
+    }
+
+    private <T extends MemberReader> void generateCreateMembers(SourceWriter writer, Iterable<T> members,
+            MemberRenderer<T> renderer) throws IOException {
         boolean first = true;
-        for (FieldReader field : cls.getFields()) {
+        for (T member : members) {
             if (!first) {
                 writer.append(",").ws();
             } else {
@@ -63,35 +102,23 @@ public class ClassGenerator implements Generator {
             first = false;
             writer.append("{").indent().softNewLine();
 
-            writer.append("name").ws().append(':').ws().append('"')
-                    .append(RenderingUtil.escapeString(field.getName()))
-                    .append("\",").softNewLine();
-            writer.append("modifiers").ws().append(':').ws().append(packModifiers(field.readModifiers()))
-                    .append(",").softNewLine();
-            writer.append("accessLevel").ws().append(':').ws().append(field.getLevel().ordinal())
-                    .append(",").softNewLine();
-            writer.append("type").ws().append(':').ws().append(context.typeToClassString(field.getType()))
-                    .append(",").softNewLine();
-
-            writer.append("getter").ws().append(':').ws();
-            if (accessibleFields != null && accessibleFields.contains(field.getName())) {
-                renderGetter(writer, field);
-            } else {
-                writer.append("null");
-            }
-            writer.append(",").softNewLine();
-
-            writer.append("setter").ws().append(':').ws();
-            if (accessibleFields != null && accessibleFields.contains(field.getName())) {
-                renderSetter(writer, field);
-            } else {
-                writer.append("null");
-            }
-
+            appendProperty(writer, "name", true, () ->  writer.append('"')
+                    .append(RenderingUtil.escapeString(member.getName())).append('"'));
+            appendProperty(writer, "modifiers", false, () -> writer.append(packModifiers(member.readModifiers())));
+            appendProperty(writer, "accessLevel", false, () -> writer.append(member.getLevel().ordinal()));
+            renderer.render(member);
             writer.outdent().softNewLine().append("}");
         }
 
         writer.outdent().append("];").softNewLine();
+    }
+
+    private void appendProperty(SourceWriter writer, String name, boolean first, Fragment value) throws IOException {
+        if (!first) {
+            writer.append(",").softNewLine();
+        }
+        writer.append(name).ws().append(':').ws();
+        value.render();
     }
 
     private void renderGetter(SourceWriter writer, FieldReader field) throws IOException {
@@ -207,6 +234,10 @@ public class ClassGenerator implements Generator {
 
     private interface Fragment {
         void render() throws IOException;
+    }
+
+    private interface MemberRenderer<T extends MemberReader> {
+        void render(T member) throws IOException;
     }
 
     private int packModifiers(Set<ElementModifier> elementModifiers) {

@@ -15,9 +15,10 @@
  */
 package org.teavm.classlib.impl;
 
+import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -33,6 +34,9 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
+import org.teavm.model.MemberReader;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -40,11 +44,18 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private List<ReflectionSupplier> reflectionSuppliers;
     private MethodReference fieldGet = new MethodReference(Field.class, "get", Object.class, Object.class);
     private MethodReference fieldSet = new MethodReference(Field.class, "set", Object.class, Object.class, void.class);
+    private MethodReference newInstance = new MethodReference(Constructor.class, "newInstance", Object[].class,
+            Object.class);
     private MethodReference getFields = new MethodReference(Class.class, "getDeclaredFields", Field[].class);
+    private MethodReference getConstructors = new MethodReference(Class.class, "getDeclaredConstructors",
+            Constructor[].class);
     private boolean fieldGetHandled;
     private boolean fieldSetHandled;
-    private Map<String, Set<String>> accessibleFieldCache = new HashMap<>();
-    private Set<String> classesWithReflectableFields = new HashSet<>();
+    private boolean newInstanceHandled;
+    private Map<String, Set<String>> accessibleFieldCache = new LinkedHashMap<>();
+    private Map<String, Set<MethodDescriptor>> accessibleMethodCache = new LinkedHashMap<>();
+    private Set<String> classesWithReflectableFields = new LinkedHashSet<>();
+    private Set<String> classesWithReflectableMethods = new LinkedHashSet<>();
 
     public ReflectionDependencyListener(List<ReflectionSupplier> reflectionSuppliers) {
         this.reflectionSuppliers = reflectionSuppliers;
@@ -54,8 +65,16 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         return classesWithReflectableFields;
     }
 
+    public Set<String> getClassesWithReflectableMethods() {
+        return classesWithReflectableMethods;
+    }
+
     public Set<String> getAccessibleFields(String className) {
         return accessibleFieldCache.get(className);
+    }
+
+    public Set<MethodDescriptor> getAccessibleMethods(String className) {
+        return accessibleMethodCache.get(className);
     }
 
     @Override
@@ -64,10 +83,18 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             handleFieldGet(agent, method, location);
         } else if (method.getReference().equals(fieldSet)) {
             handleFieldSet(agent, method, location);
+        } else if (method.getReference().equals(newInstance)) {
+            handleNewInstance(agent, method, location);
         } else if (method.getReference().equals(getFields)) {
             method.getVariable(0).getClassValueNode().addConsumer(type -> {
                 if (!type.getName().startsWith("[")) {
                     classesWithReflectableFields.add(type.getName());
+                }
+            });
+        } else if (method.getReference().equals(getConstructors)) {
+            method.getVariable(0).getClassValueNode().addConsumer(type -> {
+                if (!type.getName().startsWith("[")) {
+                    classesWithReflectableMethods.add(type.getName());
                 }
             });
         }
@@ -118,9 +145,37 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         });
     }
 
-    private void linkClassIfNecessary(DependencyAgent agent, FieldReader field, CallLocation location) {
-        if (field.hasModifier(ElementModifier.STATIC)) {
-            agent.linkClass(field.getOwnerName(), location).initClass(location);
+    private void handleNewInstance(DependencyAgent agent, MethodDependency method, CallLocation location) {
+        if (newInstanceHandled) {
+            return;
+        }
+        newInstanceHandled = true;
+
+        DependencyNode classValueNode = agent.linkMethod(getConstructors, location).getVariable(0).getClassValueNode();
+        classValueNode.addConsumer(reflectedType -> {
+            if (reflectedType.getName().startsWith("[")) {
+                return;
+            }
+
+            Set<MethodDescriptor> accessibleMethods = getAccessibleMethods(agent, reflectedType.getName());
+            ClassReader cls = agent.getClassSource().get(reflectedType.getName());
+            for (MethodDescriptor methodDescriptor : accessibleMethods) {
+                MethodReader calledMethod = cls.getMethod(methodDescriptor);
+                MethodDependency calledMethodDep = agent.linkMethod(method.getReference(), location);
+                calledMethodDep.use();
+                for (int i = 0; i < methodDescriptor.parameterCount(); ++i) {
+                    propagateSet(agent, methodDescriptor.parameterType(i), method.getVariable(1).getArrayItem(),
+                            calledMethodDep.getVariable(i + 1), location);
+                }
+                calledMethodDep.getVariable(0).propagate(reflectedType);
+                linkClassIfNecessary(agent, calledMethod, location);
+            }
+        });
+    }
+
+    private void linkClassIfNecessary(DependencyAgent agent, MemberReader member, CallLocation location) {
+        if (member.hasModifier(ElementModifier.STATIC)) {
+            agent.linkClass(member.getOwnerName(), location).initClass(location);
         }
     }
 
@@ -128,13 +183,26 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         return accessibleFieldCache.computeIfAbsent(className, key -> gatherAccessibleFields(agent, key));
     }
 
+    private Set<MethodDescriptor> getAccessibleMethods(DependencyAgent agent, String className) {
+        return accessibleMethodCache.computeIfAbsent(className, key -> gatherAccessibleMethods(agent, key));
+    }
+
     private Set<String> gatherAccessibleFields(DependencyAgent agent, String className) {
         ReflectionContextImpl context = new ReflectionContextImpl(agent);
-        Set<String> fields = new HashSet<>();
+        Set<String> fields = new LinkedHashSet<>();
         for (ReflectionSupplier supplier : reflectionSuppliers) {
             fields.addAll(supplier.getAccessibleFields(context, className));
         }
         return fields;
+    }
+
+    private Set<MethodDescriptor> gatherAccessibleMethods(DependencyAgent agent, String className) {
+        ReflectionContextImpl context = new ReflectionContextImpl(agent);
+        Set<MethodDescriptor> methods = new LinkedHashSet<>();
+        for (ReflectionSupplier supplier : reflectionSuppliers) {
+            methods.addAll(supplier.getAccessibleMethods(context, className));
+        }
+        return methods;
     }
 
     private void propagateGet(DependencyAgent agent, ValueType type, DependencyNode sourceNode,

@@ -16,7 +16,10 @@
 package org.teavm.classlib;
 
 import java.util.Collection;
+import org.teavm.model.MethodDescriptor;
 
 public interface ReflectionSupplier {
     Collection<String> getAccessibleFields(ReflectionContext context, String className);
+
+    Collection<MethodDescriptor> getAccessibleMethods(ReflectionContext context, String className);
 }

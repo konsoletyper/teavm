@@ -21,5 +21,5 @@ import org.teavm.platform.PlatformObject;
 
 @JSFunctor
 public interface JSFieldGetter extends JSObject {
-    JSObject get(PlatformObject instance);
+    PlatformObject get(PlatformObject instance);
 }
