@@ -89,6 +89,10 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         Set<String> accessibleFields = reflection.getAccessibleFields(className);
 
         ClassReader cls = context.getClassSource().get(className);
+        if (cls == null) {
+            return;
+        }
+
         writer.appendClass(className).append(".$meta.fields").ws().append('=').ws().append('[').indent();
 
         generateCreateMembers(writer, cls.getFields(), field -> {
@@ -120,6 +124,10 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         Set<MethodDescriptor> accessibleMethods = reflection.getAccessibleMethods(className);
 
         ClassReader cls = context.getClassSource().get(className);
+        if (cls == null) {
+            return;
+        }
+
         writer.appendClass(className).append(".$meta.methods").ws().append('=').ws().append('[').indent();
 
         generateCreateMembers(writer, cls.getMethods(), method -> {
@@ -160,7 +168,8 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
 
             appendProperty(writer, "name", true, () ->  writer.append('"')
                     .append(RenderingUtil.escapeString(member.getName())).append('"'));
-            appendProperty(writer, "modifiers", false, () -> writer.append(packModifiers(member.readModifiers())));
+            appendProperty(writer, "modifiers", false, () -> writer.append(
+                    ElementModifier.pack(member.readModifiers())));
             appendProperty(writer, "accessLevel", false, () -> writer.append(member.getLevel().ordinal()));
             renderer.render(member);
             writer.outdent().softNewLine().append("}");
@@ -322,19 +331,5 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
 
     private interface MemberRenderer<T extends MemberReader> {
         void render(T member) throws IOException;
-    }
-
-    private int packModifiers(Set<ElementModifier> elementModifiers) {
-        ElementModifier[] knownModifiers = ElementModifier.values();
-        int value = 0;
-        int bit = 1;
-        for (int i = 0; i < knownModifiers.length; ++i) {
-            ElementModifier modifier = knownModifiers[i];
-            if (elementModifiers.contains(modifier)) {
-                value |= bit;
-            }
-            bit <<= 1;
-        }
-        return value;
     }
 }

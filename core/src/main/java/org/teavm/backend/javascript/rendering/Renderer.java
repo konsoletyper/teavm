@@ -467,11 +467,10 @@ public class Renderer implements RenderingManager {
                     writer.appendClass(iface);
                 }
                 writer.append("],").ws();
-                int flags = 0;
-                if (cls.getModifiers().contains(ElementModifier.ENUM)) {
-                    flags |= 1;
-                }
-                writer.append(flags).append(',').ws();
+
+                writer.append(ElementModifier.pack(cls.getModifiers())).append(',').ws();
+                writer.append(cls.getAccessLevel().ordinal()).append(',').ws();
+
                 MethodReader clinit = classSource.get(cls.getName()).getMethod(
                         new MethodDescriptor("<clinit>", ValueType.VOID));
                 if (clinit != null) {

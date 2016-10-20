@@ -325,6 +325,12 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         }
     }
 
+    public int getModifiers() {
+        int flags = platformClass.getMetadata().getFlags();
+        int accessLevel = platformClass.getMetadata().getAccessLevel();
+        return Flags.getModifiers(flags, accessLevel);
+    }
+
     public boolean desiredAssertionStatus() {
         return true;
     }

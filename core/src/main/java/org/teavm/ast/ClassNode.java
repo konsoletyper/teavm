@@ -19,12 +19,14 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.ElementModifier;
 
 public class ClassNode {
     private String name;
     private String parentName;
     private Set<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
+    private AccessLevel accessLevel = AccessLevel.PUBLIC;
     private List<FieldNode> fields = new ArrayList<>();
     private List<MethodNode> methods = new ArrayList<>();
     private List<String> interfaces = new ArrayList<>();
@@ -56,5 +58,13 @@ public class ClassNode {
 
     public Set<ElementModifier> getModifiers() {
         return modifiers;
+    }
+
+    public AccessLevel getAccessLevel() {
+        return accessLevel;
+    }
+
+    public void setAccessLevel(AccessLevel accessLevel) {
+        this.accessLevel = accessLevel;
     }
 }

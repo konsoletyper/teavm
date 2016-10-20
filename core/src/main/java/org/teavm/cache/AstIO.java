@@ -92,7 +92,7 @@ public class AstIO {
     }
 
     public void write(DataOutput output, RegularMethodNode method) throws IOException {
-        output.writeInt(packModifiers(method.getModifiers()));
+        output.writeInt(ElementModifier.pack(method.getModifiers()));
         output.writeShort(method.getVariables().size());
         for (VariableNode var : method.getVariables()) {
             write(output, var);
@@ -136,7 +136,7 @@ public class AstIO {
     }
 
     public void writeAsync(DataOutput output, AsyncMethodNode method) throws IOException {
-        output.writeInt(packModifiers(method.getModifiers()));
+        output.writeInt(ElementModifier.pack(method.getModifiers()));
         output.writeShort(method.getVariables().size());
         for (VariableNode var : method.getVariables()) {
             write(output, var);
@@ -165,14 +165,6 @@ public class AstIO {
             node.getBody().add(part);
         }
         return node;
-    }
-
-    private int packModifiers(Set<ElementModifier> modifiers) {
-        int packed = 0;
-        for (ElementModifier modifier : modifiers) {
-            packed |= 1 << modifier.ordinal();
-        }
-        return packed;
     }
 
     private Set<ElementModifier> unpackModifiers(int packed) {

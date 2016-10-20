@@ -39,4 +39,7 @@ public interface PlatformClassMetadata extends JSObject {
 
     @JSProperty
     int getFlags();
+
+    @JSProperty
+    int getAccessLevel();
 }

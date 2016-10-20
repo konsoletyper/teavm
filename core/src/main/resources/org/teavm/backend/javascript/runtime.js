@@ -418,7 +418,7 @@ function $rt_putStderr(ch) {
     }
 }
 function $rt_metadata(data) {
-    for (var i = 0; i < data.length; i += 7) {
+    for (var i = 0; i < data.length; i += 8) {
         var cls = data[i];
         cls.$meta = {};
         var m = cls.$meta;
@@ -434,15 +434,19 @@ function $rt_metadata(data) {
             cls.prototype = {};
         }
         var flags = data[i + 4];
-        m.enum = (flags & 1) != 0;
+        m.enum = (flags & 16) != 0;
+        m.flags = flags;
         m.primitive = false;
         m.item = null;
         cls.prototype.constructor = cls;
         cls.classObject = null;
-        var clinit = data[i + 5];
+
+        m.accessLevel = data[i + 5];
+
+        var clinit = data[i + 6];
         cls.$clinit = clinit !== 0 ? clinit : function() {};
 
-        var virtualMethods = data[i + 6];
+        var virtualMethods = data[i + 7];
         for (var j = 0; j < virtualMethods.length; j += 2) {
             var name = virtualMethods[j];
             var func = virtualMethods[j + 1];
