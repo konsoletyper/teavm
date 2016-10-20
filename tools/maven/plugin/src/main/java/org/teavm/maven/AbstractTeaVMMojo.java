@@ -64,9 +64,6 @@ public abstract class AbstractTeaVMMojo extends AbstractMojo {
     protected boolean minifying = true;
 
     @Parameter
-    protected String mainClass;
-
-    @Parameter
     protected Properties properties;
 
     @Parameter
