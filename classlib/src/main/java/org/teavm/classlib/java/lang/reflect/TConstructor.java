@@ -103,7 +103,8 @@ public class TConstructor<T> extends TAccessibleObject implements TMember {
             throw new TIllegalArgumentException();
         }
         for (int i = 0; i < initargs.length; ++i) {
-            if (initargs[i] != null && !parameterTypes[i].isInstance((TObject) initargs[i])) {
+            if (!parameterTypes[i].isPrimitive() && initargs[i] != null
+                    && !parameterTypes[i].isInstance((TObject) initargs[i])) {
                 throw new TIllegalArgumentException();
             }
             if (parameterTypes[i].isPrimitive() && initargs[i] == null) {
@@ -112,7 +113,8 @@ public class TConstructor<T> extends TAccessibleObject implements TMember {
         }
 
         PlatformSequence<PlatformObject> jsArgs = Converter.arrayFromJava(initargs);
-        PlatformObject instance = callable.call(null, jsArgs);
+        PlatformObject instance = declaringClass.newEmptyInstance();
+        callable.call(instance, jsArgs);
         return (T) Converter.toJava(instance);
     }
 

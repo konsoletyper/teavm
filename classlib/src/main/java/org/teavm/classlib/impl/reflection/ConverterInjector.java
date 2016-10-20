@@ -23,6 +23,15 @@ import org.teavm.model.MethodReference;
 public class ConverterInjector implements Injector {
     @Override
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
-        context.writeExpr(context.getArgument(0));
+        switch (methodRef.getName()) {
+            case "toJava":
+            case "fromJava":
+                context.writeExpr(context.getArgument(0));
+                break;
+            case "arrayFromJava":
+                context.writeExpr(context.getArgument(0));
+                context.getWriter().append(".data");
+                break;
+        }
     }
 }

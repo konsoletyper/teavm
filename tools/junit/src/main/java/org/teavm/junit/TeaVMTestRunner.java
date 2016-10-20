@@ -302,6 +302,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             compileResult = compileTest(child, configuration);
         } catch (Exception e) {
             notifier.fireTestFailure(new Failure(description, e));
+            notifier.fireTestFinished(description);
+            latch.countDown();
             return null;
         }
 

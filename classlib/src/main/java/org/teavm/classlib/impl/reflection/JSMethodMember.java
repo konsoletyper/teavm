@@ -19,7 +19,7 @@ import org.teavm.jso.JSProperty;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.PlatformSequence;
 
-public interface JSConstructor extends JSMember {
+public interface JSMethodMember extends JSMember {
     @JSProperty
     PlatformSequence<PlatformClass> getParameterTypes();
 

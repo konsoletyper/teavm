@@ -161,9 +161,9 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             ClassReader cls = agent.getClassSource().get(reflectedType.getName());
             for (MethodDescriptor methodDescriptor : accessibleMethods) {
                 MethodReader calledMethod = cls.getMethod(methodDescriptor);
-                MethodDependency calledMethodDep = agent.linkMethod(method.getReference(), location);
+                MethodDependency calledMethodDep = agent.linkMethod(calledMethod.getReference(), location);
                 calledMethodDep.use();
-                for (int i = 0; i < methodDescriptor.parameterCount(); ++i) {
+                for (int i = 0; i < calledMethod.parameterCount(); ++i) {
                     propagateSet(agent, methodDescriptor.parameterType(i), method.getVariable(1).getArrayItem(),
                             calledMethodDep.getVariable(i + 1), location);
                 }

@@ -13,22 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.reflection;
+package org.teavm.classlib.java.lang;
 
-import org.teavm.jso.JSProperty;
-import org.teavm.jso.core.JSArray;
-import org.teavm.platform.PlatformClassMetadata;
+public class TNoSuchMethodException extends TReflectiveOperationException {
+    public TNoSuchMethodException() {
+    }
 
-public interface JSClass extends PlatformClassMetadata {
-    @JSProperty
-    JSArray<JSField> getFields();
-
-    @JSProperty
-    void setFields(JSArray<JSField> fields);
-
-    @JSProperty
-    JSArray<JSMethodMember> getMethods();
-
-    @JSProperty
-    void setMethods(JSArray<JSMethodMember> methods);
+    public TNoSuchMethodException(TString message) {
+        super(message);
+    }
 }

@@ -18,23 +18,57 @@ package org.teavm.classlib.java.lang;
 import java.io.IOException;
 import java.util.Set;
 import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.rendering.Precedence;
 import org.teavm.backend.javascript.rendering.RenderingUtil;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
+import org.teavm.backend.javascript.spi.Injector;
+import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.classlib.impl.ReflectionDependencyListener;
+import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyPlugin;
+import org.teavm.dependency.MethodDependency;
+import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
+import org.teavm.model.FieldReference;
 import org.teavm.model.MemberReader;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public class ClassGenerator implements Generator {
+public class ClassGenerator implements Generator, Injector, DependencyPlugin {
+    private static final FieldReference platformClassField =
+            new FieldReference(Class.class.getName(), "platformClass");
+
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         switch (methodRef.getName()) {
             case "createMetadata":
                 generateCreateMetadata(context, writer);
+                break;
+        }
+    }
+
+    @Override
+    public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
+        switch (methodRef.getName()) {
+            case "newEmptyInstance":
+                context.getWriter().append("new ");
+                context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
+                context.getWriter().append('.').appendField(platformClassField);
+                context.getWriter().append("()");
+                break;
+        }
+    }
+
+    @Override
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+        switch (method.getReference().getName()) {
+            case "newEmptyInstance":
+                method.getVariable(0).getClassValueNode().connect(method.getResult());
                 break;
         }
     }
@@ -83,9 +117,31 @@ public class ClassGenerator implements Generator {
     private void generateCreateMethodsForClass(GeneratorContext context, SourceWriter writer, String className)
             throws IOException {
         ReflectionDependencyListener reflection = context.getService(ReflectionDependencyListener.class);
+        Set<MethodDescriptor> accessibleMethods = reflection.getAccessibleMethods(className);
 
         ClassReader cls = context.getClassSource().get(className);
         writer.appendClass(className).append(".$meta.methods").ws().append('=').ws().append('[').indent();
+
+        generateCreateMembers(writer, cls.getMethods(), method -> {
+            appendProperty(writer, "parameterTypes", false, () -> {
+                writer.append('[');
+                for (int i = 0; i < method.parameterCount(); ++i) {
+                    if (i > 0) {
+                        writer.append(',').ws();
+                    }
+                    writer.append(context.typeToClassString(method.parameterType(i)));
+                }
+                writer.append(']');
+            });
+
+            appendProperty(writer, "callable", false, () -> {
+                if (accessibleMethods != null && accessibleMethods.contains(method.getDescriptor())) {
+                    renderCallable(writer, method);
+                } else {
+                    writer.append("null");
+                }
+            });
+        });
 
         writer.outdent().append("];").softNewLine();
     }
@@ -109,8 +165,6 @@ public class ClassGenerator implements Generator {
             renderer.render(member);
             writer.outdent().softNewLine().append("}");
         }
-
-        writer.outdent().append("];").softNewLine();
     }
 
     private void appendProperty(SourceWriter writer, String name, boolean first, Fragment value) throws IOException {
@@ -140,9 +194,39 @@ public class ClassGenerator implements Generator {
         writer.outdent().append("}");
     }
 
-    private void initClass(SourceWriter writer, FieldReader field) throws IOException {
-        if (field.hasModifier(ElementModifier.STATIC)) {
-            writer.appendClass(field.getOwnerName()).append("_$callClinit();").softNewLine();
+    private void renderCallable(SourceWriter writer, MethodReader method) throws IOException {
+        writer.append("function(obj,").ws().append("args)").ws().append("{").indent().softNewLine();
+
+        initClass(writer, method);
+
+        if (method.getResultType() != ValueType.VOID) {
+            writer.append("return ");
+        }
+        if (method.hasModifier(ElementModifier.STATIC)) {
+            writer.appendMethodBody(method.getReference());
+        } else {
+            writer.append("obj.").appendMethod(method.getDescriptor());
+        }
+
+        writer.append('(');
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            if (i > 0) {
+                writer.append(',').ws();
+            }
+            int index = i;
+            unboxIfNecessary(writer, method.parameterType(i), () -> writer.append("args[" + index + "]"));
+        }
+        writer.append(");").softNewLine();
+
+        if (method.getResultType() == ValueType.VOID) {
+            writer.append("return null;").softNewLine();
+        }
+        writer.outdent().append("}");
+    }
+
+    private void initClass(SourceWriter writer, MemberReader member) throws IOException {
+        if (member.hasModifier(ElementModifier.STATIC)) {
+            writer.appendClass(member.getOwnerName()).append("_$callClinit();").softNewLine();
         }
     }
 
