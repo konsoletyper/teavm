@@ -71,7 +71,7 @@ public class AsyncMethodFinder {
                     continue;
                 }
                 if (method.getAnnotations().get(Async.class.getName()) != null) {
-                    add(method.getReference());
+                    add(method.getReference(), new CallStack(method.getReference(), null));
                 }
             }
         }
@@ -83,7 +83,7 @@ public class AsyncMethodFinder {
                         continue;
                     }
                     if (hasMonitor(method)) {
-                        add(method.getReference());
+                        add(method.getReference(), new CallStack(method.getReference(), null));
                     }
                 }
             }
@@ -137,7 +137,7 @@ public class AsyncMethodFinder {
         return false;
     }
 
-    private void add(MethodReference methodRef) {
+    private void add(MethodReference methodRef, CallStack stack) {
         if (!asyncMethods.add(methodRef)) {
             return;
         }
@@ -156,11 +156,33 @@ public class AsyncMethodFinder {
         if (method.getAnnotations().get(Sync.class.getName()) != null
                 || method.getAnnotations().get(InjectedBy.class.getName()) != null) {
             diagnostics.error(new CallLocation(methodRef), "Method {{m0}} is claimed to be synchronous, "
-                    + "but it is has invocations of asynchronous methods", methodRef);
+                    + "but it is has invocations of asynchronous methods:" + stack.toString(), methodRef);
             return;
         }
         for (CallSite callSite : node.getCallerCallSites()) {
-            add(callSite.getCaller().getMethod());
+            MethodReference nextMethod = callSite.getCaller().getMethod();
+            add(nextMethod, new CallStack(nextMethod, stack));
+        }
+    }
+
+    private class CallStack {
+        MethodReference method;
+        CallStack next;
+
+        public CallStack(MethodReference method, CallStack next) {
+            this.method = method;
+            this.next = next;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            CallStack stack = this;
+            while (stack != null) {
+                sb.append("\n    calling " + stack.method);
+                stack = stack.next;
+            }
+            return sb.toString();
         }
     }
 
@@ -170,7 +192,7 @@ public class AsyncMethodFinder {
         if (cls == null) {
             return;
         }
-        for (MethodReference overridenMethod : findOverridenMethods(cls, methodRef)) {
+        for (MethodReference overridenMethod : findOverriddenMethods(cls, methodRef)) {
             addOverridenToFamily(overridenMethod);
         }
     }
@@ -193,7 +215,7 @@ public class AsyncMethodFinder {
         if (cls == null) {
             return false;
         }
-        for (MethodReference overridenMethod : findOverridenMethods(cls, methodRef)) {
+        for (MethodReference overridenMethod : findOverriddenMethods(cls, methodRef)) {
             if (addToFamily(overridenMethod)) {
                 return true;
             }
@@ -201,7 +223,7 @@ public class AsyncMethodFinder {
         return false;
     }
 
-    private Set<MethodReference> findOverridenMethods(ClassReader cls, MethodReference methodRef) {
+    private Set<MethodReference> findOverriddenMethods(ClassReader cls, MethodReference methodRef) {
         List<String> parents = new ArrayList<>();
         if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
             parents.add(cls.getParent());
@@ -211,12 +233,12 @@ public class AsyncMethodFinder {
         Set<MethodReference> visited = new HashSet<>();
         Set<MethodReference> overriden = new HashSet<>();
         for (String parent : parents) {
-            findOverridenMethods(new MethodReference(parent, methodRef.getDescriptor()), overriden, visited);
+            findOverriddenMethods(new MethodReference(parent, methodRef.getDescriptor()), overriden, visited);
         }
         return overriden;
     }
 
-    private void findOverridenMethods(MethodReference methodRef, Set<MethodReference> result,
+    private void findOverriddenMethods(MethodReference methodRef, Set<MethodReference> result,
             Set<MethodReference> visited) {
         if (!visited.add(methodRef)) {
             return;
@@ -235,10 +257,10 @@ public class AsyncMethodFinder {
             }
         } else {
             if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
-                findOverridenMethods(new MethodReference(cls.getParent(), methodRef.getDescriptor()), result, visited);
+                findOverriddenMethods(new MethodReference(cls.getParent(), methodRef.getDescriptor()), result, visited);
             }
             for (String iface : cls.getInterfaces()) {
-                findOverridenMethods(new MethodReference(iface, methodRef.getDescriptor()), result, visited);
+                findOverriddenMethods(new MethodReference(iface, methodRef.getDescriptor()), result, visited);
             }
         }
     }
