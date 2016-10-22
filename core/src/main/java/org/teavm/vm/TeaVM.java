@@ -61,6 +61,7 @@ import org.teavm.model.optimization.MethodOptimization;
 import org.teavm.model.optimization.RedundantJumpElimination;
 import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 import org.teavm.model.optimization.UnusedVariableElimination;
+import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.MissingItemsProcessor;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
@@ -478,7 +479,15 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 do {
                     changed = false;
                     for (MethodOptimization optimization : getOptimizations()) {
-                        changed |= optimization.optimize(method, optimizedProgram);
+                        try {
+                            changed |= optimization.optimize(method, optimizedProgram);
+                        } catch (Exception e) {
+                            ListingBuilder listingBuilder = new ListingBuilder();
+                            String listing = listingBuilder.buildListing(optimizedProgram, "");
+                            System.err.println("Error optimizing program for method" + method.getReference()
+                                    + ":\n" + listing);
+                            throw new RuntimeException(e);
+                        }
                     }
                 } while (changed);
 

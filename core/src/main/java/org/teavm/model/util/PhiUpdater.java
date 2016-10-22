@@ -354,11 +354,7 @@ public class PhiUpdater {
                 continue;
             }
 
-            Map<Variable, TryCatchJoint> joints = jointMap.get(tryCatch);
-            if (joints == null) {
-                joints = new HashMap<>();
-                jointMap.put(tryCatch, joints);
-            }
+            Map<Variable, TryCatchJoint> joints = jointMap.computeIfAbsent(tryCatch, k -> new HashMap<>());
             TryCatchJoint joint = joints.get(original);
             if (joint == null) {
                 joint = new TryCatchJoint();
@@ -398,7 +394,7 @@ public class PhiUpdater {
     private Variable use(Variable var) {
         Variable mappedVar = variableMap[var.getIndex()];
         if (mappedVar == null) {
-            throw new AssertionError();
+            throw new AssertionError("Variable used before definition: " + var.getIndex());
         }
         return mappedVar;
     }
