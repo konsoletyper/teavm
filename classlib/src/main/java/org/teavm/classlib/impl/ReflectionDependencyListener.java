@@ -17,6 +17,7 @@ package org.teavm.classlib.impl;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -46,12 +47,17 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private MethodReference fieldSet = new MethodReference(Field.class, "set", Object.class, Object.class, void.class);
     private MethodReference newInstance = new MethodReference(Constructor.class, "newInstance", Object[].class,
             Object.class);
+    private MethodReference invokeMethod = new MethodReference(Method.class, "invoke", Object.class, Object[].class,
+            Object.class);
     private MethodReference getFields = new MethodReference(Class.class, "getDeclaredFields", Field[].class);
     private MethodReference getConstructors = new MethodReference(Class.class, "getDeclaredConstructors",
             Constructor[].class);
+    private MethodReference getMethods = new MethodReference(Class.class, "getDeclaredMethods",
+            Method[].class);
     private boolean fieldGetHandled;
     private boolean fieldSetHandled;
     private boolean newInstanceHandled;
+    private boolean invokeHandled;
     private Map<String, Set<String>> accessibleFieldCache = new LinkedHashMap<>();
     private Map<String, Set<MethodDescriptor>> accessibleMethodCache = new LinkedHashMap<>();
     private Set<String> classesWithReflectableFields = new LinkedHashSet<>();
@@ -85,13 +91,15 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             handleFieldSet(agent, method, location);
         } else if (method.getReference().equals(newInstance)) {
             handleNewInstance(agent, method, location);
+        } else if (method.getReference().equals(invokeMethod)) {
+            handleInvoke(agent, method, location);
         } else if (method.getReference().equals(getFields)) {
             method.getVariable(0).getClassValueNode().addConsumer(type -> {
                 if (!type.getName().startsWith("[")) {
                     classesWithReflectableFields.add(type.getName());
                 }
             });
-        } else if (method.getReference().equals(getConstructors)) {
+        } else if (method.getReference().equals(getConstructors) || method.getReference().equals(getMethods)) {
             method.getVariable(0).getClassValueNode().addConsumer(type -> {
                 if (!type.getName().startsWith("[")) {
                     classesWithReflectableMethods.add(type.getName());
@@ -171,7 +179,40 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 linkClassIfNecessary(agent, calledMethod, location);
             }
         });
+        classValueNode.connect(method.getResult());
     }
+
+    private void handleInvoke(DependencyAgent agent, MethodDependency method, CallLocation location) {
+        if (invokeHandled) {
+            return;
+        }
+        invokeHandled = true;
+
+        DependencyNode classValueNode = agent.linkMethod(getMethods, location).getVariable(0).getClassValueNode();
+        classValueNode.addConsumer(reflectedType -> {
+            if (reflectedType.getName().startsWith("[")) {
+                return;
+            }
+
+            Set<MethodDescriptor> accessibleMethods = getAccessibleMethods(agent, reflectedType.getName());
+            ClassReader cls = agent.getClassSource().get(reflectedType.getName());
+            for (MethodDescriptor methodDescriptor : accessibleMethods) {
+                MethodReader calledMethod = cls.getMethod(methodDescriptor);
+                MethodDependency calledMethodDep = agent.linkMethod(calledMethod.getReference(), location);
+                calledMethodDep.use();
+                for (int i = 0; i < calledMethod.parameterCount(); ++i) {
+                    propagateSet(agent, methodDescriptor.parameterType(i), method.getVariable(2).getArrayItem(),
+                            calledMethodDep.getVariable(i + 1), location);
+                }
+                propagateSet(agent, ValueType.object(reflectedType.getName()), method.getVariable(1),
+                        calledMethodDep.getVariable(0), location);
+                propagateGet(agent, calledMethod.getResultType(), calledMethodDep.getResult(),
+                        method.getResult(), location);
+                linkClassIfNecessary(agent, calledMethod, location);
+            }
+        });
+    }
+
 
     private void linkClassIfNecessary(DependencyAgent agent, MemberReader member, CallLocation location) {
         if (member.hasModifier(ElementModifier.STATIC)) {

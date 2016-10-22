@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.InjectedBy;
@@ -33,13 +34,13 @@ import org.teavm.classlib.impl.reflection.JSField;
 import org.teavm.classlib.impl.reflection.JSMethodMember;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
+import org.teavm.classlib.java.lang.reflect.TConstructor;
+import org.teavm.classlib.java.lang.reflect.TField;
+import org.teavm.classlib.java.lang.reflect.TMethod;
+import org.teavm.classlib.java.lang.reflect.TModifier;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
-import org.teavm.classlib.java.lang.reflect.TConstructor;
-import org.teavm.classlib.java.lang.reflect.TField;
-import org.teavm.classlib.java.lang.reflect.TModifier;
-import org.teavm.dependency.PluggableDependency;
 import org.teavm.jso.core.JSArray;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
@@ -58,6 +59,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     private TField[] declaredFields;
     private TField[] fields;
     private TConstructor<T>[] declaredConstructors;
+    private TMethod[] declaredMethods;
     private static boolean reflectionInitialized;
 
     private TClass(PlatformClass platformClass) {
@@ -146,6 +148,9 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     public TField[] getDeclaredFields() throws TSecurityException {
+        if (isPrimitive() || isArray()) {
+            return new TField[0];
+        }
         if (declaredFields == null) {
             initReflection();
             JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
@@ -158,7 +163,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
                         jsField.getSetter());
             }
         }
-        return declaredFields;
+        return declaredFields.clone();
     }
 
     private static void initReflection() {
@@ -172,6 +177,10 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     private static native void createMetadata();
 
     public TField[] getFields() throws TSecurityException {
+        if (isPrimitive() || isArray()) {
+            return new TField[0];
+        }
+
         if (fields == null) {
             List<TField> fieldList = new ArrayList<>();
             TClass<?> cls = this;
@@ -191,7 +200,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
             fields = fieldList.toArray(new TField[fieldList.size()]);
         }
-        return fields;
+        return fields.clone();
     }
 
     public TField getDeclaredField(String name) throws TNoSuchFieldError {
@@ -246,6 +255,10 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
     @SuppressWarnings({ "raw", "unchecked" })
     public TConstructor<?>[] getDeclaredConstructors() throws TSecurityException {
+        if (isPrimitive() || isArray()) {
+            return new TConstructor<?>[0];
+        }
+
         if (declaredConstructors == null) {
             initReflection();
             JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
@@ -267,7 +280,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
             }
             declaredConstructors = Arrays.copyOf(declaredConstructors, count);
         }
-        return declaredConstructors;
+        return declaredConstructors.clone();
     }
 
     public TConstructor<?>[] getConstructors() throws TSecurityException {
@@ -325,6 +338,143 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         }
     }
 
+    public TMethod[] getDeclaredMethods() {
+        if (isPrimitive() || isArray()) {
+            return new TMethod[0];
+        }
+        if (declaredMethods == null) {
+            initReflection();
+            JSClass jsClass = (JSClass) getPlatformClass().getMetadata();
+            JSArray<JSMethodMember> jsMethods = jsClass.getMethods();
+            declaredMethods = new TMethod[jsMethods.getLength()];
+            int count = 0;
+            for (int i = 0; i < jsMethods.getLength(); ++i) {
+                JSMethodMember jsMethod = jsMethods.get(i);
+                if (jsMethod.getName().equals("<init>") || jsMethod.getName().equals("<clinit>")) {
+                    continue;
+                }
+                PlatformSequence<PlatformClass> jsParameterTypes = jsMethod.getParameterTypes();
+                TClass<?>[] parameterTypes = new TClass<?>[jsParameterTypes.getLength()];
+                for (int j = 0; j < parameterTypes.length; ++j) {
+                    parameterTypes[j] = getClass(jsParameterTypes.get(j));
+                }
+                TClass<?> returnType = getClass(jsMethod.getReturnType());
+                declaredMethods[count++] = new TMethod(this, jsMethod.getName(), jsMethod.getModifiers(),
+                        jsMethod.getAccessLevel(), returnType, parameterTypes, jsMethod.getCallable());
+            }
+            declaredMethods = Arrays.copyOf(declaredMethods, count);
+        }
+        return declaredMethods.clone();
+    }
+
+    public TMethod getDeclaredMethod(String name, TClass<?>... parameterTypes) throws TNoSuchMethodException,
+            TSecurityException {
+        TMethod bestFit = null;
+        for (TMethod method : getDeclaredMethods()) {
+            if (method.getName().equals(name) && Arrays.equals(method.getParameterTypes(), parameterTypes)) {
+                if (bestFit == null || bestFit.getReturnType().isAssignableFrom(method.getReturnType())) {
+                    bestFit = method;
+                }
+            }
+        }
+        if (bestFit == null) {
+            throw new TNoSuchMethodException();
+        }
+        return bestFit;
+    }
+
+    public TMethod[] getMethods() throws TSecurityException {
+        Map<MethodSignature, TMethod> methods = new HashMap<>();
+        findMethods(this, methods);
+        return methods.values().toArray(new TMethod[methods.size()]);
+    }
+
+    public TMethod getMethod(String name, TClass<?>... parameterTypes) throws TNoSuchMethodException,
+            TSecurityException {
+        TMethod method = findMethod(this, null, name, parameterTypes);
+        if (method == null) {
+            throw new TNoSuchMethodException();
+        }
+        return method;
+    }
+
+    private static void findMethods(TClass<?> cls, Map<MethodSignature, TMethod> methods) {
+        for (TMethod method : cls.getDeclaredMethods()) {
+            if (TModifier.isPublic(method.getModifiers())) {
+                MethodSignature signature = new MethodSignature(method.getName(), method.getParameterTypes(),
+                        method.getReturnType());
+                if (!methods.containsKey(signature)) {
+                    methods.put(signature, method);
+                }
+            }
+        }
+
+        if (!cls.isInterface()) {
+            TClass<?> superclass = cls.getSuperclass();
+            if (superclass != null) {
+                findMethods(superclass, methods);
+            }
+        }
+
+        for (TClass<?> iface : cls.getInterfaces()) {
+            findMethods(iface, methods);
+        }
+    }
+
+    private static TMethod findMethod(TClass<?> cls, TMethod current, String name, TClass<?>[] parameterTypes) {
+        for (TMethod method : cls.getDeclaredMethods()) {
+            if (TModifier.isPublic(method.getModifiers()) && method.getName().equals(name)
+                    && Arrays.equals(method.getParameterTypes(), parameterTypes)) {
+                if (current == null || current.getReturnType().isAssignableFrom(method.getReturnType())) {
+                    current = method;
+                }
+            }
+        }
+
+        if (!cls.isInterface()) {
+            TClass<?> superclass = cls.getSuperclass();
+            if (superclass != null) {
+                current = findMethod(superclass, current, name, parameterTypes);
+            }
+        }
+
+        for (TClass<?> iface : cls.getInterfaces()) {
+            current = findMethod(iface, current, name, parameterTypes);
+        }
+
+        return current;
+    }
+
+    private static final class MethodSignature {
+        private final String name;
+        private final TClass<?>[] parameterTypes;
+        private final TClass<?> returnType;
+
+        MethodSignature(String name, TClass<?>[] parameterTypes, TClass<?> returnType) {
+            this.name = name;
+            this.parameterTypes = parameterTypes;
+            this.returnType = returnType;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof MethodSignature)) {
+                return false;
+            }
+            MethodSignature that = (MethodSignature) o;
+            return Objects.equals(name, that.name) && Arrays.equals(parameterTypes, that.parameterTypes)
+                    && Objects.equals(returnType, that.returnType);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(name, Arrays.hashCode(parameterTypes), returnType);
+        }
+    }
+
     public int getModifiers() {
         int flags = platformClass.getMetadata().getFlags();
         int accessLevel = platformClass.getMetadata().getAccessLevel();
@@ -336,11 +486,13 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     @SuppressWarnings("unchecked")
+    @PluggableDependency(ClassGenerator.class)
     public TClass<? super T> getSuperclass() {
         return (TClass<? super T>) getClass(platformClass.getMetadata().getSuperclass());
     }
 
     @SuppressWarnings("unchecked")
+    @PluggableDependency(ClassGenerator.class)
     public TClass<? super T>[] getInterfaces() {
         PlatformSequence<PlatformClass> supertypes = platformClass.getMetadata().getSupertypes();
 

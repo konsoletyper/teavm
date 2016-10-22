@@ -74,8 +74,8 @@ public class ConstructorTest {
             InstantiationException {
         Constructor<ReflectableType> constructor = ReflectableType.class.getDeclaredConstructor();
         ReflectableType instance = constructor.newInstance();
-        assertEquals(0, instance.a);
-        assertNull(instance.b);
+        assertEquals(0, instance.getA());
+        assertNull(instance.getB());
     }
 
     @Test
@@ -84,8 +84,8 @@ public class ConstructorTest {
         Constructor<ReflectableType> constructor = ReflectableType.class
                 .getDeclaredConstructor(int.class, Object.class);
         ReflectableType instance = constructor.newInstance(23, "42");
-        assertEquals(23, instance.a);
-        assertEquals("42", instance.b);
+        assertEquals(23, instance.getA());
+        assertEquals("42", instance.getB());
     }
 
     static class ReflectableType {
@@ -106,6 +106,14 @@ public class ConstructorTest {
         @Reflectable ReflectableType(int a, Object b) {
             this.a = a;
             this.b = b;
+        }
+
+        public int getA() {
+            return a;
+        }
+
+        public Object getB() {
+            return b;
         }
     }
 }

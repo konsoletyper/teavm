@@ -24,5 +24,8 @@ public interface JSMethodMember extends JSMember {
     PlatformSequence<PlatformClass> getParameterTypes();
 
     @JSProperty
+    PlatformClass getReturnType();
+
+    @JSProperty
     JSCallable getCallable();
 }

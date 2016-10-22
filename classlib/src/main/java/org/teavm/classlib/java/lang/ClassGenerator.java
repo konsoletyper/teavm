@@ -70,7 +70,43 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
             case "newEmptyInstance":
                 method.getVariable(0).getClassValueNode().connect(method.getResult());
                 break;
+            case "getSuperclass":
+                reachGetSuperclass(agent, method);
+                break;
+            case "getInterfaces":
+                reachGetInterfaces(agent, method);
+                break;
         }
+    }
+
+    private void reachGetSuperclass(DependencyAgent agent, MethodDependency method) {
+        method.getVariable(0).getClassValueNode().addConsumer(type -> {
+            String className = type.getName();
+            if (className.startsWith("[")) {
+                return;
+            }
+
+            ClassReader cls = agent.getClassSource().get(className);
+            if (cls != null && cls.getParent() != null) {
+                method.getResult().getClassValueNode().propagate(agent.getType(cls.getParent()));
+            }
+        });
+    }
+
+    private void reachGetInterfaces(DependencyAgent agent, MethodDependency method) {
+        method.getVariable(0).getClassValueNode().addConsumer(type -> {
+            String className = type.getName();
+            if (className.startsWith("[")) {
+                return;
+            }
+
+            ClassReader cls = agent.getClassSource().get(className);
+            if (cls != null) {
+                for (String iface : cls.getInterfaces()) {
+                    method.getResult().getClassValueNode().propagate(agent.getType(iface));
+                }
+            }
+        });
     }
 
     private void generateCreateMetadata(GeneratorContext context, SourceWriter writer) throws IOException {
@@ -140,6 +176,10 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                     writer.append(context.typeToClassString(method.parameterType(i)));
                 }
                 writer.append(']');
+            });
+
+            appendProperty(writer, "returnType", false, () -> {
+                writer.append(context.typeToClassString(method.getResultType()));
             });
 
             appendProperty(writer, "callable", false, () -> {
