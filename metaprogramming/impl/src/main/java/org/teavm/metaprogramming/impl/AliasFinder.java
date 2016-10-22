@@ -16,33 +16,18 @@
 package org.teavm.metaprogramming.impl;
 
 import java.util.Arrays;
-import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.teavm.common.DisjointSet;
 import org.teavm.model.BasicBlockReader;
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodHandle;
-import org.teavm.model.MethodReference;
 import org.teavm.model.PhiReader;
 import org.teavm.model.ProgramReader;
-import org.teavm.model.RuntimeConstant;
-import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlockReader;
 import org.teavm.model.TryCatchJointReader;
 import org.teavm.model.ValueType;
 import org.teavm.model.VariableReader;
+import org.teavm.model.instructions.AbstractInstructionReader;
 import org.teavm.model.instructions.ArrayElementType;
-import org.teavm.model.instructions.BinaryBranchingCondition;
-import org.teavm.model.instructions.BinaryOperation;
-import org.teavm.model.instructions.BranchingCondition;
-import org.teavm.model.instructions.CastIntegerDirection;
-import org.teavm.model.instructions.InstructionReader;
-import org.teavm.model.instructions.IntegerSubtype;
-import org.teavm.model.instructions.InvocationType;
-import org.teavm.model.instructions.NumericOperandType;
-import org.teavm.model.instructions.SwitchTableEntryReader;
 
 class AliasFinder {
     private int[] aliases;
@@ -122,7 +107,7 @@ class AliasFinder {
         return arrayElements.clone();
     }
 
-    private static class AliasReader implements InstructionReader {
+    private static class AliasReader extends AbstractInstructionReader {
         DisjointSet disjointSet;
         Object[] constants;
         ArrayElement[] arrayElements;
@@ -134,20 +119,8 @@ class AliasFinder {
         }
 
         @Override
-        public void location(TextLocation location) {
-        }
-
-        @Override
-        public void nop() {
-        }
-
-        @Override
         public void classConstant(VariableReader receiver, ValueType cst) {
             constants[receiver.getIndex()] = cst;
-        }
-
-        @Override
-        public void nullConstant(VariableReader receiver) {
         }
 
         @Override
@@ -176,88 +149,8 @@ class AliasFinder {
         }
 
         @Override
-        public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
-                NumericOperandType type) {
-        }
-
-        @Override
-        public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
-        }
-
-        @Override
         public void assign(VariableReader receiver, VariableReader assignee) {
             disjointSet.union(receiver.getIndex(), assignee.getIndex());
-        }
-
-        @Override
-        public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
-        }
-
-        @Override
-        public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
-                NumericOperandType targetType) {
-        }
-
-        @Override
-        public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
-                CastIntegerDirection targetType) {
-        }
-
-        @Override
-        public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
-                BasicBlockReader alternative) {
-        }
-
-        @Override
-        public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
-                BasicBlockReader consequent, BasicBlockReader alternative) {
-        }
-
-        @Override
-        public void jump(BasicBlockReader target) {
-        }
-
-        @Override
-        public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
-                BasicBlockReader defaultTarget) {
-        }
-
-        @Override
-        public void exit(VariableReader valueToReturn) {
-        }
-
-        @Override
-        public void raise(VariableReader exception) {
-        }
-
-        @Override
-        public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
-        }
-
-        @Override
-        public void createArray(VariableReader receiver, ValueType itemType,
-                List<? extends VariableReader> dimensions) {
-        }
-
-        @Override
-        public void create(VariableReader receiver, String type) {
-        }
-
-        @Override
-        public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
-                ValueType fieldType) {
-        }
-
-        @Override
-        public void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType) {
-        }
-
-        @Override
-        public void arrayLength(VariableReader receiver, VariableReader array) {
-        }
-
-        @Override
-        public void cloneArray(VariableReader receiver, VariableReader array) {
         }
 
         @Override
@@ -272,42 +165,6 @@ class AliasFinder {
             elem.array = array.getIndex();
             elem.index = index.getIndex();
             arrayElements[receiver.getIndex()] = elem;
-        }
-
-        @Override
-        public void putElement(VariableReader array, VariableReader index, VariableReader value,
-                ArrayElementType type) {
-        }
-
-        @Override
-        public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
-                List<? extends VariableReader> arguments, InvocationType type) {
-        }
-
-        @Override
-        public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
-                List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
-                List<RuntimeConstant> bootstrapArguments) {
-        }
-
-        @Override
-        public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
-        }
-
-        @Override
-        public void initClass(String className) {
-        }
-
-        @Override
-        public void nullCheck(VariableReader receiver, VariableReader value) {
-        }
-
-        @Override
-        public void monitorEnter(VariableReader objectRef) {
-        }
-
-        @Override
-        public void monitorExit(VariableReader objectRef) {
         }
     }
 }

@@ -26,7 +26,7 @@ import org.teavm.common.*;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-public class DataFlowGraphBuilder implements InstructionReader {
+public class DataFlowGraphBuilder extends AbstractInstructionReader {
     private int lastIndex;
     private GraphBuilder builder = new GraphBuilder();
     private ObjectIntMap<FieldReference> fieldNodes = new ObjectIntOpenHashMap<>();
@@ -127,51 +127,6 @@ public class DataFlowGraphBuilder implements InstructionReader {
         }
     }
 
-    @Override
-    public void location(TextLocation location) {
-    }
-
-    @Override
-    public void nop() {
-    }
-
-    @Override
-    public void classConstant(VariableReader receiver, ValueType cst) {
-    }
-
-    @Override
-    public void nullConstant(VariableReader receiver) {
-    }
-
-    @Override
-    public void integerConstant(VariableReader receiver, int cst) {
-    }
-
-    @Override
-    public void longConstant(VariableReader receiver, long cst) {
-    }
-
-    @Override
-    public void floatConstant(VariableReader receiver, float cst) {
-    }
-
-    @Override
-    public void doubleConstant(VariableReader receiver, double cst) {
-    }
-
-    @Override
-    public void stringConstant(VariableReader receiver, String cst) {
-    }
-
-    @Override
-    public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
-            NumericOperandType type) {
-    }
-
-    @Override
-    public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
-    }
-
     private void connect(int a, int b) {
         builder.addEdge(a, b);
         join(a, b);
@@ -188,35 +143,6 @@ public class DataFlowGraphBuilder implements InstructionReader {
     }
 
     @Override
-    public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
-            NumericOperandType targetType) {
-    }
-
-    @Override
-    public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
-            CastIntegerDirection targetType) {
-    }
-
-    @Override
-    public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
-            BasicBlockReader alternative) {
-    }
-
-    @Override
-    public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
-            BasicBlockReader consequent, BasicBlockReader alternative) {
-    }
-
-    @Override
-    public void jump(BasicBlockReader target) {
-    }
-
-    @Override
-    public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
-            BasicBlockReader defaultTarget) {
-    }
-
-    @Override
     public void exit(VariableReader valueToReturn) {
         if (valueToReturn != null && returnIndex >= 0) {
             builder.addEdge(valueToReturn.getIndex(), returnIndex);
@@ -227,18 +153,6 @@ public class DataFlowGraphBuilder implements InstructionReader {
     public void raise(VariableReader exception) {
         builder.addEdge(exception.getIndex(), exceptionIndex);
         escaping.add(exceptionIndex);
-    }
-
-    @Override
-    public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
-    }
-
-    @Override
-    public void createArray(VariableReader receiver, ValueType itemType, List<? extends VariableReader> dimensions) {
-    }
-
-    @Override
-    public void create(VariableReader receiver, String type) {
     }
 
     private int getFieldNode(FieldReference field) {
@@ -265,10 +179,6 @@ public class DataFlowGraphBuilder implements InstructionReader {
             return;
         }
         builder.addEdge(value.getIndex(), getFieldNode(field));
-    }
-
-    @Override
-    public void arrayLength(VariableReader receiver, VariableReader array) {
     }
 
     @Override
@@ -316,14 +226,6 @@ public class DataFlowGraphBuilder implements InstructionReader {
             List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
             List<RuntimeConstant> bootstrapArguments) {
         // Should be eliminated by bootstrap method substitutor
-    }
-
-    @Override
-    public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
-    }
-
-    @Override
-    public void initClass(String className) {
     }
 
     @Override

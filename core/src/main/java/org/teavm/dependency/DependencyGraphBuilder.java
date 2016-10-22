@@ -49,24 +49,14 @@ import org.teavm.model.ValueType;
 import org.teavm.model.VariableReader;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
+import org.teavm.model.instructions.AbstractInstructionReader;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.AssignInstruction;
-import org.teavm.model.instructions.BinaryBranchingCondition;
-import org.teavm.model.instructions.BinaryOperation;
-import org.teavm.model.instructions.BranchingCondition;
-import org.teavm.model.instructions.CastIntegerDirection;
 import org.teavm.model.instructions.InstructionReader;
-import org.teavm.model.instructions.IntegerSubtype;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.NullConstantInstruction;
-import org.teavm.model.instructions.NumericOperandType;
-import org.teavm.model.instructions.SwitchTableEntryReader;
 import org.teavm.model.util.ListingBuilder;
 
-/**
- *
- * @author Alexey Andreev
- */
 class DependencyGraphBuilder {
     private DependencyChecker dependencyChecker;
     private DependencyNode[] nodes;
@@ -390,14 +380,10 @@ class DependencyGraphBuilder {
         }
     }
 
-    private InstructionReader reader = new InstructionReader() {
+    private InstructionReader reader = new AbstractInstructionReader() {
         @Override
         public void location(TextLocation location) {
             currentLocation = location;
-        }
-
-        @Override
-        public void nop() {
         }
 
         @Override
@@ -429,26 +415,6 @@ class DependencyGraphBuilder {
         }
 
         @Override
-        public void nullConstant(VariableReader receiver) {
-        }
-
-        @Override
-        public void integerConstant(VariableReader receiver, int cst) {
-        }
-
-        @Override
-        public void longConstant(VariableReader receiver, long cst) {
-        }
-
-        @Override
-        public void floatConstant(VariableReader receiver, float cst) {
-        }
-
-        @Override
-        public void doubleConstant(VariableReader receiver, double cst) {
-        }
-
-        @Override
         public void stringConstant(VariableReader receiver, String cst) {
             DependencyNode node = nodes[receiver.getIndex()];
             if (node != null) {
@@ -457,15 +423,6 @@ class DependencyGraphBuilder {
             MethodDependency method = dependencyChecker.linkMethod(new MethodReference(String.class,
                     "<init>", char[].class, void.class), new CallLocation(caller.getMethod(), currentLocation));
             method.use();
-        }
-
-        @Override
-        public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
-                NumericOperandType type) {
-        }
-
-        @Override
-        public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
         }
 
         @Override
@@ -501,36 +458,6 @@ class DependencyGraphBuilder {
                 valueNode.connect(receiverNode);
             }
         }
-
-        @Override
-        public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
-                NumericOperandType targetType) {
-        }
-
-        @Override
-        public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
-                CastIntegerDirection targetType) {
-        }
-
-        @Override
-        public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
-                BasicBlockReader alternative) {
-        }
-
-        @Override
-        public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
-                BasicBlockReader consequent, BasicBlockReader alternative) {
-        }
-
-        @Override
-        public void jump(BasicBlockReader target) {
-        }
-
-        @Override
-        public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
-                BasicBlockReader defaultTarget) {
-        }
-
         @Override
         public void exit(VariableReader valueToReturn) {
             if (valueToReturn != null) {
@@ -629,10 +556,6 @@ class DependencyGraphBuilder {
                 }
             }
             initClass(field.getClassName());
-        }
-
-        @Override
-        public void arrayLength(VariableReader receiver, VariableReader array) {
         }
 
         @Override

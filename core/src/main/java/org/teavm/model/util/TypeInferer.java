@@ -191,7 +191,7 @@ public class TypeInferer {
         return VariableType.OBJECT_ARRAY;
     }
 
-    InstructionReader reader = new InstructionReader() {
+    InstructionReader reader = new AbstractInstructionReader() {
         @Override
         public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
             builder.addEdge(array.getIndex(), receiver.getIndex());
@@ -200,19 +200,6 @@ public class TypeInferer {
         @Override
         public void stringConstant(VariableReader receiver, String cst) {
             types[receiver.getIndex()] = VariableType.OBJECT;
-        }
-
-        @Override
-        public void raise(VariableReader exception) {
-        }
-
-        @Override
-        public void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType) {
-        }
-
-        @Override
-        public void putElement(VariableReader array, VariableReader index, VariableReader value,
-                ArrayElementType type) {
         }
 
         @Override
@@ -226,43 +213,13 @@ public class TypeInferer {
         }
 
         @Override
-        public void nop() {
-        }
-
-        @Override
         public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
             types[receiver.getIndex()] = convert(type);
         }
 
         @Override
-        public void monitorExit(VariableReader objectRef) {
-        }
-
-        @Override
-        public void monitorEnter(VariableReader objectRef) {
-        }
-
-        @Override
         public void longConstant(VariableReader receiver, long cst) {
             types[receiver.getIndex()] = VariableType.LONG;
-        }
-
-        @Override
-        public void location(TextLocation location) {
-        }
-
-        @Override
-        public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
-                BasicBlockReader consequent, BasicBlockReader alternative) {
-        }
-
-        @Override
-        public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
-                BasicBlockReader alternative) {
-        }
-
-        @Override
-        public void jump(BasicBlockReader target) {
         }
 
         @Override
@@ -293,10 +250,6 @@ public class TypeInferer {
         }
 
         @Override
-        public void initClass(String className) {
-        }
-
-        @Override
         public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
                 ValueType fieldType) {
             types[receiver.getIndex()] = convert(fieldType);
@@ -311,10 +264,6 @@ public class TypeInferer {
         @Override
         public void floatConstant(VariableReader receiver, float cst) {
             types[receiver.getIndex()] = VariableType.FLOAT;
-        }
-
-        @Override
-        public void exit(VariableReader valueToReturn) {
         }
 
         @Override
@@ -349,11 +298,6 @@ public class TypeInferer {
         }
 
         @Override
-        public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
-                BasicBlockReader defaultTarget) {
-        }
-
-        @Override
         public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
                 CastIntegerDirection targetType) {
             types[receiver.getIndex()] = VariableType.INT;
@@ -381,7 +325,6 @@ public class TypeInferer {
                     types[receiver.getIndex()] = convert(type);
                     break;
             }
-
         }
 
         @Override
