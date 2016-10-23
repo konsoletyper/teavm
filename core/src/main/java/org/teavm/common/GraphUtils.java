@@ -18,6 +18,7 @@ package org.teavm.common;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.IntPredicate;
 
 /**
  *
@@ -79,73 +80,162 @@ public final class GraphUtils {
         return false;
     }
 
-    public static int[][] findStronglyConnectedComponents(Graph graph, int[] start) {
-        return findStronglyConnectedComponents(graph, start, node -> true);
+    public static Graph subgraph(Graph graph, IntPredicate filter) {
+        if (graph instanceof FilteredGraph) {
+            FilteredGraph filteredGraph = (FilteredGraph) graph;
+            IntPredicate oldFilter = filteredGraph.filter;
+            IntPredicate newFilter = v -> oldFilter.test(v) && filter.test(v);
+            return new FilteredGraph(filteredGraph.innerGraph, newFilter);
+        } else {
+            return new FilteredGraph(graph, filter);
+        }
+    }
+
+    private static class FilteredGraph implements Graph {
+        final Graph innerGraph;
+        final IntPredicate filter;
+
+        public FilteredGraph(Graph innerGraph, IntPredicate filter) {
+            this.innerGraph = innerGraph;
+            this.filter = filter;
+        }
+
+        @Override
+        public int size() {
+            return innerGraph.size();
+        }
+
+        @Override
+        public int[] incomingEdges(int node) {
+            if (!filter.test(node)) {
+                return new int[0];
+            }
+            return filterNodes(innerGraph.incomingEdges(node));
+        }
+
+        private int[] filterNodes(int[] nodes) {
+            int j = 0;
+            for (int v : nodes) {
+                if (filter.test(v)) {
+                    nodes[j++] = v;
+                }
+            }
+            if (j < nodes.length) {
+                nodes = Arrays.copyOf(nodes, j);
+            }
+            return nodes;
+        }
+
+        @Override
+        public int copyIncomingEdges(int node, int[] target) {
+            if (!filter.test(node)) {
+                return 0;
+            }
+            int[] result = incomingEdges(node);
+            System.arraycopy(result, 0, target, 0, result.length);
+            return result.length;
+        }
+
+        @Override
+        public int[] outgoingEdges(int node) {
+            if (!filter.test(node)) {
+                return new int[0];
+            }
+            return filterNodes(innerGraph.outgoingEdges(node));
+        }
+
+        @Override
+        public int copyOutgoingEdges(int node, int[] target) {
+            if (!filter.test(node)) {
+                return 0;
+            }
+            int[] result = outgoingEdges(node);
+            System.arraycopy(result, 0, target, 0, result.length);
+            return result.length;
+        }
+
+        @Override
+        public int incomingEdgesCount(int node) {
+            return incomingEdges(node).length;
+        }
+
+        @Override
+        public int outgoingEdgesCount(int node) {
+            return outgoingEdges(node).length;
+        }
     }
 
     /*
      * Tarjan's algorithm
      */
-    public static int[][] findStronglyConnectedComponents(Graph graph, int[] start, GraphNodeFilter filter) {
+    public static int[][] findStronglyConnectedComponents(Graph graph, int[] start) {
         List<int[]> components = new ArrayList<>();
         int[] visitIndex = new int[graph.size()];
         int[] headerIndex = new int[graph.size()];
-        int lastIndex = 0;
+        IntegerStack currentComponent = new IntegerStack(1);
+        boolean[] inCurrentComponent = new boolean[graph.size()];
+        int lastIndex = 1;
         IntegerStack stack = new IntegerStack(graph.size());
+        IntegerStack modeStack = new IntegerStack(graph.size());
+        int[] expectedMode = new int[graph.size()];
 
         for (int startNode : start) {
             stack.push(startNode);
-            IntegerStack currentComponent = new IntegerStack(1);
-            while (!stack.isEmpty()) {
-                int node = stack.pop();
-                if (visitIndex[node] > 0) {
-                    if (headerIndex[node] > 0) {
-                        continue;
-                    }
-                    int hdr = visitIndex[node];
-                    for (int successor : graph.outgoingEdges(node)) {
-                        if (!filter.match(successor)) {
-                            continue;
-                        }
-                        if (headerIndex[successor] == 0) {
-                            hdr = Math.min(hdr, visitIndex[successor]);
-                        } else {
-                            hdr = Math.min(hdr, headerIndex[successor]);
-                        }
-                    }
-                    if (hdr == visitIndex[node]) {
-                        IntegerArray componentMembers = new IntegerArray(graph.size());
-                        while (true) {
-                            int componentMember = currentComponent.pop();
-                            componentMembers.add(componentMember);
-                            headerIndex[componentMember] = graph.size() + 1;
-                            if (visitIndex[componentMember] == hdr) {
-                                break;
-                            }
-                        }
-                        components.add(componentMembers.getAll());
-                    }
-                    headerIndex[node] = hdr;
-                } else {
-                    visitIndex[node] = ++lastIndex;
-                    currentComponent.push(node);
-                    stack.push(node);
-                    for (int successor : graph.outgoingEdges(node)) {
-                        if (!filter.match(successor) || visitIndex[successor] > 0) {
-                            continue;
-                        }
-                        stack.push(successor);
+            modeStack.push(0);
+        }
+
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            int mode = modeStack.pop();
+            if (expectedMode[node] != mode) {
+                continue;
+            }
+            expectedMode[node]++;
+            if (mode == 1) {
+                expectedMode[node] = 2;
+                int hdr = headerIndex[node];
+                for (int successor : graph.outgoingEdges(node)) {
+                    if (visitIndex[node] < visitIndex[successor]) {
+                        hdr = Math.min(hdr, headerIndex[successor]);
+                    } else if (inCurrentComponent[successor]) {
+                        hdr = Math.min(hdr, visitIndex[successor]);
                     }
                 }
-            }
-            for (int i = 0; i < headerIndex.length; ++i) {
-                if (visitIndex[i] > 0) {
-                    headerIndex[i] = graph.size() + 1;
+                headerIndex[node] = hdr;
+
+                if (hdr == visitIndex[node]) {
+                    IntegerArray componentMembers = new IntegerArray(graph.size());
+                    int componentMember;
+                    do {
+                        componentMember = currentComponent.pop();
+                        inCurrentComponent[componentMember] = false;
+                        componentMembers.add(componentMember);
+                    } while (componentMember != node);
+                    components.add(componentMembers.getAll());
+                }
+            } else if (mode == 0) {
+                visitIndex[node] = lastIndex;
+                headerIndex[node] = lastIndex;
+                lastIndex++;
+
+                currentComponent.push(node);
+                inCurrentComponent[node] = true;
+                stack.push(node);
+                modeStack.push(1);
+                for (int successor : graph.outgoingEdges(node)) {
+                    stack.push(successor);
+                    modeStack.push(0);
                 }
             }
         }
 
         return components.toArray(new int[0][]);
+    }
+
+    private static class SCCFinder {
+        int[] index;
+        int[] lowlink;
+        boolean[] onStack;
     }
 
     public static DominatorTree buildDominatorTree(Graph graph) {

@@ -22,6 +22,8 @@ import static org.junit.Assert.assertTrue;
 import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.function.IntPredicate;
 import org.junit.Test;
 
 /**
@@ -51,7 +53,7 @@ public class GraphTest {
         builder.addEdge(12, 13);
         Graph graph = builder.build();
 
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 0 }, filter);
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 0 });
         sortSccs(sccs);
 
         assertThat(sccs.length, is(6));
@@ -78,7 +80,8 @@ public class GraphTest {
         builder.addEdge(5, 3);
         Graph graph = builder.build();
 
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3 }, node -> node != 0);
+        graph = GraphUtils.subgraph(graph, node -> node != 0);
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3 });
         sortSccs(sccs);
 
         assertThat(sccs.length, is(1));
@@ -95,7 +98,8 @@ public class GraphTest {
         builder.addEdge(2, 3);
         Graph graph = builder.build();
 
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 0 }, filter);
+        graph = GraphUtils.subgraph(graph, filter);
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 0 });
         sortSccs(sccs);
 
         assertThat(sccs.length, is(3));
@@ -126,7 +130,8 @@ public class GraphTest {
         builder.addEdge(8, 7);
         Graph graph = builder.build();
 
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3, 4 }, node -> node != 0);
+        graph = GraphUtils.subgraph(graph, node -> node != 0);
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3, 4 });
         sortSccs(sccs);
 
         assertThat(sccs.length, is(2));
@@ -232,12 +237,12 @@ public class GraphTest {
         return true;
     }
 
-    private GraphNodeFilter filter = (int node) -> true;
+    private IntPredicate filter = (int node) -> true;
 
     private void sortSccs(int[][] sccs) {
         for (int i = 0; i < sccs.length; ++i) {
             Arrays.sort(sccs[i]);
         }
-        Arrays.sort(sccs, (o1, o2) -> Integer.compare(o1[0], o2[0]));
+        Arrays.sort(sccs, Comparator.comparingInt(o -> o[0]));
     }
 }

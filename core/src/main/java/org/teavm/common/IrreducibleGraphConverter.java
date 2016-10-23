@@ -19,6 +19,7 @@ import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.Arrays;
+import java.util.function.IntPredicate;
 
 /**
  * <p>Converts irreducible graph to reducible one using node splitting algorithm described at
@@ -58,8 +59,8 @@ class IrreducibleGraphConverter {
             }
             if (irreducible) {
                 DJGraphNodeFilter filter = new DJGraphNodeFilter(djGraph, level);
-                int[][] sccs = GraphUtils.findStronglyConnectedComponents(djGraph.getGraph(),
-                        djGraph.level(level), filter);
+                Graph graph = GraphUtils.subgraph(djGraph.getGraph(), filter);
+                int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, djGraph.level(level));
                 for (int[] scc : sccs) {
                     if (scc.length > 1) {
                         handleStronglyConnectedComponent(djGraph, scc, nodeMap);
@@ -273,7 +274,7 @@ class IrreducibleGraphConverter {
         return rough;
     }
 
-    static class DJGraphNodeFilter implements GraphNodeFilter {
+    static class DJGraphNodeFilter implements IntPredicate {
         private DJGraph graph;
         private int level;
 
@@ -283,7 +284,7 @@ class IrreducibleGraphConverter {
         }
 
         @Override
-        public boolean match(int node) {
+        public boolean test(int node) {
             return graph.levelOf(node) >= level;
         }
     }
