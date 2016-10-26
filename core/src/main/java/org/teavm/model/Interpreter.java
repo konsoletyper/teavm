@@ -22,8 +22,6 @@ import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.objenesis.Objenesis;
-import org.objenesis.ObjenesisStd;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryOperation;
@@ -118,8 +116,6 @@ public class Interpreter {
     }
 
     private InstructionReader reader = new InstructionReader() {
-        private Objenesis objenesis = new ObjenesisStd();
-
         @Override
         public void location(TextLocation location) {
         }
@@ -623,7 +619,7 @@ public class Interpreter {
             } catch (ClassNotFoundException e) {
                 throw new RuntimeException("Class not found: " + type);
             }
-            variables[receiver.getIndex()] =  objenesis.newInstance(cls);
+            variables[receiver.getIndex()] = null;
         }
 
         @Override
