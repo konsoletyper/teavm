@@ -74,6 +74,7 @@ import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.backend.wasm.render.WasmBinaryWriter;
 import org.teavm.backend.wasm.render.WasmCRenderer;
 import org.teavm.backend.wasm.render.WasmRenderer;
+import org.teavm.backend.wasm.transformation.IndirectCallTraceTransformation;
 import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyChecker;
@@ -373,6 +374,9 @@ public class WasmTarget implements TeaVMTarget {
 
         if (Boolean.parseBoolean(System.getProperty("wasm.memoryTrace", "false"))) {
             new MemoryAccessTraceTransformation(module).apply();
+        }
+        if (Boolean.parseBoolean(System.getProperty("wasm.indirectCallTrace", "false"))) {
+            new IndirectCallTraceTransformation(module).apply();
         }
 
         WasmBinaryWriter writer = new WasmBinaryWriter();
