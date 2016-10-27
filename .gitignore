@@ -1,12 +1,29 @@
+# output dir
+target
+
+# KDE
 .directory
+
+# Eclipse
 .project
 .settings
 .classpath
 .factorypath
 .checkstyle
 .cache-main
-target
-.idea/libraries/Maven__*
+
+# IntelliJ IDEA
+*.iml
+!/all-deps/all-deps.iml
+!/tools/idea/**/*.iml
 .idea/uiDesigner.xml
 .idea/workspace.xml
 .idea/dictionaries/
+.idea/compiler.xml
+.idea/encodings.xml
+.idea/misc.xml
+.idea/modules.xml
+.idea/scala_compiler.xml
+.idea/vcs.xml
+.idea/libraries/*
+.idea/artifacts/*

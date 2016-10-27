@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="war" name="teavm-samples-kotlin:war">
-    <output-path>$PROJECT_DIR$/samples/kotlin/target</output-path>
-    <root id="archive" name="teavm-samples-kotlin-1.0.0-SNAPSHOT.war">
-      <element id="artifact" artifact-name="teavm-samples-kotlin:war exploded" />
-    </root>
-  </artifact>
-</component>

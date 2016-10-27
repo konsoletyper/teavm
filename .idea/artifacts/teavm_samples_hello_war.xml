@@ -1,8 +1,0 @@
-<component name="ArtifactManager">
-  <artifact type="war" name="teavm-samples-hello:war">
-    <output-path>$PROJECT_DIR$/samples/hello/target</output-path>
-    <root id="archive" name="teavm-samples-hello-1.0.0-SNAPSHOT.war">
-      <element id="artifact" artifact-name="teavm-samples-hello:war exploded" />
-    </root>
-  </artifact>
-</component>
