@@ -21,10 +21,6 @@ import org.teavm.common.GraphSplittingBackend;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Program;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ProgramNodeSplittingBackend implements GraphSplittingBackend {
     private Program program;
 

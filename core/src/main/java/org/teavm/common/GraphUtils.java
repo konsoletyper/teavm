@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.function.IntPredicate;
+import java.util.stream.Collectors;
 
 /**
  *
@@ -370,5 +371,17 @@ public final class GraphUtils {
             set = Arrays.copyOf(set, sz);
         }
         return set;
+    }
+
+    public static String printToDot(Graph graph) {
+        StringBuilder sb = new StringBuilder("digraph G {\n");
+        for (int i = 0; i < graph.size(); ++i) {
+            String successors = Arrays.stream(graph.outgoingEdges(i))
+                    .mapToObj(String::valueOf)
+                    .collect(Collectors.joining(", "));
+            sb.append("  ").append(i).append(" -> {").append(successors).append("}\n");
+        }
+        sb.append("}");
+        return sb.toString();
     }
 }

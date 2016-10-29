@@ -18,10 +18,6 @@ package org.teavm.common;
 import com.carrotsearch.hppc.IntIntMap;
 import com.carrotsearch.hppc.IntIntOpenHashMap;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DefaultGraphSplittingBackend implements GraphSplittingBackend {
     private MutableDirectedGraph graph;
     private int index;
@@ -47,10 +43,6 @@ public class DefaultGraphSplittingBackend implements GraphSplittingBackend {
 
     public int prototype(int index) {
         return prototypeNodes.get(index);
-    }
-
-    public int copyIndex(int index) {
-        return copyIndexes.get(index);
     }
 
     @Override

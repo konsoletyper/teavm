@@ -26,10 +26,6 @@ import java.util.Comparator;
 import java.util.function.IntPredicate;
 import org.junit.Test;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class GraphTest {
     @Test
     public void stronglyConnectedComponentsCalculated() {
@@ -205,7 +201,6 @@ public class GraphTest {
         builder.addEdge(7, 8);
         builder.addEdge(8, 7);
         Graph graph = builder.build();
-
         DefaultGraphSplittingBackend backend = new DefaultGraphSplittingBackend(graph);
         int[] weights = new int[graph.size()];
         Arrays.fill(weights, 1);
@@ -214,7 +209,7 @@ public class GraphTest {
 
         assertTrue("Should be irreducible", GraphUtils.isIrreducible(graph));
         assertFalse("Should be reducible", GraphUtils.isIrreducible(result));
-        assertTrue("Should be equialent", isEquialent(backend, graph));
+        assertTrue("Should be equivalent", isEquialent(backend, graph));
     }
 
     private boolean isEquialent(DefaultGraphSplittingBackend backend, Graph proto) {
