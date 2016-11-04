@@ -106,6 +106,7 @@ public class LinkedListTest {
         assertEquals(2, iter.nextIndex());
         assertEquals("a", iter.next());
         assertArrayEquals(new String[] { "1", "2", "a", "b" }, list.toArray(new String[0]));
+        assertEquals(4, list.size());
     }
 
     @Test
@@ -138,6 +139,7 @@ public class LinkedListTest {
         iter.remove();
         assertEquals(1, iter.nextIndex());
         assertEquals("3", iter.next());
+        assertEquals(4, list.size());
     }
 
     @Test(expected = IllegalStateException.class)
@@ -195,7 +197,7 @@ public class LinkedListTest {
     }
 
     @Test
-    public void removesFirstOccurence() {
+    public void removesFirstOccurrence() {
         LinkedList<String> list = new LinkedList<>();
         list.addAll(Arrays.asList("1", "2", "3", "1", "2"));
         assertFalse(list.removeFirstOccurrence("*"));
@@ -205,7 +207,7 @@ public class LinkedListTest {
     }
 
     @Test
-    public void removesLastOccurence() {
+    public void removesLastOccurrence() {
         LinkedList<String> list = new LinkedList<>();
         list.addAll(Arrays.asList("1", "2", "3", "1", "2"));
         assertFalse(list.removeLastOccurrence("*"));
