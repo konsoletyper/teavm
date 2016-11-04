@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.vm;
 
 import static org.junit.Assert.*;
 import org.junit.Test;
@@ -29,33 +29,6 @@ public class VMTest {
         assertEquals(3, array[0].length);
         assertEquals(int[][].class, array.getClass());
         assertEquals(int[].class, array[0].getClass());
-    }
-
-    @Test
-    public void longIntegersMultipied() {
-        long a = 1199747L;
-        long b = 1062911L;
-        assertEquals(1275224283517L, a * b);
-        assertEquals(-1275224283517L, a * -b);
-        a = 229767376164L;
-        b = 907271478890L;
-        assertEquals(-5267604004427634456L, a * b);
-        assertEquals(5267604004427634456L, a * -b);
-    }
-
-    @Test
-    public void longIntegersDivided() {
-        long a = 12752242835177213L;
-        long b = 1062912L;
-        assertEquals(11997458712L, a / b);
-        assertEquals(-11997458712L, a / -b);
-    }
-
-    @Test
-    public void longAdditionWorks() {
-        long a = 1134903170;
-        long b = 1836311903;
-        assertEquals(2971215073L, a + b);
     }
 
     @Test
