@@ -20,22 +20,20 @@ import com.intellij.facet.ui.FacetEditorContext;
 import com.intellij.facet.ui.FacetEditorTab;
 import com.intellij.facet.ui.FacetValidatorsManager;
 import com.intellij.openapi.components.PersistentStateComponent;
-import com.intellij.openapi.components.State;
-import com.intellij.openapi.components.Storage;
 import com.intellij.openapi.util.InvalidDataException;
 import com.intellij.openapi.util.WriteExternalException;
 import org.jdom.Element;
 import org.jetbrains.annotations.Nullable;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
+import org.teavm.idea.ui.TeaVMFacetEditorTab;
 
-@State(name = "teavm", storages = @Storage(id = "other", file = "$MODULE_FILE$"))
 public class TeaVMFacetConfiguration implements FacetConfiguration, PersistentStateComponent<TeaVMJpsConfiguration> {
     private TeaVMJpsConfiguration state = new TeaVMJpsConfiguration();
 
     @Override
     public FacetEditorTab[] createEditorTabs(FacetEditorContext editorContext,
             FacetValidatorsManager validatorsManager) {
-        return new FacetEditorTab[0];
+        return new FacetEditorTab[] { new TeaVMFacetEditorTab(editorContext.getModule(), state) };
     }
 
     @Override
@@ -46,15 +44,14 @@ public class TeaVMFacetConfiguration implements FacetConfiguration, PersistentSt
     public void writeExternal(Element element) throws WriteExternalException {
     }
 
-
     @Nullable
     @Override
     public TeaVMJpsConfiguration getState() {
-        return state.createCopy();
+        return state;
     }
 
     @Override
     public void loadState(TeaVMJpsConfiguration state) {
-        this.state.applyChanges(state);
+        this.state = state;
     }
 }

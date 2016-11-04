@@ -18,6 +18,7 @@ package org.teavm.idea;
 import com.intellij.facet.Facet;
 import com.intellij.facet.FacetType;
 import com.intellij.facet.FacetTypeId;
+import com.intellij.facet.FacetTypeRegistry;
 import com.intellij.openapi.module.JavaModuleType;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleType;
@@ -36,13 +37,13 @@ public class TeaVMFacetType extends FacetType<TeaVMFacet, TeaVMFacetConfiguratio
 
     @Override
     public TeaVMFacetConfiguration createDefaultConfiguration() {
-        return null;
+        return new TeaVMFacetConfiguration();
     }
 
     @Override
     public TeaVMFacet createFacet(@NotNull Module module, String name, @NotNull TeaVMFacetConfiguration configuration,
             @Nullable Facet underlyingFacet) {
-        return null;
+        return new TeaVMFacet(module, name, configuration);
     }
 
     @Override
@@ -54,5 +55,10 @@ public class TeaVMFacetType extends FacetType<TeaVMFacet, TeaVMFacetConfiguratio
     @Override
     public Icon getIcon() {
         return icon;
+    }
+
+    @NotNull
+    public static TeaVMFacetType getInstance() {
+        return (TeaVMFacetType) FacetTypeRegistry.getInstance().findFacetType(TYPE_ID);
     }
 }

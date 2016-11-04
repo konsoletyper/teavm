@@ -15,62 +15,50 @@
  */
 package org.teavm.idea.ui;
 
+import com.intellij.facet.ui.FacetEditorTab;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.options.Configurable;
 import com.intellij.openapi.options.ConfigurationException;
 import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
-import org.jetbrains.annotations.Nullable;
+import org.jetbrains.annotations.NotNull;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 
-public class TeaVMConfigurable implements Configurable {
-    private final Module module;
-    private TeaVMConfigurationPanel panel;
-    private TeaVMJpsConfiguration configuration;
+public class TeaVMFacetEditorTab extends FacetEditorTab {
+    private TeaVMConfigurable configurable;
 
-    public TeaVMConfigurable(Module module, TeaVMJpsConfiguration configuration) {
-        this.module = module;
-        this.configuration = configuration;
+    public TeaVMFacetEditorTab(Module module, TeaVMJpsConfiguration configuration) {
+        configurable = new TeaVMConfigurable(module, configuration);
+    }
+
+    @NotNull
+    @Override
+    public JComponent createComponent() {
+        return configurable.createComponent();
     }
 
     @Nls
     @Override
     public String getDisplayName() {
-        return "TeaVM";
-    }
-
-    @Nullable
-    @Override
-    public String getHelpTopic() {
-        return null;
-    }
-
-    @Nullable
-    @Override
-    public JComponent createComponent() {
-        if (panel == null) {
-            panel = new TeaVMConfigurationPanel(module.getProject());
-        }
-        return panel;
+        return "General settings";
     }
 
     @Override
     public boolean isModified() {
-        return panel != null && panel.isModified();
+        return configurable.isModified();
     }
 
     @Override
     public void apply() throws ConfigurationException {
-        panel.save(configuration);
-    }
-
-    @Override
-    public void reset() {
-        panel.load(configuration);
+        configurable.apply();
     }
 
     @Override
     public void disposeUIResources() {
-        this.panel = null;
+        configurable.disposeUIResources();
+    }
+
+    @Override
+    public void reset() {
+        configurable.reset();
     }
 }

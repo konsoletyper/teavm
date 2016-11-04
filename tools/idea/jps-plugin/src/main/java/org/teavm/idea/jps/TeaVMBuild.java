@@ -97,7 +97,7 @@ class TeaVMBuild {
         storage = context.getProjectDescriptor().dataManager.getStorage(target, storageProvider);
 
         TeaVMJpsConfiguration config = TeaVMJpsConfiguration.get(module);
-        if (config == null || !config.isEnabled()) {
+        if (config == null) {
             return false;
         }
 

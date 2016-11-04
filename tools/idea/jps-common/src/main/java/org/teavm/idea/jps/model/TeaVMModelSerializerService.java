@@ -16,23 +16,33 @@
 package org.teavm.idea.jps.model;
 
 import com.intellij.util.xmlb.XmlSerializer;
-import java.util.Objects;
+import java.util.Arrays;
+import java.util.List;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.model.JpsElement;
 import org.jetbrains.jps.model.module.JpsModule;
 import org.jetbrains.jps.model.serialization.JpsModelSerializerExtension;
+import org.jetbrains.jps.model.serialization.facet.JpsFacetConfigurationSerializer;
 
 public class TeaVMModelSerializerService extends JpsModelSerializerExtension {
+    @NotNull
     @Override
-    public void loadModuleOptions(@NotNull JpsModule module, @NotNull Element rootElement) {
-        rootElement.getChildren("component").stream()
-                .filter(child -> Objects.equals(child.getAttributeValue("name"), "teavm"))
-                .forEach(child -> readConfig(module, child));
+    public List<? extends JpsFacetConfigurationSerializer<?>> getFacetConfigurationSerializers() {
+        return Arrays.asList(serializer);
     }
 
-    private void readConfig(@NotNull JpsModule module, @NotNull Element element) {
-        TeaVMJpsConfiguration config = XmlSerializer.deserialize(element, TeaVMJpsConfiguration.class);
-        assert config != null;
-        config.setTo(module);
-    }
+    JpsFacetConfigurationSerializer<TeaVMJpsConfiguration> serializer =
+            new JpsFacetConfigurationSerializer<TeaVMJpsConfiguration>(TeaVMJpsConfiguration.ROLE,
+                    "teavm-js", "TeaVM (JS)") {
+        @Override
+        protected TeaVMJpsConfiguration loadExtension(@NotNull Element element, String s, JpsElement jpsElement,
+                JpsModule jpsModule) {
+            return XmlSerializer.deserialize(element, TeaVMJpsConfiguration.class);
+        }
+
+        @Override
+        protected void saveExtension(TeaVMJpsConfiguration configuration, Element element, JpsModule jpsModule) {
+        }
+    };
 }

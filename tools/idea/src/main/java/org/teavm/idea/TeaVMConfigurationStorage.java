@@ -21,7 +21,7 @@ import com.intellij.openapi.components.Storage;
 import org.jetbrains.annotations.Nullable;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 
-@State(name = "teavm", storages = @Storage(id = "other", file = "$MODULE_FILE$"))
+@State(name = "teavm", storages = @Storage(value = "$MODULE_FILE$"))
 public class TeaVMConfigurationStorage implements PersistentStateComponent<TeaVMJpsConfiguration> {
     private TeaVMJpsConfiguration state = new TeaVMJpsConfiguration();
 

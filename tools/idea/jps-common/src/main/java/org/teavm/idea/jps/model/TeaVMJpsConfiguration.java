@@ -22,22 +22,13 @@ import org.jetbrains.jps.model.ex.JpsElementChildRoleBase;
 import org.jetbrains.jps.model.module.JpsModule;
 
 public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration> {
-    private static final JpsElementChildRole<TeaVMJpsConfiguration> ROLE = JpsElementChildRoleBase.create(
+    static final JpsElementChildRole<TeaVMJpsConfiguration> ROLE = JpsElementChildRoleBase.create(
             "TeaVM configuration");
-    private boolean enabled;
     private String mainClass;
     private String targetDirectory;
     private boolean minifying;
     private boolean sourceMapsFileGenerated = true;
     private boolean sourceFilesCopied = true;
-
-    public boolean isEnabled() {
-        return enabled;
-    }
-
-    public void setEnabled(boolean enabled) {
-        this.enabled = enabled;
-    }
 
     public String getMainClass() {
         return mainClass;
@@ -97,7 +88,6 @@ public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration>
 
     @Override
     public void applyChanges(@NotNull TeaVMJpsConfiguration modified) {
-        enabled = modified.enabled;
         mainClass = modified.mainClass;
         targetDirectory = modified.targetDirectory;
         minifying = modified.minifying;
