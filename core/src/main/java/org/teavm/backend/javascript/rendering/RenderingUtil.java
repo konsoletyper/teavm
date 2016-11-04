@@ -16,8 +16,8 @@
 package org.teavm.backend.javascript.rendering;
 
 public final class RenderingUtil {
-    public static final String variableNames = "abcdefghijkmnopqrstuvwxyz";
-    public static final String variablePartNames = "abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    private static final String variableNames = "abcdefghijkmnopqrstuvwxyz";
+    private static final String variablePartNames = "abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     private RenderingUtil() {
     }
@@ -75,10 +75,11 @@ public final class RenderingUtil {
 
     public static String indexToId(int index) {
         StringBuilder sb = new StringBuilder();
-        do {
+        sb.append(variableNames.charAt(index % variableNames.length()));
+        while (index > 0) {
             sb.append(variablePartNames.charAt(index % variablePartNames.length()));
             index /= variablePartNames.length();
-        } while (index > 0);
+        }
         return sb.toString();
     }
 }

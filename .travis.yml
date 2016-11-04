@@ -14,6 +14,8 @@ script: >
   mvn -e test \
    -Dteavm.junit.target=target/js-tests \
    -Dteavm.junit.js.runner=htmlunit \
-   -Dteavm.junit.js.threads=1
+   -Dteavm.junit.js.threads=1 \
+   -Dteavm.junit.optimized=true \
+   -Dteavm.junit.minified=true
 after_script:
   - rm -rf $HOME/.m2/repository/org/teavm

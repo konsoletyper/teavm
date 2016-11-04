@@ -37,6 +37,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
+import java.util.function.Consumer;
 import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.junit.runner.Description;
@@ -199,7 +200,21 @@ public class TeaVMTestRunner extends Runner {
         }
 
         if (success && outputDir != null) {
-            runInTeaVM(child, notifier, expectedExceptions);
+            Description description = describeChild(child);
+            List<TeaVMTestConfiguration> configurations = getConfigurations();
+            int[] configurationIndex = new int[] { 0 };
+            List<Consumer<Boolean>> onSuccess = new ArrayList<>();
+
+            onSuccess.add(runSuccess -> {
+                if (runSuccess && configurationIndex[0] < configurations.size()) {
+                    runInTeaVM(child, notifier, expectedExceptions, configurations.get(configurationIndex[0]++),
+                            onSuccess.get(0));
+                } else {
+                    notifier.fireTestFinished(description);
+                    latch.countDown();
+                }
+            });
+            onSuccess.get(0).accept(true);
         } else {
             if (!run) {
                 notifier.fireTestIgnored(describeChild(child));
@@ -247,41 +262,41 @@ public class TeaVMTestRunner extends Runner {
         return true;
     }
 
-    private boolean runInTeaVM(Method child, RunNotifier notifier, Set<Class<?>> expectedExceptions) {
+    private boolean runInTeaVM(Method child, RunNotifier notifier, Set<Class<?>> expectedExceptions,
+            TeaVMTestConfiguration configuration, Consumer<Boolean> onComplete) {
         Description description = describeChild(child);
 
         CompileResult compileResult;
         try {
-            compileResult = compileTest(child);
-        } catch (IOException e) {
+            compileResult = compileTest(child, configuration);
+        } catch (Exception e) {
             notifier.fireTestFailure(new Failure(description, e));
+            onComplete.accept(false);
             return false;
         }
 
         if (!compileResult.success) {
             notifier.fireTestFailure(new Failure(description,
                     new AssertionError(compileResult.errorMessage)));
-            notifier.fireTestFinished(description);
-            latch.countDown();
+            onComplete.accept(false);
             return false;
         }
 
         if (runStrategy == null) {
-            notifier.fireTestFinished(description);
-            latch.countDown();
+            onComplete.accept(true);
             return true;
         }
 
         TestRunCallback callback = new TestRunCallback() {
             @Override
             public void complete() {
-                notifier.fireTestFinished(description);
-                latch.countDown();
+                onComplete.accept(true);
             }
 
             @Override
             public void error(Throwable e) {
                 notifier.fireTestFailure(new Failure(description, e));
+                onComplete.accept(false);
             }
         };
 
@@ -325,14 +340,22 @@ public class TeaVMTestRunner extends Runner {
         }
     }
 
-    private CompileResult compileTest(Method method) throws IOException {
+    private CompileResult compileTest(Method method, TeaVMTestConfiguration configuration) throws IOException {
         CompileResult result = new CompileResult();
 
         File path = outputDir;
         path = new File(path, method.getDeclaringClass().getName().replace('.', '/'));
         path = new File(path, method.getName());
         path.mkdirs();
-        File outputFile = new File(path, "test.js");
+
+        StringBuilder simpleName = new StringBuilder();
+        simpleName.append("test");
+        String suffix = configuration.getSuffix();
+        if (!suffix.isEmpty()) {
+            simpleName.append('-').append(suffix);
+        }
+        simpleName.append(".js");
+        File outputFile = new File(path, simpleName.toString());
         result.file = outputFile;
 
         resourceToFile("org/teavm/backend/javascript/runtime.js", new File(path, "runtime.js"));
@@ -345,12 +368,14 @@ public class TeaVMTestRunner extends Runner {
         Class<?> runnerType = testAdapter.getRunner(methodHolder);
 
         JavaScriptTarget jsTarget = new JavaScriptTarget();
-        jsTarget.setMinifying(false);
+        configuration.apply(jsTarget);
+
         TeaVM vm = new TeaVMBuilder(jsTarget)
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
                 .build();
         vm.setIncremental(false);
+        configuration.apply(vm);
         vm.installPlugins();
 
         new TestExceptionPlugin().install(vm);
@@ -371,6 +396,18 @@ public class TeaVMTestRunner extends Runner {
         }
 
         return result;
+    }
+
+    private List<TeaVMTestConfiguration> getConfigurations() {
+        List<TeaVMTestConfiguration> configurations = new ArrayList<>();
+        configurations.add(TeaVMTestConfiguration.DEFAULT);
+        if (Boolean.parseBoolean(System.getProperty("teavm.junit.minified", "false"))) {
+            configurations.add(TeaVMTestConfiguration.MINIFIED);
+        }
+        if (Boolean.parseBoolean(System.getProperty("teavm.junit.optimized", "false"))) {
+            configurations.add(TeaVMTestConfiguration.OPTIMIZED);
+        }
+        return configurations;
     }
 
     private void applyProperties(Class<?> cls, Properties result) {
