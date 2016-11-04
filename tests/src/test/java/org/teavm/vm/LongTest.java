@@ -49,6 +49,13 @@ public class LongTest {
         assertEquals(2971215073L, a + b);
     }
 
+    @Test
+    public void smallLongDivision() {
+        long a = id(-1);
+        long b = 3;
+        assertEquals(0, a / b);
+    }
+
     private static long id(long value) {
         return value;
     }

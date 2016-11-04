@@ -621,7 +621,7 @@ function Long_fromNumber(val) {
     if (val >= 0) {
         return new Long(val | 0, (val / 0x100000000) | 0);
     } else {
-        return new Long(val | 0, (-(Math.abs(val) / 0x100000000) - 1) | 0);
+        return Long_neg(new Long(-val | 0, (-val / 0x100000000) | 0));
     }
 }
 function Long_toNumber(val) {
