@@ -38,24 +38,18 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
 import javax.swing.DefaultComboBoxModel;
-import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
-import javax.swing.JComponent;
 import javax.swing.JPanel;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 
 class TeaVMConfigurationPanel extends JPanel {
-    private final JCheckBox enabledCheckBox = new JCheckBox("TeaVM enabled for this module");
     private final TextFieldWithBrowseButton mainClassField = new TextFieldWithBrowseButton(event -> chooseMainClass());
     private final TextFieldWithBrowseButton targetDirectoryField = new TextFieldWithBrowseButton();
     private final JComboBox<ComboBoxItem<Boolean>> minifyingField = new JComboBox<>(new DefaultComboBoxModel<>());
-    private final JComboBox<ComboBoxItem<Boolean>> sourceMapsField = new JComboBox<>(new DefaultComboBoxModel<>());;
+    private final JComboBox<ComboBoxItem<Boolean>> sourceMapsField = new JComboBox<>(new DefaultComboBoxModel<>());
     private final JComboBox<ComboBoxItem<Boolean>> copySourcesField = new JComboBox<>(new DefaultComboBoxModel<>());
     private final TeaVMJpsConfiguration initialConfiguration = new TeaVMJpsConfiguration();
     private final Project project;
-
-    private final List<JComponent> editComponents = Arrays.asList(mainClassField, targetDirectoryField,
-            minifyingField, sourceMapsField, copySourcesField);
 
     private final List<ComboBoxItem<Boolean>> minifiedOptions = Arrays.asList(new ComboBoxItem<>(false, "Readable"),
             new ComboBoxItem<>(true, "Minified (obfuscated)"));
@@ -67,8 +61,6 @@ class TeaVMConfigurationPanel extends JPanel {
             new ComboBoxItem<>(false, "Skip"));
 
     private final List<Field<?>> fields = Arrays.asList(
-            new Field<>(TeaVMJpsConfiguration::setEnabled, TeaVMJpsConfiguration::isEnabled,
-                    enabledCheckBox::setSelected, enabledCheckBox::isSelected),
             new Field<>(TeaVMJpsConfiguration::setMainClass, TeaVMJpsConfiguration::getMainClass,
                     mainClassField::setText, mainClassField::getText),
             new Field<>(TeaVMJpsConfiguration::setTargetDirectory, TeaVMJpsConfiguration::getTargetDirectory,
@@ -88,7 +80,6 @@ class TeaVMConfigurationPanel extends JPanel {
 
     TeaVMConfigurationPanel(Project project) {
         this.project = project;
-        enabledCheckBox.addActionListener(event -> updateEnabledState());
         setupLayout();
 
         FileChooserDescriptor targetDirectoryChooserDescriptor = FileChooserDescriptorFactory
@@ -96,23 +87,13 @@ class TeaVMConfigurationPanel extends JPanel {
         targetDirectoryField.addBrowseFolderListener("Target Directory", "Please, select folder where TeaVM should"
                 + "write generated JS files", project, targetDirectoryChooserDescriptor);
 
-        minifiedOptions.stream().forEach(minifyingField::addItem);
-        sourceMapsOptions.stream().forEach(sourceMapsField::addItem);
-        copySourcesOptions.stream().forEach(copySourcesField::addItem);
+        minifiedOptions.forEach(minifyingField::addItem);
+        sourceMapsOptions.forEach(sourceMapsField::addItem);
+        copySourcesOptions.forEach(copySourcesField::addItem);
     }
 
     private void setupLayout() {
         setLayout(new GridBagLayout());
-
-        GridBagConstraints constraints = new GridBagConstraints();
-        constraints.gridwidth = GridBagConstraints.REMAINDER;
-        constraints.anchor = GridBagConstraints.BASELINE_LEADING;
-        constraints.insets.left = 5;
-        constraints.insets.right = 5;
-        constraints.insets.bottom = 25;
-        constraints.insets.top = 10;
-        constraints.weighty = 1;
-        add(enabledCheckBox, constraints);
 
         GridBagConstraints labelConstraints = new GridBagConstraints();
         labelConstraints.gridwidth = GridBagConstraints.REMAINDER;
@@ -153,16 +134,17 @@ class TeaVMConfigurationPanel extends JPanel {
         add(minifyingField, fieldConstraints);
 
         add(bold(new JBLabel("Source maps")), labelConstraints);
-        add(new JBLabel("Indicates whether TeaVM should generate source maps. With source maps "
-                + "you can debug code in the browser's devtools."), descriptionConstraints);
+        add(new JBLabel("Indicates whether TeaVM should generate source maps."), descriptionConstraints);
+        add(new JBLabel("With source maps you can debug code in the browser's devtools."), descriptionConstraints);
         add(sourceMapsField, fieldConstraints);
 
         add(bold(new JBLabel("Copy source code")), labelConstraints);
         add(new JBLabel("Source maps require your server to provide source code."), descriptionConstraints);
-        add(new JBLabel("TeaVM can copy source code to the corresponding location, which is very convenient if "
-                + "you are going to debug in the browser."), descriptionConstraints);
+        add(new JBLabel("TeaVM can copy source code to the corresponding location,"), descriptionConstraints);
+        add(new JBLabel("which is very convenient if you are going to debug in the browser."), descriptionConstraints);
         add(copySourcesField, fieldConstraints);
 
+        GridBagConstraints constraints = new GridBagConstraints();
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weighty = 100;
         constraints.weightx = 1;
@@ -182,7 +164,6 @@ class TeaVMConfigurationPanel extends JPanel {
         for (Field<?> field : fields) {
             loadField(field, config);
         }
-        updateEnabledState();
     }
 
     void save(TeaVMJpsConfiguration config) {
@@ -203,12 +184,6 @@ class TeaVMConfigurationPanel extends JPanel {
     private void updateInitialConfiguration(TeaVMJpsConfiguration config) {
         for (Field<?> field : fields) {
             copyField(field, config);
-        }
-    }
-
-    private void updateEnabledState() {
-        for (JComponent component : editComponents) {
-            component.setEnabled(enabledCheckBox.isSelected());
         }
     }
 

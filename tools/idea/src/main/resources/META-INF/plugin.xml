@@ -26,13 +26,12 @@
   </application-components>
 
   <extensions defaultExtensionNs="com.intellij">
-    <moduleConfigurable instance="org.teavm.idea.ui.TeaVMConfigurable"/>
-    <moduleService serviceInterface="org.teavm.idea.TeaVMConfigurationStorage"
-                   serviceImplementation="org.teavm.idea.TeaVMConfigurationStorage"/>
     <compileServer.plugin classpath="jps/teavm-jps-plugin.jar;teavm-all.jar;teavm-jps-common.jar"/>
     <buildProcess.parametersProvider implementation="org.teavm.idea.TeaVMJPSConfigurator"/>
     <configurationType implementation="org.teavm.idea.debug.TeaVMDebugConfigurationType"/>
     <programRunner implementation="org.teavm.idea.debug.TeaVMDebugRunner"/>
+
+    <facetType implementation="org.teavm.idea.TeaVMFacetType"/>
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">

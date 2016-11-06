@@ -15,10 +15,9 @@
  */
 package org.teavm.idea.maven;
 
-import com.intellij.openapi.diagnostic.Logger;
+import com.intellij.facet.FacetManager;
 import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProvider;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.module.ModuleServiceManager;
 import java.util.List;
 import java.util.Map;
 import org.jdom.Element;
@@ -29,12 +28,11 @@ import org.jetbrains.idea.maven.project.MavenProject;
 import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
-import org.teavm.idea.TeaVMConfigurationStorage;
+import org.teavm.idea.TeaVMFacet;
+import org.teavm.idea.TeaVMFacetType;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 
 public class TeaVMMavenImporter extends MavenImporter {
-    private static final Logger logger = Logger.getInstance(TeaVMMavenImporter.class);
-
     public TeaVMMavenImporter() {
         super("org.teavm", "teavm-maven-plugin");
     }
@@ -49,41 +47,41 @@ public class TeaVMMavenImporter extends MavenImporter {
             MavenRootModelAdapter rootModel, MavenProjectsTree mavenModel, MavenProject mavenProject,
             MavenProjectChanges changes, Map<MavenProject, String> mavenProjectToModuleName,
             List<MavenProjectsProcessorTask> postTasks) {
-        TeaVMConfigurationStorage configurationStorage = ModuleServiceManager.getService(module,
-                TeaVMConfigurationStorage.class);
-        if (configurationStorage == null) {
-            logger.warn("Could not load component to retrieve TeaVM build configuration");
-            return;
-        }
-
-        TeaVMJpsConfiguration configuration = configurationStorage.getState();
+        FacetManager facetManager = FacetManager.getInstance(module);
 
         for (MavenPlugin mavenPlugin : mavenProject.getPlugins()) {
             if (mavenPlugin.getGroupId().equals(myPluginGroupID)
                     && mavenPlugin.getArtifactId().equals(myPluginArtifactID)) {
-                updateConfiguration(mavenPlugin, configuration);
+                updateConfiguration(mavenPlugin, facetManager, module);
             }
         }
-
-        configurationStorage.loadState(configuration);
     }
 
-    private void updateConfiguration(MavenPlugin plugin, TeaVMJpsConfiguration configuration) {
+    private void updateConfiguration(MavenPlugin plugin, FacetManager facetManager, Module module) {
         if (plugin.getConfigurationElement() != null) {
-            updateConfiguration(plugin.getConfigurationElement(), configuration);
+            updateConfiguration(plugin.getConfigurationElement(), facetManager, module);
         }
+
         for (MavenPlugin.Execution execution : plugin.getExecutions()) {
             if (execution.getGoals().contains("compile")) {
                 if (execution.getConfigurationElement() != null) {
-                    updateConfiguration(execution.getConfigurationElement(), configuration);
+                    updateConfiguration(execution.getConfigurationElement(), facetManager, module);
                 }
                 break;
             }
         }
     }
 
-    private void updateConfiguration(Element source, TeaVMJpsConfiguration configuration) {
-        configuration.setEnabled(true);
+    private void updateConfiguration(Element source, FacetManager facetManager, Module module) {
+        TeaVMFacet facet = facetManager.getFacetByType(TeaVMFacetType.TYPE_ID);
+        if (facet == null) {
+            TeaVMFacetType type = TeaVMFacetType.getInstance();
+            facet = new TeaVMFacet(module, "TeaVM (JS)", type.createDefaultConfiguration());
+            facetManager.addFacet(type, facet.getName(), facet);
+        }
+
+        TeaVMJpsConfiguration configuration = facet.getConfiguration().getState();
+
         for (Element child : source.getChildren()) {
             switch (child.getName()) {
                 case "sourceFilesCopied":
@@ -103,5 +101,7 @@ public class TeaVMMavenImporter extends MavenImporter {
                     break;
             }
         }
+
+        facet.getConfiguration().loadState(configuration);
     }
 }
