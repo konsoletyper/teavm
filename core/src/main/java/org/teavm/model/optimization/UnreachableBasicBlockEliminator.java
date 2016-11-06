@@ -15,16 +15,15 @@
  */
 package org.teavm.model.optimization;
 
+import java.util.List;
 import org.teavm.common.IntegerStack;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.Incoming;
+import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.util.InstructionTransitionExtractor;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class UnreachableBasicBlockEliminator {
     public void optimize(Program program) {
         if (program.basicBlockCount() == 0) {
@@ -51,6 +50,7 @@ public class UnreachableBasicBlockEliminator {
                 stack.push(tryCatch.getHandler().getIndex());
             }
         }
+
         for (int i = 0; i < reachable.length; ++i) {
             if (!reachable[i]) {
                 BasicBlock block = program.basicBlockAt(i);
@@ -66,6 +66,23 @@ public class UnreachableBasicBlockEliminator {
                 program.deleteBasicBlock(i);
             }
         }
+
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            if (block == null) {
+                continue;
+            }
+            for (Phi phi : block.getPhis()) {
+                List<Incoming> incomingList = phi.getIncomings();
+                for (int j = 0; j < incomingList.size(); ++j) {
+                    Incoming incoming = incomingList.get(j);
+                    if (!reachable[incoming.getSource().getIndex()]) {
+                        incomingList.remove(j--);
+                    }
+                }
+            }
+        }
+
         program.pack();
     }
 }

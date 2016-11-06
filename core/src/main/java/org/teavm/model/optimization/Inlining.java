@@ -51,6 +51,7 @@ public class Inlining {
     public void apply(Program program, ClassReaderSource classSource) {
         List<PlanEntry> plan = buildPlan(program, classSource, 0);
         execPlan(program, plan, 0);
+        new UnreachableBasicBlockEliminator().optimize(program);
     }
 
     private void execPlan(Program program, List<PlanEntry> plan, int offset) {

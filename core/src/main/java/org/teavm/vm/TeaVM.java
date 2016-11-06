@@ -444,6 +444,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             for (MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null) {
                     inlining.apply(method.getProgram(), classes);
+                    new UnusedVariableElimination().optimize(method, method.getProgram());
                 }
             }
             if (wasCancelled()) {
@@ -481,10 +482,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     for (MethodOptimization optimization : getOptimizations()) {
                         try {
                             changed |= optimization.optimize(method, optimizedProgram);
-                        } catch (Exception e) {
+                        } catch (Exception | AssertionError e) {
                             ListingBuilder listingBuilder = new ListingBuilder();
                             String listing = listingBuilder.buildListing(optimizedProgram, "");
-                            System.err.println("Error optimizing program for method" + method.getReference()
+                            System.err.println("Error optimizing program for method " + method.getReference()
                                     + ":\n" + listing);
                             throw new RuntimeException(e);
                         }

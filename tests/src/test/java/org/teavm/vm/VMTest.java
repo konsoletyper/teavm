@@ -105,6 +105,25 @@ public class VMTest {
         }
     }
 
+    @Test
+    public void inlineThrow() {
+        int x = id(23);
+        if (x == 42) {
+            x++;
+            throwException();
+            x++;
+        }
+        assertEquals(x, id(23));
+    }
+
+    private void throwException() {
+        throw new RuntimeException();
+    }
+
+    private int id(int value) {
+        return value;
+    }
+
     private static class ClassWithStaticField {
         public final static String CONST1 = "FIRST";
         public final static String CONST2 = "SECOND";
