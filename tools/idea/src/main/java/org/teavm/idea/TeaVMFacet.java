@@ -16,11 +16,14 @@
 package org.teavm.idea;
 
 import com.intellij.facet.Facet;
+import com.intellij.facet.FacetType;
 import com.intellij.openapi.module.Module;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 
 public class TeaVMFacet extends Facet<TeaVMFacetConfiguration> {
-    public TeaVMFacet(@NotNull Module module, @NotNull String name, @NotNull TeaVMFacetConfiguration configuration) {
-        super(TeaVMFacetType.getInstance(), module, name, configuration, null);
+    public TeaVMFacet(@NotNull FacetType<TeaVMFacet, TeaVMFacetConfiguration> facetType, @NotNull Module module,
+            @NotNull String name, @NotNull TeaVMFacetConfiguration configuration, @Nullable Facet<?> underlyingFacet) {
+        super(facetType, module, name, configuration, underlyingFacet);
     }
 }

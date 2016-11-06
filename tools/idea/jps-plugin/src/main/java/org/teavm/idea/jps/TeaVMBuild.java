@@ -113,6 +113,7 @@ class TeaVMBuild {
         TeaVMTool tool = new TeaVMTool();
         tool.setProgressListener(createProgressListener(context));
         tool.setLog(new EmptyTeaVMToolLog());
+        tool.setTargetType(config.getTargetType());
         tool.setMainClass(config.getMainClass());
         tool.setTargetDirectory(new File(config.getTargetDirectory()));
         tool.setClassLoader(buildClassLoader());

@@ -15,20 +15,34 @@
  */
 package org.teavm.idea.jps.model;
 
+import com.intellij.util.xmlb.annotations.Transient;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.JpsElementChildRole;
 import org.jetbrains.jps.model.ex.JpsElementBase;
 import org.jetbrains.jps.model.ex.JpsElementChildRoleBase;
 import org.jetbrains.jps.model.module.JpsModule;
+import org.teavm.tooling.TeaVMTargetType;
 
 public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration> {
     static final JpsElementChildRole<TeaVMJpsConfiguration> ROLE = JpsElementChildRoleBase.create(
             "TeaVM configuration");
+
+    @Transient
+    private TeaVMTargetType targetType;
+
     private String mainClass;
     private String targetDirectory;
     private boolean minifying;
     private boolean sourceMapsFileGenerated = true;
     private boolean sourceFilesCopied = true;
+
+    public TeaVMTargetType getTargetType() {
+        return targetType;
+    }
+
+    public void setTargetType(TeaVMTargetType targetType) {
+        this.targetType = targetType;
+    }
 
     public String getMainClass() {
         return mainClass;

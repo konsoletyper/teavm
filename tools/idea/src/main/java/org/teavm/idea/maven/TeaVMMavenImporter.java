@@ -16,10 +16,13 @@
 package org.teavm.idea.maven;
 
 import com.intellij.facet.FacetManager;
+import com.intellij.facet.FacetType;
 import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProvider;
 import com.intellij.openapi.module.Module;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.jdom.Element;
 import org.jetbrains.idea.maven.importing.MavenImporter;
 import org.jetbrains.idea.maven.importing.MavenRootModelAdapter;
@@ -29,8 +32,11 @@ import org.jetbrains.idea.maven.project.MavenProjectChanges;
 import org.jetbrains.idea.maven.project.MavenProjectsProcessorTask;
 import org.jetbrains.idea.maven.project.MavenProjectsTree;
 import org.teavm.idea.TeaVMFacet;
+import org.teavm.idea.TeaVMFacetConfiguration;
 import org.teavm.idea.TeaVMFacetType;
+import org.teavm.idea.TeaVMWebAssemblyFacetType;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
+import org.teavm.tooling.TeaVMTargetType;
 
 public class TeaVMMavenImporter extends MavenImporter {
     public TeaVMMavenImporter() {
@@ -49,35 +55,53 @@ public class TeaVMMavenImporter extends MavenImporter {
             List<MavenProjectsProcessorTask> postTasks) {
         FacetManager facetManager = FacetManager.getInstance(module);
 
+        Set<String> targetTypes = new HashSet<>();
         for (MavenPlugin mavenPlugin : mavenProject.getPlugins()) {
             if (mavenPlugin.getGroupId().equals(myPluginGroupID)
                     && mavenPlugin.getArtifactId().equals(myPluginArtifactID)) {
-                updateConfiguration(mavenPlugin, facetManager, module);
+                updateConfiguration(mavenPlugin, facetManager, module, targetTypes);
             }
         }
     }
 
-    private void updateConfiguration(MavenPlugin plugin, FacetManager facetManager, Module module) {
+    private void updateConfiguration(MavenPlugin plugin, FacetManager facetManager, Module module,
+            Set<String> targetTypes) {
         if (plugin.getConfigurationElement() != null) {
-            updateConfiguration(plugin.getConfigurationElement(), facetManager, module);
+            updateConfiguration(plugin.getConfigurationElement(), facetManager, module, targetTypes);
         }
 
         for (MavenPlugin.Execution execution : plugin.getExecutions()) {
             if (execution.getGoals().contains("compile")) {
                 if (execution.getConfigurationElement() != null) {
-                    updateConfiguration(execution.getConfigurationElement(), facetManager, module);
+                    updateConfiguration(execution.getConfigurationElement(), facetManager, module, targetTypes);
                 }
-                break;
             }
         }
     }
 
-    private void updateConfiguration(Element source, FacetManager facetManager, Module module) {
-        TeaVMFacet facet = facetManager.getFacetByType(TeaVMFacetType.TYPE_ID);
+    private void updateConfiguration(Element source, FacetManager facetManager, Module module,
+            Set<String> targetTypes) {
+        FacetType<TeaVMFacet, TeaVMFacetConfiguration> facetType;
+        switch (getTargetType(source)) {
+            case JAVASCRIPT:
+                facetType = TeaVMFacetType.getInstance();
+                break;
+            case WEBASSEMBLY:
+                facetType = TeaVMWebAssemblyFacetType.getInstance();
+                break;
+            default:
+                return;
+        }
+
+        if (!targetTypes.add(facetType.getStringId())) {
+            return;
+        }
+
+        TeaVMFacet facet = facetManager.getFacetByType(facetType.getId());
         if (facet == null) {
-            TeaVMFacetType type = TeaVMFacetType.getInstance();
-            facet = new TeaVMFacet(module, "TeaVM (JS)", type.createDefaultConfiguration());
-            facetManager.addFacet(type, facet.getName(), facet);
+            facet = new TeaVMFacet(facetType, module, facetType.getDefaultFacetName(),
+                    facetType.createDefaultConfiguration(), null);
+            facetManager.addFacet(facetType, facet.getName(), facet);
         }
 
         TeaVMJpsConfiguration configuration = facet.getConfiguration().getState();
@@ -103,5 +127,18 @@ public class TeaVMMavenImporter extends MavenImporter {
         }
 
         facet.getConfiguration().loadState(configuration);
+    }
+
+    private TeaVMTargetType getTargetType(Element source) {
+        for (Element child : source.getChildren()) {
+            if (child.getName().equals("targetType")) {
+                try {
+                    return TeaVMTargetType.valueOf(child.getTextTrim());
+                } catch (IllegalArgumentException e) {
+                    // do nothing, continue iterating
+                }
+            }
+        }
+        return TeaVMTargetType.JAVASCRIPT;
     }
 }

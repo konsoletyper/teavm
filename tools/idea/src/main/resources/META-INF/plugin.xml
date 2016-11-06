@@ -32,6 +32,7 @@
     <programRunner implementation="org.teavm.idea.debug.TeaVMDebugRunner"/>
 
     <facetType implementation="org.teavm.idea.TeaVMFacetType"/>
+    <facetType implementation="org.teavm.idea.TeaVMWebAssemblyFacetType"/>
   </extensions>
 
   <extensions defaultExtensionNs="org.jetbrains.idea.maven">

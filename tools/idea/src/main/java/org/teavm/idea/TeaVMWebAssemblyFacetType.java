@@ -27,12 +27,12 @@ import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-public class TeaVMFacetType extends FacetType<TeaVMFacet, TeaVMFacetConfiguration> {
-    public static final FacetTypeId<TeaVMFacet> TYPE_ID = new FacetTypeId<>("teavm-js");
+public class TeaVMWebAssemblyFacetType extends FacetType<TeaVMFacet, TeaVMFacetConfiguration> {
+    public static final FacetTypeId<TeaVMFacet> TYPE_ID = new FacetTypeId<>("teavm-wasm");
     private static final Icon icon = IconLoader.getIcon("/teavm-16.png");
 
-    public TeaVMFacetType() {
-        super(TYPE_ID, "teavm-js", "TeaVM (JS)");
+    public TeaVMWebAssemblyFacetType() {
+        super(TYPE_ID, "teavm-wasm", "TeaVM (WebAssembly)");
     }
 
     @Override
@@ -58,7 +58,7 @@ public class TeaVMFacetType extends FacetType<TeaVMFacet, TeaVMFacetConfiguratio
     }
 
     @NotNull
-    public static TeaVMFacetType getInstance() {
-        return (TeaVMFacetType) FacetTypeRegistry.getInstance().findFacetType(TYPE_ID);
+    public static TeaVMWebAssemblyFacetType getInstance() {
+        return (TeaVMWebAssemblyFacetType) FacetTypeRegistry.getInstance().findFacetType(TYPE_ID);
     }
 }
