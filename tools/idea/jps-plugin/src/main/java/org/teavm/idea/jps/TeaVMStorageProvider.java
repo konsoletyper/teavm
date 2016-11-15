@@ -21,9 +21,15 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.builders.storage.StorageProvider;
 
 public class TeaVMStorageProvider extends StorageProvider<TeaVMStorage> {
+    private String suffix;
+
+    public TeaVMStorageProvider(String suffix) {
+        this.suffix = suffix;
+    }
+
     @NotNull
     @Override
     public TeaVMStorage createStorage(File file) throws IOException {
-        return new TeaVMStorage(file);
+        return new TeaVMStorage(file, suffix);
     }
 }

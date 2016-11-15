@@ -34,8 +34,8 @@ public class TeaVMStorage implements StorageOwner {
     private List<Entry> participatingFiles;
     private boolean dirty;
 
-    TeaVMStorage(File file) throws IOException {
-        file = new File(file, "teavm.storage");
+    TeaVMStorage(File file, String suffix) throws IOException {
+        file = new File(file, "teavm-" + suffix + ".storage");
         this.file = file;
         if (file.exists()) {
             participatingFiles = new ArrayList<>();
@@ -104,10 +104,6 @@ public class TeaVMStorage implements StorageOwner {
                 }
             }
         }
-    }
-
-    public boolean causesBuild(String file) {
-        return participatingFiles == null || participatingFiles.contains(file);
     }
 
     public static class Entry {

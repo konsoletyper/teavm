@@ -68,6 +68,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.tooling.EmptyTeaVMToolLog;
+import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
 import org.teavm.tooling.sources.DirectorySourceFileProvider;
@@ -79,10 +80,11 @@ import org.teavm.vm.TeaVMProgressListener;
 
 class TeaVMBuild {
     private final CompileContext context;
-    private final TeaVMStorageProvider storageProvider = new TeaVMStorageProvider();
+    private final TeaVMStorageProvider jsStorageProvider = new TeaVMStorageProvider("js");
+    private final TeaVMStorageProvider wasmStorageProvider = new TeaVMStorageProvider("wasm");
     private final List<String> classPathEntries = new ArrayList<>();
     private List<String> directoryClassPathEntries;
-    private TeaVMStorage storage;
+    private Map<TeaVMTargetType, TeaVMStorage> storages = new HashMap<>();
     private final TeaVMBuilderAssistant assistant;
     private final Map<String, File> sourceFileCache = new HashMap<>();
     private final Map<File, int[]> fileLineCache = new HashMap<>();
@@ -94,9 +96,23 @@ class TeaVMBuild {
     }
 
     boolean perform(JpsModule module, ModuleBuildTarget target) throws IOException {
-        storage = context.getProjectDescriptor().dataManager.getStorage(target, storageProvider);
+        storages.put(TeaVMTargetType.JAVASCRIPT, context.getProjectDescriptor().dataManager.getStorage(
+                target, jsStorageProvider));
+        storages.put(TeaVMTargetType.WEBASSEMBLY, context.getProjectDescriptor().dataManager.getStorage(
+                target, wasmStorageProvider));
 
-        TeaVMJpsConfiguration config = TeaVMJpsConfiguration.get(module);
+        boolean doneSomething = false;
+        for (TeaVMJpsConfiguration config : TeaVMJpsConfiguration.getAll(module)) {
+            if (performForSubsystem(module, target, config)) {
+                doneSomething = true;
+            }
+        }
+
+        return doneSomething;
+    }
+
+    private boolean performForSubsystem(JpsModule module, ModuleBuildTarget target, TeaVMJpsConfiguration config)
+            throws IOException {
         if (config == null) {
             return false;
         }
@@ -106,7 +122,7 @@ class TeaVMBuild {
         directoryClassPathEntries = classPathEntries.stream().filter(name -> new File(name).isDirectory())
                 .collect(toList());
 
-        if (!hasChanges(target)) {
+        if (!hasChanges(target, config.getTargetType())) {
             return false;
         }
 
@@ -137,7 +153,7 @@ class TeaVMBuild {
         }
 
         if (!errorOccurred && tool.getProblemProvider().getSevereProblems().isEmpty()) {
-            updateStorage(tool);
+            updateStorage(tool, config.getTargetType());
         }
 
         CallGraph callGraph = tool.getDependencyInfo().getCallGraph();
@@ -377,12 +393,13 @@ class TeaVMBuild {
         return lines.getAll();
     }
 
-    private boolean hasChanges(ModuleBuildTarget target) {
+    private boolean hasChanges(ModuleBuildTarget target, TeaVMTargetType targetType) {
         if (!context.getScope().isBuildIncrementally(target.getTargetType())
                 || context.getScope().isBuildForced(target)) {
             return true;
         }
-        List<TeaVMStorage.Entry> filesToWatch = storage.getParticipatingFiles();
+
+        List<TeaVMStorage.Entry> filesToWatch = storages.get(targetType).getParticipatingFiles();
         if (filesToWatch == null) {
             return true;
         }
@@ -396,7 +413,7 @@ class TeaVMBuild {
         return false;
     }
 
-    private void updateStorage(TeaVMTool tool) {
+    private void updateStorage(TeaVMTool tool, TeaVMTargetType targetType) {
         Set<String> resources = Stream.concat(tool.getClasses().stream().map(cls -> cls.replace('.', '/') + ".class"),
                 tool.getUsedResources().stream())
                 .sorted()
@@ -408,7 +425,8 @@ class TeaVMBuild {
                 })
                 .filter(Objects::nonNull)
                 .collect(toList());
-        storage.setParticipatingFiles(participatingFiles);
+
+        storages.get(targetType).setParticipatingFiles(participatingFiles);
     }
 
     private Long getTimestamp(String path) {

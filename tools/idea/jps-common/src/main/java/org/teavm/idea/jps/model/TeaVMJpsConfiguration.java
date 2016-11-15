@@ -16,6 +16,9 @@
 package org.teavm.idea.jps.model;
 
 import com.intellij.util.xmlb.annotations.Transient;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.JpsElementChildRole;
 import org.jetbrains.jps.model.ex.JpsElementBase;
@@ -24,8 +27,11 @@ import org.jetbrains.jps.model.module.JpsModule;
 import org.teavm.tooling.TeaVMTargetType;
 
 public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration> {
-    static final JpsElementChildRole<TeaVMJpsConfiguration> ROLE = JpsElementChildRoleBase.create(
-            "TeaVM configuration");
+    static final JpsElementChildRole<TeaVMJpsConfiguration> JS_ROLE = JpsElementChildRoleBase.create(
+            "TeaVM configuration (JS)");
+
+    static final JpsElementChildRole<TeaVMJpsConfiguration> WEBASSEMBLY_ROLE = JpsElementChildRoleBase.create(
+            "TeaVM configuration (WebAssembly)");
 
     @Transient
     private TeaVMTargetType targetType;
@@ -84,12 +90,15 @@ public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration>
         this.sourceFilesCopied = sourceFilesCopied;
     }
 
-    public static TeaVMJpsConfiguration get(JpsModule module) {
-        return module.getContainer().getChild(ROLE);
-    }
-
-    public void setTo(JpsModule module) {
-        module.getContainer().setChild(ROLE, this);
+    public static List<TeaVMJpsConfiguration> getAll(JpsModule module) {
+        List<TeaVMJpsConfiguration> configurations = new ArrayList<>();
+        for (JpsElementChildRole<TeaVMJpsConfiguration> role : Arrays.asList(JS_ROLE, WEBASSEMBLY_ROLE)) {
+            TeaVMJpsConfiguration configuration = module.getContainer().getChild(role);
+            if (configuration != null) {
+                configurations.add(configuration);
+            }
+        }
+        return configurations;
     }
 
     @NotNull
