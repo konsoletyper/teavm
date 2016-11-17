@@ -406,10 +406,25 @@ function $rt_metadata(data) {
         for (var j = 0; j < names.length; j = (j + 1) | 0) {
             window[names[j]] = (function(cls, name) {
                 return function() {
-                    var clinit = cls.$clinit;
-                    cls.$clinit = function() {};
-                    clinit();
-                    return window[name].apply(window, arguments);
+                    var ptr = 0;
+                    if ($rt_resuming()) {
+                        ptr = $rt_nativeThread().pop();
+                    }
+                    main: while (true) {
+                        switch (ptr) {
+                            case 0:
+                                clinit = cls.$clinit;
+                                clinit();
+                                ptr = 1;
+                            case 1:
+                                var result = window[name].apply(window, arguments);
+                                if ($rt_suspend()) {
+                                    break;
+                                }
+                                return result;
+                        }
+                    }
+                    $rt_nativeThread().push(ptr);
                 }
             })(cls, names[j]);
         }

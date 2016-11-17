@@ -19,7 +19,6 @@ import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Async;
-import org.teavm.interop.Sync;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.CallLocation;
@@ -32,10 +31,6 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.ValueType;
 import org.teavm.platform.async.AsyncCallback;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AsyncMethodProcessor implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
@@ -63,11 +58,6 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
                     method.getAnnotations().add(annot);
                     annot = new AnnotationHolder(PluggableDependency.class.getName());
                     annot.getValues().put("value", new AnnotationValue(ValueType.parse(AsyncMethodGenerator.class)));
-                    method.getAnnotations().add(annot);
-                }
-            } else if (method.getName().equals("<clinit>")) {
-                if (method.getAnnotations().get(Sync.class.getName()) == null) {
-                    AnnotationHolder annot = new AnnotationHolder(Sync.class.getName());
                     method.getAnnotations().add(annot);
                 }
             }
