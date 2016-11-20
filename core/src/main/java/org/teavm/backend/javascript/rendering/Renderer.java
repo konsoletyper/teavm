@@ -348,26 +348,14 @@ public class Renderer implements RenderingManager {
     private void renderMethodBodies(ClassNode cls) throws RenderingException {
         debugEmitter.emitClass(cls.getName());
         try {
-            List<MethodNode> nonInitMethods = new ArrayList<>();
             MethodReader clinit = classSource.get(cls.getName()).getMethod(
                     new MethodDescriptor("<clinit>", ValueType.VOID));
-            boolean needsClinit = clinit != null;
-            List<MethodNode> clinitMethods = new ArrayList<>();
-            for (MethodNode method : cls.getMethods()) {
-                if (needsClinit && (method.getModifiers().contains(ElementModifier.STATIC)
-                        || method.getReference().getName().equals("<init>"))) {
-                    clinitMethods.add(method);
-                } else {
-                    nonInitMethods.add(method);
-                }
-            }
 
-            if (needsClinit) {
-                renderCallClinit(clinit, cls, clinitMethods);
+            if (clinit != null) {
+                renderCallClinit(clinit, cls);
             }
             if (!cls.getModifiers().contains(ElementModifier.INTERFACE)) {
                 for (MethodNode method : cls.getMethods()) {
-                    cls.getMethods();
                     if (!method.getModifiers().contains(ElementModifier.STATIC)) {
                         if (method.getReference().getName().equals("<init>")) {
                             renderInitializer(method);
@@ -376,8 +364,8 @@ public class Renderer implements RenderingManager {
                 }
             }
 
-            for (MethodNode method : nonInitMethods) {
-                renderBody(method, false);
+            for (MethodNode method : cls.getMethods()) {
+                renderBody(method, clinit != null);
             }
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
@@ -387,7 +375,7 @@ public class Renderer implements RenderingManager {
         debugEmitter.emitClass(null);
     }
 
-    private void renderCallClinit(MethodReader clinit, ClassNode cls, List<MethodNode> clinitMethods)
+    private void renderCallClinit(MethodReader clinit, ClassNode cls)
             throws IOException {
         boolean isAsync = asyncMethods.contains(clinit.getReference());
 
@@ -419,9 +407,6 @@ public class Renderer implements RenderingManager {
                     .softNewLine();
         } else {
             renderEraseClinit(cls);
-            for (MethodNode method : clinitMethods) {
-                renderBody(method, true);
-            }
         }
 
         if (isAsync) {
@@ -492,30 +477,12 @@ public class Renderer implements RenderingManager {
                 }
                 writer.append(',').ws();
 
-                List<String> stubNames = new ArrayList<>();
                 List<MethodNode> virtualMethods = new ArrayList<>();
                 for (MethodNode method : cls.getMethods()) {
-                    if (clinit != null && (method.getModifiers().contains(ElementModifier.STATIC)
-                            || method.getReference().getName().equals("<init>"))) {
-                        stubNames.add(naming.getFullNameFor(method.getReference()));
-                    }
                     if (!method.getModifiers().contains(ElementModifier.STATIC)) {
                         virtualMethods.add(method);
                     }
                 }
-                if (stubNames.size() == 1) {
-                    writer.append("'").append(stubNames.get(0)).append("'");
-                } else {
-                    writer.append('[');
-                    for (int j = 0; j < stubNames.size(); ++j) {
-                        if (j > 0) {
-                            writer.append(",").ws();
-                        }
-                        writer.append("'").append(stubNames.get(j)).append("'");
-                    }
-                    writer.append(']');
-                }
-                writer.append(',').ws();
 
                 renderVirtualDeclarations(virtualMethods);
             }
@@ -622,18 +589,19 @@ public class Renderer implements RenderingManager {
         writer.append(");").ws().append("}");
     }
 
-    private void renderBody(MethodNode method, boolean inner) throws IOException {
+    private void renderBody(MethodNode method, boolean clinitNeeded) throws IOException {
+        boolean isClinit = (method.getModifiers().contains(ElementModifier.STATIC)
+                && !method.getReference().getName().equals("<clinit>"))
+                || method.getReference().getName().equals("<init>");
+
         StatementRenderer statementRenderer = new StatementRenderer(context, writer);
         statementRenderer.setCurrentMethod(method);
 
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
         String name = naming.getFullNameFor(ref);
-        if (inner) {
-            writer.append(name).ws().append("=").ws().append("function(");
-        } else {
-            writer.append("function ").append(name).append("(");
-        }
+
+        writer.append("function ").append(name).append("(");
         int startParam = 0;
         if (method.getModifiers().contains(ElementModifier.STATIC)) {
             startParam = 1;
@@ -645,11 +613,13 @@ public class Renderer implements RenderingManager {
             writer.append(statementRenderer.variableName(i));
         }
         writer.append(")").ws().append("{").softNewLine().indent();
+
+        if (isClinit & clinitNeeded) {
+            writer.appendClass(method.getReference().getClassName()).append("_$callClinit();").softNewLine();
+        }
         method.acceptVisitor(new MethodBodyRenderer(statementRenderer));
         writer.outdent().append("}");
-        if (inner) {
-            writer.append(';');
-        }
+
         writer.newLine();
         debugEmitter.emitMethod(null);
     }

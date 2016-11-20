@@ -375,7 +375,7 @@ function $rt_putStderr(ch) {
     }
 }
 function $rt_metadata(data) {
-    for (var i = 0; i < data.length; i += 8) {
+    for (var i = 0; i < data.length; i += 7) {
         var cls = data[i];
         cls.$meta = {};
         var m = cls.$meta;
@@ -399,38 +399,8 @@ function $rt_metadata(data) {
         var clinit = data[i + 5];
         cls.$clinit = clinit !== 0 ? clinit : function() {};
 
-        var names = data[i + 6];
-        if (!(names instanceof Array)) {
-            names = [names];
-        }
-        for (var j = 0; j < names.length; j = (j + 1) | 0) {
-            window[names[j]] = (function(cls, name) {
-                return function() {
-                    var ptr = 0;
-                    if ($rt_resuming()) {
-                        ptr = $rt_nativeThread().pop();
-                    }
-                    main: while (true) {
-                        switch (ptr) {
-                            case 0:
-                                clinit = cls.$clinit;
-                                clinit();
-                                ptr = 1;
-                            case 1:
-                                var result = window[name].apply(window, arguments);
-                                if ($rt_suspend()) {
-                                    break;
-                                }
-                                return result;
-                        }
-                    }
-                    $rt_nativeThread().push(ptr);
-                }
-            })(cls, names[j]);
-        }
-
-        var virtualMethods = data[i + 7];
-        for (j = 0; j < virtualMethods.length; j += 2) {
+        var virtualMethods = data[i + 6];
+        for (var j = 0; j < virtualMethods.length; j += 2) {
             var name = virtualMethods[j];
             var func = virtualMethods[j + 1];
             if (typeof name === 'string') {
