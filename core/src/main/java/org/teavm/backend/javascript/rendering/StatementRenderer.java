@@ -121,16 +121,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         this.async = async;
     }
 
-    public MethodNode getCurrentMethod() {
-        return currentMethod;
-    }
-
     public void setCurrentMethod(MethodNode currentMethod) {
         this.currentMethod = currentMethod;
-    }
-
-    public int getCurrentPart() {
-        return currentPart;
     }
 
     public void setCurrentPart(int currentPart) {
@@ -433,6 +425,9 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 pushLocation(statement.getLocation());
             }
             writer.appendClass(statement.getClassName()).append("_$callClinit();").softNewLine();
+            if (statement.isAsync()) {
+                emitSuspendChecker();
+            }
             if (statement.getLocation() != null) {
                 popLocation();
             }

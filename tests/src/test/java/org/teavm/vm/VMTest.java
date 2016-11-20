@@ -121,10 +121,15 @@ public class VMTest {
         assertEquals(0, initCount);
         assertEquals("foo", AsyncClinitClass.foo());
         assertEquals(1, initCount);
-        assertEquals(AsyncClinitClass.state, "ok");
+        assertEquals("ok", AsyncClinitClass.state);
         assertEquals("bar", AsyncClinitClass.bar());
         assertEquals(1, initCount);
-        assertEquals(AsyncClinitClass.state, "ok");
+        assertEquals("ok", AsyncClinitClass.state);
+    }
+
+    @Test
+    public void asyncClinitField() {
+        assertEquals("ok", AsyncClinitClass.state);
     }
 
     static int initCount = 0;

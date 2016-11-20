@@ -328,11 +328,7 @@ class StatementGenerator implements InstructionVisitor {
         Map<Integer, List<Integer>> switchMap = new HashMap<>();
         for (int i = 0; i < insn.getEntries().size(); ++i) {
             SwitchTableEntry entry = insn.getEntries().get(i);
-            List<Integer> conditions = switchMap.get(entry.getTarget().getIndex());
-            if (conditions == null) {
-                conditions = new ArrayList<>();
-                switchMap.put(entry.getTarget().getIndex(), conditions);
-            }
+            List<Integer> conditions = switchMap.computeIfAbsent(entry.getTarget().getIndex(), k -> new ArrayList<>());
             conditions.add(entry.getCondition());
         }
         List<Integer> targets = new ArrayList<>(switchMap.keySet());
@@ -590,6 +586,8 @@ class StatementGenerator implements InstructionVisitor {
     public void visit(InitClassInstruction insn) {
         InitClassStatement stmt = Statement.initClass(insn.getClassName());
         stmt.setLocation(currentLocation);
+        stmt.setAsync(async);
+        async = false;
         statements.add(stmt);
     }
 

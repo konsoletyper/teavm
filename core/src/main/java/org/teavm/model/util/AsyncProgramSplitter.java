@@ -15,17 +15,35 @@
  */
 package org.teavm.model.util;
 
-import java.util.*;
-import org.teavm.common.*;
-import org.teavm.model.*;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
+import java.util.Set;
+import org.teavm.common.Graph;
+import org.teavm.common.GraphSplittingBackend;
+import org.teavm.common.GraphUtils;
+import org.teavm.common.IntegerArray;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.Instruction;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.MonitorEnterInstruction;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AsyncProgramSplitter {
     private List<Part> parts = new ArrayList<>();
     private Map<Long, Integer> partMap = new HashMap<>();
@@ -66,6 +84,10 @@ public class AsyncProgramSplitter {
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction) insn;
                     if (!asyncMethods.contains(findRealMethod(invoke.getMethod()))) {
+                        continue;
+                    }
+                } else if (insn instanceof InitClassInstruction) {
+                    if (!isSplittingClassInitializer(((InitClassInstruction) insn).getClassName())) {
                         continue;
                     }
                 } else if (!(insn instanceof MonitorEnterInstruction)) {
@@ -164,6 +186,16 @@ public class AsyncProgramSplitter {
         partMap.clear();
     }
 
+    private boolean isSplittingClassInitializer(String className) {
+        ClassReader cls = classSource.get(className);
+        if (cls == null) {
+            return false;
+        }
+
+        MethodReader method = cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID));
+        return method != null && asyncMethods.contains(method.getReference());
+    }
+
     private MethodReference findRealMethod(MethodReference method) {
         String clsName = method.getClassName();
         while (clsName != null) {
@@ -213,10 +245,6 @@ public class AsyncProgramSplitter {
     public int[] getBlockSuccessors(int index) {
         int[] result = parts.get(index).blockSuccessors;
         return Arrays.copyOf(result, result.length);
-    }
-
-    public int getBlockSuccessor(int index, int blockIndex) {
-        return parts.get(index).blockSuccessors[blockIndex];
     }
 
     public int[] getSplitPoints(int index) {
