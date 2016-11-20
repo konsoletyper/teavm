@@ -110,7 +110,7 @@ public final class TeaVMRunner {
                 .withLongOpt("wasm-version")
                 .withArgName("version")
                 .hasArg()
-                .withDescription("WebAssembly binary version (11, 12)")
+                .withDescription("WebAssembly binary version (11, 12, 13)")
                 .create());
 
         if (args.length == 0) {
@@ -295,6 +295,9 @@ public final class TeaVMRunner {
                         break;
                     case 12:
                         tool.setWasmVersion(WasmBinaryVersion.V_0xC);
+                        break;
+                    case 13:
+                        tool.setWasmVersion(WasmBinaryVersion.V_0xD);
                         break;
                     default:
                         System.err.print("Wrong version value");

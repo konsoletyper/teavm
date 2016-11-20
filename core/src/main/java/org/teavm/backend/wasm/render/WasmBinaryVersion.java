@@ -17,5 +17,6 @@ package org.teavm.backend.wasm.render;
 
 public enum WasmBinaryVersion {
     V_0xB,
-    V_0xC
+    V_0xC,
+    V_0xD
 }

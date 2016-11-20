@@ -27,23 +27,23 @@ public class WasmBinaryWriter {
         data[pointer++] = (byte) v;
     }
 
-    public void writeType(WasmType type) {
+    public void writeType(WasmType type, WasmBinaryVersion version) {
         if (type == null) {
-            writeByte(0);
+            writeByte(version == WasmBinaryVersion.V_0xD ? 0x40 : 0);
             return;
         }
         switch (type) {
             case INT32:
-                writeByte(1);
+                writeByte(version == WasmBinaryVersion.V_0xD ? 0x7F : 1);
                 break;
             case INT64:
-                writeByte(2);
+                writeByte(version == WasmBinaryVersion.V_0xD ? 0x7E : 2);
                 break;
             case FLOAT32:
-                writeByte(3);
+                writeByte(version == WasmBinaryVersion.V_0xD ? 0x7D : 3);
                 break;
             case FLOAT64:
-                writeByte(4);
+                writeByte(version == WasmBinaryVersion.V_0xD ? 0x7C : 4);
                 break;
         }
     }

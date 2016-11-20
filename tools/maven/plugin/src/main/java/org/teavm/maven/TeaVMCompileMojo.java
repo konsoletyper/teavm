@@ -78,7 +78,7 @@ public class TeaVMCompileMojo extends AbstractTeaVMMojo {
     private TeaVMTool tool = new TeaVMTool();
 
     @Parameter
-    private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0xC;
+    private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0xD;
 
     @Override
     protected File getTargetDirectory() {
