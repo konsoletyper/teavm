@@ -1137,8 +1137,19 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
+
+            Precedence outerPrecedence = precedence;
+            if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
+                writer.append('(');
+            }
+
             precedence = Precedence.FUNCTION_CALL;
+
             writer.append("new ").append(naming.getNameFor(expr.getConstructedClass()));
+            if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
+                writer.append(')');
+            }
+
             if (expr.getLocation() != null) {
                 popLocation();
             }
