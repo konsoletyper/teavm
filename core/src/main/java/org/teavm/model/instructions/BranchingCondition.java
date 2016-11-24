@@ -15,10 +15,6 @@
  */
 package org.teavm.model.instructions;
 
-/**
- *
- * @author Alexey Andreev
- */
 public enum BranchingCondition {
     EQUAL,
     NOT_EQUAL,

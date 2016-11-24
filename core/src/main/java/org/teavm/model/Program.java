@@ -60,6 +60,11 @@ public class Program implements ProgramReader {
         return basicBlocks.get(index);
     }
 
+    @Override
+    public Iterable<BasicBlock> getBasicBlocks() {
+        return basicBlocks;
+    }
+
     public void deleteVariable(int index) {
         Variable variable = variables.get(index);
         if (variable == null) {
