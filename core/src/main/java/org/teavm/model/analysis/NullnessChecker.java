@@ -51,7 +51,7 @@ public class NullnessChecker {
         notNullIncomings = new HashSet<>();
         notNull = new boolean[program.variableCount()];
         nullLiteral = new boolean[program.variableCount()];
-        phiOutputs = ProgramUtils.getPhiOutputs(program);
+        phiOutputs = ProgramUtils.getPhiOutputsByVariable(program);
         graphBuilder = new GraphBuilder(program.variableCount());
 
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);

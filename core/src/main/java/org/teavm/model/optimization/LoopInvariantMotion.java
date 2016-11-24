@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.List;
 import org.teavm.common.*;
 import org.teavm.model.*;
+import org.teavm.model.analysis.NullnessChecker;
 import org.teavm.model.instructions.*;
 import org.teavm.model.util.*;
 
@@ -53,7 +54,7 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         UsageExtractor useExtractor = new UsageExtractor();
-        LoopInvariantAnalyzer analyzer = new LoopInvariantAnalyzer();
+        LoopInvariantAnalyzer analyzer = new LoopInvariantAnalyzer(new NullnessChecker().check(program));
         CopyConstantVisitor constantCopier = new CopyConstantVisitor();
         int[][] loopExits = ControlFlowUtils.findLoopExits(graph);
 

@@ -41,6 +41,7 @@ import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
+import org.teavm.model.analysis.NullnessChecker;
 import org.teavm.model.util.BasicBlockMapper;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionCopyReader;
@@ -222,7 +223,8 @@ class LoopInversionImpl {
         private boolean isInversionProfitable(IntSet nodesToCopy) {
             UsageExtractor useExtractor = new UsageExtractor();
             DefinitionExtractor defExtractor = new DefinitionExtractor();
-            LoopInvariantAnalyzer invariantAnalyzer = new LoopInvariantAnalyzer();
+            boolean[] notNull = new NullnessChecker().check(program);
+            LoopInvariantAnalyzer invariantAnalyzer = new LoopInvariantAnalyzer(notNull);
             for (int node : nodes.toArray()) {
                 if (nodesToCopy.contains(node)) {
                     continue;

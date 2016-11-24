@@ -163,6 +163,23 @@ public final class ProgramUtils {
         return outputs;
     }
 
+    public static List<List<Incoming>> getPhiOutputsByVariable(Program program) {
+        List<List<Incoming>> outputs = new ArrayList<>(program.variableCount());
+        for (int i = 0; i < program.variableCount(); ++i) {
+            outputs.add(new ArrayList<>());
+        }
+
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Phi phi : block.getPhis()) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    outputs.get(incoming.getValue().getIndex()).add(incoming);
+                }
+            }
+        }
+
+        return outputs;
+    }
+
     public static BasicBlock[] getVariableDefinitionPlaces(Program program) {
         BasicBlock[] places = new BasicBlock[program.variableCount()];
         DefinitionExtractor defExtractor = new DefinitionExtractor();
