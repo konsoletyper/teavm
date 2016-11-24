@@ -15,9 +15,8 @@
  */
 package org.teavm.model.optimization;
 
-import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
 
 public interface MethodOptimization {
-    boolean optimize(MethodReader method, Program program);
+    boolean optimize(MethodOptimizationContext context, Program program);
 }

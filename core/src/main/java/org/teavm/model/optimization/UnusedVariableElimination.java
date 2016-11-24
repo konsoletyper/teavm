@@ -21,6 +21,10 @@ import org.teavm.model.instructions.*;
 
 public class UnusedVariableElimination implements MethodOptimization {
     @Override
+    public boolean optimize(MethodOptimizationContext context, Program program) {
+        return optimize(context.getMethod(), program);
+    }
+
     public boolean optimize(MethodReader method, Program program) {
         if (method.getProgram() == null) {
             return false;

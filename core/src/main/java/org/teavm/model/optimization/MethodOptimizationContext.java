@@ -15,13 +15,14 @@
  */
 package org.teavm.model.optimization;
 
+import org.teavm.dependency.DependencyInfo;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReader;
-import org.teavm.model.Program;
 
-public class LoopInversion implements MethodOptimization {
-    @Override
-    public boolean optimize(MethodOptimizationContext context, Program program) {
-        MethodReader method = context.getMethod();
-        return new LoopInversionImpl(method, program, method.parameterCount() + 1).apply();
-    }
+public interface MethodOptimizationContext {
+    MethodReader getMethod();
+
+    DependencyInfo getDependencyInfo();
+
+    ClassReaderSource getClassSource();
 }

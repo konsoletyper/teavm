@@ -25,7 +25,6 @@ import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
-import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
 import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
@@ -34,13 +33,13 @@ import org.teavm.model.util.ProgramUtils;
 
 public class ClassInitElimination implements MethodOptimization {
     @Override
-    public boolean optimize(MethodReader method, Program program) {
+    public boolean optimize(MethodOptimizationContext context, Program program) {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         DominatorTree dom = GraphUtils.buildDominatorTree(cfg);
         Graph domGraph = GraphUtils.buildDominatorGraph(dom, program.basicBlockCount());
 
         Step start = new Step(0);
-        start.initializedClasses.add(method.getOwnerName());
+        start.initializedClasses.add(context.getMethod().getOwnerName());
         Deque<Step> stack = new ArrayDeque<>();
         stack.push(start);
 

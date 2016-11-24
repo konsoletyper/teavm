@@ -152,10 +152,10 @@ class LoopInversionImpl {
     }
 
     private LoopWithExits getLoopWithExits(Map<Loop, LoopWithExits> cache, Loop loop) {
-        return cache.computeIfAbsent(loop, k ->
-                new LoopWithExits(loop.getHead(), loop.getParent() != null
-                        ? getLoopWithExits(cache, loop.getParent())
-                        : null));
+        return cache.computeIfAbsent(loop, k -> {
+            LoopWithExits parent = loop.getParent() != null ? getLoopWithExits(cache, loop.getParent()) : null;
+            return new LoopWithExits(loop.getHead(), parent);
+        });
     }
 
     private void sortLoops(LoopWithExits loop, Set<LoopWithExits> visited, List<LoopWithExits> target) {

@@ -22,7 +22,6 @@ import org.teavm.common.Graph;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
-import org.teavm.model.MethodReader;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
@@ -33,7 +32,7 @@ import org.teavm.model.util.ProgramUtils;
 
 public class RedundantJumpElimination implements MethodOptimization {
     @Override
-    public boolean optimize(MethodReader method, Program program) {
+    public boolean optimize(MethodOptimizationContext context, Program program) {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         int[] incomingCount = new int[cfg.size()];
         Arrays.setAll(incomingCount, cfg::incomingEdgesCount);

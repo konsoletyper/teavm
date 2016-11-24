@@ -30,7 +30,7 @@ public class LoopInvariantMotion implements MethodOptimization {
     private Program program;
 
     @Override
-    public boolean optimize(MethodReader method, Program program) {
+    public boolean optimize(MethodOptimizationContext context, Program program) {
         boolean affected = false;
         this.program = program;
         graph = new LoopGraph(ProgramUtils.buildControlFlowGraph(program));
@@ -42,7 +42,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         int[] defLocation = new int[program.variableCount()];
         Arrays.fill(defLocation, -1);
         Instruction[] constantInstructions = new Instruction[program.variableCount()];
-        for (int i = 0; i <= method.parameterCount(); ++i) {
+        for (int i = 0; i <= context.getMethod().parameterCount(); ++i) {
             defLocation[i] = 0;
         }
         for (int i = 0; i < domGraph.size(); ++i) {

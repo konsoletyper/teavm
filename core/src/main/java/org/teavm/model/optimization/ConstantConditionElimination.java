@@ -17,7 +17,6 @@ package org.teavm.model.optimization;
 
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
-import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
 import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
@@ -33,7 +32,7 @@ public class ConstantConditionElimination implements MethodOptimization {
     private boolean[] nullConstants;
 
     @Override
-    public boolean optimize(MethodReader method, Program program) {
+    public boolean optimize(MethodOptimizationContext context, Program program) {
         constants = new int[program.variableCount()];
         constantDefined = new boolean[program.variableCount()];
         nullConstants = new boolean[program.variableCount()];

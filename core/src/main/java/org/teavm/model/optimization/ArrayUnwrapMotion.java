@@ -24,7 +24,7 @@ import org.teavm.model.util.DefinitionExtractor;
 
 public class ArrayUnwrapMotion implements MethodOptimization {
     @Override
-    public boolean optimize(MethodReader method, Program program) {
+    public boolean optimize(MethodOptimizationContext context, Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             optimize(program.basicBlockAt(i));
         }

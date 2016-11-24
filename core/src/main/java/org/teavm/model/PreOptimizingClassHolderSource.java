@@ -37,7 +37,7 @@ public class PreOptimizingClassHolderSource implements ClassHolderSource {
                 return null;
             }
             for (MethodHolder method : cls.getMethods()) {
-                new GlobalValueNumbering(true).optimize(method, method.getProgram());
+                new GlobalValueNumbering(true).optimize(method.getProgram());
                 new UnusedVariableElimination().optimize(method, method.getProgram());
             }
             cache.put(name, cls);

@@ -16,14 +16,13 @@
 package org.teavm.model.optimization;
 
 import org.teavm.model.BasicBlock;
-import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.util.BasicBlockMapper;
 
 public class EmptyBlockElimination implements MethodOptimization {
     @Override
-    public boolean optimize(MethodReader method, final Program program) {
+    public boolean optimize(MethodOptimizationContext context, final Program program) {
         boolean affected = true;
         final int[] blockMapping = new int[program.basicBlockCount()];
         for (int i = 0; i < blockMapping.length; ++i) {

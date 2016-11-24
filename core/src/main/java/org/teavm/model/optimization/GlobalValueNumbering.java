@@ -46,7 +46,11 @@ public class GlobalValueNumbering implements MethodOptimization {
     }
 
     @Override
-    public boolean optimize(MethodReader method, Program program) {
+    public boolean optimize(MethodOptimizationContext context, Program program) {
+        return optimize(program);
+    }
+
+    public boolean optimize(Program program) {
         boolean affected = false;
         this.program = program;
         knownValues.clear();
