@@ -13,7 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.util;
+package org.teavm.model.text;
 
-public class ListingParser {
+public class ListingParseException extends Exception {
+    private final int index;
+
+    public ListingParseException(String message, int index) {
+        super(message);
+        this.index = index;
+    }
+
+    public int getIndex() {
+        return index;
+    }
 }

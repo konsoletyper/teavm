@@ -13,39 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.util;
+package org.teavm.model.text;
 
-enum ListingToken {
-    IDENTIFIER,
-    INTEGER,
-    LONG,
-    FLOAT,
-    DOUBLE,
-    STRING,
-    VARIABLE,
-    LABEL,
-    ASSIGN,
-    EQUAL,
-    NOT_EQUAL,
-    LESS,
-    LESS_OR_EQUAL,
-    GREATER,
-    GREATER_OR_EQUAL,
-    ADD,
-    SUBTRACT,
-    MULTIPLY,
-    DIVIDE,
-    REMAINDER,
-    AND,
-    OR,
-    XOR,
-    SHIFT_LEFT,
-    SHIFT_RIGHT,
-    SHIFT_RIGHT_UNSIGNED,
-    DOT,
-    LEFT_SQUARE_BRACKET,
-    RIGHT_SQUARE_BRACKET,
-    COMMA,
-    COLON,
-    EOF
+public class ListingParser {
 }

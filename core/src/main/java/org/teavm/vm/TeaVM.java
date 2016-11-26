@@ -63,7 +63,7 @@ import org.teavm.model.optimization.MethodOptimizationContext;
 import org.teavm.model.optimization.RedundantJumpElimination;
 import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 import org.teavm.model.optimization.UnusedVariableElimination;
-import org.teavm.model.util.ListingBuilder;
+import org.teavm.model.text.ListingBuilder;
 import org.teavm.model.util.MissingItemsProcessor;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;

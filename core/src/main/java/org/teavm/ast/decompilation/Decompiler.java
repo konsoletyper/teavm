@@ -65,8 +65,8 @@ import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
+import org.teavm.model.text.ListingBuilder;
 import org.teavm.model.util.AsyncProgramSplitter;
-import org.teavm.model.util.ListingBuilder;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.TypeInferer;
 

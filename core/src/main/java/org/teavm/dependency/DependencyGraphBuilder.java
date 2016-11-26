@@ -55,7 +55,7 @@ import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.InstructionReader;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.NullConstantInstruction;
-import org.teavm.model.util.ListingBuilder;
+import org.teavm.model.text.ListingBuilder;
 
 class DependencyGraphBuilder {
     private DependencyChecker dependencyChecker;
