@@ -21,10 +21,6 @@ import java.util.stream.Collectors;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class InstructionStringifier implements InstructionReader {
     private TextLocation location;
     private StringBuilder sb;
@@ -64,12 +60,12 @@ public class InstructionStringifier implements InstructionReader {
 
     @Override
     public void longConstant(VariableReader receiver, long cst) {
-        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst);
+        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst).append("L");
     }
 
     @Override
     public void floatConstant(VariableReader receiver, float cst) {
-        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst);
+        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst).append('F');
     }
 
     @Override
@@ -267,38 +263,35 @@ public class InstructionStringifier implements InstructionReader {
 
     @Override
     public void create(VariableReader receiver, String type) {
-        sb.append("@").append(receiver.getIndex()).append(" = new ").append(type).append("()");
+        sb.append("@").append(receiver.getIndex()).append(" = new ").append(type).append("");
     }
 
     @Override
     public void getField(VariableReader receiver, VariableReader instance, FieldReference field, ValueType fieldType) {
-        sb.append("@").append(receiver.getIndex()).append(" := ");
+        sb.append("@").append(receiver.getIndex()).append(" := field " + field);
+        sb.append(field);
         if (instance != null) {
-            sb.append("@").append(instance.getIndex());
-        } else {
-            sb.append(field.getClassName());
+            sb.append(" @").append(instance.getIndex());
         }
-        sb.append(".").append(field.getFieldName());
     }
 
     @Override
     public void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType) {
+        sb.append("field " + field);
         if (instance != null) {
-            sb.append("@").append(instance.getIndex());
-        } else {
-            sb.append(field.getClassName());
+            sb.append(" @").append(instance.getIndex());
         }
-        sb.append(".").append(field.getFieldName()).append(" := @").append(value.getIndex());
+        sb.append(" := @").append(value.getIndex());
     }
 
     @Override
     public void arrayLength(VariableReader receiver, VariableReader array) {
-        sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append(".length");
+        sb.append("@").append(receiver.getIndex()).append(" := lengthOf @").append(array.getIndex());
     }
 
     @Override
     public void cloneArray(VariableReader receiver, VariableReader array) {
-        sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append(".clone()");
+        sb.append("@").append(receiver.getIndex()).append(" := clone @").append(array.getIndex()).append("");
     }
 
     @Override
@@ -325,19 +318,25 @@ public class InstructionStringifier implements InstructionReader {
         if (receiver != null) {
             sb.append("@").append(receiver.getIndex()).append(" := ");
         }
+        switch (type) {
+            case SPECIAL:
+                sb.append("invoke ");
+                break;
+            case VIRTUAL:
+                sb.append("invokeVirtual ");
+                break;
+        }
+
         if (instance != null) {
             sb.append("@").append(instance.getIndex());
-        } else {
-            sb.append(method.getClassName());
         }
-        sb.append(".").append(method.getName()).append("(");
+
         for (int i = 0; i < arguments.size(); ++i) {
-            if (i > 0) {
+            if (instance != null || i > 0) {
                 sb.append(", ");
             }
             sb.append("@").append(arguments.get(i).getIndex());
         }
-        sb.append(")");
     }
 
     @Override
@@ -410,12 +409,12 @@ public class InstructionStringifier implements InstructionReader {
     @Override
     public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
         sb.append("@").append(receiver.getIndex()).append(" := @").append(value.getIndex())
-                .append(" instanceof ").append(type);
+                .append(" instanceOf ").append(type);
     }
 
     @Override
     public void initClass(String className) {
-        sb.append("initclass ").append(className);
+        sb.append("initClass ").append(className);
     }
 
     @Override
@@ -425,11 +424,11 @@ public class InstructionStringifier implements InstructionReader {
 
     @Override
     public void monitorEnter(VariableReader objectRef) {
-        sb.append("monitorenter @").append(objectRef.getIndex());
+        sb.append("monitorEnter @").append(objectRef.getIndex());
     }
 
     @Override
     public void monitorExit(VariableReader objectRef) {
-        sb.append("monitorexit @").append(objectRef.getIndex());
+        sb.append("monitorExit @").append(objectRef.getIndex());
     }
 }

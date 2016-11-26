@@ -17,10 +17,6 @@ package org.teavm.model;
 
 import java.util.Arrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MethodHandle {
     private MethodHandleType kind;
     private String className;

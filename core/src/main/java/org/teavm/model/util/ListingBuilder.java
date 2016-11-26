@@ -46,7 +46,7 @@ public class ListingBuilder {
 
             for (PhiReader phi : block.readPhis()) {
                 sb.append(prefix).append("    ");
-                sb.append("@").append(phi.getReceiver().getIndex()).append(" := ");
+                sb.append("@").append(phi.getReceiver().getIndex()).append(" := phi ");
                 List<? extends IncomingReader> incomings = phi.readIncomings();
                 for (int j = 0; j < incomings.size(); ++j) {
                     if (j > 0) {

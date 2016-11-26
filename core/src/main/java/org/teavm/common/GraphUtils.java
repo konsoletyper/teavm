@@ -21,10 +21,6 @@ import java.util.List;
 import java.util.function.IntPredicate;
 import java.util.stream.Collectors;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class GraphUtils {
     static final byte NONE = 0;
     static final byte VISITING = 1;
@@ -231,12 +227,6 @@ public final class GraphUtils {
         }
 
         return components.toArray(new int[0][]);
-    }
-
-    private static class SCCFinder {
-        int[] index;
-        int[] lowlink;
-        boolean[] onStack;
     }
 
     public static DominatorTree buildDominatorTree(Graph graph) {
