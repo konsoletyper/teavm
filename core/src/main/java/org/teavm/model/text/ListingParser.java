@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.Reader;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.model.BasicBlock;
@@ -28,6 +29,8 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.PutElementInstruction;
 
 public class ListingParser {
@@ -45,7 +48,7 @@ public class ListingParser {
             lexer = new ListingLexer(reader);
             variableMap = new HashMap<>();
             blockMap = new HashMap<>();
-            blockFirstOccurence = new HashMap<>();
+            blockFirstOccurence = new LinkedHashMap<>();
 
             lexer.nextToken();
             parsePrologue();
@@ -53,6 +56,12 @@ public class ListingParser {
             do {
                 parseBasicBlock();
             } while (lexer.getToken() != ListingToken.EOF);
+
+            if (!blockFirstOccurence.isEmpty()) {
+                String blockName = blockFirstOccurence.keySet().iterator().next();
+                int blockIndex = blockFirstOccurence.get(blockName);
+                throw new ListingParseException("Block not defined: " + blockName, blockIndex);
+            }
 
             return program;
         } finally {
@@ -112,17 +121,17 @@ public class ListingParser {
             lexer.nextToken();
         }
 
-        BasicBlock block = program.createBasicBlock();
-        block.setLabel(label);
-        blockMap.put(label, block);
+        BasicBlock block = blockMap.computeIfAbsent(label, k -> {
+            BasicBlock b = program.createBasicBlock();
+            b.setLabel(k);
+            return b;
+        });
 
         currentLocation = null;
         do {
             parseInstruction(block);
-
         } while (lexer.getToken() != ListingToken.LABEL && lexer.getToken() != ListingToken.EOF);
 
-        expectEofOrEol();
         while (lexer.getToken() == ListingToken.EOL) {
             lexer.nextToken();
         }
@@ -143,6 +152,25 @@ public class ListingParser {
                         insn.setLocation(currentLocation);
                         block.getInstructions().add(insn);
                         lexer.nextToken();
+                        break;
+                    }
+                    case "goto": {
+                        lexer.nextToken();
+                        BasicBlock target = expectBlock();
+                        JumpInstruction insn = new JumpInstruction();
+                        insn.setLocation(currentLocation);
+                        insn.setTarget(target);
+                        block.getInstructions().add(insn);
+                        break;
+                    }
+                    case "return": {
+                        lexer.nextToken();
+                        ExitInstruction insn = new ExitInstruction();
+                        insn.setLocation(currentLocation);
+                        if (lexer.getToken() == ListingToken.VARIABLE) {
+                            insn.setValueToReturn(expectVariable());
+                        }
+                        block.getInstructions().add(insn);
                         break;
                     }
                     default:
@@ -170,6 +198,10 @@ public class ListingParser {
             }
         }
         expectEofOrEol();
+
+        while (lexer.getToken() == ListingToken.EOL) {
+            lexer.nextToken();
+        }
     }
 
     private void parseLocation() throws IOException, ListingParseException {
@@ -236,9 +268,11 @@ public class ListingParser {
         ArrayElementType type = expectArrayType();
 
         PutElementInstruction insn = new PutElementInstruction(type);
+        insn.setLocation(currentLocation);
         insn.setArray(array);
         insn.setIndex(index);
         insn.setValue(value);
+        block.getInstructions().add(insn);
     }
 
     private ArrayElementType expectArrayType() throws IOException, ListingParseException {
@@ -289,6 +323,23 @@ public class ListingParser {
             Variable variable = program.createVariable();
             variable.setLabel(k);
             return variable;
+        });
+    }
+
+    private BasicBlock expectBlock() throws IOException, ListingParseException {
+        expect(ListingToken.LABEL);
+        String blockName = (String) lexer.getTokenValue();
+        BasicBlock block = getBlock(blockName);
+        lexer.nextToken();
+        return block;
+    }
+
+    private BasicBlock getBlock(String name) {
+        return blockMap.computeIfAbsent(name, k -> {
+            BasicBlock block = program.createBasicBlock();
+            block.setLabel(k);
+            blockFirstOccurence.put(k, lexer.getTokenStart());
+            return block;
         });
     }
 

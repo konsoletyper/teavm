@@ -25,7 +25,11 @@ import org.teavm.model.Program;
 public class ParserTest {
     @Test
     public void simple() throws Exception {
-        runTest("simple");
+        Program program = runTest("simple");
+        Assert.assertEquals(2, program.basicBlockCount());
+        Assert.assertEquals(4, program.variableCount());
+        Assert.assertEquals(4, program.basicBlockAt(0).getInstructions().size());
+        Assert.assertEquals(1, program.basicBlockAt(1).getInstructions().size());
     }
 
     private Program runTest(String name) throws IOException {

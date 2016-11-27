@@ -1,7 +1,12 @@
-    var @a as a_1
-    var @b as b_2
+    var @a as a_debug
+    var @b as b_debug
     // it's a simple comment
+
 $first
     nop
-    @a := @b
-    @a[@b] := @a as int  // another dummy comment
+    @a_1 := @a
+    @a_1[@b] := @c as int
+    goto $second
+
+$second
+    return @c
