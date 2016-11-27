@@ -25,6 +25,7 @@ public class BasicBlock implements BasicBlockReader {
     private List<Instruction> instructions = new ArrayList<>();
     private List<TryCatchBlock> tryCatchBlocks = new ArrayList<>();
     private Variable exceptionVariable;
+    private String label;
 
     BasicBlock(Program program, int index) {
         this.program = program;
@@ -256,5 +257,13 @@ public class BasicBlock implements BasicBlockReader {
 
     public void setExceptionVariable(Variable exceptionVariable) {
         this.exceptionVariable = exceptionVariable;
+    }
+
+    public String getLabel() {
+        return label;
+    }
+
+    public void setLabel(String label) {
+        this.label = label;
     }
 }

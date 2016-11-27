@@ -58,136 +58,129 @@ class ListingLexer {
         }
         skipWhiteSpace();
 
-        do {
-            switch (c) {
-                case -1:
-                    token = ListingToken.EOF;
-                    break;
-                case '@':
+        switch (c) {
+            case -1:
+                token = ListingToken.EOF;
+                break;
+            case '\n':
+                token = ListingToken.EOL;
+                nextChar();
+                break;
+            case '@':
+                readVariable();
+                break;
+            case '$':
+                readLabel();
+                break;
+            case '\'':
+                readString();
+                break;
+            case ':':
+                nextChar();
+                expect('=');
+                token = ListingToken.ASSIGN;
+                break;
+            case '=':
+                nextChar();
+                expect('=');
+                token = ListingToken.EQUAL;
+                break;
+            case '!':
+                nextChar();
+                expect('=');
+                token = ListingToken.NOT_EQUAL;
+                break;
+            case '<':
+                nextChar();
+                if (c == '=') {
                     nextChar();
-                    readVariable();
-                    break;
-                case '$':
-                    readLabel();
-                    break;
-                case '\'':
-                    readString();
-                    break;
-                case ':':
+                    token = ListingToken.LESS_OR_EQUAL;
+                } else if (c == '<') {
                     nextChar();
-                    if (c == '=') {
+                    token = ListingToken.SHIFT_LEFT;
+                } else {
+                    token = ListingToken.LESS;
+                }
+                break;
+            case '>':
+                nextChar();
+                if (c == '=') {
+                    nextChar();
+                    token = ListingToken.GREATER_OR_EQUAL;
+                } else if (c == '>') {
+                    nextChar();
+                    if (c == '>') {
                         nextChar();
-                        token = ListingToken.ASSIGN;
+                        token = ListingToken.SHIFT_RIGHT_UNSIGNED;
                     } else {
-                        token = ListingToken.COLON;
+                        token = ListingToken.SHIFT_RIGHT;
                     }
-                    break;
-                case '=':
-                    nextChar();
-                    expect('=');
-                    token = ListingToken.EQUAL;
-                    break;
-                case '!':
-                    nextChar();
-                    expect('=');
-                    token = ListingToken.NOT_EQUAL;
-                    break;
-                case '<':
-                    nextChar();
-                    if (c == '=') {
-                        nextChar();
-                        token = ListingToken.LESS_OR_EQUAL;
-                    } else if (c == '<') {
-                        nextChar();
-                        token = ListingToken.SHIFT_LEFT;
-                    } else {
-                        token = ListingToken.LESS;
-                    }
-                    break;
-                case '>':
-                    nextChar();
-                    if (c == '=') {
-                        nextChar();
-                        token = ListingToken.GREATER_OR_EQUAL;
-                    } else if (c == '>') {
-                        nextChar();
-                        if (c == '>') {
-                            nextChar();
-                            token = ListingToken.SHIFT_RIGHT_UNSIGNED;
-                        } else {
-                            token = ListingToken.SHIFT_RIGHT;
-                        }
-                    } else {
-                        token = ListingToken.GREATER;
-                    }
-                    break;
-                case '+':
-                    nextChar();
-                    token = ListingToken.ADD;
-                    break;
-                case '-':
-                    nextChar();
-                    token = ListingToken.SUBTRACT;
-                    break;
-                case '*':
-                    nextChar();
-                    token = ListingToken.SUBTRACT;
-                    break;
-                case '/':
-                    nextChar();
-                    if (c == '/') {
-                        if (skipComment()) {
-                            continue;
-                        } else {
-                            token = ListingToken.EOF;
-                        }
-                    } else {
-                        token = ListingToken.DIVIDE;
-                    }
-                    break;
-                case '%':
-                    nextChar();
-                    token = ListingToken.REMAINDER;
-                    break;
-                case '&':
-                    nextChar();
-                    token = ListingToken.AND;
-                    break;
-                case '|':
-                    nextChar();
-                    token = ListingToken.OR;
-                    break;
-                case '^':
-                    nextChar();
-                    token = ListingToken.XOR;
-                    break;
-                case '.':
-                    nextChar();
-                    token = ListingToken.DOT;
-                    break;
-                case ',':
-                    nextChar();
-                    token = ListingToken.COMMA;
-                    break;
-                case '[':
-                    nextChar();
-                    token = ListingToken.LEFT_SQUARE_BRACKET;
-                    break;
-                case ']':
-                    nextChar();
-                    token = ListingToken.RIGHT_SQUARE_BRACKET;
-                    break;
-                default:
-                    if (isIdentifierStart()) {
-                        readIdentifier();
-                    } else if (c >= '0' && c <= '9') {
-                        readNumber();
-                    } else {
-                        unexpected();
-                    }
-                    break;
-            }
-        } while (false);
+                } else {
+                    token = ListingToken.GREATER;
+                }
+                break;
+            case '+':
+                nextChar();
+                token = ListingToken.ADD;
+                break;
+            case '-':
+                nextChar();
+                token = ListingToken.SUBTRACT;
+                break;
+            case '*':
+                nextChar();
+                token = ListingToken.SUBTRACT;
+                break;
+            case '/':
+                nextChar();
+                if (c == '/') {
+                    skipComment();
+                } else {
+                    token = ListingToken.DIVIDE;
+                }
+                break;
+            case '%':
+                nextChar();
+                token = ListingToken.REMAINDER;
+                break;
+            case '&':
+                nextChar();
+                token = ListingToken.AND;
+                break;
+            case '|':
+                nextChar();
+                token = ListingToken.OR;
+                break;
+            case '^':
+                nextChar();
+                token = ListingToken.XOR;
+                break;
+            case '.':
+                nextChar();
+                token = ListingToken.DOT;
+                break;
+            case ',':
+                nextChar();
+                token = ListingToken.COMMA;
+                break;
+            case '[':
+                nextChar();
+                token = ListingToken.LEFT_SQUARE_BRACKET;
+                break;
+            case ']':
+                nextChar();
+                token = ListingToken.RIGHT_SQUARE_BRACKET;
+                break;
+            default:
+                if (isIdentifierStart()) {
+                    readIdentifier();
+                } else if (c >= '0' && c <= '9') {
+                    readNumber();
+                } else {
+                    unexpected();
+                }
+                break;
+        }
     }
 
     private void readVariable() throws IOException {
@@ -197,7 +190,7 @@ class ListingLexer {
     }
 
     private void readLabel() throws IOException {
-        readIdentifierLike();
+        nextChar();
         token = ListingToken.LABEL;
         readIdentifierLike();
     }
@@ -205,7 +198,7 @@ class ListingLexer {
     private void readIdentifierLike() throws IOException {
         StringBuilder sb = new StringBuilder();
         while (isIdentifierPart()) {
-            sb.append(c);
+            sb.append((char) c);
             nextChar();
         }
         tokenValue = sb.toString();
@@ -214,9 +207,10 @@ class ListingLexer {
     private void readIdentifier() throws IOException {
         token = ListingToken.IDENTIFIER;
         StringBuilder sb = new StringBuilder();
-        sb.append(c);
+        sb.append((char) c);
+        nextChar();
         while (isIdentifierPart()) {
-            sb.append(c);
+            sb.append((char) c);
             nextChar();
         }
         tokenValue = sb.toString();
@@ -385,14 +379,13 @@ class ListingLexer {
     }
 
     private void unexpected() throws ListingParseException {
-        throw new ListingParseException("Unexpected character: " + c, index);
+        throw new ListingParseException("Unexpected character: " + (char) c, index);
     }
 
     private void skipWhiteSpace() throws IOException {
         while (true) {
             switch (c) {
                 case ' ':
-                case '\n':
                 case '\t':
                     nextChar();
                     break;
@@ -402,14 +395,16 @@ class ListingLexer {
         }
     }
 
-    private boolean skipComment() throws IOException {
+    private void skipComment() throws IOException {
         while (true) {
             switch (c) {
                 case '\n':
                     nextChar();
-                    return true;
+                    token = ListingToken.EOL;
+                    return;
                 case -1:
-                    return false;
+                    token = ListingToken.EOF;
+                    return;
                 default:
                     nextChar();
                     break;

@@ -26,16 +26,16 @@ public class ListingBuilder {
         StringBuilder insnSb = new StringBuilder();
         InstructionStringifier stringifier = new InstructionStringifier(insnSb);
         for (int i = 0; i < program.variableCount(); ++i) {
-            sb.append(prefix).append("var @").append(i);
             VariableReader var = program.variableAt(i);
-            if (var != null && var.getDebugName() != null) {
-                sb.append(" as ").append(var.getDebugName());
+            if (var == null || var.getDebugName() == null) {
+                continue;
             }
+            sb.append(prefix).append("var @").append(i);
             sb.append('\n');
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
-            sb.append(prefix).append("$").append(i).append(":\n");
+            sb.append(prefix).append("$").append(i).append("\n");
             if (block == null) {
                 continue;
             }
@@ -65,8 +65,15 @@ public class ListingBuilder {
                 block.readInstruction(j, stringifier);
                 if (!Objects.equals(location, stringifier.getLocation())) {
                     location = stringifier.getLocation();
-                    sb.append(prefix).append("  at ").append(location != null ? location.toString()
-                            : "unknown location").append('\n');
+                    sb.append(prefix).append("  at ");
+                    if (location == null) {
+                        sb.append("unknown location");
+                    } else {
+                        sb.append("'");
+                        InstructionStringifier.escapeStringLiteral(location.getFileName(), sb);
+                        sb.append("' " + location.getLine());
+                    }
+                    sb.append('\n');
                 }
                 sb.append(prefix).append("    ").append(insnSb).append("\n");
             }

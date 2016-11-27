@@ -46,6 +46,6 @@ enum ListingToken {
     LEFT_SQUARE_BRACKET,
     RIGHT_SQUARE_BRACKET,
     COMMA,
-    COLON,
+    EOL,
     EOF
 }

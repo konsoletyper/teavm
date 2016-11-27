@@ -1,0 +1,7 @@
+    var @a as a_1
+    var @b as b_2
+    // it's a simple comment
+$first
+    nop
+    @a := @b
+    @a[@b] := @a as int  // another dummy comment

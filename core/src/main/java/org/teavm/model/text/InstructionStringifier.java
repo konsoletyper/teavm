@@ -21,11 +21,11 @@ import java.util.stream.Collectors;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-public class InstructionStringifier implements InstructionReader {
+class InstructionStringifier implements InstructionReader {
     private TextLocation location;
     private StringBuilder sb;
 
-    public InstructionStringifier(StringBuilder sb) {
+    InstructionStringifier(StringBuilder sb) {
         this.sb = sb;
     }
 
@@ -75,7 +75,41 @@ public class InstructionStringifier implements InstructionReader {
 
     @Override
     public void stringConstant(VariableReader receiver, String cst) {
-        sb.append("@").append(receiver.getIndex()).append(" := '").append(cst).append("'");
+        sb.append("@").append(receiver.getIndex()).append(" := '");
+        escapeStringLiteral(cst, sb);
+        sb.append("'");
+    }
+
+    static void escapeStringLiteral(String s, StringBuilder sb) {
+        for (int i = 0; i < s.length(); ++i) {
+            char c = s.charAt(i);
+            switch (c) {
+                case '\n':
+                    sb.append("\\n");
+                    break;
+                case '\t':
+                    sb.append("\\t");
+                    break;
+                case '\'':
+                    sb.append("\\'");
+                    break;
+                case '\\':
+                    sb.append("\\\\");
+                    break;
+                default:
+                    if (c < ' ') {
+                        sb.append("\\u");
+                        int pos = 12;
+                        for (int j = 0; j < 4; ++j) {
+                            sb.append(Character.forDigit((c >> pos) & 0xF, 16));
+                            pos -= 4;
+                        }
+                    } else {
+                        sb.append(c);
+                    }
+                    break;
+            }
+        }
     }
 
     @Override
@@ -245,13 +279,13 @@ public class InstructionStringifier implements InstructionReader {
 
     @Override
     public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
-        sb.append("@").append(receiver.getIndex()).append(" = new ").append(itemType).append("[@")
+        sb.append("@").append(receiver.getIndex()).append(" := new ").append(itemType).append("[@")
                 .append(size.getIndex()).append(']');
     }
 
     @Override
     public void createArray(VariableReader receiver, ValueType itemType, List<? extends VariableReader> dimensions) {
-        sb.append("@").append(receiver.getIndex()).append(" = new ").append(itemType).append("[");
+        sb.append("@").append(receiver.getIndex()).append(" := new ").append(itemType).append("[");
         for (int i = 0; i < dimensions.size(); ++i) {
             if (i > 0) {
                 sb.append(", ");
@@ -263,7 +297,7 @@ public class InstructionStringifier implements InstructionReader {
 
     @Override
     public void create(VariableReader receiver, String type) {
-        sb.append("@").append(receiver.getIndex()).append(" = new ").append(type).append("");
+        sb.append("@").append(receiver.getIndex()).append(" := new ").append(type).append("");
     }
 
     @Override
@@ -296,20 +330,20 @@ public class InstructionStringifier implements InstructionReader {
 
     @Override
     public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
-        sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append(".data");
+        sb.append("@").append(receiver.getIndex()).append(" := data @").append(array.getIndex()).append("");
     }
 
     @Override
     public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
             ArrayElementType type) {
         sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append("[@")
-                .append(index.getIndex()).append("]");
+                .append(index.getIndex()).append("]").append(" as " + type.name().toLowerCase());
     }
 
     @Override
     public void putElement(VariableReader array, VariableReader index, VariableReader value, ArrayElementType type) {
         sb.append("@").append(array.getIndex()).append("[@").append(index.getIndex()).append("] := @")
-                .append(value.getIndex());
+                .append(value.getIndex()).append(" as " + type.name().toLowerCase());
     }
 
     @Override
