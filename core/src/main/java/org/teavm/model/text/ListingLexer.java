@@ -83,12 +83,22 @@ class ListingLexer {
             case '=':
                 nextChar();
                 expect('=');
-                token = ListingToken.EQUAL;
+                if (c == '=') {
+                    token = ListingToken.REFERENCE_EQUAL;
+                    nextChar();
+                } else {
+                    token = ListingToken.EQUAL;
+                }
                 break;
             case '!':
                 nextChar();
                 expect('=');
-                token = ListingToken.NOT_EQUAL;
+                if (c == '=') {
+                    token = ListingToken.REFERENCE_NOT_EQUAL;
+                    nextChar();
+                } else {
+                    token = ListingToken.NOT_EQUAL;
+                }
                 break;
             case '<':
                 nextChar();
@@ -300,13 +310,11 @@ class ListingLexer {
 
     private void readNumber() throws IOException, ListingParseException {
         StringBuilder sb = new StringBuilder();
-        sb.append(c);
 
-        nextChar();
         token = ListingToken.INTEGER;
 
         while (c >= '0' && c <= '9') {
-            sb.append(c);
+            sb.append((char) c);
             nextChar();
         }
 
@@ -320,7 +328,7 @@ class ListingLexer {
             }
 
             while (c >= '0' && c <= '9') {
-                sb.append(c);
+                sb.append((char) c);
                 nextChar();
             }
         }
@@ -329,7 +337,7 @@ class ListingLexer {
             sb.append('e');
             nextChar();
             if (c == '+' || c == '-') {
-                sb.append(c);
+                sb.append((char) c);
                 nextChar();
             }
 
@@ -338,7 +346,7 @@ class ListingLexer {
             }
 
             while (c >= '0' && c <= '9') {
-                sb.append(c);
+                sb.append((char) c);
                 nextChar();
             }
         }

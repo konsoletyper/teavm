@@ -32,6 +32,15 @@ public class ParserTest {
         Assert.assertEquals(1, program.basicBlockAt(1).getInstructions().size());
     }
 
+    @Test
+    public void conditional() throws Exception {
+        Program program = runTest("conditional");
+        Assert.assertEquals(7, program.basicBlockCount());
+        for (int i = 0; i < 7; ++i) {
+            Assert.assertEquals(1, program.basicBlockAt(i).getInstructions().size());
+        }
+    }
+
     private Program runTest(String name) throws IOException {
         ClassLoader classLoader = ParserTest.class.getClassLoader();
         String path = "model/text/" + name + ".txt";

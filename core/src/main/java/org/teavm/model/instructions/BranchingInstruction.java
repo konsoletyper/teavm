@@ -19,10 +19,6 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.Variable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class BranchingInstruction extends Instruction {
     private Variable operand;
     private BranchingCondition condition;

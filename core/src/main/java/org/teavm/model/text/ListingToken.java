@@ -27,6 +27,8 @@ enum ListingToken {
     ASSIGN,
     EQUAL,
     NOT_EQUAL,
+    REFERENCE_EQUAL,
+    REFERENCE_NOT_EQUAL,
     LESS,
     LESS_OR_EQUAL,
     GREATER,

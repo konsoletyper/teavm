@@ -28,6 +28,10 @@ import org.teavm.model.TextLocation;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryBranchingCondition;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BranchingCondition;
+import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.JumpInstruction;
@@ -173,6 +177,11 @@ public class ListingParser {
                         block.getInstructions().add(insn);
                         break;
                     }
+                    case "if": {
+                        lexer.nextToken();
+                        parseIf(block);
+                        break;
+                    }
                     default:
                         unexpected();
                         break;
@@ -273,6 +282,92 @@ public class ListingParser {
         insn.setIndex(index);
         insn.setValue(value);
         block.getInstructions().add(insn);
+    }
+
+    private void parseIf(BasicBlock block) throws IOException, ListingParseException {
+        Variable first = expectVariable();
+
+        BinaryBranchingCondition binaryCondition = null;
+        BranchingCondition condition;
+        int operationIndex = lexer.getIndex();
+        ListingToken operationToken = lexer.getToken();
+        switch (lexer.getToken()) {
+            case EQUAL:
+                binaryCondition = BinaryBranchingCondition.EQUAL;
+                condition = BranchingCondition.EQUAL;
+                break;
+            case NOT_EQUAL:
+                binaryCondition = BinaryBranchingCondition.NOT_EQUAL;
+                condition = BranchingCondition.NOT_EQUAL;
+                break;
+            case REFERENCE_EQUAL:
+                binaryCondition = BinaryBranchingCondition.REFERENCE_EQUAL;
+                condition = BranchingCondition.NULL;
+                break;
+            case REFERENCE_NOT_EQUAL:
+                binaryCondition = BinaryBranchingCondition.REFERENCE_NOT_EQUAL;
+                condition = BranchingCondition.NOT_NULL;
+                break;
+            case LESS:
+                condition = BranchingCondition.LESS;
+                break;
+            case LESS_OR_EQUAL:
+                condition = BranchingCondition.LESS_OR_EQUAL;
+                break;
+            case GREATER:
+                condition = BranchingCondition.GREATER;
+                break;
+            case GREATER_OR_EQUAL:
+                condition = BranchingCondition.GREATER_OR_EQUAL;
+                break;
+            default:
+                throw new ListingParseException("Unexpected token" + lexer.getToken()
+                        + ". Expected comparison operator", lexer.getTokenStart());
+        }
+        lexer.nextToken();
+
+        Variable second = null;
+        if (lexer.getToken() == ListingToken.VARIABLE) {
+            second = expectVariable();
+        } else {
+            if (condition == BranchingCondition.NULL || condition == BranchingCondition.NOT_NULL) {
+                expectKeyword("null");
+            } else {
+                expect(ListingToken.INTEGER);
+                if (!lexer.getTokenValue().equals(0)) {
+                    throw new ListingParseException("Only comparison to 0 is supported", lexer.getTokenStart());
+                }
+                lexer.nextToken();
+            }
+        }
+
+        expectKeyword("then");
+        expectKeyword("goto");
+        BasicBlock consequent = expectBlock();
+
+        expectKeyword("else");
+        expectKeyword("goto");
+        BasicBlock alternative = expectBlock();
+
+        if (second != null) {
+            if (binaryCondition == null) {
+                throw new ListingParseException("Unsupported binary operation: " + operationToken, operationIndex);
+            }
+            BinaryBranchingInstruction insn = new BinaryBranchingInstruction(binaryCondition);
+            insn.setLocation(currentLocation);
+            insn.setFirstOperand(first);
+            insn.setSecondOperand(second);
+            insn.setConsequent(consequent);
+            insn.setAlternative(alternative);
+            block.getInstructions().add(insn);
+        } else {
+            BranchingInstruction insn = new BranchingInstruction(condition);
+            insn.setLocation(currentLocation);
+            insn.setOperand(first);
+            insn.setConsequent(consequent);
+            insn.setAlternative(alternative);
+            block.getInstructions().add(insn);
+        }
     }
 
     private ArrayElementType expectArrayType() throws IOException, ListingParseException {

@@ -218,10 +218,10 @@ class InstructionStringifier implements InstructionReader {
                 sb.append("< 0");
                 break;
             case NOT_NULL:
-                sb.append("!= null");
+                sb.append("!== null");
                 break;
             case NULL:
-                sb.append("== null");
+                sb.append("=== null");
                 break;
         }
         sb.append(" then goto $").append(consequent.getIndex()).append(" else goto $").append(alternative.getIndex());
@@ -233,12 +233,16 @@ class InstructionStringifier implements InstructionReader {
         sb.append("if @").append(first.getIndex()).append(" ");
         switch (cond) {
             case EQUAL:
-            case REFERENCE_EQUAL:
                 sb.append("==");
                 break;
+            case REFERENCE_EQUAL:
+                sb.append("===");
+                break;
             case NOT_EQUAL:
-            case REFERENCE_NOT_EQUAL:
                 sb.append("!=");
+                break;
+            case REFERENCE_NOT_EQUAL:
+                sb.append("!==");
                 break;
         }
         sb.append("@").append(second.getIndex()).append(" then goto $").append(consequent.getIndex())

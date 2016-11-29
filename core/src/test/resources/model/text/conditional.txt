@@ -1,0 +1,14 @@
+$1
+    if @a != @b then goto $2 else goto $exit
+$2
+    if @a > 0 then goto $3 else goto $exit
+$3
+    if @a >= 0 then goto $4 else goto $exit
+$4
+    if @a === null then goto $5 else goto $exit
+$5
+    if @c === @d then goto $6 else goto $exit
+$6
+    return @one
+$exit
+    return @zero
