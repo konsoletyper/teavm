@@ -28,6 +28,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -42,6 +43,9 @@ import java.util.stream.Stream;
 import org.apache.commons.io.IOUtils;
 import org.junit.runner.Description;
 import org.junit.runner.Runner;
+import org.junit.runner.manipulation.Filter;
+import org.junit.runner.manipulation.Filterable;
+import org.junit.runner.manipulation.NoTestsRemainException;
 import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
@@ -64,7 +68,7 @@ import org.teavm.vm.DirectoryBuildTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
 
-public class TeaVMTestRunner extends Runner {
+public class TeaVMTestRunner extends Runner implements Filterable {
     private static final String PATH_PARAM = "teavm.junit.target";
     private static final String RUNNER = "teavm.junit.js.runner";
     private static final String THREAD_COUNT = "teavm.junit.js.threads";
@@ -83,6 +87,7 @@ public class TeaVMTestRunner extends Runner {
     private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
     private static volatile ScheduledFuture<?> cleanupFuture;
     private CountDownLatch latch;
+    private List<Method> filteredChildren;
 
     static {
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
@@ -129,7 +134,7 @@ public class TeaVMTestRunner extends Runner {
     public Description getDescription() {
         if (suiteDescription == null) {
             suiteDescription = Description.createSuiteDescription(testClass);
-            for (Method child : getChildren()) {
+            for (Method child : getFilteredChildren()) {
                 suiteDescription.getChildren().add(describeChild(child));
             }
         }
@@ -138,7 +143,7 @@ public class TeaVMTestRunner extends Runner {
 
     @Override
     public void run(RunNotifier notifier) {
-        List<Method> children = getChildren();
+        List<Method> children = getFilteredChildren();
         latch = new CountDownLatch(children.size());
 
         notifier.fireTestStarted(getDescription());
@@ -167,6 +172,13 @@ public class TeaVMTestRunner extends Runner {
             }
         }
         return children;
+    }
+
+    private List<Method> getFilteredChildren() {
+        if (filteredChildren == null) {
+            filteredChildren = getChildren();
+        }
+        return filteredChildren;
     }
 
     private Description describeChild(Method child) {
@@ -459,6 +471,18 @@ public class TeaVMTestRunner extends Runner {
     private static ClassHolderSource getClassSource(ClassLoader classLoader) {
         return classSources.computeIfAbsent(classLoader, cl -> new PreOptimizingClassHolderSource(
                 new ClasspathClassHolderSource(classLoader)));
+    }
+
+    @Override
+    public void filter(Filter filter) throws NoTestsRemainException {
+        for (Iterator<Method> iterator = getFilteredChildren().iterator(); iterator.hasNext();) {
+            Method method = iterator.next();
+            if (filter.shouldRun(describeChild(method))) {
+                filter.apply(method);
+            } else {
+                iterator.remove();
+            }
+        }
     }
 
     static class CompileResult {
