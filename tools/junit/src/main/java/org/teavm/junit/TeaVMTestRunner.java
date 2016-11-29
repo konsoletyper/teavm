@@ -177,7 +177,7 @@ public class TeaVMTestRunner extends Runner {
     private void runChild(Method child, RunNotifier notifier) {
         notifier.fireTestStarted(describeChild(child));
 
-        boolean run = false;
+        boolean ran = false;
         boolean success = true;
 
         MethodHolder methodHolder = classHolder.getMethod(getDescriptor(child));
@@ -195,31 +195,42 @@ public class TeaVMTestRunner extends Runner {
 
         if (!child.isAnnotationPresent(SkipJVM.class)
                 && !child.getDeclaringClass().isAnnotationPresent(SkipJVM.class)) {
-            run = true;
+            ran = true;
             success = runInJvm(child, notifier, expectedExceptions);
         }
 
+        Description description = describeChild(child);
         if (success && outputDir != null) {
-            Description description = describeChild(child);
             List<TeaVMTestConfiguration> configurations = getConfigurations();
             int[] configurationIndex = new int[] { 0 };
             List<Consumer<Boolean>> onSuccess = new ArrayList<>();
 
+            List<TestRun> runs = new ArrayList<>();
             onSuccess.add(runSuccess -> {
-                if (runSuccess && configurationIndex[0] < configurations.size()) {
-                    runInTeaVM(child, notifier, expectedExceptions, configurations.get(configurationIndex[0]++),
-                            onSuccess.get(0));
+                if (runSuccess && configurationIndex[0] < runs.size()) {
+                    submitRun(runs.get(configurationIndex[0]++));
                 } else {
                     notifier.fireTestFinished(description);
                     latch.countDown();
                 }
             });
+
+            for (TeaVMTestConfiguration configuration : configurations) {
+                TestRun run = compileByTeaVM(child, notifier, expectedExceptions, configuration, onSuccess.get(0));
+                if (run != null) {
+                    runs.add(run);
+                } else {
+                    notifier.fireTestFinished(description);
+                    return;
+                }
+            }
+
             onSuccess.get(0).accept(true);
         } else {
-            if (!run) {
-                notifier.fireTestIgnored(describeChild(child));
+            if (!ran) {
+                notifier.fireTestIgnored(description);
             }
-            notifier.fireTestFinished(describeChild(child));
+            notifier.fireTestFinished(description);
             latch.countDown();
         }
     }
@@ -262,7 +273,7 @@ public class TeaVMTestRunner extends Runner {
         return true;
     }
 
-    private boolean runInTeaVM(Method child, RunNotifier notifier, Set<Class<?>> expectedExceptions,
+    private TestRun compileByTeaVM(Method child, RunNotifier notifier, Set<Class<?>> expectedExceptions,
             TeaVMTestConfiguration configuration, Consumer<Boolean> onComplete) {
         Description description = describeChild(child);
 
@@ -271,20 +282,17 @@ public class TeaVMTestRunner extends Runner {
             compileResult = compileTest(child, configuration);
         } catch (Exception e) {
             notifier.fireTestFailure(new Failure(description, e));
-            onComplete.accept(false);
-            return false;
+            return null;
         }
 
         if (!compileResult.success) {
             notifier.fireTestFailure(new Failure(description,
                     new AssertionError(compileResult.errorMessage)));
-            onComplete.accept(false);
-            return false;
+            return null;
         }
 
         if (runStrategy == null) {
-            onComplete.accept(true);
-            return true;
+            return null;
         }
 
         TestRunCallback callback = new TestRunCallback() {
@@ -300,11 +308,9 @@ public class TeaVMTestRunner extends Runner {
             }
         };
 
-        TestRun run = new TestRun(compileResult.file.getParentFile(), child,
+        return new TestRun(compileResult.file.getParentFile(), child,
                 new MethodReference(testClass.getName(), getDescriptor(child)),
                 description, callback, expectedExceptions);
-        submitRun(run);
-        return true;
     }
 
     private void submitRun(TestRun run) {
