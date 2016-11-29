@@ -326,6 +326,11 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         Program program = new Program();
         method.setProgram(program);
+
+        for (int i = 0; i <= method.parameterCount(); ++i) {
+            program.createVariable();
+        }
+
         BasicBlock block = program.createBasicBlock();
         Variable exceptionVar = program.createVariable();
         ConstructInstruction newExceptionInsn = new ConstructInstruction();

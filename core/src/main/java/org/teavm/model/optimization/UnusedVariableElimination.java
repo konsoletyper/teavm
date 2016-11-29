@@ -29,6 +29,10 @@ public class UnusedVariableElimination implements MethodOptimization {
         boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program);
         boolean[] used = new boolean[escaping.length];
 
+        for (int i = 0; i <= method.parameterCount(); ++i) {
+            used[i] = true;
+        }
+
         int[] stack = new int[graph.size() * 2];
         int top = 0;
         for (int i = 0; i < used.length; ++i) {

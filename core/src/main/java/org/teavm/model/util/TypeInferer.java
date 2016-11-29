@@ -28,7 +28,7 @@ public class TypeInferer {
     GraphBuilder arrayElemBuilder;
 
     public void inferTypes(ProgramReader program, MethodReference method) {
-        int sz = Math.max(method.parameterCount(), program.variableCount());
+        int sz = program.variableCount();
         types = new VariableType[sz];
 
         types[0] = VariableType.OBJECT;
