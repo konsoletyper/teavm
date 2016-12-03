@@ -41,6 +41,13 @@ public class ParserTest {
         }
     }
 
+    @Test
+    public void phi() throws Exception {
+        Program program = runTest("phi");
+        Assert.assertEquals(4, program.basicBlockCount());
+        Assert.assertEquals(2, program.basicBlockAt(3).getPhis().size());
+    }
+
     private Program runTest(String name) throws IOException {
         ClassLoader classLoader = ParserTest.class.getClassLoader();
         String path = "model/text/" + name + ".txt";

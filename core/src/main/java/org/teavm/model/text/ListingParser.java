@@ -23,6 +23,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.Incoming;
+import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
 import org.teavm.model.Variable;
@@ -30,11 +32,14 @@ import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
 
 public class ListingParser {
@@ -244,6 +249,19 @@ public class ListingParser {
                 parseAssignmentVariable(block, receiver, variable);
                 break;
             }
+            case IDENTIFIER: {
+                String keyword = (String) lexer.getTokenValue();
+                switch (keyword) {
+                    case "phi":
+                        lexer.nextToken();
+                        parsePhi(block, receiver);
+                        break;
+                    default:
+                        unexpected();
+                        break;
+                }
+                break;
+            }
             default:
                 unexpected();
         }
@@ -261,9 +279,67 @@ public class ListingParser {
                 block.getInstructions().add(insn);
                 break;
             }
+            case ADD:
+                parseBinary(block, receiver, variable, BinaryOperation.ADD);
+                break;
+            case SUBTRACT:
+                parseBinary(block, receiver, variable, BinaryOperation.SUBTRACT);
+                break;
+            case MULTIPLY:
+                parseBinary(block, receiver, variable, BinaryOperation.MULTIPLY);
+                break;
+            case DIVIDE:
+                parseBinary(block, receiver, variable, BinaryOperation.DIVIDE);
+                break;
+            case REMAINDER:
+                parseBinary(block, receiver, variable, BinaryOperation.MODULO);
+                break;
+            case AND:
+                parseBinary(block, receiver, variable, BinaryOperation.AND);
+                break;
+            case OR:
+                parseBinary(block, receiver, variable, BinaryOperation.OR);
+                break;
+            case XOR:
+                parseBinary(block, receiver, variable, BinaryOperation.XOR);
+                break;
+            case SHIFT_LEFT:
+                parseBinary(block, receiver, variable, BinaryOperation.SHIFT_LEFT);
+                break;
+            case SHIFT_RIGHT:
+                parseBinary(block, receiver, variable, BinaryOperation.SHIFT_RIGHT);
+                break;
+            case SHIFT_RIGHT_UNSIGNED:
+                parseBinary(block, receiver, variable, BinaryOperation.SHIFT_RIGHT_UNSIGNED);
+                break;
+            case IDENTIFIER:
+                switch ((String) lexer.getTokenValue()) {
+                    case "compareTo":
+                        parseBinary(block, receiver, variable, BinaryOperation.COMPARE);
+                        break;
+                    default:
+                        unexpected();
+                        break;
+                }
+                break;
             default:
                 unexpected();
         }
+    }
+
+    private void parseBinary(BasicBlock block, Variable receiver, Variable first, BinaryOperation operation)
+            throws IOException, ListingParseException {
+        lexer.nextToken();
+        Variable second = expectVariable();
+        expectKeyword("as");
+        NumericOperandType type = expectNumericType();
+
+        BinaryInstruction instruction = new BinaryInstruction(operation, type);
+        instruction.setFirstOperand(first);
+        instruction.setSecondOperand(second);
+        instruction.setReceiver(receiver);
+
+        block.getInstructions().add(instruction);
     }
 
     private void parseArrayAssignment(BasicBlock block, Variable array) throws IOException, ListingParseException {
@@ -282,6 +358,30 @@ public class ListingParser {
         insn.setIndex(index);
         insn.setValue(value);
         block.getInstructions().add(insn);
+    }
+
+    private void parsePhi(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+        int phiStart = lexer.getIndex();
+
+        Phi phi = new Phi();
+        while (true) {
+            Incoming incoming = new Incoming();
+            incoming.setValue(expectVariable());
+            expectKeyword("from");
+            incoming.setSource(expectBlock());
+            phi.getIncomings().add(incoming);
+
+            if (lexer.getToken() != ListingToken.COMMA) {
+                break;
+            }
+            lexer.nextToken();
+        }
+
+        if (!block.getInstructions().isEmpty() || block.getExceptionVariable() != null) {
+            throw new ListingParseException("Phi must be first instruction in block", phiStart);
+        }
+
+        block.getPhis().add(phi);
     }
 
     private void parseIf(BasicBlock block) throws IOException, ListingParseException {
@@ -400,6 +500,30 @@ public class ListingParser {
                 break;
             default:
                 throw new ListingParseException("Unknown array type: " + lexer.getTokenValue(), lexer.getTokenStart());
+        }
+        lexer.nextToken();
+        return type;
+    }
+
+    private NumericOperandType expectNumericType() throws IOException, ListingParseException {
+        expect(ListingToken.IDENTIFIER);
+        NumericOperandType type;
+        switch ((String) lexer.getTokenValue()) {
+            case "int":
+                type = NumericOperandType.INT;
+                break;
+            case "long":
+                type = NumericOperandType.LONG;
+                break;
+            case "float":
+                type = NumericOperandType.FLOAT;
+                break;
+            case "double":
+                type = NumericOperandType.DOUBLE;
+                break;
+            default:
+                throw new ListingParseException("Unknown numeric type: " + lexer.getTokenValue(),
+                        lexer.getTokenStart());
         }
         lexer.nextToken();
         return type;

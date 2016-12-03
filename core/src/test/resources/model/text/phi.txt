@@ -1,0 +1,11 @@
+$test
+    if @param == 0 then goto $whenzero else goto $whennonzero
+$whenzero
+    goto $joint
+$whennonzero
+    goto $joint
+$joint
+    @u := phi @a from $whenzero, @b from $whennonzero
+    @v := phi @x from $whenzero, @y from $whennonzero
+    @result := @u + @v as int
+    return @result
