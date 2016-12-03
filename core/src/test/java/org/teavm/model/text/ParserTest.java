@@ -26,6 +26,9 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Program;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.CastIntegerInstruction;
+import org.teavm.model.instructions.CastNumberInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
@@ -100,6 +103,18 @@ public class ParserTest {
         assertEquals(InvocationType.SPECIAL, invoke.getType());
         assertEquals(1, invoke.getArguments().size());
         assertNotNull(invoke.getInstance());
+    }
+
+    @Test
+    public void casting() throws Exception {
+        Program program = runTest("casting");
+        assertEquals(1, program.basicBlockCount());
+
+        BasicBlock block = program.basicBlockAt(0);
+        assertTrue(block.getInstructions().get(0) instanceof CastInstruction);
+        assertTrue(block.getInstructions().get(1) instanceof CastIntegerInstruction);
+        assertTrue(block.getInstructions().get(2) instanceof CastIntegerInstruction);
+        assertTrue(block.getInstructions().get(3) instanceof CastNumberInstruction);
     }
 
     private Program runTest(String name) throws IOException {

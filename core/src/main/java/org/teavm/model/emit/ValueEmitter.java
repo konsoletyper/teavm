@@ -231,7 +231,7 @@ public class ValueEmitter {
             case SHORT:
                 return IntegerSubtype.SHORT;
             case CHARACTER:
-                return IntegerSubtype.CHARACTER;
+                return IntegerSubtype.CHAR;
             default:
                 break;
         }
@@ -776,7 +776,7 @@ public class ValueEmitter {
                 return ValueType.BYTE;
             case SHORT:
                 return ValueType.SHORT;
-            case CHARACTER:
+            case CHAR:
                 return ValueType.CHARACTER;
         }
         throw new IllegalArgumentException("Unknown subtype: " + subtype);
@@ -794,7 +794,7 @@ public class ValueEmitter {
                     throw new EmitException("Can't cast non-short value: " + type);
                 }
                 break;
-            case CHARACTER:
+            case CHAR:
                 if (type != ValueType.CHARACTER) {
                     throw new EmitException("Can't cast non-char value: " + type);
                 }

@@ -185,12 +185,7 @@ public class ProgramParser {
         }
         for (LocalVariableNode localVar : method.localVariables) {
             int location = labelIndexes.get(localVar.start.getLabel());
-            List<LocalVariableNode> vars = localVariableMap.get(location);
-            if (vars == null) {
-                vars = new ArrayList<>();
-                localVariableMap.put(location, vars);
-            }
-            vars.add(localVar);
+            localVariableMap.computeIfAbsent(location, k -> new ArrayList<>()).add(localVar);
         }
         targetInstructions = new ArrayList<>(instructions.size());
         targetInstructions.addAll(Collections.nCopies(instructions.size(), null));
@@ -1004,7 +999,7 @@ public class ProgramParser {
                 }
                 case Opcodes.CALOAD: {
                     loadArrayElement(1, ArrayElementType.CHAR);
-                    CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.CHARACTER,
+                    CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.CHAR,
                             CastIntegerDirection.TO_INTEGER);
                     insn.setValue(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));
@@ -1492,7 +1487,7 @@ public class ProgramParser {
                     break;
                 }
                 case Opcodes.I2C: {
-                    CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.CHARACTER,
+                    CastIntegerInstruction insn = new CastIntegerInstruction(IntegerSubtype.CHAR,
                             CastIntegerDirection.FROM_INTEGER);
                     insn.setValue(getVariable(popSingle()));
                     insn.setReceiver(getVariable(pushSingle()));

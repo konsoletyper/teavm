@@ -560,7 +560,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                             case SHORT:
                                 evaluatedConstant = value.intValue() << 16 >> 16;
                                 break;
-                            case CHARACTER:
+                            case CHAR:
                                 evaluatedConstant = value.intValue() & 0xFFFF;
                                 break;
                         }

@@ -232,7 +232,7 @@ class StatementGenerator implements InstructionVisitor {
                     case SHORT:
                         value = Expr.unary(UnaryOperation.INT_TO_SHORT, null, value);
                         break;
-                    case CHARACTER:
+                    case CHAR:
                         value = Expr.unary(UnaryOperation.INT_TO_CHAR, null, value);
                         break;
                 }

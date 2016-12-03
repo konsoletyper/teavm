@@ -448,7 +448,7 @@ public class Interpreter {
                         case SHORT:
                             result = (short) a;
                             break;
-                        case CHARACTER:
+                        case CHAR:
                             result = (char) a;
                             break;
                         default:
@@ -467,7 +467,7 @@ public class Interpreter {
                         case SHORT:
                             result = (Short) a;
                             break;
-                        case CHARACTER:
+                        case CHAR:
                             result = (Character) a;
                             break;
                         default:

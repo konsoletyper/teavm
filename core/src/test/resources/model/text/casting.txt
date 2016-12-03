@@ -1,0 +1,6 @@
+$block
+    @r1 := cast @a to `Ljava/lang/String;`
+    @r2 := cast @b from int to char
+    @r3 := cast @c from byte to int
+    @r4 := cast @d from double to long
+    return @r1

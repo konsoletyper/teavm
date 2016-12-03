@@ -22,6 +22,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.model.BasicBlock;
@@ -40,12 +41,17 @@ import org.teavm.model.instructions.BinaryInstruction;
 import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.CastIntegerDirection;
+import org.teavm.model.instructions.CastIntegerInstruction;
+import org.teavm.model.instructions.CastNumberInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.IntegerSubtype;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
@@ -289,6 +295,9 @@ public class ListingParser {
                     case "invokeVirtual":
                     case "invokeStatic":
                         parseInvoke(block, receiver);
+                        break;
+                    case "cast":
+                        parseCast(block, receiver);
                         break;
                     default:
                         unexpected();
@@ -549,6 +558,125 @@ public class ListingParser {
             insn.getArguments().addAll(arguments);
         }
 
+        insn.setLocation(currentLocation);
+        block.getInstructions().add(insn);
+    }
+
+    private void parseCast(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+        lexer.nextToken();
+        Variable value = expectVariable();
+        expect(ListingToken.IDENTIFIER);
+        switch ((String) lexer.getTokenValue()) {
+            case "from":
+                parseNumericCast(block, receiver, value);
+                break;
+            case "to":
+                parseObjectCast(block, receiver, value);
+                break;
+            default:
+                unexpected();
+        }
+    }
+
+    private void parseNumericCast(BasicBlock block, Variable receiver, Variable value)
+            throws IOException, ListingParseException {
+        lexer.nextToken();
+
+        NumericTypeOrIntegerSubtype source = expectTypeOrIntegerSubtype();
+
+        if (source.subtype != null) {
+            CastIntegerInstruction insn = new CastIntegerInstruction(source.subtype,
+                    CastIntegerDirection.TO_INTEGER);
+            expectKeyword("to");
+            expectKeyword("int");
+            insn.setReceiver(receiver);
+            insn.setValue(value);
+            insn.setLocation(currentLocation);
+            block.getInstructions().add(insn);
+        } else {
+            expectKeyword("to");
+            expect(ListingToken.IDENTIFIER);
+            NumericTypeOrIntegerSubtype target = expectTypeOrIntegerSubtype();
+            if (target.subtype != null) {
+                if (source.type != NumericOperandType.INT) {
+                    throw new ListingParseException("Only int can be cast to "
+                            + target.subtype.name().toLowerCase(Locale.ROOT), lexer.getIndex());
+                }
+                CastIntegerInstruction insn = new CastIntegerInstruction(source.subtype,
+                        CastIntegerDirection.FROM_INTEGER);
+                insn.setReceiver(receiver);
+                insn.setValue(value);
+                insn.setLocation(currentLocation);
+                block.getInstructions().add(insn);
+            } else {
+                CastNumberInstruction insn = new CastNumberInstruction(source.type, target.type);
+                insn.setReceiver(receiver);
+                insn.setValue(value);
+                insn.setLocation(currentLocation);
+                block.getInstructions().add(insn);
+            }
+        }
+    }
+
+    private NumericTypeOrIntegerSubtype expectTypeOrIntegerSubtype() throws IOException, ListingParseException {
+        IntegerSubtype subtype = null;
+        NumericOperandType type = null;
+        expect(ListingToken.IDENTIFIER);
+        switch ((String) lexer.getTokenValue()) {
+            case "byte":
+                subtype = IntegerSubtype.BYTE;
+                break;
+            case "short":
+                subtype = IntegerSubtype.SHORT;
+                break;
+            case "char":
+                subtype = IntegerSubtype.CHAR;
+                break;
+            case "int":
+                type = NumericOperandType.INT;
+                break;
+            case "long":
+                type = NumericOperandType.LONG;
+                break;
+            case "float":
+                type = NumericOperandType.FLOAT;
+                break;
+            case "double":
+                type = NumericOperandType.DOUBLE;
+                break;
+            default:
+                unexpected();
+                return null;
+        }
+        lexer.nextToken();
+        return new NumericTypeOrIntegerSubtype(type, subtype);
+    }
+
+    private static class NumericTypeOrIntegerSubtype {
+        NumericOperandType type;
+        IntegerSubtype subtype;
+
+        public NumericTypeOrIntegerSubtype(NumericOperandType type, IntegerSubtype subtype) {
+            this.type = type;
+            this.subtype = subtype;
+        }
+    }
+
+    private void parseObjectCast(BasicBlock block, Variable receiver, Variable value)
+            throws IOException, ListingParseException {
+        lexer.nextToken();
+        expect(ListingToken.IDENTIFIER);
+        ValueType type = ValueType.parseIfPossible((String) lexer.getTokenValue());
+        if (type == null) {
+            throw new ListingParseException("Unparseable type", lexer.getTokenStart());
+        }
+        lexer.nextToken();
+
+        CastInstruction insn = new CastInstruction();
+        insn.setReceiver(receiver);
+        insn.setValue(value);
+        insn.setTargetType(type);
+        insn.setLocation(currentLocation);
         block.getInstructions().add(insn);
     }
 
