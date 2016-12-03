@@ -314,7 +314,7 @@ class InstructionStringifier implements InstructionReader {
 
     @Override
     public void createArray(VariableReader receiver, ValueType itemType, List<? extends VariableReader> dimensions) {
-        sb.append("@").append(receiver.getIndex()).append(" := new ");
+        sb.append("@").append(receiver.getIndex()).append(" := newArray ");
         escapeIdentifierIfNeeded(itemType.toString(), sb);
         sb.append("[");
 
@@ -329,9 +329,8 @@ class InstructionStringifier implements InstructionReader {
 
     @Override
     public void create(VariableReader receiver, String type) {
-        sb.append("@").append(receiver.getIndex()).append(" := new ");
+        sb.append("@").append(receiver.getIndex()).append(" := newArray ");
         escapeIdentifierIfNeeded(type, sb);
-        sb.append("");
     }
 
     @Override

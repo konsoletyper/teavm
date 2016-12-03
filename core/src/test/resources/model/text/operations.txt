@@ -1,0 +1,21 @@
+$block
+    @r1 := @a + @b as int
+    @r2 := @c - @d as long
+    @r3 := @e * @f as float
+    @r4 := @g % @h as double
+    @r5 := @a compareTo @b as int
+    @r6 := @a >> @b as int
+    @r7 := @a >>> @b as int
+    @r8 := @a & @b as int
+    @r8 := @a | @b as int
+    @r8 := @a ^ @b as int
+    @r9 := -@a as int
+    @r10 := @i instanceOf `[J`
+    initClass java.lang.Math
+    monitorEnter @i
+    @r11 := nullCheck @i
+    @r12 := data @i as long
+    @r13 := lengthOf @i
+    @r14 := clone @i
+    monitorExit @i
+    throw @exception

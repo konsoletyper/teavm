@@ -30,6 +30,9 @@ import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
 import org.teavm.model.instructions.CastNumberInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
@@ -115,6 +118,22 @@ public class ParserTest {
         assertTrue(block.getInstructions().get(1) instanceof CastIntegerInstruction);
         assertTrue(block.getInstructions().get(2) instanceof CastIntegerInstruction);
         assertTrue(block.getInstructions().get(3) instanceof CastNumberInstruction);
+    }
+
+    @Test
+    public void operations() throws Exception {
+        runTest("operations");
+    }
+
+    @Test
+    public void create() throws Exception {
+        Program program = runTest("create");
+        assertEquals(1, program.basicBlockCount());
+
+        BasicBlock block = program.basicBlockAt(0);
+        assertTrue(block.getInstructions().get(0) instanceof ConstructInstruction);
+        assertTrue(block.getInstructions().get(1) instanceof ConstructArrayInstruction);
+        assertTrue(block.getInstructions().get(2) instanceof ConstructMultiArrayInstruction);
     }
 
     private Program runTest(String name) throws IOException {
