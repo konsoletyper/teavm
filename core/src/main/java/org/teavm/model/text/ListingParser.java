@@ -17,13 +17,16 @@ package org.teavm.model.text;
 
 import java.io.IOException;
 import java.io.Reader;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
+import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
@@ -43,6 +46,8 @@ import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.NumericOperandType;
@@ -194,6 +199,12 @@ public class ListingParser {
                         parseIf(block);
                         break;
                     }
+                    case "invoke":
+                    case "invokeStatic":
+                    case "invokeVirtual": {
+                        parseInvoke(block, null);
+                        break;
+                    }
                     default:
                         unexpected();
                         break;
@@ -273,6 +284,11 @@ public class ListingParser {
                     case "classOf":
                         lexer.nextToken();
                         parseClassLiteral(block, receiver);
+                        break;
+                    case "invoke":
+                    case "invokeVirtual":
+                    case "invokeStatic":
+                        parseInvoke(block, receiver);
                         break;
                     default:
                         unexpected();
@@ -483,6 +499,57 @@ public class ListingParser {
         insn.setLocation(currentLocation);
         block.getInstructions().add(insn);
         lexer.nextToken();
+    }
+
+    private void parseInvoke(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+        InvokeInstruction insn = new InvokeInstruction();
+        insn.setReceiver(receiver);
+
+        boolean hasInstance = true;
+        switch ((String) lexer.getTokenValue()) {
+            case "invoke":
+                insn.setType(InvocationType.SPECIAL);
+                break;
+            case "invokeStatic":
+                insn.setType(InvocationType.SPECIAL);
+                hasInstance = false;
+                break;
+            case "invokeVirtual":
+                insn.setType(InvocationType.VIRTUAL);
+                break;
+        }
+        lexer.nextToken();
+
+
+        expect(ListingToken.IDENTIFIER);
+        MethodReference method = MethodReference.parseIfPossible((String) lexer.getTokenValue());
+        if (method == null) {
+            throw new ListingParseException("Unparseable method", lexer.getIndex());
+        }
+        insn.setMethod(method);
+        lexer.nextToken();
+
+        List<Variable> arguments = new ArrayList<>();
+        if (lexer.getToken() == ListingToken.VARIABLE) {
+            arguments.add(expectVariable());
+            while (lexer.getToken() == ListingToken.COMMA) {
+                lexer.nextToken();
+                arguments.add(expectVariable());
+            }
+        }
+
+        if (hasInstance) {
+            if (arguments.isEmpty()) {
+                throw new ListingParseException("This kind of invocation requires at least one argument",
+                        lexer.getIndex());
+            }
+            insn.setInstance(arguments.get(0));
+            insn.getArguments().addAll(arguments.subList(1, arguments.size()));
+        } else {
+            insn.getArguments().addAll(arguments);
+        }
+
+        block.getInstructions().add(insn);
     }
 
     private void parseIf(BasicBlock block) throws IOException, ListingParseException {

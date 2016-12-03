@@ -21,10 +21,6 @@ import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Variable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class InvokeInstruction extends Instruction {
     private InvocationType type;
     private MethodReference method;

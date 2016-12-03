@@ -187,7 +187,7 @@ class ListingLexer {
                 readEscapedIdentifier();
                 break;
             default:
-                if (isIdentifierStart()) {
+                if (isIdentifierStart(c)) {
                     readIdentifier();
                 } else if (c >= '0' && c <= '9') {
                     readNumber();
@@ -212,7 +212,7 @@ class ListingLexer {
 
     private void readIdentifierLike() throws IOException {
         StringBuilder sb = new StringBuilder();
-        while (isIdentifierPart()) {
+        while (isIdentifierPart(c)) {
             sb.append((char) c);
             nextChar();
         }
@@ -224,7 +224,7 @@ class ListingLexer {
         StringBuilder sb = new StringBuilder();
         sb.append((char) c);
         nextChar();
-        while (isIdentifierPart()) {
+        while (isIdentifierPart(c)) {
             sb.append((char) c);
             nextChar();
         }
@@ -244,7 +244,7 @@ class ListingLexer {
         tokenValue = sb.toString();
     }
 
-    private boolean isIdentifierStart() {
+    static boolean isIdentifierStart(int c) {
         if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
             return true;
         }
@@ -256,8 +256,8 @@ class ListingLexer {
         }
     }
 
-    private boolean isIdentifierPart() {
-        if (isIdentifierStart() || c >= '0' && c <= '9') {
+    static boolean isIdentifierPart(int c) {
+        if (isIdentifierStart(c) || c >= '0' && c <= '9') {
             return true;
         }
         switch (c) {
@@ -330,6 +330,11 @@ class ListingLexer {
 
         token = ListingToken.INTEGER;
 
+        if (c == '-') {
+            sb.append(c);
+            nextChar();
+        }
+
         while (c >= '0' && c <= '9') {
             sb.append((char) c);
             nextChar();
@@ -374,7 +379,7 @@ class ListingLexer {
         } else if (c == 'l' || c == 'L') {
             nextChar();
             token = ListingToken.LONG;
-        } else if (isIdentifierStart()) {
+        } else if (isIdentifierStart(c)) {
             throw new ListingParseException("Wrong number", index);
         }
 

@@ -16,6 +16,8 @@
 package org.teavm.model.text;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
@@ -28,6 +30,8 @@ import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 
@@ -70,6 +74,32 @@ public class ParserTest {
         assertTrue("DoubleConstant", block.getInstructions().get(3) instanceof DoubleConstantInstruction);
         assertTrue("StringConstant", block.getInstructions().get(4) instanceof StringConstantInstruction);
         assertTrue("ClassConstant", block.getInstructions().get(5) instanceof ClassConstantInstruction);
+    }
+
+    @Test
+    public void invocation() throws Exception {
+        Program program = runTest("invocation");
+        assertEquals(1, program.basicBlockCount());
+
+        BasicBlock block = program.basicBlockAt(0);
+        assertTrue(block.getInstructions().get(0) instanceof InvokeInstruction);
+        assertTrue(block.getInstructions().get(1) instanceof InvokeInstruction);
+        assertTrue(block.getInstructions().get(2) instanceof InvokeInstruction);
+
+        InvokeInstruction invoke = (InvokeInstruction) block.getInstructions().get(0);
+        assertEquals(InvocationType.VIRTUAL, invoke.getType());
+        assertEquals(0, invoke.getArguments().size());
+        assertNotNull(invoke.getInstance());
+
+        invoke = (InvokeInstruction) block.getInstructions().get(1);
+        assertEquals(InvocationType.SPECIAL, invoke.getType());
+        assertEquals(1, invoke.getArguments().size());
+        assertNull(invoke.getInstance());
+
+        invoke = (InvokeInstruction) block.getInstructions().get(2);
+        assertEquals(InvocationType.SPECIAL, invoke.getType());
+        assertEquals(1, invoke.getArguments().size());
+        assertNotNull(invoke.getInstance());
     }
 
     private Program runTest(String name) throws IOException {

@@ -17,6 +17,7 @@ package org.teavm.model.text;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
@@ -45,7 +46,8 @@ class InstructionStringifier implements InstructionReader {
 
     @Override
     public void classConstant(VariableReader receiver, ValueType cst) {
-        sb.append("@").append(receiver.getIndex()).append(" := classOf ").append(cst);
+        sb.append("@").append(receiver.getIndex()).append(" := classOf ");
+        escapeIdentifierIfNeeded(cst.toString(), sb);
     }
 
     @Override
@@ -112,6 +114,27 @@ class InstructionStringifier implements InstructionReader {
         }
     }
 
+    private static void escapeIdentifierIfNeeded(String s, StringBuilder sb) {
+        boolean needsEscaping = false;
+        if (s.isEmpty()) {
+            needsEscaping = true;
+        } else if (!ListingLexer.isIdentifierStart(s.charAt(0))) {
+                needsEscaping = true;
+        } else {
+            for (int i = 1; i < s.length(); ++i) {
+                if (!ListingLexer.isIdentifierPart(s.charAt(i))) {
+                    needsEscaping = true;
+                    break;
+                }
+            }
+        }
+        if (needsEscaping) {
+            sb.append('`').append(s).append('`');
+        } else {
+            sb.append(s);
+        }
+    }
+
     @Override
     public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
             NumericOperandType type) {
@@ -170,7 +193,8 @@ class InstructionStringifier implements InstructionReader {
     @Override
     public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
         sb.append("@").append(receiver.getIndex()).append(" := cast @").append(value.getIndex())
-                .append(" to ").append(targetType);
+                .append(" to ");
+        escapeIdentifierIfNeeded(targetType.toString(), sb);
     }
 
     @Override
@@ -186,10 +210,10 @@ class InstructionStringifier implements InstructionReader {
         sb.append("@").append(receiver.getIndex()).append(" := cast @").append(value.getIndex());
         switch (direction) {
             case FROM_INTEGER:
-                sb.append(" from INT to ").append(type);
+                sb.append(" from int to ").append(type.name().toLowerCase(Locale.ROOT));
                 break;
             case TO_INTEGER:
-                sb.append(" from ").append(type).append(" to INT");
+                sb.append(" from ").append(type.name().toLowerCase(Locale.ROOT)).append(" to int");
                 break;
         }
     }
@@ -263,9 +287,9 @@ class InstructionStringifier implements InstructionReader {
                 sb.append("; ");
             }
             SwitchTableEntryReader entry = table.get(i);
-            sb.append("case ").append(entry.getCondition()).append(": goto $").append(entry.getTarget().getIndex());
+            sb.append("if ").append(entry.getCondition()).append(" goto $").append(entry.getTarget().getIndex());
         }
-        sb.append(", default: goto $").append(defaultTarget.getIndex());
+        sb.append(" else goto $").append(defaultTarget.getIndex());
     }
 
     @Override
@@ -283,13 +307,17 @@ class InstructionStringifier implements InstructionReader {
 
     @Override
     public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
-        sb.append("@").append(receiver.getIndex()).append(" := new ").append(itemType).append("[@")
-                .append(size.getIndex()).append(']');
+        sb.append("@").append(receiver.getIndex()).append(" := new ");
+        escapeIdentifierIfNeeded(itemType.toString(), sb);
+        sb.append("[@").append(size.getIndex()).append(']');
     }
 
     @Override
     public void createArray(VariableReader receiver, ValueType itemType, List<? extends VariableReader> dimensions) {
-        sb.append("@").append(receiver.getIndex()).append(" := new ").append(itemType).append("[");
+        sb.append("@").append(receiver.getIndex()).append(" := new ");
+        escapeIdentifierIfNeeded(itemType.toString(), sb);
+        sb.append("[");
+
         for (int i = 0; i < dimensions.size(); ++i) {
             if (i > 0) {
                 sb.append(", ");
@@ -301,12 +329,15 @@ class InstructionStringifier implements InstructionReader {
 
     @Override
     public void create(VariableReader receiver, String type) {
-        sb.append("@").append(receiver.getIndex()).append(" := new ").append(type).append("");
+        sb.append("@").append(receiver.getIndex()).append(" := new ");
+        escapeIdentifierIfNeeded(type, sb);
+        sb.append("");
     }
 
     @Override
     public void getField(VariableReader receiver, VariableReader instance, FieldReference field, ValueType fieldType) {
-        sb.append("@").append(receiver.getIndex()).append(" := field " + field);
+        sb.append("@").append(receiver.getIndex()).append(" := field ");
+        escapeIdentifierIfNeeded(field.toString(), sb);
         sb.append(field);
         if (instance != null) {
             sb.append(" @").append(instance.getIndex());
@@ -315,7 +346,8 @@ class InstructionStringifier implements InstructionReader {
 
     @Override
     public void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType) {
-        sb.append("field " + field);
+        sb.append("field ");
+        escapeIdentifierIfNeeded(field.toString(), sb);
         if (instance != null) {
             sb.append(" @").append(instance.getIndex());
         }
@@ -329,19 +361,20 @@ class InstructionStringifier implements InstructionReader {
 
     @Override
     public void cloneArray(VariableReader receiver, VariableReader array) {
-        sb.append("@").append(receiver.getIndex()).append(" := clone @").append(array.getIndex()).append("");
+        sb.append("@").append(receiver.getIndex()).append(" := clone @").append(array.getIndex());
     }
 
     @Override
     public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
-        sb.append("@").append(receiver.getIndex()).append(" := data @").append(array.getIndex()).append("");
+        sb.append("@").append(receiver.getIndex()).append(" := data @").append(array.getIndex()).append(" as ")
+                .append(elementType.name().toLowerCase(Locale.ROOT));
     }
 
     @Override
     public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
             ArrayElementType type) {
         sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append("[@")
-                .append(index.getIndex()).append("]").append(" as " + type.name().toLowerCase());
+                .append(index.getIndex()).append("]").append(" as " + type.name().toLowerCase(Locale.ROOT));
     }
 
     @Override
@@ -356,15 +389,20 @@ class InstructionStringifier implements InstructionReader {
         if (receiver != null) {
             sb.append("@").append(receiver.getIndex()).append(" := ");
         }
-        switch (type) {
-            case SPECIAL:
-                sb.append("invoke ");
-                break;
-            case VIRTUAL:
-                sb.append("invokeVirtual ");
-                break;
+        if (instance == null) {
+            sb.append("invokeStatic ");
+        } else {
+            switch (type) {
+                case SPECIAL:
+                    sb.append("invoke ");
+                    break;
+                case VIRTUAL:
+                    sb.append("invokeVirtual ");
+                    break;
+            }
         }
 
+        escapeIdentifierIfNeeded(method.toString(), sb);
         if (instance != null) {
             sb.append("@").append(instance.getIndex());
         }
@@ -447,7 +485,8 @@ class InstructionStringifier implements InstructionReader {
     @Override
     public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
         sb.append("@").append(receiver.getIndex()).append(" := @").append(value.getIndex())
-                .append(" instanceOf ").append(type);
+                .append(" instanceOf ");
+        escapeIdentifierIfNeeded(type.toString(), sb);
     }
 
     @Override

@@ -1,0 +1,5 @@
+$block
+    @a := invokeVirtual `java.lang.String.toString()Ljava/lang/String;` @o
+    @b := invokeStatic `java.lang.Integer.parseInt(Ljava/lang/String;)I` @a
+    invoke `java.lang.String.charAt(I)C` @a, @b
+    return @b
