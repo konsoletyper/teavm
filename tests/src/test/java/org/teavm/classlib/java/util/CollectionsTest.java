@@ -116,4 +116,13 @@ public class CollectionsTest {
         assertEquals(-1, Collections.lastIndexOfSubList(list, Arrays.asList(5, 1)));
         assertEquals(0, Collections.lastIndexOfSubList(list, list));
     }
+
+    @Test
+    public void shuffleWorksOnArrayAsList() {
+        List<Integer> list = Arrays.asList(1, 2, 3, 4);
+        Collections.shuffle(list);
+        for (int i = 1; i <= 4; ++i) {
+            assertTrue("List expected to contain " + i, list.contains(i));
+        }
+    }
 }

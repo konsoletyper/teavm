@@ -17,6 +17,7 @@ package org.teavm.classlib.java.util;
 
 import java.lang.reflect.Array;
 import java.util.Objects;
+import java.util.RandomAccess;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TDouble;
@@ -1493,19 +1494,27 @@ public class TArrays extends TObject {
 
     @SafeVarargs
     public static <T> TList<T> asList(final T... a) {
-        return new TAbstractList<T>() {
-            @Override public T get(int index) {
-                return a[index];
-            }
-            @Override public T set(int index, T element) {
-                T old = a[index];
-                a[index] = element;
-                return old;
-            }
-            @Override public int size() {
-                return a.length;
-            }
-        };
+        return new ArrayAsList<>(a);
+    }
+
+    static class ArrayAsList<T> extends TAbstractList<T> implements RandomAccess {
+        private T[] array;
+
+        public ArrayAsList(T[] array) {
+            this.array = array;
+        }
+
+        @Override public T get(int index) {
+            return array[index];
+        }
+        @Override public T set(int index, T element) {
+            T old = array[index];
+            array[index] = element;
+            return old;
+        }
+        @Override public int size() {
+            return array.length;
+        }
     }
 
     public static TString deepToString(Object[] a) {

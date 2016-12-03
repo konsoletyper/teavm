@@ -113,4 +113,49 @@ public class ArrayListTest {
         }
         return list;
     }
+
+    @Test
+    public void subListRange() {
+        List<Integer> list = fillFromZeroToNine();
+
+        List<Integer> sublist = list.subList(0, 10);
+        assertEquals(10, sublist.size());
+
+        sublist = list.subList(0, 0);
+        assertEquals(0, sublist.size());
+
+        sublist = list.subList(10, 10);
+        assertEquals(0, sublist.size());
+
+        sublist = list.subList(5, 5);
+        assertEquals(0, sublist.size());
+
+        try {
+            list.subList(-1, -1);
+            fail("Expected IOOBE for negative indexes");
+        } catch (IndexOutOfBoundsException e) {
+            // OK
+        }
+
+        try {
+            list.subList(11, 11);
+            fail("Expected IOOBE for indexes beyond size");
+        } catch (IndexOutOfBoundsException e) {
+            // OK
+        }
+
+        try {
+            list.subList(-1, 11);
+            fail("Expected IOOBE for indexes beyond limits");
+        } catch (IndexOutOfBoundsException e) {
+            // OK
+        }
+
+        try {
+            list.subList(5, 4);
+            fail("Expected IAE for lowerIndex > upperIndex");
+        } catch (IllegalArgumentException e) {
+            // OK
+        }
+    }
 }
