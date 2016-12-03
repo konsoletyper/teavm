@@ -181,6 +181,11 @@ class ListingLexer {
                 nextChar();
                 token = ListingToken.RIGHT_SQUARE_BRACKET;
                 break;
+            case '`':
+                nextChar();
+                token = ListingToken.IDENTIFIER;
+                readEscapedIdentifier();
+                break;
             default:
                 if (isIdentifierStart()) {
                     readIdentifier();
@@ -226,6 +231,19 @@ class ListingLexer {
         tokenValue = sb.toString();
     }
 
+    private void readEscapedIdentifier() throws IOException, ListingParseException {
+        StringBuilder sb = new StringBuilder();
+        while (c != '`') {
+            if (c < ' ') {
+                throw new ListingParseException("Unexpected char in escaped identifier", index);
+            }
+            sb.append((char) c);
+            nextChar();
+        }
+        nextChar();
+        tokenValue = sb.toString();
+    }
+
     private boolean isIdentifierStart() {
         if (c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z') {
             return true;
@@ -243,10 +261,6 @@ class ListingLexer {
             return true;
         }
         switch (c) {
-            case '<':
-            case '>':
-            case '(':
-            case ')':
             case '.':
             case '$':
             case '#':
@@ -268,6 +282,7 @@ class ListingLexer {
                     tokenValue = sb.toString();
                     return;
                 case '\\':
+                    nextChar();
                     switch (c) {
                         case 'n':
                             sb.append('\n');
@@ -282,6 +297,7 @@ class ListingLexer {
                         case 'u':
                             int codePoint = 0;
                             for (int i = 0; i < 4; ++i) {
+                                nextChar();
                                 if (c == -1) {
                                     throw new ListingParseException("Wrong escape sequence", index);
                                 }
@@ -296,6 +312,7 @@ class ListingLexer {
                         default:
                             throw new ListingParseException("Wrong escape sequence", index);
                     }
+                    nextChar();
                     break;
                 default:
                     if (c < ' ') {

@@ -1,0 +1,8 @@
+$block
+    @a := 23
+    @b := 42L
+    @c := 3.14159F
+    @d := 2.71828
+    @e := 'foo\'bar\nbaz\\boo\u0000123'
+    @f := classOf `[Ljava/lang/String;`
+    return @a

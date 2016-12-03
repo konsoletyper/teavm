@@ -15,37 +15,61 @@
  */
 package org.teavm.model.text;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import org.junit.Assert;
 import org.junit.Test;
+import org.teavm.model.BasicBlock;
 import org.teavm.model.Program;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.DoubleConstantInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
 
 public class ParserTest {
     @Test
     public void simple() throws Exception {
         Program program = runTest("simple");
-        Assert.assertEquals(2, program.basicBlockCount());
-        Assert.assertEquals(4, program.variableCount());
-        Assert.assertEquals(4, program.basicBlockAt(0).getInstructions().size());
-        Assert.assertEquals(1, program.basicBlockAt(1).getInstructions().size());
+        assertEquals(2, program.basicBlockCount());
+        assertEquals(4, program.variableCount());
+        assertEquals(4, program.basicBlockAt(0).getInstructions().size());
+        assertEquals(1, program.basicBlockAt(1).getInstructions().size());
     }
 
     @Test
     public void conditional() throws Exception {
         Program program = runTest("conditional");
-        Assert.assertEquals(7, program.basicBlockCount());
+        assertEquals(7, program.basicBlockCount());
         for (int i = 0; i < 7; ++i) {
-            Assert.assertEquals(1, program.basicBlockAt(i).getInstructions().size());
+            assertEquals(1, program.basicBlockAt(i).getInstructions().size());
         }
     }
 
     @Test
     public void phi() throws Exception {
         Program program = runTest("phi");
-        Assert.assertEquals(4, program.basicBlockCount());
-        Assert.assertEquals(2, program.basicBlockAt(3).getPhis().size());
+        assertEquals(4, program.basicBlockCount());
+        assertEquals(2, program.basicBlockAt(3).getPhis().size());
+    }
+
+    @Test
+    public void constant() throws Exception {
+        Program program = runTest("constant");
+        assertEquals(1, program.basicBlockCount());
+
+        BasicBlock block = program.basicBlockAt(0);
+        assertEquals(7, block.getInstructions().size());
+        assertTrue("IntConstant", block.getInstructions().get(0) instanceof IntegerConstantInstruction);
+        assertTrue("LongConstant", block.getInstructions().get(1) instanceof LongConstantInstruction);
+        assertTrue("FloatConstant", block.getInstructions().get(2) instanceof FloatConstantInstruction);
+        assertTrue("DoubleConstant", block.getInstructions().get(3) instanceof DoubleConstantInstruction);
+        assertTrue("StringConstant", block.getInstructions().get(4) instanceof StringConstantInstruction);
+        assertTrue("ClassConstant", block.getInstructions().get(5) instanceof ClassConstantInstruction);
     }
 
     private Program runTest(String name) throws IOException {

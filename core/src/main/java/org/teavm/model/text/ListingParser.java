@@ -27,6 +27,7 @@ import org.teavm.model.Incoming;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
+import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.AssignInstruction;
@@ -36,11 +37,17 @@ import org.teavm.model.instructions.BinaryInstruction;
 import org.teavm.model.instructions.BinaryOperation;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
 
 public class ListingParser {
     private Program program;
@@ -207,9 +214,16 @@ public class ListingParser {
                         lexer.nextToken();
                         parseArrayAssignment(block, receiver);
                         break;
+                    default:
+                        unexpected();
+                        break;
                 }
                 break;
             }
+
+            default:
+                unexpected();
+                break;
         }
         expectEofOrEol();
 
@@ -256,10 +270,34 @@ public class ListingParser {
                         lexer.nextToken();
                         parsePhi(block, receiver);
                         break;
+                    case "classOf":
+                        lexer.nextToken();
+                        parseClassLiteral(block, receiver);
+                        break;
                     default:
                         unexpected();
                         break;
                 }
+                break;
+            }
+            case INTEGER: {
+                parseIntConstant(block, receiver);
+                break;
+            }
+            case LONG: {
+                parseLongConstant(block, receiver);
+                break;
+            }
+            case FLOAT: {
+                parseFloatConstant(block, receiver);
+                break;
+            }
+            case DOUBLE: {
+                parseDoubleConstant(block, receiver);
+                break;
+            }
+            case STRING: {
+                parseStringConstant(block, receiver);
                 break;
             }
             default:
@@ -338,6 +376,7 @@ public class ListingParser {
         instruction.setFirstOperand(first);
         instruction.setSecondOperand(second);
         instruction.setReceiver(receiver);
+        instruction.setLocation(currentLocation);
 
         block.getInstructions().add(instruction);
     }
@@ -364,6 +403,7 @@ public class ListingParser {
         int phiStart = lexer.getIndex();
 
         Phi phi = new Phi();
+        phi.setReceiver(receiver);
         while (true) {
             Incoming incoming = new Incoming();
             incoming.setValue(expectVariable());
@@ -382,6 +422,67 @@ public class ListingParser {
         }
 
         block.getPhis().add(phi);
+    }
+
+    private void parseClassLiteral(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+        expect(ListingToken.IDENTIFIER);
+        String typeString = (String) lexer.getTokenValue();
+        ValueType type = ValueType.parseIfPossible(typeString);
+        if (type == null) {
+            throw new ListingParseException("Unparseable type: " + typeString, lexer.getTokenStart());
+        }
+        lexer.nextToken();
+
+        ClassConstantInstruction insn = new ClassConstantInstruction();
+        insn.setReceiver(receiver);
+        insn.setConstant(type);
+        insn.setLocation(currentLocation);
+        block.getInstructions().add(insn);
+    }
+
+    private void parseIntConstant(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+        IntegerConstantInstruction insn = new IntegerConstantInstruction();
+        insn.setReceiver(receiver);
+        insn.setConstant((Integer) lexer.getTokenValue());
+        insn.setLocation(currentLocation);
+        block.getInstructions().add(insn);
+        lexer.nextToken();
+    }
+
+    private void parseLongConstant(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+        LongConstantInstruction insn = new LongConstantInstruction();
+        insn.setReceiver(receiver);
+        insn.setConstant((Long) lexer.getTokenValue());
+        insn.setLocation(currentLocation);
+        block.getInstructions().add(insn);
+        lexer.nextToken();
+    }
+
+    private void parseFloatConstant(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+        FloatConstantInstruction insn = new FloatConstantInstruction();
+        insn.setReceiver(receiver);
+        insn.setConstant((Float) lexer.getTokenValue());
+        insn.setLocation(currentLocation);
+        block.getInstructions().add(insn);
+        lexer.nextToken();
+    }
+
+    private void parseDoubleConstant(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+        DoubleConstantInstruction insn = new DoubleConstantInstruction();
+        insn.setReceiver(receiver);
+        insn.setConstant((Double) lexer.getTokenValue());
+        insn.setLocation(currentLocation);
+        block.getInstructions().add(insn);
+        lexer.nextToken();
+    }
+
+    private void parseStringConstant(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+        StringConstantInstruction insn = new StringConstantInstruction();
+        insn.setReceiver(receiver);
+        insn.setConstant((String) lexer.getTokenValue());
+        insn.setLocation(currentLocation);
+        block.getInstructions().add(insn);
+        lexer.nextToken();
     }
 
     private void parseIf(BasicBlock block) throws IOException, ListingParseException {
