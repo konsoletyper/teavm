@@ -444,8 +444,9 @@ public class TeaVMTool implements BaseTeaVMTool {
 
             if (targetType == TeaVMTargetType.JAVASCRIPT) {
                 try (OutputStream output = new FileOutputStream(new File(targetDirectory, outputName), true)) {
-                    Writer writer = new OutputStreamWriter(output, "UTF-8");
-                    additionalJavaScriptOutput(writer);
+                    try (Writer writer = new OutputStreamWriter(output, "UTF-8")) {
+                        additionalJavaScriptOutput(writer);
+                    }
                 }
             }
 
