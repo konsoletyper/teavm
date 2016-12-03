@@ -228,11 +228,19 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             });
 
             for (TeaVMTestConfiguration configuration : configurations) {
-                TestRun run = compileByTeaVM(child, notifier, expectedExceptions, configuration, onSuccess.get(0));
-                if (run != null) {
-                    runs.add(run);
-                } else {
+                try {
+                    TestRun run = compileByTeaVM(child, notifier, expectedExceptions, configuration, onSuccess.get(0));
+                    if (run != null) {
+                        runs.add(run);
+                    } else {
+                        notifier.fireTestFinished(description);
+                        latch.countDown();
+                        return;
+                    }
+                } catch (Throwable e) {
+                    notifier.fireTestFailure(new Failure(description, e));
                     notifier.fireTestFinished(description);
+                    latch.countDown();
                     return;
                 }
             }

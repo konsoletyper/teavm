@@ -244,7 +244,7 @@ public class PhiUpdater {
                 TryCatchBlock tryCatch = currentBlock.getTryCatchBlocks().get(i);
                 catchSuccessors.add(tryCatch.getHandler().getIndex());
                 for (TryCatchJoint joint : synthesizedJoints.get(index).get(i)) {
-                    joint.setReceiver(define(joint.getReceiver()));
+                    joint.setReceiver(defineForExceptionPhi(joint.getReceiver()));
                 }
             }
             variableMap = regularVariableMap;
@@ -308,34 +308,53 @@ public class PhiUpdater {
         while (head > 0) {
             BasicBlock block = worklist[--head];
             int[] frontiers = domFrontiers[block.getIndex()];
-            if (frontiers == null) {
-                continue;
+
+            if (frontiers != null) {
+                for (int frontier : frontiers) {
+                    BasicBlock frontierBlock = program.basicBlockAt(frontier);
+                    if (frontierBlock.getExceptionVariable() == var) {
+                        continue;
+                    }
+
+                    boolean exists = frontierBlock.getPhis().stream()
+                            .flatMap(phi -> phi.getIncomings().stream())
+                            .anyMatch(incoming -> incoming.getSource() == block && incoming.getValue() == var);
+                    if (exists) {
+                        continue;
+                    }
+
+                    Phi phi = phiMap[frontier][var.getIndex()];
+                    if (phi == null) {
+                        phi = new Phi();
+                        phi.setReceiver(var);
+                        phiIndexMap[frontier][synthesizedPhis.get(frontier).size()] = var.getIndex();
+                        synthesizedPhis.get(frontier).add(phi);
+                        phiMap[frontier][var.getIndex()] = phi;
+                        worklist[head++] = frontierBlock;
+                    }
+                }
             }
 
-            for (int frontier : frontiers) {
-                BasicBlock frontierBlock = program.basicBlockAt(frontier);
-                if (frontierBlock.getExceptionVariable() == var) {
-                    continue;
-                }
-
-                boolean exists = frontierBlock.getPhis().stream()
-                        .flatMap(phi -> phi.getIncomings().stream())
-                        .anyMatch(incoming -> incoming.getSource() == block && incoming.getValue() == var);
-                if (exists) {
-                    continue;
-                }
-
-                Phi phi = phiMap[frontier][var.getIndex()];
-                if (phi == null) {
-                    phi = new Phi();
-                    phi.setReceiver(var);
-                    phiIndexMap[frontier][synthesizedPhis.get(frontier).size()] = var.getIndex();
-                    synthesizedPhis.get(frontier).add(phi);
-                    phiMap[frontier][var.getIndex()] = phi;
-                    worklist[head++] = frontierBlock;
+            List<TryCatchBlock> tryCatchBlocks = block.getTryCatchBlocks();
+            for (int i = 0; i < tryCatchBlocks.size(); i++) {
+                TryCatchBlock tryCatch = tryCatchBlocks.get(i);
+                TryCatchJoint joint = jointMap.computeIfAbsent(tryCatch, k -> new HashMap<>()).get(var);
+                if (joint == null) {
+                    joint = new TryCatchJoint();
+                    joint.setReceiver(var);
+                    synthesizedJoints.get(block.getIndex()).get(i).add(joint);
+                    jointMap.get(tryCatch).put(var, joint);
+                    worklist[head++] = tryCatch.getHandler();
                 }
             }
         }
+    }
+
+    private Variable defineForExceptionPhi(Variable var) {
+        Variable original = var;
+        var = introduce(var);
+        mapVariable(original.getIndex(), var);
+        return var;
     }
 
     private Variable define(Variable var) {
@@ -354,15 +373,13 @@ public class PhiUpdater {
                 continue;
             }
 
-            Map<Variable, TryCatchJoint> joints = jointMap.computeIfAbsent(tryCatch, k -> new HashMap<>());
+            Map<Variable, TryCatchJoint> joints = jointMap.get(tryCatch);
+            if (joints == null) {
+                continue;
+            }
+
             TryCatchJoint joint = joints.get(original);
             if (joint == null) {
-                joint = new TryCatchJoint();
-                joint.setReceiver(original);
-                joints.put(original, joint);
-                synthesizedJoints.get(currentBlock.getIndex()).get(i).add(joint);
-            }
-            if (joint.getReceiver() == var) {
                 continue;
             }
 

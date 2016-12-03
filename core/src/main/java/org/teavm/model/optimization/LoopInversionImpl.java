@@ -152,14 +152,10 @@ class LoopInversionImpl {
     }
 
     private LoopWithExits getLoopWithExits(Map<Loop, LoopWithExits> cache, Loop loop) {
-        LoopWithExits result = cache.get(loop);
-        if (result == null) {
-            result = new LoopWithExits(loop.getHead(), loop.getParent() != null
-                    ? getLoopWithExits(cache, loop.getParent())
-                    : null);
-            cache.put(loop, result);
-        }
-        return result;
+        return cache.computeIfAbsent(loop, k ->
+                new LoopWithExits(loop.getHead(), loop.getParent() != null
+                        ? getLoopWithExits(cache, loop.getParent())
+                        : null));
     }
 
     private void sortLoops(LoopWithExits loop, Set<LoopWithExits> visited, List<LoopWithExits> target) {
@@ -179,7 +175,6 @@ class LoopInversionImpl {
         final IntSet nodesAndCopies = new IntOpenHashSet();
         final IntSet exits = new IntOpenHashSet();
         int bodyStart;
-        int copyStart;
         int headCopy;
         final IntIntMap copiedNodes = new IntIntOpenHashMap();
         boolean shouldSkip;
@@ -352,7 +347,7 @@ class LoopInversionImpl {
                         TryCatchJoint jointCopy = new TryCatchJoint();
                         jointCopy.setReceiver(joint.getReceiver());
                         jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
-                        tryCatchCopy.getJoints().add(joint);
+                        tryCatchCopy.getJoints().add(jointCopy);
                     }
                 }
             }

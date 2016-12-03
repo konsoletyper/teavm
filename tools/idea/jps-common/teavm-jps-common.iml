@@ -15,7 +15,9 @@
           <root url="jar://$MODULE_DIR$/lib/teavm-all.jar!/" />
         </CLASSES>
         <JAVADOC />
-        <SOURCES />
+        <SOURCES>
+          <root url="file://$MODULE_DIR$/../../core/src/main/java" />
+        </SOURCES>
       </library>
     </orderEntry>
   </component>
