@@ -458,7 +458,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     ? currentMethod.getVariables().get(index)
                     : null;
             if (variable != null && variable.getName() != null) {
-                String result = RenderingUtil.escapeName(variable.getName());
+                String result = "$" + RenderingUtil.escapeName(variable.getName());
                 if (keywords.contains(result) || !usedVariableNames.add(result)) {
                     String base = result;
                     int suffix = 0;
