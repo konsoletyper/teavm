@@ -1,0 +1,8 @@
+$block
+    field foo.Bar.a := @zero as I
+    field foo.Bar.b @obj := @null as `Ljava/lang/Float;`
+    @a := field foo.Bar.a as I
+    @b := field foo.Bar.b @obj as `Ljava/lang/Float;`
+    @c := invokeVirtual `java.lang.Number.intValue()I` @b
+    @r := @a + @b as int
+    return @r

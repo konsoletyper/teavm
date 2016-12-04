@@ -284,10 +284,10 @@ class InstructionStringifier implements InstructionReader {
         sb.append("switch @").append(condition.getIndex()).append(" ");
         for (int i = 0; i < table.size(); ++i) {
             if (i > 0) {
-                sb.append("; ");
+                sb.append(" ");
             }
             SwitchTableEntryReader entry = table.get(i);
-            sb.append("if ").append(entry.getCondition()).append(" goto $").append(entry.getTarget().getIndex());
+            sb.append("case ").append(entry.getCondition()).append(" goto $").append(entry.getTarget().getIndex());
         }
         sb.append(" else goto $").append(defaultTarget.getIndex());
     }
@@ -341,6 +341,8 @@ class InstructionStringifier implements InstructionReader {
         if (instance != null) {
             sb.append(" @").append(instance.getIndex());
         }
+        sb.append(" as ");
+        escapeIdentifierIfNeeded(fieldType.toString(), sb);
     }
 
     @Override
@@ -351,6 +353,8 @@ class InstructionStringifier implements InstructionReader {
             sb.append(" @").append(instance.getIndex());
         }
         sb.append(" := @").append(value.getIndex());
+        sb.append(" as ");
+        escapeIdentifierIfNeeded(fieldType.toString(), sb);
     }
 
     @Override

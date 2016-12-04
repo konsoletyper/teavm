@@ -1,0 +1,8 @@
+$start
+    switch @a case 0 goto $0 case 1 goto $1 else goto $else
+$0
+    return @v0
+$1
+    return @v1
+$else
+    return @default

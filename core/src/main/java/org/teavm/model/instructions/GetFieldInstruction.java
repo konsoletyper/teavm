@@ -20,10 +20,6 @@ import org.teavm.model.Instruction;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class GetFieldInstruction extends Instruction {
     private Variable instance;
     private FieldReference field;

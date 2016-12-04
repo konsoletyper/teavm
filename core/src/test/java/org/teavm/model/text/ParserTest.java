@@ -136,6 +136,16 @@ public class ParserTest {
         assertTrue(block.getInstructions().get(2) instanceof ConstructMultiArrayInstruction);
     }
 
+    @Test
+    public void fields() throws Exception {
+        runTest("fields");
+    }
+
+    @Test
+    public void switchInsn() throws Exception {
+        runTest("switchInsn");
+    }
+
     private Program runTest(String name) throws IOException {
         ClassLoader classLoader = ParserTest.class.getClassLoader();
         String path = "model/text/" + name + ".txt";
@@ -175,7 +185,7 @@ public class ParserTest {
         int row;
         int column;
 
-        public Location(int row, int column) {
+        Location(int row, int column) {
             this.row = row;
             this.column = column;
         }

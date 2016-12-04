@@ -26,6 +26,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
@@ -56,6 +57,7 @@ import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.IntegerSubtype;
@@ -70,8 +72,11 @@ import org.teavm.model.instructions.NegateInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.SwitchInstruction;
+import org.teavm.model.instructions.SwitchTableEntry;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class ListingParser {
@@ -253,6 +258,16 @@ public class ListingParser {
                         addInstruction(insn);
                         break;
                     }
+                    case "field": {
+                        lexer.nextToken();
+                        parseFieldSet();
+                        break;
+                    }
+                    case "switch": {
+                        lexer.nextToken();
+                        parseSwitch();
+                        break;
+                    }
                     default:
                         unexpected();
                         break;
@@ -380,6 +395,11 @@ public class ListingParser {
                         insn.setArray(expectVariable());
                         insn.setReceiver(receiver);
                         addInstruction(insn);
+                        break;
+                    }
+                    case "field": {
+                        lexer.nextToken();
+                        parseFieldGet(receiver);
                         break;
                     }
                     default:
@@ -650,6 +670,70 @@ public class ListingParser {
         }
 
         addInstruction(insn);
+    }
+
+    private void parseFieldSet() throws IOException, ListingParseException {
+        FieldReference field = expectField();
+        Variable instance = null;
+        if (lexer.getToken() == ListingToken.VARIABLE) {
+            instance = expectVariable();
+        }
+        expect(ListingToken.ASSIGN);
+        lexer.nextToken();
+        Variable value = expectVariable();
+        expectKeyword("as");
+        ValueType type = expectValueType();
+
+        PutFieldInstruction insn = new PutFieldInstruction();
+        insn.setValue(value);
+        insn.setField(field);
+        insn.setInstance(instance);
+        insn.setFieldType(type);
+        addInstruction(insn);
+    }
+
+    private void parseFieldGet(Variable receiver) throws IOException, ListingParseException {
+        FieldReference field = expectField();
+        Variable instance = null;
+        if (lexer.getToken() == ListingToken.VARIABLE) {
+            instance = expectVariable();
+        }
+        expectKeyword("as");
+        ValueType type = expectValueType();
+
+        GetFieldInstruction insn = new GetFieldInstruction();
+        insn.setReceiver(receiver);
+        insn.setInstance(instance);
+        insn.setField(field);
+        insn.setFieldType(type);
+        addInstruction(insn);
+    }
+
+    private void parseSwitch() throws IOException, ListingParseException {
+        SwitchInstruction insn = new SwitchInstruction();
+        insn.setCondition(expectVariable());
+
+        while (true) {
+            expect(ListingToken.IDENTIFIER);
+            switch ((String) lexer.getTokenValue()) {
+                case "case":
+                    lexer.nextToken();
+                    SwitchTableEntry entry = new SwitchTableEntry();
+                    expect(ListingToken.INTEGER);
+                    entry.setCondition((Integer) lexer.getTokenValue());
+                    lexer.nextToken();
+                    expectKeyword("goto");
+                    entry.setTarget(expectBlock());
+                    insn.getEntries().add(entry);
+                    break;
+                case "else":
+                    lexer.nextToken();
+                    expectKeyword("goto");
+                    insn.setDefaultTarget(expectBlock());
+                    addInstruction(insn);
+                    return;
+            }
+        }
     }
 
     private void parseCast(Variable receiver) throws IOException, ListingParseException {
@@ -948,6 +1032,17 @@ public class ListingParser {
         }
         lexer.nextToken();
         return type;
+    }
+
+    private FieldReference expectField() throws IOException, ListingParseException {
+        expect(ListingToken.IDENTIFIER);
+        String s = (String) lexer.getTokenValue();
+        int index = s.lastIndexOf('.');
+        if (index < 0) {
+            throw new ListingParseException("Unparseable field", lexer.getTokenStart());
+        }
+        lexer.nextToken();
+        return new FieldReference(s.substring(0, index), s.substring(index + 1));
     }
 
     private Variable expectVariable() throws IOException, ListingParseException {
