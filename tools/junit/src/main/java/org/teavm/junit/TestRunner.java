@@ -127,13 +127,11 @@ class TestRunner {
                         }
                     }
                     run.getCallback().error(new AssertionError(exception + "\n" + stack));
-                    run.getCallback().complete();
                     break;
                 }
             }
         } catch (Exception e) {
             run.getCallback().error(e);
-            run.getCallback().complete();
         }
     }
 }
