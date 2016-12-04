@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
+import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
@@ -78,9 +79,10 @@ public class ListingParser {
     private ListingLexer lexer;
     private Map<String, Variable> variableMap;
     private Map<String, BasicBlock> blockMap;
-    private Map<String, Integer> blockFirstOccurence;
+    private Map<String, Integer> blockFirstOccurrence;
     private Set<String> declaredBlocks = new HashSet<>();
     private TextLocation currentLocation;
+    private BasicBlock currentBlock;
 
     public Program parse(Reader reader) throws IOException, ListingParseException {
         try {
@@ -88,7 +90,7 @@ public class ListingParser {
             lexer = new ListingLexer(reader);
             variableMap = new HashMap<>();
             blockMap = new HashMap<>();
-            blockFirstOccurence = new LinkedHashMap<>();
+            blockFirstOccurrence = new LinkedHashMap<>();
 
             lexer.nextToken();
             parsePrologue();
@@ -97,9 +99,9 @@ public class ListingParser {
                 parseBasicBlock();
             } while (lexer.getToken() != ListingToken.EOF);
 
-            if (!blockFirstOccurence.isEmpty()) {
-                String blockName = blockFirstOccurence.keySet().iterator().next();
-                int blockIndex = blockFirstOccurence.get(blockName);
+            if (!blockFirstOccurrence.isEmpty()) {
+                String blockName = blockFirstOccurrence.keySet().iterator().next();
+                int blockIndex = blockFirstOccurrence.get(blockName);
                 throw new ListingParseException("Block not defined: " + blockName, blockIndex);
             }
 
@@ -109,7 +111,7 @@ public class ListingParser {
             lexer = null;
             variableMap = null;
             blockMap = null;
-            blockFirstOccurence = null;
+            blockFirstOccurrence = null;
         }
     }
 
@@ -153,7 +155,7 @@ public class ListingParser {
         if (!declaredBlocks.add(label)) {
             throw new ListingParseException("Block with label " + label + " already exists", lexer.getTokenStart());
         }
-        blockFirstOccurence.remove(label);
+        blockFirstOccurrence.remove(label);
         lexer.nextToken();
 
         expect(ListingToken.EOL);
@@ -161,7 +163,7 @@ public class ListingParser {
             lexer.nextToken();
         }
 
-        BasicBlock block = blockMap.computeIfAbsent(label, k -> {
+        currentBlock = blockMap.computeIfAbsent(label, k -> {
             BasicBlock b = program.createBasicBlock();
             b.setLabel(k);
             return b;
@@ -169,7 +171,7 @@ public class ListingParser {
 
         currentLocation = null;
         do {
-            parseInstruction(block);
+            parseInstruction();
         } while (lexer.getToken() != ListingToken.LABEL && lexer.getToken() != ListingToken.EOF);
 
         while (lexer.getToken() == ListingToken.EOL) {
@@ -177,7 +179,7 @@ public class ListingParser {
         }
     }
 
-    private void parseInstruction(BasicBlock block) throws IOException, ListingParseException {
+    private void parseInstruction() throws IOException, ListingParseException {
         switch (lexer.getToken()) {
             case IDENTIFIER: {
                 String id = (String) lexer.getTokenValue();
@@ -189,8 +191,7 @@ public class ListingParser {
                     }
                     case "nop": {
                         EmptyInstruction insn = new EmptyInstruction();
-                        insn.setLocation(currentLocation);
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         lexer.nextToken();
                         break;
                     }
@@ -198,38 +199,35 @@ public class ListingParser {
                         lexer.nextToken();
                         BasicBlock target = expectBlock();
                         JumpInstruction insn = new JumpInstruction();
-                        insn.setLocation(currentLocation);
                         insn.setTarget(target);
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     case "return": {
                         lexer.nextToken();
                         ExitInstruction insn = new ExitInstruction();
-                        insn.setLocation(currentLocation);
                         if (lexer.getToken() == ListingToken.VARIABLE) {
                             insn.setValueToReturn(expectVariable());
                         }
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     case "throw": {
                         lexer.nextToken();
                         RaiseInstruction insn = new RaiseInstruction();
-                        insn.setLocation(currentLocation);
                         insn.setException(expectVariable());
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     case "if": {
                         lexer.nextToken();
-                        parseIf(block);
+                        parseIf();
                         break;
                     }
                     case "invoke":
                     case "invokeStatic":
                     case "invokeVirtual": {
-                        parseInvoke(block, null);
+                        parseInvoke(null);
                         break;
                     }
                     case "initClass": {
@@ -238,24 +236,21 @@ public class ListingParser {
                         expect(ListingToken.IDENTIFIER);
                         insn.setClassName((String) lexer.getTokenValue());
                         lexer.nextToken();
-                        insn.setLocation(currentLocation);
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     case "monitorEnter": {
                         lexer.nextToken();
                         MonitorEnterInstruction insn = new MonitorEnterInstruction();
                         insn.setObjectRef(expectVariable());
-                        insn.setLocation(currentLocation);
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     case "monitorExit": {
                         lexer.nextToken();
                         MonitorExitInstruction insn = new MonitorExitInstruction();
                         insn.setObjectRef(expectVariable());
-                        insn.setLocation(currentLocation);
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     default:
@@ -272,11 +267,11 @@ public class ListingParser {
                 switch (lexer.getToken()) {
                     case ASSIGN:
                         lexer.nextToken();
-                        parseAssignment(block, receiver);
+                        parseAssignment(receiver);
                         break;
                     case LEFT_SQUARE_BRACKET:
                         lexer.nextToken();
-                        parseArrayAssignment(block, receiver);
+                        parseArrayAssignment(receiver);
                         break;
                     default:
                         unexpected();
@@ -319,12 +314,12 @@ public class ListingParser {
                 + "Expected 'unknown location' or '<string> : <number>'", lexer.getTokenStart());
     }
 
-    private void parseAssignment(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseAssignment(Variable receiver) throws IOException, ListingParseException {
         switch (lexer.getToken()) {
             case VARIABLE: {
                 Variable variable = getVariable((String) lexer.getTokenValue());
                 lexer.nextToken();
-                parseAssignmentVariable(block, receiver, variable);
+                parseAssignmentVariable(receiver, variable);
                 break;
             }
             case IDENTIFIER: {
@@ -332,33 +327,32 @@ public class ListingParser {
                 switch (keyword) {
                     case "phi":
                         lexer.nextToken();
-                        parsePhi(block, receiver);
+                        parsePhi(receiver);
                         break;
                     case "classOf":
                         lexer.nextToken();
-                        parseClassLiteral(block, receiver);
+                        parseClassLiteral(receiver);
                         break;
                     case "invoke":
                     case "invokeVirtual":
                     case "invokeStatic":
-                        parseInvoke(block, receiver);
+                        parseInvoke(receiver);
                         break;
                     case "cast":
-                        parseCast(block, receiver);
+                        parseCast(receiver);
                         break;
                     case "new":
-                        parseNew(block, receiver);
+                        parseNew(receiver);
                         break;
                     case "newArray":
-                        parseNewArray(block, receiver);
+                        parseNewArray(receiver);
                         break;
                     case "nullCheck": {
                         lexer.nextToken();
                         NullCheckInstruction insn = new NullCheckInstruction();
                         insn.setReceiver(receiver);
                         insn.setValue(expectVariable());
-                        insn.setLocation(currentLocation);
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     case "data": {
@@ -369,8 +363,7 @@ public class ListingParser {
                         UnwrapArrayInstruction insn = new UnwrapArrayInstruction(type);
                         insn.setArray(value);
                         insn.setReceiver(receiver);
-                        insn.setLocation(currentLocation);
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     case "lengthOf": {
@@ -378,8 +371,7 @@ public class ListingParser {
                         ArrayLengthInstruction insn = new ArrayLengthInstruction();
                         insn.setArray(expectVariable());
                         insn.setReceiver(receiver);
-                        insn.setLocation(currentLocation);
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     case "clone": {
@@ -387,8 +379,7 @@ public class ListingParser {
                         CloneArrayInstruction insn = new CloneArrayInstruction();
                         insn.setArray(expectVariable());
                         insn.setReceiver(receiver);
-                        insn.setLocation(currentLocation);
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     default:
@@ -398,27 +389,27 @@ public class ListingParser {
                 break;
             }
             case INTEGER: {
-                parseIntConstant(block, receiver);
+                parseIntConstant(receiver);
                 break;
             }
             case LONG: {
-                parseLongConstant(block, receiver);
+                parseLongConstant(receiver);
                 break;
             }
             case FLOAT: {
-                parseFloatConstant(block, receiver);
+                parseFloatConstant(receiver);
                 break;
             }
             case DOUBLE: {
-                parseDoubleConstant(block, receiver);
+                parseDoubleConstant(receiver);
                 break;
             }
             case STRING: {
-                parseStringConstant(block, receiver);
+                parseStringConstant(receiver);
                 break;
             }
             case SUBTRACT: {
-                parseNegate(block, receiver);
+                parseNegate(receiver);
                 break;
             }
             default:
@@ -426,55 +417,54 @@ public class ListingParser {
         }
     }
 
-    private void parseAssignmentVariable(BasicBlock block, Variable receiver, Variable variable)
+    private void parseAssignmentVariable(Variable receiver, Variable variable)
             throws IOException, ListingParseException {
         switch (lexer.getToken()) {
             case EOL:
             case EOF: {
                 AssignInstruction insn = new AssignInstruction();
-                insn.setLocation(currentLocation);
                 insn.setReceiver(receiver);
                 insn.setAssignee(variable);
-                block.getInstructions().add(insn);
+                addInstruction(insn);
                 break;
             }
             case ADD:
-                parseBinary(block, receiver, variable, BinaryOperation.ADD);
+                parseBinary(receiver, variable, BinaryOperation.ADD);
                 break;
             case SUBTRACT:
-                parseBinary(block, receiver, variable, BinaryOperation.SUBTRACT);
+                parseBinary(receiver, variable, BinaryOperation.SUBTRACT);
                 break;
             case MULTIPLY:
-                parseBinary(block, receiver, variable, BinaryOperation.MULTIPLY);
+                parseBinary(receiver, variable, BinaryOperation.MULTIPLY);
                 break;
             case DIVIDE:
-                parseBinary(block, receiver, variable, BinaryOperation.DIVIDE);
+                parseBinary(receiver, variable, BinaryOperation.DIVIDE);
                 break;
             case REMAINDER:
-                parseBinary(block, receiver, variable, BinaryOperation.MODULO);
+                parseBinary(receiver, variable, BinaryOperation.MODULO);
                 break;
             case AND:
-                parseBinary(block, receiver, variable, BinaryOperation.AND);
+                parseBinary(receiver, variable, BinaryOperation.AND);
                 break;
             case OR:
-                parseBinary(block, receiver, variable, BinaryOperation.OR);
+                parseBinary(receiver, variable, BinaryOperation.OR);
                 break;
             case XOR:
-                parseBinary(block, receiver, variable, BinaryOperation.XOR);
+                parseBinary(receiver, variable, BinaryOperation.XOR);
                 break;
             case SHIFT_LEFT:
-                parseBinary(block, receiver, variable, BinaryOperation.SHIFT_LEFT);
+                parseBinary(receiver, variable, BinaryOperation.SHIFT_LEFT);
                 break;
             case SHIFT_RIGHT:
-                parseBinary(block, receiver, variable, BinaryOperation.SHIFT_RIGHT);
+                parseBinary(receiver, variable, BinaryOperation.SHIFT_RIGHT);
                 break;
             case SHIFT_RIGHT_UNSIGNED:
-                parseBinary(block, receiver, variable, BinaryOperation.SHIFT_RIGHT_UNSIGNED);
+                parseBinary(receiver, variable, BinaryOperation.SHIFT_RIGHT_UNSIGNED);
                 break;
             case IDENTIFIER:
                 switch ((String) lexer.getTokenValue()) {
                     case "compareTo":
-                        parseBinary(block, receiver, variable, BinaryOperation.COMPARE);
+                        parseBinary(receiver, variable, BinaryOperation.COMPARE);
                         break;
                     case "instanceOf": {
                         lexer.nextToken();
@@ -483,8 +473,7 @@ public class ListingParser {
                         insn.setValue(variable);
                         insn.setReceiver(receiver);
                         insn.setType(type);
-                        insn.setLocation(currentLocation);
-                        block.getInstructions().add(insn);
+                        addInstruction(insn);
                         break;
                     }
                     default:
@@ -497,23 +486,22 @@ public class ListingParser {
         }
     }
 
-    private void parseBinary(BasicBlock block, Variable receiver, Variable first, BinaryOperation operation)
+    private void parseBinary(Variable receiver, Variable first, BinaryOperation operation)
             throws IOException, ListingParseException {
         lexer.nextToken();
         Variable second = expectVariable();
         expectKeyword("as");
         NumericOperandType type = expectNumericType();
 
-        BinaryInstruction instruction = new BinaryInstruction(operation, type);
-        instruction.setFirstOperand(first);
-        instruction.setSecondOperand(second);
-        instruction.setReceiver(receiver);
-        instruction.setLocation(currentLocation);
+        BinaryInstruction insn = new BinaryInstruction(operation, type);
+        insn.setFirstOperand(first);
+        insn.setSecondOperand(second);
+        insn.setReceiver(receiver);
 
-        block.getInstructions().add(instruction);
+        addInstruction(insn);
     }
 
-    private void parseArrayAssignment(BasicBlock block, Variable array) throws IOException, ListingParseException {
+    private void parseArrayAssignment(Variable array) throws IOException, ListingParseException {
         Variable index = expectVariable();
         expect(ListingToken.RIGHT_SQUARE_BRACKET);
         lexer.nextToken();
@@ -524,14 +512,13 @@ public class ListingParser {
         ArrayElementType type = expectArrayType();
 
         PutElementInstruction insn = new PutElementInstruction(type);
-        insn.setLocation(currentLocation);
         insn.setArray(array);
         insn.setIndex(index);
         insn.setValue(value);
-        block.getInstructions().add(insn);
+        addInstruction(insn);
     }
 
-    private void parsePhi(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parsePhi(Variable receiver) throws IOException, ListingParseException {
         int phiStart = lexer.getIndex();
 
         Phi phi = new Phi();
@@ -549,69 +536,62 @@ public class ListingParser {
             lexer.nextToken();
         }
 
-        if (!block.getInstructions().isEmpty() || block.getExceptionVariable() != null) {
+        if (!currentBlock.getInstructions().isEmpty() || currentBlock.getExceptionVariable() != null) {
             throw new ListingParseException("Phi must be first instruction in block", phiStart);
         }
 
-        block.getPhis().add(phi);
+        currentBlock.getPhis().add(phi);
     }
 
-    private void parseClassLiteral(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseClassLiteral(Variable receiver) throws IOException, ListingParseException {
         ValueType type = expectValueType();
-
         ClassConstantInstruction insn = new ClassConstantInstruction();
         insn.setReceiver(receiver);
         insn.setConstant(type);
-        insn.setLocation(currentLocation);
-        block.getInstructions().add(insn);
+        addInstruction(insn);
     }
 
-    private void parseIntConstant(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseIntConstant(Variable receiver) throws IOException, ListingParseException {
         IntegerConstantInstruction insn = new IntegerConstantInstruction();
         insn.setReceiver(receiver);
         insn.setConstant((Integer) lexer.getTokenValue());
-        insn.setLocation(currentLocation);
-        block.getInstructions().add(insn);
         lexer.nextToken();
+        addInstruction(insn);
     }
 
-    private void parseLongConstant(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseLongConstant(Variable receiver) throws IOException, ListingParseException {
         LongConstantInstruction insn = new LongConstantInstruction();
         insn.setReceiver(receiver);
         insn.setConstant((Long) lexer.getTokenValue());
-        insn.setLocation(currentLocation);
-        block.getInstructions().add(insn);
         lexer.nextToken();
+        addInstruction(insn);
     }
 
-    private void parseFloatConstant(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseFloatConstant(Variable receiver) throws IOException, ListingParseException {
         FloatConstantInstruction insn = new FloatConstantInstruction();
         insn.setReceiver(receiver);
         insn.setConstant((Float) lexer.getTokenValue());
-        insn.setLocation(currentLocation);
-        block.getInstructions().add(insn);
         lexer.nextToken();
+        addInstruction(insn);
     }
 
-    private void parseDoubleConstant(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseDoubleConstant(Variable receiver) throws IOException, ListingParseException {
         DoubleConstantInstruction insn = new DoubleConstantInstruction();
         insn.setReceiver(receiver);
         insn.setConstant((Double) lexer.getTokenValue());
-        insn.setLocation(currentLocation);
-        block.getInstructions().add(insn);
         lexer.nextToken();
+        addInstruction(insn);
     }
 
-    private void parseStringConstant(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseStringConstant(Variable receiver) throws IOException, ListingParseException {
         StringConstantInstruction insn = new StringConstantInstruction();
         insn.setReceiver(receiver);
         insn.setConstant((String) lexer.getTokenValue());
-        insn.setLocation(currentLocation);
-        block.getInstructions().add(insn);
         lexer.nextToken();
+        addInstruction(insn);
     }
 
-    private void parseNegate(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseNegate(Variable receiver) throws IOException, ListingParseException {
         lexer.nextToken();
         Variable value = expectVariable();
         expectKeyword("as");
@@ -619,11 +599,10 @@ public class ListingParser {
         NegateInstruction insn = new NegateInstruction(type);
         insn.setReceiver(receiver);
         insn.setOperand(value);
-        insn.setLocation(currentLocation);
-        block.getInstructions().add(insn);
+        addInstruction(insn);
     }
 
-    private void parseInvoke(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseInvoke(Variable receiver) throws IOException, ListingParseException {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setReceiver(receiver);
 
@@ -641,7 +620,6 @@ public class ListingParser {
                 break;
         }
         lexer.nextToken();
-
 
         expect(ListingToken.IDENTIFIER);
         MethodReference method = MethodReference.parseIfPossible((String) lexer.getTokenValue());
@@ -671,41 +649,37 @@ public class ListingParser {
             insn.getArguments().addAll(arguments);
         }
 
-        insn.setLocation(currentLocation);
-        block.getInstructions().add(insn);
+        addInstruction(insn);
     }
 
-    private void parseCast(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseCast(Variable receiver) throws IOException, ListingParseException {
         lexer.nextToken();
         Variable value = expectVariable();
         expect(ListingToken.IDENTIFIER);
         switch ((String) lexer.getTokenValue()) {
             case "from":
-                parseNumericCast(block, receiver, value);
+                parseNumericCast(receiver, value);
                 break;
             case "to":
-                parseObjectCast(block, receiver, value);
+                parseObjectCast(receiver, value);
                 break;
             default:
                 unexpected();
         }
     }
 
-    private void parseNumericCast(BasicBlock block, Variable receiver, Variable value)
-            throws IOException, ListingParseException {
+    private void parseNumericCast(Variable receiver, Variable value) throws IOException, ListingParseException {
         lexer.nextToken();
 
         NumericTypeOrIntegerSubtype source = expectTypeOrIntegerSubtype();
 
         if (source.subtype != null) {
-            CastIntegerInstruction insn = new CastIntegerInstruction(source.subtype,
-                    CastIntegerDirection.TO_INTEGER);
+            CastIntegerInstruction insn = new CastIntegerInstruction(source.subtype, CastIntegerDirection.TO_INTEGER);
             expectKeyword("to");
             expectKeyword("int");
             insn.setReceiver(receiver);
             insn.setValue(value);
-            insn.setLocation(currentLocation);
-            block.getInstructions().add(insn);
+            addInstruction(insn);
         } else {
             expectKeyword("to");
             expect(ListingToken.IDENTIFIER);
@@ -719,14 +693,12 @@ public class ListingParser {
                         CastIntegerDirection.FROM_INTEGER);
                 insn.setReceiver(receiver);
                 insn.setValue(value);
-                insn.setLocation(currentLocation);
-                block.getInstructions().add(insn);
+                addInstruction(insn);
             } else {
                 CastNumberInstruction insn = new CastNumberInstruction(source.type, target.type);
                 insn.setReceiver(receiver);
                 insn.setValue(value);
-                insn.setLocation(currentLocation);
-                block.getInstructions().add(insn);
+                addInstruction(insn);
             }
         }
     }
@@ -769,14 +741,13 @@ public class ListingParser {
         NumericOperandType type;
         IntegerSubtype subtype;
 
-        public NumericTypeOrIntegerSubtype(NumericOperandType type, IntegerSubtype subtype) {
+        NumericTypeOrIntegerSubtype(NumericOperandType type, IntegerSubtype subtype) {
             this.type = type;
             this.subtype = subtype;
         }
     }
 
-    private void parseObjectCast(BasicBlock block, Variable receiver, Variable value)
-            throws IOException, ListingParseException {
+    private void parseObjectCast(Variable receiver, Variable value) throws IOException, ListingParseException {
         lexer.nextToken();
         ValueType type = expectValueType();
 
@@ -784,11 +755,10 @@ public class ListingParser {
         insn.setReceiver(receiver);
         insn.setValue(value);
         insn.setTargetType(type);
-        insn.setLocation(currentLocation);
-        block.getInstructions().add(insn);
+        addInstruction(insn);
     }
 
-    private void parseNew(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseNew(Variable receiver) throws IOException, ListingParseException {
         lexer.nextToken();
         expect(ListingToken.IDENTIFIER);
         String type = (String) lexer.getTokenValue();
@@ -797,11 +767,10 @@ public class ListingParser {
         ConstructInstruction insn = new ConstructInstruction();
         insn.setReceiver(receiver);
         insn.setType(type);
-        insn.setLocation(currentLocation);
-        block.getInstructions().add(insn);
+        addInstruction(insn);
     }
 
-    private void parseNewArray(BasicBlock block, Variable receiver) throws IOException, ListingParseException {
+    private void parseNewArray(Variable receiver) throws IOException, ListingParseException {
         lexer.nextToken();
         ValueType type = expectValueType();
         List<Variable> dimensions = new ArrayList<>();
@@ -818,19 +787,17 @@ public class ListingParser {
             insn.setReceiver(receiver);
             insn.setItemType(type);
             insn.setSize(dimensions.get(0));
-            insn.setLocation(currentLocation);
-            block.getInstructions().add(insn);
+            addInstruction(insn);
         } else {
             ConstructMultiArrayInstruction insn = new ConstructMultiArrayInstruction();
             insn.setReceiver(receiver);
             insn.setItemType(type);
             insn.getDimensions().addAll(dimensions);
-            insn.setLocation(currentLocation);
-            block.getInstructions().add(insn);
+            addInstruction(insn);
         }
     }
 
-    private void parseIf(BasicBlock block) throws IOException, ListingParseException {
+    private void parseIf() throws IOException, ListingParseException {
         Variable first = expectVariable();
 
         BinaryBranchingCondition binaryCondition = null;
@@ -900,19 +867,17 @@ public class ListingParser {
                 throw new ListingParseException("Unsupported binary operation: " + operationToken, operationIndex);
             }
             BinaryBranchingInstruction insn = new BinaryBranchingInstruction(binaryCondition);
-            insn.setLocation(currentLocation);
             insn.setFirstOperand(first);
             insn.setSecondOperand(second);
             insn.setConsequent(consequent);
             insn.setAlternative(alternative);
-            block.getInstructions().add(insn);
+            addInstruction(insn);
         } else {
             BranchingInstruction insn = new BranchingInstruction(condition);
-            insn.setLocation(currentLocation);
             insn.setOperand(first);
             insn.setConsequent(consequent);
             insn.setAlternative(alternative);
-            block.getInstructions().add(insn);
+            addInstruction(insn);
         }
     }
 
@@ -1013,7 +978,7 @@ public class ListingParser {
         return blockMap.computeIfAbsent(name, k -> {
             BasicBlock block = program.createBasicBlock();
             block.setLabel(k);
-            blockFirstOccurence.put(k, lexer.getTokenStart());
+            blockFirstOccurrence.put(k, lexer.getTokenStart());
             return block;
         });
     }
@@ -1047,5 +1012,10 @@ public class ListingParser {
 
     private void unexpected() throws IOException, ListingParseException {
         throw new ListingParseException("Unexpected token " + lexer.getToken(), lexer.getTokenStart());
+    }
+
+    private void addInstruction(Instruction instruction) {
+        instruction.setLocation(currentLocation);
+        currentBlock.getInstructions().add(instruction);
     }
 }
