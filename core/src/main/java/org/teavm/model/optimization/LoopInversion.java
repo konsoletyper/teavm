@@ -22,6 +22,6 @@ public class LoopInversion implements MethodOptimization {
     @Override
     public boolean optimize(MethodOptimizationContext context, Program program) {
         MethodReader method = context.getMethod();
-        return new LoopInversionImpl(method, program, method.parameterCount() + 1).apply();
+        return new LoopInversionImpl(program, method.parameterCount() + 1).apply();
     }
 }

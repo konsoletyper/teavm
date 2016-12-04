@@ -15,10 +15,15 @@
  */
 package org.teavm.model.util;
 
+import com.carrotsearch.hppc.IntArrayDeque;
+import com.carrotsearch.hppc.IntDeque;
+import com.carrotsearch.hppc.IntObjectMap;
+import com.carrotsearch.hppc.IntObjectOpenHashMap;
 import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -86,6 +91,9 @@ public class PhiUpdater {
     private int[][] phiIndexMap;
     private Map<TryCatchBlock, Map<Variable, TryCatchJoint>> jointMap = new HashMap<>();
     private List<List<Phi>> synthesizedPhis = new ArrayList<>();
+    private IntObjectMap<Phi> phisByReceiver = new IntObjectOpenHashMap<>();
+    private IntObjectMap<TryCatchJoint> jointsByReceiver = new IntObjectOpenHashMap<>();
+    private BitSet usedPhis = new BitSet();
     private List<List<List<TryCatchJoint>>> synthesizedJoints = new ArrayList<>();
     private Variable[] originalExceptionVariables;
     private boolean[] usedDefinitions;
@@ -100,6 +108,8 @@ public class PhiUpdater {
             return;
         }
         this.program = program;
+        phisByReceiver.clear();
+        jointsByReceiver.clear();
         cfg = ProgramUtils.buildControlFlowGraph(program);
         DominatorTree domTree = GraphUtils.buildDominatorTree(cfg);
         domFrontiers = new int[cfg.size()][];
@@ -138,6 +148,8 @@ public class PhiUpdater {
 
         estimatePhis();
         renameVariables();
+        propagatePhiUsageInformation();
+        addSynthesizedPhis();
     }
 
     private void estimatePhis() {
@@ -211,6 +223,7 @@ public class PhiUpdater {
                 Variable var = program.createVariable();
                 var.setDebugName(phi.getReceiver().getDebugName());
                 mapVariable(phi.getReceiver().getIndex(), var);
+                phisByReceiver.put(var.getIndex(), phi);
                 phi.setReceiver(var);
             }
             for (Phi phi : currentBlock.getPhis()) {
@@ -244,7 +257,11 @@ public class PhiUpdater {
                 TryCatchBlock tryCatch = currentBlock.getTryCatchBlocks().get(i);
                 catchSuccessors.add(tryCatch.getHandler().getIndex());
                 for (TryCatchJoint joint : synthesizedJoints.get(index).get(i)) {
-                    joint.setReceiver(defineForExceptionPhi(joint.getReceiver()));
+                    Variable var = program.createVariable();
+                    var.setDebugName(joint.getReceiver().getDebugName());
+                    mapVariable(joint.getReceiver().getIndex(), var);
+                    joint.setReceiver(var);
+                    jointsByReceiver.put(var.getIndex(), joint);
                 }
             }
             variableMap = regularVariableMap;
@@ -263,9 +280,14 @@ public class PhiUpdater {
                 renameOutgoingPhis(successor);
             }
         }
+    }
 
+    private void addSynthesizedPhis() {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             for (Phi phi : synthesizedPhis.get(i)) {
+                if (!usedPhis.get(phi.getReceiver().getIndex())) {
+                    continue;
+                }
                 if (!phi.getIncomings().isEmpty()) {
                     program.basicBlockAt(i).getPhis().add(phi);
                 }
@@ -276,8 +298,52 @@ public class PhiUpdater {
                 List<TryCatchJoint> jointList = joints.get(j);
                 TryCatchBlock targetTryCatch = program.basicBlockAt(i).getTryCatchBlocks().get(j);
                 for (TryCatchJoint joint : jointList) {
+                    if (!usedPhis.get(joint.getReceiver().getIndex())) {
+                        continue;
+                    }
                     if (!joint.getSourceVariables().isEmpty()) {
                         targetTryCatch.getJoints().add(joint);
+                    }
+                }
+            }
+        }
+    }
+
+    private void propagatePhiUsageInformation() {
+        IntDeque worklist = new IntArrayDeque();
+        for (int receiverIndex : phisByReceiver.keys().toArray()) {
+            if (usedPhis.get(receiverIndex)) {
+                worklist.addLast(receiverIndex);
+            }
+        }
+        for (int receiverIndex : jointsByReceiver.keys().toArray()) {
+            if (usedPhis.get(receiverIndex)) {
+                worklist.addLast(receiverIndex);
+            }
+        }
+
+        IntSet visited = new IntOpenHashSet();
+        while (!worklist.isEmpty()) {
+            int varIndex = worklist.removeFirst();
+            if (!visited.add(varIndex)) {
+                continue;
+            }
+            usedPhis.set(varIndex);
+
+            Phi phi = phisByReceiver.get(varIndex);
+            if (phi != null) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    if (!visited.contains(incoming.getValue().getIndex())) {
+                        worklist.addLast(incoming.getValue().getIndex());
+                    }
+                }
+            }
+
+            TryCatchJoint joint = jointsByReceiver.get(varIndex);
+            if (joint != null) {
+                for (Variable sourceVar : joint.getSourceVariables()) {
+                    if (!visited.contains(sourceVar.getIndex())) {
+                        worklist.addLast(sourceVar.getIndex());
                     }
                 }
             }
@@ -350,13 +416,6 @@ public class PhiUpdater {
         }
     }
 
-    private Variable defineForExceptionPhi(Variable var) {
-        Variable original = var;
-        var = introduce(var);
-        mapVariable(original.getIndex(), var);
-        return var;
-    }
-
     private Variable define(Variable var) {
         Variable old = variableMap[var.getIndex()];
         Variable original = var;
@@ -413,6 +472,7 @@ public class PhiUpdater {
         if (mappedVar == null) {
             throw new AssertionError("Variable used before definition: " + var.getIndex());
         }
+        usedPhis.set(mappedVar.getIndex());
         return mappedVar;
     }
 
