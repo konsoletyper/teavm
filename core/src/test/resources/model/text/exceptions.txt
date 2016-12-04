@@ -1,0 +1,14 @@
+$start
+    @a_1 := 0
+    invokeStatic `foo.Bar.baz()I`
+    @a_2 := 1
+    invokeStatic `foo.Bar.baz()I`
+    @a_3 := 2
+    return @a_3
+catch java.lang.Exception goto $handler
+    @a_h := ephi @a_1, @a_2, @a_3
+$handler
+    @e := exception
+    @out := field `java.lang.String.out` as `Ljava/io/PrintStream;`
+    invokeVirtual `java.io.PrintStream.println(Ljava/lang/Object;)V` @out, @e
+    return @a_h

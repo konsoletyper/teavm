@@ -78,14 +78,17 @@ public class ListingBuilder {
                 sb.append(prefix).append("    ").append(insnSb).append("\n");
             }
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
-                sb.append(prefix).append("    catch ").append(tryCatch.getExceptionType())
-                        .append(" -> $").append(tryCatch.getHandler().getIndex());
+                sb.append(prefix).append("    catch ");
+                if (tryCatch.getExceptionType() != null) {
+                    InstructionStringifier.escapeStringLiteral(tryCatch.getExceptionType(), sb);
+                }
+                sb.append(" goto $").append(tryCatch.getHandler().getIndex());
                 sb.append("\n");
                 for (TryCatchJointReader joint : tryCatch.readJoints()) {
-                    sb.append("      @").append(joint.getReceiver().getIndex()).append(" := e-phi(");
+                    sb.append("      @").append(joint.getReceiver().getIndex()).append(" := ephi ");
                     sb.append(joint.readSourceVariables().stream().map(sourceVar -> "@" + sourceVar.getIndex())
                             .collect(Collectors.joining(", ")));
-                    sb.append(")\n");
+                    sb.append("\n");
                 }
             }
         }

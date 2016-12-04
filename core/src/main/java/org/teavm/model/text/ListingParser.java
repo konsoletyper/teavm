@@ -33,6 +33,8 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.TryCatchJoint;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayElementType;
@@ -88,6 +90,7 @@ public class ListingParser {
     private Set<String> declaredBlocks = new HashSet<>();
     private TextLocation currentLocation;
     private BasicBlock currentBlock;
+    private TryCatchBlock currentTryCatch;
 
     public Program parse(Reader reader) throws IOException, ListingParseException {
         try {
@@ -173,6 +176,7 @@ public class ListingParser {
             b.setLabel(k);
             return b;
         });
+        currentTryCatch = null;
 
         currentLocation = null;
         do {
@@ -268,6 +272,11 @@ public class ListingParser {
                         parseSwitch();
                         break;
                     }
+                    case "catch": {
+                        lexer.nextToken();
+                        parseCatch();
+                        break;
+                    }
                     default:
                         unexpected();
                         break;
@@ -344,6 +353,10 @@ public class ListingParser {
                         lexer.nextToken();
                         parsePhi(receiver);
                         break;
+                    case "ephi":
+                        lexer.nextToken();
+                        parseExceptionPhi(receiver);
+                        break;
                     case "classOf":
                         lexer.nextToken();
                         parseClassLiteral(receiver);
@@ -400,6 +413,15 @@ public class ListingParser {
                     case "field": {
                         lexer.nextToken();
                         parseFieldGet(receiver);
+                        break;
+                    }
+                    case "exception": {
+                        lexer.nextToken();
+                        if (!currentBlock.getInstructions().isEmpty() || currentBlock.getExceptionVariable() != null) {
+                            throw new ListingParseException("Exception can be read as a first instruction",
+                                    lexer.getTokenStart());
+                        }
+                        currentBlock.setExceptionVariable(receiver);
                         break;
                     }
                     default:
@@ -561,6 +583,24 @@ public class ListingParser {
         }
 
         currentBlock.getPhis().add(phi);
+    }
+
+    private void parseExceptionPhi(Variable receiver) throws IOException, ListingParseException {
+        int phiStart = lexer.getIndex();
+
+        TryCatchJoint joint = new TryCatchJoint();
+        joint.setReceiver(receiver);
+        joint.getSourceVariables().add(expectVariable());
+        while (lexer.getToken() == ListingToken.COMMA) {
+            lexer.nextToken();
+            joint.getSourceVariables().add(expectVariable());
+        }
+
+        if (currentTryCatch == null) {
+            throw new ListingParseException("Exception phi must appear right after catch block", phiStart);
+        }
+
+        currentTryCatch.getJoints().add(joint);
     }
 
     private void parseClassLiteral(Variable receiver) throws IOException, ListingParseException {
@@ -734,6 +774,18 @@ public class ListingParser {
                     return;
             }
         }
+    }
+
+    private void parseCatch() throws IOException, ListingParseException {
+        TryCatchBlock tryCatch = new TryCatchBlock();
+        if (lexer.getToken() == ListingToken.IDENTIFIER) {
+            tryCatch.setExceptionType((String) lexer.getTokenValue());
+            lexer.nextToken();
+        }
+        expectKeyword("goto");
+        tryCatch.setHandler(expectBlock());
+        currentTryCatch = tryCatch;
+        currentBlock.getTryCatchBlocks().add(tryCatch);
     }
 
     private void parseCast(Variable receiver) throws IOException, ListingParseException {
@@ -1109,7 +1161,8 @@ public class ListingParser {
         throw new ListingParseException("Unexpected token " + lexer.getToken(), lexer.getTokenStart());
     }
 
-    private void addInstruction(Instruction instruction) {
+    private void addInstruction(Instruction instruction) throws ListingParseException {
+        currentTryCatch = null;
         instruction.setLocation(currentLocation);
         currentBlock.getInstructions().add(instruction);
     }

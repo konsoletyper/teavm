@@ -146,6 +146,11 @@ public class ParserTest {
         runTest("switchInsn");
     }
 
+    @Test
+    public void exceptions() throws Exception {
+        runTest("exceptions");
+    }
+
     private Program runTest(String name) throws IOException {
         ClassLoader classLoader = ParserTest.class.getClassLoader();
         String path = "model/text/" + name + ".txt";

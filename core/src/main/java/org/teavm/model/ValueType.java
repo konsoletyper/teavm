@@ -321,7 +321,7 @@ public abstract class ValueType {
                 return VOID;
             case 'L':
                 if (!string.endsWith(";")) {
-                    throw new IllegalArgumentException("Wrong type descriptor");
+                    return null;
                 }
                 return object(string.substring(1, string.length() - 1).replace('/', '.'));
             default:
