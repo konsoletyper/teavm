@@ -678,7 +678,7 @@ public class Renderer implements RenderingManager {
                     variableNames.add(statementRenderer.variableName(i));
                 }
                 if (hasTryCatch) {
-                    variableNames.add("$je");
+                    variableNames.add("$$je");
                 }
                 if (!variableNames.isEmpty()) {
                     writer.append("var ");
@@ -725,7 +725,7 @@ public class Renderer implements RenderingManager {
                 }
                 boolean hasTryCatch = tryCatchFinder.tryCatchFound;
                 if (hasTryCatch) {
-                    variableNames.add("$je");
+                    variableNames.add("$$je");
                 }
                 variableNames.add(context.pointerName());
                 variableNames.add(context.tempVarName());

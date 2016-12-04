@@ -1355,25 +1355,25 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 protectedBody = nextStatement.getProtectedBody();
             }
             visitStatements(protectedBody);
-            writer.outdent().append("}").ws().append("catch").ws().append("($e)")
+            writer.outdent().append("}").ws().append("catch").ws().append("($$e)")
                     .ws().append("{").indent().softNewLine();
-            writer.append("$je").ws().append("=").ws().append("$e.$javaException;").softNewLine();
+            writer.append("$$je").ws().append("=").ws().append("$$e.$javaException;").softNewLine();
             for (TryCatchStatement catchClause : sequence) {
-                writer.append("if").ws().append("($je");
+                writer.append("if").ws().append("($$je");
                 if (catchClause.getExceptionType() != null) {
-                    writer.ws().append("&&").ws().append("$je instanceof ")
+                    writer.ws().append("&&").ws().append("$$je instanceof ")
                             .appendClass(catchClause.getExceptionType());
                 }
                 writer.append(")").ws().append("{").indent().softNewLine();
                 if (catchClause.getExceptionVariable() != null) {
                     writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()
-                            .append("$je;").softNewLine();
+                            .append("$$je;").softNewLine();
                 }
                 visitStatements(catchClause.getHandler());
                 writer.outdent().append("}").ws().append("else ");
             }
             writer.append("{").indent().softNewLine();
-            writer.append("throw $e;").softNewLine();
+            writer.append("throw $$e;").softNewLine();
             writer.outdent().append("}").softNewLine();
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
