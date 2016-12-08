@@ -18,10 +18,6 @@ package org.teavm.model;
 import java.util.Collections;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AnnotationValue {
     public static final byte BOOLEAN = 0;
     public static final byte BYTE = 1;

@@ -59,7 +59,7 @@ class ReadWriteStatsBuilder {
                 reads[block.getExceptionVariable().getIndex()]++;
             }
 
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 insn.acceptVisitor(defExtractor);
                 insn.acceptVisitor(useExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {

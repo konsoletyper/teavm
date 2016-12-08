@@ -24,10 +24,6 @@ import org.teavm.model.*;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Devirtualization {
     private DependencyInfo dependency;
     private ClassReaderSource classSource;
@@ -45,7 +41,7 @@ public class Devirtualization {
         Program program = method.getProgram();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 if (!(insn instanceof InvokeInstruction)) {
                     continue;
                 }

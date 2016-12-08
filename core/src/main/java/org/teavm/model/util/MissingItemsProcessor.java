@@ -24,10 +24,6 @@ import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MissingItemsProcessor {
     private DependencyInfo dependencyInfo;
     private Diagnostics diagnostics;
@@ -62,12 +58,11 @@ public class MissingItemsProcessor {
             BasicBlock block = program.basicBlockAt(i);
             instructionsToAdd.clear();
             boolean missing = false;
-            for (int j = 0; j < block.getInstructions().size(); ++j) {
-                Instruction insn = block.getInstructions().get(j);
+            for (Instruction insn : block) {
                 insn.acceptVisitor(instructionProcessor);
                 if (!instructionsToAdd.isEmpty()) {
                     wasModified = true;
-                    truncateBlock(block, j);
+                    truncateBlock(insn);
                     missing = true;
                     break;
                 }
@@ -83,16 +78,19 @@ public class MissingItemsProcessor {
         }
     }
 
-    private void truncateBlock(BasicBlock block, int index) {
+    private void truncateBlock(Instruction instruction) {
         InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        BasicBlock block = instruction.getBasicBlock();
         if (block.getLastInstruction() != null) {
             block.getLastInstruction().acceptVisitor(transitionExtractor);
         }
         for (BasicBlock successor : transitionExtractor.getTargets()) {
             successor.removeIncomingsFrom(block);
         }
-        block.getInstructions().subList(index, block.getInstructions().size()).clear();
-        block.getInstructions().addAll(instructionsToAdd);
+        while (instruction.getNext() != null) {
+            instruction.getNext().delete();
+        }
+        instruction.insertNextAll(instructionsToAdd);
     }
 
     private void emitExceptionThrow(TextLocation location, String exceptionName, String text) {

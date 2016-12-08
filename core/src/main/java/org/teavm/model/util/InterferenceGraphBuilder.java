@@ -61,8 +61,7 @@ class InterferenceGraphBuilder {
                 }
             }
 
-            for (int j = block.getInstructions().size() - 1; j >= 0; --j) {
-                Instruction insn = block.getInstructions().get(j);
+            for (Instruction insn = block.getLastInstruction(); insn != null; insn = insn.getPrevious()) {
                 insn.acceptVisitor(useExtractor);
                 insn.acceptVisitor(defExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {

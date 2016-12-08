@@ -173,7 +173,7 @@ public class ClassRefsRenamer implements InstructionVisitor {
     public void rename(Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock basicBlock = program.basicBlockAt(i);
-            for (Instruction insn : basicBlock.getInstructions()) {
+            for (Instruction insn : basicBlock) {
                 insn.acceptVisitor(this);
             }
             for (TryCatchBlock tryCatch : basicBlock.getTryCatchBlocks()) {

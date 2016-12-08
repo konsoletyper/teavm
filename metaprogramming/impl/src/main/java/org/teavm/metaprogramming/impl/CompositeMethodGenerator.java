@@ -197,13 +197,14 @@ public class CompositeMethodGenerator {
             templateBlock.readAllInstructions(substitutor);
 
             // Capture phi inputs of successor blocks
-            Instruction lastInsn = targetBlock.getInstructions().remove(targetBlock.getInstructions().size() - 1);
+            Instruction lastInsn = targetBlock.getLastInstruction();
+            lastInsn.delete();
             List<Incoming> blockOutgoings = outgoings.get(i);
             for (int j = 0; j < blockOutgoings.size(); ++j) {
                 VariableReader outgoingVar = outgoingVars.get(i).get(j);
                 blockOutgoings.get(j).setValue(substitutor.var(outgoingVar));
             }
-            targetBlock.getInstructions().add(lastInsn);
+            targetBlock.add(lastInsn);
 
             phiBlockMap.put(targetBlock, currentBlock());
         }
@@ -235,7 +236,7 @@ public class CompositeMethodGenerator {
 
     void add(Instruction insn) {
         insn.setLocation(forcedLocation != null ? forcedLocation : location);
-        program.basicBlockAt(blockIndex).getInstructions().add(insn);
+        program.basicBlockAt(blockIndex).add(insn);
     }
 
     Variable captureValue(CapturedValue captured) {

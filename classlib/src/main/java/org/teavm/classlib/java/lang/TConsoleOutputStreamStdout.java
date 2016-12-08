@@ -20,10 +20,6 @@ import org.teavm.classlib.java.io.TOutputStream;
 import org.teavm.interop.DelegateTo;
 import org.teavm.platform.Platform;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TConsoleOutputStreamStdout extends TOutputStream {
     @Override
     @DelegateTo("writeLowLevel")

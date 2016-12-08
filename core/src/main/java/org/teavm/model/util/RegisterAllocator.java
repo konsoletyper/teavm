@@ -37,7 +37,6 @@ import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
-import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 
 public class RegisterAllocator {
@@ -152,15 +151,16 @@ public class RegisterAllocator {
 
         BasicBlock block = joint.getBlock().getProtectedBlock();
         DefinitionExtractor defExtractor = new DefinitionExtractor();
-        for (int i = block.getInstructions().size() - 1; i >= 0; --i) {
-            Instruction insn = block.getInstructions().get(i);
+        Instruction nextInsn;
+        for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
+            nextInsn = insn.getNext();
             insn.acceptVisitor(defExtractor);
             for (Variable definedVar : defExtractor.getDefinedVariables()) {
                 if (variableSet.remove(definedVar)) {
                     AssignInstruction copyInsn = new AssignInstruction();
                     copyInsn.setReceiver(joint.getReceiver());
                     copyInsn.setAssignee(definedVar);
-                    block.getInstructions().add(i, copyInsn);
+                    insn.insertNext(copyInsn);
                 }
             }
         }
@@ -169,7 +169,7 @@ public class RegisterAllocator {
             AssignInstruction copyInsn = new AssignInstruction();
             copyInsn.setReceiver(joint.getReceiver());
             copyInsn.setAssignee(enteringVar);
-            block.getInstructions().add(0, copyInsn);
+            block.addFirst(copyInsn);
         }
     }
 
@@ -206,14 +206,14 @@ public class RegisterAllocator {
             final BasicBlock copyBlock = program.createBasicBlock();
             JumpInstruction jumpInstruction = new JumpInstruction();
             jumpInstruction.setTarget(phi.getBasicBlock());
-            copyBlock.getInstructions().add(jumpInstruction);
-            incoming.getSource().getLastInstruction().acceptVisitor(new BasicBlockMapper(block ->
+            copyBlock.add(jumpInstruction);
+            incoming.getSource().getLastInstruction().acceptVisitor(new BasicBlockMapper((int block) ->
                     block == phi.getBasicBlock().getIndex() ? copyBlock.getIndex() : block));
             blockMap.put(source, copyBlock);
             incoming.setSource(copyBlock);
             source = copyBlock;
         }
-        source.getInstructions().add(source.getInstructions().size() - 1, copyInstruction);
+        source.getLastInstruction().insertPrevious(copyInstruction);
         incoming.setValue(copyInstruction.getReceiver());
     }
 
@@ -221,8 +221,9 @@ public class RegisterAllocator {
             DisjointSet congruenceClasses) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (int j = 0; j < block.getInstructions().size(); ++j) {
-                Instruction insn = block.getInstructions().get(j);
+            Instruction nextInsn;
+            for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
+                nextInsn = insn.getNext();
                 if (!(insn instanceof AssignInstruction)) {
                     continue;
                 }
@@ -242,7 +243,7 @@ public class RegisterAllocator {
                 }
                 if (!interfere) {
                     int newClass = congruenceClasses.union(copyClass, origClass);
-                    block.getInstructions().set(j, new EmptyInstruction());
+                    insn.delete();
                     if (newClass == interferenceGraph.size()) {
                         MutableGraphNode newNode = new MutableGraphNode(interferenceGraph.size());
                         interferenceGraph.add(newNode);

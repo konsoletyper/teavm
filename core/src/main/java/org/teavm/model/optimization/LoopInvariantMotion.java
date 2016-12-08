@@ -65,8 +65,9 @@ public class LoopInvariantMotion implements MethodOptimization {
             boolean dominatesExits = exits != null && Arrays.stream(exits)
                     .allMatch(exit -> dom.dominates(v, exit));
             BasicBlock block = program.basicBlockAt(v);
-            insnLoop: for (int i = 0; i < block.getInstructions().size(); ++i) {
-                Instruction insn = block.getInstructions().get(i);
+            Instruction nextInsn;
+            insnLoop: for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
+                nextInsn = insn.getNext();
                 insn.acceptVisitor(defExtractor);
                 Variable[] defs = defExtractor.getDefinedVariables();
                 for (Variable def : defs) {
@@ -113,9 +114,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
                 EmptyInstruction empty = new EmptyInstruction();
                 empty.setLocation(insn.getLocation());
-                block.getInstructions().set(i, empty);
-                int preheader = getPreheader(defLoop.getHead());
-                List<Instruction> preheaderInstructions = program.basicBlockAt(preheader).getInstructions();
+                insn.replace(empty);
+                BasicBlock preheader = program.basicBlockAt(getPreheader(defLoop.getHead()));
                 List<Instruction> newInstructions = new ArrayList<>();
                 Variable[] variableMap = null;
                 for (Variable use : useExtractor.getUsedVariables()) {
@@ -137,7 +137,7 @@ public class LoopInvariantMotion implements MethodOptimization {
                     insn.acceptVisitor(new InstructionVariableMapper(var -> currentVariableMap[var.getIndex()]));
                 }
                 newInstructions.add(insn);
-                preheaderInstructions.addAll(preheaderInstructions.size() - 1, newInstructions);
+                preheader.getLastInstruction().insertPreviousAll(newInstructions);
                 defLocation[defs[0].getIndex()] = commonUseLoop != null ? commonUseLoop.getHead() : 0;
                 affected = true;
             }
@@ -180,7 +180,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         JumpInstruction escapeInsn = new JumpInstruction();
         BasicBlock header = program.basicBlockAt(headerIndex);
         escapeInsn.setTarget(header);
-        preheader.getInstructions().add(escapeInsn);
+        preheader.add(escapeInsn);
 
         for (Phi phi : header.getPhis()) {
             Phi preheaderPhi = null;
@@ -208,7 +208,7 @@ public class LoopInvariantMotion implements MethodOptimization {
             if (!dom.dominates(headerIndex, predIndex)) {
                 BasicBlock pred = program.basicBlockAt(predIndex);
                 pred.getLastInstruction().acceptVisitor(new BasicBlockMapper(
-                        block -> block == header.getIndex() ? preheader.getIndex() : block));
+                        (int block) -> block == header.getIndex() ? preheader.getIndex() : block));
             }
         }
 

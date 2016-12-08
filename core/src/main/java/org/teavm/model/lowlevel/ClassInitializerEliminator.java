@@ -40,14 +40,10 @@ public class ClassInitializerEliminator {
     public void apply(Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            List<Instruction> instructions = block.getInstructions();
-            for (int j = 0; j < instructions.size(); ++j) {
-                Instruction insn = instructions.get(j);
+            for (Instruction insn : block) {
                 if (insn instanceof InitClassInstruction) {
                     if (!filter(((InitClassInstruction) insn).getClassName())) {
-                        EmptyInstruction empty = new EmptyInstruction();
-                        empty.setLocation(insn.getLocation());
-                        instructions.set(j, empty);
+                        insn.delete();
                     }
                 }
             }

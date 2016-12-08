@@ -38,10 +38,6 @@ import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
 import org.teavm.platform.PlatformAnnotationProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AnnotationDependencyListener extends AbstractDependencyListener {
     @Override
     public void classReached(DependencyAgent agent, String className, CallLocation location) {

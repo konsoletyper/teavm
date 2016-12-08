@@ -267,7 +267,7 @@ public class WasmTarget implements TeaVMTarget {
             BasicBlock entryBlock = program.basicBlockAt(0);
             InitClassInstruction initInsn = new InitClassInstruction();
             initInsn.setClassName(method.getOwnerName());
-            entryBlock.getInstructions().add(0, initInsn);
+            entryBlock.addFirst(initInsn);
         }
 
         classInitializerEliminator.apply(program);
@@ -689,7 +689,7 @@ public class WasmTarget implements TeaVMTarget {
                 }
                 for (int i = 0; i < program.basicBlockCount(); ++i) {
                     BasicBlock block = program.basicBlockAt(i);
-                    for (Instruction insn : block.getInstructions()) {
+                    for (Instruction insn : block) {
                         if (insn instanceof InvokeInstruction) {
                             InvokeInstruction invoke = (InvokeInstruction) insn;
                             if (invoke.getType() == InvocationType.VIRTUAL) {

@@ -17,19 +17,13 @@ package org.teavm.model;
 
 public class InterpretException extends Exception {
     private final BasicBlockReader block;
-    private final int index;
 
-    public InterpretException(BasicBlockReader block, int index, Throwable cause) {
+    public InterpretException(BasicBlockReader block, Throwable cause) {
         super(cause);
         this.block = block;
-        this.index = index;
     }
 
     public BasicBlockReader getBlock() {
         return block;
-    }
-
-    public int getIndex() {
-        return index;
     }
 }

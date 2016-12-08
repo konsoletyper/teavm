@@ -320,7 +320,7 @@ class UsageGenerator {
         var = program.createVariable();
         insn.setReceiver(var);
 
-        block.getInstructions().add(insn);
+        block.add(insn);
         return var;
     }
 }

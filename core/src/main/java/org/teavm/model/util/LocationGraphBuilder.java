@@ -68,7 +68,7 @@ class LocationGraphBuilder {
             BasicBlock block = program.basicBlockAt(step.block);
             TextLocation location = step.location;
             boolean started = false;
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 if (insn.getLocation() != null) {
                     if (!started) {
                         step.startLocations.add(insn.getLocation());

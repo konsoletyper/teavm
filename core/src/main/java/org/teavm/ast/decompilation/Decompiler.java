@@ -351,7 +351,7 @@ public class Decompiler {
         graph = ProgramUtils.buildControlFlowGraph(program);
         int[] weights = new int[graph.size()];
         for (int i = 0; i < weights.length; ++i) {
-            weights[i] = program.basicBlockAt(i).getInstructions().size();
+            weights[i] = program.basicBlockAt(i).instructionCount();
         }
         int[] priorities = new int[graph.size()];
         for (int i = 0; i < targetBlocks.length; ++i) {
@@ -447,9 +447,7 @@ public class Decompiler {
             if (node >= 0) {
                 generator.statements.clear();
                 TextLocation lastLocation = null;
-                List<Instruction> instructions = generator.currentBlock.getInstructions();
-                for (int j = 0; j < instructions.size(); ++j) {
-                    Instruction insn = generator.currentBlock.getInstructions().get(j);
+                for (Instruction insn : generator.currentBlock) {
                     if (insn.getLocation() != null && lastLocation != insn.getLocation()) {
                         lastLocation = insn.getLocation();
                     }

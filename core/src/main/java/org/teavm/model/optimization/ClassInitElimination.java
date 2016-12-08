@@ -18,7 +18,6 @@ package org.teavm.model.optimization;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
@@ -26,7 +25,6 @@ import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
-import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.ProgramUtils;
@@ -47,16 +45,14 @@ public class ClassInitElimination implements MethodOptimization {
             Step step = stack.pop();
             int node = step.node;
             BasicBlock block = program.basicBlockAt(node);
-            List<Instruction> instructions = block.getInstructions();
 
-            for (int i = 0; i < instructions.size(); ++i) {
-                Instruction insn = instructions.get(i);
+            Instruction nextInsn;
+            for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
+                nextInsn = insn.getNext();
                 if (insn instanceof InitClassInstruction) {
                     InitClassInstruction initClass = (InitClassInstruction) insn;
                     if (!step.initializedClasses.add(initClass.getClassName())) {
-                        EmptyInstruction empty = new EmptyInstruction();
-                        empty.setLocation(initClass.getLocation());
-                        instructions.set(i, empty);
+                        insn.delete();
                     }
                     continue;
                 }

@@ -16,15 +16,18 @@
 package org.teavm.model.lowlevel;
 
 import com.carrotsearch.hppc.IntArrayList;
-import com.carrotsearch.hppc.IntObjectMap;
-import com.carrotsearch.hppc.IntObjectOpenHashMap;
-import com.carrotsearch.hppc.cursors.ObjectCursor;
+import com.carrotsearch.hppc.ObjectIntMap;
+import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
@@ -64,7 +67,7 @@ public class GCShadowStackContributor {
     }
 
     public int contribute(Program program, MethodReader method) {
-        List<IntObjectMap<BitSet>> liveInInformation = findCallSiteLiveIns(program, method);
+        List<Map<Instruction, BitSet>> liveInInformation = findCallSiteLiveIns(program, method);
 
         Graph interferenceGraph = buildInterferenceGraph(liveInInformation, program);
         boolean[] spilled = getAffectedVariables(liveInInformation, program);
@@ -93,7 +96,7 @@ public class GCShadowStackContributor {
             findAutoSpilledPhis(spilled, destinationPhis, inputCount, autoSpilled, i);
         }
 
-        List<IntObjectMap<int[]>> liveInStores = reduceGCRootStores(program, usedColors, liveInInformation,
+        List<Map<Instruction, int[]>> liveInStores = reduceGCRootStores(program, usedColors, liveInInformation,
                 colors, autoSpilled);
         putLiveInGCRoots(program, liveInStores);
 
@@ -119,11 +122,11 @@ public class GCShadowStackContributor {
         }
     }
 
-    private List<IntObjectMap<BitSet>> findCallSiteLiveIns(Program program, MethodReader method) {
+    private List<Map<Instruction, BitSet>> findCallSiteLiveIns(Program program, MethodReader method) {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         TypeInferer typeInferer = new TypeInferer();
         typeInferer.inferTypes(program, method.getReference());
-        List<IntObjectMap<BitSet>> liveInInformation = new ArrayList<>();
+        List<Map<Instruction, BitSet>> liveInInformation = new ArrayList<>();
 
         LivenessAnalyzer livenessAnalyzer = new LivenessAnalyzer();
         livenessAnalyzer.analyze(program);
@@ -132,14 +135,14 @@ public class GCShadowStackContributor {
 
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            IntObjectMap<BitSet> blockLiveIn = new IntObjectOpenHashMap<>();
+            Map<Instruction, BitSet> blockLiveIn = new HashMap<>();
             liveInInformation.add(blockLiveIn);
             BitSet currentLiveOut = new BitSet();
             for (int successor : cfg.outgoingEdges(i)) {
                 currentLiveOut.or(livenessAnalyzer.liveIn(successor));
             }
-            for (int j = block.getInstructions().size() - 1; j >= 0; --j) {
-                Instruction insn = block.getInstructions().get(j);
+
+            for (Instruction insn = block.getLastInstruction(); insn != null; insn = insn.getPrevious()) {
                 insn.acceptVisitor(defExtractor);
                 insn.acceptVisitor(useExtractor);
                 for (Variable usedVar : useExtractor.getUsedVariables()) {
@@ -164,7 +167,7 @@ public class GCShadowStackContributor {
                         }
                     }
                     csLiveIn.clear(0, method.parameterCount() + 1);
-                    blockLiveIn.put(j, csLiveIn);
+                    blockLiveIn.put(insn, csLiveIn);
                 }
             }
             if (block.getExceptionVariable() != null) {
@@ -175,11 +178,10 @@ public class GCShadowStackContributor {
         return liveInInformation;
     }
 
-    private Graph buildInterferenceGraph(List<IntObjectMap<BitSet>> liveInInformation, Program program) {
+    private Graph buildInterferenceGraph(List<Map<Instruction, BitSet>> liveInInformation, Program program) {
         GraphBuilder builder = new GraphBuilder(program.variableCount());
-        for (IntObjectMap<BitSet> blockLiveIn : liveInInformation) {
-            for (ObjectCursor<BitSet> callSiteLiveIn : blockLiveIn.values()) {
-                BitSet liveVarsSet = callSiteLiveIn.value;
+        for (Map<Instruction, BitSet> blockLiveIn : liveInInformation) {
+            for (BitSet liveVarsSet : blockLiveIn.values()) {
                 IntArrayList liveVars = new IntArrayList();
                 for (int i = liveVarsSet.nextSetBit(0); i >= 0; i = liveVarsSet.nextSetBit(i + 1)) {
                     liveVars.add(i);
@@ -196,11 +198,10 @@ public class GCShadowStackContributor {
         return builder.build();
     }
 
-    private boolean[] getAffectedVariables(List<IntObjectMap<BitSet>> liveInInformation, Program program) {
+    private boolean[] getAffectedVariables(List<Map<Instruction, BitSet>> liveInInformation, Program program) {
         boolean[] affectedVariables = new boolean[program.variableCount()];
-        for (IntObjectMap<BitSet> blockLiveIn : liveInInformation) {
-            for (ObjectCursor<BitSet> callSiteLiveIn : blockLiveIn.values()) {
-                BitSet liveVarsSet = callSiteLiveIn.value;
+        for (Map<Instruction, BitSet> blockLiveIn : liveInInformation) {
+            for (BitSet liveVarsSet : blockLiveIn.values()) {
                 for (int i = liveVarsSet.nextSetBit(0); i >= 0; i = liveVarsSet.nextSetBit(i + 1)) {
                     affectedVariables[i] = true;
                 }
@@ -243,8 +244,8 @@ public class GCShadowStackContributor {
         return inputCount;
     }
 
-    private List<IntObjectMap<int[]>> reduceGCRootStores(Program program, int usedColors,
-            List<IntObjectMap<BitSet>> liveInInformation, int[] colors, boolean[] autoSpilled) {
+    private List<Map<Instruction, int[]>> reduceGCRootStores(Program program, int usedColors,
+            List<Map<Instruction, BitSet>> liveInInformation, int[] colors, boolean[] autoSpilled) {
         class Step {
             private final int node;
             private final int[] slotStates = new int[usedColors];
@@ -253,9 +254,9 @@ public class GCShadowStackContributor {
             }
         }
 
-        List<IntObjectMap<int[]>> slotsToUpdate = new ArrayList<>();
+        List<Map<Instruction, int[]>> slotsToUpdate = new ArrayList<>();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            slotsToUpdate.add(new IntObjectOpenHashMap<>());
+            slotsToUpdate.add(new HashMap<>());
         }
 
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
@@ -274,11 +275,9 @@ public class GCShadowStackContributor {
             int[] previousStates = step.slotStates;
             int[] states = previousStates.clone();
 
-            IntObjectMap<BitSet> callSites = liveInInformation.get(step.node);
-            IntObjectMap<int[]> updatesByCallSite = slotsToUpdate.get(step.node);
-            int[] callSiteLocations = callSites.keys().toArray();
-            Arrays.sort(callSiteLocations);
-            for (int callSiteLocation : callSiteLocations) {
+            Map<Instruction, BitSet> callSites = liveInInformation.get(step.node);
+            Map<Instruction, int[]> updatesByCallSite = slotsToUpdate.get(step.node);
+            for (Instruction callSiteLocation : sortInstructions(callSites.keySet(), program.basicBlockAt(step.node))) {
                 BitSet liveIns = callSites.get(callSiteLocation);
                 for (int liveVar = liveIns.nextSetBit(0); liveVar >= 0; liveVar = liveIns.nextSetBit(liveVar + 1)) {
                     int slot = colors[liveVar];
@@ -305,6 +304,17 @@ public class GCShadowStackContributor {
         return slotsToUpdate;
     }
 
+    private List<Instruction> sortInstructions(Collection<Instruction> instructions, BasicBlock block) {
+        ObjectIntMap<Instruction> indexes = new ObjectIntOpenHashMap<>();
+        int index = 0;
+        for (Instruction instruction : block) {
+            indexes.put(instruction, index++);
+        }
+        List<Instruction> sortedInstructions = new ArrayList<>(instructions);
+        sortedInstructions.sort(Comparator.comparing(insn -> indexes.getOrDefault(insn, -1)));
+        return sortedInstructions;
+    }
+
     private static int[] compareStates(int[] oldStates, int[] newStates, boolean[] autoSpilled) {
         int[] comparison = new int[oldStates.length];
         Arrays.fill(comparison, -2);
@@ -324,24 +334,30 @@ public class GCShadowStackContributor {
         return comparison;
     }
 
-    private void putLiveInGCRoots(Program program, List<IntObjectMap<int[]>> updateInformation) {
+    private void putLiveInGCRoots(Program program, List<Map<Instruction, int[]>> updateInformation) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            IntObjectMap<int[]> updatesByIndex = updateInformation.get(i);
-            int[] callSiteLocations = updatesByIndex.keys().toArray();
-            Arrays.sort(callSiteLocations);
-            for (int j = callSiteLocations.length - 1; j >= 0; --j) {
-                int callSiteLocation = callSiteLocations[j];
+            Map<Instruction, int[]> updatesByIndex = updateInformation.get(i);
+            Instruction[] callSiteLocations = updatesByIndex.keySet().toArray(new Instruction[0]);
+            ObjectIntMap<Instruction> instructionIndexes = getInstructionIndexes(block);
+            Arrays.sort(callSiteLocations, Comparator.comparing(instructionIndexes::get));
+            for (Instruction callSiteLocation : updatesByIndex.keySet()) {
                 int[] updates = updatesByIndex.get(callSiteLocation);
                 storeLiveIns(block, callSiteLocation, updates);
             }
         }
     }
 
-    private void storeLiveIns(BasicBlock block, int index, int[] updates) {
+    private ObjectIntMap<Instruction> getInstructionIndexes(BasicBlock block) {
+        ObjectIntMap<Instruction> indexes = new ObjectIntOpenHashMap<>();
+        for (Instruction instruction : block) {
+            indexes.put(instruction, indexes.size());
+        }
+        return indexes;
+    }
+
+    private void storeLiveIns(BasicBlock block, Instruction callInstruction, int[] updates) {
         Program program = block.getProgram();
-        List<Instruction> instructions = block.getInstructions();
-        Instruction callInstruction = instructions.get(index);
         List<Instruction> instructionsToAdd = new ArrayList<>();
 
         for (int slot = 0; slot < updates.length; ++slot) {
@@ -372,7 +388,7 @@ public class GCShadowStackContributor {
             instructionsToAdd.add(registerInvocation);
         }
 
-        instructions.addAll(index, instructionsToAdd);
+        callInstruction.insertPreviousAll(instructionsToAdd);
     }
 
     private boolean isReference(TypeInferer typeInferer, int var) {

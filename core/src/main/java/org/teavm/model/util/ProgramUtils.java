@@ -25,6 +25,8 @@ import org.teavm.model.BasicBlockReader;
 import org.teavm.model.Incoming;
 import org.teavm.model.IncomingReader;
 import org.teavm.model.Instruction;
+import org.teavm.model.InstructionIterator;
+import org.teavm.model.InstructionReadVisitor;
 import org.teavm.model.Phi;
 import org.teavm.model.PhiReader;
 import org.teavm.model.Program;
@@ -89,17 +91,24 @@ public final class ProgramUtils {
         if (block.getExceptionVariable() != null) {
             target.setExceptionVariable(targetProgram.variableAt(block.getExceptionVariable().getIndex()));
         }
-        target.getInstructions().addAll(copyInstructions(block, 0, block.instructionCount(), targetProgram));
+        InstructionCopyReader copyReader = new InstructionCopyReader(targetProgram);
+        for (InstructionIterator iterator = block.iterateInstructions(); iterator.hasNext();) {
+            iterator.next();
+            iterator.read(copyReader);
+            target.add(copyReader.getCopy());
+        }
         target.getPhis().addAll(copyPhis(block, targetProgram));
         target.getTryCatchBlocks().addAll(copyTryCatches(block, targetProgram));
     }
 
-    public static List<Instruction> copyInstructions(BasicBlockReader block, int from, int to, Program target) {
+    public static List<Instruction> copyInstructions(Instruction from, Instruction to, Program target) {
         List<Instruction> result = new ArrayList<>();
         InstructionCopyReader copyReader = new InstructionCopyReader(target);
-        for (int i = from; i < to; ++i) {
-            block.readInstruction(i, copyReader);
+        InstructionReadVisitor visitor = new InstructionReadVisitor(copyReader);
+        while (from != to) {
+            from.acceptVisitor(visitor);
             result.add(copyReader.getCopy());
+            from = from.getNext();
         }
         return result;
     }
@@ -195,7 +204,7 @@ public final class ProgramUtils {
                 places[phi.getReceiver().getIndex()] = block;
             }
 
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 insn.acceptVisitor(defExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {
                     places[var.getIndex()] = block;

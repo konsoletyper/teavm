@@ -336,24 +336,24 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         ConstructInstruction newExceptionInsn = new ConstructInstruction();
         newExceptionInsn.setType(NoSuchMethodError.class.getName());
         newExceptionInsn.setReceiver(exceptionVar);
-        block.getInstructions().add(newExceptionInsn);
+        block.add(newExceptionInsn);
 
         Variable constVar = program.createVariable();
         StringConstantInstruction constInsn = new StringConstantInstruction();
         constInsn.setConstant("Native method implementation not found: " + method.getReference());
         constInsn.setReceiver(constVar);
-        block.getInstructions().add(constInsn);
+        block.add(constInsn);
 
         InvokeInstruction initExceptionInsn = new InvokeInstruction();
         initExceptionInsn.setInstance(exceptionVar);
         initExceptionInsn.setMethod(new MethodReference(NoSuchMethodError.class, "<init>", String.class, void.class));
         initExceptionInsn.setType(InvocationType.SPECIAL);
         initExceptionInsn.getArguments().add(constVar);
-        block.getInstructions().add(initExceptionInsn);
+        block.add(initExceptionInsn);
 
         RaiseInstruction raiseInsn = new RaiseInstruction();
         raiseInsn.setException(exceptionVar);
-        block.getInstructions().add(raiseInsn);
+        block.add(raiseInsn);
 
         controller.getDiagnostics().error(new CallLocation(method.getReference()),
                 "Native method {{m0}} has no implementation",  method.getReference());

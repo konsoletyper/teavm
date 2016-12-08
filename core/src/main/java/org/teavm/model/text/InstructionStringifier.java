@@ -337,7 +337,6 @@ class InstructionStringifier implements InstructionReader {
     public void getField(VariableReader receiver, VariableReader instance, FieldReference field, ValueType fieldType) {
         sb.append("@").append(receiver.getIndex()).append(" := field ");
         escapeIdentifierIfNeeded(field.toString(), sb);
-        sb.append(field);
         if (instance != null) {
             sb.append(" @").append(instance.getIndex());
         }
@@ -407,13 +406,15 @@ class InstructionStringifier implements InstructionReader {
 
         escapeIdentifierIfNeeded(method.toString(), sb);
         if (instance != null) {
+            sb.append(' ');
             sb.append("@").append(instance.getIndex());
         }
 
         for (int i = 0; i < arguments.size(); ++i) {
             if (instance != null || i > 0) {
-                sb.append(", ");
+                sb.append(",");
             }
+            sb.append(' ');
             sb.append("@").append(arguments.get(i).getIndex());
         }
     }

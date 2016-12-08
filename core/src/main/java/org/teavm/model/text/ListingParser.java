@@ -417,7 +417,7 @@ public class ListingParser {
                     }
                     case "exception": {
                         lexer.nextToken();
-                        if (!currentBlock.getInstructions().isEmpty() || currentBlock.getExceptionVariable() != null) {
+                        if (currentBlock.instructionCount() > 0 || currentBlock.getExceptionVariable() != null) {
                             throw new ListingParseException("Exception can be read as a first instruction",
                                     lexer.getTokenStart());
                         }
@@ -578,7 +578,7 @@ public class ListingParser {
             lexer.nextToken();
         }
 
-        if (!currentBlock.getInstructions().isEmpty() || currentBlock.getExceptionVariable() != null) {
+        if (currentBlock.instructionCount() > 0 || currentBlock.getExceptionVariable() != null) {
             throw new ListingParseException("Phi must be first instruction in block", phiStart);
         }
 
@@ -1164,6 +1164,6 @@ public class ListingParser {
     private void addInstruction(Instruction instruction) throws ListingParseException {
         currentTryCatch = null;
         instruction.setLocation(currentLocation);
-        currentBlock.getInstructions().add(instruction);
+        currentBlock.add(instruction);
     }
 }

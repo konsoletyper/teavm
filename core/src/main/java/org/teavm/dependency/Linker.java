@@ -55,9 +55,7 @@ public class Linker {
         Program program = method.getProgram();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (int j = 0; j < block.getInstructions().size(); ++j) {
-                Instruction insn = block.getInstructions().get(j);
-
+            for (Instruction insn : block) {
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction) insn;
                     MethodDependencyInfo linkedMethod = dependency.getMethodImplementation(invoke.getMethod());
@@ -75,7 +73,7 @@ public class Linker {
                     if (!fieldRef.getClassName().equals(method.getOwnerName())) {
                         InitClassInstruction initInsn = new InitClassInstruction();
                         initInsn.setClassName(fieldRef.getClassName());
-                        block.getInstructions().add(j++, initInsn);
+                        insn.insertPrevious(initInsn);
                     }
 
                 } else if (insn instanceof PutFieldInstruction) {

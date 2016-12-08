@@ -45,8 +45,7 @@ public class ClassPatch implements ClassHolderTransformer {
     private void patchProgram(Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (int j = 0; j < block.getInstructions().size(); ++j) {
-                Instruction instruction = block.getInstructions().get(j);
+            for (Instruction instruction : block) {
                 if (instruction instanceof GetFieldInstruction) {
                     GetFieldInstruction getField = (GetFieldInstruction) instruction;
                     if (getField.getField().equals(platformClassField)) {
@@ -54,14 +53,14 @@ public class ClassPatch implements ClassHolderTransformer {
                         replacement.setReceiver(getField.getReceiver());
                         replacement.setAssignee(getField.getInstance());
                         replacement.setLocation(instruction.getLocation());
-                        block.getInstructions().set(j, replacement);
+                        instruction.replace(replacement);
                     }
                 } else if (instruction instanceof PutFieldInstruction) {
                     PutFieldInstruction putField = (PutFieldInstruction) instruction;
                     if (putField.getField().equals(platformClassField)) {
                         EmptyInstruction replacement = new EmptyInstruction();
                         replacement.setLocation(instruction.getLocation());
-                        block.getInstructions().set(j, replacement);
+                        instruction.replace(replacement);
                     }
                 }
             }

@@ -32,7 +32,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     public static String toString(int i, int radix) {
-        if (radix < MIN_VALUE || radix > MAX_VALUE) {
+        if (radix < Character.MIN_RADIX || radix > Character.MAX_RADIX) {
             radix = 10;
         }
         return new TAbstractStringBuilder(20).append(i, radix).toString();

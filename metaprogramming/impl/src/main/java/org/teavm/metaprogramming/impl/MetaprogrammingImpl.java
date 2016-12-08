@@ -278,7 +278,7 @@ public final class MetaprogrammingImpl {
 
                 JumpInstruction jumpToStart = new JumpInstruction();
                 jumpToStart.setTarget(program.basicBlockAt(startBlock.getIndex() + 1));
-                startBlock.getInstructions().add(jumpToStart);
+                startBlock.add(jumpToStart);
 
                 new Optimizations().apply(program);
                 cls.addMethod(methodHolder);

@@ -15,8 +15,6 @@
  */
 package org.teavm.model.lowlevel;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
@@ -44,33 +42,31 @@ public class ClassInitializerTransformer {
 
         for (int i = 0; i < basicBlockMap.length; ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            List<Instruction> instructions = block.getInstructions();
-            for (int j = 0; j < instructions.size(); ++j) {
-                Instruction instruction = instructions.get(j);
-                if (instruction instanceof InitClassInstruction) {
-                    String className = ((InitClassInstruction) instruction).getClassName();
-
-                    BasicBlock continueBlock = program.createBasicBlock();
-                    List<Instruction> instructionsToMove = instructions.subList(j + 1, instructions.size());
-                    List<Instruction> instructionsToMoveCopy = new ArrayList<>(instructionsToMove);
-                    instructionsToMove.clear();
-                    continueBlock.getInstructions().addAll(instructionsToMoveCopy);
-                    continueBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
-
-                    BasicBlock initBlock = program.createBasicBlock();
-                    instructions.remove(j);
-                    initBlock.getInstructions().add(instruction);
-                    JumpInstruction jumpToContinue = new JumpInstruction();
-                    jumpToContinue.setTarget(continueBlock);
-                    initBlock.getInstructions().add(jumpToContinue);
-
-                    createInitCheck(program, block, className, continueBlock, initBlock);
-
-                    basicBlockMap[i] = continueBlock.getIndex();
-                    block = continueBlock;
-                    instructions = block.getInstructions();
-                    j = 0;
+            for (Instruction instruction : block) {
+                if (!(instruction instanceof InitClassInstruction)) {
+                    continue;
                 }
+                String className = ((InitClassInstruction) instruction).getClassName();
+                block = instruction.getBasicBlock();
+
+                BasicBlock continueBlock = program.createBasicBlock();
+                while (instruction.getNext() != null) {
+                    Instruction toMove = instruction.getNext();
+                    toMove.delete();
+                    continueBlock.add(toMove);
+                }
+                continueBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
+
+                BasicBlock initBlock = program.createBasicBlock();
+                instruction.delete();
+                initBlock.add(instruction);
+                JumpInstruction jumpToContinue = new JumpInstruction();
+                jumpToContinue.setTarget(continueBlock);
+                initBlock.add(jumpToContinue);
+
+                createInitCheck(program, block, className, continueBlock, initBlock);
+
+                basicBlockMap[i] = continueBlock.getIndex();
             }
         }
 
@@ -94,19 +90,19 @@ public class ClassInitializerTransformer {
         ClassConstantInstruction clsConstant = new ClassConstantInstruction();
         clsConstant.setReceiver(clsVariable);
         clsConstant.setConstant(ValueType.object(className));
-        block.getInstructions().add(clsConstant);
+        block.add(clsConstant);
 
         InvokeInstruction checkInitialized = new InvokeInstruction();
         checkInitialized.setType(InvocationType.SPECIAL);
         checkInitialized.setMethod(new MethodReference(Allocator.class, "isInitialized", Class.class, boolean.class));
         checkInitialized.getArguments().add(clsVariable);
         checkInitialized.setReceiver(initializedVariable);
-        block.getInstructions().add(checkInitialized);
+        block.add(checkInitialized);
 
         BranchingInstruction branching = new BranchingInstruction(BranchingCondition.EQUAL);
         branching.setOperand(initializedVariable);
         branching.setConsequent(continueBlock);
         branching.setAlternative(initBlock);
-        block.getInstructions().add(branching);
+        block.add(branching);
     }
 }

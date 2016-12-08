@@ -31,7 +31,7 @@ public class EmptyBlockElimination implements MethodOptimization {
         int lastNonEmpty = program.basicBlockCount() - 1;
         for (int i = program.basicBlockCount() - 2; i > 0; --i) {
             BasicBlock block = program.basicBlockAt(i);
-            if (block.getPhis().isEmpty() && block.getInstructions().size() == 1
+            if (block.getPhis().isEmpty() && block.instructionCount() == 1
                     && block.getLastInstruction() instanceof JumpInstruction) {
                 JumpInstruction insn = (JumpInstruction) block.getLastInstruction();
                 if (insn.getTarget().getIndex() == i + 1) {
@@ -40,7 +40,7 @@ public class EmptyBlockElimination implements MethodOptimization {
             }
             lastNonEmpty = blockMapping[i];
         }
-        new BasicBlockMapper(block -> blockMapping[block]).transform(program);
+        new BasicBlockMapper((int block) -> blockMapping[block]).transform(program);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             if (blockMapping[i] != i) {
                 program.deleteBasicBlock(i);

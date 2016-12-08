@@ -44,7 +44,7 @@ public class InstructionVariableMapper implements InstructionVisitor {
     }
 
     public void applyToInstructions(BasicBlock block) {
-        for (Instruction insn : block.getInstructions()) {
+        for (Instruction insn : block) {
             insn.acceptVisitor(this);
         }
     }

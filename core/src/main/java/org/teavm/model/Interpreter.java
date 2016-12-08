@@ -66,14 +66,15 @@ public class Interpreter {
 
         try {
             while (true) {
-                int instructionIndex = 0;
+                InstructionIterator iterator = currentBlock.iterateInstructions();
                 try {
-                    while (instructionIndex < currentBlock.instructionCount()) {
-                        currentBlock.readInstruction(instructionIndex++, reader);
+                    while (iterator.hasNext()) {
+                        iterator.next();
+                        iterator.read(reader);
                     }
                 } catch (RuntimeException e) {
                     if (!pickExceptionHandler(e)) {
-                        throw new InterpretException(currentBlock, instructionIndex, e);
+                        throw new InterpretException(currentBlock, e);
                     }
                 }
                 switch (state) {
@@ -82,7 +83,7 @@ public class Interpreter {
                     }
                     case THROWN: {
                         Throwable ex = (Throwable) result;
-                        throw new InterpretException(currentBlock, currentBlock.instructionCount() - 1, ex);
+                        throw new InterpretException(currentBlock, ex);
                     }
                     case EXECUTING:
                         break;

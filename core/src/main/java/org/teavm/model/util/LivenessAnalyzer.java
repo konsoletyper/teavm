@@ -52,7 +52,7 @@ public class LivenessAnalyzer {
                 definitions[block.getExceptionVariable().getIndex()] = i;
             }
 
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 insn.acceptVisitor(usageExtractor);
                 IntSet usedVars = new IntOpenHashSet();
                 for (Variable var : usageExtractor.getUsedVariables()) {

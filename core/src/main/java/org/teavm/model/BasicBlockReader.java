@@ -27,7 +27,7 @@ public interface BasicBlockReader {
 
     int instructionCount();
 
-    void readInstruction(int index, InstructionReader reader);
+    InstructionIterator iterateInstructions();
 
     void readAllInstructions(InstructionReader reader);
 

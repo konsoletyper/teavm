@@ -81,15 +81,14 @@ public class GlobalValueNumbering implements MethodOptimization {
                 block.setExceptionVariable(program.variableAt(var));
             }
 
-            for (int i = 0; i < block.getInstructions().size(); ++i) {
+            for (Instruction currentInsn : block) {
                 evaluatedConstant = null;
-                Instruction currentInsn = block.getInstructions().get(i);
                 currentInsn.acceptVisitor(optimizer);
                 if (eliminate) {
                     affected = true;
                     EmptyInstruction empty = new EmptyInstruction();
                     empty.setLocation(currentInsn.getLocation());
-                    block.getInstructions().set(i, empty);
+                    currentInsn.replace(empty);
                     eliminate = false;
                 } else if (evaluatedConstant != null) {
                     if (evaluatedConstant instanceof Integer) {
@@ -97,25 +96,25 @@ public class GlobalValueNumbering implements MethodOptimization {
                         newInsn.setConstant((Integer) evaluatedConstant);
                         newInsn.setReceiver(program.variableAt(receiver));
                         newInsn.setLocation(currentInsn.getLocation());
-                        block.getInstructions().set(i, newInsn);
+                        currentInsn.replace(newInsn);
                     } else if (evaluatedConstant instanceof Long) {
                         LongConstantInstruction newInsn = new LongConstantInstruction();
                         newInsn.setConstant((Long) evaluatedConstant);
                         newInsn.setReceiver(program.variableAt(receiver));
                         newInsn.setLocation(currentInsn.getLocation());
-                        block.getInstructions().set(i, newInsn);
+                        currentInsn.replace(newInsn);
                     } else if (evaluatedConstant instanceof Float) {
                         FloatConstantInstruction newInsn = new FloatConstantInstruction();
                         newInsn.setConstant((Float) evaluatedConstant);
                         newInsn.setReceiver(program.variableAt(receiver));
                         newInsn.setLocation(currentInsn.getLocation());
-                        block.getInstructions().set(i, newInsn);
+                        currentInsn.replace(newInsn);
                     } else if (evaluatedConstant instanceof Double) {
                         DoubleConstantInstruction newInsn = new DoubleConstantInstruction();
                         newInsn.setConstant((Double) evaluatedConstant);
                         newInsn.setReceiver(program.variableAt(receiver));
                         newInsn.setLocation(currentInsn.getLocation());
-                        block.getInstructions().set(i, newInsn);
+                        currentInsn.replace(newInsn);
                     }
                 }
             }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2016 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,22 +15,16 @@
  */
 package org.teavm.model;
 
-import java.util.HashSet;
-import java.util.Set;
+import org.teavm.model.instructions.InstructionReader;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class AsyncInformation {
-    private Set<MethodReference> syncMethods = new HashSet<>();
-    private Set<MethodReference> asyncMethods = new HashSet<>();
+public interface InstructionIterator {
+    boolean hasNext();
 
-    public Set<MethodReference> getSyncMethods() {
-        return syncMethods;
-    }
+    void next();
 
-    public Set<MethodReference> getAsyncMethods() {
-        return asyncMethods;
-    }
+    boolean hasPrevious();
+
+    void previous();
+
+    void read(InstructionReader reader);
 }

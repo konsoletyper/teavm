@@ -48,10 +48,6 @@ import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.util.InstructionTransitionExtractor;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class ProgramEmitter {
     private Program program;
     private BasicBlock block;
@@ -388,7 +384,7 @@ public final class ProgramEmitter {
         if (currentLocation != null) {
             insn.setLocation(currentLocation);
         }
-        block.getInstructions().add(insn);
+        block.add(insn);
     }
 
     public static ProgramEmitter create(MethodHolder method, ClassReaderSource classSource) {
@@ -404,7 +400,7 @@ public final class ProgramEmitter {
 
         JumpInstruction insn = new JumpInstruction();
         insn.setTarget(block);
-        zeroBlock.getInstructions().add(insn);
+        zeroBlock.add(insn);
 
         program.createVariable();
         for (int i = 0; i < method.parameterCount(); ++i) {

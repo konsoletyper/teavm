@@ -38,7 +38,7 @@ public class ConstantConditionElimination implements MethodOptimization {
         nullConstants = new boolean[program.variableCount()];
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 if (insn instanceof IntegerConstantInstruction) {
                     IntegerConstantInstruction constInsn = (IntegerConstantInstruction) insn;
                     int receiver = constInsn.getReceiver().getIndex();
@@ -61,7 +61,7 @@ public class ConstantConditionElimination implements MethodOptimization {
                 JumpInstruction jump = new JumpInstruction();
                 jump.setTarget(target);
                 jump.setLocation(insn.getLocation());
-                block.getInstructions().set(block.getInstructions().size() - 1, jump);
+                block.getLastInstruction().replace(jump);
                 changed = true;
             }
         }

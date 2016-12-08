@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class ModelUtils {
     private ModelUtils() {
     }

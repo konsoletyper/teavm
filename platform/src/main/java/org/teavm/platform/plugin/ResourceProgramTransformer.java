@@ -22,10 +22,6 @@ import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 
-/**
- *
- * @author Alexey Andreev
- */
 class ResourceProgramTransformer {
     private ClassReaderSource innerSource;
     private Program program;
@@ -42,16 +38,13 @@ class ResourceProgramTransformer {
     }
 
     private void transformBasicBlock(BasicBlock block) {
-        List<Instruction> instructions = block.getInstructions();
-        for (int i = 0; i < instructions.size(); ++i) {
-            Instruction insn = instructions.get(i);
+        for (Instruction insn : block) {
             if (insn instanceof InvokeInstruction) {
                 InvokeInstruction invoke = (InvokeInstruction) insn;
                 List<Instruction> replacement = transformInvoke(invoke);
                 if (replacement != null) {
-                    instructions.set(i, new EmptyInstruction());
-                    instructions.addAll(i, replacement);
-                    i += replacement.size();
+                    insn.insertNextAll(replacement);
+                    insn.delete();
                 }
             }
         }

@@ -21,10 +21,6 @@ import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.parsing.ClassDateProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DiskProgramCache implements ProgramCache {
     private File directory;
     private ProgramIO programIO;
@@ -86,7 +82,7 @@ public class DiskProgramCache implements ProgramCache {
             Program program = cache.get(method).program;
             for (int i = 0; i < program.basicBlockCount(); ++i) {
                 BasicBlock block = program.basicBlockAt(i);
-                for (Instruction insn : block.getInstructions()) {
+                for (Instruction insn : block) {
                     insn.acceptVisitor(analyzer);
                 }
             }

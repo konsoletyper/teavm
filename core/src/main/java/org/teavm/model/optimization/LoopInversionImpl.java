@@ -227,7 +227,7 @@ class LoopInversionImpl {
                 }
                 BasicBlock block = program.basicBlockAt(node);
                 Set<Variable> currentInvariants = new HashSet<>();
-                for (Instruction insn : block.getInstructions()) {
+                for (Instruction insn : block) {
                     invariantAnalyzer.reset();
                     insn.acceptVisitor(invariantAnalyzer);
                     if (!invariantAnalyzer.canMove && !invariantAnalyzer.constant) {
@@ -304,7 +304,7 @@ class LoopInversionImpl {
         }
 
         private void copyCondition() {
-            BasicBlockMapper blockMapper = new BasicBlockMapper(block -> copiedNodes.getOrDefault(block, block));
+            BasicBlockMapper blockMapper = new BasicBlockMapper((int block) -> copiedNodes.getOrDefault(block, block));
 
             InstructionCopyReader copier = new InstructionCopyReader(program);
             for (int node : copiedNodes.keys().toArray()) {
@@ -314,11 +314,11 @@ class LoopInversionImpl {
                 targetBlock.setExceptionVariable(sourceBlock.getExceptionVariable());
 
                 copier.resetLocation();
-                for (int i = 0; i < sourceBlock.instructionCount(); ++i) {
-                    sourceBlock.readInstruction(i, copier);
-                    Instruction insn = copier.getCopy();
+                List<Instruction> instructionCopies = ProgramUtils.copyInstructions(sourceBlock.getFirstInstruction(),
+                        null, targetBlock.getProgram());
+                for (Instruction insn : instructionCopies) {
                     insn.acceptVisitor(blockMapper);
-                    targetBlock.getInstructions().add(insn);
+                    targetBlock.add(insn);
                 }
 
                 for (Phi phi : sourceBlock.getPhis()) {
@@ -373,7 +373,7 @@ class LoopInversionImpl {
          * Back edges from body are not back edges anymore, instead they point to a copied condition.
          */
         private void moveBackEdges() {
-            BasicBlockMapper mapper = new BasicBlockMapper(block -> block == head ? headCopy : block);
+            BasicBlockMapper mapper = new BasicBlockMapper((int block) -> block == head ? headCopy : block);
 
             for (int node : nodes.toArray()) {
                 BasicBlock block = program.basicBlockAt(node);

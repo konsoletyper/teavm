@@ -18,10 +18,6 @@ package org.teavm.model;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AnnotationContainer implements AnnotationContainerReader {
     private Map<String, AnnotationHolder> annotations = new HashMap<>();
 

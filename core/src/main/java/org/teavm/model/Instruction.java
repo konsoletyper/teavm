@@ -15,15 +15,14 @@
  */
 package org.teavm.model;
 
+import java.util.Iterator;
 import org.teavm.model.instructions.InstructionVisitor;
 
 public abstract class Instruction {
-    private BasicBlock basicBlock;
+    BasicBlock basicBlock;
     private TextLocation location;
-
-    void setBasicBlock(BasicBlock basicBlock) {
-        this.basicBlock = basicBlock;
-    }
+    Instruction next;
+    Instruction previous;
 
     public BasicBlock getBasicBlock() {
         return basicBlock;
@@ -42,4 +41,127 @@ public abstract class Instruction {
     }
 
     public abstract void acceptVisitor(InstructionVisitor visitor);
+
+    public Instruction getNext() {
+        return next;
+    }
+
+    public Instruction getPrevious() {
+        return previous;
+    }
+
+    public boolean delete() {
+        if (basicBlock == null) {
+            return false;
+        }
+
+        if (next != null) {
+            next.previous = previous;
+        } else {
+            basicBlock.lastInstruction = previous;
+        }
+
+        if (previous != null) {
+            previous.next = next;
+        } else {
+            basicBlock.firstInstruction = next;
+        }
+
+        basicBlock.cachedSize--;
+        basicBlock = null;
+        next = null;
+        previous = null;
+
+        return true;
+    }
+
+    public boolean replace(Instruction other) {
+        checkInBasicBlock();
+        other.checkAddable();
+
+        if (next != null) {
+            next.previous = other;
+        } else {
+            basicBlock.lastInstruction = other;
+        }
+        other.next = next;
+
+        if (previous != null) {
+            previous.next = other;
+        } else {
+            basicBlock.firstInstruction = other;
+        }
+        other.previous = previous;
+
+        other.basicBlock = basicBlock;
+        basicBlock = null;
+        next = null;
+        previous = null;
+
+        return true;
+    }
+
+    public void insertNext(Instruction other) {
+        checkInBasicBlock();
+        other.checkAddable();
+
+        if (next != null) {
+            next.previous = other;
+        } else {
+            basicBlock.lastInstruction = other;
+        }
+        other.next = next;
+
+        other.previous = this;
+        next = other;
+
+        basicBlock.cachedSize++;
+        other.basicBlock = basicBlock;
+    }
+
+    public void insertNextAll(Iterable<Instruction> other) {
+        Iterator<Instruction> iterator = other.iterator();
+        Instruction last = this;
+        while (iterator.hasNext()) {
+            Instruction insn = iterator.next();
+            last.insertNext(insn);
+            last = insn;
+        }
+    }
+
+    public void insertPrevious(Instruction other) {
+        checkInBasicBlock();
+        other.checkAddable();
+
+        if (previous != null) {
+            previous.next = other;
+        } else {
+            basicBlock.firstInstruction = other;
+        }
+        other.previous = previous;
+
+        other.next = this;
+        previous = other;
+
+        basicBlock.cachedSize++;
+        other.basicBlock = basicBlock;
+    }
+
+    public void insertPreviousAll(Iterable<Instruction> other) {
+        for (Instruction instruction : other) {
+            insertPrevious(instruction);
+        }
+    }
+
+    private void checkInBasicBlock() {
+        if (getBasicBlock() == null) {
+            throw new IllegalArgumentException("This instruction is not in basic block");
+        }
+    }
+
+    void checkAddable() {
+        if (getBasicBlock() != null) {
+            throw new IllegalArgumentException("This instruction is in some basic block");
+        }
+    }
 }

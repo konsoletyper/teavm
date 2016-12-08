@@ -83,7 +83,7 @@ public class ProxyVariableContext extends VariableContext {
         insn.setField(capturedValue.field.getReference());
         insn.setFieldType(capturedValue.field.getType());
         insn.setReceiver(var);
-        startBlock.getInstructions().add(insn);
+        startBlock.add(insn);
 
         return var;
     }
@@ -105,7 +105,7 @@ public class ProxyVariableContext extends VariableContext {
         invokeSuper.setInstance(ctorProgram.createVariable());
         invokeSuper.setMethod(new MethodReference(proxyClass.getParent(), "<init>", ValueType.VOID));
         invokeSuper.setType(InvocationType.SPECIAL);
-        ctorBlock.getInstructions().add(invokeSuper);
+        ctorBlock.add(invokeSuper);
 
         for (int i = 0; i < capturedValues.size(); ++i) {
             PutFieldInstruction putInsn = new PutFieldInstruction();
@@ -113,11 +113,11 @@ public class ProxyVariableContext extends VariableContext {
             putInsn.setFieldType(capturedValues.get(i).field.getType());
             putInsn.setValue(ctorProgram.createVariable());
             putInsn.setInstance(ctorProgram.variableAt(0));
-            ctorBlock.getInstructions().add(putInsn);
+            ctorBlock.add(putInsn);
         }
 
         ExitInstruction exit = new ExitInstruction();
-        ctorBlock.getInstructions().add(exit);
+        ctorBlock.add(exit);
 
         proxyClass.addMethod(ctor);
 

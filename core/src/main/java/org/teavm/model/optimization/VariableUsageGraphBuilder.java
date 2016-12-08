@@ -29,7 +29,7 @@ public final class VariableUsageGraphBuilder {
         InstructionAnalyzer analyzer = new InstructionAnalyzer(builder);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 insn.acceptVisitor(analyzer);
             }
             for (Phi phi : block.getPhis()) {

@@ -74,7 +74,7 @@ public class ProgramIO {
             }
             TextLocation location = null;
             InstructionWriter insnWriter = new InstructionWriter(data);
-            for (Instruction insn : basicBlock.getInstructions()) {
+            for (Instruction insn : basicBlock) {
                 try {
                     if (!Objects.equals(location, insn.getLocation())) {
                         location = insn.getLocation();
@@ -173,7 +173,7 @@ public class ProgramIO {
                     default: {
                         Instruction insn = readInstruction(insnType, program, data);
                         insn.setLocation(location);
-                        block.getInstructions().add(insn);
+                        block.add(insn);
                         break;
                     }
                 }
@@ -932,16 +932,20 @@ public class ProgramIO {
                 insn.setInstance(program.variableAt(input.readShort()));
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
+                ValueType type = ValueType.parse(symbolTable.at(input.readInt()));
                 insn.setField(new FieldReference(className, fieldName));
                 insn.setValue(program.variableAt(input.readShort()));
+                insn.setFieldType(type);
                 return insn;
             }
             case 27: {
                 PutFieldInstruction insn = new PutFieldInstruction();
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
+                ValueType type = ValueType.parse(symbolTable.at(input.readInt()));
                 insn.setField(new FieldReference(className, fieldName));
                 insn.setValue(program.variableAt(input.readShort()));
+                insn.setFieldType(type);
                 return insn;
             }
             case 28: {

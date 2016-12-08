@@ -1,6 +1,20 @@
+/*
+ *  Copyright 2016 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.teavm.classlib.impl;
 
-import java.util.List;
 import java.util.Properties;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.BasicBlock;
@@ -16,10 +30,6 @@ import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ScalaHacks implements ClassHolderTransformer {
     private static final String ATTR_NAME_CLASS = "java.util.jar.Attributes$Name";
     @Override
@@ -56,16 +66,14 @@ public class ScalaHacks implements ClassHolderTransformer {
                 Program program = method.getProgram();
                 for (int i = 0; i < program.basicBlockCount(); ++i) {
                     BasicBlock block = program.basicBlockAt(i);
-                    List<Instruction> instructions = block.getInstructions();
-                    for (int j = 0; j < instructions.size(); ++j) {
-                        Instruction insn = instructions.get(j);
+                    for (Instruction insn : block) {
                         if (insn instanceof InvokeInstruction) {
                             if (((InvokeInstruction) insn).getMethod().getClassName().equals(ATTR_NAME_CLASS)) {
-                                instructions.remove(j--);
+                                insn.delete();
                             }
                         } else if (insn instanceof PutFieldInstruction) {
                             if (((PutFieldInstruction) insn).getField().getFieldName().equals("ScalaCompilerVersion")) {
-                                instructions.remove(j--);
+                                insn.delete();
                             }
                         } else if (insn instanceof ConstructInstruction) {
                             ConstructInstruction cons = (ConstructInstruction) insn;

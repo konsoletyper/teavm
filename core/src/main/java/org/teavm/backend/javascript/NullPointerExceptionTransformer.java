@@ -37,8 +37,7 @@ public class NullPointerExceptionTransformer implements ClassHolderTransformer {
     }
 
     private void transformBlock(BasicBlock block) {
-        for (int i = 0; i < block.getInstructions().size(); ++i) {
-            Instruction insn = block.getInstructions().get(i);
+        for (Instruction insn : block) {
             if (insn instanceof InvokeInstruction) {
                 InvokeInstruction invoke = (InvokeInstruction) insn;
                 if (invoke.getType() != InvocationType.VIRTUAL) {
@@ -49,7 +48,7 @@ public class NullPointerExceptionTransformer implements ClassHolderTransformer {
                 Variable var = block.getProgram().createVariable();
                 nullCheck.setReceiver(var);
                 invoke.setInstance(var);
-                block.getInstructions().add(i++, nullCheck);
+                insn.insertPrevious(nullCheck);
             }
         }
     }

@@ -78,7 +78,7 @@ public class ShadowStackTransformer {
         invocation.getArguments().add(sizeVariable);
         instructionsToAdd.add(invocation);
 
-        block.getInstructions().addAll(0, instructionsToAdd);
+        block.addFirstAll(instructionsToAdd);
     }
 
     private void addStackRelease(Program program, int maxDepth) {
@@ -101,7 +101,7 @@ public class ShadowStackTransformer {
         } else {
             exitBlock = program.createBasicBlock();
             ExitInstruction exit = new ExitInstruction();
-            exitBlock.getInstructions().add(exit);
+            exitBlock.add(exit);
 
             if (hasResult) {
                 Phi phi = new Phi();
@@ -125,7 +125,7 @@ public class ShadowStackTransformer {
                 jumpToExit.setLocation(oldExit.getLocation());
                 jumpToExit.setLocation(oldExit.getLocation());
 
-                block.getInstructions().set(block.getInstructions().size() - 1, jumpToExit);
+                block.getLastInstruction().replace(jumpToExit);
             }
         }
 
@@ -143,6 +143,6 @@ public class ShadowStackTransformer {
         invocation.getArguments().add(sizeVariable);
         instructionsToAdd.add(invocation);
 
-        exitBlock.getInstructions().addAll(exitBlock.getInstructions().size() - 1, instructionsToAdd);
+        exitBlock.getLastInstruction().insertPreviousAll(instructionsToAdd);
     }
 }

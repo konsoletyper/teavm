@@ -15,10 +15,10 @@
  */
 package org.teavm.model.optimization;
 
-import java.util.ArrayList;
-import java.util.List;
-import org.teavm.model.*;
-import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.Instruction;
+import org.teavm.model.Program;
+import org.teavm.model.Variable;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.DefinitionExtractor;
 
@@ -32,42 +32,32 @@ public class ArrayUnwrapMotion implements MethodOptimization {
     }
 
     private void optimize(BasicBlock block) {
-        List<Instruction> newInstructions = new ArrayList<>();
-        List<Instruction> instructions = block.getInstructions();
-        for (int i = 0; i < instructions.size(); ++i) {
-            Instruction insn = instructions.get(i);
+        for (Instruction insn : block) {
             if (insn instanceof UnwrapArrayInstruction) {
                 UnwrapArrayInstruction unwrap = (UnwrapArrayInstruction) insn;
-                EmptyInstruction empty = new EmptyInstruction();
-                empty.setLocation(unwrap.getLocation());
-                instructions.set(i, empty);
-                int def = whereDefined(instructions, i, unwrap.getArray());
-                if (def < 0) {
-                    newInstructions.add(unwrap);
+                Instruction def = whereDefined(insn, unwrap.getArray());
+                insn.delete();
+                if (def == null) {
+                    block.addFirst(unwrap);
                 } else {
-                    instructions.add(def + 1, unwrap);
-                    unwrap.setLocation(instructions.get(def).getLocation());
-                    ++i;
+                    def.insertNext(unwrap);
+                    unwrap.setLocation(def.getLocation());
                 }
             }
-        }
-        if (!newInstructions.isEmpty()) {
-            instructions.addAll(0, newInstructions);
         }
     }
 
-    private int whereDefined(List<Instruction> instructions, int index, Variable var) {
+    private Instruction whereDefined(Instruction instruction, Variable var) {
         DefinitionExtractor def = new DefinitionExtractor();
-        while (index >= 0) {
-            Instruction insn = instructions.get(index);
-            insn.acceptVisitor(def);
+        while (instruction != null) {
+            instruction.acceptVisitor(def);
             for (Variable defVar : def.getDefinedVariables()) {
                 if (defVar == var) {
-                    return index;
+                    return instruction;
                 }
             }
-            --index;
+            instruction = instruction.getPrevious();
         }
-        return index;
+        return instruction;
     }
 }

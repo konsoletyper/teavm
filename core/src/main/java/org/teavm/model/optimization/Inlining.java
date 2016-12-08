@@ -29,6 +29,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BranchingInstruction;
@@ -62,7 +63,7 @@ public class Inlining {
 
     private void execPlanEntry(Program program, PlanEntry planEntry, int offset) {
         BasicBlock block = program.basicBlockAt(planEntry.targetBlock + offset);
-        InvokeInstruction invoke = (InvokeInstruction) block.getInstructions().get(planEntry.targetInstruction);
+        InvokeInstruction invoke = (InvokeInstruction) planEntry.targetInstruction;
         BasicBlock splitBlock = program.createBasicBlock();
         BasicBlock firstInlineBlock = program.createBasicBlock();
         Program inlineProgram = planEntry.program;
@@ -75,30 +76,43 @@ public class Inlining {
             program.createVariable();
         }
 
-        List<Instruction> movedInstructions = block.getInstructions().subList(planEntry.targetInstruction + 1,
-                block.getInstructions().size());
-        List<Instruction> instructionsToMove = new ArrayList<>(movedInstructions);
-        movedInstructions.clear();
-        splitBlock.getInstructions().addAll(instructionsToMove);
+        while (planEntry.targetInstruction.getNext() != null) {
+            Instruction insn = planEntry.targetInstruction.getNext();
+            insn.delete();
+            splitBlock.add(insn);
+        }
         splitBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
 
-        block.getInstructions().remove(block.getInstructions().size() - 1);
+        invoke.delete();
         if (invoke.getInstance() == null || invoke.getMethod().getName().equals("<init>")) {
             InitClassInstruction clinit = new InitClassInstruction();
             clinit.setClassName(invoke.getMethod().getClassName());
-            block.getInstructions().add(clinit);
+            block.add(clinit);
         }
         JumpInstruction jumpToInlinedProgram = new JumpInstruction();
         jumpToInlinedProgram.setTarget(firstInlineBlock);
-        block.getInstructions().add(jumpToInlinedProgram);
+        block.add(jumpToInlinedProgram);
 
         for (int i = 0; i < inlineProgram.basicBlockCount(); ++i) {
             BasicBlock blockToInline = inlineProgram.basicBlockAt(i);
             BasicBlock inlineBlock = program.basicBlockAt(firstInlineBlock.getIndex() + i);
-            ProgramUtils.copyBasicBlock(blockToInline, inlineBlock);
+            while (blockToInline.getFirstInstruction() != null) {
+                Instruction insn = blockToInline.getFirstInstruction();
+                insn.delete();
+                inlineBlock.add(insn);
+            }
+
+            List<Phi> phis = new ArrayList<>(blockToInline.getPhis());
+            blockToInline.getPhis().clear();
+            inlineBlock.getPhis().addAll(phis);
+
+            List<TryCatchBlock> tryCatches = new ArrayList<>(blockToInline.getTryCatchBlocks());
+            blockToInline.getTryCatchBlocks().clear();
+            inlineBlock.getTryCatchBlocks().addAll(tryCatches);
         }
 
-        BasicBlockMapper blockMapper = new BasicBlockMapper(index -> index + firstInlineBlock.getIndex());
+        BasicBlockMapper blockMapper = new BasicBlockMapper((BasicBlock b) ->
+                program.basicBlockAt(b.getIndex() + firstInlineBlock.getIndex()));
         InstructionVariableMapper variableMapper = new InstructionVariableMapper(var -> {
             if (var.getIndex() == 0) {
                 return invoke.getInstance();
@@ -120,7 +134,7 @@ public class Inlining {
                 ExitInstruction exit = (ExitInstruction) lastInsn;
                 JumpInstruction exitReplacement = new JumpInstruction();
                 exitReplacement.setTarget(splitBlock);
-                mappedBlock.getInstructions().set(mappedBlock.getInstructions().size() - 1, exitReplacement);
+                exit.replace(exitReplacement);
                 if (exit.getValueToReturn() != null) {
                     Incoming resultIncoming = new Incoming();
                     resultIncoming.setSource(mappedBlock);
@@ -135,7 +149,7 @@ public class Inlining {
                 AssignInstruction resultAssignment = new AssignInstruction();
                 resultAssignment.setReceiver(invoke.getReceiver());
                 resultAssignment.setAssignee(resultVariables.get(0).getValue());
-                splitBlock.getInstructions().add(0, resultAssignment);
+                splitBlock.addFirst(resultAssignment);
             } else {
                 Phi resultPhi = new Phi();
                 resultPhi.setReceiver(invoke.getReceiver());
@@ -170,14 +184,11 @@ public class Inlining {
         List<PlanEntry> plan = new ArrayList<>();
         int ownComplexity = getComplexity(program);
 
-        for (int i = program.basicBlockCount() - 1; i >= 0; --i) {
-            BasicBlock block = program.basicBlockAt(i);
+        for (BasicBlock block : program.getBasicBlocks()) {
             if (!block.getTryCatchBlocks().isEmpty()) {
                 continue;
             }
-            List<Instruction> instructions = block.getInstructions();
-            for (int j = instructions.size() - 1; j >= 0; --j) {
-                Instruction insn = instructions.get(j);
+            for (Instruction insn : block) {
                 if (!(insn instanceof InvokeInstruction)) {
                     continue;
                 }
@@ -202,13 +213,14 @@ public class Inlining {
                 }
 
                 PlanEntry entry = new PlanEntry();
-                entry.targetBlock = i;
-                entry.targetInstruction = j;
+                entry.targetBlock = block.getIndex();
+                entry.targetInstruction = insn;
                 entry.program = invokedProgram;
                 entry.innerPlan.addAll(buildPlan(invokedProgram, classSource, depth + 1));
                 plan.add(entry);
             }
         }
+        Collections.reverse(plan);
 
         return plan;
     }
@@ -222,20 +234,20 @@ public class Inlining {
         int complexity = 0;
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            List<Instruction> instructions = block.getInstructions();
-            int nopCount = (int) instructions.stream().filter(insn -> insn instanceof EmptyInstruction).count();
-            int invokeCount = instructions.stream().mapToInt(insn -> {
-                if (!(insn instanceof InvokeInstruction)) {
-                    return 0;
+            int nopCount = 0;
+            int invokeCount = 0;
+            for (Instruction insn : block) {
+                if (insn instanceof EmptyInstruction) {
+                    nopCount++;
+                } else if (insn instanceof InvokeInstruction) {
+                    InvokeInstruction invoke = (InvokeInstruction) insn;
+                    invokeCount += invoke.getArguments().size();
+                    if (invoke.getInstance() != null) {
+                        invokeCount++;
+                    }
                 }
-                InvokeInstruction invoke = (InvokeInstruction) insn;
-                int count = invoke.getArguments().size();
-                if (invoke.getInstance() != null) {
-                    count++;
-                }
-                return count + 1;
-            }).sum();
-            complexity += instructions.size() - 1 - nopCount + invokeCount;
+            }
+            complexity += block.instructionCount() - nopCount + invokeCount;
             Instruction lastInsn = block.getLastInstruction();
             if (lastInsn instanceof SwitchInstruction) {
                 complexity += 3;
@@ -248,7 +260,7 @@ public class Inlining {
 
     private class PlanEntry {
         int targetBlock;
-        int targetInstruction;
+        Instruction targetInstruction;
         Program program;
         final List<PlanEntry> innerPlan = new ArrayList<>();
     }

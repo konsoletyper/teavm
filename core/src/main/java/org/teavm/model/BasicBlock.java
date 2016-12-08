@@ -18,14 +18,16 @@ package org.teavm.model;
 import java.util.*;
 import org.teavm.model.instructions.InstructionReader;
 
-public class BasicBlock implements BasicBlockReader {
+public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
     private Program program;
     private int index;
     private List<Phi> phis = new ArrayList<>();
-    private List<Instruction> instructions = new ArrayList<>();
     private List<TryCatchBlock> tryCatchBlocks = new ArrayList<>();
     private Variable exceptionVariable;
     private String label;
+    Instruction firstInstruction;
+    Instruction lastInstruction;
+    int cachedSize;
 
     BasicBlock(Program program, int index) {
         this.program = program;
@@ -50,59 +52,114 @@ public class BasicBlock implements BasicBlockReader {
         this.program = null;
     }
 
-    private List<Instruction> safeInstructions = new AbstractList<Instruction>() {
-        @Override
-        public Instruction get(int index) {
-            return instructions.get(index);
-        }
-
-        @Override
-        public int size() {
-            return instructions.size();
-        }
-
-        @Override
-        public void add(int index, Instruction e) {
-            if (e.getBasicBlock() != null) {
-                throw new IllegalArgumentException("This instruction is in some basic block");
-            }
-            e.setBasicBlock(BasicBlock.this);
-            instructions.add(index, e);
-        }
-
-        @Override
-        public Instruction set(int index, Instruction element) {
-            if (element.getBasicBlock() != null) {
-                throw new IllegalArgumentException("This instruction is in some basic block");
-            }
-            Instruction oldInsn = instructions.get(index);
-            oldInsn.setBasicBlock(null);
-            element.setBasicBlock(BasicBlock.this);
-            return instructions.set(index, element);
-        }
-
-        @Override
-        public Instruction remove(int index) {
-            Instruction insn = instructions.remove(index);
-            insn.setBasicBlock(null);
-            return insn;
-        }
-
-        @Override
-        public void clear() {
-            for (Instruction insn : instructions) {
-                insn.setBasicBlock(null);
-            }
-            instructions.clear();
-        }
-    };
-
-    public List<Instruction> getInstructions() {
-        return safeInstructions;
+    public Instruction getFirstInstruction() {
+        return firstInstruction;
     }
 
     public Instruction getLastInstruction() {
-        return !instructions.isEmpty() ? instructions.get(instructions.size() - 1) : null;
+        return lastInstruction;
+    }
+
+    @Override
+    public Iterator<Instruction> iterator() {
+        return new Iterator<Instruction>() {
+            Instruction instruction = firstInstruction;
+            private boolean removed;
+
+            @Override
+            public boolean hasNext() {
+                return instruction != null;
+            }
+
+            @Override
+            public Instruction next() {
+                if (instruction == null) {
+                    throw new NoSuchElementException();
+                }
+                Instruction result = instruction;
+                instruction = instruction.next;
+                removed = false;
+                return result;
+            }
+
+            @Override
+            public void remove() {
+                if (removed) {
+                    throw new IllegalStateException();
+                }
+                if (instruction == null) {
+                    throw new NoSuchElementException();
+                }
+                Instruction next = instruction.next;
+                instruction.delete();
+                instruction = next;
+                removed = true;
+            }
+        };
+    }
+
+    public void addFirst(Instruction instruction) {
+        instruction.checkAddable();
+        if (firstInstruction == null) {
+            firstInstruction = instruction;
+            lastInstruction = instruction;
+        } else {
+            instruction.next = firstInstruction;
+            firstInstruction.previous = instruction;
+            firstInstruction = instruction;
+        }
+
+        cachedSize++;
+        instruction.basicBlock = this;
+    }
+
+    public void addAll(Iterable<Instruction> instructions) {
+        for (Instruction instruction : instructions) {
+            add(instruction);
+        }
+    }
+
+    public void add(Instruction instruction) {
+        instruction.checkAddable();
+        if (firstInstruction == null) {
+            firstInstruction = instruction;
+            lastInstruction = instruction;
+        } else {
+            instruction.previous = lastInstruction;
+            lastInstruction.next = instruction;
+            lastInstruction = instruction;
+        }
+
+        cachedSize++;
+        instruction.basicBlock = this;
+    }
+
+    public void addFirstAll(Iterable<Instruction> instructions) {
+        Iterator<Instruction> iterator = instructions.iterator();
+        if (!iterator.hasNext()) {
+            return;
+        }
+        Instruction last = iterator.next();
+        addFirst(last);
+        while (iterator.hasNext()) {
+            Instruction insn = iterator.next();
+            last.insertNext(insn);
+            last = insn;
+        }
+    }
+
+    public void removeAllInstructions() {
+        for (Instruction instruction = firstInstruction; instruction != null;) {
+            Instruction next = instruction.next;
+            instruction.previous = null;
+            instruction.next = null;
+            instruction.basicBlock = null;
+            instruction = next;
+        }
+        firstInstruction = null;
+        lastInstruction = null;
+
+        cachedSize = 0;
     }
 
     private List<Phi> safePhis = new AbstractList<Phi>() {
@@ -165,21 +222,52 @@ public class BasicBlock implements BasicBlockReader {
 
     @Override
     public int instructionCount() {
-        return instructions.size();
+        return cachedSize;
     }
 
     @Override
-    public void readInstruction(int index, InstructionReader reader) {
-        Instruction insn = instructions.get(index);
-        reader.location(insn.getLocation());
-        insn.acceptVisitor(new InstructionReadVisitor(reader));
+    public InstructionIterator iterateInstructions() {
+        return new InstructionIterator() {
+            Instruction instruction = firstInstruction;
+            Instruction readInstruction;
+            InstructionReadVisitor visitor = new InstructionReadVisitor(null);
+
+            @Override
+            public boolean hasNext() {
+                return instruction != null;
+            }
+
+            @Override
+            public void next() {
+                readInstruction = instruction;
+                instruction = instruction.next;
+            }
+
+            @Override
+            public boolean hasPrevious() {
+                return instruction != null && instruction.previous != null;
+            }
+
+            @Override
+            public void previous() {
+                instruction = instruction.previous;
+                readInstruction = instruction;
+            }
+
+            @Override
+            public void read(InstructionReader reader) {
+                visitor.reader = reader;
+                readInstruction.acceptVisitor(visitor);
+                visitor.reader = null;
+            }
+        };
     }
 
     @Override
     public void readAllInstructions(InstructionReader reader) {
         InstructionReadVisitor visitor = new InstructionReadVisitor(reader);
         TextLocation location = null;
-        for (Instruction insn : instructions) {
+        for (Instruction insn : this) {
             if (!Objects.equals(location, insn.getLocation())) {
                 location = insn.getLocation();
                 reader.location(location);

@@ -22,10 +22,6 @@ import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JavacSupport implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
@@ -39,15 +35,15 @@ public class JavacSupport implements ClassHolderTransformer {
             ConstructInstruction construct = new ConstructInstruction();
             construct.setReceiver(var);
             construct.setType("com.sun.tools.javac.api.JavacTool");
-            block.getInstructions().add(construct);
+            block.add(construct);
             InvokeInstruction init = new InvokeInstruction();
             init.setInstance(var);
             init.setType(InvocationType.SPECIAL);
             init.setMethod(new MethodReference("com.sun.tools.javac.api.JavacTool", "<init>", ValueType.VOID));
-            block.getInstructions().add(init);
+            block.add(init);
             ExitInstruction exit = new ExitInstruction();
             exit.setValueToReturn(var);
-            block.getInstructions().add(exit);
+            block.add(exit);
             method.setProgram(program);
         }
     }

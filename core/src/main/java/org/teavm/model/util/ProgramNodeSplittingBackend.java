@@ -36,12 +36,11 @@ public class ProgramNodeSplittingBackend implements GraphSplittingBackend {
             int node = nodes[i];
             BasicBlock block = program.basicBlockAt(node);
             BasicBlock blockCopy = program.createBasicBlock();
-            blockCopy.getInstructions().addAll(ProgramUtils.copyInstructions(block, 0,
-                    block.getInstructions().size(), program));
+            blockCopy.addAll(ProgramUtils.copyInstructions(block.getFirstInstruction(), null, program));
             copies[i] = blockCopy.getIndex();
             map.put(nodes[i], copies[i] + 1);
         }
-        BasicBlockMapper copyBlockMapper = new BasicBlockMapper(block -> {
+        BasicBlockMapper copyBlockMapper = new BasicBlockMapper((int block) -> {
             int mappedIndex = map.get(block);
             return mappedIndex == 0 ? block : mappedIndex - 1;
         });

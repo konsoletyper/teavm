@@ -65,11 +65,11 @@ public class UnusedVariableElimination implements MethodOptimization {
                 block.setExceptionVariable(null);
             }
 
-            for (int j = 0; j < block.getInstructions().size(); ++j) {
+            for (Instruction insn : block) {
                 insnOptimizer.eliminate = false;
-                block.getInstructions().get(j).acceptVisitor(insnOptimizer);
+                insn.acceptVisitor(insnOptimizer);
                 if (insnOptimizer.eliminate) {
-                    block.getInstructions().remove(j--);
+                    insn.delete();
                 }
             }
 

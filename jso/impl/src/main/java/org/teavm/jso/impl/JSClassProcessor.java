@@ -270,9 +270,7 @@ class JSClassProcessor {
         program = methodToProcess.getProgram();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            List<Instruction> instructions = block.getInstructions();
-            for (int j = 0; j < instructions.size(); ++j) {
-                Instruction insn = instructions.get(j);
+            for (Instruction insn : block) {
                 if (!(insn instanceof InvokeInstruction)) {
                     continue;
                 }
@@ -285,9 +283,8 @@ class JSClassProcessor {
                 CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
                 replacement.clear();
                 if (processInvocation(method, callLocation, invoke, methodToProcess)) {
-                    block.getInstructions().set(j, replacement.get(0));
-                    block.getInstructions().addAll(j + 1, replacement.subList(1, replacement.size()));
-                    j += replacement.size() - 1;
+                    insn.insertNextAll(replacement);
+                    insn.delete();
                 }
             }
         }
@@ -657,16 +654,16 @@ class JSClassProcessor {
         if (callee.getResultType() != ValueType.VOID) {
             insn.setReceiver(program.createVariable());
         }
-        block.getInstructions().addAll(replacement);
-        block.getInstructions().add(insn);
+        block.addAll(replacement);
+        block.add(insn);
 
         ExitInstruction exit = new ExitInstruction();
         if (insn.getReceiver() != null) {
             replacement.clear();
             exit.setValueToReturn(wrap(insn.getReceiver(), callee.getResultType(), null));
-            block.getInstructions().addAll(replacement);
+            block.addAll(replacement);
         }
-        block.getInstructions().add(exit);
+        block.add(exit);
 
         callerMethod.setProgram(program);
         cls.addMethod(callerMethod);

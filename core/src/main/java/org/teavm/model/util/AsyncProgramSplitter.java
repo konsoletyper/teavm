@@ -46,7 +46,7 @@ import org.teavm.model.instructions.MonitorEnterInstruction;
 
 public class AsyncProgramSplitter {
     private List<Part> parts = new ArrayList<>();
-    private Map<Long, Integer> partMap = new HashMap<>();
+    private Map<Instruction, Integer> partMap = new HashMap<>();
     private ClassReaderSource classSource;
     private Set<MethodReference> asyncMethods = new HashSet<>();
     private Program program;
@@ -63,7 +63,7 @@ public class AsyncProgramSplitter {
         Part initialPart = new Part(program.basicBlockCount());
         initialPart.program = initialProgram;
         parts.add(initialPart);
-        partMap.put(0L, 0);
+        partMap.put(program.basicBlockAt(0).getFirstInstruction(), 0);
         Step initialStep = new Step();
         initialStep.source = 0;
         initialStep.targetPart = initialPart;
@@ -78,9 +78,8 @@ public class AsyncProgramSplitter {
             }
             BasicBlock sourceBlock = program.basicBlockAt(step.source);
             step.targetPart.originalBlocks[step.source] = step.source;
-            int last = 0;
-            for (int i = 0; i < sourceBlock.getInstructions().size(); ++i) {
-                Instruction insn = sourceBlock.getInstructions().get(i);
+            Instruction last = sourceBlock.getFirstInstruction();
+            for (Instruction insn : sourceBlock) {
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction) insn;
                     if (!asyncMethods.contains(findRealMethod(invoke.getMethod()))) {
@@ -96,8 +95,7 @@ public class AsyncProgramSplitter {
 
                 // If we met asynchronous invocation...
                 // Copy portion of current block from last occurrence (or from start) to i'th instruction.
-                targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock,
-                        last, i, targetBlock.getProgram()));
+                targetBlock.addAll(ProgramUtils.copyInstructions(last, insn, targetBlock.getProgram()));
                 targetBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock,
                         targetBlock.getProgram()));
                 for (TryCatchBlock tryCatch : targetBlock.getTryCatchBlocks()) {
@@ -108,15 +106,14 @@ public class AsyncProgramSplitter {
                         queue.add(next);
                     }
                 }
-                last = i;
+                last = insn;
 
-                step.targetPart.splitPoints[targetBlock.getIndex()] = i;
+                step.targetPart.splitPoints[targetBlock.getIndex()] = insn;
 
                 // If this instruction already separates program, end with current block and refer to the
                 // existing part
-                long key = ((long) step.source << 32) | i;
-                if (partMap.containsKey(key)) {
-                    step.targetPart.blockSuccessors[targetBlock.getIndex()] = partMap.get(key);
+                if (partMap.containsKey(insn)) {
+                    step.targetPart.blockSuccessors[targetBlock.getIndex()] = partMap.get(insn);
                     continue taskLoop;
                 }
 
@@ -128,7 +125,7 @@ public class AsyncProgramSplitter {
                 parts.add(part);
 
                 // Mark current instruction as a separator and remember which part is in charge.
-                partMap.put(key, partId);
+                partMap.put(insn, partId);
                 step.targetPart.blockSuccessors[targetBlock.getIndex()] = partId;
 
                 // Continue with a new block in the new part
@@ -136,15 +133,14 @@ public class AsyncProgramSplitter {
                 if (step.source > 0) {
                     JumpInstruction jumpToNextBlock = new JumpInstruction();
                     jumpToNextBlock.setTarget(targetBlock);
-                    nextProgram.basicBlockAt(0).getInstructions().add(jumpToNextBlock);
+                    nextProgram.basicBlockAt(0).add(jumpToNextBlock);
                     nextProgram.basicBlockAt(0).getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock,
                             nextProgram));
                 }
                 step.targetPart = part;
                 part.originalBlocks[targetBlock.getIndex()] = step.source;
             }
-            targetBlock.getInstructions().addAll(ProgramUtils.copyInstructions(sourceBlock,
-                    last, sourceBlock.getInstructions().size(), targetBlock.getProgram()));
+            targetBlock.addAll(ProgramUtils.copyInstructions(last, null, targetBlock.getProgram()));
             targetBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock, targetBlock.getProgram()));
             for (TryCatchBlock tryCatch : targetBlock.getTryCatchBlocks()) {
                 if (tryCatch.getHandler() != null) {
@@ -170,18 +166,18 @@ public class AsyncProgramSplitter {
         for (Part part : parts) {
             IntegerArray blockSuccessors = IntegerArray.of(part.blockSuccessors);
             IntegerArray originalBlocks = IntegerArray.of(part.originalBlocks);
-            IntegerArray splitPoints = IntegerArray.of(part.splitPoints);
+            List<Instruction> splitPoints = new ArrayList<>(Arrays.asList(part.splitPoints));
             AsyncProgramSplittingBackend splittingBackend = new AsyncProgramSplittingBackend(
                     new ProgramNodeSplittingBackend(part.program), blockSuccessors, originalBlocks, splitPoints);
             Graph graph = ProgramUtils.buildControlFlowGraph(part.program);
             int[] weights = new int[graph.size()];
             for (int i = 0; i < part.program.basicBlockCount(); ++i) {
-                weights[i] = part.program.basicBlockAt(i).getInstructions().size();
+                weights[i] = part.program.basicBlockAt(i).instructionCount();
             }
             GraphUtils.splitIrreducibleGraph(graph, weights, splittingBackend);
             part.blockSuccessors = splittingBackend.blockSuccessors.getAll();
             part.originalBlocks = splittingBackend.originalBlocks.getAll();
-            part.splitPoints = splittingBackend.splitPoints.getAll();
+            part.splitPoints = splittingBackend.splitPoints.toArray(new Instruction[0]);
         }
         partMap.clear();
     }
@@ -247,7 +243,7 @@ public class AsyncProgramSplitter {
         return Arrays.copyOf(result, result.length);
     }
 
-    public int[] getSplitPoints(int index) {
+    public Instruction[] getSplitPoints(int index) {
         return parts.get(index).splitPoints.clone();
     }
 
@@ -258,14 +254,13 @@ public class AsyncProgramSplitter {
     static class Part {
         Program program;
         int[] blockSuccessors;
-        int[] splitPoints;
+        Instruction[] splitPoints;
         int[] originalBlocks;
 
-        public Part(int blockCount) {
+        Part(int blockCount) {
             blockSuccessors = new int[blockCount];
             Arrays.fill(blockSuccessors, -1);
-            splitPoints = new int[blockCount];
-            Arrays.fill(splitPoints, -1);
+            splitPoints = new Instruction[blockCount];
             originalBlocks = new int[blockCount];
             Arrays.fill(originalBlocks, -1);
         }
@@ -280,10 +275,10 @@ public class AsyncProgramSplitter {
         private GraphSplittingBackend inner;
         private IntegerArray blockSuccessors;
         private IntegerArray originalBlocks;
-        private IntegerArray splitPoints;
+        private List<Instruction> splitPoints;
 
         public AsyncProgramSplittingBackend(GraphSplittingBackend inner, IntegerArray blockSuccessors,
-                IntegerArray originalBlocks, IntegerArray splitPoints) {
+                IntegerArray originalBlocks, List<Instruction> splitPoints) {
             this.inner = inner;
             this.blockSuccessors = blockSuccessors;
             this.originalBlocks = originalBlocks;
@@ -298,7 +293,7 @@ public class AsyncProgramSplitter {
                 int node = nodes[i];
                 if (blockSuccessors.size() <= copy) {
                     blockSuccessors.add(-1);
-                    splitPoints.add(-1);
+                    splitPoints.add(null);
                     originalBlocks.add(-1);
                 }
                 blockSuccessors.set(copy, blockSuccessors.get(node));

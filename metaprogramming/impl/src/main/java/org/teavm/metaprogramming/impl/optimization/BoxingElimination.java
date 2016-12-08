@@ -16,11 +16,11 @@
 package org.teavm.metaprogramming.impl.optimization;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.teavm.common.DisjointSet;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
@@ -39,8 +39,8 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.util.UsageExtractor;
 
 public class BoxingElimination {
-    private static Set<String> wrapperClasses = Arrays.asList(Boolean.class, Byte.class, Short.class,
-            Character.class, Integer.class, Long.class, Float.class, Double.class).stream()
+    private static Set<String> wrapperClasses = Stream.of(Boolean.class, Byte.class, Short.class,
+            Character.class, Integer.class, Long.class, Float.class, Double.class)
             .map(Class::getName)
             .collect(Collectors.toSet());
     private DisjointSet set = new DisjointSet();
@@ -67,7 +67,7 @@ public class BoxingElimination {
 
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 if (insn instanceof AssignInstruction) {
                     AssignInstruction assign = (AssignInstruction) insn;
                     union(assign.getReceiver().getIndex(), assign.getAssignee().getIndex());
@@ -125,15 +125,14 @@ public class BoxingElimination {
     private void removeInstructions() {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (int j = 0; j < block.getInstructions().size(); ++j) {
-                Instruction insn = block.getInstructions().get(j);
+            for (Instruction insn : block) {
                 if (insn instanceof CastInstruction) {
                     CastInstruction cast = (CastInstruction) insn;
                     if (isProven(cast.getReceiver().getIndex())) {
                         AssignInstruction assign = new AssignInstruction();
                         assign.setReceiver(cast.getReceiver());
                         assign.setAssignee(cast.getValue());
-                        block.getInstructions().set(j, assign);
+                        insn.replace(assign);
                     }
                 } else if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction) insn;
@@ -141,12 +140,12 @@ public class BoxingElimination {
                         AssignInstruction assign = new AssignInstruction();
                         assign.setReceiver(invoke.getReceiver());
                         assign.setAssignee(invoke.getArguments().get(0));
-                        block.getInstructions().set(j, assign);
+                        insn.replace(assign);
                     } else if (invoke.getInstance() != null && isProven(invoke.getInstance().getIndex())) {
                         AssignInstruction assign = new AssignInstruction();
                         assign.setReceiver(invoke.getReceiver());
                         assign.setAssignee(invoke.getInstance());
-                        block.getInstructions().set(j, assign);
+                        insn.replace(assign);
                     }
                 }
             }

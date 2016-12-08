@@ -114,7 +114,7 @@ public class Parser {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             IntIntMap varMap = blockEntryVariableMappings[i];
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 insn.acceptVisitor(defExtractor);
                 Map<Integer, String> newDebugNames = parser.getDebugNames(insn);
                 if (newDebugNames != null) {
@@ -180,7 +180,7 @@ public class Parser {
 
             result[node] = new IntIntOpenHashMap(varMap);
 
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 insn.acceptVisitor(defExtractor);
                 for (Variable definedVar : defExtractor.getDefinedVariables()) {
                     int sourceVar = phiUpdater.getSourceVariable(definedVar.getIndex());

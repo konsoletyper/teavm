@@ -19,10 +19,6 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JCLHacks implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
@@ -32,39 +28,33 @@ public class JCLHacks implements ClassHolderTransformer {
     }
 
     private void installThreadMethods(ClassHolder cls) {
-        cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("setName", String.class, void.class),
-                false));
+        cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("setName", String.class, void.class)));
         cls.addMethod(createMethodThrowingSecurityException(new MethodDescriptor("setDaemon",
-                boolean.class, void.class), false));
+                boolean.class, void.class)));
     }
 
-    private MethodHolder createMethodThrowingSecurityException(MethodDescriptor desc, boolean staticMethod) {
+    private MethodHolder createMethodThrowingSecurityException(MethodDescriptor desc) {
         MethodHolder method = new MethodHolder(desc);
         Program program = new Program();
         for (int i = 0; i < desc.parameterCount(); ++i) {
             program.createVariable();
         }
-        if (!staticMethod) {
-            program.createVariable();
-        }
+        program.createVariable();
         program.createVariable();
         Variable var = program.createVariable();
         BasicBlock block = program.createBasicBlock();
         ConstructInstruction cons = new ConstructInstruction();
         cons.setType("java.lang.SecurityException");
         cons.setReceiver(var);
-        block.getInstructions().add(cons);
+        block.add(cons);
         InvokeInstruction invoke = new InvokeInstruction();
         invoke.setType(InvocationType.SPECIAL);
         invoke.setInstance(var);
         invoke.setMethod(new MethodReference(SecurityException.class, "<init>", void.class));
-        block.getInstructions().add(invoke);
+        block.add(invoke);
         RaiseInstruction raise = new RaiseInstruction();
         raise.setException(var);
-        block.getInstructions().add(raise);
-        if (staticMethod) {
-            method.getModifiers().add(ElementModifier.STATIC);
-        }
+        block.add(raise);
         method.setLevel(AccessLevel.PUBLIC);
         method.setProgram(program);
         return method;

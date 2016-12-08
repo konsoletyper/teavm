@@ -18,10 +18,6 @@ package org.teavm.model.optimization;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class VariableEscapeAnalyzer {
     private VariableEscapeAnalyzer() {
     }
@@ -31,7 +27,7 @@ public final class VariableEscapeAnalyzer {
         InstructionAnalyzer analyzer = new InstructionAnalyzer(escaping);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            for (Instruction insn : block.getInstructions()) {
+            for (Instruction insn : block) {
                 insn.acceptVisitor(analyzer);
             }
         }

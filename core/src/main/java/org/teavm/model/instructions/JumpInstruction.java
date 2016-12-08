@@ -18,10 +18,6 @@ package org.teavm.model.instructions;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JumpInstruction extends Instruction {
     private BasicBlock target;
 

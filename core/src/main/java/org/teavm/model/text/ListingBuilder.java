@@ -60,9 +60,10 @@ public class ListingBuilder {
             }
 
             TextLocation location = null;
-            for (int j = 0; j < block.instructionCount(); ++j) {
+            for (InstructionIterator iterator = block.iterateInstructions(); iterator.hasNext();) {
+                iterator.next();
                 insnSb.setLength(0);
-                block.readInstruction(j, stringifier);
+                iterator.read(stringifier);
                 if (!Objects.equals(location, stringifier.getLocation())) {
                     location = stringifier.getLocation();
                     sb.append(prefix).append("  at ");

@@ -22,10 +22,6 @@ import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.SwitchTableEntry;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class StringChooseEmitter {
     private ProgramEmitter pe;
     private ValueEmitter testValue;
@@ -78,7 +74,7 @@ public class StringChooseEmitter {
     }
 
     public ProgramEmitter otherwise(FragmentEmitter fragment) {
-        otherwiseBlock.getInstructions().clear();
+        otherwiseBlock.removeAllInstructions();
         pe.enter(otherwiseBlock);
         pe.emitAndJump(fragment, joinBlock);
         pe.enter(joinBlock);

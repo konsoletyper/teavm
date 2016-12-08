@@ -21,10 +21,6 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DependencyAgent implements DependencyInfo, ServiceRepository {
     private DependencyChecker checker;
 

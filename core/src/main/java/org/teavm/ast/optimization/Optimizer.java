@@ -21,6 +21,7 @@ import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.common.Graph;
+import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;
@@ -107,7 +108,7 @@ public class Optimizer {
         Program originalProgram = splitter.getOriginalProgram();
         Program program = splitter.getProgram(partIndex);
         int[] successors = splitter.getBlockSuccessors(partIndex);
-        int[] splitPoints = splitter.getSplitPoints(partIndex);
+        Instruction[] splitPoints = splitter.getSplitPoints(partIndex);
         int[] originalBlocks = splitter.getOriginalBlocks(partIndex);
 
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -124,11 +125,11 @@ public class Optimizer {
             // Remove from live set all variables that are defined in these blocks
             DefinitionExtractor defExtractor = new DefinitionExtractor();
             UsageExtractor useExtractor = new UsageExtractor();
-            List<Instruction> instructions = originalProgram.basicBlockAt(originalBlocks[i]).getInstructions();
-            int splitPoint = splitPoints[i];
-            for (int j = instructions.size() - 1; j >= splitPoint; --j) {
-                instructions.get(j).acceptVisitor(defExtractor);
-                instructions.get(j).acceptVisitor(useExtractor);
+            BasicBlock block = originalProgram.basicBlockAt(originalBlocks[i]);
+            Instruction splitPoint = splitPoints[i];
+            for (Instruction insn = block.getLastInstruction(); insn != splitPoint; insn = insn.getPrevious()) {
+                insn.acceptVisitor(defExtractor);
+                insn.acceptVisitor(useExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {
                     liveVars.clear(var.getIndex());
                 }

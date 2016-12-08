@@ -101,7 +101,7 @@ public class ExceptionHandlingShadowStackContributor {
                 catchCall.setMethod(new MethodReference(ExceptionHandling.class, "catchException",
                         Throwable.class));
                 catchCall.setReceiver(block.getExceptionVariable());
-                block.getInstructions().add(0, catchCall);
+                block.addFirst(catchCall);
                 block.setExceptionVariable(null);
             }
 
@@ -123,8 +123,6 @@ public class ExceptionHandlingShadowStackContributor {
     }
 
     private int contributeToBasicBlock(BasicBlock block) {
-        List<Instruction> instructions = block.getInstructions();
-
         int[] currentJointSources = new int[program.variableCount()];
         int[] jointReceiverMap = new int[program.variableCount()];
         Arrays.fill(currentJointSources, -1);
@@ -147,9 +145,7 @@ public class ExceptionHandlingShadowStackContributor {
         List<BasicBlock> blocksToClearHandlers = new ArrayList<>();
         blocksToClearHandlers.add(block);
 
-        for (int i = 0; i < instructions.size(); ++i) {
-            Instruction insn = instructions.get(i);
-
+        for (Instruction insn : block) {
             if (isCallInstruction(insn)) {
                 BasicBlock next;
                 boolean last = false;
@@ -160,21 +156,23 @@ public class ExceptionHandlingShadowStackContributor {
                     raise.setType(InvocationType.SPECIAL);
                     raise.getArguments().add(((RaiseInstruction) insn).getException());
                     raise.setLocation(insn.getLocation());
-                    instructions.set(i, raise);
+                    insn.replace(raise);
+                    insn = raise;
                     next = null;
-                } else if (i < instructions.size() - 1 && instructions.get(i + 1) instanceof JumpInstruction) {
-                    next = ((JumpInstruction) instructions.get(i + 1)).getTarget();
-                    instructions.remove(i + 1);
+                } else if (insn.getNext() != null && insn.getNext() instanceof JumpInstruction) {
+                    next = ((JumpInstruction) insn.getNext()).getTarget();
+                    insn.getNext().delete();
                     last = true;
                 } else {
                     next = program.createBasicBlock();
                     next.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
                     blocksToClearHandlers.add(next);
 
-                    List<Instruction> remainingInstructions = instructions.subList(i + 1, instructions.size());
-                    List<Instruction> instructionsToMove = new ArrayList<>(remainingInstructions);
-                    remainingInstructions.clear();
-                    next.getInstructions().addAll(instructionsToMove);
+                    while (insn.getNext() != null) {
+                        Instruction nextInsn = insn.getNext();
+                        nextInsn.delete();
+                        next.add(nextInsn);
+                    }
                 }
 
                 CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size());
@@ -182,16 +180,14 @@ public class ExceptionHandlingShadowStackContributor {
                 List<Instruction> pre = setLocation(getInstructionsBeforeCallSite(callSite), insn.getLocation());
                 List<Instruction> post = getInstructionsAfterCallSite(block, next, callSite, currentJointSources);
                 post = setLocation(post, insn.getLocation());
-                instructions.addAll(instructions.size() - 1, pre);
-                instructions.addAll(post);
+                insn.insertPreviousAll(pre);
+                insn.insertNextAll(post);
                 hasExceptionHandlers = true;
 
                 if (next == null || last) {
                     break;
                 }
                 block = next;
-                instructions = block.getInstructions();
-                i = -1;
             }
 
             insn.acceptVisitor(defExtractor);
@@ -323,10 +319,10 @@ public class ExceptionHandlingShadowStackContributor {
     private BasicBlock getDefaultExceptionHandler() {
         if (defaultExceptionHandler == null) {
             defaultExceptionHandler = program.createBasicBlock();
-            Variable result = createReturnValueInstructions(defaultExceptionHandler.getInstructions());
+            Variable result = createReturnValueInstructions(defaultExceptionHandler);
             ExitInstruction exit = new ExitInstruction();
             exit.setValueToReturn(result);
-            defaultExceptionHandler.getInstructions().add(exit);
+            defaultExceptionHandler.add(exit);
         }
         return defaultExceptionHandler;
     }
@@ -343,7 +339,7 @@ public class ExceptionHandlingShadowStackContributor {
         return phi;
     }
 
-    private Variable createReturnValueInstructions(List<Instruction> instructions) {
+    private Variable createReturnValueInstructions(BasicBlock block) {
         ValueType returnType = method.getReturnType();
         if (returnType == ValueType.VOID) {
             return null;
@@ -360,29 +356,29 @@ public class ExceptionHandlingShadowStackContributor {
                 case INTEGER:
                     IntegerConstantInstruction intConstant = new IntegerConstantInstruction();
                     intConstant.setReceiver(variable);
-                    instructions.add(intConstant);
+                    block.add(intConstant);
                     return variable;
                 case LONG:
                     LongConstantInstruction longConstant = new LongConstantInstruction();
                     longConstant.setReceiver(variable);
-                    instructions.add(longConstant);
+                    block.add(longConstant);
                     return variable;
                 case FLOAT:
                     FloatConstantInstruction floatConstant = new FloatConstantInstruction();
                     floatConstant.setReceiver(variable);
-                    instructions.add(floatConstant);
+                    block.add(floatConstant);
                     return variable;
                 case DOUBLE:
                     DoubleConstantInstruction doubleConstant = new DoubleConstantInstruction();
                     doubleConstant.setReceiver(variable);
-                    instructions.add(doubleConstant);
+                    block.add(doubleConstant);
                     return variable;
             }
         }
 
         NullConstantInstruction nullConstant = new NullConstantInstruction();
         nullConstant.setReceiver(variable);
-        instructions.add(nullConstant);
+        block.add(nullConstant);
 
         return variable;
     }

@@ -98,7 +98,7 @@ public class ProgramParser {
         getBasicBlock(0);
         JumpInstruction insn = new JumpInstruction();
         insn.setTarget(program.basicBlockAt(1));
-        program.basicBlockAt(0).getInstructions().add(insn);
+        program.basicBlockAt(0).add(insn);
         doAnalyze(method);
         assemble(method);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -271,12 +271,12 @@ public class ProgramParser {
                 if (basicBlock != null && !hasProperLastInstruction(basicBlock)) {
                     JumpInstruction insn = new JumpInstruction();
                     insn.setTarget(newBasicBlock);
-                    basicBlock.getInstructions().add(insn);
+                    basicBlock.add(insn);
                 }
                 basicBlock = newBasicBlock;
-                if (!basicBlock.getInstructions().isEmpty()) {
+                if (basicBlock.instructionCount() > 0) {
                     Map<Integer, String> debugNames = new HashMap<>(accumulatedDebugNames);
-                    variableDebugNames.put(basicBlock.getInstructions().get(0), debugNames);
+                    variableDebugNames.put(basicBlock.getFirstInstruction(), debugNames);
                 }
             }
             List<Instruction> builtInstructions = targetInstructions.get(i);
@@ -305,7 +305,7 @@ public class ProgramParser {
                 for (Instruction insn : builtInstructions) {
                     insn.setLocation(lastLocation);
                 }
-                basicBlock.getInstructions().addAll(builtInstructions);
+                basicBlock.addAll(builtInstructions);
             }
         }
     }
@@ -1704,6 +1704,7 @@ public class ProgramParser {
                     PutFieldInstruction insn = new PutFieldInstruction();
                     insn.setField(referenceCache.getCached(new FieldReference(ownerCls, name)));
                     insn.setValue(getVariable(value));
+                    insn.setFieldType(referenceCache.parseValueTypeCached(desc));
                     addInstruction(insn);
                     break;
                 }
