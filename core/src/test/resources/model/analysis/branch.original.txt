@@ -1,0 +1,13 @@
+var @this as this
+
+$start
+    @v := invokeStatic `Foo.get()LFoo;`
+    if @v === null then goto $ifNull else goto $ifNotNull
+$ifNull
+    invokeVirtual `Foo.bar()V` @v
+    goto $join
+$ifNotNull
+    invokeVirtual `Foo.baz()V` @v
+    goto $join
+$join
+    return

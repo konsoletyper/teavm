@@ -22,5 +22,7 @@ public interface VariableReader {
 
     String getDebugName();
 
+    String getLabel();
+
     int getRegister();
 }

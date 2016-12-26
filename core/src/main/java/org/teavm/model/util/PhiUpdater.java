@@ -105,7 +105,7 @@ public class PhiUpdater {
         return variableToSourceMap.get(var);
     }
 
-    public List<Phi> getSynthesizedPhisBy() {
+    public List<Phi> getSynthesizedPhis() {
         return synthesizedPhis;
     }
 
@@ -232,6 +232,7 @@ public class PhiUpdater {
             for (Phi phi : synthesizedPhisByBlock.get(index)) {
                 Variable var = program.createVariable();
                 var.setDebugName(phi.getReceiver().getDebugName());
+                var.setLabel(phi.getReceiver().getLabel());
                 mapVariable(phi.getReceiver().getIndex(), var);
                 phisByReceiver.put(var.getIndex(), phi);
                 phi.setReceiver(var);
@@ -269,6 +270,7 @@ public class PhiUpdater {
                 for (TryCatchJoint joint : synthesizedJointsByBlock.get(index).get(i)) {
                     Variable var = program.createVariable();
                     var.setDebugName(joint.getReceiver().getDebugName());
+                    var.setLabel(joint.getReceiver().getLabel());
                     mapVariable(joint.getReceiver().getIndex(), var);
                     joint.setReceiver(var);
                     jointsByReceiver.put(var.getIndex(), joint);
@@ -277,7 +279,8 @@ public class PhiUpdater {
             variableMap = regularVariableMap;
 
             int[] successors = domGraph.outgoingEdges(index);
-            for (int successor : successors) {
+            for (int j = successors.length - 1; j >= 0; --j) {
+                int successor = successors[j];
                 Task next = new Task();
                 next.variables = (catchSuccessors.contains(successor) ? catchVariableMap : variableMap).clone();
                 next.block = program.basicBlockAt(successor);
@@ -473,7 +476,10 @@ public class PhiUpdater {
         if (!usedDefinitions[var.getIndex()]) {
             usedDefinitions[var.getIndex()] = true;
         } else {
+            Variable old = var;
             var = program.createVariable();
+            var.setDebugName(old.getDebugName());
+            var.setLabel(old.getLabel());
         }
 
         return var;

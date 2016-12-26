@@ -16,8 +16,10 @@
 package org.teavm.model.util;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.model.BasicBlock;
@@ -218,5 +220,25 @@ public final class ProgramUtils {
             }
         }
         return places;
+    }
+
+    public static void makeUniqueLabels(Program program) {
+        Set<String> occupiedLabels = new HashSet<>();
+
+        for (int i = 0; i < program.variableCount(); ++i) {
+            Variable var = program.variableAt(i);
+            if (var.getLabel() == null) {
+                continue;
+            }
+            String suggestedName = var.getLabel();
+            if (!occupiedLabels.add(suggestedName)) {
+                int suffix = 1;
+                String base = suggestedName + "_";
+                do {
+                    suggestedName = base + suffix++;
+                } while (!occupiedLabels.add(suggestedName));
+            }
+            var.setLabel(suggestedName);
+        }
     }
 }

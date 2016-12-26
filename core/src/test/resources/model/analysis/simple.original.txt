@@ -1,0 +1,6 @@
+var @this as this
+
+$0
+    @a := invokeStatic `Foo.bar()Ljava/lang/Object;`
+    invokeVirtual `java.lang.Object.toString()Ljava/lang/String;` @a
+    return @a

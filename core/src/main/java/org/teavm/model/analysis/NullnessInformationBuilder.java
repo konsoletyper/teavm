@@ -15,11 +15,18 @@
  */
 package org.teavm.model.analysis;
 
+import com.carrotsearch.hppc.IntArrayDeque;
+import com.carrotsearch.hppc.IntDeque;
+import com.carrotsearch.hppc.IntIntMap;
+import com.carrotsearch.hppc.IntIntOpenHashMap;
+import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
+import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
@@ -32,7 +39,7 @@ import org.teavm.model.Variable;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
-import org.teavm.model.instructions.BranchingCondition;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.CloneArrayInstruction;
@@ -40,7 +47,6 @@ import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ConstructMultiArrayInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
-import org.teavm.model.instructions.InstructionVisitor;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.MonitorEnterInstruction;
 import org.teavm.model.instructions.MonitorExitInstruction;
@@ -49,20 +55,22 @@ import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
+import org.teavm.model.util.DominatorWalker;
+import org.teavm.model.util.DominatorWalkerCallback;
 import org.teavm.model.util.PhiUpdater;
 
 class NullnessInformationBuilder {
     private Program program;
     private MethodDescriptor methodDescriptor;
-    private BitSet notNullVariables = new BitSet();
-    private BitSet nullVariables = new BitSet();
-    private BitSet synthesizedVariables = new BitSet();
-    private PhiUpdater phiUpdater;
+    BitSet notNullVariables = new BitSet();
+    BitSet nullVariables = new BitSet();
+    BitSet synthesizedVariables = new BitSet();
+    PhiUpdater phiUpdater;
     private List<NullConstantInstruction> nullInstructions = new ArrayList<>();
     private List<NullCheckInstruction> notNullInstructions = new ArrayList<>();
     private Graph assignmentGraph;
-    private int[] nullPredecessorsLeft;
     private int[] notNullPredecessorsLeft;
+    private int[] sccIndexes;
 
     NullnessInformationBuilder(Program program, MethodDescriptor methodDescriptor) {
         this.program = program;
@@ -72,12 +80,13 @@ class NullnessInformationBuilder {
     void build() {
         extendProgram();
         buildAssignmentGraph();
-        findKnownNullness();
+        propagateNullness();
     }
 
     private void extendProgram() {
         insertAdditionalVariables();
 
+        notNullVariables.set(0);
         Variable[] parameters = new Variable[methodDescriptor.parameterCount() + 1];
         for (int i = 0; i < parameters.length; ++i) {
             parameters[i] = program.variableAt(i);
@@ -89,55 +98,28 @@ class NullnessInformationBuilder {
     }
 
     private void insertAdditionalVariables() {
+        DominatorWalker walker = new DominatorWalker(program);
         NullExtensionVisitor ev = new NullExtensionVisitor();
-        for (BasicBlock block : program.getBasicBlocks()) {
-            Instruction lastInstruction = block.getLastInstruction();
-            if (lastInstruction instanceof BranchingInstruction) {
-                BranchingInstruction branching = (BranchingInstruction) lastInstruction;
-                if (branching.getCondition() == BranchingCondition.NULL) {
-                    insertNullAndNotNull(branching.getOperand(), branching.getConsequent(), branching.getAlternative());
-                } else if (branching.getCondition() == BranchingCondition.NOT_NULL) {
-                    insertNullAndNotNull(branching.getOperand(), branching.getAlternative(), branching.getConsequent());
-                }
-            }
-
-            for (Instruction instruction = block.getFirstInstruction(); instruction != null;) {
-                Instruction next = instruction.getNext();
-                instruction.acceptVisitor(ev);
-                instruction = next;
-            }
-        }
+        walker.walk(ev);
     }
 
     private void collectAdditionalVariables() {
         for (NullConstantInstruction nullInstruction : nullInstructions) {
             nullVariables.set(nullInstruction.getReceiver().getIndex());
+            synthesizedVariables.set(nullInstruction.getReceiver().getIndex());
         }
         for (NullCheckInstruction notNullInstruction : notNullInstructions) {
             notNullVariables.set(notNullInstruction.getReceiver().getIndex());
+            synthesizedVariables.set(notNullInstruction.getReceiver().getIndex());
         }
-        synthesizedVariables.or(nullVariables);
-        synthesizedVariables.or(notNullVariables);
 
         nullInstructions.clear();
         notNullInstructions.clear();
     }
 
-    private void insertNullAndNotNull(Variable variable, BasicBlock nullBlock, BasicBlock notNullBlock) {
-        NullCheckInstruction notNullInstruction = new NullCheckInstruction();
-        notNullInstruction.setValue(variable);
-        notNullInstruction.setReceiver(variable);
-        notNullBlock.addFirst(notNullInstruction);
-        notNullInstructions.add(notNullInstruction);
-
-        NullConstantInstruction nullInstruction = new NullConstantInstruction();
-        nullInstruction.setReceiver(variable);
-        nullBlock.addFirst(nullInstruction);
-        nullInstructions.add(nullInstruction);
-    }
-
     private void buildAssignmentGraph() {
-        GraphBuilder builder = new GraphBuilder();
+        GraphBuilder builder = new GraphBuilder(program.variableCount());
+
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Phi phi : block.getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
@@ -161,25 +143,93 @@ class NullnessInformationBuilder {
         }
         assignmentGraph = builder.build();
 
-        // TODO: handle SCCs
+        sccIndexes = new int[program.variableCount()];
+        if (assignmentGraph.size() > 0) {
+            int[][] sccs = GraphUtils.findStronglyConnectedComponents(assignmentGraph, new int[]{0});
+            for (int i = 0; i < sccs.length; ++i) {
+                for (int sccNode : sccs[i]) {
+                    sccIndexes[sccNode] = i + 1;
+                }
+            }
+        }
 
-        nullPredecessorsLeft = new int[assignmentGraph.size()];
         notNullPredecessorsLeft = new int[assignmentGraph.size()];
         for (int i = 0; i < assignmentGraph.size(); ++i) {
-            nullPredecessorsLeft[i] = assignmentGraph.incomingEdgesCount(i);
             notNullPredecessorsLeft[i] = assignmentGraph.incomingEdgesCount(i);
-        }
-    }
-
-    private void findKnownNullness() {
-        for (BasicBlock block : program.getBasicBlocks()) {
-            for (Instruction instruction : block) {
-                instruction.acceptVisitor(nullnessVisitor);
+            if (sccIndexes[i] > 0) {
+                for (int predecessor : assignmentGraph.outgoingEdges(i)) {
+                    if (sccIndexes[predecessor] == sccIndexes[i]) {
+                        notNullPredecessorsLeft[i]--;
+                    }
+                }
             }
         }
     }
 
-    class NullExtensionVisitor extends AbstractInstructionVisitor {
+    private void propagateNullness() {
+        if (assignmentGraph.size() == 0) {
+            return;
+        }
+
+        IntDeque deque = new IntArrayDeque();
+        for (int i = notNullVariables.nextSetBit(0); i >= 0; i = notNullVariables.nextSetBit(i + 1)) {
+            deque.addLast(i);
+        }
+        boolean[] visited = new boolean[program.variableCount()];
+
+        while (!deque.isEmpty()) {
+            int node = deque.removeFirst();
+            if (visited[node]) {
+                continue;
+            }
+            visited[node] = true;
+            for (int successor : assignmentGraph.outgoingEdges(node)) {
+                if (sccIndexes[successor] == 0 || sccIndexes[successor] != sccIndexes[node]) {
+                    if (--notNullPredecessorsLeft[successor] == 0) {
+                        deque.addLast(successor);
+                    }
+                }
+            }
+        }
+    }
+
+    class NullExtensionVisitor extends AbstractInstructionVisitor implements DominatorWalkerCallback<State> {
+        State currentState;
+        BasicBlock currentBlock;
+        IntIntMap nullSuccessors = new IntIntOpenHashMap();
+        IntIntMap notNullSuccessors = new IntIntOpenHashMap();
+
+        @Override
+        public State visit(BasicBlock block) {
+            currentState = new State();
+
+            currentBlock = block;
+            if (nullSuccessors.containsKey(block.getIndex())) {
+                int varIndex = nullSuccessors.remove(block.getIndex());
+                insertNullInstruction(program.variableAt(varIndex));
+            }
+            if (notNullSuccessors.containsKey(block.getIndex())) {
+                int varIndex = notNullSuccessors.remove(block.getIndex());
+                insertNotNullInstruction(null, program.variableAt(varIndex));
+            }
+
+            for (Instruction insn : block) {
+                insn.acceptVisitor(this);
+            }
+
+            return currentState;
+        }
+
+        @Override
+        public void endVisit(BasicBlock block, State state) {
+            for (int rollbackToNull : state.newlyNonNull.toArray()) {
+                notNullVariables.clear(rollbackToNull);
+            }
+            for (int rollbackToNotNull : state.newlyNull.toArray()) {
+                nullVariables.clear(rollbackToNotNull);
+            }
+        }
+
         @Override
         public void visit(GetFieldInstruction insn) {
             if (insn.getInstance() != null) {
@@ -226,16 +276,11 @@ class NullnessInformationBuilder {
             insertNotNullInstruction(insn, insn.getObjectRef());
         }
 
-        private void insertNotNullInstruction(Instruction currentInstruction, Variable var) {
-            NullCheckInstruction insn = new NullCheckInstruction();
-            insn.setReceiver(var);
-            insn.setValue(var);
-            notNullInstructions.add(insn);
-            currentInstruction.insertNext(insn);
+        @Override
+        public void visit(StringConstantInstruction insn) {
+            notNullVariables.set(insn.getReceiver().getIndex());
         }
-    }
 
-    private InstructionVisitor nullnessVisitor = new AbstractInstructionVisitor() {
         @Override
         public void visit(ClassConstantInstruction insn) {
             notNullVariables.set(insn.getReceiver().getIndex());
@@ -247,8 +292,9 @@ class NullnessInformationBuilder {
         }
 
         @Override
-        public void visit(StringConstantInstruction insn) {
-            notNullVariables.set(insn.getReceiver().getIndex());
+        public void visit(AssignInstruction insn) {
+            notNullVariables.set(insn.getReceiver().getIndex(), notNullVariables.get(insn.getAssignee().getIndex()));
+            nullVariables.set(insn.getReceiver().getIndex(), nullVariables.get(insn.getAssignee().getIndex()));
         }
 
         @Override
@@ -268,7 +314,95 @@ class NullnessInformationBuilder {
 
         @Override
         public void visit(NullCheckInstruction insn) {
-            super.visit(insn);
+            notNullVariables.set(insn.getReceiver().getIndex());
         }
-    };
+
+        @Override
+        public void visit(BranchingInstruction insn) {
+            switch (insn.getCondition()) {
+                case NOT_NULL:
+                    notNullSuccessors.put(insn.getConsequent().getIndex(), insn.getOperand().getIndex());
+                    nullSuccessors.put(insn.getAlternative().getIndex(), insn.getOperand().getIndex());
+                    break;
+                case NULL:
+                    nullSuccessors.put(insn.getConsequent().getIndex(), insn.getOperand().getIndex());
+                    notNullSuccessors.put(insn.getAlternative().getIndex(), insn.getOperand().getIndex());
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        @Override
+        public void visit(BinaryBranchingInstruction insn) {
+            Variable first = insn.getFirstOperand();
+            Variable second = insn.getSecondOperand();
+            if (nullVariables.get(first.getIndex())) {
+                first = second;
+            } else if (!nullVariables.get(second.getIndex())) {
+                return;
+            }
+
+            switch (insn.getCondition()) {
+                case REFERENCE_EQUAL:
+                    notNullSuccessors.put(insn.getConsequent().getIndex(), first.getIndex());
+                    nullSuccessors.put(insn.getAlternative().getIndex(), first.getIndex());
+                    break;
+                case REFERENCE_NOT_EQUAL:
+                    nullSuccessors.put(insn.getConsequent().getIndex(), first.getIndex());
+                    notNullSuccessors.put(insn.getAlternative().getIndex(), first.getIndex());
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        private void insertNotNullInstruction(Instruction currentInstruction, Variable var) {
+            if (notNullVariables.get(var.getIndex())) {
+                return;
+            }
+            NullCheckInstruction insn = new NullCheckInstruction();
+            insn.setReceiver(var);
+            insn.setValue(var);
+            notNullInstructions.add(insn);
+            if (currentInstruction != null) {
+                currentInstruction.insertNext(insn);
+            } else {
+                currentBlock.addFirst(insn);
+            }
+            markAsNonNull(var);
+        }
+
+        private void insertNullInstruction(Variable var) {
+            if (nullVariables.get(var.getIndex())) {
+                return;
+            }
+            NullConstantInstruction insn = new NullConstantInstruction();
+            insn.setReceiver(var);
+            nullInstructions.add(insn);
+            currentBlock.addFirst(insn);
+            markAsNull(var);
+        }
+
+        private void markAsNonNull(Variable var) {
+            if (notNullVariables.get(var.getIndex())) {
+                return;
+            }
+            notNullVariables.set(var.getIndex());
+            currentState.newlyNonNull.add(var.getIndex());
+        }
+
+        private void markAsNull(Variable var) {
+            if (nullVariables.get(var.getIndex())) {
+                return;
+            }
+            nullVariables.set(var.getIndex());
+            currentState.newlyNull.add(var.getIndex());
+        }
+    }
+
+    static class State {
+        IntSet newlyNonNull = new IntOpenHashSet();
+        IntSet newlyNull = new IntOpenHashSet();
+    }
 }

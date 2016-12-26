@@ -24,13 +24,13 @@ public class ListingBuilder {
     public String buildListing(ProgramReader program, String prefix) {
         StringBuilder sb = new StringBuilder();
         StringBuilder insnSb = new StringBuilder();
-        InstructionStringifier stringifier = new InstructionStringifier(insnSb);
+        InstructionStringifier stringifier = new InstructionStringifier(insnSb, program);
         for (int i = 0; i < program.variableCount(); ++i) {
             VariableReader var = program.variableAt(i);
             if (var == null || var.getDebugName() == null) {
                 continue;
             }
-            sb.append(prefix).append("var @").append(i);
+            sb.append(prefix).append("var @").append(stringifier.getVariableLabel(i));
             sb.append('\n');
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -41,20 +41,21 @@ public class ListingBuilder {
             }
 
             if (block.getExceptionVariable() != null) {
-                sb.append("    @").append(block.getExceptionVariable().getIndex()).append(" = exception\n");
+                sb.append("    ").append(stringifier.getVariableLabel(block.getExceptionVariable().getIndex()))
+                        .append(" = exception\n");
             }
 
             for (PhiReader phi : block.readPhis()) {
                 sb.append(prefix).append("    ");
-                sb.append("@").append(phi.getReceiver().getIndex()).append(" := phi ");
+                sb.append("@").append(stringifier.getVariableLabel(phi.getReceiver().getIndex())).append(" := phi ");
                 List<? extends IncomingReader> incomings = phi.readIncomings();
                 for (int j = 0; j < incomings.size(); ++j) {
                     if (j > 0) {
                         sb.append(", ");
                     }
                     IncomingReader incoming = incomings.get(j);
-                    sb.append("@").append(incoming.getValue().getIndex()).append(" from ")
-                            .append("$").append(incoming.getSource().getIndex());
+                    sb.append("@").append(stringifier.getVariableLabel(incoming.getValue().getIndex()))
+                            .append(" from ").append("$").append(incoming.getSource().getIndex());
                 }
                 sb.append("\n");
             }
@@ -86,8 +87,10 @@ public class ListingBuilder {
                 sb.append(" goto $").append(tryCatch.getHandler().getIndex());
                 sb.append("\n");
                 for (TryCatchJointReader joint : tryCatch.readJoints()) {
-                    sb.append("      @").append(joint.getReceiver().getIndex()).append(" := ephi ");
-                    sb.append(joint.readSourceVariables().stream().map(sourceVar -> "@" + sourceVar.getIndex())
+                    sb.append("      @").append(stringifier.getVariableLabel(joint.getReceiver().getIndex()))
+                            .append(" := ephi ");
+                    sb.append(joint.readSourceVariables().stream()
+                            .map(sourceVar -> "@" + stringifier.getVariableLabel(sourceVar.getIndex()))
                             .collect(Collectors.joining(", ")));
                     sb.append("\n");
                 }

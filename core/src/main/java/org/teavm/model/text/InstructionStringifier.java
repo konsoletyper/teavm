@@ -16,8 +16,10 @@
 package org.teavm.model.text;
 
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
@@ -25,9 +27,29 @@ import org.teavm.model.instructions.*;
 class InstructionStringifier implements InstructionReader {
     private TextLocation location;
     private StringBuilder sb;
+    private String[] variableLabels;
 
-    InstructionStringifier(StringBuilder sb) {
+    InstructionStringifier(StringBuilder sb, ProgramReader program) {
         this.sb = sb;
+
+        variableLabels = new String[program.variableCount()];
+        Set<String> occupiedLabels = new HashSet<>();
+        for (int i = 0; i < program.variableCount(); ++i) {
+            VariableReader var = program.variableAt(i);
+            String suggestedName = var.getLabel() != null ? var.getLabel() : Integer.toString(i);
+            if (!occupiedLabels.add(suggestedName)) {
+                int suffix = 1;
+                String base = suggestedName + "_";
+                do {
+                    suggestedName = base + suffix++;
+                } while (!occupiedLabels.add(suggestedName));
+            }
+            variableLabels[i] = suggestedName;
+        }
+    }
+
+    public String getVariableLabel(int index) {
+        return variableLabels[index];
     }
 
     public TextLocation getLocation() {
@@ -44,40 +66,58 @@ class InstructionStringifier implements InstructionReader {
         sb.append("nop");
     }
 
+    InstructionStringifier append(String str) {
+        sb.append(str);
+        return this;
+    }
+
+    InstructionStringifier append(int value) {
+        sb.append(value);
+        return this;
+    }
+
+    InstructionStringifier append(char value) {
+        sb.append(value);
+        return this;
+    }
+
+    InstructionStringifier appendLocalVar(VariableReader var) {
+        return append("@").append(variableLabels[var.getIndex()]);
+    }
+
     @Override
     public void classConstant(VariableReader receiver, ValueType cst) {
-        sb.append("@").append(receiver.getIndex()).append(" := classOf ");
-        escapeIdentifierIfNeeded(cst.toString(), sb);
+        appendLocalVar(receiver).append(" := classOf ").escapeIdentifierIfNeeded(cst.toString());
     }
 
     @Override
     public void nullConstant(VariableReader receiver) {
-        sb.append("@").append(receiver.getIndex()).append(" := null");
+        appendLocalVar(receiver).append(" := null");
     }
 
     @Override
     public void integerConstant(VariableReader receiver, int cst) {
-        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst);
+        appendLocalVar(receiver).append(" := " + cst);
     }
 
     @Override
     public void longConstant(VariableReader receiver, long cst) {
-        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst).append("L");
+        appendLocalVar(receiver).append(" := " + cst + "L");
     }
 
     @Override
     public void floatConstant(VariableReader receiver, float cst) {
-        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst).append('F');
+        appendLocalVar(receiver).append(" := " + cst + 'F');
     }
 
     @Override
     public void doubleConstant(VariableReader receiver, double cst) {
-        sb.append("@").append(receiver.getIndex()).append(" := ").append(cst);
+        appendLocalVar(receiver).append(" := " + cst);
     }
 
     @Override
     public void stringConstant(VariableReader receiver, String cst) {
-        sb.append("@").append(receiver.getIndex()).append(" := '");
+        appendLocalVar(receiver).append(" := '");
         escapeStringLiteral(cst, sb);
         sb.append("'");
     }
@@ -114,7 +154,7 @@ class InstructionStringifier implements InstructionReader {
         }
     }
 
-    private static void escapeIdentifierIfNeeded(String s, StringBuilder sb) {
+    private InstructionStringifier escapeIdentifierIfNeeded(String s) {
         boolean needsEscaping = false;
         if (s.isEmpty()) {
             needsEscaping = true;
@@ -133,87 +173,88 @@ class InstructionStringifier implements InstructionReader {
         } else {
             sb.append(s);
         }
+
+        return this;
     }
 
     @Override
     public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
             NumericOperandType type) {
-        sb.append("@").append(receiver.getIndex()).append(" := @").append(first.getIndex()).append(" ");
+        appendLocalVar(receiver).append(" := ").appendLocalVar(first).append(" ");
         switch (op) {
             case ADD:
-                sb.append("+");
+                append("+");
                 break;
             case AND:
-                sb.append("&");
+                append("&");
                 break;
             case COMPARE:
-                sb.append("compareTo");
+                append("compareTo");
                 break;
             case DIVIDE:
-                sb.append("/");
+                append("/");
                 break;
             case MODULO:
-                sb.append("%");
+                append("%");
                 break;
             case MULTIPLY:
-                sb.append("*");
+                append("*");
                 break;
             case OR:
-                sb.append("|");
+                append("|");
                 break;
             case SHIFT_LEFT:
-                sb.append("<<");
+                append("<<");
                 break;
             case SHIFT_RIGHT:
-                sb.append(">>");
+                append(">>");
                 break;
             case SHIFT_RIGHT_UNSIGNED:
-                sb.append(">>>");
+                append(">>>");
                 break;
             case SUBTRACT:
-                sb.append("-");
+                append("-");
                 break;
             case XOR:
-                sb.append("^");
+                append("^");
                 break;
         }
-        sb.append(" @").append(second.getIndex());
+        append(" ").appendLocalVar(second);
     }
 
     @Override
     public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
-        sb.append("@").append(receiver.getIndex()).append(" := -").append(" @").append(operand.getIndex());
+        appendLocalVar(receiver).append(" := -").append(" ").appendLocalVar(operand);
     }
 
     @Override
     public void assign(VariableReader receiver, VariableReader assignee) {
-        sb.append("@").append(receiver.getIndex()).append(" := @").append(assignee.getIndex());
+        appendLocalVar(receiver).append(" := ").appendLocalVar(assignee);
     }
 
     @Override
     public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
-        sb.append("@").append(receiver.getIndex()).append(" := cast @").append(value.getIndex())
-                .append(" to ");
-        escapeIdentifierIfNeeded(targetType.toString(), sb);
+        appendLocalVar(receiver).append(" := cast ").appendLocalVar(value).append(" to ")
+                .escapeIdentifierIfNeeded(targetType.toString());
     }
 
     @Override
     public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
             NumericOperandType targetType) {
-        sb.append("@").append(receiver.getIndex()).append(" := cast @").append(value.getIndex())
-                .append(" from ").append(sourceType).append(" to ").append(targetType);
+        appendLocalVar(receiver).append(" := cast ").appendLocalVar(value)
+                .append(" from ").append(sourceType.toString()).append(" to ").append(targetType.toString());
     }
 
     @Override
     public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
             CastIntegerDirection direction) {
-        sb.append("@").append(receiver.getIndex()).append(" := cast @").append(value.getIndex());
+        appendLocalVar(receiver).append(" := cast ").appendLocalVar(value);
         switch (direction) {
             case FROM_INTEGER:
-                sb.append(" from int to ").append(type.name().toLowerCase(Locale.ROOT));
+                append(" from int to ").append(type.name().toLowerCase(Locale.ROOT));
                 break;
             case TO_INTEGER:
-                sb.append(" from ").append(type.name().toLowerCase(Locale.ROOT)).append(" to int");
+                append(" from ").append(type.name().toLowerCase(Locale.ROOT)).append(" to int");
                 break;
         }
     }
@@ -221,7 +262,7 @@ class InstructionStringifier implements InstructionReader {
     @Override
     public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
             BasicBlockReader alternative) {
-        sb.append("if @").append(operand.getIndex()).append(" ");
+        append("if ").appendLocalVar(operand).append(" ");
         switch (cond) {
             case EQUAL:
                 sb.append("== 0");
@@ -248,174 +289,164 @@ class InstructionStringifier implements InstructionReader {
                 sb.append("=== null");
                 break;
         }
-        sb.append(" then goto $").append(consequent.getIndex()).append(" else goto $").append(alternative.getIndex());
+        append(" then goto $").append(consequent.getIndex()).append(" else goto $").append(alternative.getIndex());
     }
 
     @Override
     public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
             BasicBlockReader consequent, BasicBlockReader alternative) {
-        sb.append("if @").append(first.getIndex()).append(" ");
+        append("if ").appendLocalVar(first).append(" ");
         switch (cond) {
             case EQUAL:
-                sb.append("==");
+                append("==");
                 break;
             case REFERENCE_EQUAL:
-                sb.append("===");
+                append("===");
                 break;
             case NOT_EQUAL:
-                sb.append("!=");
+                append("!=");
                 break;
             case REFERENCE_NOT_EQUAL:
-                sb.append("!==");
+                append("!==");
                 break;
         }
-        sb.append("@").append(second.getIndex()).append(" then goto $").append(consequent.getIndex())
+        appendLocalVar(second).append(" then goto $").append(consequent.getIndex())
                 .append(" else goto $").append(alternative.getIndex());
     }
 
     @Override
     public void jump(BasicBlockReader target) {
-        sb.append("goto $").append(target.getIndex());
+        append("goto $").append(target.getIndex());
     }
 
     @Override
     public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
             BasicBlockReader defaultTarget) {
-        sb.append("switch @").append(condition.getIndex()).append(" ");
+        append("switch ").appendLocalVar(condition).append(" ");
         for (int i = 0; i < table.size(); ++i) {
             if (i > 0) {
-                sb.append(" ");
+                append(" ");
             }
             SwitchTableEntryReader entry = table.get(i);
-            sb.append("case ").append(entry.getCondition()).append(" goto $").append(entry.getTarget().getIndex());
+            append("case ").append(entry.getCondition()).append(" goto $").append(entry.getTarget().getIndex());
         }
         sb.append(" else goto $").append(defaultTarget.getIndex());
     }
 
     @Override
     public void exit(VariableReader valueToReturn) {
-        sb.append("return");
+        append("return");
         if (valueToReturn != null) {
-            sb.append(" @").append(valueToReturn.getIndex());
+            append(" ").appendLocalVar(valueToReturn);
         }
     }
 
     @Override
     public void raise(VariableReader exception) {
-        sb.append("throw @").append(exception.getIndex());
+        append("throw ").appendLocalVar(exception);
     }
 
     @Override
     public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
-        sb.append("@").append(receiver.getIndex()).append(" := new ");
-        escapeIdentifierIfNeeded(itemType.toString(), sb);
-        sb.append("[@").append(size.getIndex()).append(']');
+        appendLocalVar(receiver).append(" := new ").escapeIdentifierIfNeeded(itemType.toString())
+                .append("[").appendLocalVar(size).append(']');
     }
 
     @Override
     public void createArray(VariableReader receiver, ValueType itemType, List<? extends VariableReader> dimensions) {
-        sb.append("@").append(receiver.getIndex()).append(" := newArray ");
-        escapeIdentifierIfNeeded(itemType.toString(), sb);
-        sb.append("[");
+        appendLocalVar(receiver).append(" := newArray ").escapeIdentifierIfNeeded(itemType.toString());
+        append("[");
 
         for (int i = 0; i < dimensions.size(); ++i) {
             if (i > 0) {
-                sb.append(", ");
+                append(", ");
             }
-            sb.append("@").append(dimensions.get(i).getIndex());
+            appendLocalVar(dimensions.get(i));
         }
-        sb.append("]");
+        append("]");
     }
 
     @Override
     public void create(VariableReader receiver, String type) {
-        sb.append("@").append(receiver.getIndex()).append(" := newArray ");
-        escapeIdentifierIfNeeded(type, sb);
+        appendLocalVar(receiver).append(" := newArray ").escapeIdentifierIfNeeded(type);
     }
 
     @Override
     public void getField(VariableReader receiver, VariableReader instance, FieldReference field, ValueType fieldType) {
-        sb.append("@").append(receiver.getIndex()).append(" := field ");
-        escapeIdentifierIfNeeded(field.toString(), sb);
+        appendLocalVar(receiver).append(" := field ").escapeIdentifierIfNeeded(field.toString());
         if (instance != null) {
-            sb.append(" @").append(instance.getIndex());
+            append(" ").appendLocalVar(instance);
         }
-        sb.append(" as ");
-        escapeIdentifierIfNeeded(fieldType.toString(), sb);
+        append(" as ").escapeIdentifierIfNeeded(fieldType.toString());
     }
 
     @Override
     public void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType) {
-        sb.append("field ");
-        escapeIdentifierIfNeeded(field.toString(), sb);
+        append("field ").escapeIdentifierIfNeeded(field.toString());
         if (instance != null) {
-            sb.append(" @").append(instance.getIndex());
+            append(" ").appendLocalVar(instance);
         }
-        sb.append(" := @").append(value.getIndex());
-        sb.append(" as ");
-        escapeIdentifierIfNeeded(fieldType.toString(), sb);
+        append(" := ").appendLocalVar(value).append(" as ").escapeIdentifierIfNeeded(fieldType.toString());
     }
 
     @Override
     public void arrayLength(VariableReader receiver, VariableReader array) {
-        sb.append("@").append(receiver.getIndex()).append(" := lengthOf @").append(array.getIndex());
+        appendLocalVar(receiver).append(" := lengthOf ").appendLocalVar(array);
     }
 
     @Override
     public void cloneArray(VariableReader receiver, VariableReader array) {
-        sb.append("@").append(receiver.getIndex()).append(" := clone @").append(array.getIndex());
+        appendLocalVar(receiver).append(" := clone ").appendLocalVar(array);
     }
 
     @Override
     public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
-        sb.append("@").append(receiver.getIndex()).append(" := data @").append(array.getIndex()).append(" as ")
+        appendLocalVar(receiver).append(" := data ").appendLocalVar(array).append(" as ")
                 .append(elementType.name().toLowerCase(Locale.ROOT));
     }
 
     @Override
     public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
             ArrayElementType type) {
-        sb.append("@").append(receiver.getIndex()).append(" := @").append(array.getIndex()).append("[@")
-                .append(index.getIndex()).append("]").append(" as " + type.name().toLowerCase(Locale.ROOT));
+        appendLocalVar(receiver).append(" := ").appendLocalVar(array).append("[").appendLocalVar(index).append("]")
+                .append(" as " + type.name().toLowerCase(Locale.ROOT));
     }
 
     @Override
     public void putElement(VariableReader array, VariableReader index, VariableReader value, ArrayElementType type) {
-        sb.append("@").append(array.getIndex()).append("[@").append(index.getIndex()).append("] := @")
-                .append(value.getIndex()).append(" as " + type.name().toLowerCase());
+        appendLocalVar(array).append("[").appendLocalVar(index).append("] := ").appendLocalVar(value)
+                .append(" as " + type.name().toLowerCase(Locale.ROOT));
     }
 
     @Override
     public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments, InvocationType type) {
         if (receiver != null) {
-            sb.append("@").append(receiver.getIndex()).append(" := ");
+            appendLocalVar(receiver).append(" := ");
         }
         if (instance == null) {
-            sb.append("invokeStatic ");
+            append("invokeStatic ");
         } else {
             switch (type) {
                 case SPECIAL:
-                    sb.append("invoke ");
+                    append("invoke ");
                     break;
                 case VIRTUAL:
-                    sb.append("invokeVirtual ");
+                    append("invokeVirtual ");
                     break;
             }
         }
 
-        escapeIdentifierIfNeeded(method.toString(), sb);
+        escapeIdentifierIfNeeded(method.toString());
         if (instance != null) {
-            sb.append(' ');
-            sb.append("@").append(instance.getIndex());
+            append(' ').appendLocalVar(instance);
         }
 
         for (int i = 0; i < arguments.size(); ++i) {
             if (instance != null || i > 0) {
-                sb.append(",");
+                append(",");
             }
-            sb.append(' ');
-            sb.append("@").append(arguments.get(i).getIndex());
+            append(' ').appendLocalVar(arguments.get(i));
         }
     }
 
@@ -424,17 +455,17 @@ class InstructionStringifier implements InstructionReader {
             List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
             List<RuntimeConstant> bootstrapArguments) {
         if (receiver != null) {
-            sb.append("@").append(receiver.getIndex()).append(" := ");
+            appendLocalVar(receiver).append(" := ");
         }
         if (instance != null) {
-            sb.append("@").append(instance.getIndex()).append(".");
+            appendLocalVar(instance).append(".");
         }
-        sb.append(method.getName()).append("(");
-        sb.append(arguments.stream().map(arg -> "@"  + arg.getIndex()).collect(Collectors.joining(", ")));
-        sb.append(") ");
-        sb.append("[").append(convert(bootstrapMethod)).append('(');
-        sb.append(bootstrapArguments.stream().map(this::convert).collect(Collectors.joining(", ")));
-        sb.append(")");
+        append(method.getName()).append("(");
+        append(arguments.stream().map(arg -> "@" + arg.getIndex()).collect(Collectors.joining(", ")));
+        append(") ");
+        append("[").append(convert(bootstrapMethod)).append('(');
+        append(bootstrapArguments.stream().map(this::convert).collect(Collectors.joining(", ")));
+        append(")");
     }
 
     private String convert(MethodHandle handle) {
@@ -488,28 +519,27 @@ class InstructionStringifier implements InstructionReader {
 
     @Override
     public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
-        sb.append("@").append(receiver.getIndex()).append(" := @").append(value.getIndex())
-                .append(" instanceOf ");
-        escapeIdentifierIfNeeded(type.toString(), sb);
+        appendLocalVar(receiver).append(" := ").appendLocalVar(value).append(" instanceOf ")
+                .escapeIdentifierIfNeeded(type.toString());
     }
 
     @Override
     public void initClass(String className) {
-        sb.append("initClass ").append(className);
+        append("initClass ").append(className);
     }
 
     @Override
     public void nullCheck(VariableReader receiver, VariableReader value) {
-        sb.append("@").append(receiver.getIndex()).append(" := nullCheck @").append(value.getIndex());
+        appendLocalVar(receiver).append(" := nullCheck ").appendLocalVar(value);
     }
 
     @Override
     public void monitorEnter(VariableReader objectRef) {
-        sb.append("monitorEnter @").append(objectRef.getIndex());
+        append("monitorEnter ").appendLocalVar(objectRef);
     }
 
     @Override
     public void monitorExit(VariableReader objectRef) {
-        sb.append("monitorExit @").append(objectRef.getIndex());
+        append("monitorExit ").appendLocalVar(objectRef);
     }
 }

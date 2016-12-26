@@ -1,0 +1,13 @@
+$start
+    if @cond === null then goto $ifNull else goto $ifNotNull
+$ifNull
+    @a := 'qwe'
+    goto $join
+$ifNotNull
+    @b := invokeStatic `org.test.Foo.bar()Ljava/lang/String;`
+    @b_1 := nullCheck @b
+    goto $join
+$join
+    @c := phi @a from $ifNull, @b from $ifNotNull
+    @d := phi @a from $ifNull, @b_1 from $ifNotNull
+    return @c

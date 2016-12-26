@@ -1,0 +1,10 @@
+var @this as this
+
+$0
+    @a := invokeStatic `Foo.bar()Ljava/lang/Object;`
+    invokeVirtual `java.lang.Object.toString()Ljava/lang/String;` @a
+    @a_1 := nullCheck @a
+    return @a_1
+
+// NULLABLE a
+// NOT_NULL a_1

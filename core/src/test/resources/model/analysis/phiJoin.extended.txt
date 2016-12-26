@@ -1,0 +1,21 @@
+$start
+    if @cond === null then goto $ifNull else goto $ifNotNull
+$ifNull
+    @cond_1 := null
+    @a := 'qwe'
+    goto $join
+$ifNotNull
+    @cond_2 := nullCheck @cond
+    @b := invokeStatic `org.test.Foo.bar()Ljava/lang/String;`
+    @b_1 := nullCheck @b
+    goto $join
+$join
+    @c := phi @a from $ifNull, @b from $ifNotNull
+    @d := phi @a from $ifNull, @b_1 from $ifNotNull
+    return @c
+
+// NULLABLE: b
+// NOT_NULL: b_1
+// NOT_NULL: a
+// NULLABLE: c
+// NOT_NULL: d

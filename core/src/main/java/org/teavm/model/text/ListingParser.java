@@ -72,6 +72,7 @@ import org.teavm.model.instructions.MonitorEnterInstruction;
 import org.teavm.model.instructions.MonitorExitInstruction;
 import org.teavm.model.instructions.NegateInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
@@ -349,6 +350,13 @@ public class ListingParser {
             case IDENTIFIER: {
                 String keyword = (String) lexer.getTokenValue();
                 switch (keyword) {
+                    case "null": {
+                        lexer.nextToken();
+                        NullConstantInstruction insn = new NullConstantInstruction();
+                        insn.setReceiver(receiver);
+                        addInstruction(insn);
+                        break;
+                    }
                     case "phi":
                         lexer.nextToken();
                         parsePhi(receiver);

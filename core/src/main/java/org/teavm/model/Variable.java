@@ -62,6 +62,7 @@ public class Variable implements VariableReader {
         this.debugName = debugName;
     }
 
+    @Override
     public String getLabel() {
         return label;
     }
