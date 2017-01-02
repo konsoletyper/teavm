@@ -17,30 +17,25 @@ package org.teavm.model.analysis.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
-import com.carrotsearch.hppc.IntIntMap;
-import com.carrotsearch.hppc.IntIntOpenHashMap;
 import com.carrotsearch.hppc.ObjectByteMap;
 import com.carrotsearch.hppc.ObjectByteOpenHashMap;
-import com.carrotsearch.hppc.ObjectIntMap;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Reader;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
+import org.teavm.model.ListingParseUtils;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.analysis.NullnessInformation;
 import org.teavm.model.text.ListingBuilder;
-import org.teavm.model.text.ListingParseException;
-import org.teavm.model.text.ListingParser;
 import org.teavm.model.util.ProgramUtils;
 
 public class NullnessAnalysisTest {
@@ -66,11 +61,11 @@ public class NullnessAnalysisTest {
     }
 
     private void test() {
-        String baseName = "model/analysis/" + name.getMethodName();
+        String baseName = "model/analysis/nullness/" + name.getMethodName();
         String originalResourceName = baseName + ".original.txt";
         String extendedResourceName = baseName + ".extended.txt";
-        Program originalProgram = parseResource(originalResourceName);
-        Program extendedProgram = parseResource(extendedResourceName);
+        Program originalProgram = ListingParseUtils.parseFromResource(originalResourceName);
+        Program extendedProgram = ListingParseUtils.parseFromResource(extendedResourceName);
 
         ListingBuilder listingBuilder = new ListingBuilder();
         String listingBeforeExtension = listingBuilder.buildListing(originalProgram, "");
@@ -97,18 +92,6 @@ public class NullnessAnalysisTest {
         information.dispose();
         String listingAfterDispose = listingBuilder.buildListing(originalProgram, "");
         assertEquals(listingBeforeExtension, listingAfterDispose);
-    }
-
-    private Program parseResource(String name) {
-        ClassLoader classLoader = NullnessAnalysisTest.class.getClassLoader();
-        try (InputStream input = classLoader.getResourceAsStream(name);
-                Reader reader = new InputStreamReader(input, "UTF-8")) {
-            return new ListingParser().parse(reader);
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        } catch (ListingParseException e) {
-            throw new RuntimeException("at " + e.getIndex() + "", e);
-        }
     }
 
     private ObjectByteMap<String> extractExpectedNullness(String name) {

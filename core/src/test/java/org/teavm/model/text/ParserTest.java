@@ -22,6 +22,7 @@ import java.io.InputStreamReader;
 import org.junit.Assert;
 import org.junit.Test;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ListingParseUtils;
 import org.teavm.model.Program;
 
 public class ParserTest {
@@ -98,47 +99,6 @@ public class ParserTest {
     }
 
     private Program runTest(String name) throws IOException {
-        ClassLoader classLoader = ParserTest.class.getClassLoader();
-        String path = "model/text/" + name + ".txt";
-
-        try (InputStream input = classLoader.getResourceAsStream(path);
-                InputStreamReader reader = new InputStreamReader(input, "UTF-8")) {
-            return new ListingParser().parse(reader);
-        } catch (ListingParseException e) {
-            Location location;
-            try (InputStream input = classLoader.getResourceAsStream(path)) {
-                location = offsetToLocation(e.getIndex(), input);
-            }
-            Assert.fail("Parse error at [" + (location.row + 1) + "; " + (location.column + 1)
-                    + "]: " + e.getMessage());
-            return null;
-        }
-    }
-
-    private Location offsetToLocation(int offset, InputStream input) throws IOException {
-        int row = 0;
-        int column = 0;
-        try (InputStreamReader reader = new InputStreamReader(input, "UTF-8")) {
-            for (int i = 0; i < offset; ++i) {
-                int c = reader.read();
-                if (c == '\n') {
-                    row++;
-                    column = 0;
-                } else {
-                    column++;
-                }
-            }
-        }
-        return new Location(row, column);
-    }
-
-    static class Location {
-        int row;
-        int column;
-
-        Location(int row, int column) {
-            this.row = row;
-            this.column = column;
-        }
+        return ListingParseUtils.parseFromResource("model/text/" + name + ".txt");
     }
 }
