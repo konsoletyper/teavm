@@ -1,0 +1,21 @@
+var @this as this
+
+$start
+    @first := field `Foo.first` @this as `LBar;`
+    @checkedFirst := nullCheck @first
+    goto $head
+$head
+    @current := phi @checkedFirst from $start, @checkedNext from $body
+    @isLast := field `Bar.last` @current as Z
+    @current_2 := nullCheck @current
+    if @isLast == 0 then goto $exit else goto $body
+$body
+    @next := field `Bar.next` @current_2 as `LBar;`
+    @checkedNext := nullCheck @next
+    goto $head
+$exit
+    @value := field `Bar.value` @current_2 as `Ljava/lang/Object;`
+    return @value
+
+// NOT_NULL current
+// NOT_NULL current_2

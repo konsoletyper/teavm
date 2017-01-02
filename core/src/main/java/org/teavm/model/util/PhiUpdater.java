@@ -488,7 +488,7 @@ public class PhiUpdater {
     private Variable use(Variable var) {
         Variable mappedVar = variableMap[var.getIndex()];
         if (mappedVar == null) {
-            throw new AssertionError("Variable used before definition: " + var.getIndex());
+            throw new AssertionError("Variable used before definition: " + var.getDisplayLabel());
         }
         usedPhis.set(mappedVar.getIndex());
         return mappedVar;

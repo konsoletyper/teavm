@@ -1,0 +1,23 @@
+var @this as this
+
+$start
+    @bar := invokeVirtual `Foo.bar()LBar;` @this
+    @cond := invokeVirtual `Foo.cond()I` @this
+    if @cond == 0 then goto $if0 else goto $else
+$if0
+    invokeVirtual `Bar.baz()LBar;` @bar
+    goto $join
+catch java.lang.RuntimeException goto $if0Handler
+$if0Handler
+    goto $join
+$else
+    invokeVirtual `Bar.baz()LBar;` @bar
+    goto $else1
+$else1
+    invokeVirtual `Bar.baz2()LBar;` @bar
+    goto $join
+catch java.lang.RuntimeException goto $elseHandler
+$elseHandler
+    goto $join
+$join
+    return @bar

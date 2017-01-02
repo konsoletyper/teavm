@@ -1,4 +1,7 @@
+var @this as this
+
 $start
+    @cond := invokeStatic `Cond.get()Ljava/lang/Object;`
     if @cond === null then goto $ifNull else goto $ifNotNull
 $ifNull
     @cond_1 := null
@@ -14,8 +17,8 @@ $join
     @d := phi @a from $ifNull, @b_1 from $ifNotNull
     return @c
 
-// NULLABLE: b
-// NOT_NULL: b_1
-// NOT_NULL: a
-// NULLABLE: c
-// NOT_NULL: d
+// NULLABLE b
+// NOT_NULL b_1
+// NOT_NULL a
+// NULLABLE c
+// NOT_NULL d

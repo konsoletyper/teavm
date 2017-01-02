@@ -84,9 +84,9 @@ class NullnessInformationBuilder {
     }
 
     private void extendProgram() {
+        notNullVariables.set(0);
         insertAdditionalVariables();
 
-        notNullVariables.set(0);
         Variable[] parameters = new Variable[methodDescriptor.parameterCount() + 1];
         for (int i = 0; i < parameters.length; ++i) {
             parameters[i] = program.variableAt(i);
@@ -123,7 +123,7 @@ class NullnessInformationBuilder {
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Phi phi : block.getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
-                    builder.addEdge(incoming.getSource().getIndex(), phi.getReceiver().getIndex());
+                    builder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
                 }
             }
             for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
@@ -183,6 +183,7 @@ class NullnessInformationBuilder {
                 continue;
             }
             visited[node] = true;
+            notNullVariables.set(node);
             for (int successor : assignmentGraph.outgoingEdges(node)) {
                 if (sccIndexes[successor] == 0 || sccIndexes[successor] != sccIndexes[node]) {
                     if (--notNullPredecessorsLeft[successor] == 0) {
@@ -202,6 +203,10 @@ class NullnessInformationBuilder {
         @Override
         public State visit(BasicBlock block) {
             currentState = new State();
+
+            if (block.getExceptionVariable() != null) {
+                notNullVariables.set(block.getIndex());
+            }
 
             currentBlock = block;
             if (nullSuccessors.containsKey(block.getIndex())) {

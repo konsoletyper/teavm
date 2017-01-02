@@ -1,0 +1,27 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Value.extract()Ljava/lang/String;`
+    @cond := invokeStatic `Cond.invoke()I`
+    if @cond == 0 then goto $if0 else goto $else
+$if0
+    @len := invokeStatic `Value.extractLen()I`
+    if @len == 0 then goto $ifEmpty else goto $ifNotEmpty
+$ifEmpty
+    invokeStatic `Foo.f(Ljava/lang/String;)V` @a
+    goto $joinIf0
+$ifNotEmpty
+    invokeVirtual `java.lang.String.trim()Ljava/lang/String;` @a
+    @a_1 := nullCheck @a
+    goto $joinIf0
+$joinIf0
+    @a_2 := phi @a from $ifEmpty, @a_1 from $ifNotEmpty
+    invokeStatic `Foo.g(Ljava/lang/String;)V` @a_2
+    goto $join
+$else
+    invokeStatic `Foo.bar(Ljava/lang/String;)V` @a
+    goto $join
+$join
+    @a_3 := phi @a_2 from $joinIf0, @a from $else
+    invokeStatic `Foo.baz(Ljava/lang/String;)V` @a_3
+    return

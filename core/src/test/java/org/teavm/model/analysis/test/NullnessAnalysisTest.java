@@ -60,6 +60,21 @@ public class NullnessAnalysisTest {
         test();
     }
 
+    @Test
+    public void phiPropagation() {
+        test();
+    }
+
+    @Test
+    public void tryCatchJoint() {
+        test();
+    }
+
+    @Test
+    public void loop() {
+        test();
+    }
+
     private void test() {
         String baseName = "model/analysis/nullness/" + name.getMethodName();
         String originalResourceName = baseName + ".original.txt";

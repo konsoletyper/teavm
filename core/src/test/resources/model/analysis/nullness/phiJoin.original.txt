@@ -1,4 +1,7 @@
+var @this as this
+
 $start
+    @cond := invokeStatic `Cond.get()Ljava/lang/Object;`
     if @cond === null then goto $ifNull else goto $ifNotNull
 $ifNull
     @a := 'qwe'

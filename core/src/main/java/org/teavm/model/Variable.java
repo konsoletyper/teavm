@@ -70,4 +70,8 @@ public class Variable implements VariableReader {
     public void setLabel(String label) {
         this.label = label;
     }
+
+    public String getDisplayLabel() {
+        return label != null ? label : String.valueOf(index);
+    }
 }
