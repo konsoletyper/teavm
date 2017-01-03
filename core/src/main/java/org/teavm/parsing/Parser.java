@@ -129,7 +129,9 @@ public class Parser {
                 for (Map.Entry<Integer, String> debugName : debugNames.entrySet()) {
                     int receiver = varMap.getOrDefault(debugName.getKey(), -1);
                     if (receiver >= 0) {
-                        program.variableAt(receiver).setDebugName(debugName.getValue());
+                        Variable receiverVar = program.variableAt(receiver);
+                        receiverVar.setDebugName(debugName.getValue());
+                        receiverVar.setLabel(debugName.getValue());
                     }
                 }
             }

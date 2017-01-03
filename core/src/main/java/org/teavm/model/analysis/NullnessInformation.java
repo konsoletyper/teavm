@@ -77,6 +77,8 @@ public class NullnessInformation {
                     insn.acceptVisitor(variableMapper);
                 }
             }
+            variableMapper.applyToPhis(block);
+            variableMapper.applyToTryCatchBlocks(block);
         }
     }
 

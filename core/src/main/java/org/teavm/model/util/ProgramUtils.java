@@ -75,6 +75,7 @@ public final class ProgramUtils {
         for (int i = 0; i < program.variableCount(); ++i) {
             Variable var = copy.createVariable();
             var.setDebugName(program.variableAt(i).getDebugName());
+            var.setLabel(program.variableAt(i).getLabel());
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             copy.createBasicBlock();

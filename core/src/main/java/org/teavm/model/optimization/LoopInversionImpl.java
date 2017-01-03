@@ -35,12 +35,13 @@ import org.teavm.common.LoopGraph;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
+import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
-import org.teavm.model.analysis.NullnessChecker;
+import org.teavm.model.analysis.NullnessInformation;
 import org.teavm.model.util.BasicBlockMapper;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionCopyReader;
@@ -80,6 +81,7 @@ import org.teavm.model.util.UsageExtractor;
  */
 class LoopInversionImpl {
     private final Program program;
+    private final MethodReference method;
     private final int parameterCount;
     private Graph cfg;
     private DominatorTree dom;
@@ -88,8 +90,9 @@ class LoopInversionImpl {
     private BasicBlock[] definitionPlaces;
     private boolean affected;
 
-    LoopInversionImpl(Program program, int parameterCount) {
+    LoopInversionImpl(Program program, MethodReference method, int parameterCount) {
         this.program = program;
+        this.method = method;
         this.parameterCount = parameterCount;
         definitionPlaces = ProgramUtils.getVariableDefinitionPlaces(program);
     }
@@ -202,7 +205,10 @@ class LoopInversionImpl {
             }
 
             IntSet nodesToCopy = nodesToCopy();
-            if (!isInversionProfitable(nodesToCopy)) {
+            NullnessInformation nullness = NullnessInformation.build(program, method.getDescriptor());
+            boolean profitable = isInversionProfitable(nodesToCopy, nullness);
+            nullness.dispose();
+            if (!profitable) {
                 return false;
             }
             copyBasicBlocks(nodesToCopy);
@@ -216,11 +222,10 @@ class LoopInversionImpl {
             return true;
         }
 
-        private boolean isInversionProfitable(IntSet nodesToCopy) {
+        private boolean isInversionProfitable(IntSet nodesToCopy, NullnessInformation nullness) {
             UsageExtractor useExtractor = new UsageExtractor();
             DefinitionExtractor defExtractor = new DefinitionExtractor();
-            boolean[] notNull = new NullnessChecker().check(program);
-            LoopInvariantAnalyzer invariantAnalyzer = new LoopInvariantAnalyzer(notNull);
+            LoopInvariantAnalyzer invariantAnalyzer = new LoopInvariantAnalyzer(nullness);
             for (int node : nodes.toArray()) {
                 if (nodesToCopy.contains(node)) {
                     continue;

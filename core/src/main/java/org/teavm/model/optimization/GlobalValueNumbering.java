@@ -15,13 +15,61 @@
  */
 package org.teavm.model.optimization;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.function.UnaryOperator;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.Incoming;
+import org.teavm.model.Instruction;
+import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.TryCatchJoint;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.ArrayLengthInstruction;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.CastIntegerInstruction;
+import org.teavm.model.instructions.CastNumberInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
+import org.teavm.model.instructions.DoubleConstantInstruction;
+import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.instructions.InstructionVisitor;
+import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
+import org.teavm.model.instructions.MonitorExitInstruction;
+import org.teavm.model.instructions.NegateInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.PutElementInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.SwitchInstruction;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.ProgramUtils;
 
 public class GlobalValueNumbering implements MethodOptimization {
@@ -86,9 +134,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                 currentInsn.acceptVisitor(optimizer);
                 if (eliminate) {
                     affected = true;
-                    EmptyInstruction empty = new EmptyInstruction();
-                    empty.setLocation(currentInsn.getLocation());
-                    currentInsn.replace(empty);
+                    currentInsn.delete();
                     eliminate = false;
                 } else if (evaluatedConstant != null) {
                     if (evaluatedConstant instanceof Integer) {
@@ -500,6 +546,9 @@ public class GlobalValueNumbering implements MethodOptimization {
             }
             if (insn.getReceiver().getDebugName() != null) {
                 insn.getAssignee().setDebugName(insn.getReceiver().getDebugName());
+            }
+            if (insn.getReceiver().getLabel() != null) {
+                insn.getAssignee().setLabel(insn.getReceiver().getLabel());
             }
             map[insn.getReceiver().getIndex()] = map[insn.getAssignee().getIndex()];
             eliminate = true;

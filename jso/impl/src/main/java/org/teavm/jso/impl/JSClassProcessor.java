@@ -74,10 +74,6 @@ import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 
-/**
- *
- * @author Alexey Andreev
- */
 class JSClassProcessor {
     private final ClassReaderSource classSource;
     private final JSBodyRepository repository;
@@ -171,6 +167,7 @@ class JSClassProcessor {
                          program.variableAt(var.getIndex() + 1));
                 for (int i = program.variableCount() - 1; i > 0; --i) {
                     program.variableAt(i).setDebugName(program.variableAt(i - 1).getDebugName());
+                    program.variableAt(i).setLabel(program.variableAt(i - 1).getLabel());
                 }
                 for (int i = 0; i < program.basicBlockCount(); ++i) {
                     BasicBlock block = program.basicBlockAt(i);

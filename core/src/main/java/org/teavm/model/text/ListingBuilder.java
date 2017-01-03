@@ -31,6 +31,7 @@ public class ListingBuilder {
                 continue;
             }
             sb.append(prefix).append("var @").append(stringifier.getVariableLabel(i));
+            sb.append(" as ").append(var.getDebugName());
             sb.append('\n');
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -41,8 +42,8 @@ public class ListingBuilder {
             }
 
             if (block.getExceptionVariable() != null) {
-                sb.append("    ").append(stringifier.getVariableLabel(block.getExceptionVariable().getIndex()))
-                        .append(" = exception\n");
+                sb.append("    @").append(stringifier.getVariableLabel(block.getExceptionVariable().getIndex()))
+                        .append(" := exception\n");
             }
 
             for (PhiReader phi : block.readPhis()) {

@@ -18,11 +18,34 @@ package org.teavm.model.optimization;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.teavm.common.*;
-import org.teavm.model.*;
-import org.teavm.model.analysis.NullnessChecker;
-import org.teavm.model.instructions.*;
-import org.teavm.model.util.*;
+import org.teavm.common.DominatorTree;
+import org.teavm.common.Graph;
+import org.teavm.common.GraphUtils;
+import org.teavm.common.IntegerStack;
+import org.teavm.common.Loop;
+import org.teavm.common.LoopGraph;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.Incoming;
+import org.teavm.model.Instruction;
+import org.teavm.model.Phi;
+import org.teavm.model.Program;
+import org.teavm.model.Variable;
+import org.teavm.model.analysis.NullnessInformation;
+import org.teavm.model.instructions.AbstractInstructionVisitor;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.DoubleConstantInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.util.BasicBlockMapper;
+import org.teavm.model.util.ControlFlowUtils;
+import org.teavm.model.util.DefinitionExtractor;
+import org.teavm.model.util.InstructionVariableMapper;
+import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.UsageExtractor;
 
 public class LoopInvariantMotion implements MethodOptimization {
     private int[] preheaders;
@@ -32,6 +55,8 @@ public class LoopInvariantMotion implements MethodOptimization {
 
     @Override
     public boolean optimize(MethodOptimizationContext context, Program program) {
+        NullnessInformation nullness = NullnessInformation.build(program, context.getMethod().getDescriptor());
+
         boolean affected = false;
         this.program = program;
         graph = new LoopGraph(ProgramUtils.buildControlFlowGraph(program));
@@ -54,7 +79,7 @@ public class LoopInvariantMotion implements MethodOptimization {
 
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         UsageExtractor useExtractor = new UsageExtractor();
-        LoopInvariantAnalyzer analyzer = new LoopInvariantAnalyzer(new NullnessChecker().check(program));
+        LoopInvariantAnalyzer analyzer = new LoopInvariantAnalyzer(nullness);
         CopyConstantVisitor constantCopier = new CopyConstantVisitor();
         int[][] loopExits = ControlFlowUtils.findLoopExits(graph);
 
@@ -112,9 +137,7 @@ public class LoopInvariantMotion implements MethodOptimization {
                     }
                 }
 
-                EmptyInstruction empty = new EmptyInstruction();
-                empty.setLocation(insn.getLocation());
-                insn.replace(empty);
+                insn.delete();
                 BasicBlock preheader = program.basicBlockAt(getPreheader(defLoop.getHead()));
                 List<Instruction> newInstructions = new ArrayList<>();
                 Variable[] variableMap = null;
@@ -146,6 +169,7 @@ public class LoopInvariantMotion implements MethodOptimization {
             }
         }
 
+        nullness.dispose();
         return affected;
     }
 
@@ -191,6 +215,8 @@ public class LoopInvariantMotion implements MethodOptimization {
                     if (preheaderPhi == null) {
                         preheaderPhi = new Phi();
                         preheaderPhi.setReceiver(program.createVariable());
+                        preheaderPhi.getReceiver().setLabel(phi.getReceiver().getLabel());
+                        preheaderPhi.getReceiver().setDebugName(phi.getReceiver().getDebugName());
                         preheader.getPhis().add(preheaderPhi);
                     }
                     preheaderPhi.getIncomings().add(incoming);
@@ -215,18 +241,15 @@ public class LoopInvariantMotion implements MethodOptimization {
         return preheader.getIndex();
     }
 
-    private class CopyConstantVisitor implements InstructionVisitor {
+    private class CopyConstantVisitor extends AbstractInstructionVisitor {
         Instruction copy;
         Variable var;
-
-        @Override
-        public void visit(EmptyInstruction insn) {
-        }
 
         @Override
         public void visit(ClassConstantInstruction insn) {
             var = program.createVariable();
             var.setDebugName(insn.getReceiver().getDebugName());
+            var.setLabel(insn.getReceiver().getLabel());
             ClassConstantInstruction copy = new ClassConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -237,6 +260,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         public void visit(NullConstantInstruction insn) {
             var = program.createVariable();
             var.setDebugName(insn.getReceiver().getDebugName());
+            var.setLabel(insn.getReceiver().getLabel());
             NullConstantInstruction copy = new NullConstantInstruction();
             copy.setReceiver(var);
             this.copy = copy;
@@ -246,6 +270,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         public void visit(IntegerConstantInstruction insn) {
             var = program.createVariable();
             var.setDebugName(insn.getReceiver().getDebugName());
+            var.setLabel(insn.getReceiver().getLabel());
             IntegerConstantInstruction copy = new IntegerConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -256,6 +281,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         public void visit(LongConstantInstruction insn) {
             var = program.createVariable();
             var.setDebugName(insn.getReceiver().getDebugName());
+            var.setLabel(insn.getReceiver().getLabel());
             LongConstantInstruction copy = new LongConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -266,6 +292,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         public void visit(FloatConstantInstruction insn) {
             var = program.createVariable();
             var.setDebugName(insn.getReceiver().getDebugName());
+            var.setLabel(insn.getReceiver().getLabel());
             FloatConstantInstruction copy = new FloatConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -276,6 +303,7 @@ public class LoopInvariantMotion implements MethodOptimization {
         public void visit(DoubleConstantInstruction insn) {
             var = program.createVariable();
             var.setDebugName(insn.getReceiver().getDebugName());
+            var.setLabel(insn.getReceiver().getLabel());
             DoubleConstantInstruction copy = new DoubleConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
@@ -286,126 +314,11 @@ public class LoopInvariantMotion implements MethodOptimization {
         public void visit(StringConstantInstruction insn) {
             var = program.createVariable();
             var.setDebugName(insn.getReceiver().getDebugName());
+            var.setLabel(insn.getReceiver().getLabel());
             StringConstantInstruction copy = new StringConstantInstruction();
             copy.setConstant(insn.getConstant());
             copy.setReceiver(var);
             this.copy = copy;
-        }
-
-        @Override
-        public void visit(BinaryInstruction insn) {
-        }
-
-        @Override
-        public void visit(NegateInstruction insn) {
-        }
-
-        @Override
-        public void visit(AssignInstruction insn) {
-        }
-
-        @Override
-        public void visit(CastInstruction insn) {
-        }
-
-        @Override
-        public void visit(CastNumberInstruction insn) {
-        }
-
-        @Override
-        public void visit(CastIntegerInstruction insn) {
-        }
-
-        @Override
-        public void visit(BranchingInstruction insn) {
-        }
-
-        @Override
-        public void visit(BinaryBranchingInstruction insn) {
-        }
-
-        @Override
-        public void visit(JumpInstruction insn) {
-        }
-
-        @Override
-        public void visit(SwitchInstruction insn) {
-        }
-
-        @Override
-        public void visit(ExitInstruction insn) {
-        }
-
-        @Override
-        public void visit(RaiseInstruction insn) {
-        }
-
-        @Override
-        public void visit(ConstructArrayInstruction insn) {
-        }
-
-        @Override
-        public void visit(ConstructInstruction insn) {
-        }
-
-        @Override
-        public void visit(ConstructMultiArrayInstruction insn) {
-        }
-
-        @Override
-        public void visit(GetFieldInstruction insn) {
-        }
-
-        @Override
-        public void visit(PutFieldInstruction insn) {
-        }
-
-        @Override
-        public void visit(ArrayLengthInstruction insn) {
-        }
-
-        @Override
-        public void visit(CloneArrayInstruction insn) {
-        }
-
-        @Override
-        public void visit(UnwrapArrayInstruction insn) {
-        }
-
-        @Override
-        public void visit(GetElementInstruction insn) {
-        }
-
-        @Override
-        public void visit(PutElementInstruction insn) {
-        }
-
-        @Override
-        public void visit(InvokeInstruction insn) {
-        }
-
-        @Override
-        public void visit(InvokeDynamicInstruction insn) {
-        }
-
-        @Override
-        public void visit(IsInstanceInstruction insn) {
-        }
-
-        @Override
-        public void visit(InitClassInstruction insn) {
-        }
-
-        @Override
-        public void visit(NullCheckInstruction insn) {
-        }
-
-        @Override
-        public void visit(MonitorEnterInstruction insn) {
-        }
-
-        @Override
-        public void visit(MonitorExitInstruction insn) {
         }
     }
 }

@@ -222,6 +222,7 @@ public class AsyncProgramSplitter {
             Variable varCopy = copy.variableAt(i);
             varCopy.setRegister(var.getRegister());
             varCopy.setDebugName(var.getDebugName());
+            varCopy.setLabel(var.getLabel());
         }
         return copy;
     }

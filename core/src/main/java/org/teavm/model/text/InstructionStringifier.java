@@ -348,7 +348,7 @@ class InstructionStringifier implements InstructionReader {
 
     @Override
     public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
-        appendLocalVar(receiver).append(" := new ").escapeIdentifierIfNeeded(itemType.toString())
+        appendLocalVar(receiver).append(" := newArray ").escapeIdentifierIfNeeded(itemType.toString())
                 .append("[").appendLocalVar(size).append(']');
     }
 
@@ -368,7 +368,7 @@ class InstructionStringifier implements InstructionReader {
 
     @Override
     public void create(VariableReader receiver, String type) {
-        appendLocalVar(receiver).append(" := newArray ").escapeIdentifierIfNeeded(type);
+        appendLocalVar(receiver).append(" := new ").escapeIdentifierIfNeeded(type);
     }
 
     @Override

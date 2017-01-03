@@ -109,6 +109,8 @@ public class Inlining {
             List<TryCatchBlock> tryCatches = new ArrayList<>(blockToInline.getTryCatchBlocks());
             blockToInline.getTryCatchBlocks().clear();
             inlineBlock.getTryCatchBlocks().addAll(tryCatches);
+
+            inlineBlock.setExceptionVariable(blockToInline.getExceptionVariable());
         }
 
         BasicBlockMapper blockMapper = new BasicBlockMapper((BasicBlock b) ->

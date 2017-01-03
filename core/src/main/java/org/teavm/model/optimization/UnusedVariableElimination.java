@@ -16,8 +16,40 @@
 package org.teavm.model.optimization;
 
 import org.teavm.common.Graph;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.Instruction;
+import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.MethodReader;
+import org.teavm.model.Phi;
+import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.TryCatchJoint;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.AbstractInstructionVisitor;
+import org.teavm.model.instructions.ArrayLengthInstruction;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.CastIntegerInstruction;
+import org.teavm.model.instructions.CastNumberInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
+import org.teavm.model.instructions.DoubleConstantInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.NegateInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class UnusedVariableElimination implements MethodOptimization {
     @Override
@@ -90,10 +122,17 @@ public class UnusedVariableElimination implements MethodOptimization {
             }
         }
 
+        for (int i = 0; i < program.variableCount(); ++i) {
+            if (!used[i]) {
+                program.deleteVariable(i);
+            }
+        }
+        program.pack();
+
         return false;
     }
 
-    private static class InstructionOptimizer implements InstructionVisitor {
+    private static class InstructionOptimizer extends AbstractInstructionVisitor {
         private boolean[] used;
         boolean eliminate;
 
@@ -105,10 +144,6 @@ public class UnusedVariableElimination implements MethodOptimization {
             if (!used[var.getIndex()]) {
                 eliminate = true;
             }
-        }
-
-        @Override
-        public void visit(EmptyInstruction insn) {
         }
 
         @Override
@@ -177,30 +212,6 @@ public class UnusedVariableElimination implements MethodOptimization {
         }
 
         @Override
-        public void visit(BranchingInstruction insn) {
-        }
-
-        @Override
-        public void visit(BinaryBranchingInstruction insn) {
-        }
-
-        @Override
-        public void visit(JumpInstruction insn) {
-        }
-
-        @Override
-        public void visit(SwitchInstruction insn) {
-        }
-
-        @Override
-        public void visit(ExitInstruction insn) {
-        }
-
-        @Override
-        public void visit(RaiseInstruction insn) {
-        }
-
-        @Override
         public void visit(ConstructArrayInstruction insn) {
             requestUsage(insn.getReceiver());
         }
@@ -218,10 +229,6 @@ public class UnusedVariableElimination implements MethodOptimization {
         @Override
         public void visit(GetFieldInstruction insn) {
             requestUsage(insn.getReceiver());
-        }
-
-        @Override
-        public void visit(PutFieldInstruction insn) {
         }
 
         @Override
@@ -245,10 +252,6 @@ public class UnusedVariableElimination implements MethodOptimization {
         }
 
         @Override
-        public void visit(PutElementInstruction insn) {
-        }
-
-        @Override
         public void visit(InvokeInstruction insn) {
             if (insn.getReceiver() != null && !used[insn.getReceiver().getIndex()]) {
                 insn.setReceiver(null);
@@ -268,20 +271,8 @@ public class UnusedVariableElimination implements MethodOptimization {
         }
 
         @Override
-        public void visit(InitClassInstruction insn) {
-        }
-
-        @Override
         public void visit(NullCheckInstruction insn) {
             requestUsage(insn.getReceiver());
-        }
-
-        @Override
-        public void visit(MonitorEnterInstruction insn) {
-        }
-
-        @Override
-        public void visit(MonitorExitInstruction insn) {
         }
     }
 }

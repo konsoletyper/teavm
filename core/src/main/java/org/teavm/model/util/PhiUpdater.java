@@ -102,6 +102,9 @@ public class PhiUpdater {
     private List<TryCatchJoint> synthesizedJoints = new ArrayList<>();
 
     public int getSourceVariable(int var) {
+        if (var >= variableToSourceMap.size()) {
+            return -1;
+        }
         return variableToSourceMap.get(var);
     }
 
@@ -217,6 +220,7 @@ public class PhiUpdater {
         }
 
         List<List<Incoming>> phiOutputs = ProgramUtils.getPhiOutputs(program);
+        List<List<TryCatchJoint>> inputJoints = getInputJoints(program);
 
         while (head > 0) {
             Task task = stack[--head];
@@ -239,6 +243,9 @@ public class PhiUpdater {
             }
             for (Phi phi : currentBlock.getPhis()) {
                 phi.setReceiver(define(phi.getReceiver()));
+            }
+            for (TryCatchJoint joint : inputJoints.get(index)) {
+                joint.setReceiver(define(joint.getReceiver()));
             }
 
             for (Instruction insn : currentBlock) {
@@ -492,6 +499,21 @@ public class PhiUpdater {
         }
         usedPhis.set(mappedVar.getIndex());
         return mappedVar;
+    }
+
+    private static List<List<TryCatchJoint>> getInputJoints(Program program) {
+        List<List<TryCatchJoint>> inputJoints = new ArrayList<>();
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            inputJoints.add(new ArrayList<>());
+        }
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                for (TryCatchJoint joint : tryCatch.getJoints()) {
+                    inputJoints.get(tryCatch.getHandler().getIndex()).add(joint);
+                }
+            }
+        }
+        return inputJoints;
     }
 
     private InstructionVisitor consumer = new InstructionVisitor() {
