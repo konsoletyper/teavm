@@ -1,0 +1,19 @@
+$start
+    @a := invokeStatic `Foo.bar()I`
+    @a_1 := invokeStatic `Foo.baz()I`
+    goto $second
+    catch java.lang.RuntimeException goto $catch
+        @a_2 := ephi @a, @a_1
+$second
+    @a_3 := invokeStatic `Foo.boo()I`
+    goto $end
+    catch java.lang.RuntimeException goto $catch
+        @a_4 := ephi @a_1, @a_3
+$catch
+    @a_5 := phi @a_2 from $start, @a_4 from $second
+    @b := 1
+    @a_6 := @a_5 + @b as int
+    goto $end
+$end
+    @a_7 := phi @a_3 from $second, @a_6 from $catch
+    return @a_7

@@ -1,0 +1,11 @@
+$start
+    @a := invokeStatic `Foo.bar()I`
+    @a := invokeStatic `Foo.baz()I`
+    goto $end
+    catch java.lang.RuntimeException goto $catch
+$catch
+    @b := 1
+    @a := @a + @b as int
+    goto $end
+$end
+    return @a

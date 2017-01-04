@@ -1,0 +1,16 @@
+$start
+    @cond := invokeStatic `Foo.cond()I`
+    if @cond == 0 then goto $zero else goto $nonzero
+$zero
+    @a := 23
+    goto $joint
+$nonzero
+    @a := 42
+    goto $joint
+$joint
+    goto $exit
+    catch goto $catch
+$catch
+    goto $exit
+$exit
+    return @a

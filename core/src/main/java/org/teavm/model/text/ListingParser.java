@@ -786,7 +786,7 @@ public class ListingParser {
 
     private void parseCatch() throws IOException, ListingParseException {
         TryCatchBlock tryCatch = new TryCatchBlock();
-        if (lexer.getToken() == ListingToken.IDENTIFIER) {
+        if (lexer.getToken() == ListingToken.IDENTIFIER && !lexer.getTokenValue().equals("goto")) {
             tryCatch.setExceptionType((String) lexer.getTokenValue());
             lexer.nextToken();
         }
