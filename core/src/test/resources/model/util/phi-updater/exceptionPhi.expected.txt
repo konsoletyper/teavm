@@ -6,8 +6,8 @@ $start
         @a_2 := ephi @a, @a_1
 $catch
     @b := 1
-    @a_4 := @a_2 + @b as int
+    @a_3 := @a_2 + @b as int
     goto $end
 $end
-    @a_3 := phi @a_1 from $start, @a_4 from $catch
-    return @a_3
+    @a_4 := phi @a_1 from $start, @a_3 from $catch
+    return @a_4

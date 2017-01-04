@@ -136,6 +136,7 @@ public class Inlining {
                 ExitInstruction exit = (ExitInstruction) lastInsn;
                 JumpInstruction exitReplacement = new JumpInstruction();
                 exitReplacement.setTarget(splitBlock);
+                exitReplacement.setLocation(exit.getLocation());
                 exit.replace(exitReplacement);
                 if (exit.getValueToReturn() != null) {
                     Incoming resultIncoming = new Incoming();

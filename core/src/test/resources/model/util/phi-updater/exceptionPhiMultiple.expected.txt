@@ -5,15 +5,15 @@ $start
     catch java.lang.RuntimeException goto $catch
         @a_2 := ephi @a, @a_1
 $second
-    @a_3 := invokeStatic `Foo.boo()I`
+    @a_5 := invokeStatic `Foo.boo()I`
     goto $end
     catch java.lang.RuntimeException goto $catch
-        @a_4 := ephi @a_1, @a_3
+        @a_6 := ephi @a_1, @a_5
 $catch
-    @a_5 := phi @a_2 from $start, @a_4 from $second
+    @a_3 := phi @a_2 from $start, @a_6 from $second
     @b := 1
-    @a_6 := @a_5 + @b as int
+    @a_4 := @a_3 + @b as int
     goto $end
 $end
-    @a_7 := phi @a_3 from $second, @a_6 from $catch
+    @a_7 := phi @a_4 from $catch, @a_5 from $second
     return @a_7

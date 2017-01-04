@@ -228,6 +228,7 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
     @Override
     public InstructionIterator iterateInstructions() {
         return new InstructionIterator() {
+            TextLocation location;
             Instruction instruction = firstInstruction;
             Instruction readInstruction;
             InstructionReadVisitor visitor = new InstructionReadVisitor(null);
@@ -257,6 +258,10 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
             @Override
             public void read(InstructionReader reader) {
                 visitor.reader = reader;
+                if (!Objects.equals(readInstruction.getLocation(), location)) {
+                    location = readInstruction.getLocation();
+                    reader.location(location);
+                }
                 readInstruction.acceptVisitor(visitor);
                 visitor.reader = null;
             }

@@ -34,7 +34,7 @@ interface TeaVMTestConfiguration {
 
         @Override
         public void apply(TeaVM vm) {
-            vm.setOptimizationLevel(TeaVMOptimizationLevel.FULL);
+            vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
         }
 
         @Override
