@@ -22,8 +22,6 @@ import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodReader;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
-import org.teavm.model.TryCatchBlock;
-import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
@@ -102,15 +100,6 @@ public class UnusedVariableElimination implements MethodOptimization {
                 insn.acceptVisitor(insnOptimizer);
                 if (insnOptimizer.eliminate) {
                     insn.delete();
-                }
-            }
-
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (int j = 0; j < tryCatch.getJoints().size(); ++j) {
-                    TryCatchJoint joint = tryCatch.getJoints().get(j);
-                    if (!used[joint.getReceiver().getIndex()]) {
-                        tryCatch.getJoints().remove(j--);
-                    }
                 }
             }
 

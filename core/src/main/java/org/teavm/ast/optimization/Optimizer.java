@@ -16,7 +16,6 @@
 package org.teavm.ast.optimization;
 
 import java.util.BitSet;
-import java.util.List;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.RegularMethodNode;

@@ -3,16 +3,14 @@ $start
     @a_1 := invokeStatic `Foo.baz()I`
     goto $second
     catch goto $catch
-        @a_2 := ephi @a, @a_1
 $second
-    @a_3 := invokeStatic `Foo.bar2()I`
-    @a_4 := invokeStatic `Foo.baz2()I`
+    @a_2 := invokeStatic `Foo.bar2()I`
+    @a_3 := invokeStatic `Foo.baz2()I`
     goto $end
     catch goto $catch
-        @a_5 := ephi @a_1, @a_3, @a_4
 $catch
-    @a_6 := phi @a_2 from $start, @a_5 from $second
+    @a_4 := phi @a from $start, @a_1 from $start, @a_2 from $second, @a_3 from $second
     goto $end
 $end
-    @a_7 := phi @a_4 from $second, @a_6 from $catch
-    return @a_7
+    @a_5 := phi @a_3 from $second, @a_4 from $catch
+    return @a_5

@@ -52,15 +52,6 @@ class InterferenceGraphBuilder {
                 live.add(nodes.get(outgoing.getValue().getIndex()));
             }
 
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    for (Variable sourceVar : joint.getSourceVariables()) {
-                        live.add(nodes.get(sourceVar.getIndex()));
-                    }
-                    live.remove(nodes.get(joint.getReceiver().getIndex()));
-                }
-            }
-
             for (Instruction insn = block.getLastInstruction(); insn != null; insn = insn.getPrevious()) {
                 insn.acceptVisitor(useExtractor);
                 insn.acceptVisitor(defExtractor);

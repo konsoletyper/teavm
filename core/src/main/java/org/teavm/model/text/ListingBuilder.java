@@ -17,8 +17,14 @@ package org.teavm.model.text;
 
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
-import org.teavm.model.*;
+import org.teavm.model.BasicBlockReader;
+import org.teavm.model.IncomingReader;
+import org.teavm.model.InstructionIterator;
+import org.teavm.model.PhiReader;
+import org.teavm.model.ProgramReader;
+import org.teavm.model.TextLocation;
+import org.teavm.model.TryCatchBlockReader;
+import org.teavm.model.VariableReader;
 
 public class ListingBuilder {
     public String buildListing(ProgramReader program, String prefix) {
@@ -87,14 +93,6 @@ public class ListingBuilder {
                 }
                 sb.append(" goto $").append(tryCatch.getHandler().getIndex());
                 sb.append("\n");
-                for (TryCatchJointReader joint : tryCatch.readJoints()) {
-                    sb.append("      @").append(stringifier.getVariableLabel(joint.getReceiver().getIndex()))
-                            .append(" := ephi ");
-                    sb.append(joint.readSourceVariables().stream()
-                            .map(sourceVar -> "@" + stringifier.getVariableLabel(sourceVar.getIndex()))
-                            .collect(Collectors.joining(", ")));
-                    sb.append("\n");
-                }
             }
         }
         return sb.toString();

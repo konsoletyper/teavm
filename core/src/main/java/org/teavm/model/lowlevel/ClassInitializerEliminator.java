@@ -16,7 +16,6 @@
 package org.teavm.model.lowlevel;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
@@ -26,7 +25,6 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.Program;
-import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
 
 public class ClassInitializerEliminator {

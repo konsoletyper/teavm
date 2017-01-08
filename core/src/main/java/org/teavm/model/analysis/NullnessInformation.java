@@ -24,8 +24,6 @@ import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
-import org.teavm.model.TryCatchBlock;
-import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionVariableMapper;
@@ -57,7 +55,6 @@ public class NullnessInformation {
 
     public void dispose() {
         Set<Phi> phisToRemove = new HashSet<>(phiUpdater.getSynthesizedPhis());
-        Set<TryCatchJoint> jointsToRemove = new HashSet<>(phiUpdater.getSynthesizedJoints());
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         InstructionVariableMapper variableMapper = new InstructionVariableMapper(var -> {
             int source = phiUpdater.getSourceVariable(var.getIndex());
@@ -65,9 +62,6 @@ public class NullnessInformation {
         });
         for (BasicBlock block : program.getBasicBlocks()) {
             block.getPhis().removeIf(phisToRemove::contains);
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                tryCatch.getJoints().removeIf(jointsToRemove::contains);
-            }
             for (Instruction insn : block) {
                 insn.acceptVisitor(defExtractor);
                 if (Arrays.stream(defExtractor.getDefinedVariables())
@@ -78,8 +72,18 @@ public class NullnessInformation {
                 }
             }
             variableMapper.applyToPhis(block);
-            variableMapper.applyToTryCatchBlocks(block);
+            if (block.getExceptionVariable() != null) {
+                block.setExceptionVariable(variableMapper.map(block.getExceptionVariable()));
+            }
         }
+
+        for (int i = 0; i < program.variableCount(); ++i) {
+            int sourceVar = phiUpdater.getSourceVariable(i);
+            if (sourceVar >= 0 && sourceVar != i) {
+                program.deleteVariable(i);
+            }
+        }
+        program.pack();
     }
 
     public static NullnessInformation build(Program program, MethodDescriptor methodDescriptor) {

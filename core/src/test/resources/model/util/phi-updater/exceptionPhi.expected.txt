@@ -3,8 +3,8 @@ $start
     @a_1 := invokeStatic `Foo.baz()I`
     goto $end
     catch java.lang.RuntimeException goto $catch
-        @a_2 := ephi @a, @a_1
 $catch
+    @a_2 := phi @a from $start, @a_1 from $start
     @b := 1
     @a_3 := @a_2 + @b as int
     goto $end

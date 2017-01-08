@@ -18,6 +18,7 @@ package org.teavm.model.lowlevel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
@@ -29,7 +30,6 @@ import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
-import org.teavm.model.TryCatchJoint;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.BinaryBranchingCondition;
@@ -64,7 +64,6 @@ public class ExceptionHandlingShadowStackContributor {
     private Program program;
     private DominatorTree dom;
     private BasicBlock[] variableDefinitionPlaces;
-    private Phi[] jointPhis;
     private boolean hasExceptionHandlers;
 
     public ExceptionHandlingShadowStackContributor(ManagedMethodRepository managedMethodRepository,
@@ -77,7 +76,6 @@ public class ExceptionHandlingShadowStackContributor {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         dom = GraphUtils.buildDominatorTree(cfg);
         variableDefinitionPlaces = ProgramUtils.getVariableDefinitionPlaces(program);
-        jointPhis = new Phi[program.variableCount()];
     }
 
     public boolean contribute() {
@@ -126,17 +124,26 @@ public class ExceptionHandlingShadowStackContributor {
         int[] currentJointSources = new int[program.variableCount()];
         int[] jointReceiverMap = new int[program.variableCount()];
         Arrays.fill(currentJointSources, -1);
+
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-            for (TryCatchJoint joint : tryCatch.getJoints()) {
-                for (Variable sourceVar : joint.getSourceVariables()) {
+            for (Phi phi : tryCatch.getHandler().getPhis()) {
+                List<Variable> sourceVariables = phi.getIncomings().stream()
+                        .filter(incoming -> incoming.getSource() == tryCatch.getProtectedBlock())
+                        .map(incoming -> incoming.getValue())
+                        .collect(Collectors.toList());
+                if (sourceVariables.isEmpty()) {
+                    continue;
+                }
+
+                for (Variable sourceVar : sourceVariables) {
                     BasicBlock sourceVarDefinedAt = variableDefinitionPlaces[sourceVar.getIndex()];
                     if (dom.dominates(sourceVarDefinedAt.getIndex(), block.getIndex())) {
-                        currentJointSources[joint.getReceiver().getIndex()] = sourceVar.getIndex();
+                        currentJointSources[phi.getReceiver().getIndex()] = sourceVar.getIndex();
                         break;
                     }
                 }
-                for (Variable sourceVar : joint.getSourceVariables()) {
-                    jointReceiverMap[sourceVar.getIndex()] = joint.getReceiver().getIndex();
+                for (Variable sourceVar : sourceVariables) {
+                    jointReceiverMap[sourceVar.getIndex()] = phi.getReceiver().getIndex();
                 }
             }
         }
@@ -281,13 +288,17 @@ public class ExceptionHandlingShadowStackContributor {
                 switchInsn.getEntries().add(catchEntry);
             }
 
-            for (TryCatchJoint joint : tryCatch.getJoints()) {
-                Phi phi = getJointPhi(joint);
-                Incoming incoming = new Incoming();
-                incoming.setSource(block);
-                int value = currentJointSources[joint.getReceiver().getIndex()];
-                incoming.setValue(program.variableAt(value));
-                phi.getIncomings().add(incoming);
+            for (Phi phi : tryCatch.getHandler().getPhis()) {
+                int value = currentJointSources[phi.getReceiver().getIndex()];
+                if (value < 0) {
+                    continue;
+                }
+                for (Incoming incoming : phi.getIncomings()) {
+                    if (incoming.getValue().getIndex() == value) {
+                        incoming.setSource(block);
+                        break;
+                    }
+                }
             }
         }
 
@@ -325,18 +336,6 @@ public class ExceptionHandlingShadowStackContributor {
             defaultExceptionHandler.add(exit);
         }
         return defaultExceptionHandler;
-    }
-
-    private Phi getJointPhi(TryCatchJoint joint) {
-        Phi phi = jointPhis[joint.getReceiver().getIndex()];
-        if (phi == null) {
-            phi = new Phi();
-            phi.setReceiver(joint.getReceiver());
-            BasicBlock handler = program.basicBlockAt(joint.getBlock().getHandler().getIndex());
-            handler.getPhis().add(phi);
-            jointPhis[joint.getReceiver().getIndex()] = phi;
-        }
-        return phi;
     }
 
     private Variable createReturnValueInstructions(BasicBlock block) {

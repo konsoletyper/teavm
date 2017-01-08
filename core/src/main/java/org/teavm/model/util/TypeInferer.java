@@ -52,14 +52,6 @@ public class TypeInferer {
                     builder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
                 }
             }
-
-            for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
-                for (TryCatchJointReader joint : tryCatch.readJoints()) {
-                    for (VariableReader sourceVar : joint.readSourceVariables()) {
-                        builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
-                    }
-                }
-            }
         }
 
         IntegerStack stack = new IntegerStack(sz);

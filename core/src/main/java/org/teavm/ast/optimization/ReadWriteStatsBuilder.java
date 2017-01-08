@@ -78,14 +78,6 @@ class ReadWriteStatsBuilder {
                     }
                 }
             }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    writes[joint.getReceiver().getIndex()] += joint.getSourceVariables().size();
-                    for (Variable var : joint.getSourceVariables()) {
-                        reads[var.getIndex()]++;
-                    }
-                }
-            }
 
             for (int succ : dom.outgoingEdges(node)) {
                 stack.push(succ);

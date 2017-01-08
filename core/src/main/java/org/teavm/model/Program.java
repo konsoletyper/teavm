@@ -65,6 +65,35 @@ public class Program implements ProgramReader {
         return basicBlocks;
     }
 
+    public void rearrangeBasicBlocks(List<BasicBlock> basicBlocks) {
+        if (!isPacked()) {
+            throw new IllegalStateException("This operation is not supported on unpacked programs");
+        }
+
+        if (basicBlocks.size() != this.basicBlocks.size()) {
+            throw new IllegalArgumentException("New list of basic blocks has wrong size ("
+                + basicBlocks.size() + ", expected " + basicBlockCount() + ")");
+        }
+
+        boolean[] indexes = new boolean[basicBlocks.size()];
+        for (BasicBlock block : basicBlocks) {
+            if (block.getProgram() != this) {
+                throw new IllegalArgumentException("The list of basic blocks contains a basic block from "
+                        + "another program");
+            }
+            if (indexes[block.getIndex()]) {
+                throw new IllegalArgumentException("The list of basic blocks contains same basic block twice");
+            }
+            indexes[block.getIndex()] = true;
+        }
+
+        this.basicBlocks.clear();
+        this.basicBlocks.addAll(basicBlocks);
+        for (int i = 0; i < this.basicBlocks.size(); ++i) {
+            this.basicBlocks.get(i).setIndex(i);
+        }
+    }
+
     public void deleteVariable(int index) {
         Variable variable = variables.get(index);
         if (variable == null) {

@@ -18,10 +18,8 @@ package org.teavm.model.util;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.teavm.common.DisjointSet;
 import org.teavm.common.MutableGraphEdge;
 import org.teavm.common.MutableGraphNode;
@@ -33,15 +31,12 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.ProgramReader;
-import org.teavm.model.TryCatchBlock;
-import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 
 public class RegisterAllocator {
     public void allocateRegisters(MethodReader method, Program program) {
-        insertJointArgumentsCopies(program);
         insertPhiArgumentsCopies(program);
         InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
         LivenessAnalyzer liveness = new LivenessAnalyzer();
@@ -91,9 +86,6 @@ public class RegisterAllocator {
 
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             program.basicBlockAt(i).getPhis().clear();
-            for (TryCatchBlock tryCatch : program.basicBlockAt(i).getTryCatchBlocks()) {
-                tryCatch.getJoints().clear();
-            }
         }
     }
 
@@ -134,42 +126,6 @@ public class RegisterAllocator {
                 }
                 graph.set(i, graph.get(cls));
             }
-        }
-    }
-
-    private void insertJointArgumentsCopies(Program program) {
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                tryCatch.getJoints().forEach(this::insertCopy);
-            }
-        }
-    }
-
-    private void insertCopy(TryCatchJoint joint) {
-        Set<Variable> variableSet = new HashSet<>(joint.getSourceVariables());
-
-        BasicBlock block = joint.getBlock().getProtectedBlock();
-        DefinitionExtractor defExtractor = new DefinitionExtractor();
-        Instruction nextInsn;
-        for (Instruction insn = block.getFirstInstruction(); insn != null; insn = nextInsn) {
-            nextInsn = insn.getNext();
-            insn.acceptVisitor(defExtractor);
-            for (Variable definedVar : defExtractor.getDefinedVariables()) {
-                if (variableSet.remove(definedVar)) {
-                    AssignInstruction copyInsn = new AssignInstruction();
-                    copyInsn.setReceiver(joint.getReceiver());
-                    copyInsn.setAssignee(definedVar);
-                    insn.insertNext(copyInsn);
-                }
-            }
-        }
-
-        for (Variable enteringVar : variableSet) {
-            AssignInstruction copyInsn = new AssignInstruction();
-            copyInsn.setReceiver(joint.getReceiver());
-            copyInsn.setAssignee(enteringVar);
-            block.addFirst(copyInsn);
         }
     }
 
@@ -319,13 +275,6 @@ public class RegisterAllocator {
             for (Phi phi : block.getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
                     classes.union(phi.getReceiver().getIndex(), incoming.getValue().getIndex());
-                }
-            }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    for (Variable sourceVar : joint.getSourceVariables()) {
-                        classes.union(sourceVar.getIndex(), joint.getReceiver().getIndex());
-                    }
                 }
             }
         }

@@ -15,14 +15,10 @@
  */
 package org.teavm.model;
 
-import java.util.List;
-
 public interface TryCatchBlockReader {
     BasicBlockReader getProtectedBlock();
 
     BasicBlockReader getHandler();
 
     String getExceptionType();
-
-    List<TryCatchJointReader> readJoints();
 }

@@ -5,9 +5,9 @@ $start
     invokeStatic `foo.Bar.baz()I`
     @a_3 := 2
     return @a_3
-catch java.lang.Exception goto $handler
-    @a_h := ephi @a_1, @a_2, @a_3
+    catch java.lang.Exception goto $handler
 $handler
+    @a_h := phi @a_1 from $start, @a_2 from $start, @a_3 from $start
     @e := exception
     @out := field `java.lang.String.out` as `Ljava/io/PrintStream;`
     invokeVirtual `java.io.PrintStream.println(Ljava/lang/Object;)V` @out, @e

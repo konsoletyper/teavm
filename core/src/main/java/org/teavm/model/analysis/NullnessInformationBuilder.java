@@ -33,8 +33,6 @@ import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
-import org.teavm.model.TryCatchBlock;
-import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
@@ -124,13 +122,6 @@ class NullnessInformationBuilder {
             for (Phi phi : block.getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
                     builder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
-                }
-            }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    for (Variable sourceVar : joint.getSourceVariables()) {
-                        builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
-                    }
                 }
             }
 

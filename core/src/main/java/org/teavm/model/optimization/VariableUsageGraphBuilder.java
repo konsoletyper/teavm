@@ -17,8 +17,28 @@ package org.teavm.model.optimization;
 
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.Incoming;
+import org.teavm.model.Instruction;
+import org.teavm.model.Phi;
+import org.teavm.model.Program;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.AbstractInstructionVisitor;
+import org.teavm.model.instructions.ArrayLengthInstruction;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.CastIntegerInstruction;
+import org.teavm.model.instructions.CastNumberInstruction;
+import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.NegateInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public final class VariableUsageGraphBuilder {
     private VariableUsageGraphBuilder() {
@@ -37,18 +57,11 @@ public final class VariableUsageGraphBuilder {
                     builder.addEdge(incoming.getValue().getIndex(), phi.getReceiver().getIndex());
                 }
             }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    for (Variable sourceVar : joint.getSourceVariables()) {
-                        builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
-                    }
-                }
-            }
         }
         return builder.build();
     }
 
-    private static class InstructionAnalyzer implements InstructionVisitor {
+    private static class InstructionAnalyzer extends AbstractInstructionVisitor {
         private GraphBuilder builder;
 
         public InstructionAnalyzer(GraphBuilder builder) {
@@ -59,38 +72,6 @@ public final class VariableUsageGraphBuilder {
             for (Variable arg : arguments) {
                 builder.addEdge(arg.getIndex(), receiver.getIndex());
             }
-        }
-
-        @Override
-        public void visit(EmptyInstruction insn) {
-        }
-
-        @Override
-        public void visit(ClassConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(NullConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(IntegerConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(LongConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(FloatConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(DoubleConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(StringConstantInstruction insn) {
         }
 
         @Override
@@ -124,36 +105,8 @@ public final class VariableUsageGraphBuilder {
         }
 
         @Override
-        public void visit(BranchingInstruction insn) {
-        }
-
-        @Override
-        public void visit(BinaryBranchingInstruction insn) {
-        }
-
-        @Override
-        public void visit(JumpInstruction insn) {
-        }
-
-        @Override
-        public void visit(SwitchInstruction insn) {
-        }
-
-        @Override
-        public void visit(ExitInstruction insn) {
-        }
-
-        @Override
-        public void visit(RaiseInstruction insn) {
-        }
-
-        @Override
         public void visit(ConstructArrayInstruction insn) {
             use(insn.getReceiver(), insn.getSize());
-        }
-
-        @Override
-        public void visit(ConstructInstruction insn) {
         }
 
         @Override
@@ -166,10 +119,6 @@ public final class VariableUsageGraphBuilder {
             if (insn.getInstance() != null) {
                 use(insn.getReceiver(), insn.getInstance());
             }
-        }
-
-        @Override
-        public void visit(PutFieldInstruction insn) {
         }
 
         @Override
@@ -193,39 +142,13 @@ public final class VariableUsageGraphBuilder {
         }
 
         @Override
-        public void visit(PutElementInstruction insn) {
-        }
-
-        @Override
-        public void visit(InvokeInstruction insn) {
-        }
-
-        @Override
-        public void visit(InvokeDynamicInstruction insn) {
-        }
-
-        @Override
         public void visit(IsInstanceInstruction insn) {
             use(insn.getReceiver(), insn.getValue());
         }
 
         @Override
-        public void visit(InitClassInstruction insn) {
-        }
-
-        @Override
         public void visit(NullCheckInstruction insn) {
             use(insn.getReceiver(), insn.getValue());
-        }
-
-        @Override
-        public void visit(MonitorEnterInstruction insn) {
-
-        }
-
-        @Override
-        public void visit(MonitorExitInstruction insn) {
-
         }
     }
 }

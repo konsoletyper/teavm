@@ -36,10 +36,7 @@ import org.teavm.model.ProgramReader;
 import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchBlockReader;
-import org.teavm.model.TryCatchJoint;
-import org.teavm.model.TryCatchJointReader;
 import org.teavm.model.Variable;
-import org.teavm.model.VariableReader;
 
 public final class ProgramUtils {
     private ProgramUtils() {
@@ -110,6 +107,7 @@ public final class ProgramUtils {
         InstructionReadVisitor visitor = new InstructionReadVisitor(copyReader);
         while (from != to) {
             from.acceptVisitor(visitor);
+            copyReader.getCopy().setLocation(from.getLocation());
             result.add(copyReader.getCopy());
             from = from.getNext();
         }
@@ -138,21 +136,7 @@ public final class ProgramUtils {
             TryCatchBlock tryCatchCopy = new TryCatchBlock();
             tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
             tryCatchCopy.setHandler(target.basicBlockAt(tryCatch.getHandler().getIndex()));
-            tryCatchCopy.getJoints().addAll(copyTryCatchJoints(tryCatch, target));
             result.add(tryCatchCopy);
-        }
-        return result;
-    }
-
-    public static List<TryCatchJoint> copyTryCatchJoints(TryCatchBlockReader block, Program target) {
-        List<TryCatchJoint> result = new ArrayList<>();
-        for (TryCatchJointReader joint : block.readJoints()) {
-            TryCatchJoint jointCopy = new TryCatchJoint();
-            jointCopy.setReceiver(target.variableAt(joint.getReceiver().getIndex()));
-            for (VariableReader sourceVar : joint.readSourceVariables()) {
-                jointCopy.getSourceVariables().add(target.variableAt(sourceVar.getIndex()));
-            }
-            result.add(jointCopy);
         }
         return result;
     }
@@ -168,23 +152,6 @@ public final class ProgramUtils {
             for (Phi phi : block.getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
                     outputs.get(incoming.getSource().getIndex()).add(incoming);
-                }
-            }
-        }
-
-        return outputs;
-    }
-
-    public static List<List<Incoming>> getPhiOutputsByVariable(Program program) {
-        List<List<Incoming>> outputs = new ArrayList<>(program.variableCount());
-        for (int i = 0; i < program.variableCount(); ++i) {
-            outputs.add(new ArrayList<>());
-        }
-
-        for (BasicBlock block : program.getBasicBlocks()) {
-            for (Phi phi : block.getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    outputs.get(incoming.getValue().getIndex()).add(incoming);
                 }
             }
         }
@@ -211,12 +178,6 @@ public final class ProgramUtils {
                 insn.acceptVisitor(defExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {
                     places[var.getIndex()] = block;
-                }
-            }
-
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    places[joint.getReceiver().getIndex()] = block;
                 }
             }
         }

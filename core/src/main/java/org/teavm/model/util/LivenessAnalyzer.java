@@ -21,7 +21,12 @@ import java.util.ArrayDeque;
 import java.util.BitSet;
 import java.util.Deque;
 import org.teavm.common.Graph;
-import org.teavm.model.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.Incoming;
+import org.teavm.model.Instruction;
+import org.teavm.model.Phi;
+import org.teavm.model.Program;
+import org.teavm.model.Variable;
 
 public class LivenessAnalyzer {
     private BitSet[] liveVars;
@@ -66,18 +71,6 @@ public class LivenessAnalyzer {
                 for (Variable var : defExtractor.getDefinedVariables()) {
                     if (!usedVars.contains(var.getIndex())) {
                         definitions[var.getIndex()] = i;
-                    }
-                }
-            }
-
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    definitions[joint.getReceiver().getIndex()] = i;
-                    for (Variable sourceVar : joint.getSourceVariables()) {
-                        Task task = new Task();
-                        task.block = i;
-                        task.var = sourceVar.getIndex();
-                        stack.push(task);
                     }
                 }
             }

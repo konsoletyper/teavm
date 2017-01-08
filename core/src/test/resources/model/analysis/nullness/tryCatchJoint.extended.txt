@@ -8,9 +8,9 @@ $if0
     invokeVirtual `Bar.baz()LBar;` @bar
     @bar_1 := nullCheck @bar
     goto $join
-catch java.lang.RuntimeException goto $if0Handler
-    @bar_2 := ephi @bar, @bar_1
+    catch java.lang.RuntimeException goto $if0Handler
 $if0Handler
+    @bar_2 := phi @bar from $if0, @bar_1 from $if0
     goto $join
 $else
     invokeVirtual `Bar.baz()LBar;` @bar
@@ -19,7 +19,7 @@ $else
 $else1
     invokeVirtual `Bar.baz2()LBar;` @bar_3
     goto $join
-catch java.lang.RuntimeException goto $elseHandler
+    catch java.lang.RuntimeException goto $elseHandler
 $elseHandler
     goto $join
 $join

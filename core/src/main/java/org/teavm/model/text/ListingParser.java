@@ -34,7 +34,6 @@ import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
-import org.teavm.model.TryCatchJoint;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayElementType;
@@ -89,9 +88,9 @@ public class ListingParser {
     private Map<String, BasicBlock> blockMap;
     private Map<String, Integer> blockFirstOccurrence;
     private Set<String> declaredBlocks = new HashSet<>();
+    private List<BasicBlock> orderedBlocks = new ArrayList<>();
     private TextLocation currentLocation;
     private BasicBlock currentBlock;
-    private TryCatchBlock currentTryCatch;
 
     public Program parse(Reader reader) throws IOException, ListingParseException {
         try {
@@ -113,6 +112,9 @@ public class ListingParser {
                 int blockIndex = blockFirstOccurrence.get(blockName);
                 throw new ListingParseException("Block not defined: " + blockName, blockIndex);
             }
+
+            program.pack();
+            program.rearrangeBasicBlocks(orderedBlocks);
 
             return program;
         } finally {
@@ -177,7 +179,7 @@ public class ListingParser {
             b.setLabel(k);
             return b;
         });
-        currentTryCatch = null;
+        orderedBlocks.add(currentBlock);
 
         currentLocation = null;
         do {
@@ -360,10 +362,6 @@ public class ListingParser {
                     case "phi":
                         lexer.nextToken();
                         parsePhi(receiver);
-                        break;
-                    case "ephi":
-                        lexer.nextToken();
-                        parseExceptionPhi(receiver);
                         break;
                     case "classOf":
                         lexer.nextToken();
@@ -593,24 +591,6 @@ public class ListingParser {
         currentBlock.getPhis().add(phi);
     }
 
-    private void parseExceptionPhi(Variable receiver) throws IOException, ListingParseException {
-        int phiStart = lexer.getIndex();
-
-        TryCatchJoint joint = new TryCatchJoint();
-        joint.setReceiver(receiver);
-        joint.getSourceVariables().add(expectVariable());
-        while (lexer.getToken() == ListingToken.COMMA) {
-            lexer.nextToken();
-            joint.getSourceVariables().add(expectVariable());
-        }
-
-        if (currentTryCatch == null) {
-            throw new ListingParseException("Exception phi must appear right after catch block", phiStart);
-        }
-
-        currentTryCatch.getJoints().add(joint);
-    }
-
     private void parseClassLiteral(Variable receiver) throws IOException, ListingParseException {
         ValueType type = expectValueType();
         ClassConstantInstruction insn = new ClassConstantInstruction();
@@ -792,7 +772,6 @@ public class ListingParser {
         }
         expectKeyword("goto");
         tryCatch.setHandler(expectBlock());
-        currentTryCatch = tryCatch;
         currentBlock.getTryCatchBlocks().add(tryCatch);
     }
 
@@ -1170,7 +1149,6 @@ public class ListingParser {
     }
 
     private void addInstruction(Instruction instruction) throws ListingParseException {
-        currentTryCatch = null;
         instruction.setLocation(currentLocation);
         currentBlock.add(instruction);
     }

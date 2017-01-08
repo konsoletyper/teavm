@@ -28,8 +28,6 @@ import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.Program;
-import org.teavm.model.TryCatchBlock;
-import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
@@ -161,14 +159,6 @@ public class GlobalValueNumbering implements MethodOptimization {
                         newInsn.setReceiver(program.variableAt(receiver));
                         newInsn.setLocation(currentInsn.getLocation());
                         currentInsn.replace(newInsn);
-                    }
-                }
-            }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    for (int i = 0; i < joint.getSourceVariables().size(); ++i) {
-                        int sourceVar = map[joint.getSourceVariables().get(i).getIndex()];
-                        joint.getSourceVariables().set(i, program.variableAt(sourceVar));
                     }
                 }
             }

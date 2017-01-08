@@ -39,7 +39,6 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
-import org.teavm.model.TryCatchJoint;
 import org.teavm.model.Variable;
 import org.teavm.model.analysis.NullnessInformation;
 import org.teavm.model.util.BasicBlockMapper;
@@ -345,13 +344,6 @@ class LoopInversionImpl {
                     tryCatchCopy.setExceptionType(tryCatch.getExceptionType());
                     tryCatchCopy.setHandler(program.basicBlockAt(copiedNodes.getOrDefault(handler, handler)));
                     targetBlock.getTryCatchBlocks().add(tryCatchCopy);
-
-                    for (TryCatchJoint joint : tryCatch.getJoints()) {
-                        TryCatchJoint jointCopy = new TryCatchJoint();
-                        jointCopy.setReceiver(joint.getReceiver());
-                        jointCopy.getSourceVariables().addAll(joint.getSourceVariables());
-                        tryCatchCopy.getJoints().add(jointCopy);
-                    }
                 }
             }
 

@@ -3,17 +3,15 @@ $start
     @a_1 := invokeStatic `Foo.baz()I`
     goto $second
     catch java.lang.RuntimeException goto $catch
-        @a_2 := ephi @a, @a_1
 $second
-    @a_5 := invokeStatic `Foo.boo()I`
+    @a_2 := invokeStatic `Foo.boo()I`
     goto $end
     catch java.lang.RuntimeException goto $catch
-        @a_6 := ephi @a_1, @a_5
 $catch
-    @a_3 := phi @a_2 from $start, @a_6 from $second
+    @a_3 := phi @a from $start, @a_1 from $start, @a_1 from $second, @a_2 from $second
     @b := 1
     @a_4 := @a_3 + @b as int
     goto $end
 $end
-    @a_7 := phi @a_4 from $catch, @a_5 from $second
-    return @a_7
+    @a_5 := phi @a_2 from $second, @a_4 from $catch
+    return @a_5

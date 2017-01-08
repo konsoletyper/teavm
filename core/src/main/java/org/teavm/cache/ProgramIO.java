@@ -63,14 +63,6 @@ public class ProgramIO {
                 data.writeInt(tryCatch.getExceptionType() != null ? symbolTable.lookup(
                         tryCatch.getExceptionType()) : -1);
                 data.writeShort(tryCatch.getHandler().getIndex());
-                data.writeShort(tryCatch.getJoints().size());
-                for (TryCatchJoint joint : tryCatch.getJoints()) {
-                    data.writeShort(joint.getReceiver().getIndex());
-                    data.writeShort(joint.getSourceVariables().size());
-                    for (Variable sourceVar : joint.getSourceVariables()) {
-                        data.writeShort(sourceVar.getIndex());
-                    }
-                }
             }
             TextLocation location = null;
             InstructionWriter insnWriter = new InstructionWriter(data);
@@ -140,17 +132,6 @@ public class ProgramIO {
                     tryCatch.setExceptionType(symbolTable.at(typeIndex));
                 }
                 tryCatch.setHandler(program.basicBlockAt(data.readShort()));
-
-                int jointCount = data.readShort();
-                for (int k = 0; k < jointCount; ++k) {
-                    TryCatchJoint joint = new TryCatchJoint();
-                    joint.setReceiver(program.variableAt(data.readShort()));
-                    int jointSourceCount = data.readShort();
-                    for (int m = 0; m < jointSourceCount; ++m) {
-                        joint.getSourceVariables().add(program.variableAt(data.readShort()));
-                    }
-                    tryCatch.getJoints().add(joint);
-                }
 
                 block.getTryCatchBlocks().add(tryCatch);
             }

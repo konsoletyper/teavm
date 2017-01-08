@@ -64,13 +64,6 @@ public class DataFlowGraphBuilder extends AbstractInstructionReader {
                     builder.addEdge(from, to);
                 }
             }
-            for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
-                for (TryCatchJointReader joint : tryCatch.readJoints()) {
-                    for (VariableReader sourceVar : joint.readSourceVariables()) {
-                        builder.addEdge(sourceVar.getIndex(), joint.getReceiver().getIndex());
-                    }
-                }
-            }
             block.readAllInstructions(this);
         }
         Graph graph = builder.build();
@@ -219,13 +212,6 @@ public class DataFlowGraphBuilder extends AbstractInstructionReader {
         if (receiver != null && !(method.getReturnType() instanceof ValueType.Primitive)) {
             escaping.add(receiver.getIndex());
         }
-    }
-
-    @Override
-    public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
-            List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
-            List<RuntimeConstant> bootstrapArguments) {
-        // Should be eliminated by bootstrap method substitutor
     }
 
     @Override

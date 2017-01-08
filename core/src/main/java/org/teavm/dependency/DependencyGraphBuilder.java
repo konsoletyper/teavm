@@ -44,7 +44,6 @@ import org.teavm.model.Program;
 import org.teavm.model.RuntimeConstant;
 import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlockReader;
-import org.teavm.model.TryCatchJointReader;
 import org.teavm.model.ValueType;
 import org.teavm.model.VariableReader;
 import org.teavm.model.emit.ProgramEmitter;
@@ -141,19 +140,6 @@ class DependencyGraphBuilder {
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 if (tryCatch.getExceptionType() != null) {
                     dependencyChecker.linkClass(tryCatch.getExceptionType(), new CallLocation(caller.getMethod()));
-                }
-
-                for (TryCatchJointReader joint : tryCatch.readJoints()) {
-                    DependencyNode receiverNode = nodes[joint.getReceiver().getIndex()];
-                    if (receiverNode == null) {
-                        continue;
-                    }
-                    for (VariableReader source : joint.readSourceVariables()) {
-                        DependencyNode sourceNode = nodes[source.getIndex()];
-                        if (sourceNode != null) {
-                            sourceNode.connect(receiverNode);
-                        }
-                    }
                 }
             }
         }
