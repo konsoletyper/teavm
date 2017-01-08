@@ -57,7 +57,6 @@ import org.teavm.model.optimization.Devirtualization;
 import org.teavm.model.optimization.GlobalValueNumbering;
 import org.teavm.model.optimization.Inlining;
 import org.teavm.model.optimization.LoopInvariantMotion;
-import org.teavm.model.optimization.LoopInversion;
 import org.teavm.model.optimization.MethodOptimization;
 import org.teavm.model.optimization.MethodOptimizationContext;
 import org.teavm.model.optimization.RedundantJumpElimination;
@@ -539,7 +538,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         optimizations.add(new RedundantJumpElimination());
         optimizations.add(new ArrayUnwrapMotion());
         if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
-            optimizations.add(new LoopInversion());
+            //optimizations.add(new LoopInversion());
             optimizations.add(new LoopInvariantMotion());
         }
         optimizations.add(new GlobalValueNumbering(optimizationLevel == TeaVMOptimizationLevel.SIMPLE));
