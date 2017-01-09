@@ -17,10 +17,6 @@ package org.teavm.dependency;
 
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface MethodDependencyInfo {
     ValueDependencyInfo[] getVariables();
 

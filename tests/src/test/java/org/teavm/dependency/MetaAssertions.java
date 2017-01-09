@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,14 +15,11 @@
  */
 package org.teavm.dependency;
 
-public interface ValueDependencyInfo {
-    String[] getTypes();
+public final class MetaAssertions {
+    private MetaAssertions() {
+    }
 
-    boolean hasType(String type);
-
-    boolean hasArrayType();
-
-    ValueDependencyInfo getArrayItem();
-
-    ValueDependencyInfo getClassValueNode();
+    public static void assertTypes(Object value, Class<?>... types) {
+        // do nothing, process by TeaVM test infrastructure
+    }
 }

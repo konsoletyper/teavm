@@ -20,10 +20,6 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MethodDependency implements MethodDependencyInfo {
     private DependencyChecker dependencyChecker;
     DependencyNode[] variableNodes;

@@ -21,10 +21,6 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface DependencyInfo {
     ClassReaderSource getClassSource();
 

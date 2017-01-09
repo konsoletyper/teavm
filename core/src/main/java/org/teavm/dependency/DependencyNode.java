@@ -191,11 +191,11 @@ public class DependencyNode implements ValueDependencyInfo {
             if (DependencyChecker.shouldLog) {
                 arrayItemNode.tag = tag + "[";
             }
-            arrayItemNode.addConsumer(this::propagate);
         }
         return arrayItemNode;
     }
 
+    @Override
     public DependencyNode getClassValueNode() {
         if (classValueNode == null) {
             classValueNode = new DependencyNode(dependencyChecker, degree);
@@ -203,7 +203,6 @@ public class DependencyNode implements ValueDependencyInfo {
             if (DependencyChecker.shouldLog) {
                 classValueNode.tag = tag + "@";
             }
-            classValueNode.addConsumer(this::propagate);
         }
         return classValueNode;
     }
