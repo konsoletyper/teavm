@@ -15,11 +15,15 @@
  */
 package org.teavm.model.optimization;
 
+import com.carrotsearch.hppc.IntArrayList;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -30,6 +34,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
+import org.teavm.model.analysis.ClassInference;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BranchingInstruction;
@@ -48,11 +53,33 @@ import org.teavm.model.util.ProgramUtils;
 public class Inlining {
     private static final int DEFAULT_THRESHOLD = 15;
     private static final int MAX_DEPTH = 5;
+    private IntArrayList depthsByBlock;
+    private Set<Instruction> instructionsToSkip;
 
-    public void apply(Program program, ClassReaderSource classSource) {
-        List<PlanEntry> plan = buildPlan(program, classSource, 0);
-        execPlan(program, plan, 0);
+    public void apply(Program program, MethodReference method, ClassReaderSource classes,
+            DependencyInfo dependencyInfo) {
+        depthsByBlock = new IntArrayList(program.basicBlockCount());
+        for (int i = 0; i < program.basicBlockCount(); ++i) {
+            depthsByBlock.add(0);
+        }
+        instructionsToSkip = new HashSet<>();
+
+        while (applyOnce(program, classes)) {
+            devirtualize(program, method, dependencyInfo);
+        }
+        depthsByBlock = null;
+        instructionsToSkip = null;
+
         new UnreachableBasicBlockEliminator().optimize(program);
+    }
+
+    private boolean applyOnce(Program program, ClassReaderSource classSource) {
+        List<PlanEntry> plan = buildPlan(program, classSource, 0);
+        if (plan.isEmpty()) {
+            return false;
+        }
+        execPlan(program, plan, 0);
+        return true;
     }
 
     private void execPlan(Program program, List<PlanEntry> plan, int offset) {
@@ -69,6 +96,9 @@ public class Inlining {
         Program inlineProgram = planEntry.program;
         for (int i = 1; i < inlineProgram.basicBlockCount(); ++i) {
             program.createBasicBlock();
+        }
+        while (depthsByBlock.size() < program.basicBlockCount()) {
+            depthsByBlock.add(planEntry.depth);
         }
 
         int variableOffset = program.variableCount();
@@ -186,12 +216,22 @@ public class Inlining {
         }
         List<PlanEntry> plan = new ArrayList<>();
         int ownComplexity = getComplexity(program);
+        int originalDepth = depth;
 
         for (BasicBlock block : program.getBasicBlocks()) {
             if (!block.getTryCatchBlocks().isEmpty()) {
                 continue;
             }
+
+            if (originalDepth == 0) {
+                depth = depthsByBlock.get(block.getIndex());
+            }
+
             for (Instruction insn : block) {
+                if (instructionsToSkip.contains(insn)) {
+                    continue;
+                }
+
                 if (!(insn instanceof InvokeInstruction)) {
                     continue;
                 }
@@ -203,15 +243,17 @@ public class Inlining {
                 MethodReader invokedMethod = getMethod(classSource, invoke.getMethod());
                 if (invokedMethod == null || invokedMethod.getProgram() == null
                         || invokedMethod.getProgram().basicBlockCount() == 0) {
+                    instructionsToSkip.add(insn);
                     continue;
                 }
 
                 Program invokedProgram = ProgramUtils.copy(invokedMethod.getProgram());
-                int complexityThreshold = DEFAULT_THRESHOLD - depth * 2;
+                int complexityThreshold = DEFAULT_THRESHOLD;
                 if (ownComplexity < DEFAULT_THRESHOLD) {
                     complexityThreshold += DEFAULT_THRESHOLD;
                 }
                 if (getComplexity(invokedProgram) > complexityThreshold) {
+                    instructionsToSkip.add(insn);
                     continue;
                 }
 
@@ -220,6 +262,7 @@ public class Inlining {
                 entry.targetInstruction = insn;
                 entry.program = invokedProgram;
                 entry.innerPlan.addAll(buildPlan(invokedProgram, classSource, depth + 1));
+                entry.depth = depth;
                 plan.add(entry);
             }
         }
@@ -261,10 +304,42 @@ public class Inlining {
         return complexity;
     }
 
+    private void devirtualize(Program program, MethodReference method, DependencyInfo dependencyInfo) {
+        ClassInference inference = new ClassInference(dependencyInfo);
+        inference.infer(program, method);
+
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction instruction : block) {
+                if (!(instruction instanceof InvokeInstruction)) {
+                    continue;
+                }
+                InvokeInstruction invoke = (InvokeInstruction) instruction;
+                if (invoke.getType() != InvocationType.VIRTUAL) {
+                    continue;
+                }
+
+                Set<MethodReference> implementations = new HashSet<>();
+                for (String className : inference.classesOf(invoke.getInstance().getIndex())) {
+                    MethodReference rawMethod = new MethodReference(className, invoke.getMethod().getDescriptor());
+                    MethodReader resolvedMethod = dependencyInfo.getClassSource().resolve(rawMethod);
+                    if (resolvedMethod != null) {
+                        implementations.add(resolvedMethod.getReference());
+                    }
+                }
+
+                if (implementations.size() == 1) {
+                    invoke.setType(InvocationType.SPECIAL);
+                    invoke.setMethod(implementations.iterator().next());
+                }
+            }
+        }
+    }
+
     private class PlanEntry {
         int targetBlock;
         Instruction targetInstruction;
         Program program;
+        int depth;
         final List<PlanEntry> innerPlan = new ArrayList<>();
     }
 }

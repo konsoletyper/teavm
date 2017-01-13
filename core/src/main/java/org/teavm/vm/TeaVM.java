@@ -368,7 +368,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 return;
             }
 
-            inline(classSet);
+            inline(classSet, dependencyChecker);
             if (wasCancelled()) {
                 return;
             }
@@ -435,22 +435,35 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
-    private void inline(ListableClassHolderSource classes) {
+    private void inline(ListableClassHolderSource classes, DependencyInfo dependencyInfo) {
         if (optimizationLevel != TeaVMOptimizationLevel.FULL) {
             return;
         }
+
+        Map<MethodReference, Program> inlinedPrograms = new HashMap<>();
         Inlining inlining = new Inlining();
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
             for (MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null) {
+                    Program program = ProgramUtils.copy(method.getProgram());
                     MethodOptimizationContextImpl context = new MethodOptimizationContextImpl(method, classes);
-                    inlining.apply(method.getProgram(), classes);
-                    new UnusedVariableElimination().optimize(context, method.getProgram());
+                    inlining.apply(program, method.getReference(), classes, dependencyInfo);
+                    new UnusedVariableElimination().optimize(context, program);
+                    inlinedPrograms.put(method.getReference(), program);
                 }
             }
             if (wasCancelled()) {
                 return;
+            }
+        }
+
+        for (String className : classes.getClassNames()) {
+            ClassHolder cls = classes.get(className);
+            for (MethodHolder method : cls.getMethods()) {
+                if (method.getProgram() != null) {
+                    method.setProgram(inlinedPrograms.get(method.getReference()));
+                }
             }
         }
     }

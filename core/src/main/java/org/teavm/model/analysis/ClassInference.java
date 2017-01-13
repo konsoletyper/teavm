@@ -231,15 +231,17 @@ public class ClassInference {
                         MethodReference resolvedMethodRef = resolvedMethod.getReference();
                         if (callSite.resolvedMethods.add(resolvedMethodRef)) {
                             MethodDependencyInfo methodDep = dependencyInfo.getMethod(resolvedMethodRef);
-                            if (callSite.receiver >= 0) {
-                                readValue(methodDep.getResult(), program.variableAt(callSite.receiver), queue);
-                            }
-                            for (int i = 0; i < callSite.arguments.length; ++i) {
-                                writeValue(methodDep.getVariable(i + 1), program.variableAt(callSite.arguments[i]),
-                                        queue);
-                            }
-                            for (String type : methodDep.getThrown().getTypes()) {
-                                queue.add(new Task(callSite.block, -1, type));
+                            if (methodDep != null) {
+                                if (callSite.receiver >= 0) {
+                                    readValue(methodDep.getResult(), program.variableAt(callSite.receiver), queue);
+                                }
+                                for (int i = 0; i < callSite.arguments.length; ++i) {
+                                    writeValue(methodDep.getVariable(i + 1), program.variableAt(callSite.arguments[i]),
+                                            queue);
+                                }
+                                for (String type : methodDep.getThrown().getTypes()) {
+                                    queue.add(new Task(callSite.block, -1, type));
+                                }
                             }
                         }
                     }
@@ -252,9 +254,15 @@ public class ClassInference {
 
             IntObjectMap<ValueType> variableCasts = casts.get(task.variable);
             if (variableCasts != null) {
-                ValueType type = task.className.startsWith("[")
-                        ? ValueType.parse(task.className)
-                        : ValueType.object(task.className);
+                ValueType type;
+                if (task.className.startsWith("[")) {
+                    type = ValueType.parseIfPossible(task.className);
+                    if (type == null) {
+                        type = ValueType.arrayOf(ValueType.object("java.lang.Object"));
+                    }
+                } else {
+                    type = ValueType.object(task.className);
+                }
                 for (int target : variableCasts.keys().toArray()) {
                     ValueType targetType = variableCasts.get(target);
                     if (classSource.isSuperType(targetType, type).orElse(false)) {

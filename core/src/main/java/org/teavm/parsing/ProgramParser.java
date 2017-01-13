@@ -1695,11 +1695,6 @@ public class ProgramParser {
                     break;
                 }
                 case Opcodes.PUTSTATIC: {
-                    if (!owner.equals(currentClassName)) {
-                        InitClassInstruction initInsn = new InitClassInstruction();
-                        initInsn.setClassName(ownerCls);
-                        addInstruction(initInsn);
-                    }
                     int value = desc.equals("D") || desc.equals("J") ? popDouble() : popSingle();
                     PutFieldInstruction insn = new PutFieldInstruction();
                     insn.setField(referenceCache.getCached(new FieldReference(ownerCls, name)));
