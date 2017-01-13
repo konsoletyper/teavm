@@ -98,7 +98,7 @@ public class Inlining {
             program.createBasicBlock();
         }
         while (depthsByBlock.size() < program.basicBlockCount()) {
-            depthsByBlock.add(planEntry.depth);
+            depthsByBlock.add(planEntry.depth + 1);
         }
 
         int variableOffset = program.variableCount();
@@ -225,6 +225,9 @@ public class Inlining {
 
             if (originalDepth == 0) {
                 depth = depthsByBlock.get(block.getIndex());
+                if (depth >= MAX_DEPTH) {
+                    continue;
+                }
             }
 
             for (Instruction insn : block) {
