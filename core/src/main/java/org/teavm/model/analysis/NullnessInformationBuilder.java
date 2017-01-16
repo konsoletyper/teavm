@@ -24,6 +24,7 @@ import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
+import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.common.GraphUtils;
@@ -190,6 +191,12 @@ class NullnessInformationBuilder {
         BasicBlock currentBlock;
         IntIntMap nullSuccessors = new IntIntOpenHashMap();
         IntIntMap notNullSuccessors = new IntIntOpenHashMap();
+        private DominatorTree dom;
+
+        @Override
+        public void setDomTree(DominatorTree domTree) {
+            dom = domTree;
+        }
 
         @Override
         public State visit(BasicBlock block) {
@@ -317,12 +324,12 @@ class NullnessInformationBuilder {
         public void visit(BranchingInstruction insn) {
             switch (insn.getCondition()) {
                 case NOT_NULL:
-                    notNullSuccessors.put(insn.getConsequent().getIndex(), insn.getOperand().getIndex());
-                    nullSuccessors.put(insn.getAlternative().getIndex(), insn.getOperand().getIndex());
+                    setNotNullSuccessor(insn.getConsequent(), insn.getOperand());
+                    setNullSuccessor(insn.getAlternative(), insn.getOperand());
                     break;
                 case NULL:
-                    nullSuccessors.put(insn.getConsequent().getIndex(), insn.getOperand().getIndex());
-                    notNullSuccessors.put(insn.getAlternative().getIndex(), insn.getOperand().getIndex());
+                    setNullSuccessor(insn.getConsequent(), insn.getOperand());
+                    setNotNullSuccessor(insn.getAlternative(), insn.getOperand());
                     break;
                 default:
                     break;
@@ -341,16 +348,37 @@ class NullnessInformationBuilder {
 
             switch (insn.getCondition()) {
                 case REFERENCE_EQUAL:
-                    notNullSuccessors.put(insn.getConsequent().getIndex(), first.getIndex());
-                    nullSuccessors.put(insn.getAlternative().getIndex(), first.getIndex());
+                    setNotNullSuccessor(insn.getConsequent(), first);
+                    setNullSuccessor(insn.getAlternative(), first);
                     break;
                 case REFERENCE_NOT_EQUAL:
-                    nullSuccessors.put(insn.getConsequent().getIndex(), first.getIndex());
-                    notNullSuccessors.put(insn.getAlternative().getIndex(), first.getIndex());
+                    setNullSuccessor(insn.getConsequent(), first);
+                    setNotNullSuccessor(insn.getAlternative(), first);
                     break;
                 default:
                     break;
             }
+        }
+
+        private void setNullSuccessor(BasicBlock successor, Variable value) {
+            if (shouldSetSuccessor(successor, value)) {
+                nullSuccessors.put(successor.getIndex(), value.getIndex());
+            }
+        }
+
+        private void setNotNullSuccessor(BasicBlock successor, Variable value) {
+            if (shouldSetSuccessor(successor, value)) {
+                notNullSuccessors.put(successor.getIndex(), value.getIndex());
+            }
+        }
+
+        private boolean shouldSetSuccessor(BasicBlock successor, Variable value) {
+            for (Phi phi : successor.getPhis()) {
+                if (phi.getIncomings().stream().anyMatch(incoming -> incoming.getValue() == value)) {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private void insertNotNullInstruction(Instruction currentInstruction, Variable var) {

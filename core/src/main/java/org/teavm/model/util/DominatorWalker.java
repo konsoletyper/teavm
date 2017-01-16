@@ -23,12 +23,13 @@ import org.teavm.model.Program;
 
 public class DominatorWalker {
     private Program program;
+    private DominatorTree dom;
     private Graph domGraph;
 
     public DominatorWalker(Program program) {
         this.program = program;
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
-        DominatorTree dom = GraphUtils.buildDominatorTree(cfg);
+        dom = GraphUtils.buildDominatorTree(cfg);
         domGraph = GraphUtils.buildDominatorGraph(dom, cfg.size());
     }
 
@@ -36,6 +37,7 @@ public class DominatorWalker {
         int[] stack = new int[program.basicBlockCount() * 2];
         Object[] stateStack = new Object[stack.length];
         boolean[] backward = new boolean[stack.length];
+        callback.setDomTree(dom);
 
         int head = 1;
         while (head > 0) {
