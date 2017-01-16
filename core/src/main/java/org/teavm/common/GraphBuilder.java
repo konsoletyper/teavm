@@ -22,10 +22,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class GraphBuilder {
     private GraphImpl builtGraph;
     private List<IntSet> addedEdges = new ArrayList<>();
