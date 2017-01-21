@@ -235,12 +235,9 @@ public class PhiUpdater {
 
             int[] successors = domGraph.outgoingEdges(index);
 
-            IntSet successorSet = IntOpenHashSet.from(successors);
             for (Incoming output : phiOutputs.get(index)) {
-                if (successorSet.contains(output.getPhi().getBasicBlock().getIndex())) {
-                    Variable var = output.getValue();
-                    output.setValue(use(var));
-                }
+                Variable var = output.getValue();
+                output.setValue(use(var));
             }
 
             for (int j = successors.length - 1; j >= 0; --j) {

@@ -1,0 +1,10 @@
+var @this as this
+
+$start
+    @x := new X
+    @a := 'qwe'
+    field X.foo @x := @a as `Ljava/lang/String;`
+    @b := 123
+    field X.bar @x := @b as I
+    @y := field X.bar @x as I
+    return @y

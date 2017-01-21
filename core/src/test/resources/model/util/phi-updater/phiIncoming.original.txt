@@ -1,0 +1,15 @@
+var @this as this
+
+$start
+    @cond := invokeStatic `Foo.bar()I`
+    if @cond == 0 then goto $zero else goto $nonzero
+$zero
+    @a := 0
+    goto $joint
+$nonzero
+    @b := 1
+    @b := 2
+    goto $joint
+$joint
+    @c := phi @a from $zero, @b from $nonzero
+    return @c

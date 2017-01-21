@@ -50,6 +50,11 @@ public class PhiUpdaterTest {
         doTest();
     }
 
+    @Test
+    public void phiIncoming() {
+        doTest();
+    }
+
     private void doTest() {
         String originalPath = PREFIX + name.getMethodName() + ".original.txt";
         String expectedPath = PREFIX + name.getMethodName() + ".expected.txt";

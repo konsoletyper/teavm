@@ -1,0 +1,13 @@
+var @this as this
+
+$start
+    @a := new A
+    @tmp1 := 23
+    field A.foo @a := @tmp1 as I
+    @b := @a
+    @tmp2 := 42
+    field A.bar @b := @tmp2 as I
+    @r := field A.foo @b as I
+    @s := field A.bar @b as I
+    @t := field A.bar @a as I
+    return @r

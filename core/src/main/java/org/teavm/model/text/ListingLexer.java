@@ -318,7 +318,7 @@ class ListingLexer {
                     if (c < ' ') {
                         throw new ListingParseException("Unexpected character in string literal: " + c, index);
                     }
-                    sb.append(c);
+                    sb.append((char) c);
                     nextChar();
                     break;
             }

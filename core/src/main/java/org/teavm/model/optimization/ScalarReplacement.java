@@ -21,8 +21,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.model.BasicBlock;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
@@ -59,15 +57,23 @@ public class ScalarReplacement implements MethodOptimization {
                 Collections.nCopies(program.variableCount(), null));
 
         MethodReference methodReference = context.getMethod().getReference();
-        EscapeAnalysis escapeAnalysis = new EscapeAnalysis(context.getClassSource());
+        EscapeAnalysis escapeAnalysis = new EscapeAnalysis();
         escapeAnalysis.analyze(program, methodReference);
         boolean canPerform = false;
         for (int i = 0; i < fieldMappings.size(); ++i) {
             FieldReference[] fields = escapeAnalysis.getFields(i);
             if (!escapeAnalysis.escapes(i) && fields != null) {
+                Variable instanceVar = program.variableAt(i);
                 Map<FieldReference, Variable> fieldMapping = new LinkedHashMap<>();
                 for (FieldReference field : fields) {
-                    fieldMapping.put(field, program.createVariable());
+                    Variable var = program.createVariable();
+                    if (instanceVar.getDebugName() != null) {
+                        var.setDebugName(instanceVar.getDebugName() + "$" + field.getFieldName());
+                    }
+                    if (instanceVar.getLabel() != null) {
+                        var.setLabel(instanceVar.getLabel() + "$" + field.getFieldName());
+                    }
+                    fieldMapping.put(field, var);
                 }
                 fieldMappings.set(i, fieldMapping);
                 canPerform = true;
@@ -77,8 +83,7 @@ public class ScalarReplacement implements MethodOptimization {
             return false;
         }
 
-        ScalarReplacementVisitor visitor = new ScalarReplacementVisitor(escapeAnalysis, context.getClassSource(),
-                fieldMappings);
+        ScalarReplacementVisitor visitor = new ScalarReplacementVisitor(escapeAnalysis, fieldMappings);
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Instruction instruction : block) {
                 instruction.acceptVisitor(visitor);
@@ -116,7 +121,7 @@ public class ScalarReplacement implements MethodOptimization {
                         phiReplacement.getIncomings().add(incomingReplacement);
                     }
 
-                    additionalPhis.add(phi);
+                    additionalPhis.add(phiReplacement);
                 }
                 block.getPhis().remove(i--);
             }
@@ -134,13 +139,11 @@ public class ScalarReplacement implements MethodOptimization {
 
     static class ScalarReplacementVisitor extends AbstractInstructionVisitor {
         private EscapeAnalysis escapeAnalysis;
-        private ClassReaderSource classSource;
         private List<Map<FieldReference, Variable>> fieldMappings;
 
-        public ScalarReplacementVisitor(EscapeAnalysis escapeAnalysis, ClassReaderSource classSource,
+        public ScalarReplacementVisitor(EscapeAnalysis escapeAnalysis,
                 List<Map<FieldReference, Variable>> fieldMappings) {
             this.escapeAnalysis = escapeAnalysis;
-            this.classSource = classSource;
             this.fieldMappings = fieldMappings;
         }
 
@@ -149,9 +152,9 @@ public class ScalarReplacement implements MethodOptimization {
             int var = insn.getReceiver().getIndex();
             if (!escapeAnalysis.escapes(var) && escapeAnalysis.getFields(var) != null) {
                 for (FieldReference fieldRef : escapeAnalysis.getFields(var)) {
-                    FieldReader field = classSource.resolve(fieldRef);
+                    ValueType fieldType = escapeAnalysis.getFieldType(fieldRef);
                     Variable receiver = fieldMappings.get(insn.getReceiver().getIndex()).get(fieldRef);
-                    Instruction initializer = generateDefaultValue(field.getType(), receiver);
+                    Instruction initializer = generateDefaultValue(fieldType, receiver);
                     initializer.setLocation(initializer.getLocation());
                     insn.insertPrevious(initializer);
                 }

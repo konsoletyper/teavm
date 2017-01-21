@@ -1,0 +1,27 @@
+var @this as this
+
+$start
+    @cond := invokeStatic `Foo.bar()I`
+    if @cond == 0 then goto $zero else goto $nonzero
+$zero
+    @a$foo := null
+    @a$baz := 0.0F
+    @a$bar := 0
+    @tmp1 := null
+    @a$foo_1 := @tmp1
+    goto $joint
+$nonzero
+    @b$bar := 0
+    @b$boo := 0
+    @b$baz := 0.0F
+    @tmp2 := 23
+    @b$bar_1 := @tmp2
+    @b$boo_1 := @tmp2
+    goto $joint
+$joint
+    @c$baz := phi @a$baz from $zero, @b$baz from $nonzero
+    @c$bar := phi @a$bar from $zero, @b$bar_1 from $nonzero
+    @tmp3 := 12.0F
+    @c$baz_1 := @tmp3
+    @r := @c$bar
+    return @r

@@ -1,0 +1,15 @@
+var @this as this
+
+$start
+    @a$foo := 0
+    @a$bar := 0
+    @tmp1 := 23
+    @a$foo_1 := @tmp1
+    @b$foo := @a$foo_1
+    @b$bar := @a$bar
+    @tmp2 := 42
+    @b$bar_1 := @tmp2
+    @r := @b$foo
+    @s := @b$bar_1
+    @t := @a$bar
+    return @r

@@ -1,0 +1,11 @@
+var @this as this
+
+$start
+    @x$foo := null
+    @x$bar := 0
+    @a := 'qwe'
+    @x$foo_1 := @a
+    @b := 123
+    @x$bar_1 := @b
+    @y := @x$bar_1
+    return @y

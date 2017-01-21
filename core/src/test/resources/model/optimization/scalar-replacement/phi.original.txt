@@ -1,0 +1,22 @@
+var @this as this
+
+$start
+    @cond := invokeStatic `Foo.bar()I`
+    if @cond == 0 then goto $zero else goto $nonzero
+$zero
+    @a := new A
+    @tmp1 := null
+    field A.foo @a := @tmp1 as `Ljava/lang/Object;`
+    goto $joint
+$nonzero
+    @b := new B
+    @tmp2 := 23
+    field B.bar @b := @tmp2 as I
+    field B.boo @b := @tmp2 as I
+    goto $joint
+$joint
+    @c := phi @a from $zero, @b from $nonzero
+    @tmp3 := 12.0F
+    field C.baz @c := @tmp3 as F
+    @r := field B.bar @c as I
+    return @r
