@@ -87,7 +87,6 @@
     <module>jso/apis</module>
     <module>jso/impl</module>
     <module>html4j</module>
-    <module>samples</module>
     <module>platform</module>
     <module>tools/core</module>
     <module>tools/cli</module>
@@ -287,6 +286,18 @@
   </build>
 
   <profiles>
+    <profile>
+      <id>all-modules</id>
+      <activation>
+        <property>
+          <name>teavm.build.all</name>
+          <value>!false</value>
+        </property>
+      </activation>
+      <modules>
+        <module>samples</module>
+      </modules>
+    </profile>
     <profile>
       <id>sign-artifacts</id>
       <build>

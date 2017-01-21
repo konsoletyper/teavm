@@ -51,8 +51,8 @@ import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ProgramUtils;
 
 public class Inlining {
-    private static final int DEFAULT_THRESHOLD = 15;
-    private static final int MAX_DEPTH = 5;
+    private static final int DEFAULT_THRESHOLD = 17;
+    private static final int MAX_DEPTH = 7;
     private IntArrayList depthsByBlock;
     private Set<Instruction> instructionsToSkip;
 
