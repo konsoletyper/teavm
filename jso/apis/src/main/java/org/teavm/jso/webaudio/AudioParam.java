@@ -15,7 +15,7 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.typedarrays.Float32Array;
@@ -30,21 +30,17 @@ public interface AudioParam extends JSObject {
     @JSProperty
     float getDefaultValue();
 
-    @JSMethod
     void setValueAtTime(float value, double startTime);
 
-    @JSMethod
     void linearRampToValueAtTime(float value, double endTime);
 
-    @JSMethod
     void exponentialRampToValueAtTime(float value, double endTime);
 
-    @JSMethod
     void setTargetAtTime(float target, double startTime, float timeConstant);
 
-    @JSMethod
     void setValueCurveAtTime(Float32Array values, double startTime, double duration);
 
-    @JSMethod
+    void setValueCurveAtTime(@JSByRef float[] values, double startTime, double duration);
+
     void cancelScheduledValues(double startTime);
 }

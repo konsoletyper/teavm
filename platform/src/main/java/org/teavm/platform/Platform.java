@@ -81,7 +81,7 @@ public final class Platform {
         return (PlatformConsole) Window.current();
     }
 
-    @JSBody(params = {}, script = "return $rt_nextId();")
+    @JSBody(script = "return $rt_nextId();")
     public static native int nextObjectId();
 
     public static <T> T newInstance(PlatformClass cls) {
@@ -140,7 +140,7 @@ public final class Platform {
         ((PlatformHelper) Window.current()).killSchedule(id);
     }
 
-    @JSBody(params = {}, script = "return [];")
+    @JSBody(script = "return [];")
     public static native <T> PlatformQueue<T> createQueue();
 
     public static PlatformString stringFromCharCode(int charCode) {

@@ -18,10 +18,6 @@ package org.teavm.jso.typedarrays;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class Float64Array extends ArrayBufferView {
     @JSIndexer
     public abstract double get(int index);

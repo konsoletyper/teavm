@@ -15,11 +15,13 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.typedarrays.Float32Array;
 
 public interface IIRFilterNode extends AudioNode {
-    @JSMethod
     void getFrequencyResponse(Float32Array frequencyHz, Float32Array magResponse, Float32Array phaseResponse);
+
+    void getFrequencyResponse(@JSByRef float[] frequencyHz, @JSByRef float[] magResponse,
+            @JSByRef float[] phaseResponse);
 }
 

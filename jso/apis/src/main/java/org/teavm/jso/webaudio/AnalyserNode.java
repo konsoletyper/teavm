@@ -15,7 +15,7 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.typedarrays.Uint8Array;
@@ -48,16 +48,16 @@ public interface AnalyserNode extends AudioNode {
     @JSProperty
     float getSmoothingTimeConstant();
 
-    @JSMethod
     void getFloatFrequencyData(Float32Array array);
 
-    @JSMethod
+    void getFloatFrequencyData(@JSByRef float[] array);
+
     void getByteFrequencyData(Uint8Array array);
 
-    @JSMethod
     void getFloatTimeDomainData(Float32Array array);
 
-    @JSMethod
+    void getFloatTimeDomainData(@JSByRef float[] array);
+
     void getByteTimeDomainData(Uint8Array array);
 }
 

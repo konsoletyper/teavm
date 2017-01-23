@@ -68,6 +68,6 @@ public class TRandom extends TObject implements TSerializable {
         return random();
     }
 
-    @JSBody(params = {}, script = "return Math.random();")
+    @JSBody(script = "return Math.random();")
     private static native double random();
 }

@@ -15,7 +15,7 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.typedarrays.Float32Array;
@@ -33,18 +33,21 @@ public interface AudioBuffer extends JSObject {
     @JSProperty
     int getNumberOfChannels();
 
-    @JSMethod
     Float32Array getChannelData(int channel);
 
-    @JSMethod
     void copyFromChannel(Float32Array destination, int channelNumber);
 
-    @JSMethod
+    void copyFromChannel(@JSByRef float[] destination, int channelNumber);
+
     void copyFromChannel(Float32Array destination, int channelNumber, int startInChannel);
 
-    @JSMethod
+    void copyFromChannel(@JSByRef float[] destination, int channelNumber, int startInChannel);
+
     void copyToChannel(Float32Array source, int channelNumber);
 
-    @JSMethod
+    void copyToChannel(@JSByRef float[] source, int channelNumber);
+
     void copyToChannel(Float32Array source, int channelNumber, int startInChannel);
+
+    void copyToChannel(@JSByRef float[] source, int channelNumber, int startInChannel);
 }

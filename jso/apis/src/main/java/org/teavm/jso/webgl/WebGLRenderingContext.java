@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.webgl;
 
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
@@ -659,7 +660,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform1fv(WebGLUniformLocation location, JSArrayReader<JSNumber> v);
 
-    void uniform1fv(WebGLUniformLocation location, float[] v);
+    void uniform1fv(WebGLUniformLocation location, @JSByRef float[] v);
 
     void uniform1i(WebGLUniformLocation location, int x);
 
@@ -667,7 +668,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform1iv(WebGLUniformLocation location, JSArrayReader<JSNumber> v);
 
-    void uniform1iv(WebGLUniformLocation location, int[] v);
+    void uniform1iv(WebGLUniformLocation location, @JSByRef int[] v);
 
     void uniform2f(WebGLUniformLocation location, float x, float y);
 
@@ -675,7 +676,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform2fv(WebGLUniformLocation location, JSArrayReader<JSNumber> v);
 
-    void uniform2fv(WebGLUniformLocation location, float[] v);
+    void uniform2fv(WebGLUniformLocation location, @JSByRef float[] v);
 
     void uniform2i(WebGLUniformLocation location, int x, int y);
 
@@ -683,7 +684,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform2iv(WebGLUniformLocation location, JSArrayReader<JSNumber> v);
 
-    void uniform2iv(WebGLUniformLocation location, int[] v);
+    void uniform2iv(WebGLUniformLocation location, @JSByRef int[] v);
 
     void uniform3f(WebGLUniformLocation location, float x, float y, float z);
 
@@ -691,7 +692,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform3fv(WebGLUniformLocation location, JSArrayReader<JSNumber> v);
 
-    void uniform3fv(WebGLUniformLocation location, float[] v);
+    void uniform3fv(WebGLUniformLocation location, @JSByRef float[] v);
 
     void uniform3i(WebGLUniformLocation location, int x, int y, int z);
 
@@ -699,7 +700,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform3iv(WebGLUniformLocation location, JSArrayReader<JSNumber> v);
 
-    void uniform3iv(WebGLUniformLocation location, int[] v);
+    void uniform3iv(WebGLUniformLocation location, @JSByRef int[] v);
 
     void uniform4f(WebGLUniformLocation location, float x, float y, float z, float w);
 
@@ -707,7 +708,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform4fv(WebGLUniformLocation location, JSArrayReader<JSNumber> v);
 
-    void uniform4fv(WebGLUniformLocation location, float[] v);
+    void uniform4fv(WebGLUniformLocation location, @JSByRef float[] v);
 
     void uniform4i(WebGLUniformLocation location, int x, int y, int z, int w);
 
@@ -715,25 +716,25 @@ public interface WebGLRenderingContext extends JSObject {
 
     void uniform4iv(WebGLUniformLocation location, JSArrayReader<JSNumber> v);
 
-    void uniform4iv(WebGLUniformLocation location, int[] v);
+    void uniform4iv(WebGLUniformLocation location, @JSByRef int[] v);
 
     void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, Float32Array value);
 
     void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, JSArrayReader<JSNumber> value);
 
-    void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, float[] value);
+    void uniformMatrix2fv(WebGLUniformLocation location, boolean transpose, @JSByRef float[] value);
 
     void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, Float32Array value);
 
     void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, JSArrayReader<JSNumber> value);
 
-    void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, float[] value);
+    void uniformMatrix3fv(WebGLUniformLocation location, boolean transpose, @JSByRef float[] value);
 
     void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, Float32Array value);
 
     void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, JSArrayReader<JSNumber> value);
 
-    void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, float[] value);
+    void uniformMatrix4fv(WebGLUniformLocation location, boolean transpose, @JSByRef float[] value);
 
     void useProgram(WebGLProgram program);
 
@@ -745,7 +746,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void vertexAttrib1fv(int indx, JSArrayReader<JSNumber> values);
 
-    void vertexAttrib1fv(int indx, float[] values);
+    void vertexAttrib1fv(int indx, @JSByRef float[] values);
 
     void vertexAttrib2f(int indx, float x, float y);
 
@@ -753,7 +754,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void vertexAttrib2fv(int indx, JSArrayReader<JSNumber> values);
 
-    void vertexAttrib2fv(int indx, float[] values);
+    void vertexAttrib2fv(int indx, @JSByRef float[] values);
 
     void vertexAttrib3f(int indx, float x, float y, float z);
 
@@ -761,7 +762,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void vertexAttrib3fv(int indx, JSArrayReader<JSNumber> values);
 
-    void vertexAttrib3fv(int indx, float[] values);
+    void vertexAttrib3fv(int indx, @JSByRef float[] values);
 
     void vertexAttrib4f(int indx, float x, float y, float z, float w);
 
@@ -769,7 +770,7 @@ public interface WebGLRenderingContext extends JSObject {
 
     void vertexAttrib4fv(int indx, JSArrayReader<JSNumber> values);
 
-    void vertexAttrib4fv(int indx, float[] values);
+    void vertexAttrib4fv(int indx, @JSByRef float[] values);
 
     void vertexAttribPointer(int indx, int size, int type, boolean normalized, int stride, int offset);
 

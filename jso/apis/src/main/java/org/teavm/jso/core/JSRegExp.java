@@ -19,10 +19,6 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class JSRegExp implements JSObject {
     @JSBody(params = "pattern", script = "return new RegExp(pattern);")
     public static native JSRegExp create(String pattern);

@@ -16,11 +16,9 @@
 package org.teavm.jso.webaudio;
 
 import org.teavm.jso.JSFunctor;
-import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 
 @JSFunctor
 public interface DecodeSuccessCallback extends JSObject {
-    @JSMethod
     void onSuccess(AudioBuffer decodedData);
 }

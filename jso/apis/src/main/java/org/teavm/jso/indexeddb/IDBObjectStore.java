@@ -20,10 +20,6 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSString;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class IDBObjectStore implements JSObject, IDBCursorSource {
     @JSProperty
     public abstract String getName();
@@ -40,7 +36,7 @@ public abstract class IDBObjectStore implements JSObject, IDBCursorSource {
         }
     }
 
-    @JSBody(params = {}, script = "return this;")
+    @JSBody(script = "return this;")
     private native String[] unwrapStringArray(JSObject obj);
 
     @JSProperty

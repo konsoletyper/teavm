@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
@@ -39,9 +38,7 @@ public interface AudioWorkerGlobalScope extends JSObject {
     @JSProperty
     AudioWorkerParamDescriptor[] getParameters();
 
-    @JSMethod
     AudioParam addParameter(String name, float defaultValue);
 
-    @JSMethod
     void removeParameter(String name);
 }

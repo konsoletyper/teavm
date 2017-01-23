@@ -18,10 +18,6 @@ package org.teavm.jso.core;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class JSNumber implements JSObject {
     private JSNumber() {
     }

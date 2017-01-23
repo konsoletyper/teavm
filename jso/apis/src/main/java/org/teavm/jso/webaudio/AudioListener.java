@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
@@ -32,13 +31,10 @@ public interface AudioListener extends JSObject {
     @JSProperty
     float getSpeedOfSound();
 
-    @JSMethod
     void setPosition(float x, float y, float z);
 
-    @JSMethod
     void setOrientation(float x, float y, float z, float xUp, float yUp, float zUp);
 
-    @JSMethod
     void setVelocity(float x, float y, float z);
 }
 

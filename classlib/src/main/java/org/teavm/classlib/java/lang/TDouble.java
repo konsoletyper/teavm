@@ -222,7 +222,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     @JSBody(params = "v", script = "return isNaN(v);")
     public static native boolean isNaN(double v);
 
-    @JSBody(params = {}, script = "return NaN;")
+    @JSBody(script = "return NaN;")
     private static native double getNaN();
 
     @JSBody(params = "v", script = "return !isFinite(v);")

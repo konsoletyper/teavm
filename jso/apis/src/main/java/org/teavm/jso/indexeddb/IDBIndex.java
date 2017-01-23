@@ -40,7 +40,7 @@ public abstract class IDBIndex implements JSObject, IDBCursorSource {
         }
     }
 
-    @JSBody(params = {}, script = "return this;")
+    @JSBody(script = "return this;")
     private native String[] unwrapStringArray(JSObject obj);
 
     @JSProperty

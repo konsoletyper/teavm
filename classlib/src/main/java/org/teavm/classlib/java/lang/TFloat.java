@@ -101,7 +101,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     @Import(module = "runtime", name = "isFinite")
     private static native boolean isFinite(float v);
 
-    @JSBody(params = {}, script = "return NaN;")
+    @JSBody(script = "return NaN;")
     @Import(module = "runtime", name = "getNaN")
     private static native float getNaN();
 

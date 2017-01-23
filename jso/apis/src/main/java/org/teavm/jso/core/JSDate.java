@@ -19,12 +19,8 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class JSDate implements JSObject {
-    @JSBody(params = {}, script = "return new Date();")
+    @JSBody(script = "return new Date();")
     public static native JSDate create();
 
     @JSBody(params = "millis", script = "return new Date(millis);")

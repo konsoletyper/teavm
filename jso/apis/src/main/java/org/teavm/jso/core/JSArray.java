@@ -19,11 +19,6 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- * @param <T>
- */
 public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
     private JSArray() {
     }
@@ -83,7 +78,7 @@ public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
 
     public abstract JSArray<T> splice(int start, int count, T a, T b, T c, T d);
 
-    @JSBody(params = {}, script = "return new Array();")
+    @JSBody(script = "return new Array();")
     public static native <T extends JSObject> JSArray<T> create();
 
     @JSBody(params = "size", script = "return new Array(size);")

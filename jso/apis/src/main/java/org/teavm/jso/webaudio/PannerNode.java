@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSProperty;
 
 public interface PannerNode extends AudioNode {
@@ -74,13 +73,10 @@ public interface PannerNode extends AudioNode {
     @JSProperty
     float getConeOuterGain();
 
-    @JSMethod
     void setPosition(float x, float y, float z);
 
-    @JSMethod
     void setOrientation(float x, float y, float z);
 
-    @JSMethod
     void setVelocity(float x, float y, float z);
 }
 

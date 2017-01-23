@@ -16,7 +16,7 @@
 package org.teavm.jso.webaudio;
 
 import org.teavm.jso.JSBody;
-import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
@@ -50,112 +50,82 @@ public abstract class AudioContext implements JSObject {
     @JSProperty("onstatechange")
     public abstract EventListener<MediaEvent> getOnStateChange();
 
-    @JSMethod
     public abstract void suspend();
 
-    @JSMethod
     public abstract void resume();
 
-    @JSMethod
     public abstract void close();
 
-    @JSMethod
     public abstract AudioBuffer createBuffer(int numberOfChannels, int length, float sampleRate);
 
-    @JSMethod
     public abstract AudioBuffer decodeAudioData(ArrayBuffer audioData, DecodeSuccessCallback successCallback,
             DecodeErrorCallback errorCallback);
 
-    @JSMethod
     public abstract AudioBuffer decodeAudioData(ArrayBuffer audioData, DecodeSuccessCallback successCallback);
 
-    @JSMethod
     public abstract AudioBuffer decodeAudioData(ArrayBuffer audioData);
 
-    @JSMethod
     public abstract AudioBufferSourceNode createBufferSource();
 
-    @JSMethod
     public abstract MediaElementAudioSourceNode createMediaElementSource(HTMLMediaElement mediaElement);
 
-    @JSMethod
     public abstract MediaStreamAudioSourceNode createMediaStreamSource(MediaStream mediaStream);
 
-    @JSMethod
     public abstract MediaStreamAudioDestinationNode createMediaStreamDestination();
 
-    @JSMethod
     public abstract AudioWorker createAudioWorker();
 
-    @JSMethod
     public abstract ScriptProcessorNode createScriptProcessor(int bufferSize, int numberOfInputChannels,
             int numberOfOutputChannels);
 
-    @JSMethod
     public abstract ScriptProcessorNode createScriptProcessor(int bufferSize, int numberOfInputChannels);
 
-    @JSMethod
     public abstract ScriptProcessorNode createScriptProcessor(int bufferSize);
 
-    @JSMethod
     public abstract ScriptProcessorNode createScriptProcessor();
 
-    @JSMethod
     public abstract AnalyserNode createAnalyser();
 
-    @JSMethod
     public abstract GainNode createGain();
 
-    @JSMethod
     public abstract DelayNode createDelay(double maxDelayTime);
 
-    @JSMethod
     public abstract DelayNode createDelay();
 
-    @JSMethod
     public abstract BiquadFilterNode createBiquadFilter();
 
-    @JSMethod
     public abstract IIRFilterNode createIIRFilter(Float32Array feedforward, Float32Array feedback);
 
-    @JSMethod
     public abstract WaveShaperNode createWaveShaper();
 
-    @JSMethod
     public abstract PannerNode createPanner();
 
-    @JSMethod
     public abstract StereoPannerNode createStereoPanner();
 
-    @JSMethod
     public abstract ConvolverNode createConvolver();
 
-    @JSMethod
     public abstract ChannelSplitterNode createChannelSplitter(int numberOfOutputs);
 
-    @JSMethod
     public abstract ChannelSplitterNode createChannelSplitter();
 
-    @JSMethod
     public abstract ChannelMergerNode createChannelMerger(int numberOfInputs);
 
-    @JSMethod
     public abstract ChannelMergerNode createChannelMerger();
 
-    @JSMethod
     public abstract DynamicsCompressorNode createDynamicsCompressor();
 
-    @JSMethod
     public abstract OscillatorNode createOscillator();
 
-    @JSMethod
     public abstract PeriodicWave createPeriodicWave(Float32Array real, Float32Array image,
             PeriodicWaveConstraints constraints);
 
-    @JSMethod
+    public abstract PeriodicWave createPeriodicWave(@JSByRef float[] real, @JSByRef float[] image,
+            PeriodicWaveConstraints constraints);
+
     public abstract PeriodicWave createPeriodicWave(Float32Array real, Float32Array image);
 
-    @JSBody(params = {},
-            script = "var Context = window.AudioContext || window.webkitAudioContext; return new Context();")
+    public abstract PeriodicWave createPeriodicWave(@JSByRef float[] real, @JSByRef float[] image);
+
+    @JSBody(script = "var Context = window.AudioContext || window.webkitAudioContext; return new Context();")
     public static native AudioContext create();
 }

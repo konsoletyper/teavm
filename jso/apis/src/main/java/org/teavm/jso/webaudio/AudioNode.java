@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
@@ -27,40 +26,28 @@ public interface AudioNode extends JSObject {
     String CHANNEL_INTERPRETATION_SPEAKERS = "speakers";
     String CHANNEL_INTERPRETATION_DISCRETE = "discrete";
 
-    @JSMethod
     void connect(AudioNode destination, int output, int input);
 
-    @JSMethod
     void connect(AudioNode destination, int output);
 
-    @JSMethod
     void connect(AudioNode destination);
 
-    @JSMethod
     void connect(AudioParam destination, int output);
 
-    @JSMethod
     void connect(AudioParam destination);
 
-    @JSMethod
     void disconnect();
 
-    @JSMethod
     void disconnect(int output);
 
-    @JSMethod
     void disconnect(AudioNode destination);
 
-    @JSMethod
     void disconnect(AudioNode destination, int output);
 
-    @JSMethod
     void disconnect(AudioNode destination, int output, int input);
 
-    @JSMethod
     void disconnect(AudioParam destination);
 
-    @JSMethod
     void disconnect(AudioParam destination, int output);
 
     @JSProperty

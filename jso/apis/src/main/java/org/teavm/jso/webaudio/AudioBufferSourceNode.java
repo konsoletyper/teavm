@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 
@@ -56,22 +55,16 @@ public interface AudioBufferSourceNode extends AudioNode {
     @JSProperty("onended")
     EventListener<MediaEvent> getOnEnded();
 
-    @JSMethod
     void start(double when, double offset, double duration);
 
-    @JSMethod
     void start(double when, double offset);
 
-    @JSMethod
     void start(double when);
 
-    @JSMethod
     void start();
 
-    @JSMethod
     void stop(double when);
 
-    @JSMethod
     void stop();
 }
 

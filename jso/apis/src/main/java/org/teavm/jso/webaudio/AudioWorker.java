@@ -15,7 +15,7 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
@@ -36,24 +36,17 @@ public interface AudioWorker extends JSObject {
     @JSProperty(value = "onloaded")
     EventListener<MediaEvent> getOnLoaded();
 
-    @JSMethod
     void terminate();
 
-    @JSMethod
-    void postMessage(JSObject message, JSObject[] transfer);
+    void postMessage(JSObject message, @JSByRef JSObject[] transfer);
 
-    @JSMethod
     void postMessage(JSObject message, JSObject transfer);
 
-    @JSMethod
     void postMessage(JSObject message);
 
-    @JSMethod
     AudioWorkerNode createNode(int numberOfInputs, int numberOfOutputs);
 
-    @JSMethod
     AudioParam addParameter(String name, float defaultValue);
 
-    @JSMethod
     void removeParameter(String name);
 }

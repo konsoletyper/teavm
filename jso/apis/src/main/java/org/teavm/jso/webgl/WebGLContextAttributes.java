@@ -60,6 +60,6 @@ public abstract class WebGLContextAttributes implements JSObject {
     @JSProperty
     public abstract void setPreserveDrawingBuffer(boolean preserveDrawingBuffer);
 
-    @JSBody(params = {}, script = "return {};")
+    @JSBody(script = "return {};")
     public static native WebGLContextAttributes create();
 }

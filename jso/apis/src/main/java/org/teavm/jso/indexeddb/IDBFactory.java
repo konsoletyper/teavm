@@ -18,16 +18,12 @@ package org.teavm.jso.indexeddb;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class IDBFactory implements JSObject {
     public static boolean isSupported() {
         return !getInstanceImpl().isUndefined();
     }
 
-    @JSBody(params = {}, script = "return typeof this === 'undefined';")
+    @JSBody(script = "return typeof this === 'undefined';")
     private native boolean isUndefined();
 
     public static IDBFactory getInstance() {
@@ -38,7 +34,7 @@ public abstract class IDBFactory implements JSObject {
         return factory;
     }
 
-    @JSBody(params = {}, script = "return window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || "
+    @JSBody(script = "return window.indexedDB || window.mozIndexedDB || window.webkitIndexedDB || "
             + "window.msIndexedDB;")
     static native IDBFactory getInstanceImpl();
 

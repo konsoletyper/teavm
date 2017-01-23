@@ -15,15 +15,10 @@
  */
 package org.teavm.jso.dom.html;
 
-import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.canvas.CanvasImageSource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HTMLCanvasElement extends HTMLElement, CanvasImageSource {
     @JSProperty
     int getWidth();
@@ -41,6 +36,5 @@ public interface HTMLCanvasElement extends HTMLElement, CanvasImageSource {
 
     JSObject getContext(String contextId, JSObject attributes);
 
-    @JSMethod
     String toDataURL(String type);
 }

@@ -19,10 +19,6 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class IDBKeyRange implements JSObject {
     @JSProperty
     public abstract JSObject getLower();

@@ -18,10 +18,6 @@ package org.teavm.jso.typedarrays;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class Uint8ClampedArray extends ArrayBufferView {
     @JSIndexer
     public abstract short get(int index);

@@ -17,14 +17,10 @@ package org.teavm.jso.browser;
 
 import org.teavm.jso.JSBody;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class Navigator {
     private Navigator() {
     }
 
-    @JSBody(params = "", script = "return window.navigator.onLine;")
+    @JSBody(script = "return window.navigator.onLine;")
     public static native boolean isOnline();
 }

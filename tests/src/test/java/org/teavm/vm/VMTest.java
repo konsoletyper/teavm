@@ -152,7 +152,7 @@ public class VMTest {
         assertEquals(30, s);
     }
 
-    @JSBody(params = {}, script = "return [1, 2]")
+    @JSBody(script = "return [1, 2]")
     private static native int[] createArray();
 
     static int initCount = 0;

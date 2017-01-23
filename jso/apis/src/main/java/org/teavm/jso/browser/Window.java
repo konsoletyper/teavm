@@ -24,10 +24,6 @@ import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLIFrameElement;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class Window implements JSObject, WindowEventTarget, StorageProvider, JSArrayReader<HTMLIFrameElement> {
     private Window() {
     }
@@ -161,7 +157,7 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
         postMessage(message, targetOrigin, JSArray.of(transfer));
     }
 
-    @JSBody(params = {}, script = "return window;")
+    @JSBody(script = "return window;")
     public static native Window current();
 
     @JSBody(params = "uri", script = "return encodeURI(uri);")

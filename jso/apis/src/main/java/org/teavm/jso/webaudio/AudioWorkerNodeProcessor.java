@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.webaudio;
 
-import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
@@ -28,13 +27,10 @@ public interface AudioWorkerNodeProcessor extends EventTarget {
     @JSProperty("onmessage")
     EventListener<MediaEvent> getOnMessage();
 
-    @JSMethod
     void postMessage(JSObject message, JSObject[] transfer);
 
-    @JSMethod
     void postMessage(JSObject message, JSObject transfer);
 
-    @JSMethod
     void postMessage(JSObject message);
 
 }

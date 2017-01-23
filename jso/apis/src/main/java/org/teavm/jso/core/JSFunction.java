@@ -15,13 +15,10 @@
  */
 package org.teavm.jso.core;
 
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface JSFunction extends JSObject {
     @JSProperty
     int getLength();
@@ -50,5 +47,5 @@ public interface JSFunction extends JSObject {
     JSObject call(JSObject thisArg, JSObject a, JSObject b, JSObject c, JSObject d, JSObject e, JSObject f,
             JSObject g, JSObject h);
 
-    JSObject apply(JSObject thisArg, JSObject[] arguments);
+    JSObject apply(JSObject thisArg, @JSByRef JSObject[] arguments);
 }
