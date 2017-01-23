@@ -35,10 +35,6 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JSNativeGenerator implements Injector, DependencyPlugin, Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef)
@@ -76,6 +72,10 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {
         SourceWriter writer = context.getWriter();
         switch (methodRef.getName()) {
+            case "arrayData":
+                context.writeExpr(context.getArgument(0));
+                writer.append(".data");
+                break;
             case "get":
                 context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
                 renderProperty(context.getArgument(1), context);

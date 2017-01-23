@@ -33,6 +33,9 @@ final class JS {
     }
 
     @InjectedBy(JSNativeGenerator.class)
+    public static native JSObject arrayData(Object array);
+
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject wrap(byte value);
 
     @InjectedBy(JSNativeGenerator.class)

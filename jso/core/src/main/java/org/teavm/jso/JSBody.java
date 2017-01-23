@@ -127,7 +127,7 @@ public @interface JSBody {
     /**
      * <p>How method parameters are named inside JavaScript implementation.</p>
      */
-    String[] params();
+    String[] params() default {};
 
     /**
      * <p>JavaScript code.</p>
