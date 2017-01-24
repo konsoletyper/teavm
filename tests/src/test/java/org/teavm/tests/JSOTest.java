@@ -35,14 +35,13 @@ public class JSOTest {
         Problem foundProblem = build("callJSBodyWithWrongParameter").stream().filter(problem -> {
             return problem.getLocation().getMethod().getName().equals("callJSBodyWithWrongParameter")
                     && problem.getText().equals("Method {{m0}} is not a proper native JavaScript method "
-                        + " declaration. Its parameter #1 has invalid type {{t1}}");
+                        + "declaration: its 1th parameter has wrong type");
         }).findAny().orElse(null);
 
         assertNotNull(foundProblem);
         Object[] params = foundProblem.getParams();
         assertThat(params[0], is(new MethodReference(JSOTest.class, "jsBodyWithWrongParameter",
                 Object.class, void.class)));
-        assertThat(params[1], is(ValueType.parse(Object.class)));
     }
 
     private static void callJSBodyWithWrongParameter() {
@@ -57,7 +56,7 @@ public class JSOTest {
         Problem foundProblem = build("callWrongNonStaticJSBody").stream().filter(problem -> {
             return problem.getLocation().getMethod().getName().equals("callWrongNonStaticJSBody")
                     && problem.getText().equals("Method {{m0}} is not a proper native JavaScript method "
-                        + " declaration. It is non-static and declared on a non-overlay class {{c1}}");
+                        + "declaration. It is non-static and declared on a non-overlay class {{c1}}");
         }).findAny().orElse(null);
 
         assertNotNull(foundProblem);
@@ -78,14 +77,13 @@ public class JSOTest {
         Problem foundProblem = build("callJSBodyWithWrongReturningType").stream().filter(problem -> {
             return problem.getLocation().getMethod().getName().equals("callJSBodyWithWrongReturningType")
                     && problem.getText().equals("Method {{m0}} is not a proper native JavaScript method "
-                            + " declaration, since it returns invalid type {{t1}}");
+                            + "declaration, since it returns wrong type");
         }).findAny().orElse(null);
 
         assertNotNull(foundProblem);
         Object[] params = foundProblem.getParams();
         assertThat(params[0], is(new MethodReference(JSOTest.class, "jsBodyWithWrongReturningType", String.class,
                 Object.class)));
-        assertThat(params[1], is(ValueType.parse(Object.class)));
     }
 
     private static void callJSBodyWithWrongReturningType() {

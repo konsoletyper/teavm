@@ -337,7 +337,7 @@ class JSClassProcessor {
         if (invoke.getInstance() != null) {
             if (!typeHelper.isSupportedType(ValueType.object(method.getOwnerName()))) {
                 diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
-                        + " declaration. It is non-static and declared on a non-overlay class {{c1}}",
+                        + "declaration. It is non-static and declared on a non-overlay class {{c1}}",
                         invoke.getMethod(), method.getOwnerName());
                 valid = false;
             }
@@ -443,7 +443,7 @@ class JSClassProcessor {
     private boolean validateSignature(MethodReader method, CallLocation callLocation, boolean[] byRefParams) {
         if (method.getResultType() != ValueType.VOID && !typeHelper.isSupportedType(method.getResultType())) {
             diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
-                    + "declaration", method.getReference());
+                    + "declaration, since it returns wrong type", method.getReference());
             return false;
         }
 
@@ -453,13 +453,13 @@ class JSClassProcessor {
             ValueType paramType = parameterTypes[i];
             if (!typeHelper.isSupportedType(paramType)) {
                 diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
-                        + "declaration: its " + (i + 1) + "th argument has wrong type", method.getReference());
+                        + "declaration: its " + (i + 1) + "th parameter has wrong type", method.getReference());
                 return false;
             }
             if (parameterAnnotations[i].get(JSByRef.class.getName()) != null) {
                 if (!typeHelper.isSupportedByRefType(paramType)) {
                     diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
-                            + "declaration: its " + (i + 1) + "th argument is declared as JSByRef, "
+                            + "declaration: its " + (i + 1) + "th parameter is declared as JSByRef, "
                             + "which has incompatible type", method.getReference());
                     return false;
                 }
