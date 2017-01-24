@@ -142,6 +142,7 @@ public class AsyncProgramSplitter {
             }
             targetBlock.addAll(ProgramUtils.copyInstructions(last, null, targetBlock.getProgram()));
             targetBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock, targetBlock.getProgram()));
+            targetBlock.setExceptionVariable(sourceBlock.getExceptionVariable());
             for (TryCatchBlock tryCatch : targetBlock.getTryCatchBlocks()) {
                 if (tryCatch.getHandler() != null) {
                     Step next = new Step();

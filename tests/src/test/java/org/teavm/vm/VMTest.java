@@ -18,9 +18,11 @@ package org.teavm.vm;
 import static org.junit.Assert.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.interop.Async;
 import org.teavm.jso.JSBody;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.platform.async.AsyncCallback;
 
 @RunWith(TeaVMTestRunner.class)
 public class VMTest {
@@ -150,6 +152,23 @@ public class VMTest {
             s += a[0] + a[1];
         }
         assertEquals(30, s);
+    }
+
+    @Test
+    @SkipJVM
+    public void asyncTryCatch() {
+        try {
+            throwExceptionAsync();
+            fail("Exception should have been thrown");
+        } catch (RuntimeException e) {
+            assertEquals("OK", e.getMessage());
+        }
+    }
+
+    @Async
+    private static native void throwExceptionAsync();
+    private static void throwExceptionAsync(AsyncCallback<Void> callback) {
+        callback.error(new RuntimeException("OK"));
     }
 
     @JSBody(script = "return [1, 2]")

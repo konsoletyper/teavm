@@ -38,6 +38,7 @@ public class ProgramNodeSplittingBackend implements GraphSplittingBackend {
             BasicBlock blockCopy = program.createBasicBlock();
             blockCopy.addAll(ProgramUtils.copyInstructions(block.getFirstInstruction(), null, program));
             blockCopy.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
+            blockCopy.setExceptionVariable(block.getExceptionVariable());
             copies[i] = blockCopy.getIndex();
             map.put(nodes[i], copies[i] + 1);
         }
@@ -45,11 +46,11 @@ public class ProgramNodeSplittingBackend implements GraphSplittingBackend {
             int mappedIndex = map.get(block);
             return mappedIndex == 0 ? block : mappedIndex - 1;
         });
-        for (int i = 0; i < copies.length; ++i) {
-            copyBlockMapper.transform(program.basicBlockAt(copies[i]));
+        for (int copy : copies) {
+            copyBlockMapper.transform(program.basicBlockAt(copy));
         }
-        for (int i = 0; i < domain.length; ++i) {
-            copyBlockMapper.transform(program.basicBlockAt(domain[i]));
+        for (int domainNode : domain) {
+            copyBlockMapper.transform(program.basicBlockAt(domainNode));
         }
         return copies;
     }
