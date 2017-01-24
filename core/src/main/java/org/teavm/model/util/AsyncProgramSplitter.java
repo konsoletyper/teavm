@@ -164,12 +164,16 @@ public class AsyncProgramSplitter {
         }
 
         for (Part part : parts) {
+            Graph graph = ProgramUtils.buildControlFlowGraph(part.program);
+            if (!GraphUtils.isIrreducible(graph)) {
+                continue;
+            }
+
             IntegerArray blockSuccessors = IntegerArray.of(part.blockSuccessors);
             IntegerArray originalBlocks = IntegerArray.of(part.originalBlocks);
             List<Instruction> splitPoints = new ArrayList<>(Arrays.asList(part.splitPoints));
             AsyncProgramSplittingBackend splittingBackend = new AsyncProgramSplittingBackend(
                     new ProgramNodeSplittingBackend(part.program), blockSuccessors, originalBlocks, splitPoints);
-            Graph graph = ProgramUtils.buildControlFlowGraph(part.program);
             int[] weights = new int[graph.size()];
             for (int i = 0; i < part.program.basicBlockCount(); ++i) {
                 weights[i] = part.program.basicBlockAt(i).instructionCount();
@@ -278,7 +282,7 @@ public class AsyncProgramSplitter {
         private IntegerArray originalBlocks;
         private List<Instruction> splitPoints;
 
-        public AsyncProgramSplittingBackend(GraphSplittingBackend inner, IntegerArray blockSuccessors,
+        AsyncProgramSplittingBackend(GraphSplittingBackend inner, IntegerArray blockSuccessors,
                 IntegerArray originalBlocks, List<Instruction> splitPoints) {
             this.inner = inner;
             this.blockSuccessors = blockSuccessors;

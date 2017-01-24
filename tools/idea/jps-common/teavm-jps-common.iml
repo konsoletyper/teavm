@@ -17,6 +17,7 @@
         <JAVADOC />
         <SOURCES>
           <root url="file://$MODULE_DIR$/../../core/src/main/java" />
+          <root url="file://$MODULE_DIR$/../../../core/src/main/java" />
         </SOURCES>
       </library>
     </orderEntry>

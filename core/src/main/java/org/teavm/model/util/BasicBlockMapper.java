@@ -43,10 +43,9 @@ public class BasicBlockMapper extends AbstractInstructionVisitor {
 
     public void transform(BasicBlock block) {
         Instruction lastInsn = block.getLastInstruction();
-        if (lastInsn == null) {
-            return;
+        if (lastInsn != null) {
+            lastInsn.acceptVisitor(this);
         }
-        lastInsn.acceptVisitor(this);
 
         for (Phi phi : block.getPhis()) {
             for (Incoming incoming : phi.getIncomings()) {

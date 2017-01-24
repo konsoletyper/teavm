@@ -35,7 +35,7 @@ class IrreducibleGraphConverter {
     private IntSet[] nodeCopies;
     private IntegerArray nodeOriginals;
 
-    public void convertToReducible(Graph cfg, int[] weight, GraphSplittingBackend backend) {
+    void convertToReducible(Graph cfg, int[] weight, GraphSplittingBackend backend) {
         this.backend = backend;
 
         nodeCopies = new IntOpenHashSet[cfg.size()];
