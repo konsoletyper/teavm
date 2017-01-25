@@ -125,7 +125,7 @@ public class Optimizer {
             DefinitionExtractor defExtractor = new DefinitionExtractor();
             UsageExtractor useExtractor = new UsageExtractor();
             BasicBlock block = originalProgram.basicBlockAt(originalBlocks[i]);
-            Instruction splitPoint = splitPoints[i];
+            Instruction splitPoint = splitPoints[i].getPrevious();
             for (Instruction insn = block.getLastInstruction(); insn != splitPoint; insn = insn.getPrevious()) {
                 insn.acceptVisitor(defExtractor);
                 insn.acceptVisitor(useExtractor);
