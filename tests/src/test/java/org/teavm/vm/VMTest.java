@@ -165,10 +165,26 @@ public class VMTest {
         }
     }
 
+    @Test
+    @SkipJVM
+    public void asyncExceptionHandler() {
+        try {
+            throw new RuntimeException("OK");
+        } catch (RuntimeException e) {
+            assertEquals("OK", suspendAndReturn(e).getMessage());
+        }
+    }
+
     @Async
     private static native void throwExceptionAsync();
     private static void throwExceptionAsync(AsyncCallback<Void> callback) {
         callback.error(new RuntimeException("OK"));
+    }
+
+    @Async
+    private static native <T> T suspendAndReturn(T value);
+    private static <T> void suspendAndReturn(T value, AsyncCallback<T> callback) {
+        callback.complete(value);
     }
 
     @JSBody(script = "return [1, 2]")

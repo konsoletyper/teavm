@@ -95,6 +95,10 @@ public class AsyncProgramSplitter {
 
                 // If we met asynchronous invocation...
                 // Copy portion of current block from last occurrence (or from start) to i'th instruction.
+                if (sourceBlock.getExceptionVariable() != null) {
+                    targetBlock.setExceptionVariable(targetBlock.getProgram().variableAt(
+                            sourceBlock.getExceptionVariable().getIndex()));
+                }
                 targetBlock.addAll(ProgramUtils.copyInstructions(last, insn, targetBlock.getProgram()));
                 targetBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock,
                         targetBlock.getProgram()));
@@ -139,6 +143,11 @@ public class AsyncProgramSplitter {
                 }
                 step.targetPart = part;
                 part.originalBlocks[targetBlock.getIndex()] = step.source;
+            }
+
+            if (sourceBlock.getExceptionVariable() != null) {
+                targetBlock.setExceptionVariable(targetBlock.getProgram().variableAt(
+                        sourceBlock.getExceptionVariable().getIndex()));
             }
             targetBlock.addAll(ProgramUtils.copyInstructions(last, null, targetBlock.getProgram()));
             targetBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(sourceBlock, targetBlock.getProgram()));
