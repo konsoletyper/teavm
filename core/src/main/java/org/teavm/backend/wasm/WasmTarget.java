@@ -200,11 +200,11 @@ public class WasmTarget implements TeaVMTarget {
 
     @Override
     public void contributeDependencies(DependencyChecker dependencyChecker) {
-        for (Class type : Arrays.asList(int.class, long.class, float.class, double.class)) {
+        for (Class<?> type : Arrays.asList(int.class, long.class, float.class, double.class)) {
             MethodReference method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
             dependencyChecker.linkMethod(method, null).use();
         }
-        for (Class type : Arrays.asList(float.class, double.class)) {
+        for (Class<?> type : Arrays.asList(float.class, double.class)) {
             MethodReference method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
             dependencyChecker.linkMethod(method, null).use();
         }

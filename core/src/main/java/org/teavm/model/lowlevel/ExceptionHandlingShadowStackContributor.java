@@ -17,7 +17,9 @@ package org.teavm.model.lowlevel;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
@@ -90,8 +92,12 @@ public class ExceptionHandlingShadowStackContributor {
             allPhis.addAll(program.basicBlockAt(i).getPhis());
         }
 
+        Set<BasicBlock> exceptionHandlers = new HashSet<>();
         for (int i = 0; i < blockCount; ++i) {
             BasicBlock block = program.basicBlockAt(i);
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                exceptionHandlers.add(tryCatch.getHandler());
+            }
 
             if (block.getExceptionVariable() != null) {
                 InvokeInstruction catchCall = new InvokeInstruction();
@@ -111,9 +117,11 @@ public class ExceptionHandlingShadowStackContributor {
         }
 
         for (Phi phi : allPhis) {
-            for (Incoming incoming : phi.getIncomings()) {
-                int mappedSource = blockMapping[incoming.getSource().getIndex()];
-                incoming.setSource(program.basicBlockAt(mappedSource));
+            if (!exceptionHandlers.contains(phi.getBasicBlock())) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    int mappedSource = blockMapping[incoming.getSource().getIndex()];
+                    incoming.setSource(program.basicBlockAt(mappedSource));
+                }
             }
         }
 
@@ -187,8 +195,8 @@ public class ExceptionHandlingShadowStackContributor {
                 List<Instruction> pre = setLocation(getInstructionsBeforeCallSite(callSite), insn.getLocation());
                 List<Instruction> post = getInstructionsAfterCallSite(block, next, callSite, currentJointSources);
                 post = setLocation(post, insn.getLocation());
-                insn.insertPreviousAll(pre);
-                insn.insertNextAll(post);
+                block.getLastInstruction().insertPreviousAll(pre);
+                block.addAll(post);
                 hasExceptionHandlers = true;
 
                 if (next == null || last) {
