@@ -70,12 +70,15 @@ public final class GC {
             next = currentChunk.toAddress().add(size);
         }
         int freeSize = current.size;
-        currentChunk = next.toStructure();
         freeSize -= size;
         if (freeSize > 0) {
-            currentChunk.classReference = 0;
+            currentChunk = next.toStructure();
             currentChunk.size = freeSize;
+        } else {
+            freeMemory -= size;
+            getAvailableChunkIfPossible(currentChunk.size + 1);
         }
+        currentChunk.classReference = 0;
         freeMemory -= size;
         return current;
     }
@@ -89,6 +92,9 @@ public final class GC {
     }
 
     private static boolean getAvailableChunkIfPossible(int size) {
+        if (freeChunks == 0) {
+            return false;
+        }
         while (true) {
             if (currentChunk.toAddress().add(size) == currentChunkLimit) {
                 break;

@@ -22,11 +22,6 @@ import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
-import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.backend.wasm.model.expression.WasmFloat32Constant;
-import org.teavm.backend.wasm.model.expression.WasmFloat64Constant;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
-import org.teavm.backend.wasm.model.expression.WasmInt64Constant;
 import org.teavm.interop.Export;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassHolder;
@@ -89,27 +84,6 @@ public class WasmGenerator {
                 firstVariable);
         methodAst.getBody().acceptVisitor(visitor);
         function.getBody().add(visitor.result);
-
-        if (function.getResult() != null) {
-            WasmExpression finalExpr;
-            switch (function.getResult()) {
-                case INT32:
-                    finalExpr = new WasmInt32Constant(0);
-                    break;
-                case INT64:
-                    finalExpr = new WasmInt64Constant(0);
-                    break;
-                case FLOAT32:
-                    finalExpr = new WasmFloat32Constant(0);
-                    break;
-                case FLOAT64:
-                    finalExpr = new WasmFloat64Constant(0);
-                    break;
-                default:
-                    throw new AssertionError();
-            }
-            function.getBody().add(finalExpr);
-        }
 
         AnnotationReader exportAnnot = method.getAnnotations().get(Export.class.getName());
         if (exportAnnot != null) {

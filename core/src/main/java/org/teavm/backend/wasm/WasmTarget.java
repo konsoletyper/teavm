@@ -670,9 +670,10 @@ public class WasmTarget implements TeaVMTarget {
         gcIntrinsic.setRegionsAddress(address);
         gcIntrinsic.setRegionMaxCount(regionCount);
 
-        gcMemory -= regionCount * 2;
         address += regionCount * 2;
         address = (address + 4) >> 2 << 2;
+
+        gcMemory = module.getMemorySize() * 65536 - address;
         gcIntrinsic.setHeapAddress(address);
         gcIntrinsic.setAvailableBytes(gcMemory);
     }

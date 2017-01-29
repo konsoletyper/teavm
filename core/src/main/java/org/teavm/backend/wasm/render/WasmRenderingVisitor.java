@@ -29,6 +29,7 @@ import org.teavm.backend.wasm.model.expression.WasmBreak;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConditional;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
+import org.teavm.backend.wasm.model.expression.WasmDefaultExpressionVisitor;
 import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmExpressionVisitor;
@@ -70,6 +71,35 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     boolean lineNumbersEmitted;
     List<WasmSignature> signatureList = new ArrayList<>();
     Map<WasmSignature, Integer> signatureMap = new HashMap<>();
+
+    void preprocess(WasmExpression expression) {
+        expression.acceptVisitor(new WasmDefaultExpressionVisitor() {
+            @Override
+            public void visit(WasmBranch expression) {
+                super.visit(expression);
+                register(expression.getTarget());
+            }
+
+            @Override
+            public void visit(WasmBreak expression) {
+                super.visit(expression);
+                register(expression.getTarget());
+            }
+
+            @Override
+            public void visit(WasmSwitch expression) {
+                super.visit(expression);
+                for (WasmBlock target : expression.getTargets()) {
+                    register(target);
+                }
+                register(expression.getDefaultTarget());
+            }
+
+            private void register(WasmBlock block) {
+                blockIdentifiers.computeIfAbsent(block, key -> "block_" + blockIdentifiers.size());
+            }
+        });
+    }
 
     void clear() {
         blockIdentifiers.clear();
@@ -135,13 +165,18 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmBlock expression) {
-        renderBlock(expression, expression.isLoop() ? "loop" : "block");
+        renderBlock(expression, expression.isLoop() ? "loop" : "block", true);
     }
 
-    private void renderBlock(WasmBlock block, String name) {
-        String id = getIdentifier("@block");
-        blockIdentifiers.put(block, id);
-        open().append(name + " $" + id);
+    private void renderBlock(WasmBlock block, String name, boolean signature) {
+        open().append(name);
+        String id = blockIdentifiers.get(block);
+        if (id != null) {
+            append(" $" + id);
+        }
+        if (signature && block.getType() != null) {
+            append(" " + type(block.getType()));
+        }
         for (WasmExpression part : block.getBody()) {
             line(part);
         }
@@ -183,14 +218,19 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmConditional expression) {
         open().append("if");
+
+        if (expression.getType() != null) {
+            append(" " + type(expression.getType()));
+        }
+
         line(expression.getCondition());
 
         lf();
-        renderBlock(expression.getThenBlock(), "then");
+        renderBlock(expression.getThenBlock(), "then", false);
 
         if (!expression.getElseBlock().getBody().isEmpty()) {
             lf();
-            renderBlock(expression.getElseBlock(), "else");
+            renderBlock(expression.getElseBlock(), "else", false);
         }
 
         close();
@@ -343,7 +383,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmCall expression) {
-        open().append(expression.isImported() ? "call_import" : "call").append(" $" + expression.getFunctionName());
+        open().append("call").append(" $" + expression.getFunctionName());
         for (WasmExpression argument : expression.getArguments()) {
             line(argument);
         }

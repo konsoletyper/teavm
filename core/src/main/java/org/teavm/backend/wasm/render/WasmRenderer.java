@@ -55,28 +55,24 @@ public class WasmRenderer {
 
     public void render(WasmModule module) {
         visitor.open().append("module");
-        renderMemory(module);
         renderTypes(module);
 
         for (WasmFunction function : module.getFunctions().values()) {
-            if (function.getImportName() == null) {
-                continue;
-            }
-            lf().renderImport(function);
-        }
-        for (WasmFunction function : module.getFunctions().values()) {
             if (function.getImportName() != null) {
-                continue;
+                lf().render(function);
             }
-            lf().render(function);
         }
         for (WasmFunction function : module.getFunctions().values()) {
-            if (function.getExportName() == null) {
-                continue;
+            if (function.getImportName() == null) {
+                lf().render(function);
             }
-            lf().renderExport(function);
         }
+
         renderTable(module);
+        renderMemory(module);
+        renderElement(module);
+        renderData(module);
+
         if (module.getStartFunction() != null) {
             visitor.lf().open().append("start $" + module.getStartFunction().getName()).close().lf();
         }
@@ -85,9 +81,12 @@ public class WasmRenderer {
 
     public void renderMemory(WasmModule module) {
         visitor.lf();
-        visitor.open().append("memory " + module.getMemorySize());
+        visitor.open().append("memory " + module.getMemorySize()).close().lf();
+    }
+
+    public void renderData(WasmModule module) {
         for (WasmMemorySegment segment : module.getSegments()) {
-            visitor.lf().open().append("segment " + segment.getOffset());
+            visitor.lf().open().append("data (i32.const " + segment.getOffset() + ")");
             visitor.indent();
             for (int i = 0; i < segment.getLength(); i += 256) {
                 visitor.lf().append("\"");
@@ -110,26 +109,21 @@ public class WasmRenderer {
             visitor.outdent();
             visitor.close();
         }
-        visitor.close().lf();
-    }
-
-    public void renderImport(WasmFunction function) {
-        String importModule = function.getImportModule();
-        if (importModule == null) {
-            importModule = "";
-        }
-        visitor.open().append("import $" + function.getName() + " \"" + importModule + "\" "
-                + "\"" + function.getImportName() + "\"");
-        renderSignature(function);
-        visitor.close();
-    }
-
-    public void renderExport(WasmFunction function) {
-        visitor.open().append("export \"" + function.getExportName() + "\" $" + function.getName()).close();
     }
 
     public void render(WasmFunction function) {
         visitor.open().append("func $" + function.getName());
+
+        if (function.getImportName() != null) {
+            String importModule = function.getImportModule();
+            if (importModule == null) {
+                importModule = "";
+            }
+            visitor.append(" (import \"" + importModule + "\" \"" + function.getImportName() + "\")");
+        } else if (function.getExportName() != null) {
+            visitor.append(" (export \"" + function.getExportName() + "\")");
+        }
+
         renderSignature(function);
 
         int firstLocalVariable = function.getParameters().size();
@@ -141,6 +135,9 @@ public class WasmRenderer {
                 visitor.append(" ").append(local.getType());
             }
             visitor.close();
+        }
+        for (WasmExpression part : function.getBody()) {
+            visitor.preprocess(part);
         }
         for (WasmExpression part : function.getBody()) {
             visitor.line(part);
@@ -195,7 +192,15 @@ public class WasmRenderer {
             return;
         }
 
-        visitor.lf().open().append("table");
+        visitor.lf().open().append("table " + module.getFunctionTable().size() + " anyfunc").close().lf();
+    }
+
+    private void renderElement(WasmModule module) {
+        if (module.getFunctionTable().isEmpty()) {
+            return;
+        }
+
+        visitor.lf().open().append("elem (i32.const 0)");
         for (WasmFunction function : module.getFunctionTable()) {
             visitor.lf().append("$" + function.getName());
         }
