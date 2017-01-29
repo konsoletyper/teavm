@@ -15,10 +15,6 @@
  */
 package org.teavm.ast;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface StatementVisitor {
     void visit(AssignmentStatement statement);
 
