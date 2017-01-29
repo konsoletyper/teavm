@@ -17,10 +17,8 @@ package org.teavm.backend.wasm.render;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmBlock;
@@ -63,14 +61,13 @@ import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 
 class WasmRenderingVisitor implements WasmExpressionVisitor {
-    private Set<String> usedIdentifiers = new HashSet<>();
     StringBuilder sb = new StringBuilder();
     private Map<WasmBlock, String> blockIdentifiers = new HashMap<>();
     private int indentLevel;
     private boolean lfDeferred;
     boolean lineNumbersEmitted;
     List<WasmSignature> signatureList = new ArrayList<>();
-    Map<WasmSignature, Integer> signatureMap = new HashMap<>();
+    private Map<WasmSignature, Integer> signatureMap = new HashMap<>();
 
     void preprocess(WasmExpression expression) {
         expression.acceptVisitor(new WasmDefaultExpressionVisitor() {
@@ -103,7 +100,6 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     void clear() {
         blockIdentifiers.clear();
-        usedIdentifiers.clear();
     }
 
     WasmRenderingVisitor append(String text) {
@@ -122,7 +118,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         return append(type(type));
     }
 
-    WasmRenderingVisitor append(WasmExpression expression) {
+    private WasmRenderingVisitor append(WasmExpression expression) {
         expression.acceptVisitor(this);
         return this;
     }
@@ -280,7 +276,7 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         open().append("set_local " + asString(expression.getLocal())).line(expression.getValue()).close();
     }
 
-    String asString(WasmLocal local) {
+    private String asString(WasmLocal local) {
         return String.valueOf(local.getIndex());
     }
 
@@ -415,7 +411,9 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmDrop expression) {
+        open().append("drop").lf();
         append(expression.getOperand());
+        close();
     }
 
     @Override
@@ -578,20 +576,6 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         line(expression.getIndex());
         line(expression.getValue());
         close();
-    }
-
-    private String getIdentifier(String suggested) {
-        if (usedIdentifiers.add(suggested)) {
-            return suggested;
-        }
-        int index = 1;
-        while (true) {
-            String id = suggested + "#" + index;
-            if (usedIdentifiers.add(id)) {
-                return id;
-            }
-            ++index;
-        }
     }
 
     private String type(WasmType type) {

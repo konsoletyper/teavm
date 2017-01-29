@@ -22,6 +22,7 @@ import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
 import org.teavm.interop.Export;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassHolder;
@@ -83,6 +84,9 @@ public class WasmGenerator {
         WasmGenerationVisitor visitor = new WasmGenerationVisitor(context, classGenerator, binaryWriter, function,
                 firstVariable);
         methodAst.getBody().acceptVisitor(visitor);
+        if (visitor.result instanceof WasmBlock) {
+            ((WasmBlock) visitor.result).setType(function.getResult());
+        }
         function.getBody().add(visitor.result);
 
         AnnotationReader exportAnnot = method.getAnnotations().get(Export.class.getName());
