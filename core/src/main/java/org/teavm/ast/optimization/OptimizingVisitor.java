@@ -63,12 +63,14 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private Expr resultExpr;
     Statement resultStmt;
     private final boolean[] preservedVars;
+    private final int[] writeFrequencies;
     private final int[] readFrequencies;
     private List<Statement> resultSequence;
 
-    OptimizingVisitor(boolean[] preservedVars, int[] readFreqencies) {
+    OptimizingVisitor(boolean[] preservedVars, int[] writeFrequencies, int[] readFrequencies) {
         this.preservedVars = preservedVars;
-        this.readFrequencies = readFreqencies;
+        this.writeFrequencies = writeFrequencies;
+        this.readFrequencies = readFrequencies;
     }
 
     private static boolean isZero(Expr expr) {
@@ -196,6 +198,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(VariableExpr expr) {
         int index = expr.getIndex();
         resultExpr = expr;
+        if (writeFrequencies[index] != 1) {
+            return;
+        }
         if (readFrequencies[index] != 1 || preservedVars[index]) {
             return;
         }
@@ -569,7 +574,58 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         statement.getConsequent().addAll(consequent);
         statement.getAlternative().clear();
         statement.getAlternative().addAll(alternative);
-        resultStmt = statement;
+
+        Statement asConditional = tryConvertToConditionalExpression(statement);
+        if (asConditional != null) {
+            asConditional.acceptVisitor(this);
+        } else {
+            resultStmt = statement;
+        }
+    }
+
+    private Statement tryConvertToConditionalExpression(ConditionalStatement statement) {
+        if (statement.getConsequent().size() != 1 || statement.getAlternative().size() != 1) {
+            return null;
+        }
+
+        Statement first = statement.getConsequent().get(0);
+        Statement second = statement.getAlternative().get(0);
+        if (!(first instanceof AssignmentStatement) || !(second instanceof AssignmentStatement)) {
+            return null;
+        }
+
+        AssignmentStatement firstAssignment = (AssignmentStatement) first;
+        AssignmentStatement secondAssignment = (AssignmentStatement) second;
+        if (firstAssignment.getLeftValue() == null || secondAssignment.getRightValue() == null) {
+            return null;
+        }
+        if (firstAssignment.isAsync() || secondAssignment.isAsync()) {
+            return null;
+        }
+
+        if (!(firstAssignment.getLeftValue() instanceof VariableExpr)
+                || !(secondAssignment.getLeftValue() instanceof VariableExpr)) {
+            return null;
+        }
+        VariableExpr firstLhs = (VariableExpr) firstAssignment.getLeftValue();
+        VariableExpr secondLhs = (VariableExpr) secondAssignment.getLeftValue();
+        if (firstLhs.getIndex() == secondLhs.getIndex()) {
+            ConditionalExpr conditionalExpr = new ConditionalExpr();
+            conditionalExpr.setCondition(statement.getCondition());
+            conditionalExpr.setConsequent(firstAssignment.getRightValue());
+            conditionalExpr.setAlternative(secondAssignment.getRightValue());
+            conditionalExpr.setLocation(statement.getCondition().getLocation());
+            AssignmentStatement assignment = new AssignmentStatement();
+            assignment.setLocation(conditionalExpr.getLocation());
+            VariableExpr lhs = new VariableExpr();
+            lhs.setIndex(firstLhs.getIndex());
+            assignment.setLeftValue(lhs);
+            assignment.setRightValue(conditionalExpr);
+            writeFrequencies[lhs.getIndex()]--;
+            return assignment;
+        }
+
+        return null;
     }
 
     @Override

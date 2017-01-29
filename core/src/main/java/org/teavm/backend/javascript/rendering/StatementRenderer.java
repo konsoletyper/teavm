@@ -936,7 +936,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             expr.getAlternative().acceptVisitor(this);
 
             if (outerPrecedence.ordinal() > Precedence.CONDITIONAL.ordinal()) {
-                writer.append('(');
+                writer.append(')');
             }
 
             if (expr.getLocation() != null) {

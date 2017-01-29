@@ -35,14 +35,9 @@ public class Optimizer {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
         stats.analyze(program);
         boolean[] preservedVars = new boolean[stats.writes.length];
-        for (int i = 0; i < preservedVars.length; ++i) {
-            if (stats.writes[i] != 1) {
-                preservedVars[i] = true;
-            }
-        }
         BreakEliminator breakEliminator = new BreakEliminator();
         breakEliminator.eliminate(method.getBody());
-        OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.reads);
+        OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads);
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);
         int paramCount = method.getReference().parameterCount();
@@ -70,17 +65,12 @@ public class Optimizer {
             boolean[] preservedVars = new boolean[method.getVariables().size()];
             ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
             stats.analyze(splitter.getProgram(i));
-            for (int j = 0; j < stats.writes.length; ++j) {
-                if (stats.writes[j] != 1 && stats.reads[j] > 0) {
-                    preservedVars[j] = true;
-                }
-            }
 
             AsyncMethodPart part = method.getBody().get(i);
             BreakEliminator breakEliminator = new BreakEliminator();
             breakEliminator.eliminate(part.getStatement());
             findEscapingLiveVars(liveness, cfg, splitter, i, preservedVars);
-            OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.reads);
+            OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads);
             part.getStatement().acceptVisitor(optimizer);
             part.setStatement(optimizer.resultStmt);
         }
