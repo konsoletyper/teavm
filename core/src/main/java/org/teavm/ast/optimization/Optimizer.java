@@ -84,10 +84,8 @@ public class Optimizer {
         method.getVariables().addAll(unusedEliminator.getReorderedVariables());
 
         RedundantLabelEliminator labelEliminator = new RedundantLabelEliminator();
-        RedundantReturnElimination returnElimination = new RedundantReturnElimination();
         for (AsyncMethodPart part : method.getBody()) {
             part.getStatement().acceptVisitor(labelEliminator);
-            part.getStatement().acceptVisitor(returnElimination);
         }
 
         for (int i = 0; i < method.getVariables().size(); ++i) {
