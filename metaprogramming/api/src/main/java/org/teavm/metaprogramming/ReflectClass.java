@@ -15,7 +15,6 @@
  */
 package org.teavm.metaprogramming;
 
-import java.util.Arrays;
 import org.teavm.metaprogramming.reflect.ReflectAnnotatedElement;
 import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
@@ -49,15 +48,9 @@ public interface ReflectClass<T> extends ReflectAnnotatedElement {
 
     <U> ReflectClass<U> asSubclass(Class<U> cls);
 
-    default boolean isAssignableFrom(ReflectClass<?> cls) {
-        return cls == this
-                || cls.getSuperclass() != null && this.isAssignableFrom(cls.getSuperclass())
-                || Arrays.stream(cls.getInterfaces()).anyMatch(this::isAssignableFrom);
-    }
+    boolean isAssignableFrom(ReflectClass<?> cls);
 
-    default boolean isAssignableFrom(Class<?> cls) {
-        return isAssignableFrom(Metaprogramming.findClass(cls));
-    }
+    boolean isAssignableFrom(Class<?> cls);
 
     ReflectMethod[] getDeclaredMethods();
 
@@ -65,21 +58,11 @@ public interface ReflectClass<T> extends ReflectAnnotatedElement {
 
     ReflectMethod getDeclaredMethod(String name, ReflectClass<?>... parameterTypes);
 
-    default ReflectMethod getDeclaredJMethod(String name, Class<?>... parameterTypes) {
-        ReflectClass<?>[] mappedParamTypes = Arrays.stream(parameterTypes)
-                .map(Metaprogramming::findClass)
-                .toArray(ReflectClass[]::new);
-        return getDeclaredMethod(name, mappedParamTypes);
-    }
+    ReflectMethod getDeclaredJMethod(String name, Class<?>... parameterTypes);
 
     ReflectMethod getMethod(String name, ReflectClass<?>... parameterTypes);
 
-    default ReflectMethod getJMethod(String name, Class<?>... parameterTypes) {
-        ReflectClass<?>[] mappedParamTypes = Arrays.stream(parameterTypes)
-                .map(Metaprogramming::findClass)
-                .toArray(ReflectClass[]::new);
-        return getMethod(name, mappedParamTypes);
-    }
+    ReflectMethod getJMethod(String name, Class<?>... parameterTypes);
 
     ReflectField[] getDeclaredFields();
 

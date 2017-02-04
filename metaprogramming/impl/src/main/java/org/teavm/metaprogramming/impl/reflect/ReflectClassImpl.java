@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import org.teavm.metaprogramming.ReflectClass;
+import org.teavm.metaprogramming.impl.MetaprogrammingImpl;
 import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 import org.teavm.model.AccessLevel;
@@ -198,6 +199,18 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
     }
 
     @Override
+    public boolean isAssignableFrom(ReflectClass<?> cls) {
+        return cls == this
+                || cls.getSuperclass() != null && this.isAssignableFrom(cls.getSuperclass())
+                || Arrays.stream(cls.getInterfaces()).anyMatch(this::isAssignableFrom);
+    }
+
+    @Override
+    public boolean isAssignableFrom(Class<?> cls) {
+        return isAssignableFrom(MetaprogrammingImpl.findClass(cls));
+    }
+
+    @Override
     public ReflectMethod[] getDeclaredMethods() {
         resolve();
         if (classReader == null) {
@@ -271,6 +284,22 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
             MethodReader methodReader = classReader.getMethod(m);
             return methodReader != null ? new ReflectMethodImpl(this, methodReader) : null;
         });
+    }
+
+    @Override
+    public ReflectMethod getDeclaredJMethod(String name, Class<?>... parameterTypes) {
+        ReflectClass<?>[] mappedParamTypes = Arrays.stream(parameterTypes)
+                .map(MetaprogrammingImpl::findClass)
+                .toArray(ReflectClass[]::new);
+        return getDeclaredMethod(name, mappedParamTypes);
+    }
+
+    @Override
+    public ReflectMethod getJMethod(String name, Class<?>... parameterTypes) {
+        ReflectClass<?>[] mappedParamTypes = Arrays.stream(parameterTypes)
+                .map(MetaprogrammingImpl::findClass)
+                .toArray(ReflectClass[]::new);
+        return getMethod(name, mappedParamTypes);
     }
 
     @Override

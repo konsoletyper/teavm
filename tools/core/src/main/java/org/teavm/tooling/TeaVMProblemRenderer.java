@@ -59,7 +59,7 @@ public final class TeaVMProblemRenderer {
         renderCallLocation(location.getMethod(), location.getSourceLocation(), sb);
         if (location.getMethod() != null) {
             CallGraphNode node = cg.getNode(location.getMethod());
-            while (true) {
+            for (int i = 0; i < 100; ++i) {
                 Iterator<? extends CallSite> callSites = node.getCallerCallSites().iterator();
                 if (!callSites.hasNext()) {
                     break;
