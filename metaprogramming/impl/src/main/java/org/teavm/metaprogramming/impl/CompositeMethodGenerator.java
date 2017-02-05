@@ -147,7 +147,10 @@ public class CompositeMethodGenerator {
         returnBlockIndex = program.basicBlockCount() - 1;
 
         for (int i = capturedValues.size(); i < template.variableCount(); ++i) {
-            program.createVariable();
+            VariableReader variable = template.variableAt(i);
+            Variable variableCopy = program.createVariable();
+            variableCopy.setDebugName(variable.getDebugName());
+            variableCopy.setLabel(variable.getLabel());
         }
 
         // Pre-create phis
@@ -305,10 +308,11 @@ public class CompositeMethodGenerator {
             add(insn);
             return insn.getReceiver();
         } else if (value instanceof ValueImpl) {
-            return varContext.emitVariable((ValueImpl<?>) value, new CallLocation(MetaprogrammingImpl.templateMethod,
-                    location));
+            Variable result = varContext.emitVariable((ValueImpl<?>) value,
+                    new CallLocation(MetaprogrammingImpl.templateMethod, location));
+            return coalesce(result);
         } else if (value instanceof LazyValueImpl) {
-            return lazy((LazyValueImpl<?>) value);
+            return coalesce(lazy((LazyValueImpl<?>) value));
         } else if (value instanceof ReflectFieldImpl) {
             ReflectFieldImpl reflectField = (ReflectFieldImpl) value;
             diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
@@ -356,12 +360,22 @@ public class CompositeMethodGenerator {
         if (result instanceof ValueImpl) {
             return ((ValueImpl<?>) result).innerValue;
         } else if (result instanceof LazyValueImpl) {
-            return lazy((LazyValueImpl) result);
+            return lazy((LazyValueImpl<?>) result);
         } else if (result != null) {
             throw new IllegalStateException("Unknown value type: " + result.getClass().getName());
         } else {
             return null;
         }
+    }
+
+    private Variable coalesce(Variable var) {
+        if (var == null) {
+            NullConstantInstruction nullInsn = new NullConstantInstruction();
+            nullInsn.setReceiver(program.createVariable());
+            var = nullInsn.getReceiver();
+            add(nullInsn);
+        }
+        return var;
     }
 
     Variable box(Variable var, ValueType type) {
@@ -805,10 +819,12 @@ public class CompositeMethodGenerator {
             if (type == InvocationType.VIRTUAL && instance != null) {
                 if (method.getClassName().equals(Value.class.getName())) {
                     if (method.getName().equals("get")) {
-                        AssignInstruction insn = new AssignInstruction();
-                        insn.setReceiver(var(receiver));
-                        insn.setAssignee(var(instance));
-                        add(insn);
+                        if (receiver != null) {
+                            AssignInstruction insn = new AssignInstruction();
+                            insn.setReceiver(var(receiver));
+                            insn.setAssignee(var(instance));
+                            add(insn);
+                        }
                         return;
                     } else {
                         diagnostics.error(new CallLocation(MetaprogrammingImpl.templateMethod, location),
