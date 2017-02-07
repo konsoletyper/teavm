@@ -28,16 +28,21 @@ import org.teavm.jso.canvas.CanvasRenderingContext2D;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
+import org.teavm.jso.dom.html.HTMLInputElement;
 import org.teavm.samples.benchmark.shared.Scene;
 
 public final class BenchmarkStarter {
     private static HTMLDocument document = Window.current().getDocument();
     private static HTMLCanvasElement canvas = (HTMLCanvasElement) document.getElementById("benchmark-canvas");
     private static HTMLElement resultTableBody = document.getElementById("result-table-body");
+    private static HTMLInputElement displayAnimationCheckbox =
+            document.getElementById("display-animation-checkbox").cast();
+    private static HTMLElement averageTime = document.getElementById("average-time");
     private static Scene scene = new Scene();
     private static int currentSecond;
     private static long startMillisecond;
     private static double timeSpentCalculating;
+    private static double totalTime;
 
     private BenchmarkStarter() {
     }
@@ -62,11 +67,18 @@ public final class BenchmarkStarter {
             row.appendChild(timeCell);
             timeCell.appendChild(document.createTextNode(String.valueOf(timeSpentCalculating)));
 
+            totalTime += timeSpentCalculating;
             timeSpentCalculating = 0;
             currentSecond = second;
+
+            averageTime.withText(String.valueOf(Math.round(totalTime / second)));
         }
         timeSpentCalculating += end - start;
-        render();
+
+        if (displayAnimationCheckbox.isChecked()) {
+            render();
+        }
+
         Window.setTimeout(() -> makeStep(), scene.timeUntilNextStep());
     }
 

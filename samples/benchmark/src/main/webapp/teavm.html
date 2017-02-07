@@ -26,6 +26,10 @@
     <div>
       <canvas id="benchmark-canvas" width="600" height="600"></canvas>
     </div>
+    <div>
+      <input type="checkbox" id="display-animation-checkbox" checked>
+      <label for="display-animation-checkbox">display animation</label>
+    </div>
     <table>
       <thead>
         <tr>
@@ -35,6 +39,12 @@
       </thead>
       <tbody id="result-table-body">
       </tbody>
+      <tfoot>
+        <tr>
+          <th>Average</th>
+          <td id="average-time"></td>
+        <tr>
+      </tfoot>
     </table>
   </body>
 </html>
