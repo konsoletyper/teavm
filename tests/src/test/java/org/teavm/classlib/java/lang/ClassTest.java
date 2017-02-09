@@ -119,7 +119,7 @@ public class ClassTest {
 
     @Test
     public void instanceCreatedThroughReflectionAsync() throws Exception {
-        Runnable instance = (Runnable)Class.forName(TestObjectAsync.class.getName()).newInstance();
+        Runnable instance = TestObjectAsync.class.newInstance();
         instance.run();
         assertEquals(TestObjectAsync.class, instance.getClass());
         assertEquals(2, ((TestObjectAsync)instance).getCounter());
