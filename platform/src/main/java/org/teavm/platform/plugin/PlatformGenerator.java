@@ -117,9 +117,6 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                         .appendMethodBody(method.getReference()).append(";").softNewLine();
             }
         }
-        writer.appendMethodBody(Platform.class, "newInstance", PlatformClass.class, Object.class).ws().append('=').ws()
-                .appendMethodBody(Platform.class, "newInstanceImpl", PlatformClass.class, Object.class)
-                .append(";").softNewLine();
     }
 
     private void generateNewInstance(GeneratorContext context, SourceWriter writer) throws IOException {

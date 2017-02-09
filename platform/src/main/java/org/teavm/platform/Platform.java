@@ -33,6 +33,8 @@ public final class Platform {
     private Platform() {
     }
 
+    private static boolean newInstancePrepared;
+
     @InjectedBy(PlatformGenerator.class)
     public static native PlatformObject getPlatformObject(Object obj);
 
@@ -85,7 +87,10 @@ public final class Platform {
     public static native int nextObjectId();
 
     public static <T> T newInstance(PlatformClass cls) {
-        prepareNewInstance();
+        if (!newInstancePrepared) {
+            prepareNewInstance();
+            newInstancePrepared = true;
+        }
         return newInstanceImpl(cls);
     }
 
