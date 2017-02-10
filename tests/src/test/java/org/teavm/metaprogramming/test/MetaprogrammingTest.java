@@ -36,6 +36,7 @@ import org.teavm.metaprogramming.Value;
 import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 import org.teavm.metaprogramming.test.subpackage.MetaprogrammingGenerator;
+import org.teavm.model.ValueType;
 
 @CompileTime
 @RunWith(TeaVMTestRunner.class)
@@ -394,6 +395,24 @@ public class MetaprogrammingTest {
         Value<Void> type = result;
         emit(() -> type);
     }
+
+    @Test
+    public void unassignedLazyEvaluated() {
+        withUnassignedLazy(Object.class);
+        assertEquals(23, counter);
+    }
+
+    @Meta
+    private static native void withUnassignedLazy(Class<Object> cls);
+    private static void withUnassignedLazy(ReflectClass<Object> cls) {
+        emit(() -> counter = 42);
+        Value<Object> value = lazy(() -> counter = 23);
+        emit(() -> {
+            value.get();
+        });
+    }
+
+    private static int counter = 0;
 
     static class Context {
         public int a;

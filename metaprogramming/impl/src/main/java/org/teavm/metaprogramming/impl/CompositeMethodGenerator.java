@@ -824,6 +824,8 @@ public class CompositeMethodGenerator {
                             insn.setReceiver(var(receiver));
                             insn.setAssignee(var(instance));
                             add(insn);
+                        } else {
+                            var(instance);
                         }
                         return;
                     } else {
