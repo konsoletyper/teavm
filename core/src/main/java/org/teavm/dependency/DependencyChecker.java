@@ -75,7 +75,6 @@ public class DependencyChecker implements DependencyInfo {
     private Diagnostics diagnostics;
     DefaultCallGraph callGraph = new DefaultCallGraph();
     private DependencyAgent agent;
-    List<DependencyNode> nodes = new ArrayList<>();
     Map<MethodReference, BootstrapMethodSubstitutor> bootstrapMethodSubstitutors = new HashMap<>();
     private boolean completing;
 
@@ -134,9 +133,7 @@ public class DependencyChecker implements DependencyInfo {
     }
 
     public DependencyNode createNode() {
-        DependencyNode node = new DependencyNode(this);
-        nodes.add(node);
-        return node;
+        return new DependencyNode(this);
     }
 
     @Override
@@ -235,16 +232,32 @@ public class DependencyChecker implements DependencyInfo {
         }
     }
 
+    private int propagationDepth;
+
     void schedulePropagation(DependencyConsumer consumer, DependencyType type) {
-        tasks.add(() -> consumer.consume(type));
+        if (propagationDepth < 50) {
+            ++propagationDepth;
+            consumer.consume(type);
+            --propagationDepth;
+        } else {
+            tasks.add(() -> consumer.consume(type));
+        }
     }
 
     void schedulePropagation(DependencyConsumer consumer, DependencyType[] types) {
-        tasks.add(() -> {
+        if (propagationDepth < 50) {
+            ++propagationDepth;
             for (DependencyType type : types) {
                 consumer.consume(type);
             }
-        });
+            --propagationDepth;
+        } else {
+            tasks.add(() -> {
+                for (DependencyType type : types) {
+                    consumer.consume(type);
+                }
+            });
+        }
     }
 
     private Set<String> classesAddedByRoot = new HashSet<>();
@@ -318,7 +331,7 @@ public class DependencyChecker implements DependencyInfo {
             throw new IllegalStateException("Can't submit class during completion phase");
         }
         callGraph.getNode(methodRef);
-        boolean added = true;
+        boolean added;
         if (callLocation != null && callLocation.getMethod() != null) {
             added = callGraph.getNode(callLocation.getMethod()).addCallSite(methodRef,
                     callLocation.getSourceLocation());
@@ -408,7 +421,7 @@ public class DependencyChecker implements DependencyInfo {
         if (completing) {
             throw new IllegalStateException("Can't submit class during completion phase");
         }
-        boolean added = true;
+        boolean added;
         if (location != null) {
             added = callGraph.getNode(location.getMethod()).addFieldAccess(fieldRef, location.getSourceLocation());
         } else {
