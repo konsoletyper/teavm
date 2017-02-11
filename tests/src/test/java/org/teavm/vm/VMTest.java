@@ -36,6 +36,30 @@ public class VMTest {
     }
 
     @Test
+    public void emptyMultiArrayCreated() {
+        int[][] array = new int[0][0];
+        assertEquals(0, array.length);
+        assertEquals(int[][].class, array.getClass());
+    }
+
+    @Test
+    public void emptyMultiArrayCreated2() {
+        int[][][] array = new int[1][0][1];
+        assertEquals(1, array.length);
+        assertEquals(0, array[0].length);
+        assertEquals(int[][][].class, array.getClass());
+    }
+
+    @Test
+    public void emptyMultiArrayCreated3() {
+        int[][][] array = new int[1][1][0];
+        assertEquals(1, array.length);
+        assertEquals(1, array[0].length);
+        assertEquals(0, array[0][0].length);
+        assertEquals(int[][][].class, array.getClass());
+    }
+
+    @Test
     public void catchesException() {
         try {
             throw new IllegalArgumentException();

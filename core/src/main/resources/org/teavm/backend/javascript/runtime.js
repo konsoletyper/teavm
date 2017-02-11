@@ -248,87 +248,129 @@ function $rt_exception(ex) {
     return err;
 }
 function $rt_createMultiArray(cls, dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions));
-    var firstDim = dimensions[0] | 0;
-    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+    var first = 0;
+    for (var i = dimensions.length - 1; i >= 0; i = (i - 1) | 0) {
+        if (dimensions[i] == 0) {
+            first = i;
+            break;
+        }
+    }
+    if (first > 0) {
+        for (i = 0; i < first; i = (i + 1) | 0) {
+            cls = $rt_arraycls(cls);
+        }
+        if (first == dimensions.length - 1) {
+            return $rt_createArray(cls, dimensions[first]);
+        }
+    }
+    var arrays = new Array($rt_primitiveArrayCount(dimensions, first));
+    var firstDim = dimensions[first] | 0;
+    for (i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createArray(cls, firstDim);
     }
-    return $rt_createMultiArrayImpl(cls, arrays, dimensions);
+    return $rt_createMultiArrayImpl(cls, arrays, dimensions, first);
 }
 function $rt_createByteMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    if (arrays.length == 0) {
+        return $rt_createMultiArray($rt_bytecls(), dimensions);
+    }
     var firstDim = dimensions[0] | 0;
-    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+    for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createByteArray(firstDim);
     }
     return $rt_createMultiArrayImpl($rt_bytecls(), arrays, dimensions);
 }
 function $rt_createCharMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    if (arrays.length == 0) {
+        return $rt_createMultiArray($rt_charcls(), dimensions);
+    }
     var firstDim = dimensions[0] | 0;
-    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+    for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createCharArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_charcls(), arrays, dimensions);
+    return $rt_createMultiArrayImpl($rt_charcls(), arrays, dimensions, 0);
 }
 function $rt_createBooleanMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    if (arrays.length == 0) {
+        return $rt_createMultiArray($rt_booleancls(), dimensions);
+    }
     var firstDim = dimensions[0] | 0;
-    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+    for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createBooleanArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_booleancls(), arrays, dimensions);
+    return $rt_createMultiArrayImpl($rt_booleancls(), arrays, dimensions, 0);
 }
 function $rt_createShortMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    if (arrays.length == 0) {
+        return $rt_createMultiArray($rt_shortcls(), dimensions);
+    }
     var firstDim = dimensions[0] | 0;
-    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+    for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createShortArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_shortcls(), arrays, dimensions);
+    return $rt_createMultiArrayImpl($rt_shortcls(), arrays, dimensions, 0);
 }
 function $rt_createIntMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    if (arrays.length == 0) {
+        return $rt_createMultiArray($rt_intcls(), dimensions);
+    }
     var firstDim = dimensions[0] | 0;
-    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+    for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createIntArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_intcls(), arrays, dimensions);
+    return $rt_createMultiArrayImpl($rt_intcls(), arrays, dimensions, 0);
 }
 function $rt_createLongMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    if (arrays.length == 0) {
+        return $rt_createMultiArray($rt_longcls(), dimensions);
+    }
     var firstDim = dimensions[0] | 0;
-    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+    for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createLongArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_longcls(), arrays, dimensions);
+    return $rt_createMultiArrayImpl($rt_longcls(), arrays, dimensions, 0);
 }
 function $rt_createFloatMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    if (arrays.length == 0) {
+        return $rt_createMultiArray($rt_floatcls(), dimensions);
+    }
     var firstDim = dimensions[0] | 0;
-    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+    for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createFloatArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_floatcls(), arrays, dimensions);
+    return $rt_createMultiArrayImpl($rt_floatcls(), arrays, dimensions, 0);
 }
 function $rt_createDoubleMultiArray(dimensions) {
-    var arrays = new Array($rt_primitiveArrayCount(dimensions));
+    var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
+    if (arrays.length == 0) {
+        return $rt_createMultiArray($rt_doublecls(), dimensions);
+    }
     var firstDim = dimensions[0] | 0;
-    for (var i = 0 | 0; i < arrays.length; i = (i + 1) | 0) {
+    for (var i = 0; i < arrays.length; i = (i + 1) | 0) {
         arrays[i] = $rt_createDoubleArray(firstDim);
     }
-    return $rt_createMultiArrayImpl($rt_doublecls(), arrays, dimensions);
+    return $rt_createMultiArrayImpl($rt_doublecls(), arrays, dimensions, 0);
 }
-function $rt_primitiveArrayCount(dimensions) {
-    var val = dimensions[1] | 0;
-    for (var i = 2 | 0; i < dimensions.length; i = (i + 1) | 0) {
+function $rt_primitiveArrayCount(dimensions, start) {
+    var val = dimensions[start + 1] | 0;
+    for (var i = start + 2; i < dimensions.length; i = (i + 1) | 0) {
         val = (val * (dimensions[i] | 0)) | 0;
+        if (val == 0) {
+            break;
+        }
     }
     return val;
 }
-function $rt_createMultiArrayImpl(cls, arrays, dimensions) {
+function $rt_createMultiArrayImpl(cls, arrays, dimensions, start) {
     var limit = arrays.length;
-    for (var i = 1 | 0; i < dimensions.length; i = (i + 1) | 0) {
+    for (var i = (start + 1) | 0; i < dimensions.length; i = (i + 1) | 0) {
         cls = $rt_arraycls(cls);
         var dim = dimensions[i];
         var index = 0;
