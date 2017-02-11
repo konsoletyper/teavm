@@ -94,7 +94,6 @@ public class MethodDescriber {
             int classParamIndex = -1;
             for (int i = 0; i < method.parameterCount(); ++i) {
                 ValueType proxyParam = meta.parameterType(i + paramOffset);
-                ValueType param = method.parameterType(i);
                 if (proxyParam.isObject(ReflectClass.class)) {
                     if (classParamIndex == -1) {
                         classParamIndex = i;

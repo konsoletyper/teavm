@@ -414,6 +414,18 @@ public class MetaprogrammingTest {
 
     private static int counter = 0;
 
+    @Test
+    public void arrayTypeSelected() {
+        assertEquals(String[].class, createInstance(String.class, 1).getClass());
+        assertEquals(String[][].class, createInstance(String[].class, 1).getClass());
+    }
+
+    @Meta
+    private static native Object createInstance(Class<?> cls, int size);
+    private static void createInstance(ReflectClass<?> cls, Value<Integer> size) {
+        exit(() -> cls.createArray(size.get()));
+    }
+
     static class Context {
         public int a;
         public int b;

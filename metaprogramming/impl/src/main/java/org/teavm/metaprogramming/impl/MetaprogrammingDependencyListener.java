@@ -107,7 +107,7 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             ValueType type = usageEntry.getKey();
             String typeName = type instanceof ValueType.Object
                     ? ((ValueType.Object) type).getClassName()
-                    : type.toString();
+                    : type.toString().replace('/', '.');
             choice.option(typeName, () -> {
                 MethodReference implMethod = usageEntry.getValue();
                 ValueEmitter[] castParamVars = new ValueEmitter[paramVars.length];
