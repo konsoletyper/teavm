@@ -25,6 +25,13 @@ import org.teavm.jso.JSBody;
  * @author Alexey Andreev
  */
 public class TRandom extends TObject implements TSerializable {
+
+    /** A stored gaussian value for nextGaussian() */
+    private double storedGaussian;
+    
+    /** Whether storedGuassian value is valid */
+    private boolean haveStoredGaussian;
+    
     public TRandom() {
     }
 
@@ -66,6 +73,37 @@ public class TRandom extends TObject implements TSerializable {
 
     public double nextDouble() {
         return random();
+    }
+    
+    /**
+     * Generate a random number with Gaussian distribution:
+     * centered around 0 with a standard deviation of 1.0.
+     */
+    public double nextGaussian() {
+
+        /*
+         * This implementation uses the polar method to generate two gaussian
+         * values at a time. One is returned, and the other is stored to be returned
+         * next time.
+         */
+
+        if (haveStoredGaussian) {
+            haveStoredGaussian = false;
+            return storedGaussian;
+        }
+
+        double v1, v2, s;
+        do {
+            v1 = 2 * nextDouble() - 1;
+            v2 = 2 * nextDouble() - 1;
+            s = v1 * v1 + v2 * v2;
+        } while (s >= 1 || s == 0);
+
+        double m = StrictMath.sqrt(-2 * StrictMath.log(s) / s);
+        storedGaussian = v2 * m;
+        haveStoredGaussian = true;
+
+        return v1 * m;
     }
 
     @JSBody(script = "return Math.random();")
