@@ -176,11 +176,11 @@ public final class MetaprogrammingImpl {
     }
 
     public static void location(String fileName, int lineNumber) {
-        unsupported();
+        generator.forcedLocation = new TextLocation(fileName, lineNumber);
     }
 
     public static void defaultLocation() {
-        unsupported();
+        generator.forcedLocation = null;
     }
 
     @SuppressWarnings("WeakerAccess")
@@ -249,6 +249,7 @@ public final class MetaprogrammingImpl {
                 returnType = methodHolder.getResultType();
                 varContext = nestedVarContext;
                 generator = new CompositeMethodGenerator(varContext, new Program());
+                generator.forcedLocation = generatorBackup.forcedLocation;
 
                 Program program = generator.program;
                 program.createBasicBlock();

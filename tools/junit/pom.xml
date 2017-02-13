@@ -26,6 +26,8 @@
   <modelVersion>4.0.0</modelVersion>
 
   <artifactId>teavm-junit</artifactId>
+  <name>TeaVM JUnit runner</name>
+  <description>TeaVM implementation of JUnit API</description>
 
   <dependencies>
     <dependency>
