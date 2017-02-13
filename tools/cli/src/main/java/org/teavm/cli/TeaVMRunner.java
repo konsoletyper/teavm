@@ -21,6 +21,7 @@ import java.net.URL;
 import java.net.URLClassLoader;
 import org.apache.commons.cli.*;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
+import org.teavm.tooling.ClassAlias;
 import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
@@ -106,6 +107,12 @@ public final class TeaVMRunner {
                 .withDescription("Additional classpath that will be reloaded by TeaVM each time in wait mode")
                 .withLongOpt("classpath")
                 .create('p'));
+        options.addOption(OptionBuilder
+                .withLongOpt("classalias")
+                .withArgName("alias")
+                .hasArgs()
+                .withDescription("Alias names for classes. Specify as fully.qualified.Name:AliasName")
+                .create());
         options.addOption(OptionBuilder
                 .withLongOpt("wasm-version")
                 .withArgName("version")
@@ -215,6 +222,24 @@ public final class TeaVMRunner {
             classPath = commandLine.getOptionValues('p');
         }
 
+        if (commandLine.hasOption("classalias")) {
+            String[] aliasStrings = commandLine.getOptionValues("classalias");
+            
+            for (String aliasString : aliasStrings) {
+                int i = aliasString.indexOf(':');
+                if (i == -1) {
+                    System.err.print("Wrong alias specification");
+                    printUsage(options);
+                    return;
+                }
+                
+                ClassAlias alias = new ClassAlias();
+                alias.setClassName(aliasString.substring(0, i));
+                alias.setAlias(aliasString.substring(i + 1));
+                tool.getClassAliases().add(alias);
+            }
+        }
+        
         boolean interactive = commandLine.hasOption('w');
         setupWasm(tool, commandLine, options);
 
