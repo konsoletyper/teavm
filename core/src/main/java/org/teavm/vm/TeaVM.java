@@ -564,6 +564,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
         optimizations.add(new ClassInitElimination());
         optimizations.add(new UnreachableBasicBlockElimination());
+        optimizations.add(new UnusedVariableElimination());
         return optimizations;
     }
 
