@@ -2,9 +2,9 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
-  <groupId>${groupId}</groupId>
-  <artifactId>${artifactId}</artifactId>
-  <version>${version}</version>
+  <groupId>\${groupId}</groupId>
+  <artifactId>\${artifactId}</artifactId>
+  <version>\${version}</version>
   <packaging>war</packaging>
 
   <properties>
@@ -18,7 +18,7 @@
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-classlib</artifactId>
-      <version>${teavm.version}</version>
+      <version>\${teavm.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -26,7 +26,7 @@
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-jso-apis</artifactId>
-      <version>${teavm.version}</version>
+      <version>\${teavm.version}</version>
       <scope>provided</scope>
     </dependency>
 
@@ -46,8 +46,8 @@
         <artifactId>maven-compiler-plugin</artifactId>
         <version>3.1</version>
         <configuration>
-          <source>${java.version}</source>
-          <target>${java.version}</target>
+          <source>\${java.version}</source>
+          <target>\${java.version}</target>
         </configuration>
       </plugin>
 
@@ -58,7 +58,7 @@
         <configuration>
           <webResources>
             <resource>
-              <directory>${project.build.directory}/generated/js</directory>
+              <directory>\${project.build.directory}/generated/js</directory>
             </resource>
           </webResources>
         </configuration>
@@ -68,7 +68,7 @@
       <plugin>
         <groupId>org.teavm</groupId>
         <artifactId>teavm-maven-plugin</artifactId>
-        <version>${teavm.version}</version>
+        <version>\${teavm.version}</version>
         <executions>
           <execution>
             <id>web-client</id>
@@ -78,10 +78,10 @@
             <configuration>
               <!-- Directory where TeaVM should put generated files. This configuration conforms to the settings
                    of the WAR plugin -->
-              <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
+              <targetDirectory>\${project.build.directory}/generated/js/teavm</targetDirectory>
 
               <!-- Main class, containing static void main(String[]) -->
-              <mainClass>${package}.Client</mainClass>
+              <mainClass>\${package}.Client</mainClass>
 
               <!-- Whether TeaVM should produce minified JavaScript. Can reduce JavaScript file size more than
                    two times -->
@@ -96,6 +96,9 @@
               <!-- Whether TeaVM should also put source files into output directory,
                    for compatibility with source maps -->
               <sourceFilesCopied>true</sourceFilesCopied>
+
+              <!-- Optimization level. Valid values are: SIMPLE, ADVANCED, FULL -->
+              <optimizationLevel>ADVANCED</optimizationLevel>
             </configuration>
           </execution>
         </executions>
