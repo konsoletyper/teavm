@@ -11,7 +11,7 @@ branches:
 env:
   - MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=256m"
 before_install:
-  - OLD_VERSION=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version`
+  - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -v "^\["`
   - NEW_VERSION=${OLD_VERSION%-SNAPSHOT}-build-$TRAVIS_BUILD_NUMBER
   - mvn versions:set -DnewVersion=$NEW_VERSION
 script: >
