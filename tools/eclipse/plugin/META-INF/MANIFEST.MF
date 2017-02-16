@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: TeaVM plugin for Eclipse
 Bundle-SymbolicName: teavm-eclipse-plugin;singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 0.5.0.qualifier
 Bundle-Vendor: Alexey Andreev <konsoletyper@gmail.com>
 Bundle-RequiredExecutionEnvironment: JavaSE-1.8
 Bundle-Activator: org.teavm.eclipse.TeaVMEclipsePlugin

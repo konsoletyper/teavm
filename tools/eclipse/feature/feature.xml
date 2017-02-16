@@ -2,7 +2,7 @@
 <feature
       id="teavm-eclipse-feature"
       label="TeaVM Eclipse support"
-      version="1.0.0.qualifier"
+      version="0.5.0.qualifier"
       provider-name="Alexey Andreev &lt;konsoletyper@gmail.com&gt;">
 
   <description url="http://www.example.com/description">
@@ -233,14 +233,14 @@
          id="teavm-eclipse-plugin"
          download-size="0"
          install-size="0"
-         version="1.0.0.qualifier"
+         version="0.5.0.qualifier"
          unpack="false"/>
 
   <plugin
          id="teavm-eclipse-core-plugin"
          download-size="0"
          install-size="0"
-         version="1.0.0.qualifier"
+         version="0.5.0.qualifier"
          unpack="false"/>
 
 </feature>

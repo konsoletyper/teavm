@@ -2,7 +2,7 @@ Manifest-Version: 1.0
 Bundle-ManifestVersion: 2
 Bundle-Name: TeaVM plugin for Eclipse
 Bundle-SymbolicName: teavm-eclipse-core-plugin;singleton:=true
-Bundle-Version: 1.0.0.qualifier
+Bundle-Version: 0.5.0.qualifier
 Bundle-Vendor: Alexey Andreev <konsoletyper@gmail.com>
 Bundle-RequiredExecutionEnvironment: JavaSE-1.7
 Bundle-ClassPath: .,
@@ -37,9 +37,9 @@ Bundle-ClassPath: .,
  lib/org.apache.aries.spifly.weaver-internal-1.0.1.jar,
  lib/org.apache.aries.util-1.0.0.jar,
  lib/slf4j-api-1.7.7.jar,
- lib/teavm-chrome-rdp-1.0.0-SNAPSHOT.jar,
- lib/teavm-core-1.0.0-SNAPSHOT.jar,
- lib/teavm-tooling-1.0.0-SNAPSHOT.jar,
+ lib/teavm-chrome-rdp-0.5.0-SNAPSHOT.jar,
+ lib/teavm-core-0.5.0-SNAPSHOT.jar,
+ lib/teavm-tooling-0.5.0-SNAPSHOT.jar,
  lib/websocket-api-9.2.1.v20140609.jar,
  lib/websocket-client-9.2.1.v20140609.jar,
  lib/websocket-common-9.2.1.v20140609.jar,

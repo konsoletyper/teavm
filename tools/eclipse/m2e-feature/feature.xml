@@ -2,7 +2,7 @@
 <feature
       id="teavm-eclipse-m2e-feature"
       label="TeaVM maven configuration support"
-      version="1.0.0.qualifier"
+      version="0.5.0.qualifier"
       provider-name="Alexey Andreev &lt;konsoletyper@gmail.com&gt;">
 
    <description url="http://www.example.com/description">

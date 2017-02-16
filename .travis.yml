@@ -10,6 +10,10 @@ branches:
     - /^release-.+$/
 env:
   - MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=256m"
+before_install:
+  - OLD_VERSION=`mvn org.apache.maven.plugins:maven-help-plugin:2.1.1:evaluate -Dexpression=project.version`
+  - NEW_VERSION=${OLD_VERSION%-SNAPSHOT}-build-$TRAVIS_BUILD_NUMBER
+  - mvn versions:set -DnewVersion=$NEW_VERSION
 script: >
   mvn -e test \
    -Dteavm.junit.target=target/js-tests \
@@ -17,5 +21,9 @@ script: >
    -Dteavm.junit.js.threads=1 \
    -Dteavm.junit.optimized=true \
    -Dteavm.junit.minified=true
+after_success: >
+   if [ "${TRAVIS_PULL_REQUEST:-false}" != "false" ]; then
+     mvn deploy --settings travis-settings.xml -P deploy-to-bintray
+   fi
 after_script:
   - rm -rf $HOME/.m2/repository/org/teavm
