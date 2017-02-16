@@ -12,7 +12,7 @@ env:
   - MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=256m"
 before_install:
   - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download\w+:)"`
-  - NEW_VERSION=${OLD_VERSION%-SNAPSHOT}-build-`printf %05d $TRAVIS_BUILD_NUMBER`
+  - NEW_VERSION=${OLD_VERSION%-SNAPSHOT}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
   - echo "Building version $NEW_VERSION"
   - mvn versions:set -DnewVersion=$NEW_VERSION
 script: >
