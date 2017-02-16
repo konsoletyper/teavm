@@ -326,7 +326,7 @@
         <repository>
           <id>bintray-teavm</id>
           <name>Bintray Preview Repository</name>
-          <url>https://api.bintray.com/maven/konsoletyper/teavm-preview/teavm/;publish=1</url>
+          <url>https://api.bintray.com/maven/konsoletyper/teavm/teavm-dev/;publish=1</url>
         </repository>
       </distributionManagement>
     </profile>

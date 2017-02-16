@@ -8,7 +8,7 @@ branches:
   only:
     - master
     - /^release-.+$/
-    - /^preview-.+/
+    - /^dev-.+/
 env:
   - MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=256m"
 before_install:
@@ -24,7 +24,7 @@ script: >
    -Dteavm.junit.optimized=true \
    -Dteavm.junit.minified=true
 after_success: >
-   if [ "${TRAVIS_PULL_REQUEST:-false}" != "false" ] && [ $TRAVIS_BRANCH == preview-* ]; then
+   if [[ "${TRAVIS_PULL_REQUEST:-unknown}" == "false" && $TRAVIS_BRANCH == dev-* ]] ; then
      mvn deploy --settings travis-settings.xml -P deploy-to-bintray
    fi
 after_script:
