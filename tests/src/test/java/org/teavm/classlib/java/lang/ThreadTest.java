@@ -39,14 +39,14 @@ public class ThreadTest {
         new Thread() {
             @Override public void run() {
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(50);
                 } catch (InterruptedException e) {
                 }
                 mainThread.interrupt();
             }
         }.start();
         try {
-            Thread.sleep(300);
+            Thread.sleep(500);
             fail("Exception expected");
         } catch (InterruptedException e) {
             assertEquals(Thread.currentThread(), mainThread);
