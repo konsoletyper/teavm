@@ -40,12 +40,19 @@ import org.teavm.idea.jps.remote.TeaVMElementLocation;
 public class TeaVMJPSRemoteService extends UnicastRemoteObject implements ApplicationComponent, TeaVMBuilderAssistant {
     private static final int MIN_PORT = 10000;
     private static final int MAX_PORT = 1 << 16;
-    private final ProjectManager projectManager = ProjectManager.getInstance();
+    private ProjectManager projectManager;
     private int port;
     private Registry registry;
 
     public TeaVMJPSRemoteService() throws RemoteException {
         super();
+    }
+
+    private synchronized ProjectManager getProjectManager() {
+        if (projectManager == null) {
+            projectManager = ProjectManager.getInstance();
+        }
+        return projectManager;
     }
 
     @Override
@@ -94,7 +101,7 @@ public class TeaVMJPSRemoteService extends UnicastRemoteObject implements Applic
         TeaVMElementLocation[] resultHolder = new TeaVMElementLocation[1];
 
         ApplicationManager.getApplication().runReadAction(() -> {
-            for (Project project : projectManager.getOpenProjects()) {
+            for (Project project : getProjectManager().getOpenProjects()) {
                 JavaPsiFacade psi = JavaPsiFacade.getInstance(project);
                 PsiClass cls = psi.findClass(className, GlobalSearchScope.allScope(project));
                 if (cls == null) {

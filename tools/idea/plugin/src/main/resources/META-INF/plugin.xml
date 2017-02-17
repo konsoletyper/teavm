@@ -1,7 +1,7 @@
 <idea-plugin version="2">
   <id>org.teavm.idea</id>
   <name>TeaVM IDEA plugin</name>
-  <version>1.0</version>
+  <version>${project.version}</version>
   <vendor email="info@teavm.org" url="http://teavm.org">TeaVM community</vendor>
 
   <depends>org.jetbrains.idea.maven</depends>
@@ -17,7 +17,7 @@
     ]]>
   </change-notes>
 
-  <idea-version since-build="141.0"/>
+  <idea-version since-build="163.12024.16"/>
 
   <application-components>
     <component>
@@ -26,7 +26,7 @@
   </application-components>
 
   <extensions defaultExtensionNs="com.intellij">
-    <compileServer.plugin classpath="jps/teavm-jps-plugin.jar;teavm-all.jar;teavm-jps-common.jar"/>
+    <compileServer.plugin classpath="jps/teavm-jps-plugin.jar;teavm.jar;teavm-jps-common.jar"/>
     <buildProcess.parametersProvider implementation="org.teavm.idea.TeaVMJPSConfigurator"/>
     <configurationType implementation="org.teavm.idea.debug.TeaVMDebugConfigurationType"/>
     <programRunner implementation="org.teavm.idea.debug.TeaVMDebugRunner"/>

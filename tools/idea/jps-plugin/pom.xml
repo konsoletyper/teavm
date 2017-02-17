@@ -27,8 +27,8 @@
   </parent>
   <modelVersion>4.0.0</modelVersion>
 
-  <artifactId>teavm-jps-common</artifactId>
-  <name>TeaVM IDEA JPS common artifact</name>
+  <artifactId>teavm-jps-plugin</artifactId>
+  <name>TeaVM IDEA JPS plugin</name>
 
   <properties>
     <idea.artifacts.dir>${basedir}/..</idea.artifacts.dir>
@@ -49,13 +49,13 @@
     </dependency>
     <dependency>
       <groupId>org.teavm.idea</groupId>
-      <artifactId>jdom</artifactId>
+      <artifactId>util</artifactId>
       <version>${idea.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.teavm.idea</groupId>
-      <artifactId>util</artifactId>
+      <artifactId>jdom</artifactId>
       <version>${idea.version}</version>
       <scope>provided</scope>
     </dependency>
@@ -73,8 +73,8 @@
     </dependency>
 
     <dependency>
-      <groupId>org.teavm.idea</groupId>
-      <artifactId>teavm</artifactId>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-jps-common</artifactId>
       <version>${project.version}</version>
     </dependency>
   </dependencies>

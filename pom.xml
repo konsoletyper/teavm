@@ -71,6 +71,7 @@
     <slf4j.version>1.7.7</slf4j.version>
     <selenium.version>2.47.2</selenium.version>
     <jackson.version>2.6.2</jackson.version>
+    <idea.version>2016.3.4</idea.version>
 
     <teavm.test.incremental>false</teavm.test.incremental>
     <teavm.test.threads>1</teavm.test.threads>
@@ -296,6 +297,7 @@
       </activation>
       <modules>
         <module>samples</module>
+        <module>tools/idea</module>
       </modules>
     </profile>
     <profile>
