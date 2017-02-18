@@ -43,7 +43,7 @@
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-tooling</artifactId>
-      <version>${project.version}</version>
+      <version>${idea.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -54,7 +54,7 @@
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-chrome-rdp</artifactId>
-      <version>${project.version}</version>
+      <version>${idea.version}</version>
       <exclusions>
         <exclusion>
           <groupId>org.slf4j</groupId>
@@ -65,7 +65,7 @@
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-metaprogramming-impl</artifactId>
-      <version>${project.version}</version>
+      <version>${idea.version}</version>
     </dependency>
   </dependencies>
 
