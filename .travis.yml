@@ -9,13 +9,13 @@ branches:
     - master
     - /^release-.+$/
     - /^dev-.+/
-env:
-  - MAVEN_OPTS="-Xmx1024m -XX:MaxPermSize=256m"
 before_install:
   - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download\w+:)"`
   - NEW_VERSION=${OLD_VERSION%-SNAPSHOT}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
   - echo "Building version $NEW_VERSION"
   - mvn versions:set -DnewVersion=$NEW_VERSION
+install:
+  - mvn install -Dteavm.build.all=false -P with-idea -DskipTests=true -Dmaven.javadoc.skip=true -B -V
 script: >
   mvn -e test \
    -Dteavm.junit.target=target/js-tests \
@@ -25,7 +25,12 @@ script: >
    -Dteavm.junit.minified=true
 after_success: >
    if [[ "${TRAVIS_PULL_REQUEST:-unknown}" == "false" && $TRAVIS_BRANCH == dev-* ]] ; then
-     mvn deploy --settings travis-settings.xml -P deploy-to-bintray
+     export NEW_VERSION
+     export TEAVM_FTP_HOST
+     export TEAVM_FTP_LOGIN
+     export TEAVM_FTP_PASSWORD
+     mvn deploy -Dteavm.build.all=false --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
+     ./update-idea-repository.sh
    fi
 after_script:
   - rm -rf $HOME/.m2/repository/org/teavm

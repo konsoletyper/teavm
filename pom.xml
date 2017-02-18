@@ -301,6 +301,13 @@
       </modules>
     </profile>
     <profile>
+      <id>with-idea</id>
+      <modules>
+        <module>tools/idea</module>
+      </modules>
+    </profile>
+
+    <profile>
       <id>sign-artifacts</id>
       <build>
         <plugins>
