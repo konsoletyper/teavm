@@ -29,7 +29,7 @@ after_success: >
      export TEAVM_FTP_HOST
      export TEAVM_FTP_LOGIN
      export TEAVM_FTP_PASSWORD
-     mvn deploy -Dteavm.build.all=false --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
+     mvn deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
      ./update-idea-repository.sh
    fi
 after_script:

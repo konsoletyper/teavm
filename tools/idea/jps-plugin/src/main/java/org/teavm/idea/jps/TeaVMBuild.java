@@ -24,7 +24,6 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.net.URLClassLoader;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -488,7 +487,9 @@ class TeaVMBuild {
             }
         }).toArray(URL[]::new);
 
-        return new URLClassLoader(urls, TeaVMBuilder.class.getClassLoader());
+        RenamingClassLoader classLoader = new RenamingClassLoader(urls, TeaVMBuilder.class.getClassLoader());
+        classLoader.rename("org/objectweb/asm/", "org/teavm/asm/");
+        return classLoader;
     }
 
     private void buildClassPath(JpsModule module, Set<JpsModule> visited) {
