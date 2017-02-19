@@ -1,12 +1,13 @@
 TeaVM
 =====
 
-[![Build Status](https://travis-ci.org/konsoletyper/teavm.svg?branch=master)](https://travis-ci.org/konsoletyper/teavm)
+[![Build Status](https://travis-ci.org/konsoletyper/teavm.svg?branch=master)](https://travis-ci.org/konsoletyper/teavm) [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin) [![Bintray](https://api.bintray.com/packages/konsoletyper/teavm/teavm-dev/images/download.svg) ](https://bintray.com/konsoletyper/teavm/teavm-dev/_latestVersion) 
 
 What is TeaVM?
 --------------
 
-TeaVM is an ahead-of-time translator from Java bytecode to JavaScript.
+TeaVM is an ahead-of-time compiler of Java bytecode.
+Currently, is supports translation to JavaScript and WebAssembly (experimental).
 It can be compared with GWT, however TeaVM does not require source code of your application and
 all required libraries.
 You can use TeaVM for building applications for the browser, due to the following features:
@@ -19,6 +20,7 @@ You can use TeaVM for building applications for the browser, due to the followin
   * generation of source maps;
   * debugger;
   * interoperation with JavaScript libraries together with the set of predefined browser interfaces.
+  * supports WebAssebly output (experimental).
 
 
 Quick start
@@ -35,44 +37,51 @@ The easiest way to create a new TeaVM project is to type in the command line:
 Now you can execute `mvn clean package` and get the generated `war` file.
 Deploy this `war` in Tomcat or another container, or simply unzip it and open the `index.html` page.
 
-It is much easier to develop TeaVM applications using Eclipse.
-If you prefer Eclipse, please read [this tutorial](https://github.com/konsoletyper/teavm/wiki/Eclipse-tutorial).
-
 To learn TeaVM deeper, you take a look at the [samples](samples) module,
 containing examples of TeaVM-based projects.
 Also you can read [project's wiki](https://github.com/konsoletyper/teavm/wiki/).
 
 
-DukeScript
-----------
+Preview builds
+--------------
 
-[DukeScript](http://wiki.apidesign.org/wiki/DukeScript) is a set of APIs that allows Java applications
-easily talk to JavaScript environment to (usually) animate an HTML page. While DukeScript has its own
-implementation of JVM, called [Bck2Brwsr](http://wiki.apidesign.org/wiki/Bck2Brwsr), TeaVM also provides
-support for running DukeScript applications, using [teavm-html4j](teavm-html4j) plugin.
+You may want to access new features and don't want to wait until stable release is published on Maven Central. In this case you can get latest development build from [bintray](https://bintray.com/konsoletyper/teavm/teavm-dev). All you need is to put the following in your `pom.xml`:
+
+```xml
+  <repositories>
+    <repository>
+      <id>teavm-dev</id>
+      <url>https://dl.bintray.com/konsoletyper/teavm</url>
+    </repository>
+  </repositories>
+```
+
+IDEA plugin is also available in preview builds. You need to add corresponding repository manually to IDEA. Open *Settings* -> *Plugins* -> *Browse repositories...* -> *Manage repositories...*, click *Add* button and enter `http://teavm.org/idea/dev/teavmRepository.xml`. Then get back to *Browse repositories* and pick TeaVM plugin from list. 
 
 
-Live examples
--------------
+Building TeaVM
+--------------
 
-Compare the speed of JavaScript produced by TeaVM and GWT here: http://teavm.org/live-examples/jbox2d-benchmark/
+Simply clone source code (`git clone https://github.com/konsoletyper/teavm.git`) and run maven build (`mvn clean install`). You can do things a little faster (`mvn clean -DskipTests`) or even a little more faster (`mvn clean -DskipTests -Dteavm.build.all=false`).
 
-Play [Geobot](http://teavm.org/live-examples/geobot/), a little physics-based puzzle game.
-Thanks to [joan789](http://joan789.deviantart.com/) for her great artwork!
 
-Thanks to [Jaroslav Tulach](http://wiki.apidesign.org/wiki/User:JaroslavTulach), author of DukeScript, we have several
-DukeScript example applications. One is the minesweeper game.
-You can try its TeaVM-compiled version [here](http://xelfi.cz/minesweeper/teavm/), and then take a look at
-[source code](http://source.apidesign.org/hg/html~demo/file/4dce5ea7e13a/minesweeper/src/main/java/org/apidesign/demo/minesweeper/MinesModel.java)
-and [HTML page](http://source.apidesign.org/hg/html~demo/file/4dce5ea7e13a/minesweeper/src/main/webapp/pages/index.html).
+Embedding TeaVM
+---------------
 
-Another example is available [here](http://graphhopper.com/teavm/).
-It uses [GraphHopper](https://github.com/graphhopper/graphhopper/) to build route in browser.
-Unlike original GraphHopper example it works completely in browser instead of querying server.
-Thanks to [Peter Karich](https://github.com/karussell).
+If you are not satisfied with Maven, you can embed TeaVM in your program or even create your own plugin for any build tool, like And or Gradle. The starting point for you may be `org.teavm.tooling.TeaVMTool` class from `teavm-tooling` artifact. You may want to go deeper and use `org.teavm.vm.TeaVM` from `teavm-core` artifact, learn how `TeaVMTool` initializes it. To learn how to use `TeaVMTool` class itself, find its usages across project source code. You most likely encounter Maven and IDEA plugins.
+  
+Please, notice that these APIs for embedding are still unstable and may change between versions.
+
+
+WebAssembly
+-----------
+
+WebAssembly support is in experimental status. It may lack major features available in JavaScript backend. There's no documentation yet and you should do many things by hands (like embedding generated `wasm` file into your page, importing JavaScript objects, etc). Look at [samples/benchmark](https://github.com/konsoletyper/teavm/blob/master/samples/benchmark/) module. You should first examine `pom.xml` file to learn how to build `wasm` file from Java. Then you may want to examine `index-teavm.html` and `index-teavm.js` to learn how to embed WebAssembly into your web page. 
 
 
 Feedback
 --------
+
+More information is available at the official site: http://teavm.org.
 
 Ask your questions by email: info@teavm.org. Also you can report issues on a project's [issue tracker](https://github.com/konsoletyper/teavm/issues).
