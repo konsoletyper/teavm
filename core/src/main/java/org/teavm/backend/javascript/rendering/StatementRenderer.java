@@ -103,6 +103,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private final Set<String> usedVariableNames = new HashSet<>();
     private MethodNode currentMethod;
     private int currentPart;
+    private int partOffset;
 
     public StatementRenderer(RenderingContext context, SourceWriter writer) {
         this.context = context;
@@ -127,6 +128,10 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     public void setCurrentPart(int currentPart) {
         this.currentPart = currentPart;
+    }
+    
+    public void setPartOffset(int partOffset) {
+        this.partOffset = partOffset;
     }
 
     public void setEnd(boolean end) {
@@ -1385,8 +1390,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     public void visit(GotoPartStatement statement) {
         try {
             if (statement.getPart() != currentPart) {
-                writer.append(context.pointerName()).ws().append("=").ws().append(statement.getPart()).append(";")
-                        .softNewLine();
+                writer.append(context.pointerName()).ws().append("=").ws().append(statement.getPart() + partOffset)
+                        .append(";").softNewLine();
             }
             if (!end || statement.getPart() != currentPart + 1) {
                 writer.append("continue ").append(context.mainLoopName()).append(";").softNewLine();

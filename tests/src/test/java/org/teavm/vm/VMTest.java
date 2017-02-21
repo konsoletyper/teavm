@@ -161,6 +161,13 @@ public class VMTest {
     }
 
     @Test
+    public void asyncClinitInstance() {
+        AsyncClinitClass acl = new AsyncClinitClass();
+        assertEquals("ok", AsyncClinitClass.state);
+        assertEquals("ok", acl.instanceState);
+    }
+
+    @Test
     @SkipJVM
     public void loopAndExceptionPhi() {
         int[] a = createArray();
@@ -218,6 +225,7 @@ public class VMTest {
 
     private static class AsyncClinitClass {
         static String state = "";
+        String instanceState = "";
 
         static {
             initCount++;
@@ -235,6 +243,16 @@ public class VMTest {
 
         public static String bar() {
             return "bar";
+        }
+        
+        public AsyncClinitClass() {
+            instanceState += "ok";
+            try {
+                Thread.sleep(1);
+            }
+            catch (InterruptedException ie) {
+                throw new RuntimeException(ie);
+            }
         }
     }
 

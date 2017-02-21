@@ -25,6 +25,7 @@ import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.ClassNode;
 import org.teavm.ast.FieldNode;
+import org.teavm.ast.GotoPartStatement;
 import org.teavm.ast.MethodNode;
 import org.teavm.ast.MethodNodeVisitor;
 import org.teavm.ast.NativeMethodNode;
@@ -614,10 +615,7 @@ public class Renderer implements RenderingManager {
         }
         writer.append(")").ws().append("{").softNewLine().indent();
 
-        if (isClinit & clinitNeeded) {
-            writer.appendClass(method.getReference().getClassName()).append("_$callClinit();").softNewLine();
-        }
-        method.acceptVisitor(new MethodBodyRenderer(statementRenderer));
+        method.acceptVisitor(new MethodBodyRenderer(statementRenderer, isClinit & clinitNeeded));
         writer.outdent().append("}");
 
         writer.newLine();
@@ -639,14 +637,20 @@ public class Renderer implements RenderingManager {
     private class MethodBodyRenderer implements MethodNodeVisitor, GeneratorContext {
         private boolean async;
         private StatementRenderer statementRenderer;
+        private boolean doClinit;
 
-        public MethodBodyRenderer(StatementRenderer statementRenderer) {
+        public MethodBodyRenderer(StatementRenderer statementRenderer, boolean doClinit) {
             this.statementRenderer = statementRenderer;
+            this.doClinit = doClinit;
         }
 
         @Override
         public void visit(NativeMethodNode methodNode) {
             try {
+                if (doClinit) {
+                    writer.appendClass(methodNode.getReference().getClassName()).append("_$callClinit();")
+                            .softNewLine();
+                }
                 this.async = methodNode.isAsync();
                 statementRenderer.setAsync(methodNode.isAsync());
                 methodNode.getGenerator().generate(this, writer, methodNode.getReference());
@@ -658,6 +662,9 @@ public class Renderer implements RenderingManager {
         @Override
         public void visit(RegularMethodNode method) {
             try {
+                if (doClinit) {
+                    writer.appendClass(method.getReference().getClassName()).append("_$callClinit();").softNewLine();
+                }
                 statementRenderer.setAsync(false);
                 this.async = false;
                 MethodReference ref = method.getReference();
@@ -766,8 +773,9 @@ public class Renderer implements RenderingManager {
                 }
 
                 renderAsyncPrologue();
+                int partOffset = 0;
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
-                    writer.append("case ").append(i).append(":").indent().softNewLine();
+                    writer.append("case ").append(i + partOffset).append(":").indent().softNewLine();
                     if (i == 0 && methodNode.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
                         writer.appendMethodBody(new MethodReference(Object.class, "monitorEnter",
                                 Object.class, void.class));
@@ -775,6 +783,18 @@ public class Renderer implements RenderingManager {
                         appendMonitor(statementRenderer, methodNode);
                         writer.append(");").softNewLine();
                         statementRenderer.emitSuspendChecker();
+                    }
+                    if (i == 0 && doClinit) {
+                        partOffset = 1;
+                        writer.appendClass(methodNode.getReference().getClassName()).append("_$callClinit();")
+                                .softNewLine();
+                        statementRenderer.emitSuspendChecker();
+                        GotoPartStatement gps = new GotoPartStatement();
+                        gps.setPart(1);
+                        statementRenderer.setEnd(true);
+                        statementRenderer.visit(gps);
+                        statementRenderer.setPartOffset(1); 
+                        writer.outdent().append("case ").append(i + partOffset).append(":").indent().softNewLine();
                     }
                     AsyncMethodPart part = methodNode.getBody().get(i);
                     statementRenderer.setEnd(true);
