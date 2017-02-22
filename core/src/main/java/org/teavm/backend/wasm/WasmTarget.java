@@ -104,12 +104,12 @@ import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.instructions.CloneArrayInstruction;
-import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
+import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.RuntimeArray;
@@ -127,10 +127,10 @@ public class WasmTarget implements TeaVMTarget {
     private boolean debugging;
     private boolean wastEmitted;
     private boolean cEmitted;
+    private ClassInitializerInsertionTransformer clinitInsertionTransformer;
     private ClassInitializerEliminator classInitializerEliminator;
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
-    private MethodDescriptor clinitDescriptor = new MethodDescriptor("<clinit>", void.class);
     private WasmBinaryVersion version = WasmBinaryVersion.V_0xC;
 
     @Override
@@ -139,6 +139,7 @@ public class WasmTarget implements TeaVMTarget {
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
         shadowStackTransformer = new ShadowStackTransformer(controller.getUnprocessedClassSource());
+        clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource());
     }
 
     @Override
@@ -261,28 +262,10 @@ public class WasmTarget implements TeaVMTarget {
 
     @Override
     public void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classes) {
-        ClassReader cls = classes.get(method.getOwnerName());
-        boolean hasClinit = cls.getMethod(clinitDescriptor) != null;
-        if (needsClinitCall(method) && hasClinit) {
-            BasicBlock entryBlock = program.basicBlockAt(0);
-            InitClassInstruction initInsn = new InitClassInstruction();
-            initInsn.setClassName(method.getOwnerName());
-            entryBlock.addFirst(initInsn);
-        }
-
+        clinitInsertionTransformer.apply(method, program);
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
         shadowStackTransformer.apply(program, method);
-    }
-
-    private static boolean needsClinitCall(MethodReader method) {
-        if (method.getName().equals("<clinit>")) {
-            return false;
-        }
-        if (method.getName().equals("<init>")) {
-            return true;
-        }
-        return method.hasModifier(ElementModifier.STATIC);
     }
 
     @Override

@@ -365,7 +365,7 @@ public class Renderer implements RenderingManager {
             }
 
             for (MethodNode method : cls.getMethods()) {
-                renderBody(method, clinit != null);
+                renderBody(method);
             }
         } catch (NamingException e) {
             throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
@@ -589,11 +589,7 @@ public class Renderer implements RenderingManager {
         writer.append(");").ws().append("}");
     }
 
-    private void renderBody(MethodNode method, boolean clinitNeeded) throws IOException {
-        boolean isClinit = (method.getModifiers().contains(ElementModifier.STATIC)
-                && !method.getReference().getName().equals("<clinit>"))
-                || method.getReference().getName().equals("<init>");
-
+    private void renderBody(MethodNode method) throws IOException {
         StatementRenderer statementRenderer = new StatementRenderer(context, writer);
         statementRenderer.setCurrentMethod(method);
 
@@ -614,9 +610,6 @@ public class Renderer implements RenderingManager {
         }
         writer.append(")").ws().append("{").softNewLine().indent();
 
-        if (isClinit & clinitNeeded) {
-            writer.appendClass(method.getReference().getClassName()).append("_$callClinit();").softNewLine();
-        }
         method.acceptVisitor(new MethodBodyRenderer(statementRenderer));
         writer.outdent().append("}");
 
@@ -640,7 +633,7 @@ public class Renderer implements RenderingManager {
         private boolean async;
         private StatementRenderer statementRenderer;
 
-        public MethodBodyRenderer(StatementRenderer statementRenderer) {
+        MethodBodyRenderer(StatementRenderer statementRenderer) {
             this.statementRenderer = statementRenderer;
         }
 

@@ -63,7 +63,6 @@ public class AsyncProgramSplitter {
         Part initialPart = new Part(program.basicBlockCount());
         initialPart.program = initialProgram;
         parts.add(initialPart);
-        partMap.put(program.basicBlockAt(0).getFirstInstruction(), 0);
         Step initialStep = new Step();
         initialStep.source = 0;
         initialStep.targetPart = initialPart;
@@ -134,7 +133,7 @@ public class AsyncProgramSplitter {
 
                 // Continue with a new block in the new part
                 targetBlock = nextProgram.createBasicBlock();
-                if (step.source > 0) {
+                if (targetBlock.getIndex() > 0) {
                     JumpInstruction jumpToNextBlock = new JumpInstruction();
                     jumpToNextBlock.setTarget(targetBlock);
                     nextProgram.basicBlockAt(0).add(jumpToNextBlock);
@@ -143,6 +142,8 @@ public class AsyncProgramSplitter {
                 }
                 step.targetPart = part;
                 part.originalBlocks[targetBlock.getIndex()] = step.source;
+
+                partMap.put(program.basicBlockAt(0).getFirstInstruction(), 0);
             }
 
             if (sourceBlock.getExceptionVariable() != null) {
