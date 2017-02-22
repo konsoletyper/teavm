@@ -20,6 +20,7 @@ target
 .idea/workspace.xml
 .idea/dictionaries/
 .idea/compiler.xml
+.idea/kotlinc.xml
 .idea/encodings.xml
 .idea/misc.xml
 .idea/modules.xml
