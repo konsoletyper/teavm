@@ -16,6 +16,7 @@
 package org.teavm.vm;
 
 import static org.junit.Assert.*;
+
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
@@ -168,6 +169,13 @@ public class VMTest {
     }
 
     @Test
+    public void asyncWait() {
+        AsyncClinitClass acl = new AsyncClinitClass();
+        acl.doWait();
+        assertEquals("ok", acl.instanceState);
+    }
+
+    @Test
     @SkipJVM
     public void loopAndExceptionPhi() {
         int[] a = createArray();
@@ -251,6 +259,26 @@ public class VMTest {
                 Thread.sleep(1);
             }
             catch (InterruptedException ie) {
+                throw new RuntimeException(ie);
+            }
+        }
+        
+        public synchronized void doWait()
+        {
+            new Thread() {
+                public void run() {
+                    synchronized (AsyncClinitClass.this) {
+                        AsyncClinitClass.this.notify();
+                    }
+                }
+            }.start();
+            
+            try {
+                Thread.sleep(1);
+                wait();
+            }
+            catch (InterruptedException ie) {
+                instanceState = "error";
                 throw new RuntimeException(ie);
             }
         }
