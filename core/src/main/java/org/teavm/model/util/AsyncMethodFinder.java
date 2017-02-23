@@ -113,6 +113,7 @@ public class AsyncMethodFinder {
                     continue;
                 }
                 if (hasMonitor(method)) {
+                    result = true;
                     break loop;
                 }
             }
