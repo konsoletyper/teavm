@@ -168,6 +168,13 @@ public class VMTest {
     }
 
     @Test
+    public void asyncWait() {
+        AsyncClinitClass acl = new AsyncClinitClass();
+        acl.doWait();
+        assertEquals("ok", acl.instanceState);
+    }
+
+    @Test
     @SkipJVM
     public void loopAndExceptionPhi() {
         int[] a = createArray();
@@ -244,13 +251,28 @@ public class VMTest {
         public static String bar() {
             return "bar";
         }
-        
+
         public AsyncClinitClass() {
             instanceState += "ok";
             try {
                 Thread.sleep(1);
+            } catch (InterruptedException ie) {
+                throw new RuntimeException(ie);
             }
-            catch (InterruptedException ie) {
+        }
+
+        public synchronized void doWait() {
+            new Thread(() -> {
+                synchronized (AsyncClinitClass.this) {
+                    notify();
+                }
+            }).start();
+
+            try {
+                Thread.sleep(1);
+                wait();
+            } catch (InterruptedException ie) {
+                instanceState = "error";
                 throw new RuntimeException(ie);
             }
         }
