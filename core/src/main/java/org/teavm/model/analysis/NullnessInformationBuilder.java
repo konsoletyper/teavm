@@ -203,7 +203,7 @@ class NullnessInformationBuilder {
             currentState = new State();
 
             if (block.getExceptionVariable() != null) {
-                notNullVariables.set(block.getIndex());
+                notNullVariables.set(block.getExceptionVariable().getIndex());
             }
 
             currentBlock = block;

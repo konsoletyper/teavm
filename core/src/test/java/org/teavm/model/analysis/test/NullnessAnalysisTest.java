@@ -80,6 +80,11 @@ public class NullnessAnalysisTest {
         test();
     }
 
+    @Test
+    public void exception() {
+        test();
+    }
+
     private void test() {
         String baseName = "model/analysis/nullness/" + name.getMethodName();
         String originalResourceName = baseName + ".original.txt";

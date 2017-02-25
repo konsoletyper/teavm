@@ -1,0 +1,12 @@
+var @this as this
+$start
+    @str := invokeStatic `Foo.getData()Ljava/lang/String;`
+    @n := invokeStatic `java.lang.Integer.parseInt(Ljava/lang/String;)I` @str
+    return @n
+    catch java.lang.RuntimeException goto $handle
+$handle
+    @e := exception
+    @m := invoke `java.lang.Throwable.getMessage()Ljava/lang/String;` @e
+    @z := invoke `java.lang.String.length()I` @m
+    @m_1 := nullCheck @m
+    return @z
