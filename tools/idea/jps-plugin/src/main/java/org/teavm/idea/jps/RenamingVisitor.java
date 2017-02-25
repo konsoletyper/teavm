@@ -264,7 +264,7 @@ public class RenamingVisitor extends ClassVisitor {
     private String renameType(Type type) {
         switch (type.getSort()) {
             case Type.ARRAY:
-                return "[" + renameType(type.getElementType());
+                return "[" + renameValueDesc(type.getDescriptor().substring(1));
             case Type.METHOD:
                 return "(" + Arrays.stream(type.getArgumentTypes()).map(this::renameType)
                         .collect(Collectors.joining("")) + ")" + renameType(type.getReturnType());
