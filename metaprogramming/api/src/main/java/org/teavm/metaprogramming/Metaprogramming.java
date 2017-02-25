@@ -55,6 +55,11 @@ public final class Metaprogramming {
         unsupported();
     }
 
+    public static SourceLocation getLocation() {
+        unsupported();
+        return null;
+    }
+
     public static ReflectClass<?> findClass(String name) {
         unsupported();
         return null;

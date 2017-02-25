@@ -39,7 +39,7 @@ import org.teavm.model.ValueType;
 public class ReflectClassImpl<T> implements ReflectClass<T> {
     public final ValueType type;
     private ReflectContext context;
-    private ClassReader classReader;
+    public ClassReader classReader;
     private boolean resolved;
     private Class<?> cls;
     private Map<String, ReflectFieldImpl> declaredFields = new HashMap<>();
@@ -380,7 +380,7 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
         return annotations.getAnnotation(type);
     }
 
-    private void resolve() {
+    public void resolve() {
         if (resolved) {
             return;
         }

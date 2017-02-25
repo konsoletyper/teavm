@@ -183,6 +183,29 @@ public final class MetaprogrammingImpl {
         generator.forcedLocation = null;
     }
 
+    public static SourceLocation getLocation() {
+        TextLocation location = generator.forcedLocation;
+        if (location == null) {
+            location = generator.location;
+        }
+        if (location == null) {
+            return null;
+        }
+
+        ReflectClassImpl<?> cls = reflectContext.findClass(templateMethod.getClassName());
+        if (cls == null) {
+            return null;
+        }
+        cls.resolve();
+        MethodReader methodReader = cls.classReader.getMethod(templateMethod.getDescriptor());
+        if (methodReader == null) {
+            return null;
+        }
+        ReflectMethod method = new ReflectMethodImpl(cls, methodReader);
+        return new SourceLocation(method, location != null ? location.getFileName() : null,
+                location != null ? location.getLine() : null);
+    }
+
     @SuppressWarnings("WeakerAccess")
     public static ReflectClass<?> findClass(String name) {
         return reflectContext.findClass(name);
@@ -405,6 +428,9 @@ public final class MetaprogrammingImpl {
         }
 
         private CallLocation convertLocation(SourceLocation location) {
+            if (location == null) {
+                return null;
+            }
             MethodReader method = ((ReflectMethodImpl) location.getMethod()).method;
             return location.getFileName() != null
                     ? new CallLocation(method.getReference(),

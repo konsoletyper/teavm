@@ -129,6 +129,7 @@ class UsageGenerator {
         MetaprogrammingImpl.generator = new CompositeMethodGenerator(varContext);
         MetaprogrammingImpl.varContext = varContext;
         MetaprogrammingImpl.returnType = model.getMethod().getReturnType();
+        MetaprogrammingImpl.generator.location = location != null ? location.getSourceLocation() : null;
 
         for (int i = 0; i <= model.getMetaParameterCount(); ++i) {
             MetaprogrammingImpl.generator.getProgram().createVariable();
