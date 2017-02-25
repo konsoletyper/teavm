@@ -344,9 +344,11 @@ public class TObject {
 
         @Override
         public void onTimer() {
-            if (!expired()) {
-                run();
-            }
+            Platform.postpone(() -> {
+                if (!expired()) {
+                    run();
+                }
+            });
         }
 
         @Override
