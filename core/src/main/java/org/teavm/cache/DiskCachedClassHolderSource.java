@@ -195,6 +195,18 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
         output.writeByte(method.getLevel().ordinal());
         output.writeInt(packModifiers(method.getModifiers()));
         writeAnnotations(output, method.getAnnotations());
+
+        for (AnnotationContainer parameterAnnotation : method.getParameterAnnotations()) {
+            writeAnnotations(output, parameterAnnotation);
+        }
+
+        if (method.getAnnotationDefault() != null) {
+            output.writeBoolean(true);
+            writeAnnotationValue(output, method.getAnnotationDefault());
+        } else {
+            output.writeBoolean(false);
+        }
+
         if (method.getProgram() != null) {
             output.writeBoolean(true);
             programIO.write(method.getProgram(), output);
@@ -209,6 +221,15 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
         method.setLevel(accessLevels[input.readByte()]);
         method.getModifiers().addAll(unpackModifiers(input.readInt()));
         readAnnotations(input, method.getAnnotations());
+
+        for (int i = 0; i < method.parameterCount(); ++i) {
+            readAnnotations(input, method.parameterAnnotation(i));
+        }
+
+        if (input.readBoolean()) {
+            method.setAnnotationDefault(readAnnotationValue(input));
+        }
+
         boolean hasProgram = input.readBoolean();
         if (hasProgram) {
             method.setProgram(programIO.read(input));
