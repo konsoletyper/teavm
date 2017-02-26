@@ -100,9 +100,11 @@ public class TeaVMMavenImporter extends MavenImporter {
 
         TeaVMFacet facet = facetManager.getFacetByType(facetType.getId());
 
+        boolean justCreated = false;
         if (facet == null) {
             facet = facetManager.createFacet(facetType, facetType.getDefaultFacetName(), null);
             facetModel.addFacet(facet);
+            justCreated = true;
         }
 
         TeaVMJpsConfiguration configuration = facet.getConfiguration().getState();
@@ -110,13 +112,14 @@ public class TeaVMMavenImporter extends MavenImporter {
         for (Element child : source.getChildren()) {
             switch (child.getName()) {
                 case "sourceFilesCopied":
-                    configuration.setSourceFilesCopied(Boolean.parseBoolean(child.getTextTrim()));
+                    if (justCreated) {
+                        configuration.setSourceFilesCopied(true);
+                    }
                     break;
                 case "sourceMapsGenerated":
-                    configuration.setSourceMapsFileGenerated(Boolean.parseBoolean(child.getTextTrim()));
-                    break;
-                case "minifying":
-                    configuration.setMinifying(Boolean.parseBoolean(child.getTextTrim()));
+                    if (justCreated) {
+                        configuration.setSourceMapsFileGenerated(true);
+                    }
                     break;
                 case "targetDirectory":
                     configuration.setTargetDirectory(child.getTextTrim());

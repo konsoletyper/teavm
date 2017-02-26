@@ -45,14 +45,10 @@ import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 class TeaVMConfigurationPanel extends JPanel {
     private final TextFieldWithBrowseButton mainClassField = new TextFieldWithBrowseButton(event -> chooseMainClass());
     private final TextFieldWithBrowseButton targetDirectoryField = new TextFieldWithBrowseButton();
-    private final JComboBox<ComboBoxItem<Boolean>> minifyingField = new JComboBox<>(new DefaultComboBoxModel<>());
     private final JComboBox<ComboBoxItem<Boolean>> sourceMapsField = new JComboBox<>(new DefaultComboBoxModel<>());
     private final JComboBox<ComboBoxItem<Boolean>> copySourcesField = new JComboBox<>(new DefaultComboBoxModel<>());
     private final TeaVMJpsConfiguration initialConfiguration = new TeaVMJpsConfiguration();
     private final Project project;
-
-    private final List<ComboBoxItem<Boolean>> minifiedOptions = Arrays.asList(new ComboBoxItem<>(false, "Readable"),
-            new ComboBoxItem<>(true, "Minified (obfuscated)"));
 
     private final List<ComboBoxItem<Boolean>> sourceMapsOptions = Arrays.asList(new ComboBoxItem<>(true, "Generate"),
             new ComboBoxItem<>(false, "Skip"));
@@ -65,9 +61,6 @@ class TeaVMConfigurationPanel extends JPanel {
                     mainClassField::setText, mainClassField::getText),
             new Field<>(TeaVMJpsConfiguration::setTargetDirectory, TeaVMJpsConfiguration::getTargetDirectory,
                     targetDirectoryField::setText, targetDirectoryField::getText),
-            new Field<>(TeaVMJpsConfiguration::setMinifying, TeaVMJpsConfiguration::isMinifying,
-                    value -> minifyingField.setSelectedIndex(value ? 1 : 0),
-                    () -> minifiedOptions.get(minifyingField.getSelectedIndex()).value),
             new Field<>(TeaVMJpsConfiguration::setSourceMapsFileGenerated,
                     TeaVMJpsConfiguration::isSourceMapsFileGenerated,
                     value -> sourceMapsField.setSelectedIndex(value ? 0 : 1),
@@ -87,7 +80,6 @@ class TeaVMConfigurationPanel extends JPanel {
         targetDirectoryField.addBrowseFolderListener("Target Directory", "Please, select folder where TeaVM should"
                 + "write generated JS files", project, targetDirectoryChooserDescriptor);
 
-        minifiedOptions.forEach(minifyingField::addItem);
         sourceMapsOptions.forEach(sourceMapsField::addItem);
         copySourcesOptions.forEach(copySourcesField::addItem);
     }
@@ -126,12 +118,6 @@ class TeaVMConfigurationPanel extends JPanel {
         add(targetDirectoryField, fieldConstraints);
 
         fieldConstraints.fill = GridBagConstraints.NONE;
-        add(bold(new JBLabel("Minification")), labelConstraints);
-        add(new JBLabel("Indicates whether TeaVM should minify (obfuscate) generated JavaScript."),
-                descriptionConstraints);
-        add(new JBLabel("It is highly desirable for production environment, since minified code is up to 3 "
-                + "times smaller."), descriptionConstraints);
-        add(minifyingField, fieldConstraints);
 
         add(bold(new JBLabel("Source maps")), labelConstraints);
         add(new JBLabel("Indicates whether TeaVM should generate source maps."), descriptionConstraints);

@@ -137,7 +137,6 @@ class TeaVMBuild {
         tool.setDebugInformationGenerated(config.isSourceMapsFileGenerated());
         tool.setSourceFilesCopied(config.isSourceFilesCopied());
 
-        tool.setMinifying(config.isMinifying());
         for (SourceFileProvider fileProvider : sourceFileProviders) {
             tool.addSourceFileProvider(fileProvider);
         }

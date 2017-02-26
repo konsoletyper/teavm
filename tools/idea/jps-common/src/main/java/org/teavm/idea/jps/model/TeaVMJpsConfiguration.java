@@ -66,14 +66,6 @@ public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration>
         this.targetDirectory = targetDirectory;
     }
 
-    public boolean isMinifying() {
-        return minifying;
-    }
-
-    public void setMinifying(boolean minifying) {
-        this.minifying = minifying;
-    }
-
     public boolean isSourceMapsFileGenerated() {
         return sourceMapsFileGenerated;
     }
