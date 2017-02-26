@@ -18,10 +18,6 @@ package org.teavm.maven;
 import org.apache.maven.plugin.logging.Log;
 import org.teavm.tooling.TeaVMToolLog;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MavenTeaVMToolLog implements TeaVMToolLog {
     private Log log;
 

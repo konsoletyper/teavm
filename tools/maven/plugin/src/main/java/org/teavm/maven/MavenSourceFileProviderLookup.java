@@ -30,10 +30,6 @@ import org.teavm.tooling.sources.DirectorySourceFileProvider;
 import org.teavm.tooling.sources.JarSourceFileProvider;
 import org.teavm.tooling.sources.SourceFileProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MavenSourceFileProviderLookup {
     private MavenProject mavenProject;
     private RepositorySystem repositorySystem;
