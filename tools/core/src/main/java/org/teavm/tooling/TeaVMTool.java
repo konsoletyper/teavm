@@ -15,6 +15,7 @@
  */
 package org.teavm.tooling;
 
+import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -487,8 +488,8 @@ public class TeaVMTool implements BaseTeaVMTool {
         if (debugInformationGenerated) {
             assert debugEmitter != null;
             DebugInformation debugInfo = debugEmitter.getDebugInformation();
-            try (OutputStream debugInfoOut = new FileOutputStream(new File(targetDirectory,
-                    getResolvedTargetFileName() + ".teavmdbg"))) {
+            try (OutputStream debugInfoOut = new BufferedOutputStream(new FileOutputStream(new File(targetDirectory,
+                    getResolvedTargetFileName() + ".teavmdbg")))) {
                 debugInfo.write(debugInfoOut);
             }
             log.info("Debug information successfully written");
