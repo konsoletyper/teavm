@@ -216,7 +216,7 @@ public class RenderingContext {
     }
 
     public String mainLoopName() {
-        return minifying ? "$m" : "$main";
+        return minifying ? "_" : "main";
     }
 
     public String tempVarName() {

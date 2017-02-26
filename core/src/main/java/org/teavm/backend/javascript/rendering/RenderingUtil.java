@@ -76,6 +76,7 @@ public final class RenderingUtil {
     public static String indexToId(int index) {
         StringBuilder sb = new StringBuilder();
         sb.append(variableNames.charAt(index % variableNames.length()));
+        index /= variableNames.length();
         while (index > 0) {
             sb.append(variablePartNames.charAt(index % variablePartNames.length()));
             index /= variablePartNames.length();

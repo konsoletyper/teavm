@@ -307,7 +307,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         String name = blockIdMap.get(id);
         if (name == null) {
             int index = blockIdMap.size();
-            name = "$b" + RenderingUtil.indexToId(index);
+            name = RenderingUtil.indexToId(index);
             blockIdMap.put(id, name);
         }
         return name;
