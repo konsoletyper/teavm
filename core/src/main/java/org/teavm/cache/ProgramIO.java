@@ -470,6 +470,7 @@ public class ProgramIO {
                 }
                 output.writeInt(symbolTable.lookup(insn.getField().getClassName()));
                 output.writeInt(symbolTable.lookup(insn.getField().getFieldName()));
+                output.writeInt(symbolTable.lookup(insn.getFieldType().toString()));
                 output.writeShort(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -566,7 +567,7 @@ public class ProgramIO {
             try {
                 output.writeByte(41);
                 output.writeShort(insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1);
-                output.writeShort(insn.getInstance().getIndex());
+                output.writeShort(insn.getInstance() != null ? insn.getInstance().getIndex() : -1);
                 output.writeInt(symbolTable.lookup(insn.getMethod().toString()));
                 for (int i = 0; i < insn.getArguments().size(); ++i) {
                     output.writeShort(insn.getArguments().get(i).getIndex());
@@ -1035,23 +1036,11 @@ public class ProgramIO {
                 return insn;
             }
             case 41: {
-                /*
-                        output.writeByte(41);
-                        output.writeShort(insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1);
-                        output.writeShort(insn.getInstance().getIndex());
-                        output.writeInt(symbolTable.lookup(insn.getMethod().toString()));
-                        for (int i = 0; i < insn.getArguments().size(); ++i) {
-                            output.writeShort(insn.getArguments().get(i).getIndex());
-                        }
-                        write(insn.getBootstrapMethod());
-                        output.writeByte(insn.getBootstrapArguments().size());
-                        for (int i = 0; i < insn.getBootstrapArguments().size(); ++i) {
-                            write(insn.getBootstrapArguments().get(i));
-                        */
                 InvokeDynamicInstruction insn = new InvokeDynamicInstruction();
                 short receiver = input.readShort();
+                short instance = input.readShort();
                 insn.setReceiver(receiver >= 0 ? program.variableAt(receiver) : null);
-                insn.setInstance(program.variableAt(input.readShort()));
+                insn.setInstance(instance >= 0 ? program.variableAt(instance) : null);
                 insn.setMethod(MethodDescriptor.parse(symbolTable.at(input.readInt())));
                 int argsCount = insn.getMethod().parameterCount();
                 for (int i = 0; i < argsCount; ++i) {
@@ -1085,20 +1074,20 @@ public class ProgramIO {
                 return MethodHandle.staticFieldSetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
                         ValueType.parse(symbolTable.at(input.readInt())));
             case 4:
-                return MethodHandle.virtualCaller(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+                return MethodHandle.virtualCaller(symbolTable.at(input.readInt()),
+                        MethodDescriptor.parse(symbolTable.at(input.readInt())));
             case 5:
-                return MethodHandle.staticCaller(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+                return MethodHandle.staticCaller(symbolTable.at(input.readInt()),
+                        MethodDescriptor.parse(symbolTable.at(input.readInt())));
             case 6:
-                return MethodHandle.specialCaller(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+                return MethodHandle.specialCaller(symbolTable.at(input.readInt()),
+                        MethodDescriptor.parse(symbolTable.at(input.readInt())));
             case 7:
-                return MethodHandle.constructorCaller(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+                return MethodHandle.constructorCaller(symbolTable.at(input.readInt()),
+                        MethodDescriptor.parse(symbolTable.at(input.readInt())));
             case 8:
-                return MethodHandle.interfaceCaller(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+                return MethodHandle.interfaceCaller(symbolTable.at(input.readInt()),
+                        MethodDescriptor.parse(symbolTable.at(input.readInt())));
             default:
                 throw new IllegalArgumentException("Unexpected method handle type: " + kind);
         }

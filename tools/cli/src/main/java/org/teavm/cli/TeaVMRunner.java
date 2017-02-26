@@ -232,14 +232,14 @@ public final class TeaVMRunner {
                     printUsage(options);
                     return;
                 }
-                
+
                 ClassAlias alias = new ClassAlias();
                 alias.setClassName(aliasString.substring(0, i));
                 alias.setAlias(aliasString.substring(i + 1));
                 tool.getClassAliases().add(alias);
             }
         }
-        
+
         boolean interactive = commandLine.hasOption('w');
         setupWasm(tool, commandLine, options);
 
