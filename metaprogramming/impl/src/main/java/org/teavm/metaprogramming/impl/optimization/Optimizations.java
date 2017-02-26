@@ -15,13 +15,16 @@
  */
 package org.teavm.metaprogramming.impl.optimization;
 
+import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 
 public class Optimizations {
     private BoxingElimination boxingElimination = new BoxingElimination();
+    private ArrayElimination arrayElimination = new ArrayElimination();
 
-    public Program apply(Program program) {
+    public Program apply(Program program, MethodReference methodReference) {
         boxingElimination.optimize(program);
+        arrayElimination.apply(program, methodReference);
         return program;
     }
 }

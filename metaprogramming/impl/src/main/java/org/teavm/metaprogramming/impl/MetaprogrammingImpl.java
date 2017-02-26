@@ -304,7 +304,7 @@ public final class MetaprogrammingImpl {
                 jumpToStart.setTarget(program.basicBlockAt(startBlock.getIndex() + 1));
                 startBlock.add(jumpToStart);
 
-                new Optimizations().apply(program);
+                new Optimizations().apply(program, new MethodReference(cls.getName(), methodHolder.getDescriptor()));
                 cls.addMethod(methodHolder);
             } finally {
                 returnType = returnTypeBackup;

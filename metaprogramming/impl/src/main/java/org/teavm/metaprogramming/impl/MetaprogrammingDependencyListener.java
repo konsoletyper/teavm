@@ -93,7 +93,7 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             result.returnValue();
         }
 
-        agent.submitMethod(model.getMethod(), new Optimizations().apply(pe.getProgram()));
+        agent.submitMethod(model.getMethod(), new Optimizations().apply(pe.getProgram(), model.getMethod()));
     }
 
     private void emitMultipleUsage(MethodModel model, ProgramEmitter pe, DependencyAgent agent,
@@ -132,6 +132,6 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             }
         });
 
-        agent.submitMethod(model.getMethod(), new Optimizations().apply(pe.getProgram()));
+        agent.submitMethod(model.getMethod(), new Optimizations().apply(pe.getProgram(), model.getMethod()));
     }
 }
