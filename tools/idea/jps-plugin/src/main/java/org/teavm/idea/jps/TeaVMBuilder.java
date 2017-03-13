@@ -63,7 +63,7 @@ public class TeaVMBuilder extends ModuleLevelBuilder {
 
         boolean doneSomething = false;
 
-        TeaVMBuild build = new TeaVMBuild(context, assistant);
+        TeaVMBuild build = new TeaVMBuild(context, assistant, new InProcessBuildStrategy(context));
         for (JpsModule module : chunk.getModules()) {
             doneSomething |= build.perform(module, chunk.representativeTarget());
             if (context.getCancelStatus().isCanceled()) {
