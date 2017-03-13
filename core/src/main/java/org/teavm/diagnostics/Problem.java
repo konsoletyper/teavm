@@ -15,14 +15,11 @@
  */
 package org.teavm.diagnostics;
 
+import java.io.Serializable;
 import java.util.Arrays;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class Problem {
+public class Problem implements Serializable {
     private ProblemSeverity severity;
     private CallLocation location;
     private String text;

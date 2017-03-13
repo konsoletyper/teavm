@@ -15,9 +15,10 @@
  */
 package org.teavm.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class CallLocation {
+public class CallLocation implements Serializable {
     private MethodReference method;
     private TextLocation sourceLocation;
 

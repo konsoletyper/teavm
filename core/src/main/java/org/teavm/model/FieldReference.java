@@ -15,11 +15,9 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class FieldReference {
+import java.io.Serializable;
+
+public class FieldReference implements Serializable {
     private String className;
     private String fieldName;
 

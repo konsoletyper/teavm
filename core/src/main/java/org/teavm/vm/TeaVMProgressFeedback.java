@@ -15,11 +15,9 @@
  */
 package org.teavm.vm;
 
-/**
- *
- * @author Alexey Andreev
- */
-public enum TeaVMProgressFeedback {
+import java.io.Serializable;
+
+public enum TeaVMProgressFeedback implements Serializable {
     CONTINUE,
     CANCEL
 }

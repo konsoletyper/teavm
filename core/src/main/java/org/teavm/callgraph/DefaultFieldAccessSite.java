@@ -15,15 +15,12 @@
  */
 package org.teavm.callgraph;
 
+import java.io.Serializable;
 import java.util.Objects;
 import org.teavm.model.FieldReference;
 import org.teavm.model.TextLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class DefaultFieldAccessSite implements FieldAccessSite {
+public class DefaultFieldAccessSite implements FieldAccessSite, Serializable {
     private TextLocation location;
     private CallGraphNode callee;
     private FieldReference field;

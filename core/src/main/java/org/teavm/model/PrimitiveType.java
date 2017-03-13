@@ -15,11 +15,9 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
-public enum PrimitiveType {
+import java.io.Serializable;
+
+public enum PrimitiveType implements Serializable {
     BOOLEAN,
     CHARACTER,
     BYTE,

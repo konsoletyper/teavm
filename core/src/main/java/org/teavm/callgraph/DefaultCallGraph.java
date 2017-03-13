@@ -15,58 +15,98 @@
  */
 package org.teavm.callgraph;
 
+import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.Serializable;
 import java.util.*;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class DefaultCallGraph implements CallGraph {
-    private Map<MethodReference, DefaultCallGraphNode> nodes = new HashMap<>();
-    private Map<FieldReference, Set<DefaultFieldAccessSite>> fieldAccessSites = new HashMap<>();
-    private Map<String, Set<DefaultClassAccessSite>> classAccessSites = new HashMap<>();
+public class DefaultCallGraph implements CallGraph, Serializable {
+    private transient Map<MethodReference, DefaultCallGraphNode> nodes = new HashMap<>();
+    private List<Map.Entry<MethodReference, DefaultCallGraphNode>> nodeList;
+    private transient Map<FieldReference, Set<DefaultFieldAccessSite>> fieldAccessSites = new HashMap<>();
+    private List<Map.Entry<FieldReference, DefaultFieldAccessSite>> fieldAccessSiteList;
+    private transient Map<String, Set<DefaultClassAccessSite>> classAccessSites = new HashMap<>();
+    private List<Map.Entry<String, DefaultClassAccessSite>> classAccessSiteList;
 
     @Override
     public DefaultCallGraphNode getNode(MethodReference method) {
-        DefaultCallGraphNode node = nodes.get(method);
-        if (node == null) {
-            node = new DefaultCallGraphNode(this, method);
-            nodes.put(method, node);
-        }
-        return nodes.get(method);
+        ensureDeserialized();
+        return nodes.computeIfAbsent(method, k -> new DefaultCallGraphNode(this, method));
     }
 
     @Override
     public Collection<DefaultFieldAccessSite> getFieldAccess(FieldReference reference) {
+        ensureDeserialized();
         Set<DefaultFieldAccessSite> resultSet = fieldAccessSites.get(reference);
-        return resultSet != null ? Collections.unmodifiableSet(resultSet)
-                : Collections.<DefaultFieldAccessSite>emptySet();
+        return resultSet != null ? Collections.unmodifiableSet(resultSet) : Collections.emptySet();
     }
 
     void addFieldAccess(DefaultFieldAccessSite accessSite) {
-        Set<DefaultFieldAccessSite> sites = fieldAccessSites.get(accessSite.getField());
-        if (sites == null) {
-            sites = new HashSet<>();
-            fieldAccessSites.put(accessSite.getField(), sites);
-        }
-        sites.add(accessSite);
+        ensureDeserialized();
+        fieldAccessSites.computeIfAbsent(accessSite.getField(), k -> new HashSet<>()).add(accessSite);
     }
 
     @Override
     public Collection<DefaultClassAccessSite> getClassAccess(String className) {
+        ensureDeserialized();
         Set<DefaultClassAccessSite> resultSet = classAccessSites.get(className);
-        return resultSet != null ? Collections.unmodifiableSet(resultSet)
-                : Collections.<DefaultClassAccessSite>emptySet();
+        return resultSet != null ? Collections.unmodifiableSet(resultSet) : Collections.emptySet();
     }
 
     void addClassAccess(DefaultClassAccessSite accessSite) {
-        Set<DefaultClassAccessSite> sites = classAccessSites.get(accessSite.getClassName());
-        if (sites == null) {
-            sites = new HashSet<>();
-            classAccessSites.put(accessSite.getClassName(), sites);
+        ensureDeserialized();
+        classAccessSites.computeIfAbsent(accessSite.getClassName(), k -> new HashSet<>()).add(accessSite);
+    }
+
+    private void ensureDeserialized() {
+        if (nodes != null) {
+            return;
         }
-        sites.add(accessSite);
+
+        nodes = new HashMap<>();
+        for (Map.Entry<MethodReference, DefaultCallGraphNode> entry : nodeList) {
+            nodes.put(entry.getKey(), entry.getValue());
+        }
+        nodeList = null;
+
+        fieldAccessSites = new HashMap<>();
+        for (Map.Entry<FieldReference, DefaultFieldAccessSite> entry : fieldAccessSiteList) {
+            fieldAccessSites.computeIfAbsent(entry.getKey(), k -> new HashSet<>()).add(entry.getValue());
+        }
+        fieldAccessSiteList = null;
+
+        classAccessSites = new HashMap<>();
+        for (Map.Entry<String, DefaultClassAccessSite> entry : classAccessSiteList) {
+            classAccessSites.computeIfAbsent(entry.getKey(), k -> new HashSet<>()).add(entry.getValue());
+        }
+        classAccessSiteList = null;
+    }
+
+    private void writeObject(ObjectOutputStream out) throws IOException {
+        ensureDeserialized();
+        nodeList = new ArrayList<>(nodes.entrySet());
+
+        fieldAccessSiteList = new ArrayList<>();
+        for (Map.Entry<FieldReference, Set<DefaultFieldAccessSite>> entry : fieldAccessSites.entrySet()) {
+            for (DefaultFieldAccessSite site : entry.getValue()) {
+                fieldAccessSiteList.add(new AbstractMap.SimpleEntry<>(entry.getKey(), site));
+            }
+        }
+
+        classAccessSiteList = new ArrayList<>();
+        for (Map.Entry<String, Set<DefaultClassAccessSite>> entry : classAccessSites.entrySet()) {
+            for (DefaultClassAccessSite site : entry.getValue()) {
+                classAccessSiteList.add(new AbstractMap.SimpleEntry<>(entry.getKey(), site));
+            }
+        }
+
+        out.defaultWriteObject();
+    }
+
+    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
     }
 }

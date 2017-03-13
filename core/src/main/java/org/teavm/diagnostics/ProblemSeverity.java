@@ -15,11 +15,9 @@
  */
 package org.teavm.diagnostics;
 
-/**
- *
- * @author Alexey Andreev
- */
-public enum ProblemSeverity {
+import java.io.Serializable;
+
+public enum ProblemSeverity implements Serializable {
     ERROR,
     WARNING
 }

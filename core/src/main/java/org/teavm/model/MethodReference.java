@@ -17,6 +17,7 @@ package org.teavm.model;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
+import java.io.Serializable;
 import java.util.Arrays;
 
 /**
@@ -30,7 +31,7 @@ import java.util.Arrays;
  *
  * @author Alexey Andreev
  */
-public class MethodReference {
+public class MethodReference implements Serializable {
     private String className;
     private String name;
     private ValueType[] signature;

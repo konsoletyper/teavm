@@ -17,10 +17,6 @@ package org.teavm.diagnostics;
 
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ProblemProvider {
     List<Problem> getProblems();
 

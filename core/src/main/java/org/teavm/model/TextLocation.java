@@ -15,9 +15,10 @@
  */
 package org.teavm.model;
 
+import java.io.Serializable;
 import java.util.Objects;
 
-public class TextLocation {
+public class TextLocation implements Serializable {
     private String fileName;
     private int line = -1;
 

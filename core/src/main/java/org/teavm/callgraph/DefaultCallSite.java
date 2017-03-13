@@ -15,14 +15,11 @@
  */
 package org.teavm.callgraph;
 
+import java.io.Serializable;
 import java.util.Objects;
 import org.teavm.model.TextLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class DefaultCallSite implements CallSite {
+public class DefaultCallSite implements CallSite, Serializable {
     private TextLocation location;
     private DefaultCallGraphNode callee;
     private DefaultCallGraphNode caller;
