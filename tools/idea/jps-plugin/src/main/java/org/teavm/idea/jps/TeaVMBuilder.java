@@ -33,10 +33,13 @@ import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
 import org.jetbrains.jps.model.module.JpsModule;
+import org.teavm.idea.jps.model.TeaVMBuildStrategy;
 import org.teavm.idea.jps.remote.TeaVMBuilderAssistant;
+import org.teavm.idea.jps.remote.TeaVMRemoteBuildService;
 
 public class TeaVMBuilder extends ModuleLevelBuilder {
-    private static TeaVMBuilderAssistant assistant;
+    private TeaVMBuilderAssistant assistant;
+    private TeaVMRemoteBuildService buildService;
 
     public TeaVMBuilder() {
         super(BuilderCategory.CLASS_POST_PROCESSOR);
@@ -46,6 +49,16 @@ public class TeaVMBuilder extends ModuleLevelBuilder {
             try {
                 Registry registry = LocateRegistry.getRegistry(Integer.parseInt(portString));
                 assistant = (TeaVMBuilderAssistant) registry.lookup(TeaVMBuilderAssistant.ID);
+            } catch (NumberFormatException | RemoteException | NotBoundException e) {
+                e.printStackTrace();
+            }
+        }
+
+        String daemonPortString = System.getProperty(TeaVMRemoteBuildService.REMOTE_PORT);
+        if (daemonPortString != null) {
+            try {
+                Registry registry = LocateRegistry.getRegistry(Integer.parseInt(daemonPortString));
+                buildService = (TeaVMRemoteBuildService) registry.lookup(TeaVMRemoteBuildService.ID);
             } catch (NumberFormatException | RemoteException | NotBoundException e) {
                 e.printStackTrace();
             }
@@ -63,7 +76,10 @@ public class TeaVMBuilder extends ModuleLevelBuilder {
 
         boolean doneSomething = false;
 
-        TeaVMBuild build = new TeaVMBuild(context, assistant, new InProcessBuildStrategy(context));
+        TeaVMBuildStrategy buildStrategy = buildService != null
+                ? new RemoteBuildStrategy(context, buildService)
+                : new InProcessBuildStrategy(context);
+        TeaVMBuild build = new TeaVMBuild(context, assistant, buildStrategy);
         for (JpsModule module : chunk.getModules()) {
             doneSomething |= build.perform(module, chunk.representativeTarget());
             if (context.getCancelStatus().isCanceled()) {

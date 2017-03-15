@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -19,20 +19,20 @@ import com.intellij.openapi.components.PersistentStateComponent;
 import com.intellij.openapi.components.State;
 import com.intellij.openapi.components.Storage;
 import org.jetbrains.annotations.Nullable;
-import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
+import org.teavm.idea.jps.model.TeaVMJpsWorkspaceConfiguration;
 
-@State(name = "teavm", storages = @Storage(value = "$MODULE_FILE$"))
-public class TeaVMConfigurationStorage implements PersistentStateComponent<TeaVMJpsConfiguration> {
-    private TeaVMJpsConfiguration state = new TeaVMJpsConfiguration();
+@State(name = "teavm", storages = @Storage(value = "teavm.xml"))
+public class TeaVMWorkspaceConfigurationStorage implements PersistentStateComponent<TeaVMJpsWorkspaceConfiguration> {
+    private TeaVMJpsWorkspaceConfiguration state = new TeaVMJpsWorkspaceConfiguration();
 
     @Nullable
     @Override
-    public TeaVMJpsConfiguration getState() {
+    public TeaVMJpsWorkspaceConfiguration getState() {
         return state.createCopy();
     }
 
     @Override
-    public void loadState(TeaVMJpsConfiguration state) {
-        this.state.applyChanges(state);
+    public void loadState(TeaVMJpsWorkspaceConfiguration configuration) {
+        state.applyChanges(configuration);
     }
 }

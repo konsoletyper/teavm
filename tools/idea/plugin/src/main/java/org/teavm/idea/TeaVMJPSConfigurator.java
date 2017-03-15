@@ -17,20 +17,28 @@ package org.teavm.idea;
 
 import static org.teavm.idea.jps.remote.TeaVMBuilderAssistant.REMOTE_PORT;
 import com.intellij.compiler.server.BuildProcessParametersProvider;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.teavm.idea.jps.remote.TeaVMRemoteBuildService;
 
 public class TeaVMJPSConfigurator extends BuildProcessParametersProvider {
     private TeaVMJPSRemoteService remoteService;
+    private TeaVMDaemonComponent daemonComponent;
 
-    public TeaVMJPSConfigurator(TeaVMJPSRemoteService remoteService) {
+    public TeaVMJPSConfigurator(TeaVMJPSRemoteService remoteService, TeaVMDaemonComponent daemonComponent) {
         this.remoteService = remoteService;
+        this.daemonComponent = daemonComponent;
     }
 
     @NotNull
     @Override
     public List<String> getVMArguments() {
-        return Collections.singletonList("-D" + REMOTE_PORT + "=" + remoteService.getPort());
+        List<String> result = new ArrayList<>();
+        result.add("-D" + REMOTE_PORT + "=" + remoteService.getPort());
+        if (daemonComponent.isDaemonRunning()) {
+            result.add("-D" + TeaVMRemoteBuildService.REMOTE_PORT + "=" + daemonComponent.getDaemonPort());
+        }
+        return result;
     }
 }
