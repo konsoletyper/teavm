@@ -15,10 +15,6 @@
  */
 package org.teavm.callgraph;
 
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -29,20 +25,17 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 
-public class DefaultCallGraphNode implements CallGraphNode, Serializable {
+public class DefaultCallGraphNode implements CallGraphNode {
     private DefaultCallGraph graph;
     private MethodReference method;
-    private transient Set<DefaultCallSite> callSites = new HashSet<>();
-    private List<DefaultCallSite> callSiteList;
-    private transient Set<DefaultCallSite> safeCallSites;
-    private List<DefaultCallSite> callerCallSites = new ArrayList<>();
-    private transient List<DefaultCallSite> safeCallersCallSites;
-    private transient Set<DefaultFieldAccessSite> fieldAccessSites = new HashSet<>();
-    private List<DefaultFieldAccessSite> fieldAccessSiteList;
-    private transient Set<DefaultFieldAccessSite> safeFieldAccessSites;
-    private transient Set<DefaultClassAccessSite> classAccessSites = new HashSet<>();
-    private List<DefaultClassAccessSite> classAccessSiteList;
-    private transient Set<DefaultClassAccessSite> safeClassAccessSites;
+    Set<DefaultCallSite> callSites = new HashSet<>();
+    private Set<DefaultCallSite> safeCallSites;
+    List<DefaultCallSite> callerCallSites = new ArrayList<>();
+    private List<DefaultCallSite> safeCallersCallSites;
+    Set<DefaultFieldAccessSite> fieldAccessSites = new HashSet<>();
+    private Set<DefaultFieldAccessSite> safeFieldAccessSites;
+    Set<DefaultClassAccessSite> classAccessSites = new HashSet<>();
+    private Set<DefaultClassAccessSite> safeClassAccessSites;
 
     DefaultCallGraphNode(DefaultCallGraph graph, MethodReference method) {
         this.graph = graph;
@@ -61,7 +54,6 @@ public class DefaultCallGraphNode implements CallGraphNode, Serializable {
 
     @Override
     public Collection<DefaultCallSite> getCallSites() {
-        ensureDeserialized();
         if (safeCallSites == null) {
             safeCallSites = Collections.unmodifiableSet(callSites);
         }
@@ -70,7 +62,6 @@ public class DefaultCallGraphNode implements CallGraphNode, Serializable {
 
     @Override
     public Collection<DefaultCallSite> getCallerCallSites() {
-        ensureDeserialized();
         if (safeCallersCallSites == null) {
             safeCallersCallSites = Collections.unmodifiableList(callerCallSites);
         }
@@ -78,7 +69,6 @@ public class DefaultCallGraphNode implements CallGraphNode, Serializable {
     }
 
     public boolean addCallSite(MethodReference method, TextLocation location) {
-        ensureDeserialized();
         DefaultCallGraphNode callee = graph.getNode(method);
         DefaultCallSite callSite = new DefaultCallSite(location, callee, this);
         if (callSites.add(callSite)) {
@@ -95,7 +85,6 @@ public class DefaultCallGraphNode implements CallGraphNode, Serializable {
 
     @Override
     public Collection<DefaultFieldAccessSite> getFieldAccessSites() {
-        ensureDeserialized();
         if (safeFieldAccessSites == null) {
             safeFieldAccessSites = Collections.unmodifiableSet(fieldAccessSites);
         }
@@ -103,7 +92,6 @@ public class DefaultCallGraphNode implements CallGraphNode, Serializable {
     }
 
     public boolean addFieldAccess(FieldReference field, TextLocation location) {
-        ensureDeserialized();
         DefaultFieldAccessSite site = new DefaultFieldAccessSite(location, this, field);
         if (fieldAccessSites.add(site)) {
             graph.addFieldAccess(site);
@@ -114,8 +102,7 @@ public class DefaultCallGraphNode implements CallGraphNode, Serializable {
     }
 
     @Override
-    public Collection<? extends ClassAccessSite> getClassAccessSites() {
-        ensureDeserialized();
+    public Collection<DefaultClassAccessSite> getClassAccessSites() {
         if (safeClassAccessSites == null) {
             safeClassAccessSites = Collections.unmodifiableSet(classAccessSites);
         }
@@ -123,7 +110,6 @@ public class DefaultCallGraphNode implements CallGraphNode, Serializable {
     }
 
     public boolean addClassAccess(String className, TextLocation location) {
-        ensureDeserialized();
         DefaultClassAccessSite site = new DefaultClassAccessSite(location, this, className);
         if (classAccessSites.add(site)) {
             graph.addClassAccess(site);
@@ -131,32 +117,5 @@ public class DefaultCallGraphNode implements CallGraphNode, Serializable {
         } else {
             return false;
         }
-    }
-
-    private void ensureDeserialized() {
-        if (callSites != null) {
-            return;
-        }
-
-        callSites = new HashSet<>(callSiteList);
-        callSiteList = null;
-
-        fieldAccessSites = new HashSet<>(fieldAccessSiteList);
-        fieldAccessSiteList = null;
-
-        classAccessSites = new HashSet<>(classAccessSiteList);
-        classAccessSiteList = null;
-    }
-
-    private void writeObject(ObjectOutputStream out) throws IOException {
-        ensureDeserialized();
-        callSiteList = new ArrayList<>(callSites);
-        fieldAccessSiteList = new ArrayList<>(fieldAccessSites);
-        classAccessSiteList = new ArrayList<>(classAccessSites);
-        out.defaultWriteObject();
-    }
-
-    private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
     }
 }

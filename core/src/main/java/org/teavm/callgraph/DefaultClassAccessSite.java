@@ -21,10 +21,10 @@ import org.teavm.model.TextLocation;
 
 public class DefaultClassAccessSite implements ClassAccessSite, Serializable {
     private TextLocation location;
-    private CallGraphNode callee;
+    private DefaultCallGraphNode callee;
     private String className;
 
-    DefaultClassAccessSite(TextLocation location, CallGraphNode callee, String className) {
+    DefaultClassAccessSite(TextLocation location, DefaultCallGraphNode callee, String className) {
         this.location = location;
         this.callee = callee;
         this.className = className;
@@ -36,7 +36,7 @@ public class DefaultClassAccessSite implements ClassAccessSite, Serializable {
     }
 
     @Override
-    public CallGraphNode getCallee() {
+    public DefaultCallGraphNode getCallee() {
         return callee;
     }
 

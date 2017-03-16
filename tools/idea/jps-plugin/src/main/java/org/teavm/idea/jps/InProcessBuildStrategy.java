@@ -119,6 +119,8 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
         tool.setDebugInformationGenerated(debugInformationGenerated);
         tool.setSourceFilesCopied(sourceFilesCopied);
 
+        tool.setMinifying(false);
+
         for (SourceFileProvider fileProvider : sourceFileProviders) {
             tool.addSourceFileProvider(fileProvider);
         }

@@ -15,98 +15,251 @@
  */
 package org.teavm.callgraph;
 
+import com.carrotsearch.hppc.ObjectIntMap;
+import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
 public class DefaultCallGraph implements CallGraph, Serializable {
-    private transient Map<MethodReference, DefaultCallGraphNode> nodes = new HashMap<>();
-    private List<Map.Entry<MethodReference, DefaultCallGraphNode>> nodeList;
-    private transient Map<FieldReference, Set<DefaultFieldAccessSite>> fieldAccessSites = new HashMap<>();
-    private List<Map.Entry<FieldReference, DefaultFieldAccessSite>> fieldAccessSiteList;
-    private transient Map<String, Set<DefaultClassAccessSite>> classAccessSites = new HashMap<>();
-    private List<Map.Entry<String, DefaultClassAccessSite>> classAccessSiteList;
+    Map<MethodReference, DefaultCallGraphNode> nodes = new LinkedHashMap<>();
+    Map<FieldReference, Set<DefaultFieldAccessSite>> fieldAccessSites = new LinkedHashMap<>();
+    Map<String, Set<DefaultClassAccessSite>> classAccessSites = new LinkedHashMap<>();
 
     @Override
     public DefaultCallGraphNode getNode(MethodReference method) {
-        ensureDeserialized();
         return nodes.computeIfAbsent(method, k -> new DefaultCallGraphNode(this, method));
     }
 
     @Override
     public Collection<DefaultFieldAccessSite> getFieldAccess(FieldReference reference) {
-        ensureDeserialized();
         Set<DefaultFieldAccessSite> resultSet = fieldAccessSites.get(reference);
         return resultSet != null ? Collections.unmodifiableSet(resultSet) : Collections.emptySet();
     }
 
     void addFieldAccess(DefaultFieldAccessSite accessSite) {
-        ensureDeserialized();
         fieldAccessSites.computeIfAbsent(accessSite.getField(), k -> new HashSet<>()).add(accessSite);
     }
 
     @Override
     public Collection<DefaultClassAccessSite> getClassAccess(String className) {
-        ensureDeserialized();
         Set<DefaultClassAccessSite> resultSet = classAccessSites.get(className);
         return resultSet != null ? Collections.unmodifiableSet(resultSet) : Collections.emptySet();
     }
 
     void addClassAccess(DefaultClassAccessSite accessSite) {
-        ensureDeserialized();
         classAccessSites.computeIfAbsent(accessSite.getClassName(), k -> new HashSet<>()).add(accessSite);
     }
 
-    private void ensureDeserialized() {
-        if (nodes != null) {
-            return;
-        }
-
-        nodes = new HashMap<>();
-        for (Map.Entry<MethodReference, DefaultCallGraphNode> entry : nodeList) {
-            nodes.put(entry.getKey(), entry.getValue());
-        }
-        nodeList = null;
-
-        fieldAccessSites = new HashMap<>();
-        for (Map.Entry<FieldReference, DefaultFieldAccessSite> entry : fieldAccessSiteList) {
-            fieldAccessSites.computeIfAbsent(entry.getKey(), k -> new HashSet<>()).add(entry.getValue());
-        }
-        fieldAccessSiteList = null;
-
-        classAccessSites = new HashMap<>();
-        for (Map.Entry<String, DefaultClassAccessSite> entry : classAccessSiteList) {
-            classAccessSites.computeIfAbsent(entry.getKey(), k -> new HashSet<>()).add(entry.getValue());
-        }
-        classAccessSiteList = null;
-    }
-
     private void writeObject(ObjectOutputStream out) throws IOException {
-        ensureDeserialized();
-        nodeList = new ArrayList<>(nodes.entrySet());
-
-        fieldAccessSiteList = new ArrayList<>();
-        for (Map.Entry<FieldReference, Set<DefaultFieldAccessSite>> entry : fieldAccessSites.entrySet()) {
-            for (DefaultFieldAccessSite site : entry.getValue()) {
-                fieldAccessSiteList.add(new AbstractMap.SimpleEntry<>(entry.getKey(), site));
-            }
-        }
-
-        classAccessSiteList = new ArrayList<>();
-        for (Map.Entry<String, Set<DefaultClassAccessSite>> entry : classAccessSites.entrySet()) {
-            for (DefaultClassAccessSite site : entry.getValue()) {
-                classAccessSiteList.add(new AbstractMap.SimpleEntry<>(entry.getKey(), site));
-            }
-        }
-
-        out.defaultWriteObject();
+        SerializableCallGraphBuilder builder = new SerializableCallGraphBuilder();
+        out.writeObject(builder.build(this));
     }
 
     private void readObject(ObjectInputStream in) throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
+        SerializableCallGraph scg = (SerializableCallGraph) in.readObject();
+        nodes = new LinkedHashMap<>();
+        fieldAccessSites = new LinkedHashMap<>();
+        classAccessSites = new LinkedHashMap<>();
+        new CallGraphBuilder().build(scg, this);
+    }
+
+    static class SerializableCallGraphBuilder {
+        List<SerializableCallGraph.Node> nodes = new ArrayList<>();
+        ObjectIntMap<DefaultCallGraphNode> nodeToIndex = new ObjectIntOpenHashMap<>();
+        List<SerializableCallGraph.CallSite> callSites = new ArrayList<>();
+        List<DefaultCallSite> originalCallSites = new ArrayList<>();
+        ObjectIntMap<DefaultCallSite> callSiteToIndex = new ObjectIntOpenHashMap<>();
+        List<SerializableCallGraph.FieldAccess> fieldAccessList = new ArrayList<>();
+        ObjectIntMap<DefaultFieldAccessSite> fieldAccessToIndex = new ObjectIntOpenHashMap<>();
+        List<SerializableCallGraph.ClassAccess> classAccessList = new ArrayList<>();
+        ObjectIntMap<DefaultClassAccessSite> classAccessToIndex = new ObjectIntOpenHashMap<>();
+        List<DefaultCallGraphNode> nodesToProcess = new ArrayList<>();
+        List<DefaultCallSite> callSitesToProcess = new ArrayList<>();
+        List<DefaultFieldAccessSite> fieldAccessToProcess = new ArrayList<>();
+        List<DefaultClassAccessSite> classAccessToProcess = new ArrayList<>();
+
+        SerializableCallGraph build(DefaultCallGraph cg) {
+            SerializableCallGraph scg = new SerializableCallGraph();
+
+            scg.nodeIndexes = cg.nodes.values().stream()
+                    .mapToInt(this::getNode)
+                    .toArray();
+            scg.fieldAccessIndexes = cg.fieldAccessSites.values().stream()
+                    .flatMapToInt(accessSites -> accessSites.stream().mapToInt(this::getFieldAccess))
+                    .toArray();
+            scg.classAccessIndexes = cg.classAccessSites.values().stream()
+                    .flatMapToInt(accessSites -> accessSites.stream().mapToInt(this::getClassAccess))
+                    .toArray();
+
+            while (step()) {
+                // just repeat
+            }
+
+            scg.nodes = nodes.toArray(new SerializableCallGraph.Node[0]);
+            scg.callSites = callSites.toArray(new SerializableCallGraph.CallSite[0]);
+            scg.fieldAccessList = fieldAccessList.toArray(new SerializableCallGraph.FieldAccess[0]);
+            scg.classAccessList = classAccessList.toArray(new SerializableCallGraph.ClassAccess[0]);
+
+            return scg;
+        }
+
+        boolean step() {
+            return processNodes() | processCallSites() | processFieldAccess() | processClassAccess();
+        }
+
+        boolean processNodes() {
+            boolean hasAny = false;
+            for (DefaultCallGraphNode node : nodesToProcess.toArray(new DefaultCallGraphNode[0])) {
+                int index = nodeToIndex.get(node);
+                SerializableCallGraph.Node serializableNode = nodes.get(index);
+                serializableNode.method = node.getMethod();
+                serializableNode.callSites = node.getCallSites().stream()
+                        .mapToInt(this::getCallSite)
+                        .toArray();
+                serializableNode.callerCallSites = node.getCallerCallSites().stream()
+                        .mapToInt(this::getCallSite)
+                        .toArray();
+                serializableNode.fieldAccessSites = node.getFieldAccessSites().stream()
+                        .mapToInt(this::getFieldAccess)
+                        .toArray();
+                serializableNode.classAccessSites = node.getClassAccessSites().stream()
+                        .mapToInt(this::getClassAccess)
+                        .toArray();
+                hasAny = true;
+            }
+            nodesToProcess.clear();
+            return hasAny;
+        }
+
+        boolean processCallSites() {
+            boolean hasAny = false;
+            for (DefaultCallSite callSite : callSitesToProcess.toArray(new DefaultCallSite[0])) {
+                int index = callSiteToIndex.get(callSite);
+                SerializableCallGraph.CallSite scs = callSites.get(index);
+                scs.location = callSite.getLocation();
+                scs.caller = getNode(callSite.getCaller());
+                scs.callee = getNode(callSite.getCallee());
+                hasAny = true;
+            }
+            callSitesToProcess.clear();
+            return hasAny;
+        }
+
+        boolean processFieldAccess() {
+            boolean hasAny = false;
+            for (DefaultFieldAccessSite accessSite : fieldAccessToProcess.toArray(new DefaultFieldAccessSite[0])) {
+                int index = fieldAccessToIndex.get(accessSite);
+                SerializableCallGraph.FieldAccess sfa = fieldAccessList.get(index);
+                sfa.location = accessSite.getLocation();
+                sfa.field = accessSite.getField();
+                sfa.callee = getNode(accessSite.getCallee());
+                hasAny = true;
+            }
+            fieldAccessToProcess.clear();
+            return hasAny;
+        }
+
+        boolean processClassAccess() {
+            boolean hasAny = false;
+            for (DefaultClassAccessSite accessSite : classAccessToProcess.toArray(new DefaultClassAccessSite[0])) {
+                int index = classAccessToIndex.get(accessSite);
+                SerializableCallGraph.ClassAccess sca = classAccessList.get(index);
+                sca.location = accessSite.getLocation();
+                sca.className = accessSite.getClassName();
+                sca.callee = getNode(accessSite.getCallee());
+                hasAny = true;
+            }
+            classAccessToProcess.clear();
+            return hasAny;
+        }
+
+        private int getNode(DefaultCallGraphNode node) {
+            int index = nodeToIndex.getOrDefault(node, -1);
+            if (index < 0) {
+                index = nodeToIndex.size();
+                nodeToIndex.put(node, index);
+                nodes.add(new SerializableCallGraph.Node());
+                nodesToProcess.add(node);
+            }
+            return index;
+        }
+
+        private int getCallSite(DefaultCallSite callSite) {
+            int index = callSiteToIndex.getOrDefault(callSite, -1);
+            if (index < 0) {
+                index = callSiteToIndex.size();
+                callSiteToIndex.put(callSite, index);
+                callSites.add(new SerializableCallGraph.CallSite());
+                callSitesToProcess.add(callSite);
+            }
+            return index;
+        }
+
+        private int getFieldAccess(DefaultFieldAccessSite fieldAccessSite) {
+            int index = fieldAccessToIndex.getOrDefault(fieldAccessSite, -1);
+            if (index < 0) {
+                index = fieldAccessToIndex.size();
+                fieldAccessToIndex.put(fieldAccessSite, index);
+                fieldAccessList.add(new SerializableCallGraph.FieldAccess());
+                fieldAccessToProcess.add(fieldAccessSite);
+            }
+            return index;
+        }
+
+        private int getClassAccess(DefaultClassAccessSite classAccessSite) {
+            int index = classAccessToIndex.getOrDefault(classAccessSite, -1);
+            if (index < 0) {
+                index = classAccessToIndex.size();
+                classAccessToIndex.put(classAccessSite, index);
+                classAccessList.add(new SerializableCallGraph.ClassAccess());
+                classAccessToProcess.add(classAccessSite);
+            }
+            return index;
+        }
+    }
+
+    static class CallGraphBuilder {
+        List<DefaultCallGraphNode> nodes = new ArrayList<>();
+        List<DefaultCallSite> callSites = new ArrayList<>();
+        List<DefaultFieldAccessSite> fieldAccessList = new ArrayList<>();
+        List<DefaultClassAccessSite> classAccessList = new ArrayList<>();
+
+        void build(SerializableCallGraph scg, DefaultCallGraph cg) {
+            for (SerializableCallGraph.Node serializableNode : scg.nodes) {
+                nodes.add(new DefaultCallGraphNode(cg, serializableNode.method));
+            }
+            for (SerializableCallGraph.CallSite scs : scg.callSites) {
+                callSites.add(new DefaultCallSite(scs.location, nodes.get(scs.callee), nodes.get(scs.caller)));
+            }
+            for (SerializableCallGraph.FieldAccess sfa : scg.fieldAccessList) {
+                fieldAccessList.add(new DefaultFieldAccessSite(sfa.location, nodes.get(sfa.callee), sfa.field));
+            }
+            for (SerializableCallGraph.ClassAccess sca : scg.classAccessList) {
+                classAccessList.add(new DefaultClassAccessSite(sca.location, nodes.get(sca.callee), sca.className));
+            }
+
+            for (int index : scg.nodeIndexes) {
+                DefaultCallGraphNode node = nodes.get(index);
+                cg.nodes.put(node.getMethod(), node);
+            }
+            for (int index : scg.fieldAccessIndexes) {
+                cg.addFieldAccess(fieldAccessList.get(index));
+            }
+            for (int index : scg.classAccessIndexes) {
+                cg.addClassAccess(classAccessList.get(index));
+            }
+        }
     }
 }

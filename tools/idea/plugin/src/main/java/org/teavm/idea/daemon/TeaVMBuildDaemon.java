@@ -118,6 +118,8 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         tool.setDebugInformationGenerated(request.debugInformationGenerated);
         tool.setSourceFilesCopied(request.sourceFilesCopied);
 
+        tool.setMinifying(false);
+
         for (String sourceDirectory : request.sourceDirectories) {
             tool.addSourceFileProvider(new DirectorySourceFileProvider(new File(sourceDirectory)));
         }
@@ -162,15 +164,10 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
 
             @Override
             public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) {
-                if ((System.currentTimeMillis() - lastReportedTime) > 100) {
-                    lastReportedTime = System.currentTimeMillis();
-                    try {
-                        return callback.phaseStarted(phase, count);
-                    } catch (RemoteException e) {
-                        return TeaVMProgressFeedback.CANCEL;
-                    }
-                } else {
-                    return TeaVMProgressFeedback.CONTINUE;
+                try {
+                    return callback.phaseStarted(phase, count);
+                } catch (RemoteException e) {
+                    throw new RuntimeException(e);
                 }
             }
 
@@ -181,7 +178,7 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
                     try {
                         return callback.progressReached(progress);
                     } catch (RemoteException e) {
-                        return TeaVMProgressFeedback.CANCEL;
+                        throw new RuntimeException(e);
                     }
                 } else {
                     return TeaVMProgressFeedback.CONTINUE;
