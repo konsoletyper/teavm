@@ -15,9 +15,18 @@
  */
 package org.teavm.backend.javascript.rendering;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 public final class RenderingUtil {
-    private static final String variableNames = "abcdefghijkmnopqrstuvwxyz";
-    private static final String variablePartNames = "abcdefghijkmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    public static final Set<String> KEYWORDS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("break", "case",
+            "catch", "class", "const", "continue", "debugger", "default", "delete", "do", "else", "export",
+            "extends", "finally", "for", "function", "if", "import", "in", "instanceof", "new", "return",
+            "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield")));
+    public static final String VARIABLE_START_CHARS = "abcdefghijklmnopqrstuvwxyz";
+    public static final String VARIABLE_PART_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
     private RenderingUtil() {
     }
@@ -73,14 +82,18 @@ public final class RenderingUtil {
         return sb.toString();
     }
 
-    public static String indexToId(int index) {
+    public static String indexToId(int index, String startChars) {
         StringBuilder sb = new StringBuilder();
-        sb.append(variableNames.charAt(index % variableNames.length()));
-        index /= variableNames.length();
+        sb.append(startChars.charAt(index % startChars.length()));
+        index /= startChars.length();
         while (index > 0) {
-            sb.append(variablePartNames.charAt(index % variablePartNames.length()));
-            index /= variablePartNames.length();
+            sb.append(VARIABLE_PART_CHARS.charAt(index % VARIABLE_PART_CHARS.length()));
+            index /= VARIABLE_PART_CHARS.length();
         }
         return sb.toString();
+    }
+
+    public static String indexToId(int index) {
+        return indexToId(index, VARIABLE_START_CHARS);
     }
 }

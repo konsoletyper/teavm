@@ -15,9 +15,10 @@
  */
 package org.teavm.backend.javascript.rendering;
 
+import com.carrotsearch.hppc.IntArrayList;
+import com.carrotsearch.hppc.IntIndexedContainer;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -83,10 +84,6 @@ import org.teavm.model.ValueType;
 import org.teavm.vm.RenderingException;
 
 public class StatementRenderer implements ExprVisitor, StatementVisitor {
-    private static final Set<String> keywords = new HashSet<>(Arrays.asList("break", "case", "catch",
-            "class", "const", "continue", "debugger", "default", "delete", "do", "else", "export",
-            "extends", "finally", "for", "function", "if", "import", "in", "instanceof", "new", "return",
-            "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield"));
     private RenderingContext context;
     private SourceWriter writer;
     private ClassReaderSource classSource;
@@ -103,6 +100,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private final Set<String> usedVariableNames = new HashSet<>();
     private MethodNode currentMethod;
     private int currentPart;
+    private List<String> blockIds = new ArrayList<>();
+    private IntIndexedContainer blockIndexMap = new IntArrayList();
 
     public StatementRenderer(RenderingContext context, SourceWriter writer) {
         this.context = context;
@@ -307,10 +306,25 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         String name = blockIdMap.get(id);
         if (name == null) {
             int index = blockIdMap.size();
-            name = RenderingUtil.indexToId(index);
+            name = generateBlockId(index);
             blockIdMap.put(id, name);
         }
         return name;
+    }
+
+    private String generateBlockId(int index) {
+        int mappedIndex;
+        while (blockIds.size() <= index) {
+            mappedIndex = blockIndexMap.isEmpty() ? -1 : blockIndexMap.get(blockIds.size());
+            mappedIndex++;
+            while (RenderingUtil.KEYWORDS.contains(RenderingUtil.indexToId(mappedIndex))) {
+                mappedIndex++;
+            }
+            blockIndexMap.add(mappedIndex);
+            blockIds.add(RenderingUtil.indexToId(mappedIndex));
+        }
+        mappedIndex = blockIndexMap.get(index);
+        return blockIds.get(mappedIndex);
     }
 
     @Override
@@ -459,7 +473,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     : null;
             if (variable != null && variable.getName() != null) {
                 String result = "$" + RenderingUtil.escapeName(variable.getName());
-                if (keywords.contains(result) || !usedVariableNames.add(result)) {
+                if (RenderingUtil.KEYWORDS.contains(result) || !usedVariableNames.add(result)) {
                     String base = result;
                     int suffix = 0;
                     do {
