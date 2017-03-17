@@ -19,8 +19,6 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Collection;
 import java.util.List;
-import org.jetbrains.jps.incremental.CompileContext;
-import org.jetbrains.jps.incremental.messages.ProgressMessage;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.Problem;
 import org.teavm.diagnostics.ProblemProvider;
@@ -33,14 +31,14 @@ import org.teavm.idea.jps.remote.TeaVMRemoteBuildService;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
+import org.teavm.vm.TeaVMProgressListener;
 
 public class RemoteBuildStrategy implements TeaVMBuildStrategy {
-    private final CompileContext context;
     private TeaVMRemoteBuildRequest request;
     private TeaVMRemoteBuildService buildService;
+    private TeaVMProgressListener progressListener;
 
-    public RemoteBuildStrategy(CompileContext context, TeaVMRemoteBuildService buildService) {
-        this.context = context;
+    public RemoteBuildStrategy(TeaVMRemoteBuildService buildService) {
         this.buildService = buildService;
     }
 
@@ -95,10 +93,15 @@ public class RemoteBuildStrategy implements TeaVMBuildStrategy {
     }
 
     @Override
+    public void setProgressListener(TeaVMProgressListener progressListener) {
+        this.progressListener = progressListener;
+    }
+
+    @Override
     public TeaVMBuildResult build() {
         TeaVMRemoteBuildResponse response;
         try {
-            response = buildService.build(request, new CallbackImpl(context));
+            response = buildService.build(request, new CallbackImpl(progressListener));
         } catch (Throwable e) {
             throw new RuntimeException(e);
         }
@@ -143,46 +146,21 @@ public class RemoteBuildStrategy implements TeaVMBuildStrategy {
     }
 
     static class CallbackImpl extends UnicastRemoteObject implements TeaVMRemoteBuildCallback {
-        private CompileContext context;
-        int expectedCount;
-        TeaVMPhase currentPhase;
+        private TeaVMProgressListener listener;
 
-        public CallbackImpl(CompileContext context) throws RemoteException {
+        public CallbackImpl(TeaVMProgressListener listener) throws RemoteException {
             super();
-            this.context = context;
+            this.listener = listener;
         }
 
         @Override
         public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) throws RemoteException {
-            expectedCount = count;
-            context.processMessage(new ProgressMessage(phaseName(phase), 0));
-            currentPhase = phase;
-            return context.getCancelStatus().isCanceled() ? TeaVMProgressFeedback.CANCEL
-                    : TeaVMProgressFeedback.CONTINUE;
+            return listener.phaseStarted(phase, count);
         }
 
         @Override
         public TeaVMProgressFeedback progressReached(int progress) throws RemoteException {
-            context.processMessage(new ProgressMessage(phaseName(currentPhase), (float) progress / expectedCount));
-            return context.getCancelStatus().isCanceled() ? TeaVMProgressFeedback.CANCEL
-                    : TeaVMProgressFeedback.CONTINUE;
-        }
-    }
-
-    private static String phaseName(TeaVMPhase phase) {
-        switch (phase) {
-            case DEPENDENCY_CHECKING:
-                return "Discovering classes to compile";
-            case LINKING:
-                return "Resolving method invocations";
-            case DECOMPILATION:
-                return "Compiling classes";
-            case OPTIMIZATION:
-                return "Optimizing code";
-            case RENDERING:
-                return "Building JS file";
-            default:
-                throw new AssertionError();
+            return listener.progressReached(progress);
         }
     }
 }

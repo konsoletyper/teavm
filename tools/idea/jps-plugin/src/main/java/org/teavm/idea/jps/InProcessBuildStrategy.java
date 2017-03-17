@@ -23,7 +23,6 @@ import java.util.Collection;
 import java.util.List;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
-import org.jetbrains.jps.incremental.messages.ProgressMessage;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.idea.jps.model.TeaVMBuildResult;
@@ -35,8 +34,6 @@ import org.teavm.tooling.TeaVMToolException;
 import org.teavm.tooling.sources.DirectorySourceFileProvider;
 import org.teavm.tooling.sources.JarSourceFileProvider;
 import org.teavm.tooling.sources.SourceFileProvider;
-import org.teavm.vm.TeaVMPhase;
-import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
 public class InProcessBuildStrategy implements TeaVMBuildStrategy {
@@ -49,6 +46,7 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
     private boolean debugInformationGenerated;
     private boolean sourceFilesCopied;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
+    private TeaVMProgressListener progressListener;
 
     public InProcessBuildStrategy(CompileContext context) {
         this.context = context;
@@ -106,9 +104,14 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
     }
 
     @Override
+    public void setProgressListener(TeaVMProgressListener progressListener) {
+        this.progressListener = progressListener;
+    }
+
+    @Override
     public TeaVMBuildResult build() {
         TeaVMTool tool = new TeaVMTool();
-        tool.setProgressListener(createProgressListener(context));
+        tool.setProgressListener(progressListener);
         tool.setLog(new EmptyTeaVMToolLog());
         tool.setTargetType(targetType);
         tool.setMainClass(mainClass);
@@ -150,46 +153,6 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
         RenamingClassLoader classLoader = new RenamingClassLoader(urls, TeaVMBuilder.class.getClassLoader());
         classLoader.rename("org/objectweb/asm/", "org/teavm/asm/");
         return classLoader;
-    }
-
-    private TeaVMProgressListener createProgressListener(CompileContext context) {
-        return new TeaVMProgressListener() {
-            private TeaVMPhase currentPhase;
-            int expectedCount;
-
-            @Override
-            public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) {
-                expectedCount = count;
-                context.processMessage(new ProgressMessage(phaseName(phase), 0));
-                currentPhase = phase;
-                return context.getCancelStatus().isCanceled() ? TeaVMProgressFeedback.CANCEL
-                        : TeaVMProgressFeedback.CONTINUE;
-            }
-
-            @Override
-            public TeaVMProgressFeedback progressReached(int progress) {
-                context.processMessage(new ProgressMessage(phaseName(currentPhase), (float) progress / expectedCount));
-                return context.getCancelStatus().isCanceled() ? TeaVMProgressFeedback.CANCEL
-                        : TeaVMProgressFeedback.CONTINUE;
-            }
-        };
-    }
-
-    private static String phaseName(TeaVMPhase phase) {
-        switch (phase) {
-            case DEPENDENCY_CHECKING:
-                return "Discovering classes to compile";
-            case LINKING:
-                return "Resolving method invocations";
-            case DECOMPILATION:
-                return "Compiling classes";
-            case OPTIMIZATION:
-                return "Optimizing code";
-            case RENDERING:
-                return "Building JS file";
-            default:
-                throw new AssertionError();
-        }
     }
 
     static class InProcessBuildResult implements TeaVMBuildResult {

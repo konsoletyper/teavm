@@ -38,6 +38,7 @@ import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.ModuleBuildTarget;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
+import org.jetbrains.jps.incremental.messages.ProgressMessage;
 import org.jetbrains.jps.model.JpsProject;
 import org.jetbrains.jps.model.java.JpsJavaExtensionService;
 import org.jetbrains.jps.model.library.JpsLibrary;
@@ -65,6 +66,9 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.tooling.TeaVMTargetType;
+import org.teavm.vm.TeaVMPhase;
+import org.teavm.vm.TeaVMProgressFeedback;
+import org.teavm.vm.TeaVMProgressListener;
 
 class TeaVMBuild {
     private final CompileContext context;
@@ -123,6 +127,7 @@ class TeaVMBuild {
         buildStrategy.setMainClass(config.getMainClass());
         buildStrategy.setTargetType(config.getTargetType());
         buildStrategy.setTargetDirectory(config.getTargetDirectory());
+        buildStrategy.setProgressListener(createProgressListener(context));
         TeaVMBuildResult buildResult = buildStrategy.build();
 
         if (!buildResult.isErrorOccurred() && buildResult.getProblems().getSevereProblems().isEmpty()) {
@@ -132,6 +137,46 @@ class TeaVMBuild {
         reportProblems(buildResult.getProblems(), buildResult.getCallGraph());
 
         return true;
+    }
+
+    private TeaVMProgressListener createProgressListener(CompileContext context) {
+        return new TeaVMProgressListener() {
+            private TeaVMPhase currentPhase;
+            int expectedCount;
+
+            @Override
+            public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) {
+                expectedCount = count;
+                context.processMessage(new ProgressMessage(phaseName(phase), 0));
+                currentPhase = phase;
+                return context.getCancelStatus().isCanceled() ? TeaVMProgressFeedback.CANCEL
+                        : TeaVMProgressFeedback.CONTINUE;
+            }
+
+            @Override
+            public TeaVMProgressFeedback progressReached(int progress) {
+                context.processMessage(new ProgressMessage(phaseName(currentPhase), (float) progress / expectedCount));
+                return context.getCancelStatus().isCanceled() ? TeaVMProgressFeedback.CANCEL
+                        : TeaVMProgressFeedback.CONTINUE;
+            }
+        };
+    }
+
+    private static String phaseName(TeaVMPhase phase) {
+        switch (phase) {
+            case DEPENDENCY_CHECKING:
+                return "Discovering classes to compile";
+            case LINKING:
+                return "Resolving method invocations";
+            case DECOMPILATION:
+                return "Compiling classes";
+            case OPTIMIZATION:
+                return "Optimizing code";
+            case RENDERING:
+                return "Building JS file";
+            default:
+                throw new AssertionError();
+        }
     }
 
     private void reportProblems(ProblemProvider problemProvider, CallGraph callGraph) {

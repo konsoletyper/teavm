@@ -17,6 +17,7 @@ package org.teavm.idea.jps.model;
 
 import java.util.List;
 import org.teavm.tooling.TeaVMTargetType;
+import org.teavm.vm.TeaVMProgressListener;
 
 public interface TeaVMBuildStrategy {
     void init();
@@ -38,6 +39,8 @@ public interface TeaVMBuildStrategy {
     void setDebugInformationGenerated(boolean debugInformationGenerated);
 
     void setSourceFilesCopied(boolean sourceFilesCopied);
+
+    void setProgressListener(TeaVMProgressListener progressListener);
 
     TeaVMBuildResult build();
 }

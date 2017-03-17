@@ -77,7 +77,7 @@ public class TeaVMBuilder extends ModuleLevelBuilder {
         boolean doneSomething = false;
 
         TeaVMBuildStrategy buildStrategy = buildService != null
-                ? new RemoteBuildStrategy(context, buildService)
+                ? new RemoteBuildStrategy(buildService)
                 : new InProcessBuildStrategy(context);
         TeaVMBuild build = new TeaVMBuild(context, assistant, buildStrategy);
         for (JpsModule module : chunk.getModules()) {
