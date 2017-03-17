@@ -315,7 +315,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private String generateBlockId(int index) {
         int mappedIndex;
         while (blockIds.size() <= index) {
-            mappedIndex = blockIndexMap.isEmpty() ? -1 : blockIndexMap.get(blockIds.size());
+            mappedIndex = blockIndexMap.isEmpty() ? -1 : blockIndexMap.get(blockIds.size() - 1);
             mappedIndex++;
             while (RenderingUtil.KEYWORDS.contains(RenderingUtil.indexToId(mappedIndex))) {
                 mappedIndex++;
