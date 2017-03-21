@@ -323,8 +323,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             blockIndexMap.add(mappedIndex);
             blockIds.add(RenderingUtil.indexToId(mappedIndex));
         }
-        mappedIndex = blockIndexMap.get(index);
-        return blockIds.get(mappedIndex);
+        return blockIds.get(index);
     }
 
     @Override
