@@ -98,6 +98,9 @@ public class TThrowable extends RuntimeException {
         this.writableStackTrace = true;
         fillInStackTrace();
         this.cause = cause;
+        if (cause != null) {
+            this.message = cause.message;
+        }
     }
 
     @Override
@@ -117,7 +120,10 @@ public class TThrowable extends RuntimeException {
 
     @Override
     public TThrowable getCause() {
-        return cause != this ? cause : null;
+        if (cause == this) {
+            return null;
+        }
+        return cause;
     }
 
     @Remove
@@ -144,6 +150,11 @@ public class TThrowable extends RuntimeException {
 
     public void printStackTrace(TPrintStream stream) {
         stream.println(TString.wrap(getClass().getName() + ": " + getMessage()));
+        if (cause != null && cause != this) {
+            stream.print((TString.wrap("Caused by ")));
+            cause.printStackTrace(stream);
+        }
+            
     }
 
     @Rename("getStackTrace")
