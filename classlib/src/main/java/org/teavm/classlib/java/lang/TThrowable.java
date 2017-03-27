@@ -21,10 +21,6 @@ import org.teavm.interop.Remove;
 import org.teavm.interop.Rename;
 import org.teavm.interop.Superclass;
 
-/**
- *
- * @author Alexey Andreev
- */
 @Superclass("java.lang.Object")
 public class TThrowable extends RuntimeException {
     private static final long serialVersionUID = 2026791432677149320L;
@@ -115,8 +111,11 @@ public class TThrowable extends RuntimeException {
         return TString.wrap(getMessage());
     }
 
-    @Override
-    public TThrowable getCause() {
+    @Remove
+    public native TThrowable getCause();
+
+    @Rename("getCause")
+    public TThrowable getCause0() {
         return cause != this ? cause : null;
     }
 
