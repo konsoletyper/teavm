@@ -90,6 +90,7 @@ class UsageGenerator {
     private MethodDependency installAdditionalDependencies() {
         MethodDependency nameDep = agent.linkMethod(new MethodReference(Class.class, "getName", String.class),
                 location);
+        nameDep.getVariable(0).propagate(agent.getType(Class.class.getName()));
         nameDep.getThrown().connect(methodDep.getThrown());
         nameDep.use();
 
