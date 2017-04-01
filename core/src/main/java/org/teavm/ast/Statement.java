@@ -44,7 +44,7 @@ public abstract class Statement {
         return stmt;
     }
 
-    public static Statement cond(Expr predicate, List<Statement> consequent, List<Statement> alternative) {
+    public static ConditionalStatement cond(Expr predicate, List<Statement> consequent, List<Statement> alternative) {
         ConditionalStatement statement = new ConditionalStatement();
         statement.setCondition(predicate);
         statement.getConsequent().addAll(consequent);

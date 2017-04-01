@@ -18,15 +18,22 @@ package org.teavm.ast.decompilation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryOperation;
+import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BreakStatement;
+import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ContinueStatement;
 import org.teavm.ast.Expr;
+import org.teavm.ast.IdentifiedStatement;
 import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.MonitorEnterStatement;
@@ -40,9 +47,17 @@ import org.teavm.ast.SwitchStatement;
 import org.teavm.ast.ThrowStatement;
 import org.teavm.ast.UnaryOperation;
 import org.teavm.ast.UnwrapArrayExpr;
+import org.teavm.ast.WhileStatement;
+import org.teavm.common.DominatorTree;
+import org.teavm.common.Graph;
 import org.teavm.common.GraphIndexer;
+import org.teavm.common.GraphUtils;
+import org.teavm.common.IntegerArray;
+import org.teavm.common.Loop;
+import org.teavm.common.LoopGraph;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolderSource;
+import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -91,21 +106,130 @@ import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.SwitchTableEntry;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
+import org.teavm.model.util.ProgramUtils;
 
 class StatementGenerator implements InstructionVisitor {
-    private int lastSwitchId;
-    final List<Statement> statements = new ArrayList<>();
-    GraphIndexer indexer;
-    BasicBlock nextBlock;
+    List<Statement> statements;
     BasicBlock currentBlock;
-    Decompiler.Block[] blockMap;
     Program program;
     ClassHolderSource classSource;
+    private Graph cfg;
+    private DominatorTree domTree;
+    private Graph domGraph;
+    private GraphIndexer indexer;
+    private LoopGraph loopGraph;
     private TextLocation currentLocation;
     boolean async;
+    private IdentifiedStatement[] targetLabels;
+    private boolean[] loopHeads;
+    private int lastBlockId;
+    private int[][] loopExits;
 
-    void setCurrentLocation(TextLocation currentLocation) {
-        this.currentLocation = currentLocation;
+    void prepare() {
+        cfg = ProgramUtils.buildControlFlowGraph(program);
+        domTree = GraphUtils.buildDominatorTree(cfg);
+        domGraph = GraphUtils.buildDominatorGraph(domTree, cfg.size());
+        indexer = new GraphIndexer(cfg);
+        loopGraph = new LoopGraph(cfg);
+        targetLabels = new IdentifiedStatement[cfg.size()];
+        loopHeads = new boolean[cfg.size()];
+        prepareLoopExits();
+    }
+
+    private void prepareLoopExits() {
+        loopExits = new int[cfg.size()][];
+        int[] exitOfLoop = new int[cfg.size()];
+        Arrays.fill(exitOfLoop, -1);
+
+        for (int i = 0; i < loopGraph.size(); ++i) {
+            Loop loop = loopGraph.loopAt(i);
+            if (loop == null) {
+                continue;
+            }
+
+            int[] successors = cfg.outgoingEdges(i);
+            for (int successor : successors) {
+                Loop successorLoop = loopGraph.loopAt(successor);
+                if (successorLoop == loop || exitOfLoop[successor] >= 0) {
+                    continue;
+                }
+
+                if (successorLoop != null && successorLoop.isChildOf(loop)) {
+                    continue;
+                }
+
+                while (successorLoop != null && !loop.isChildOf(successorLoop)) {
+                    successorLoop = successorLoop.getParent();
+                }
+
+                while (loop.getParent() != successorLoop) {
+                    loop = loop.getParent();
+                }
+
+                exitOfLoop[successor] = loop.getHead();
+            }
+        }
+
+        IntegerArray[] preliminaryLoopExits = new IntegerArray[cfg.size()];
+        for (int i = 0; i < loopGraph.size(); ++i) {
+            int head = exitOfLoop[i];
+            if (head >= 0) {
+                IntegerArray exitsOfHead = preliminaryLoopExits[head];
+                if (exitsOfHead == null) {
+                    exitsOfHead = new IntegerArray(1);
+                    preliminaryLoopExits[head] = exitsOfHead;
+                }
+                exitsOfHead.add(i);
+            }
+        }
+
+        for (int i = 0; i < loopGraph.size(); ++i) {
+            if (preliminaryLoopExits[i] != null) {
+                loopExits[i] = preliminaryLoopExits[i].getAll();
+            }
+        }
+    }
+
+    void processBlock() {
+        while (currentBlock != null) {
+            IdentifiedStatement jumpTarget = targetLabels[currentBlock.getIndex()];
+            Loop loop = loopGraph.loopAt(currentBlock.getIndex());
+            if (jumpTarget != null) {
+                statements.add(generateJumpStatement(currentBlock));
+                currentBlock = null;
+            } else if (loop != null && loop.getHead() == currentBlock.getIndex()) {
+                handleLoop(loop);
+            } else {
+                processSimpleBlock();
+            }
+        }
+    }
+
+    private void processSimpleBlock() {
+        for (Instruction insn : currentBlock) {
+            if (insn.getLocation() != null && currentLocation != insn.getLocation()) {
+                currentLocation = insn.getLocation();
+            }
+            insn.acceptVisitor(this);
+        }
+    }
+
+    private void handleLoop(Loop loop) {
+        BasicBlock[] exits = Arrays.stream(loopExits[loop.getHead()])
+                .mapToObj(program::basicBlockAt)
+                .toArray(BasicBlock[]::new);
+        createBlockStatements(exits, () -> {
+            WhileStatement statement = new WhileStatement();
+            statement.setId(createBlockId());
+            targetLabels[loop.getHead()] = statement;
+            loopHeads[loop.getHead()] = true;
+
+            statements = statement.getBody();
+            currentBlock = program.basicBlockAt(loop.getHead());
+
+            processSimpleBlock();
+            processBlock();
+        });
     }
 
     @Override
@@ -314,44 +438,49 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(JumpInstruction insn) {
-        Statement stmt = generateJumpStatement(insn.getTarget());
-        if (stmt != null) {
-            statements.add(stmt);
-        }
+        currentBlock = insn.getTarget();
     }
 
     @Override
     public void visit(SwitchInstruction insn) {
-        SwitchStatement stmt = new SwitchStatement();
-        stmt.setId("sblock" + (lastSwitchId++));
-        stmt.setValue(Expr.var(insn.getCondition().getIndex()));
-        Map<Integer, List<Integer>> switchMap = new HashMap<>();
-        for (int i = 0; i < insn.getEntries().size(); ++i) {
-            SwitchTableEntry entry = insn.getEntries().get(i);
-            List<Integer> conditions = switchMap.computeIfAbsent(entry.getTarget().getIndex(), k -> new ArrayList<>());
-            conditions.add(entry.getCondition());
-        }
-        List<Integer> targets = new ArrayList<>(switchMap.keySet());
-        Collections.sort(targets);
-        for (int target : targets) {
-            SwitchClause clause = new SwitchClause();
-            List<Integer> conditionList = switchMap.get(target);
-            int[] conditions = new int[conditionList.size()];
-            for (int i = 0; i < conditionList.size(); ++i) {
-                conditions[i] = conditionList.get(i);
+        Set<BasicBlock> targetBlocks = insn.getEntries().stream()
+                .map(entry -> entry.getTarget())
+                .collect(Collectors.toSet());
+        targetBlocks.add(insn.getDefaultTarget());
+        BasicBlock[] immediatelyDominatedBlocks = getImmediatelyDominatedBlocks()
+                .filter(block -> !targetBlocks.contains(block))
+                .toArray(BasicBlock[]::new);
+
+        createBlockStatements(immediatelyDominatedBlocks, () -> {
+            SwitchStatement statement = new SwitchStatement();
+            statement.setId(createBlockId());
+            statement.setValue(Expr.var(insn.getCondition().getIndex()));
+            statements.add(statement);
+
+            Map<Integer, IntegerArray> switchMap = new HashMap<>();
+            for (int i = 0; i < insn.getEntries().size(); ++i) {
+                SwitchTableEntry entry = insn.getEntries().get(i);
+                IntegerArray conditions = switchMap.computeIfAbsent(entry.getTarget().getIndex(),
+                        k -> new IntegerArray(1));
+                conditions.add(entry.getCondition());
             }
-            clause.setConditions(conditions);
-            Statement jumpStmt = generateJumpStatement(stmt, target);
-            if (jumpStmt != null) {
-                clause.getBody().add(jumpStmt);
+
+            List<Integer> targets = new ArrayList<>(switchMap.keySet());
+            Collections.sort(targets);
+
+            for (int target : targets) {
+                SwitchClause clause = new SwitchClause();
+                clause.setConditions(switchMap.get(target).getAll());
+                statement.getClauses().add(clause);
+
+                statements = clause.getBody();
+                currentBlock = program.basicBlockAt(target);
+                processBlock();
             }
-            stmt.getClauses().add(clause);
-        }
-        Statement breakStmt = generateJumpStatement(insn.getDefaultTarget());
-        if (breakStmt != null) {
-            stmt.getDefaultClause().add(breakStmt);
-        }
-        statements.add(stmt);
+
+            statements = statement.getDefaultClause();
+            currentBlock = insn.getDefaultTarget();
+        });
     }
 
     @Override
@@ -360,6 +489,7 @@ class StatementGenerator implements InstructionVisitor {
                 ? Expr.var(insn.getValueToReturn().getIndex()) : null);
         stmt.setLocation(currentLocation);
         statements.add(stmt);
+        currentBlock = null;
     }
 
     @Override
@@ -368,6 +498,7 @@ class StatementGenerator implements InstructionVisitor {
         stmt.setLocation(currentLocation);
         stmt.setException(Expr.var(insn.getException().getIndex()));
         statements.add(stmt);
+        currentBlock = null;
     }
 
     @Override
@@ -539,41 +670,80 @@ class StatementGenerator implements InstructionVisitor {
     }
 
     Statement generateJumpStatement(BasicBlock target) {
-        if (nextBlock == target && blockMap[target.getIndex()] == null) {
-            return null;
-        }
-        Decompiler.Block block = blockMap[target.getIndex()];
-        if (block == null) {
-            throw new IllegalStateException("Could not find block for basic block $" + target.getIndex());
-        }
-        if (target.getIndex() == indexer.nodeAt(block.end)) {
+        if (!loopHeads[target.getIndex()]) {
             BreakStatement breakStmt = new BreakStatement();
             breakStmt.setLocation(currentLocation);
-            breakStmt.setTarget(block.statement);
+            breakStmt.setTarget(targetLabels[target.getIndex()]);
             return breakStmt;
         } else {
             ContinueStatement contStmt = new ContinueStatement();
             contStmt.setLocation(currentLocation);
-            contStmt.setTarget(block.statement);
+            contStmt.setTarget(targetLabels[target.getIndex()]);
             return contStmt;
         }
     }
-    private Statement generateJumpStatement(SwitchStatement stmt, int target) {
-        Statement body = generateJumpStatement(program.basicBlockAt(target));
-        if (body == null) {
-            BreakStatement breakStmt = new BreakStatement();
-            breakStmt.setTarget(stmt);
-            body = breakStmt;
-        }
-        return body;
-    }
 
     private void branch(Expr condition, BasicBlock consequentBlock, BasicBlock alternativeBlock) {
-        Statement consequent = generateJumpStatement(consequentBlock);
-        Statement alternative = generateJumpStatement(alternativeBlock);
-        statements.add(Statement.cond(condition,
-                consequent != null ? Arrays.asList(consequent) : Collections.emptyList(),
-                alternative != null ? Arrays.asList(alternative) : Collections.emptyList()));
+        BasicBlock[] immediatelyDominatedBlocks = getImmediatelyDominatedBlocks()
+                .filter(block -> block != consequentBlock && block != alternativeBlock)
+                .toArray(BasicBlock[]::new);
+
+        createBlockStatements(immediatelyDominatedBlocks, () -> {
+            ConditionalStatement statement = Statement.cond(condition, Collections.emptyList(),
+                    Collections.emptyList());
+            statements.add(statement);
+
+            statements = statement.getConsequent();
+            currentBlock = consequentBlock;
+            processBlock();
+
+            statements = statement.getAlternative();
+            currentBlock = alternativeBlock;
+            processBlock();
+        });
+    }
+
+    private Stream<BasicBlock> getImmediatelyDominatedBlocks() {
+        int[] immediatelyDominatedNodes = domGraph.outgoingEdges(currentBlock.getIndex());
+        return Arrays.stream(immediatelyDominatedNodes)
+                .mapToObj(program::basicBlockAt)
+                .filter(block -> targetLabels[block.getIndex()] == null)
+                .sorted(Comparator.comparingInt(block -> indexer.indexOf(block.getIndex())));
+    }
+
+    private void createBlockStatements(BasicBlock[] immediatelyDominatedBlocks, Runnable innerAction) {
+        if (immediatelyDominatedBlocks.length == 0) {
+            innerAction.run();
+            return;
+        }
+
+        List<Statement> outerStatements = statements;
+        BlockStatement[] blockStatements = new BlockStatement[immediatelyDominatedBlocks.length];
+        for (int i = 0; i < immediatelyDominatedBlocks.length; i++) {
+            BasicBlock dominatedBlock = immediatelyDominatedBlocks[i];
+            BlockStatement blockStatement = new BlockStatement();
+            blockStatement.setId(createBlockId());
+            blockStatements[i] = blockStatement;
+            targetLabels[dominatedBlock.getIndex()] = blockStatement;
+        }
+
+        statements = blockStatements[0].getBody();
+        innerAction.run();
+
+        for (int i = 0; i < immediatelyDominatedBlocks.length - 1; i++) {
+            currentBlock = immediatelyDominatedBlocks[i];
+            statements = blockStatements[i + 1].getBody();
+            statements.add(blockStatements[i]);
+            processBlock();
+        }
+
+        currentBlock = immediatelyDominatedBlocks[immediatelyDominatedBlocks.length - 1];
+        statements = outerStatements;
+        statements.add(blockStatements[immediatelyDominatedBlocks.length - 1]);
+    }
+
+    private String createBlockId() {
+        return "block_" + lastBlockId++;
     }
 
     private Expr compare(BinaryOperation op, OperationType type, Variable value) {

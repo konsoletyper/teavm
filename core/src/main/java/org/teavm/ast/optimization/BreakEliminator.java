@@ -107,7 +107,7 @@ class BreakEliminator implements StatementVisitor {
     @Override
     public void visit(BlockStatement statement) {
         outerStatements.add(statement);
-        if (!escapes(currentSequence.subList(currentIndex + 1, currentSequence.size()))) {
+        if (currentSequence != null && !escapes(currentSequence.subList(currentIndex + 1, currentSequence.size()))) {
             blockSuccessors.put(statement, currentSequence.subList(currentIndex + 1, currentSequence.size()));
         }
         processSequence(statement.getBody());
