@@ -556,14 +556,16 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
         accept(expr.getConsequent());
         conditional.getThenBlock().getBody().add(result);
+        result.acceptVisitor(typeInference);
+        WasmType thenType = typeInference.getResult();
+        conditional.getThenBlock().setType(thenType);
 
         accept(expr.getAlternative());
         conditional.getElseBlock().getBody().add(result);
-
-        conditional.getThenBlock().acceptVisitor(typeInference);
-        WasmType thenType = typeInference.getResult();
-        conditional.getElseBlock().acceptVisitor(typeInference);
+        result.acceptVisitor(typeInference);
         WasmType elseType = typeInference.getResult();
+        conditional.getElseBlock().setType(elseType);
+
         assert thenType == elseType;
         conditional.setType(thenType);
 
