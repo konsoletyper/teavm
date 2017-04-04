@@ -41,6 +41,7 @@ public class WasmBinaryRenderer {
     private static final int SECTION_DATA = 11;
 
     private static final int EXTERNAL_KIND_FUNCTION = 0;
+    private static final int EXTERNAL_KIND_MEMORY = 2;
 
     private WasmBinaryWriter output;
     private WasmBinaryVersion version;
@@ -186,16 +187,16 @@ public class WasmBinaryRenderer {
     }
 
     private void renderExport(WasmModule module) {
-        List<WasmFunction> functions = module.getFunctions().values().stream()
-                .filter(function -> function.getExportName() != null)
-                .collect(Collectors.toList());
-        if (functions.isEmpty()) {
-            return;
-        }
+
+        // https://github.com/WebAssembly/design/blob/master/BinaryEncoding.md#export-section
 
         WasmBinaryWriter section = new WasmBinaryWriter();
 
-        section.writeLEB(functions.size());
+        List<WasmFunction> functions = module.getFunctions().values().stream()
+                .filter(function -> function.getExportName() != null)
+                .collect(Collectors.toList());
+
+        section.writeLEB(functions.size() + 1);
         for (WasmFunction function : functions) {
             int functionIndex = functionIndexes.get(function.getName());
 
@@ -204,6 +205,11 @@ public class WasmBinaryRenderer {
             section.writeByte(EXTERNAL_KIND_FUNCTION);
             section.writeLEB(functionIndex);
         }
+
+        // We also need to export the memory to make it accessible
+        section.writeAsciiString("memory");
+        section.writeByte(EXTERNAL_KIND_MEMORY);
+        section.writeLEB(0);
 
         writeSection(SECTION_EXPORT, "export", section.getData());
     }
