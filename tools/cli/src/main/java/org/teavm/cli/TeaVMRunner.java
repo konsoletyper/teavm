@@ -15,11 +15,22 @@
  */
 package org.teavm.cli;
 
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
-import org.apache.commons.cli.*;
+
+import org.apache.commons.cli.CommandLine;
+import org.apache.commons.cli.CommandLineParser;
+import org.apache.commons.cli.HelpFormatter;
+import org.apache.commons.cli.OptionBuilder;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.PosixParser;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.ClassAlias;
 import org.teavm.tooling.RuntimeCopyOperation;
@@ -315,14 +326,8 @@ public final class TeaVMRunner {
             try {
                 int version = Integer.parseInt(value);
                 switch (version) {
-                    case 11:
-                        tool.setWasmVersion(WasmBinaryVersion.V_0xB);
-                        break;
-                    case 12:
-                        tool.setWasmVersion(WasmBinaryVersion.V_0xC);
-                        break;
-                    case 13:
-                        tool.setWasmVersion(WasmBinaryVersion.V_0xD);
+                    case 1:
+                        tool.setWasmVersion(WasmBinaryVersion.V_0x1);
                         break;
                     default:
                         System.err.print("Wrong version value");

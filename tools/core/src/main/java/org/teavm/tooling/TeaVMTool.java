@@ -100,7 +100,7 @@ public class TeaVMTool implements BaseTeaVMTool {
     private DebugInformationBuilder debugEmitter;
     private JavaScriptTarget javaScriptTarget;
     private WasmTarget webAssemblyTarget;
-    private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0xD;
+    private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
 
     public File getTargetDirectory() {
         return targetDirectory;

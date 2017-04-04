@@ -20,7 +20,7 @@ You can use TeaVM for building applications for the browser, due to the followin
   * generation of source maps;
   * debugger;
   * interoperation with JavaScript libraries together with the set of predefined browser interfaces.
-  * supports WebAssebly output (experimental).
+  * supports WebAssembly output (experimental).
 
 
 Quick start
