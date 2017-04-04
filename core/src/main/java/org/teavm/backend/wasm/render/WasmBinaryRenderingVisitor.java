@@ -70,27 +70,21 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmBlock expression) {
-        int blockDepth = expression.isLoop() && version == WasmBinaryVersion.V_0xB ? 2 : 1;
+        int blockDepth = 1;
         depth += blockDepth;
         blockDepths.put(expression, depth);
-        if (version == WasmBinaryVersion.V_0xD) {
-            writer.writeByte(expression.isLoop() ? 0x03 : 0x02);
-        } else {
-            writer.writeByte(expression.isLoop() ? 0x02 : 0x01);
-        }
+        writer.writeByte(expression.isLoop() ? 0x03 : 0x02);
         writeBlockType(expression.getType());
         for (WasmExpression part : expression.getBody()) {
             part.acceptVisitor(this);
         }
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x0B : 0x0F);
+        writer.writeByte(0x0B);
         blockDepths.remove(expression);
         depth -= blockDepth;
     }
 
     private void writeBlockType(WasmType type) {
-        if (version != WasmBinaryVersion.V_0xB) {
-            writer.writeType(type, version);
-        }
+        writer.writeType(type, version);
     }
 
     @Override
@@ -100,11 +94,8 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
         expression.getCondition().acceptVisitor(this);
 
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x0D : 0x07);
+        writer.writeByte(0x0D);
 
-        if (version == WasmBinaryVersion.V_0xB) {
-            writer.writeByte(expression.getResult() != null ? 1 : 0);
-        }
         writeLabel(expression.getTarget());
     }
 
@@ -114,11 +105,8 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             expression.getResult().acceptVisitor(this);
         }
 
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x0C : 0x06);
+        writer.writeByte(0x0C);
 
-        if (version == WasmBinaryVersion.V_0xB) {
-            writer.writeByte(expression.getResult() != null ? 1 : 0);
-        }
         writeLabel(expression.getTarget());
     }
 
@@ -126,36 +114,24 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmSwitch expression) {
         expression.getSelector().acceptVisitor(this);
 
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x0E : 0x08);
-
-        if (version == WasmBinaryVersion.V_0xB) {
-            writer.writeByte(0);
-        }
+        writer.writeByte(0x0E);
 
         writer.writeLEB(expression.getTargets().size());
         for (WasmBlock target : expression.getTargets()) {
             int targetDepth = blockDepths.get(target);
             int relativeDepth = depth - targetDepth;
-            if (version != WasmBinaryVersion.V_0xB) {
-                writer.writeLEB(relativeDepth);
-            } else {
-                writer.writeFixed(relativeDepth);
-            }
+            writer.writeLEB(relativeDepth);
         }
 
         int defaultDepth = blockDepths.get(expression.getDefaultTarget());
         int relativeDepth = depth - defaultDepth;
-        if (version != WasmBinaryVersion.V_0xB) {
-            writer.writeLEB(relativeDepth);
-        } else {
-            writer.writeFixed(relativeDepth);
-        }
+        writer.writeLEB(relativeDepth);
     }
 
     @Override
     public void visit(WasmConditional expression) {
         expression.getCondition().acceptVisitor(this);
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x04 : 0x03);
+        writer.writeByte(0x04);
         writeBlockType(expression.getType());
 
         ++depth;
@@ -166,7 +142,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         blockDepths.remove(expression.getThenBlock());
 
         if (!expression.getElseBlock().getBody().isEmpty()) {
-            writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x05 : 0x04);
+            writer.writeByte(0x05);
             blockDepths.put(expression.getElseBlock(), depth);
             for (WasmExpression part : expression.getElseBlock().getBody()) {
                 part.acceptVisitor(this);
@@ -175,7 +151,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
         --depth;
 
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x0B : 0x0F);
+        writer.writeByte(0x0B);
     }
 
     @Override
@@ -183,55 +159,48 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         if (expression.getValue() != null) {
             expression.getValue().acceptVisitor(this);
         }
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x0F : 0x09);
-        if (version == WasmBinaryVersion.V_0xB) {
-            writer.writeByte(expression.getValue() != null ? 1 : 0);
-        }
+        writer.writeByte(0x0F);
     }
 
     @Override
     public void visit(WasmUnreachable expression) {
-        if (version == WasmBinaryVersion.V_0xB) {
-            writer.writeByte(0x0A);
-        } else {
-            writer.writeByte(0x0);
-        }
+        writer.writeByte(0x0);
     }
 
     @Override
     public void visit(WasmInt32Constant expression) {
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x41 : 0x10);
+        writer.writeByte(0x41);
         writer.writeSignedLEB(expression.getValue());
     }
 
     @Override
     public void visit(WasmInt64Constant expression) {
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x42 : 0x11);
+        writer.writeByte(0x42);
         writer.writeSignedLEB(expression.getValue());
     }
 
     @Override
     public void visit(WasmFloat32Constant expression) {
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x43 : 0x13);
+        writer.writeByte(0x43);
         writer.writeFixed(Float.floatToRawIntBits(expression.getValue()));
     }
 
     @Override
     public void visit(WasmFloat64Constant expression) {
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x44 : 0x12);
+        writer.writeByte(0x44);
         writer.writeFixed(Double.doubleToRawLongBits(expression.getValue()));
     }
 
     @Override
     public void visit(WasmGetLocal expression) {
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x20 : 0x14);
+        writer.writeByte(0x20);
         writer.writeLEB(expression.getLocal().getIndex());
     }
 
     @Override
     public void visit(WasmSetLocal expression) {
         expression.getValue().acceptVisitor(this);
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x21 : 0x15);
+        writer.writeByte(0x21);
         writer.writeLEB(expression.getLocal().getIndex());
     }
 
@@ -239,11 +208,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmIntBinary expression) {
         expression.getFirst().acceptVisitor(this);
         expression.getSecond().acceptVisitor(this);
-        if (version == WasmBinaryVersion.V_0xD) {
-            render0xD(expression);
-        } else {
-            renderOld(expression);
-        }
+        render0xD(expression);
     }
 
     private void render0xD(WasmIntBinary expression) {
@@ -409,178 +374,11 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
     }
 
-    private void renderOld(WasmIntBinary expression) {
-        switch (expression.getType()) {
-            case INT32:
-                switch (expression.getOperation()) {
-                    case ADD:
-                        writer.writeByte(0x40);
-                        break;
-                    case SUB:
-                        writer.writeByte(0x41);
-                        break;
-                    case MUL:
-                        writer.writeByte(0x42);
-                        break;
-                    case DIV_SIGNED:
-                        writer.writeByte(0x43);
-                        break;
-                    case DIV_UNSIGNED:
-                        writer.writeByte(0x44);
-                        break;
-                    case REM_SIGNED:
-                        writer.writeByte(0x45);
-                        break;
-                    case REM_UNSIGNED:
-                        writer.writeByte(0x46);
-                        break;
-                    case AND:
-                        writer.writeByte(0x47);
-                        break;
-                    case OR:
-                        writer.writeByte(0x48);
-                        break;
-                    case XOR:
-                        writer.writeByte(0x49);
-                        break;
-                    case SHL:
-                        writer.writeByte(0x4A);
-                        break;
-                    case SHR_UNSIGNED:
-                        writer.writeByte(0x4B);
-                        break;
-                    case SHR_SIGNED:
-                        writer.writeByte(0x4C);
-                        break;
-                    case ROTR:
-                        writer.writeByte(0xB6);
-                        break;
-                    case ROTL:
-                        writer.writeByte(0xB7);
-                        break;
-                    case EQ:
-                        writer.writeByte(0x4D);
-                        break;
-                    case NE:
-                        writer.writeByte(0x4E);
-                        break;
-                    case LT_SIGNED:
-                        writer.writeByte(0x4F);
-                        break;
-                    case LE_SIGNED:
-                        writer.writeByte(0x50);
-                        break;
-                    case LT_UNSIGNED:
-                        writer.writeByte(0x51);
-                        break;
-                    case LE_UNSIGNED:
-                        writer.writeByte(0x52);
-                        break;
-                    case GT_SIGNED:
-                        writer.writeByte(0x53);
-                        break;
-                    case GE_SIGNED:
-                        writer.writeByte(0x54);
-                        break;
-                    case GT_UNSIGNED:
-                        writer.writeByte(0x55);
-                        break;
-                    case GE_UNSIGNED:
-                        writer.writeByte(0x56);
-                        break;
-                }
-                break;
-            case INT64:
-                switch (expression.getOperation()) {
-                    case ADD:
-                        writer.writeByte(0x5B);
-                        break;
-                    case SUB:
-                        writer.writeByte(0x5C);
-                        break;
-                    case MUL:
-                        writer.writeByte(0x5D);
-                        break;
-                    case DIV_SIGNED:
-                        writer.writeByte(0x5E);
-                        break;
-                    case DIV_UNSIGNED:
-                        writer.writeByte(0x5F);
-                        break;
-                    case REM_SIGNED:
-                        writer.writeByte(0x60);
-                        break;
-                    case REM_UNSIGNED:
-                        writer.writeByte(0x61);
-                        break;
-                    case AND:
-                        writer.writeByte(0x62);
-                        break;
-                    case OR:
-                        writer.writeByte(0x63);
-                        break;
-                    case XOR:
-                        writer.writeByte(0x64);
-                        break;
-                    case SHL:
-                        writer.writeByte(0x65);
-                        break;
-                    case SHR_UNSIGNED:
-                        writer.writeByte(0x66);
-                        break;
-                    case SHR_SIGNED:
-                        writer.writeByte(0x67);
-                        break;
-                    case ROTR:
-                        writer.writeByte(0xB8);
-                        break;
-                    case ROTL:
-                        writer.writeByte(0xB9);
-                        break;
-                    case EQ:
-                        writer.writeByte(0x68);
-                        break;
-                    case NE:
-                        writer.writeByte(0x69);
-                        break;
-                    case LT_SIGNED:
-                        writer.writeByte(0x6A);
-                        break;
-                    case LE_SIGNED:
-                        writer.writeByte(0x6B);
-                        break;
-                    case LT_UNSIGNED:
-                        writer.writeByte(0x6C);
-                        break;
-                    case LE_UNSIGNED:
-                        writer.writeByte(0x6D);
-                        break;
-                    case GT_SIGNED:
-                        writer.writeByte(0x6E);
-                        break;
-                    case GE_SIGNED:
-                        writer.writeByte(0x6F);
-                        break;
-                    case GT_UNSIGNED:
-                        writer.writeByte(0x70);
-                        break;
-                    case GE_UNSIGNED:
-                        writer.writeByte(0x71);
-                        break;
-                }
-                break;
-        }
-    }
-
     @Override
     public void visit(WasmFloatBinary expression) {
         expression.getFirst().acceptVisitor(this);
         expression.getSecond().acceptVisitor(this);
-        if (version == WasmBinaryVersion.V_0xD) {
-            render0xD(expression);
-        } else {
-            renderOld(expression);
-        }
+        render0xD(expression);
     }
 
     private void render0xD(WasmFloatBinary expression) {
@@ -668,163 +466,43 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
     }
 
-    private void renderOld(WasmFloatBinary expression) {
-        switch (expression.getType()) {
-            case FLOAT32:
-                switch (expression.getOperation()) {
-                    case ADD:
-                        writer.writeByte(0x75);
-                        break;
-                    case SUB:
-                        writer.writeByte(0x76);
-                        break;
-                    case MUL:
-                        writer.writeByte(0x77);
-                        break;
-                    case DIV:
-                        writer.writeByte(0x78);
-                        break;
-                    case MIN:
-                        writer.writeByte(0x79);
-                        break;
-                    case MAX:
-                        writer.writeByte(0x7A);
-                        break;
-                    case EQ:
-                        writer.writeByte(0x83);
-                        break;
-                    case NE:
-                        writer.writeByte(0x84);
-                        break;
-                    case LT:
-                        writer.writeByte(0x85);
-                        break;
-                    case LE:
-                        writer.writeByte(0x86);
-                        break;
-                    case GT:
-                        writer.writeByte(0x87);
-                        break;
-                    case GE:
-                        writer.writeByte(0x88);
-                        break;
-                }
-                break;
-            case FLOAT64:
-                switch (expression.getOperation()) {
-                    case ADD:
-                        writer.writeByte(0x89);
-                        break;
-                    case SUB:
-                        writer.writeByte(0x8A);
-                        break;
-                    case MUL:
-                        writer.writeByte(0x8B);
-                        break;
-                    case DIV:
-                        writer.writeByte(0x8C);
-                        break;
-                    case MIN:
-                        writer.writeByte(0x8D);
-                        break;
-                    case MAX:
-                        writer.writeByte(0x8E);
-                        break;
-                    case EQ:
-                        writer.writeByte(0x97);
-                        break;
-                    case NE:
-                        writer.writeByte(0x98);
-                        break;
-                    case LT:
-                        writer.writeByte(0x99);
-                        break;
-                    case LE:
-                        writer.writeByte(0x9A);
-                        break;
-                    case GT:
-                        writer.writeByte(0x9B);
-                        break;
-                    case GE:
-                        writer.writeByte(0x9C);
-                        break;
-                }
-                break;
-        }
-    }
-
     @Override
     public void visit(WasmIntUnary expression) {
         expression.getOperand().acceptVisitor(this);
-        if (version == WasmBinaryVersion.V_0xD) {
-            switch (expression.getType()) {
-                case INT32:
-                    switch (expression.getOperation()) {
-                        case CLZ:
-                            writer.writeByte(0x67);
-                            break;
-                        case CTZ:
-                            writer.writeByte(0x68);
-                            break;
-                        case POPCNT:
-                            writer.writeByte(0x69);
-                            break;
-                    }
-                    break;
-                case INT64:
-                    switch (expression.getOperation()) {
-                        case CLZ:
-                            writer.writeByte(0x79);
-                            break;
-                        case CTZ:
-                            writer.writeByte(0x7A);
-                            break;
-                        case POPCNT:
-                            writer.writeByte(0x7B);
-                            break;
-                    }
-                    break;
-            }
-        } else {
-            switch (expression.getType()) {
-                case INT32:
-                    switch (expression.getOperation()) {
-                        case CLZ:
-                            writer.writeByte(0x57);
-                            break;
-                        case CTZ:
-                            writer.writeByte(0x58);
-                            break;
-                        case POPCNT:
-                            writer.writeByte(0x59);
-                            break;
-                    }
-                    break;
-                case INT64:
-                    switch (expression.getOperation()) {
-                        case CLZ:
-                            writer.writeByte(0x72);
-                            break;
-                        case CTZ:
-                            writer.writeByte(0x73);
-                            break;
-                        case POPCNT:
-                            writer.writeByte(0x74);
-                            break;
-                    }
-                    break;
-            }
+        switch (expression.getType()) {
+            case INT32:
+                switch (expression.getOperation()) {
+                    case CLZ:
+                        writer.writeByte(0x67);
+                        break;
+                    case CTZ:
+                        writer.writeByte(0x68);
+                        break;
+                    case POPCNT:
+                        writer.writeByte(0x69);
+                        break;
+                }
+                break;
+            case INT64:
+                switch (expression.getOperation()) {
+                    case CLZ:
+                        writer.writeByte(0x79);
+                        break;
+                    case CTZ:
+                        writer.writeByte(0x7A);
+                        break;
+                    case POPCNT:
+                        writer.writeByte(0x7B);
+                        break;
+                }
+                break;
         }
     }
 
     @Override
     public void visit(WasmFloatUnary expression) {
         expression.getOperand().acceptVisitor(this);
-        if (version == WasmBinaryVersion.V_0xD) {
-            render0xD(expression);
-        } else {
-            renderOld(expression);
-        }
+        render0xD(expression);
     }
 
     private void render0xD(WasmFloatUnary expression) {
@@ -888,75 +566,10 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
     }
 
-    private void renderOld(WasmFloatUnary expression) {
-        switch (expression.getType()) {
-            case FLOAT32:
-                switch (expression.getOperation()) {
-                    case ABS:
-                        writer.writeByte(0x7B);
-                        break;
-                    case NEG:
-                        writer.writeByte(0x7C);
-                        break;
-                    case COPYSIGN:
-                        writer.writeByte(0x7D);
-                        break;
-                    case CEIL:
-                        writer.writeByte(0x7E);
-                        break;
-                    case FLOOR:
-                        writer.writeByte(0x7F);
-                        break;
-                    case TRUNC:
-                        writer.writeByte(0x80);
-                        break;
-                    case NEAREST:
-                        writer.writeByte(0x81);
-                        break;
-                    case SQRT:
-                        writer.writeByte(0x82);
-                        break;
-                }
-                break;
-            case FLOAT64:
-                switch (expression.getOperation()) {
-                    case ABS:
-                        writer.writeByte(0x8F);
-                        break;
-                    case NEG:
-                        writer.writeByte(0x90);
-                        break;
-                    case COPYSIGN:
-                        writer.writeByte(0x91);
-                        break;
-                    case CEIL:
-                        writer.writeByte(0x92);
-                        break;
-                    case FLOOR:
-                        writer.writeByte(0x93);
-                        break;
-                    case TRUNC:
-                        writer.writeByte(0x94);
-                        break;
-                    case NEAREST:
-                        writer.writeByte(0x95);
-                        break;
-                    case SQRT:
-                        writer.writeByte(0x96);
-                        break;
-                }
-                break;
-        }
-    }
-
     @Override
     public void visit(WasmConversion expression) {
         expression.getOperand().acceptVisitor(this);
-        if (version == WasmBinaryVersion.V_0xD) {
-            render0xD(expression);
-        } else {
-            renderOld(expression);
-        }
+        render0xD(expression);
     }
 
     private void render0xD(WasmConversion expression) {
@@ -1024,71 +637,6 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
     }
 
-    private void renderOld(WasmConversion expression) {
-        switch (expression.getSourceType()) {
-            case INT32:
-                switch (expression.getTargetType()) {
-                    case INT32:
-                        break;
-                    case INT64:
-                        writer.writeByte(expression.isSigned() ? 0xA6 : 0xA7);
-                        break;
-                    case FLOAT32:
-                        writer.writeByte(expression.isSigned() ? 0xA8 : 0xA9);
-                        break;
-                    case FLOAT64:
-                        writer.writeByte(expression.isSigned() ? 0xAE : 0xAF);
-                        break;
-                }
-                break;
-            case INT64:
-                switch (expression.getTargetType()) {
-                    case INT32:
-                        writer.writeByte(0xA1);
-                        break;
-                    case INT64:
-                        break;
-                    case FLOAT32:
-                        writer.writeByte(expression.isSigned() ? 0xAA : 0xAB);
-                        break;
-                    case FLOAT64:
-                        writer.writeByte(expression.isSigned() ? 0xB0 : 0xB1);
-                        break;
-                }
-                break;
-            case FLOAT32:
-                switch (expression.getTargetType()) {
-                    case INT32:
-                        writer.writeByte(expression.isSigned() ? 0x9D : 0x9F);
-                        break;
-                    case INT64:
-                        writer.writeByte(expression.isSigned() ? 0xA2 : 0xA4);
-                        break;
-                    case FLOAT32:
-                        break;
-                    case FLOAT64:
-                        writer.writeByte(0xB2);
-                        break;
-                }
-                break;
-            case FLOAT64:
-                switch (expression.getTargetType()) {
-                    case INT32:
-                        writer.writeByte(expression.isSigned() ? 0x9E : 0xA0);
-                        break;
-                    case INT64:
-                        writer.writeByte(expression.isSigned() ? 0xA3 : 0xA5);
-                        break;
-                    case FLOAT32:
-                        writer.writeByte(0xAC);
-                        break;
-                    case FLOAT64:
-                        break;
-                }
-                break;
-        }
-    }
-
     @Override
     public void visit(WasmCall expression) {
         for (WasmExpression argument : expression.getArguments()) {
@@ -1102,30 +650,17 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
             return;
         }
 
-        if (version == WasmBinaryVersion.V_0xB) {
-            writer.writeByte(!expression.isImported() ? 0x16 : 0x18);
-            writer.writeLEB(expression.getArguments().size());
-        } else {
-            writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x10 : 0x16);
-        }
+        writer.writeByte(0x10);
         writer.writeLEB(functionIndex);
     }
 
     @Override
     public void visit(WasmIndirectCall expression) {
-        if (version == WasmBinaryVersion.V_0xB) {
-            expression.getSelector().acceptVisitor(this);
-        }
         for (WasmExpression argument : expression.getArguments()) {
             argument.acceptVisitor(this);
         }
-        if (version != WasmBinaryVersion.V_0xB) {
-            expression.getSelector().acceptVisitor(this);
-        }
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x11 : 0x17);
-        if (version == WasmBinaryVersion.V_0xB) {
-            writer.writeLEB(expression.getArguments().size());
-        }
+        expression.getSelector().acceptVisitor(this);
+        writer.writeByte(0x11);
 
         WasmType[] signatureTypes = new WasmType[expression.getParameterTypes().size() + 1];
         signatureTypes[0] = expression.getReturnType();
@@ -1134,60 +669,34 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         }
         writer.writeLEB(signatureIndexes.get(new WasmSignature(signatureTypes)));
 
-        if (version == WasmBinaryVersion.V_0xD) {
-            writer.writeByte(0);
-        }
+        writer.writeByte(0);
     }
 
     @Override
     public void visit(WasmDrop expression) {
         expression.getOperand().acceptVisitor(this);
-        if (version == WasmBinaryVersion.V_0xC) {
-            writer.writeByte(0x0B);
-        } else if (version == WasmBinaryVersion.V_0xD) {
-            writer.writeByte(0x1A);
-        }
+        writer.writeByte(0x1A);
     }
 
     @Override
     public void visit(WasmLoadInt32 expression) {
         expression.getIndex().acceptVisitor(this);
-        if (version == WasmBinaryVersion.V_0xD) {
-            switch (expression.getConvertFrom()) {
-                case INT8:
-                    writer.writeByte(0x2C);
-                    break;
-                case UINT8:
-                    writer.writeByte(0x2D);
-                    break;
-                case INT16:
-                    writer.writeByte(0x2E);
-                    break;
-                case UINT16:
-                    writer.writeByte(0x2F);
-                    break;
-                case INT32:
-                    writer.writeByte(0x28);
-                    break;
-            }
-        } else {
-            switch (expression.getConvertFrom()) {
-                case INT8:
-                    writer.writeByte(0x20);
-                    break;
-                case UINT8:
-                    writer.writeByte(0x21);
-                    break;
-                case INT16:
-                    writer.writeByte(0x22);
-                    break;
-                case UINT16:
-                    writer.writeByte(0x23);
-                    break;
-                case INT32:
-                    writer.writeByte(0x2A);
-                    break;
-            }
+        switch (expression.getConvertFrom()) {
+            case INT8:
+                writer.writeByte(0x2C);
+                break;
+            case UINT8:
+                writer.writeByte(0x2D);
+                break;
+            case INT16:
+                writer.writeByte(0x2E);
+                break;
+            case UINT16:
+                writer.writeByte(0x2F);
+                break;
+            case INT32:
+                writer.writeByte(0x28);
+                break;
         }
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
@@ -1196,54 +705,28 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmLoadInt64 expression) {
         expression.getIndex().acceptVisitor(this);
-        if (version == WasmBinaryVersion.V_0xD) {
-            switch (expression.getConvertFrom()) {
-                case INT8:
-                    writer.writeByte(0x30);
-                    break;
-                case UINT8:
-                    writer.writeByte(0x31);
-                    break;
-                case INT16:
-                    writer.writeByte(0x32);
-                    break;
-                case UINT16:
-                    writer.writeByte(0x33);
-                    break;
-                case INT32:
-                    writer.writeByte(0x34);
-                    break;
-                case UINT32:
-                    writer.writeByte(0x25);
-                    break;
-                case INT64:
-                    writer.writeByte(0x29);
-                    break;
-            }
-        } else {
-            switch (expression.getConvertFrom()) {
-                case INT8:
-                    writer.writeByte(0x24);
-                    break;
-                case UINT8:
-                    writer.writeByte(0x25);
-                    break;
-                case INT16:
-                    writer.writeByte(0x26);
-                    break;
-                case UINT16:
-                    writer.writeByte(0x27);
-                    break;
-                case INT32:
-                    writer.writeByte(0x28);
-                    break;
-                case UINT32:
-                    writer.writeByte(0x29);
-                    break;
-                case INT64:
-                    writer.writeByte(0x2B);
-                    break;
-            }
+        switch (expression.getConvertFrom()) {
+            case INT8:
+                writer.writeByte(0x30);
+                break;
+            case UINT8:
+                writer.writeByte(0x31);
+                break;
+            case INT16:
+                writer.writeByte(0x32);
+                break;
+            case UINT16:
+                writer.writeByte(0x33);
+                break;
+            case INT32:
+                writer.writeByte(0x34);
+                break;
+            case UINT32:
+                writer.writeByte(0x25);
+                break;
+            case INT64:
+                writer.writeByte(0x29);
+                break;
         }
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
@@ -1252,7 +735,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmLoadFloat32 expression) {
         expression.getIndex().acceptVisitor(this);
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x2A : 0x2C);
+        writer.writeByte(0x2A);
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
     }
@@ -1260,7 +743,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmLoadFloat64 expression) {
         expression.getIndex().acceptVisitor(this);
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x2B : 0x2D);
+        writer.writeByte(0x2B);
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
     }
@@ -1269,34 +752,18 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmStoreInt32 expression) {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
-        if (version == WasmBinaryVersion.V_0xD) {
-            switch (expression.getConvertTo()) {
-                case INT8:
-                case UINT8:
-                    writer.writeByte(0x3A);
-                    break;
-                case INT16:
-                case UINT16:
-                    writer.writeByte(0x3B);
-                    break;
-                case INT32:
-                    writer.writeByte(0x36);
-                    break;
-            }
-        } else {
-            switch (expression.getConvertTo()) {
-                case INT8:
-                case UINT8:
-                    writer.writeByte(0x2E);
-                    break;
-                case INT16:
-                case UINT16:
-                    writer.writeByte(0x2F);
-                    break;
-                case INT32:
-                    writer.writeByte(0x33);
-                    break;
-            }
+        switch (expression.getConvertTo()) {
+            case INT8:
+            case UINT8:
+                writer.writeByte(0x3A);
+                break;
+            case INT16:
+            case UINT16:
+                writer.writeByte(0x3B);
+                break;
+            case INT32:
+                writer.writeByte(0x36);
+                break;
         }
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
@@ -1306,42 +773,22 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmStoreInt64 expression) {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
-        if (version == WasmBinaryVersion.V_0xD) {
-            switch (expression.getConvertTo()) {
-                case INT8:
-                case UINT8:
-                    writer.writeByte(0x3C);
-                    break;
-                case INT16:
-                case UINT16:
-                    writer.writeByte(0x3D);
-                    break;
-                case INT32:
-                case UINT32:
-                    writer.writeByte(0x3E);
-                    break;
-                case INT64:
-                    writer.writeByte(0x37);
-                    break;
-            }
-        } else {
-            switch (expression.getConvertTo()) {
-                case INT8:
-                case UINT8:
-                    writer.writeByte(0x30);
-                    break;
-                case INT16:
-                case UINT16:
-                    writer.writeByte(0x31);
-                    break;
-                case INT32:
-                case UINT32:
-                    writer.writeByte(0x32);
-                    break;
-                case INT64:
-                    writer.writeByte(0x34);
-                    break;
-            }
+        switch (expression.getConvertTo()) {
+            case INT8:
+            case UINT8:
+                writer.writeByte(0x3C);
+                break;
+            case INT16:
+            case UINT16:
+                writer.writeByte(0x3D);
+                break;
+            case INT32:
+            case UINT32:
+                writer.writeByte(0x3E);
+                break;
+            case INT64:
+                writer.writeByte(0x37);
+                break;
         }
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
@@ -1351,7 +798,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmStoreFloat32 expression) {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x38 : 0x35);
+        writer.writeByte(0x38);
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
     }
@@ -1360,7 +807,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     public void visit(WasmStoreFloat64 expression) {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
-        writer.writeByte(version == WasmBinaryVersion.V_0xD ? 0x39 : 0x36);
+        writer.writeByte(0x39);
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
     }

@@ -131,7 +131,7 @@ public class WasmTarget implements TeaVMTarget {
     private ClassInitializerEliminator classInitializerEliminator;
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
-    private WasmBinaryVersion version = WasmBinaryVersion.V_0xC;
+    private WasmBinaryVersion version = WasmBinaryVersion.V_0x1;
 
     @Override
     public void setController(TeaVMTargetController controller) {
