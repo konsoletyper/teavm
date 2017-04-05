@@ -21,6 +21,7 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.generate.CallSiteBinaryGenerator;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
+import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
@@ -28,14 +29,18 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.model.MethodReference;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
+import org.teavm.runtime.CallSite;
 import org.teavm.runtime.ExceptionHandling;
 
 public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
     private CallSiteBinaryGenerator callSiteBinaryGenerator;
+    private WasmClassGenerator classGenerator;
     private List<WasmInt32Constant> constants = new ArrayList<>();
 
-    public ExceptionHandlingIntrinsic(BinaryWriter binaryWriter, WasmClassGenerator classGenerator) {
-        callSiteBinaryGenerator = new CallSiteBinaryGenerator(binaryWriter, classGenerator);
+    public ExceptionHandlingIntrinsic(BinaryWriter binaryWriter, WasmClassGenerator classGenerator,
+            WasmStringPool stringPool) {
+        callSiteBinaryGenerator = new CallSiteBinaryGenerator(binaryWriter, classGenerator, stringPool);
+        this.classGenerator = classGenerator;
     }
 
     @Override
@@ -63,9 +68,10 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
         constant.setLocation(invocation.getLocation());
         constants.add(constant);
 
+        int callSiteSize = classGenerator.getClassSize(CallSite.class.getName());
         WasmExpression id = manager.generate(invocation.getArguments().get(0));
-        WasmExpression offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL,
-                id, new WasmInt32Constant(3));
+        WasmExpression offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL,
+                id, new WasmInt32Constant(callSiteSize));
 
         return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, constant, offset);
     }

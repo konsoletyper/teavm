@@ -19,10 +19,6 @@ import java.util.Objects;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.util.TObjects;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class TStackTraceElement extends TObject implements TSerializable {
     private TString declaringClass;
     private TString methodName;
@@ -89,6 +85,7 @@ public final class TStackTraceElement extends TObject implements TSerializable {
         } else {
             sb.append(TString.wrap("Unknown Source"));
         }
+        sb.append(TString.wrap(")"));
         return sb.toString();
     }
 }

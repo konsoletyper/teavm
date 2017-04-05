@@ -172,7 +172,6 @@ public final class Platform {
         return cls.itemType;
     }
 
-    @DelegateTo("getNameLowLevel")
     public static String getName(PlatformClass cls) {
         return cls.getMetadata().getName();
     }

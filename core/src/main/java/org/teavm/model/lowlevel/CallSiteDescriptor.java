@@ -21,13 +21,19 @@ import java.util.List;
 public class CallSiteDescriptor {
     private int id;
     private List<ExceptionHandlerDescriptor> handlers = new ArrayList<>();
+    private CallSiteLocation location;
 
-    public CallSiteDescriptor(int id) {
+    public CallSiteDescriptor(int id, CallSiteLocation location) {
         this.id = id;
+        this.location = location;
     }
 
     public int getId() {
         return id;
+    }
+
+    public CallSiteLocation getLocation() {
+        return location;
     }
 
     public List<ExceptionHandlerDescriptor> getHandlers() {
