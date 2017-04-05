@@ -15,9 +15,8 @@
  */
 package org.teavm.backend.wasm.generate;
 
-import java.util.ArrayList;
-import java.util.List;
-
+import java.util.HashSet;
+import java.util.Set;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
@@ -36,12 +35,10 @@ import org.teavm.model.MethodReader;
 
 public class WasmDependencyListener extends AbstractDependencyListener implements ClassHolderTransformer {
 
-    private List<MethodHolder> exportedMethods;
+    private final Set<String> visitedClassesCheckedForExport;
 
-    @Override
-    public void started(DependencyAgent agent) {
-        exportedMethods = new ArrayList<>();
-        super.started(agent);
+    public WasmDependencyListener() {
+        visitedClassesCheckedForExport = new HashSet<>();
     }
 
     @Override
@@ -58,6 +55,16 @@ public class WasmDependencyListener extends AbstractDependencyListener implement
                 }
             }
         }
+
+        String className = method.getReference().getClassName();
+        if (visitedClassesCheckedForExport.add(className)) {
+            for (MethodReader reader : agent.getClassSource().get(className).getMethods()) {
+                AnnotationReader annotation = reader.getAnnotations().get(Export.class.getName());
+                if (annotation != null) {
+                    agent.linkMethod(reader.getReference(), null).use();
+                }
+            }
+        }
     }
 
     @Override
@@ -68,20 +75,6 @@ public class WasmDependencyListener extends AbstractDependencyListener implement
                 method.setProgram(null);
                 method.getModifiers().add(ElementModifier.NATIVE);
             }
-
-            AnnotationReader exportAnnot = method.getAnnotations().get(Export.class.getName());
-            if (exportAnnot != null) {
-                exportedMethods.add(method);
-
-            }
         }
-    }
-
-    @Override
-    public void beforeCompleting(DependencyAgent agent) {
-        for (MethodHolder holder : exportedMethods) {
-            agent.linkMethod(holder.getReference(), null).use();
-        }
-        super.beforeCompleting(agent);
     }
 }

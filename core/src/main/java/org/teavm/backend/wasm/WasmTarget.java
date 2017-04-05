@@ -132,11 +132,6 @@ public class WasmTarget implements TeaVMTarget {
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
     private WasmBinaryVersion version = WasmBinaryVersion.V_0x1;
-    private WasmDependencyListener wasmDependencyListener;
-
-    public WasmTarget() {
-        wasmDependencyListener = new WasmDependencyListener();
-    }
 
     @Override
     public void setController(TeaVMTargetController controller) {
@@ -161,14 +156,14 @@ public class WasmTarget implements TeaVMTarget {
     public List<ClassHolderTransformer> getTransformers() {
         List<ClassHolderTransformer> transformers = new ArrayList<>();
         transformers.add(new ClassPatch());
-        transformers.add(wasmDependencyListener);
+        transformers.add(new WasmDependencyListener());
         return transformers;
     }
 
     @Override
     public List<DependencyListener> getDependencyListeners() {
         List<DependencyListener> listeners = new ArrayList<>();
-        listeners.add(wasmDependencyListener);
+        listeners.add(new WasmDependencyListener());
         return listeners;
     }
 

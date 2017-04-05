@@ -30,7 +30,5 @@ public interface DependencyListener {
 
     void fieldReached(DependencyAgent agent, FieldDependency field, CallLocation location);
 
-    void beforeCompleting(DependencyAgent agent);
-
     void completing(DependencyAgent agent);
 }
