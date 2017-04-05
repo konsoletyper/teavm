@@ -17,16 +17,16 @@
 var Benchmark = function() {
     function Benchmark(canvas) {
         this.canvas = canvas;
-        this.module = null;
+        this.instance = null;
         this.line = "";
         this.resultTableBody = document.getElementById("result-table-body");
     }
     Benchmark.prototype.runAll = function() {
-        load(this, function() { this.module.exports.main(); }.bind(this));
+        load(this, function() { this.instance.exports.main(); }.bind(this));
     };
 
     function tick(benchmark) {
-        var exports = benchmark.module.exports;
+        var exports = benchmark.instance.exports;
         exports.tick();
         var exception = exports.sys$catchException();
         if (exception !== 0) {
@@ -132,9 +132,13 @@ var Benchmark = function() {
                     }
                 }
             };
-            WebAssembly.compile(response).then(function(module) {
-                benchmark.module = new WebAssembly.Instance(module, importObj);
+
+            WebAssembly.instantiate(response, importObj).then(function(resultObject) {
+                benchmark.instance = resultObject.instance;
+                console.log("Initialized")
                 callback();
+            }).catch(function(error) {
+                console.log("Error : " + error);
             });
         };
         xhr.send();
