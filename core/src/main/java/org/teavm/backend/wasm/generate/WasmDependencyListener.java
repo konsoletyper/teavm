@@ -20,6 +20,7 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.Export;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
@@ -31,6 +32,19 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 
 public class WasmDependencyListener extends AbstractDependencyListener implements ClassHolderTransformer {
+
+    @Override
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
+        super.classReached(agent, className, location);
+
+        for (MethodReader reader : agent.getClassSource().get(className).getMethods()) {
+            AnnotationReader annotation = reader.getAnnotations().get(Export.class.getName());
+            if (annotation != null) {
+                agent.linkMethod(reader.getReference(), null).use();
+            }
+        }
+    }
+
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         AnnotationReader delegateAnnot = method.getMethod().getAnnotations().get(DelegateTo.class.getName());
