@@ -15,8 +15,6 @@
  */
 package org.teavm.backend.wasm.generate;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
@@ -35,10 +33,16 @@ import org.teavm.model.MethodReader;
 
 public class WasmDependencyListener extends AbstractDependencyListener implements ClassHolderTransformer {
 
-    private final Set<String> visitedClassesCheckedForExport;
+    @Override
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
+        super.classReached(agent, className, location);
 
-    public WasmDependencyListener() {
-        visitedClassesCheckedForExport = new HashSet<>();
+        for (MethodReader reader : agent.getClassSource().get(className).getMethods()) {
+            AnnotationReader annotation = reader.getAnnotations().get(Export.class.getName());
+            if (annotation != null) {
+                agent.linkMethod(reader.getReference(), null).use();
+            }
+        }
     }
 
     @Override
@@ -52,16 +56,6 @@ public class WasmDependencyListener extends AbstractDependencyListener implement
                     if (delegate != method.getMethod()) {
                         agent.linkMethod(delegate.getReference(), location).use();
                     }
-                }
-            }
-        }
-
-        String className = method.getReference().getClassName();
-        if (visitedClassesCheckedForExport.add(className)) {
-            for (MethodReader reader : agent.getClassSource().get(className).getMethods()) {
-                AnnotationReader annotation = reader.getAnnotations().get(Export.class.getName());
-                if (annotation != null) {
-                    agent.linkMethod(reader.getReference(), null).use();
                 }
             }
         }
