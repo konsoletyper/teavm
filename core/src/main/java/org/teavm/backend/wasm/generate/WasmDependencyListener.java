@@ -15,11 +15,15 @@
  */
 package org.teavm.backend.wasm.generate;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.Export;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
@@ -31,6 +35,15 @@ import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 
 public class WasmDependencyListener extends AbstractDependencyListener implements ClassHolderTransformer {
+
+    private List<MethodHolder> exportedMethods;
+
+    @Override
+    public void started(DependencyAgent agent) {
+        exportedMethods = new ArrayList<>();
+        super.started(agent);
+    }
+
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         AnnotationReader delegateAnnot = method.getMethod().getAnnotations().get(DelegateTo.class.getName());
@@ -55,6 +68,20 @@ public class WasmDependencyListener extends AbstractDependencyListener implement
                 method.setProgram(null);
                 method.getModifiers().add(ElementModifier.NATIVE);
             }
+
+            AnnotationReader exportAnnot = method.getAnnotations().get(Export.class.getName());
+            if (exportAnnot != null) {
+                exportedMethods.add(method);
+
+            }
         }
+    }
+
+    @Override
+    public void beforeCompleting(DependencyAgent agent) {
+        for (MethodHolder holder : exportedMethods) {
+            agent.linkMethod(holder.getReference(), null).use();
+        }
+        super.beforeCompleting(agent);
     }
 }

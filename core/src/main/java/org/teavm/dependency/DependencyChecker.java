@@ -524,6 +524,15 @@ public class DependencyChecker implements DependencyInfo {
         interrupted = false;
         processQueue();
         if (!interrupted) {
+
+            // Allow listeners to do additional stuff
+            for (DependencyListener listener : listeners) {
+                listener.beforeCompleting(agent);
+            }
+            // And make sure the queue is empty
+            processQueue();
+
+            // Now we are done here!
             completing = true;
             lock();
             for (DependencyListener listener : listeners) {
