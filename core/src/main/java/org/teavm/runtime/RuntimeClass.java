@@ -26,6 +26,7 @@ public class RuntimeClass extends RuntimeJavaObject {
     public int flags;
     public int tag;
     public int canary;
+    public RuntimeJavaObject name;
     public RuntimeClass itemType;
     public RuntimeClass arrayType;
     public IsSupertypeFunction isSupertypeOf;

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,14 +15,11 @@
  */
 package org.teavm.runtime;
 
-import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
-import org.teavm.interop.Unmanaged;
 
-@Unmanaged
-@StaticInit
-public class CallSite extends Structure {
-    public int handlerCount;
-    public ExceptionHandler firstHandler;
-    public CallSiteLocation location;
+public class CallSiteLocation extends Structure {
+    public String fileName;
+    public String className;
+    public String methodName;
+    public int lineNumber;
 }

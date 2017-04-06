@@ -57,6 +57,7 @@ public class WasmClassGenerator {
     private List<String> functionTable = new ArrayList<>();
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
+    private WasmStringPool stringPool;
     private DataStructure objectStructure = new DataStructure((byte) 0,
             DataPrimitives.INT, /* class */
             DataPrimitives.ADDRESS /* monitor/hash code */);
@@ -67,6 +68,7 @@ public class WasmClassGenerator {
             DataPrimitives.INT, /* flags */
             DataPrimitives.INT, /* tag */
             DataPrimitives.INT, /* canary */
+            DataPrimitives.ADDRESS, /* name */
             DataPrimitives.ADDRESS, /* item type */
             DataPrimitives.ADDRESS, /* array type */
             DataPrimitives.INT, /* isInstance function */
@@ -79,11 +81,12 @@ public class WasmClassGenerator {
     private static final int CLASS_FLAGS = 2;
     private static final int CLASS_TAG = 3;
     private static final int CLASS_CANARY = 4;
-    private static final int CLASS_ITEM_TYPE = 5;
-    private static final int CLASS_ARRAY_TYPE = 6;
-    private static final int CLASS_IS_INSTANCE = 7;
-    private static final int CLASS_PARENT = 8;
-    private static final int CLASS_LAYOUT = 9;
+    private static final int CLASS_NAME = 5;
+    private static final int CLASS_ITEM_TYPE = 6;
+    private static final int CLASS_ARRAY_TYPE = 7;
+    private static final int CLASS_IS_INSTANCE = 8;
+    private static final int CLASS_PARENT = 9;
+    private static final int CLASS_LAYOUT = 10;
 
     public WasmClassGenerator(ClassReaderSource classSource, VirtualTableProvider vtableProvider,
             TagRegistry tagRegistry, BinaryWriter binaryWriter) {
@@ -91,6 +94,11 @@ public class WasmClassGenerator {
         this.vtableProvider = vtableProvider;
         this.tagRegistry = tagRegistry;
         this.binaryWriter = binaryWriter;
+        this.stringPool = new WasmStringPool(this, binaryWriter);
+    }
+
+    public WasmStringPool getStringPool() {
+        return stringPool;
     }
 
     private void addClass(ValueType type) {
@@ -204,6 +212,7 @@ public class WasmClassGenerator {
         int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
         header.setInt(CLASS_TAG, tag);
         header.setInt(CLASS_CANARY, RuntimeClass.computeCanary(occupiedSize, tag));
+        header.setAddress(CLASS_NAME, stringPool.getStringPointer(name));
         header.setInt(CLASS_IS_INSTANCE, functionTable.size());
         functionTable.add(WasmMangling.mangleIsSupertype(ValueType.object(name)));
         header.setAddress(CLASS_PARENT, parentPtr);

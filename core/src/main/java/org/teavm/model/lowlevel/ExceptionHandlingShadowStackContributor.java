@@ -190,7 +190,11 @@ public class ExceptionHandlingShadowStackContributor {
                     }
                 }
 
-                CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size());
+                String fileName = insn.getLocation() != null ? insn.getLocation().getFileName() : null;
+                int lineNumber = insn.getLocation() != null ? insn.getLocation().getLine() : -1;
+                CallSiteLocation location = new CallSiteLocation(fileName, method.getClassName(), method.getName(),
+                        lineNumber);
+                CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size(), location);
                 callSites.add(callSite);
                 List<Instruction> pre = setLocation(getInstructionsBeforeCallSite(callSite), insn.getLocation());
                 List<Instruction> post = getInstructionsAfterCallSite(block, next, callSite, currentJointSources);
