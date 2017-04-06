@@ -142,7 +142,7 @@ public class RenderingContext {
         } else if (cst instanceof String) {
             String string = (String) cst;
             int index = lookupString(string);
-            return "$rt_s(" + index + ")";
+            return naming.getNameForFunction("$rt_s") + "(" + index + ")";
         } else if (cst instanceof Long) {
             long value = (Long) cst;
             if (value == 0) {

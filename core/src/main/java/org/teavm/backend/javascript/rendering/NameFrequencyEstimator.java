@@ -215,6 +215,8 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
     public void visit(ConstantExpr expr) {
         if (expr.getValue() instanceof ValueType) {
             visitType((ValueType) expr.getValue());
+        } else if (expr.getValue() instanceof String) {
+            consumer.consumeFunction("$rt_s");
         }
     }
 

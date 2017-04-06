@@ -182,7 +182,7 @@ public class Renderer implements RenderingManager {
     private void renderRuntimeString() throws IOException {
         MethodReference stringCons = new MethodReference(String.class, "<init>", char[].class, void.class);
         writer.append("function $rt_str(str) {").indent().softNewLine();
-        writer.append("if (str == null) {").indent().softNewLine();
+        writer.append("if (str === null) {").indent().softNewLine();
         writer.append("return null;").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("var characters = $rt_createCharArray(str.length);").softNewLine();
@@ -199,6 +199,9 @@ public class Renderer implements RenderingManager {
         MethodReference getChars = new MethodReference(String.class, "getChars", int.class, int.class,
                 char[].class, int.class, void.class);
         writer.append("function $rt_ustr(str) {").indent().softNewLine();
+        writer.append("if (str === null) {").indent().softNewLine();
+        writer.append("return null;").softNewLine();
+        writer.outdent().append("}").softNewLine();
         writer.append("var result = \"\";").softNewLine();
         writer.append("var sz = ").appendMethodBody(stringLen).append("(str);").softNewLine();
         writer.append("var array = $rt_createCharArray(sz);").softNewLine();
@@ -245,7 +248,8 @@ public class Renderer implements RenderingManager {
 
     private void renderRuntimeAliases() throws IOException {
         String[] names = { "$rt_throw", "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray",
-                "$rt_isInstance", "$rt_nativeThread", "$rt_suspending", "$rt_resuming", "$rt_invalidPointer" };
+                "$rt_isInstance", "$rt_nativeThread", "$rt_suspending", "$rt_resuming", "$rt_invalidPointer",
+                "$rt_s" };
         boolean first = true;
         for (String name : names) {
             if (!first) {
