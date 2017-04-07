@@ -13,13 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.xml;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSIndexer;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
-    E item(int index);
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/API/Element/getClientRects
+ */
+public interface DOMRectList extends JSObject {
 
-    E namedItem(String name);
+    @JSProperty
+    int getLength();
+
+    @JSIndexer
+    DOMRect get(int index);
 }

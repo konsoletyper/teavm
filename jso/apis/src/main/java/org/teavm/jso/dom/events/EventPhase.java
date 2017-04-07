@@ -13,13 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.events;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.dom.html.use.UseHTMLValue;
 
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
-    E item(int index);
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/API/Event/eventPhase#Event_phase_constants
+ */
+public enum EventPhase implements UseHTMLValue<Integer> {
+  NONE(0),
+  CAPTURING_PHASE(1),
+  AT_TARGET(2),
+  BUBBLING_PHASE(3);
 
-    E namedItem(String name);
+  private final int value;
+
+  EventPhase(int value) {
+    this.value = value;
+  }
+
+  @Override
+  public Integer getValue() {
+    return value;
+  }
+
 }

@@ -13,13 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.html.use;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.html.ValidityState;
 
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
-    E item(int index);
+/**
+ * All elements containing html form validation methods - instead of doing duplicated code.
+ * Not a real element.
+ */
+public interface UseHTMLFormValidation {
 
-    E namedItem(String name);
+    @JSProperty
+    boolean isWillValidate();
+
+    @JSProperty
+    ValidityState getValidity();
+
+    @JSProperty
+    String getValidationMessage();
+
+    @JSMethod
+    boolean checkValidity();
+
+    @JSMethod
+    boolean reportValidity();
+
+    @JSMethod
+    void setCustomValidity(String error);
 }

@@ -15,11 +15,20 @@
  */
 package org.teavm.jso.dom.html;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.dom.html.use.UseHTMLValue;
 
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
-    E item(int index);
+public enum Encoding implements UseHTMLValue<String> {
+    MULTIPART("multipart/form-data"),
+    URLENCODED("application/x-www-form-urlencoded");
 
-    E namedItem(String name);
+    private final String value;
+
+    Encoding(String value) {
+        this.value = value;
+    }
+
+    @Override
+    public String getValue() {
+        return value;
+    }
 }

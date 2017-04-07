@@ -15,11 +15,13 @@
  */
 package org.teavm.jso.dom.html;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSProperty;
 
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
-    E item(int index);
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/API/HTMLDataListElement
+ */
+public interface HTMLDataListElement extends HTMLElement {
 
-    E namedItem(String name);
+    @JSProperty
+    HTMLCollection<HTMLDataElement> getOptions();
 }

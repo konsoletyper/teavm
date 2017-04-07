@@ -13,13 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.range;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.dom.html.use.UseHTMLValue;
 
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
-    E item(int index);
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/API/Range/compareBoundaryPoints
+ * https://dom.spec.whatwg.org/#dom-range-compareboundarypoints
+ */
+public enum RangeCompare implements UseHTMLValue<Short> {
+  START_TO_START(0),
+  START_TO_END(1),
+  END_TO_END(2),
+  END_TO_START(3);
 
-    E namedItem(String name);
+  private final short value;
+
+  RangeCompare(int value) {
+    this.value = (short) value;
+  }
+
+  @Override
+  public Short getValue() {
+    return value;
+  }
+
 }

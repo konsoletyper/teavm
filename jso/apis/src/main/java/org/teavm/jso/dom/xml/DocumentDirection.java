@@ -13,13 +13,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.xml;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.dom.html.use.UseHTMLValue;
 
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
-    E item(int index);
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/API/Document/dir
+ */
+public enum DocumentDirection implements UseHTMLValue<String> {
+  LTR("ltr"),
+  RTL("rtl"),
+  AUTO("auto");
 
-    E namedItem(String name);
+  private final String value;
+
+  DocumentDirection(String value) {
+    this.value = value;
+  }
+
+  @Override
+  public String getValue() {
+    return value;
+  }
+
 }

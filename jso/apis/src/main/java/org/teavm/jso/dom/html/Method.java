@@ -15,11 +15,13 @@
  */
 package org.teavm.jso.dom.html;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.dom.html.use.UseHTMLValue;
 
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
-    E item(int index);
+public enum Method implements UseHTMLValue<String> {
+  GET, POST;
 
-    E namedItem(String name);
+  @Override
+  public String getValue() {
+    return name();
+  }
 }
