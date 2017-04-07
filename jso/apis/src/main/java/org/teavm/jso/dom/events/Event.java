@@ -15,11 +15,13 @@
  */
 package org.teavm.jso.dom.events;
 
+import org.teavm.jso.JSBody;
+import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.html.use.UseHTMLValue;
 
 /**
- *
  * @author Alexey Andreev
  */
 public interface Event extends JSObject {
@@ -28,29 +30,72 @@ public interface Event extends JSObject {
     short BUBBLING_PHASE = 3;
 
     @JSProperty
-    String getType();
+    EventTarget getCurrentTarget();
+
+    default EventClass getEventClass() {
+        return UseHTMLValue.toEnumValue(EventClass.class, innerGetEventClass());
+    }
+
+    @JSBody(script = "return this.constructor.name;")
+    String innerGetEventClass();
+
+    default EventPhase getEventPhase() {
+        return UseHTMLValue.toEnumValue(EventPhase.class, innerGetEventPhase());
+    }
+
+    @JSProperty("eventPhase")
+    int innerGetEventPhase();
+
+    @JSProperty
+    EventTarget getSrcElement();
 
     @JSProperty
     EventTarget getTarget();
 
     @JSProperty
-    EventTarget getCurrentTarget();
+    double getTimeStamp();
 
-    @JSProperty
-    short getEventPhase();
+    default EventType getType() {
+        return UseHTMLValue.toEnumValue(EventType.class, innerGetType());
+    }
+
+    @JSProperty("type")
+    String innerGetType();
 
     @JSProperty
     boolean isBubbles();
 
     @JSProperty
+    boolean isCancelBubble();
+
+    @JSProperty
     boolean isCancelable();
 
     @JSProperty
-    JSObject getTimeStamp();
+    boolean isDefaultPrevented();
 
-    void stopPropagation();
+    @JSProperty
+    boolean isReturnValue();
 
+    @JSProperty
+    void setCancelBubble(boolean cancelBubble);
+
+    @JSProperty
+    void setReturnValue(boolean returnValue);
+
+    default void initEvent(EventType eventType, boolean canBubble, boolean cancelable) {
+        innerInitEvent(UseHTMLValue.getHtmlValue(eventType), canBubble, cancelable);
+    }
+
+    @JSMethod("initEvent")
+    void innerInitEvent(String eventType, boolean canBubble, boolean cancelable);
+
+    @JSMethod
     void preventDefault();
 
-    void initEvent(String eventTypeArg, boolean canBubbleArg, boolean cancelableArg);
+    @JSMethod
+    void stopImmediatePropagation();
+
+    @JSMethod
+    void stopPropagation();
 }

@@ -13,17 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.html.use;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSProperty;
 
 /**
- * @author Alexey Andreev
+ * All elements containing an href - instead of doing duplicated code.
+ * Not a real element.
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+public interface UseHTMLHRef {
 
-    E item(int index);
+    @JSProperty("href")
+    String getHRef();
 
-    E namedItem(String name);
+    @JSProperty("href")
+    void setHRef(String hRef);
 }

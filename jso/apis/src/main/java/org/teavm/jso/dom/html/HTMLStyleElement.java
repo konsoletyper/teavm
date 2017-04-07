@@ -15,15 +15,34 @@
  */
 package org.teavm.jso.dom.html;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSProperty;
 
 /**
- * @author Alexey Andreev
+ * https://developer.mozilla.org/en-US/docs/Web/API/HTMLStyleElement
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+public interface HTMLStyleElement extends HTMLElement {
 
-    E item(int index);
+    @JSProperty
+    String getMedia();
 
-    E namedItem(String name);
+    @JSProperty
+    void setMedia(String media);
+
+    @JSProperty
+    String getNonce();
+
+    @JSProperty
+    void setNonce(String nonce);
+
+    @JSProperty
+    String getType();
+
+    @JSProperty
+    void setType(String type);
+
+    @JSProperty
+    boolean isScoped();
+
+    @JSProperty
+    void setScoped(boolean scoped);
 }

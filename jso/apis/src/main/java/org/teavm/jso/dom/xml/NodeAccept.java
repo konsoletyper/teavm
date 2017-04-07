@@ -13,17 +13,27 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.xml;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.dom.html.use.UseHTMLValue;
 
 /**
- * @author Alexey Andreev
+ * https://developer.mozilla.org/en-US/docs/Web/API/NodeFilter/acceptNode
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+public enum NodeAccept implements UseHTMLValue<Short> {
+    FILTER_ACCEPT(1),
+    FILTER_REJECT(2),
+    FILTER_SKIP(3);
 
-    E item(int index);
+    private final short value;
 
-    E namedItem(String name);
+    NodeAccept(int value) {
+        this.value = (short) value;
+    }
+
+    @Override
+    public Short getValue() {
+        return value;
+    }
+
 }

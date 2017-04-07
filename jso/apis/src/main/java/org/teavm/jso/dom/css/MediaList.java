@@ -13,17 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.css;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSIndexer;
+import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
- * @author Alexey Andreev
+ * https://developer.mozilla.org/en-US/docs/Web/API/MediaList
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+public interface MediaList extends JSObject {
 
-    E item(int index);
+    @JSProperty
+    int getLength();
 
-    E namedItem(String name);
+    @JSIndexer
+    String get(int index);
+
+    @JSProperty
+    String getMediaText();
+
+    @JSProperty
+    void setMediaText(String mediaText);
+
+    @JSMethod
+    void appendMedium(String medium);
+
+    @JSMethod
+    void deleteMedium(String medium);
 }

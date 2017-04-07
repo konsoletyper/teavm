@@ -15,15 +15,8 @@
  */
 package org.teavm.jso.dom.html;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
-
 /**
- * @author Alexey Andreev
+ * https://developer.mozilla.org/en-US/docs/Web/API/HTMLDivElement
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
-
-    E item(int index);
-
-    E namedItem(String name);
+public interface HTMLDivElement extends HTMLElement {
 }

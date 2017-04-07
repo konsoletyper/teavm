@@ -15,15 +15,28 @@
  */
 package org.teavm.jso.dom.html;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSProperty;
 
 /**
- * @author Alexey Andreev
+ * https://developer.mozilla.org/en-US/docs/Web/API/HTMLOListElement
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+public interface HTMLOListElement extends HTMLElement {
 
-    E item(int index);
+    @JSProperty
+    boolean isReversed();
 
-    E namedItem(String name);
+    @JSProperty
+    void setReversed(boolean reversed);
+
+    @JSProperty
+    int getStart();
+
+    @JSProperty
+    void setStart(int start);
+
+    @JSProperty
+    String getType();
+
+    @JSProperty
+    void setType(String type);
 }

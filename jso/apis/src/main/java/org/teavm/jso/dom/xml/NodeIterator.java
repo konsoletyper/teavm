@@ -13,17 +13,35 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.xml;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 /**
- * @author Alexey Andreev
+ * https://developer.mozilla.org/en-US/docs/Web/API/NodeIterator
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+public interface NodeIterator extends JSObject {
 
-    E item(int index);
+    @JSProperty
+    boolean isExpandEntityReferences();
 
-    E namedItem(String name);
+    @JSProperty
+    NodeFilter getFilter();
+
+    @JSProperty
+    boolean isPointerBeforeReferenceNode();
+
+    @JSProperty
+    Node getReferenceNode();
+
+    @JSProperty
+    Node getRoot();
+
+    @JSMethod
+    Node nextNode();
+
+    @JSMethod
+    Node previousNode();
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2016 Liraz.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.html.use;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSProperty;
 
 /**
- * @author Alexey Andreev
+ * All elements containing a src - instead of doing duplicated code.
+ * Not a real element.
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+public interface UseHTMLSrc {
 
-    E item(int index);
+    @JSProperty
+    String getSrc();
 
-    E namedItem(String name);
+    @JSProperty
+    void setSrc(String src);
 }

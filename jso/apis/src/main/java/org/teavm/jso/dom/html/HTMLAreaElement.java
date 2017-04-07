@@ -15,15 +15,29 @@
  */
 package org.teavm.jso.dom.html;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.html.use.UseHTMLTarget;
 
 /**
- * @author Alexey Andreev
+ * https://developer.mozilla.org/en-US/docs/Web/API/HTMLAreaElement
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+public interface HTMLAreaElement extends HTMLElement, HTMLHyperlinkElementUtils, UseHTMLTarget {
 
-    E item(int index);
+    @JSProperty
+    String getAlt();
 
-    E namedItem(String name);
+    @JSProperty
+    void setAlt(String alt);
+
+    @JSProperty
+    String getCoords();
+
+    @JSProperty
+    void setCoords(String coords);
+
+    @JSProperty
+    String getShape();
+
+    @JSProperty
+    void setShape(String shape);
 }

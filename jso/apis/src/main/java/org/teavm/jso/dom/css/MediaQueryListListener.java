@@ -13,17 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.css;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSFunctor;
 
-/**
- * @author Alexey Andreev
- */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+@JSFunctor
+public interface MediaQueryListListener {
 
-    E item(int index);
-
-    E namedItem(String name);
+  void listen(MediaQueryList mql);
 }
