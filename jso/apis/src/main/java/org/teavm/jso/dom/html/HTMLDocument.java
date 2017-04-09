@@ -16,6 +16,7 @@
 package org.teavm.jso.dom.html;
 
 import java.util.function.Consumer;
+import org.teavm.jso.JSBody;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.browser.Location;
@@ -34,7 +35,6 @@ import org.teavm.jso.dom.xml.DocumentDesignMode;
 import org.teavm.jso.dom.xml.DocumentDirection;
 import org.teavm.jso.dom.xml.DocumentReadyState;
 import org.teavm.jso.dom.xml.DocumentType;
-import org.teavm.jso.dom.xml.Element;
 import org.teavm.jso.dom.xml.Node;
 import org.teavm.jso.dom.xml.NodeFilter;
 import org.teavm.jso.dom.xml.NodeIterator;
@@ -60,22 +60,25 @@ public interface HTMLDocument extends Document, EventTarget {
         return result;
     }
 
-    @JSMethod
-    <E extends Element> HTMLCollection<E> getElementsByClassName(String className);
+    @Override
+    HTMLElement getElementById(String elementId);
 
-    default <E extends Element> HTMLCollection<E> getElementsByTagName(TagName tagName) {
+    @JSMethod
+    <E extends HTMLElement> HTMLCollection<E> getElementsByClassName(String className);
+
+    default <E extends HTMLElement> HTMLCollection<E> getElementsByTagName(TagName tagName) {
         return innerGetElementsByTagName(UseHTMLValue.getHtmlValue(tagName));
     }
 
     @JSMethod("getElementsByTagName")
-    <E extends Element> HTMLCollection<E> innerGetElementsByTagName(String tagName);
+    <E extends HTMLElement> HTMLCollection<E> innerGetElementsByTagName(String tagName);
 
-    default <E extends Element> HTMLCollection<E> getElementsByTagNameNS(String namespaceURI, TagName tagName) {
+    default <E extends HTMLElement> HTMLCollection<E> getElementsByTagNameNS(String namespaceURI, TagName tagName) {
         return innerGetElementsByTagNameNS(namespaceURI, UseHTMLValue.getHtmlValue(tagName));
     }
 
     @JSMethod("getElementsByTagNameNS")
-    <E extends Element> HTMLCollection<E> innerGetElementsByTagNameNS(String namespaceURI, String tagName);
+    <E extends HTMLElement> HTMLCollection<E> innerGetElementsByTagNameNS(String namespaceURI, String tagName);
 
     @JSProperty
     HTMLBodyElement getBody();
@@ -100,7 +103,7 @@ public interface HTMLDocument extends Document, EventTarget {
     String getURL();
 
     @JSProperty
-    <E extends Element> E getActiveElement();
+    <E extends HTMLElement> E getActiveElement();
 
     @JSProperty
     String getBgColor();
@@ -127,31 +130,31 @@ public interface HTMLDocument extends Document, EventTarget {
         return UseHTMLValue.toEnumValue(DocumentDesignMode.class, innerGetDesignMode());
     }
 
-    @JSProperty("designMode")
+    @JSBody(script = "return this.designMode;")
     String innerGetDesignMode();
 
     default void setDesignMode(DocumentDesignMode designMode) {
         innerSetDesignMode(UseHTMLValue.getHtmlValue(designMode));
     }
 
-    @JSProperty("designMode")
+    @JSBody(params = "value", script = "this.designMode = value;")
     void innerSetDesignMode(String designMode);
 
     default DocumentDirection getDir() {
         return UseHTMLValue.toEnumValue(DocumentDirection.class, innerGetDir());
     }
 
-    @JSProperty("dir")
+    @JSBody(script = "return this.dir;")
     String innerGetDir();
 
     default void setDir(DocumentDirection dir) {
         innerSetDir(UseHTMLValue.getHtmlValue(dir));
     }
 
-    @JSProperty("dir")
+    @JSBody(params = "value", script = "this.dir = value;")
     void innerSetDir(String dir);
 
-    @JSProperty("doctype")
+    @JSBody(script = "return this.docType;")
     DocumentType getDocType();
 
     @JSProperty
@@ -219,7 +222,7 @@ public interface HTMLDocument extends Document, EventTarget {
         return UseHTMLValue.toEnumValue(DocumentReadyState.class, innerGetReadyState());
     }
 
-    @JSProperty("readyState")
+    @JSBody(script = "return this.readyState;")
     String innerGetReadyState();
 
     @JSProperty
@@ -291,79 +294,33 @@ public interface HTMLDocument extends Document, EventTarget {
     @JSProperty("onafterscriptexecute")
     EventListener<Event> setOnAfterScriptExecute(EventListener<Event> listener);
 
-    default EventListener<Event> setOnBeforeScriptExecute(EventListener<Event> listener) {
-        innerSetOnBeforeScriptExecute(listener);
-        return listener;
-    }
-
     @JSProperty("onbeforescriptexecute")
-    void innerSetOnBeforeScriptExecute(EventListener<Event> listener);
-
-    default EventListener<Event> setOnCopy(EventListener<Event> listener) {
-        innerSetOnCopy(listener);
-        return listener;
-    }
+    EventListener<Event> setOnBeforeScriptExecute(EventListener<Event> listener);
 
     @JSProperty("oncopy")
-    void innerSetOnCopy(EventListener<Event> listener);
-
-    default EventListener<Event> setOnCut(EventListener<Event> listener) {
-        innerSetOnCut(listener);
-        return listener;
-    }
+    EventListener<Event> setOnCopy(EventListener<Event> listener);
 
     @JSProperty("oncut")
-    void innerSetOnCut(EventListener<Event> listener);
-
-    default EventListener<Event> setOnPaste(EventListener<Event> listener) {
-        innerSetOnPaste(listener);
-        return listener;
-    }
+    EventListener<Event> setOnCut(EventListener<Event> listener);
 
     @JSProperty("onpaste")
-    void innerSetOnPaste(EventListener<Event> listener);
-
-    default EventListener<Event> setOnPointerLockChange(EventListener<Event> listener) {
-        innerSetOnPointerLockChange(listener);
-        return listener;
-    }
+    EventListener<Event> setOnPaste(EventListener<Event> listener);
 
     @JSProperty("onpointerlockchange")
-    void innerSetOnPointerLockChange(EventListener<Event> listener);
-
-    default EventListener<Event> setOnPointerLockError(EventListener<Event> listener) {
-        innerSetOnPointerLockError(listener);
-        return listener;
-    }
+    EventListener<Event> setOnPointerLockChange(EventListener<Event> listener);
 
     @JSProperty("onpointerlockerror")
-    void innerSetOnPointerLockError(EventListener<Event> listener);
-
-    default EventListener<Event> setOnReadyStateChange(EventListener<Event> listener) {
-        innerSetOnReadyStateChange(listener);
-        return listener;
-    }
+    EventListener<Event> setOnPointerLockError(EventListener<Event> listener);
 
     @JSProperty("onreadystatechange")
-    void innerSetOnReadyStateChange(EventListener<Event> listener);
-
-    default EventListener<Event> setOnSelectionChange(EventListener<Event> listener) {
-        innerSetOnSelectionChange(listener);
-        return listener;
-    }
-
+    EventListener<Event> setOnReadyStateChange(EventListener<Event> listener);
 
     @JSProperty("onselectionchange")
-    void innerSetOnSelectionChange(EventListener<Event> listener);
-
-    default EventListener<Event> setOnWheel(EventListener<Event> listener) {
-        innerSetOnWheel(listener);
-        return listener;
-    }
-
+    EventListener<Event> setOnSelectionChange(EventListener<Event> listener);
 
     @JSProperty("onwheel")
-    void innerSetOnWheel(EventListener<Event> listener);
+    EventListener<Event> setOnWheel(EventListener<Event> listener);
+
 
     @JSMethod
     Node adoptNode(Node source);
@@ -371,19 +328,19 @@ public interface HTMLDocument extends Document, EventTarget {
     @JSMethod
     Range caretRangeFromPoint(double x, double y);
 
-    default <E extends Element> E createElement(TagName tagName) {
+    default <E extends HTMLElement> E createElement(TagName tagName) {
         return innerCreateElement(UseHTMLValue.getHtmlValue(tagName));
     }
 
     @JSMethod("createElement")
-    <E extends Element> E innerCreateElement(String tagName);
+    <E extends HTMLElement> E innerCreateElement(String tagName);
 
-    default <E extends Element> E createElementNS(String namespaceURI, TagName tagName) {
+    default <E extends HTMLElement> E createElementNS(String namespaceURI, TagName tagName) {
         return innerCreateElementNS(namespaceURI, UseHTMLValue.getHtmlValue(tagName));
     }
 
     @JSMethod("createElementNS")
-    <E extends Element> E innerCreateElementNS(String namespaceURI, String tagName);
+    <E extends HTMLElement> E innerCreateElementNS(String namespaceURI, String tagName);
 
     default <E extends Event> E createEvent(EventClass eventClass) {
         return innerCreateEvent(UseHTMLValue.getHtmlValue(eventClass));
@@ -399,10 +356,10 @@ public interface HTMLDocument extends Document, EventTarget {
     Range createRange();
 
     @JSMethod
-    <E extends Element> E elementFromPoint(double x, double y);
+    <E extends HTMLElement> E elementFromPoint(double x, double y);
 
     @JSMethod
-    <E extends Element> E[] elementsFromPoint(double x, double y);
+    <E extends HTMLElement> E[] elementsFromPoint(double x, double y);
 
     @JSMethod
     void exitPointerLock();
@@ -417,7 +374,7 @@ public interface HTMLDocument extends Document, EventTarget {
     boolean execCommand(String command, boolean userInterface, String value);
 
     @JSMethod
-    <E extends Element> NodeList<E> getElementsByName(String elementName);
+    <E extends HTMLElement> NodeList<E> getElementsByName(String elementName);
 
     @JSMethod
     Selection getSelection();

@@ -43,7 +43,7 @@ public interface Event extends JSObject {
         return UseHTMLValue.toEnumValue(EventPhase.class, innerGetEventPhase());
     }
 
-    @JSProperty("eventPhase")
+    @JSBody(script = "return this.eventPhase;")
     int innerGetEventPhase();
 
     @JSProperty
@@ -59,7 +59,7 @@ public interface Event extends JSObject {
         return UseHTMLValue.toEnumValue(EventType.class, innerGetType());
     }
 
-    @JSProperty("type")
+    @JSBody(script = "return this.type;")
     String innerGetType();
 
     @JSProperty

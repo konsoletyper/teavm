@@ -15,7 +15,6 @@
  */
 package org.teavm.jso.dom.xml;
 
-import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSProperty;
 
 /**
@@ -58,6 +57,5 @@ public interface Document extends Node {
 
     NodeList<Element> getElementsByTagNameNS(String namespaceURI, String localName);
 
-    @JSMethod
-    <E extends Element> E getElementById(String elementId);
+    Element getElementById(String elementId);
 }
