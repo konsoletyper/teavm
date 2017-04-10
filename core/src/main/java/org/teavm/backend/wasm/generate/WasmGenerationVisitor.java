@@ -745,7 +745,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         WasmBlock defaultTarget = wrapper;
         wrapper = defaultBlock;
 
-        if (max - min >= SWITCH_TABLE_THRESHOLD) {
+        if ((long) max - (long) min >= SWITCH_TABLE_THRESHOLD) {
             translateSwitchToBinarySearch(statement, condition, initialWrapper, defaultTarget, targets);
         } else {
             translateSwitchToWasmSwitch(statement, condition, initialWrapper, defaultTarget, targets, min, max);
@@ -804,7 +804,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         final int label;
         final WasmBlock target;
 
-        public TableEntry(int label, WasmBlock target) {
+        TableEntry(int label, WasmBlock target) {
             this.label = label;
             this.target = target;
         }
