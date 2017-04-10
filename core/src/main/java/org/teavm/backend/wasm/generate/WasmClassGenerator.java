@@ -73,6 +73,7 @@ public class WasmClassGenerator {
             DataPrimitives.ADDRESS, /* array type */
             DataPrimitives.INT, /* isInstance function */
             DataPrimitives.ADDRESS, /* parent */
+            DataPrimitives.ADDRESS, /* enum values */
             DataPrimitives.ADDRESS  /* layout */);
     private IntegerArray staticGcRoots = new IntegerArray(1);
     private int staticGcRootsAddress;
@@ -86,7 +87,8 @@ public class WasmClassGenerator {
     private static final int CLASS_ARRAY_TYPE = 7;
     private static final int CLASS_IS_INSTANCE = 8;
     private static final int CLASS_PARENT = 9;
-    private static final int CLASS_LAYOUT = 10;
+    private static final int CLASS_ENUM_VALUES = 10;
+    private static final int CLASS_LAYOUT = 11;
 
     public WasmClassGenerator(ClassReaderSource classSource, VirtualTableProvider vtableProvider,
             TagRegistry tagRegistry, BinaryWriter binaryWriter) {
@@ -193,6 +195,7 @@ public class WasmClassGenerator {
                 : 0;
 
         String name = ((ValueType.Object) binaryData.type).getClassName();
+        int flags = 0;
 
         VirtualTable vtable = vtableProvider.lookup(name);
         int vtableSize = vtable != null ? vtable.getEntries().size() : 0;
@@ -238,7 +241,32 @@ public class WasmClassGenerator {
             staticGcRoots.add(binaryData.fieldLayout.get(field.getFieldName()));
         }
 
+        ClassReader cls = classSource.get(name);
+        if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
+            header.setAddress(CLASS_ENUM_VALUES, generateEnumValues(cls, binaryData));
+            flags |= RuntimeClass.ENUM;
+        }
+
+        header.setInt(CLASS_FLAGS, flags);
+
         return vtable != null ? wrapper : header;
+    }
+
+    private int generateEnumValues(ClassReader cls, ClassBinaryData binaryData) {
+        FieldReader[] fields = cls.getFields().stream()
+                .filter(field -> field.hasModifier(ElementModifier.ENUM))
+                .toArray(FieldReader[]::new);
+        DataValue sizeValue = DataPrimitives.ADDRESS.createValue();
+        sizeValue.setAddress(0, fields.length);
+        int valuesAddress = binaryWriter.append(sizeValue);
+
+        for (FieldReader field : fields) {
+            DataValue fieldRefValue = DataPrimitives.ADDRESS.createValue();
+            fieldRefValue.setAddress(0, binaryData.fieldLayout.get(field.getName()));
+            binaryWriter.append(fieldRefValue);
+        }
+
+        return valuesAddress;
     }
 
     private List<FieldReference> getReferenceFields(ClassReader cls) {

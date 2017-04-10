@@ -111,7 +111,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     public boolean isEnum() {
-        return platformClass.getMetadata().isEnum();
+        return Platform.isEnum(platformClass);
     }
 
     public TClass<?> getComponentType() {
