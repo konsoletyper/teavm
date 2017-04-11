@@ -26,10 +26,6 @@ import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.Resource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MetadataProviderNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {

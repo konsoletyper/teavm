@@ -1529,6 +1529,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             accept(expr);
             return result;
         }
+
+        @Override
+        public BinaryWriter getBinaryWriter() {
+            return binaryWriter;
+        }
     };
 
     private WasmLocal getTemporary(WasmType type) {

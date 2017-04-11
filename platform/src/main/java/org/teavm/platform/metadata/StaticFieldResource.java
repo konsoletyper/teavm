@@ -15,9 +15,5 @@
  */
 package org.teavm.platform.metadata;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface StaticFieldResource extends Resource {
 }

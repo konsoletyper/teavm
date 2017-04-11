@@ -25,6 +25,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.wasm.binary.BinaryWriter;
@@ -46,6 +47,8 @@ import org.teavm.backend.wasm.intrinsics.PlatformIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformObjectIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ShadowStackIntrinsic;
 import org.teavm.backend.wasm.intrinsics.StructureIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmIntrinsicFactory;
+import org.teavm.backend.wasm.intrinsics.WasmIntrinsicFactoryContext;
 import org.teavm.backend.wasm.intrinsics.WasmRuntimeIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;
@@ -76,6 +79,7 @@ import org.teavm.backend.wasm.render.WasmCRenderer;
 import org.teavm.backend.wasm.render.WasmRenderer;
 import org.teavm.backend.wasm.transformation.IndirectCallTraceTransformation;
 import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
+import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyChecker;
 import org.teavm.dependency.DependencyListener;
@@ -89,6 +93,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
@@ -122,7 +127,7 @@ import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
-public class WasmTarget implements TeaVMTarget {
+public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private TeaVMTargetController controller;
     private boolean debugging;
     private boolean wastEmitted;
@@ -132,6 +137,7 @@ public class WasmTarget implements TeaVMTarget {
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
     private WasmBinaryVersion version = WasmBinaryVersion.V_0x1;
+    private List<WasmIntrinsicFactory> additionalIntrinsics = new ArrayList<>();
 
     @Override
     public void setController(TeaVMTargetController controller) {
@@ -143,8 +149,13 @@ public class WasmTarget implements TeaVMTarget {
     }
 
     @Override
+    public void add(WasmIntrinsicFactory intrinsic) {
+        additionalIntrinsics.add(intrinsic);
+    }
+
+    @Override
     public List<TeaVMHostExtension> getHostExtensions() {
-        return Collections.emptyList();
+        return Collections.singletonList(this);
     }
 
     @Override
@@ -296,6 +307,12 @@ public class WasmTarget implements TeaVMTarget {
         context.addIntrinsic(new PlatformClassIntrinsic());
         context.addIntrinsic(new PlatformObjectIntrinsic(classGenerator));
         context.addIntrinsic(new ClassIntrinsic());
+
+        IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext(classes);
+        for (WasmIntrinsicFactory additionalIntrinsicFactory : additionalIntrinsics) {
+            context.addIntrinsic(additionalIntrinsicFactory.create(intrinsicFactoryContext));
+        }
+
         GCIntrinsic gcIntrinsic = new GCIntrinsic();
         context.addIntrinsic(gcIntrinsic);
         MutatorIntrinsic mutatorIntrinsic = new MutatorIntrinsic();
@@ -376,6 +393,34 @@ public class WasmTarget implements TeaVMTarget {
         }
         if (cEmitted) {
             emitC(module, buildTarget, getBaseName(outputName) + ".c");
+        }
+    }
+
+    private class IntrinsicFactoryContext implements WasmIntrinsicFactoryContext {
+        private ClassReaderSource classSource;
+
+        public IntrinsicFactoryContext(ClassReaderSource classSource) {
+            this.classSource = classSource;
+        }
+
+        @Override
+        public ClassReaderSource getClassSource() {
+            return classSource;
+        }
+
+        @Override
+        public ClassLoader getClassLoader() {
+            return controller.getClassLoader();
+        }
+
+        @Override
+        public ServiceRepository getServices() {
+            return controller.getServices();
+        }
+
+        @Override
+        public Properties getProperties() {
+            return controller.getProperties();
         }
     }
 

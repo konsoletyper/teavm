@@ -17,10 +17,6 @@ package org.teavm.platform.plugin;
 
 import org.teavm.platform.metadata.Resource;
 
-/**
- *
- * @author Alexey Andreev
- */
 final class ResourceAccessor {
     private ResourceAccessor() {
     }

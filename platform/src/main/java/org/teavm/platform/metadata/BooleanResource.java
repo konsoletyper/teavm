@@ -15,10 +15,6 @@
  */
 package org.teavm.platform.metadata;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface BooleanResource extends Resource {
     boolean getValue();
 

@@ -15,16 +15,26 @@
  */
 package org.teavm.platform.plugin;
 
+import org.teavm.backend.javascript.TeaVMJavaScriptHost;
+import org.teavm.backend.wasm.TeaVMWasmHost;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 public class PlatformPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
-        host.add(new MetadataProviderTransformer());
-        host.add(new ResourceTransformer());
-        host.add(new ResourceAccessorTransformer(host));
-        host.add(new ResourceAccessorDependencyListener());
+        if (host.getExtension(TeaVMJavaScriptHost.class) != null) {
+            host.add(new MetadataProviderTransformer());
+            host.add(new ResourceTransformer());
+            host.add(new ResourceAccessorTransformer(host));
+            host.add(new ResourceAccessorDependencyListener());
+        }
+
+        TeaVMWasmHost wasmHost = host.getExtension(TeaVMWasmHost.class);
+        if (wasmHost != null) {
+            wasmHost.add(ctx -> new MetadataIntrinsic(ctx.getClassSource(), ctx.getClassLoader(), ctx.getProperties()));
+        }
+
         host.add(new AsyncMethodProcessor());
         host.add(new NewInstanceDependencySupport());
         host.add(new ClassLookupDependencySupport());

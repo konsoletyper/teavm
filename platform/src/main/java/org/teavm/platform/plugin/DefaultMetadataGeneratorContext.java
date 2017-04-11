@@ -22,10 +22,6 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.platform.metadata.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     private ListableClassReaderSource classSource;
     private ClassLoader classLoader;

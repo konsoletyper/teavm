@@ -23,10 +23,6 @@ import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 class ResourceAccessorInjector implements Injector {
     @Override
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {

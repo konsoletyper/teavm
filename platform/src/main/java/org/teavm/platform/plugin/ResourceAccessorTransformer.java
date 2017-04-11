@@ -25,10 +25,10 @@ import org.teavm.model.MethodHolder;
 import org.teavm.vm.spi.TeaVMHost;
 
 class ResourceAccessorTransformer implements ClassHolderTransformer {
-    private TeaVMJavaScriptHost vm;
+    private TeaVMJavaScriptHost jsHost;
 
     public ResourceAccessorTransformer(TeaVMHost vm) {
-        this.vm = vm.getExtension(TeaVMJavaScriptHost.class);
+        this.jsHost = vm.getExtension(TeaVMJavaScriptHost.class);
     }
 
     @Override
@@ -38,9 +38,9 @@ class ResourceAccessorTransformer implements ClassHolderTransformer {
             for (MethodHolder method : cls.getMethods()) {
                 if (method.hasModifier(ElementModifier.NATIVE)) {
                     if (method.getName().equals("keys")) {
-                        vm.add(method.getReference(), new ResourceAccessorGenerator());
+                        jsHost.add(method.getReference(), new ResourceAccessorGenerator());
                     } else {
-                        vm.add(method.getReference(), injector);
+                        jsHost.add(method.getReference(), injector);
                     }
                 }
             }
