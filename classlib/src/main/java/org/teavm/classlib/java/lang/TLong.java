@@ -56,7 +56,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
         }
         long value = 0;
         while (index < s.length()) {
-            int digit = TCharacter.getNumericValue(s.charAt(index++));
+            int digit = s.charAt(index++) - '0';
             if (digit < 0) {
                 throw new TNumberFormatException(TString.wrap("String contains invalid digits: " + s));
             }

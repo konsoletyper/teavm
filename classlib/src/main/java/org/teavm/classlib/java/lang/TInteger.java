@@ -77,7 +77,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
             throw new TNumberFormatException();
         }
         while (index < s.length()) {
-            int digit = TCharacter.getNumericValue(s.charAt(index++));
+            int digit = s.charAt(index++) - '0';
             if (digit < 0) {
                 throw new TNumberFormatException(TString.wrap("String contains invalid digits: " + s));
             }
