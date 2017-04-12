@@ -101,6 +101,7 @@ public class TeaVMTool implements BaseTeaVMTool {
     private JavaScriptTarget javaScriptTarget;
     private WasmTarget webAssemblyTarget;
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
+    private Set<File> generatedFiles = new HashSet<>();
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -276,6 +277,10 @@ public class TeaVMTool implements BaseTeaVMTool {
         return vm != null ? vm.getClasses() : Collections.emptyList();
     }
 
+    public Set<File> getGeneratedFiles() {
+        return generatedFiles;
+    }
+
     public Collection<String> getUsedResources() {
         if (vm == null) {
             return Collections.emptyList();
@@ -443,6 +448,9 @@ public class TeaVMTool implements BaseTeaVMTool {
                 TeaVMProblemRenderer.describeProblems(vm, log);
             }
 
+            File outputFile = new File(targetDirectory, outputName);
+            generatedFiles.add(outputFile);
+
             if (targetType == TeaVMTargetType.JAVASCRIPT) {
                 try (OutputStream output = new FileOutputStream(new File(targetDirectory, outputName), true)) {
                     try (Writer writer = new OutputStreamWriter(output, "UTF-8")) {
@@ -488,10 +496,11 @@ public class TeaVMTool implements BaseTeaVMTool {
         if (debugInformationGenerated) {
             assert debugEmitter != null;
             DebugInformation debugInfo = debugEmitter.getDebugInformation();
-            try (OutputStream debugInfoOut = new BufferedOutputStream(new FileOutputStream(new File(targetDirectory,
-                    getResolvedTargetFileName() + ".teavmdbg")))) {
+            File debugSymbolFile = new File(targetDirectory, getResolvedTargetFileName() + ".teavmdbg");
+            try (OutputStream debugInfoOut = new BufferedOutputStream(new FileOutputStream(debugSymbolFile))) {
                 debugInfo.write(debugInfoOut);
             }
+            generatedFiles.add(debugSymbolFile);
             log.info("Debug information successfully written");
         }
         if (sourceMapsFileGenerated) {
@@ -499,8 +508,8 @@ public class TeaVMTool implements BaseTeaVMTool {
             DebugInformation debugInfo = debugEmitter.getDebugInformation();
             String sourceMapsFileName = getResolvedTargetFileName() + ".map";
             writer.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
-            try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(
-                    new File(targetDirectory, sourceMapsFileName)), "UTF-8")) {
+            File sourceMapsFile = new File(targetDirectory, sourceMapsFileName);
+            try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(sourceMapsFile), "UTF-8")) {
                 debugInfo.writeAsSourceMaps(sourceMapsOut, "src", getResolvedTargetFileName());
             }
             log.info("Source maps successfully written");
@@ -548,9 +557,11 @@ public class TeaVMTool implements BaseTeaVMTool {
 
     private void resourceToFile(String resource, String fileName) throws IOException {
         try (InputStream input = TeaVMTool.class.getClassLoader().getResourceAsStream(resource)) {
-            try (OutputStream output = new FileOutputStream(new File(targetDirectory, fileName))) {
+            File outputFile = new File(targetDirectory, fileName);
+            try (OutputStream output = new FileOutputStream(outputFile)) {
                 IOUtils.copy(input, output);
             }
+            generatedFiles.add(outputFile);
         }
     }
 

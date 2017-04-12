@@ -21,6 +21,8 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
 import org.jetbrains.jps.incremental.CompileContext;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
 import org.teavm.callgraph.CallGraph;
@@ -137,8 +139,12 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
             errorOccurred = true;
         }
 
+        Set<String> generatedFiles = tool.getGeneratedFiles().stream()
+                .map(File::getAbsolutePath)
+                .collect(Collectors.toSet());
+
         return new InProcessBuildResult(tool.getDependencyInfo().getCallGraph(), errorOccurred,
-                tool.getProblemProvider(), tool.getClasses(), tool.getUsedResources());
+                tool.getProblemProvider(), tool.getClasses(), tool.getUsedResources(), generatedFiles);
     }
 
     private ClassLoader buildClassLoader() {
@@ -161,14 +167,16 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
         private ProblemProvider problemProvider;
         private Collection<String> classes;
         private Collection<String> usedResources;
+        private Collection<String> generatedFiles;
 
         InProcessBuildResult(CallGraph callGraph, boolean errorOccurred, ProblemProvider problemProvider,
-                Collection<String> classes, Collection<String> usedResources) {
+                Collection<String> classes, Collection<String> usedResources, Collection<String> generatedFiles) {
             this.callGraph = callGraph;
             this.errorOccurred = errorOccurred;
             this.problemProvider = problemProvider;
             this.classes = classes;
             this.usedResources = usedResources;
+            this.generatedFiles = generatedFiles;
         }
 
         @Override
@@ -194,6 +202,11 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
         @Override
         public Collection<String> getUsedResources() {
             return usedResources;
+        }
+
+        @Override
+        public Collection<String> getGeneratedFiles() {
+            return generatedFiles;
         }
     }
 }

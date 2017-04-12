@@ -142,6 +142,11 @@ public class RemoteBuildStrategy implements TeaVMBuildStrategy {
             public Collection<String> getClasses() {
                 return response.classes;
             }
+
+            @Override
+            public Collection<String> getGeneratedFiles() {
+                return response.generatedFiles;
+            }
         };
     }
 

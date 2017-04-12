@@ -29,4 +29,6 @@ public interface TeaVMBuildResult {
     Collection<String> getUsedResources();
 
     Collection<String> getClasses();
+
+    Collection<String> getGeneratedFiles();
 }

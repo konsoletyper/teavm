@@ -34,8 +34,8 @@ import java.util.Objects;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Stream;
+import org.jetbrains.jps.builders.BuildOutputConsumer;
 import org.jetbrains.jps.incremental.CompileContext;
-import org.jetbrains.jps.incremental.ModuleBuildTarget;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
 import org.jetbrains.jps.incremental.messages.ProgressMessage;
@@ -65,50 +65,35 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
-import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
 class TeaVMBuild {
     private final CompileContext context;
-    private final TeaVMStorageProvider jsStorageProvider = new TeaVMStorageProvider("js");
-    private final TeaVMStorageProvider wasmStorageProvider = new TeaVMStorageProvider("wasm");
     private final List<String> classPathEntries = new ArrayList<>();
     private List<String> directoryClassPathEntries;
-    private Map<TeaVMTargetType, TeaVMStorage> storages = new HashMap<>();
+    private TeaVMStorage storage;
     private final TeaVMBuilderAssistant assistant;
     private final Map<String, File> sourceFileCache = new HashMap<>();
     private final Map<File, int[]> fileLineCache = new HashMap<>();
     private TeaVMBuildStrategy buildStrategy;
+    private BuildOutputConsumer outputConsumer;
 
-    TeaVMBuild(CompileContext context, TeaVMBuilderAssistant assistant, TeaVMBuildStrategy buildStrategy) {
+    TeaVMBuild(CompileContext context, TeaVMBuilderAssistant assistant, TeaVMBuildStrategy buildStrategy,
+            BuildOutputConsumer outputConsumer) {
         this.context = context;
         this.assistant = assistant;
         this.buildStrategy = buildStrategy;
+        this.outputConsumer = outputConsumer;
     }
 
-    boolean perform(JpsModule module, ModuleBuildTarget target) throws IOException {
-        storages.put(TeaVMTargetType.JAVASCRIPT, context.getProjectDescriptor().dataManager.getStorage(
-                target, jsStorageProvider));
-        storages.put(TeaVMTargetType.WEBASSEMBLY, context.getProjectDescriptor().dataManager.getStorage(
-                target, wasmStorageProvider));
+    boolean perform(JpsModule module, TeaVMBuildTarget target) throws IOException {
+        TeaVMStorageProvider storageProvider = new TeaVMStorageProvider(
+                target.getConfiguration().getTargetType().name());
+        storage = context.getProjectDescriptor().dataManager.getStorage(target, storageProvider);
 
-        boolean doneSomething = false;
-        for (TeaVMJpsConfiguration config : TeaVMJpsConfiguration.getAll(module)) {
-            if (performForSubsystem(module, target, config)) {
-                doneSomething = true;
-            }
-        }
-
-        return doneSomething;
-    }
-
-    private boolean performForSubsystem(JpsModule module, ModuleBuildTarget target, TeaVMJpsConfiguration config)
-            throws IOException {
-        if (config == null) {
-            return false;
-        }
+        TeaVMJpsConfiguration config = target.getConfiguration();
 
         classPathEntries.clear();
         buildStrategy.init();
@@ -116,7 +101,7 @@ class TeaVMBuild {
         directoryClassPathEntries = classPathEntries.stream().filter(name -> new File(name).isDirectory())
                 .collect(toList());
 
-        if (!hasChanges(target, config.getTargetType())) {
+        if (!hasChanges(target)) {
             return false;
         }
 
@@ -131,10 +116,14 @@ class TeaVMBuild {
         TeaVMBuildResult buildResult = buildStrategy.build();
 
         if (!buildResult.isErrorOccurred() && buildResult.getProblems().getSevereProblems().isEmpty()) {
-            updateStorage(buildResult, config.getTargetType());
+            updateStorage(buildResult);
         }
 
         reportProblems(buildResult.getProblems(), buildResult.getCallGraph());
+
+        for (String fileName : buildResult.getGeneratedFiles()) {
+            outputConsumer.registerOutputFile(new File(fileName), Collections.emptyList());
+        }
 
         return true;
     }
@@ -410,13 +399,13 @@ class TeaVMBuild {
         return lines.getAll();
     }
 
-    private boolean hasChanges(ModuleBuildTarget target, TeaVMTargetType targetType) {
+    private boolean hasChanges(TeaVMBuildTarget target) {
         if (!context.getScope().isBuildIncrementally(target.getTargetType())
                 || context.getScope().isBuildForced(target)) {
             return true;
         }
 
-        List<TeaVMStorage.Entry> filesToWatch = storages.get(targetType).getParticipatingFiles();
+        List<TeaVMStorage.Entry> filesToWatch = storage.getParticipatingFiles();
         if (filesToWatch == null) {
             return true;
         }
@@ -430,7 +419,7 @@ class TeaVMBuild {
         return false;
     }
 
-    private void updateStorage(TeaVMBuildResult buildResult, TeaVMTargetType targetType) {
+    private void updateStorage(TeaVMBuildResult buildResult) {
         Set<String> resources = Stream.concat(buildResult.getClasses().stream()
                 .map(cls -> cls.replace('.', '/') + ".class"), buildResult.getUsedResources().stream())
                 .sorted()
@@ -443,7 +432,7 @@ class TeaVMBuild {
                 .filter(Objects::nonNull)
                 .collect(toList());
 
-        storages.get(targetType).setParticipatingFiles(participatingFiles);
+        storage.setParticipatingFiles(participatingFiles);
     }
 
     private Long getTimestamp(String path) {

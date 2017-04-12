@@ -15,38 +15,24 @@
  */
 package org.teavm.idea.jps;
 
-import java.io.IOException;
-import java.net.URL;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.jps.builders.BuildTargetType;
 import org.jetbrains.jps.incremental.BuilderService;
-import org.jetbrains.jps.incremental.ModuleLevelBuilder;
 import org.jetbrains.jps.incremental.TargetBuilder;
 
 public class TeaVMBuilderService extends BuilderService {
     @NotNull
     @Override
-    public List<? extends ModuleLevelBuilder> createModuleLevelBuilders() {
-        try {
-            Enumeration<URL> resources = TeaVMBuilderService.class.getClassLoader().getResources(
-                    "org/objectweb/asm/ClassVisitor.class");
-            while (resources.hasMoreElements()) {
-                URL url = resources.nextElement();
-                System.out.println(url);
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-        System.out.println();
+    public List<? extends TargetBuilder<?, ?>> createBuilders() {
         return Arrays.asList(new TeaVMBuilder());
     }
 
     @NotNull
     @Override
-    public List<? extends TargetBuilder<?, ?>> createBuilders() {
-        return Collections.emptyList();
+    public List<? extends BuildTargetType<?>> getTargetTypes() {
+        return Collections.singletonList(TeaVMBuildTargetType.INSTANCE);
     }
 }

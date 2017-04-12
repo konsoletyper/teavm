@@ -142,6 +142,9 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         response.severeProblems.addAll(tool.getProblemProvider().getSevereProblems());
         response.classes.addAll(tool.getClasses());
         response.usedResources.addAll(tool.getUsedResources());
+        response.generatedFiles.addAll(tool.getGeneratedFiles().stream()
+                .map(File::getAbsolutePath)
+                .collect(Collectors.toSet()));
 
         return response;
     }
