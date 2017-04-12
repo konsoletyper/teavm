@@ -93,7 +93,6 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
@@ -397,14 +396,14 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     }
 
     private class IntrinsicFactoryContext implements WasmIntrinsicFactoryContext {
-        private ClassReaderSource classSource;
+        private ListableClassReaderSource classSource;
 
-        public IntrinsicFactoryContext(ClassReaderSource classSource) {
+        public IntrinsicFactoryContext(ListableClassReaderSource classSource) {
             this.classSource = classSource;
         }
 
         @Override
-        public ClassReaderSource getClassSource() {
+        public ListableClassReaderSource getClassSource() {
             return classSource;
         }
 

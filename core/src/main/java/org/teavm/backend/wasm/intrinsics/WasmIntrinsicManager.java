@@ -18,9 +18,12 @@ package org.teavm.backend.wasm.intrinsics;
 import org.teavm.ast.Expr;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.diagnostics.Diagnostics;
 
 public interface WasmIntrinsicManager {
     WasmExpression generate(Expr expr);
 
     BinaryWriter getBinaryWriter();
+
+    Diagnostics getDiagnostics();
 }

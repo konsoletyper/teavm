@@ -17,10 +17,10 @@ package org.teavm.backend.wasm.intrinsics;
 
 import java.util.Properties;
 import org.teavm.common.ServiceRepository;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ListableClassReaderSource;
 
 public interface WasmIntrinsicFactoryContext {
-    ClassReaderSource getClassSource();
+    ListableClassReaderSource getClassSource();
 
     ClassLoader getClassLoader();
 

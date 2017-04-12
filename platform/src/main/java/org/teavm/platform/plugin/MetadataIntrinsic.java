@@ -20,36 +20,53 @@ import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
-import org.teavm.model.AnnotationReader;
-import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
+import org.teavm.common.ServiceRepository;
+import org.teavm.model.CallLocation;
+import org.teavm.model.ListableClassReaderSource;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataProvider;
+import org.teavm.platform.metadata.Resource;
 
 public class MetadataIntrinsic implements WasmIntrinsic {
-    private ClassReaderSource classSource;
+    private ListableClassReaderSource classSource;
     private ClassLoader classLoader;
+    private ServiceRepository services;
     private Properties properties;
 
-    public MetadataIntrinsic(ClassReaderSource classSource, ClassLoader classLoader, Properties properties) {
+    public MetadataIntrinsic(ListableClassReaderSource classSource, ClassLoader classLoader,
+            ServiceRepository services, Properties properties) {
         this.classSource = classSource;
         this.classLoader = classLoader;
+        this.services = services;
         this.properties = properties;
     }
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        ClassReader cls = classSource.get(methodReference.getClassName());
-        if (cls == null) {
+        MethodReader method = classSource.resolve(methodReference);
+        if (method == null) {
             return false;
         }
 
-        AnnotationReader annot = cls.getAnnotations().get(MetadataProvider.class.getName());
-        return annot != null;
+        return method.getAnnotations().get(MetadataProvider.class.getName()) != null;
     }
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
+        MethodReader method = classSource.resolve(invocation.getMethod());
+        MetadataGenerator generator = MetadataUtils.createMetadataGenerator(classLoader, method,
+                new CallLocation(invocation.getMethod()), manager.getDiagnostics());
+        if (generator == null) {
+            return new WasmInt32Constant(0);
+        }
+
+        DefaultMetadataGeneratorContext metadataContext = new DefaultMetadataGeneratorContext(classSource,
+                classLoader, properties, services);
+        Resource resource = generator.generateMetadata(metadataContext, invocation.getMethod());
+
         return null;
     }
 }

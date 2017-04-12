@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,20 +15,7 @@
  */
 package org.teavm.platform.plugin;
 
-import java.lang.reflect.Method;
-import java.util.HashMap;
-import java.util.Map;
-
-class BuildTimeResourceProxyFactory {
-    private Map<Method, BuildTimeResourceMethod> methods = new HashMap<>();
-    private Object[] initialData;
-
-    public BuildTimeResourceProxyFactory(Map<Method, BuildTimeResourceMethod> methods, Object[] initialData) {
-        this.methods = methods;
-        this.initialData = initialData;
-    }
-
-    BuildTimeResourceProxy create() {
-        return new BuildTimeResourceProxy(methods, initialData);
-    }
+public enum ResourceAccessorType {
+    GETTER,
+    SETTER
 }
