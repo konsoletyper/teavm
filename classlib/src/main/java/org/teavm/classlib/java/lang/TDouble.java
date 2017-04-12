@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.interop.Import;
 import org.teavm.jso.JSBody;
 
 public class TDouble extends TNumber implements TComparable<TDouble> {
@@ -220,12 +221,15 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     }
 
     @JSBody(params = "v", script = "return isNaN(v);")
+    @Import(module = "runtime", name = "isNaN")
     public static native boolean isNaN(double v);
 
     @JSBody(script = "return NaN;")
+    @Import(module = "runtime", name = "getNaN")
     private static native double getNaN();
 
     @JSBody(params = "v", script = "return !isFinite(v);")
+    @Import(module = "runtime", name = "isInfinite")
     public static native boolean isInfinite(double v);
 
     public static long doubleToRawLongBits(double value) {
