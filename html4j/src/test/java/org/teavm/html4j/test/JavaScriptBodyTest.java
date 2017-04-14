@@ -24,11 +24,16 @@ import java.util.Calendar;
 import net.java.html.js.JavaScriptBody;
 import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.SkipJVM;
+import org.teavm.junit.TeaVMTestRunner;
 
 /**
  *
  * @author Alexey Andreev
  */
+@RunWith(TeaVMTestRunner.class)
+@SkipJVM
 public class JavaScriptBodyTest {
     @Test
     public void readResource() throws IOException {

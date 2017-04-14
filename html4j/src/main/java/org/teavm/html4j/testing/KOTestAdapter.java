@@ -18,7 +18,6 @@ package org.teavm.html4j.testing;
 import java.lang.annotation.Annotation;
 import java.lang.reflect.Method;
 import java.util.Collections;
-import org.netbeans.html.json.tck.KOTest;
 import org.teavm.model.MethodReader;
 import org.teavm.testing.TestAdapter;
 import org.teavm.testing.TestRunner;
@@ -28,11 +27,13 @@ import org.teavm.testing.TestRunner;
  * @author Alexey Andreev
  */
 public class KOTestAdapter implements TestAdapter {
+    static final String KO_TEST_CLASS = "org.netbeans.html.json.tck.KOTest";
+
     @Override
     public boolean acceptClass(Class<?> cls) {
         for (Method method : cls.getDeclaredMethods()) {
             for (Annotation annot : method.getAnnotations()) {
-                if (annot.annotationType().getName().equals(KOTest.class.getName())) {
+                if (annot.annotationType().getName().equals(KO_TEST_CLASS)) {
                     return true;
                 }
             }
@@ -42,7 +43,7 @@ public class KOTestAdapter implements TestAdapter {
 
     @Override
     public boolean acceptMethod(MethodReader method) {
-        return method.getAnnotations().get(KOTest.class.getName()) != null;
+        return method.getAnnotations().get(KO_TEST_CLASS) != null;
     }
 
     @Override
