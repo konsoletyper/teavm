@@ -25,10 +25,13 @@ public class HTML4JPlugin implements TeaVMPlugin {
         if (host.getExtension(TeaVMJavaScriptHost.class) == null) {
             return;
         }
-        host.add(new JavaScriptBodyDependency());
+
+        JavaScriptBodyDependency bodyDependency = new JavaScriptBodyDependency();
+        host.add(bodyDependency);
         host.add(new JavaScriptBodyTransformer());
         host.add(new JCLHacks());
 
         host.getExtension(TeaVMJavaScriptHost.class).add(new JavaScriptResourceInterceptor());
+        host.getExtension(TeaVMJavaScriptHost.class).add(new JavaScriptObjectEnhancer(bodyDependency));
     }
 }

@@ -236,7 +236,7 @@ public class JavaScriptTCKTest extends JavaScriptBodyTest {
 
     @Test @Override
     public void toStringOfAnEnum() {
-        //super.toStringOfAnEnum();
+        super.toStringOfAnEnum();
     }
 
     @Test @Override
