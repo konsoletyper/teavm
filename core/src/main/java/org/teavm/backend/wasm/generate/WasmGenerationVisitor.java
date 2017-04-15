@@ -790,7 +790,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         } else {
             int mid = (upper + lower) / 2;
             int label = entries.get(mid).label;
-            WasmExpression condition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_UNSIGNED,
+            WasmExpression condition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED,
                     new WasmGetLocal(conditionVar), new WasmInt32Constant(label));
             WasmConditional conditional = new WasmConditional(condition);
             consumer.getBody().add(conditional);
