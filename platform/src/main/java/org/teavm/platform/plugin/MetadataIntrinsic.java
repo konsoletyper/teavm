@@ -15,8 +15,18 @@
  */
 package org.teavm.platform.plugin;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.binary.BinaryWriter;
+import org.teavm.backend.wasm.binary.DataPrimitives;
+import org.teavm.backend.wasm.binary.DataStructure;
+import org.teavm.backend.wasm.binary.DataType;
+import org.teavm.backend.wasm.binary.DataValue;
+import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
@@ -35,6 +45,7 @@ public class MetadataIntrinsic implements WasmIntrinsic {
     private ClassLoader classLoader;
     private ServiceRepository services;
     private Properties properties;
+    private Map<ResourceTypeDescriptor, DataStructure> resourceTypeCache = new HashMap<>();
 
     public MetadataIntrinsic(ListableClassReaderSource classSource, ClassLoader classLoader,
             ServiceRepository services, Properties properties) {
@@ -66,7 +77,94 @@ public class MetadataIntrinsic implements WasmIntrinsic {
         DefaultMetadataGeneratorContext metadataContext = new DefaultMetadataGeneratorContext(classSource,
                 classLoader, properties, services);
         Resource resource = generator.generateMetadata(metadataContext, invocation.getMethod());
+        int address = writeValue(manager.getBinaryWriter(), manager.getStringPool(), resource);
 
-        return null;
+        return new WasmInt32Constant(address);
+    }
+
+    private int writeValue(BinaryWriter writer, WasmStringPool stringPool, Object value) {
+        if (value instanceof String) {
+            return stringPool.getStringPointer((String) value);
+        } else if (value instanceof ResourceTypeDescriptorProvider && value instanceof Resource) {
+            return writeResource(writer, stringPool, (ResourceTypeDescriptorProvider) value);
+        } else {
+            throw new IllegalArgumentException("Don't know how to write resource: " + value);
+        }
+    }
+
+    private int writeResource(BinaryWriter writer, WasmStringPool stringPool,
+            ResourceTypeDescriptorProvider resourceType) {
+        DataStructure structure = getDataStructure(resourceType.getDescriptor());
+        DataValue value = structure.createValue();
+        int address = writer.append(value);
+        Object[] propertyValues = resourceType.getValues();
+
+        for (String propertyName : resourceType.getDescriptor().getPropertyTypes().keySet()) {
+            Class<?> propertyType = resourceType.getDescriptor().getPropertyTypes().get(propertyName);
+            int index = resourceType.getPropertyIndex(propertyName);
+            Object propertyValue = propertyValues[index];
+            writeValueTo(writer, stringPool, propertyType, value, index, propertyValue);
+        }
+
+        return address;
+    }
+
+    private void writeValueTo(BinaryWriter writer, WasmStringPool stringPool, Class<?> type, DataValue target,
+            int index, Object value) {
+        if (type == String.class) {
+            target.setAddress(index, stringPool.getStringPointer((String) value));
+        } else if (type == boolean.class) {
+            target.setByte(index, (boolean) value ? (byte) 1 : 0);
+        } else if (type == byte.class) {
+            target.setByte(index, (byte) value);
+        } else if (type == short.class) {
+            target.setShort(index, (short) value);
+        } else if (type == char.class) {
+            target.setShort(index, (short) (char) value);
+        } else if (type == int.class) {
+            target.setInt(index, (int) value);
+        } else if (type == long.class) {
+            target.setLong(index, (long) value);
+        } else if (type == float.class) {
+            target.setFloat(index, (float) value);
+        } else if (type == double.class) {
+            target.setDouble(index, (double) value);
+        } else if (value instanceof ResourceTypeDescriptorProvider && value instanceof Resource) {
+            int address = writeResource(writer, stringPool, (ResourceTypeDescriptorProvider) value);
+            target.setAddress(index, address);
+        } else {
+            throw new IllegalArgumentException("Don't know how to write resource: " + value);
+        }
+    }
+
+    private DataStructure getDataStructure(ResourceTypeDescriptor descriptor) {
+        return resourceTypeCache.computeIfAbsent(descriptor, t -> {
+            List<String> propertyNames = new ArrayList<>(descriptor.getPropertyTypes().keySet());
+            DataType[] propertyDataTypes = new DataType[propertyNames.size()];
+            for (int i = 0; i < propertyNames.size(); i++) {
+                String propertyName = propertyNames.get(i);
+                propertyDataTypes[i] = getDataType(descriptor.getPropertyTypes().get(propertyName));
+            }
+
+            return new DataStructure((byte) 4, propertyDataTypes);
+        });
+    }
+
+    private static DataType getDataType(Class<?> cls) {
+        if (cls == boolean.class || cls == byte.class) {
+            return DataPrimitives.BYTE;
+        } else if (cls == short.class || cls == char.class) {
+            return DataPrimitives.SHORT;
+        } else if (cls == int.class) {
+            return DataPrimitives.INT;
+        } else if (cls == float.class) {
+            return DataPrimitives.FLOAT;
+        } else if (cls == long.class) {
+            return DataPrimitives.LONG;
+        } else if (cls == double.class) {
+            return DataPrimitives.DOUBLE;
+        } else {
+            return DataPrimitives.ADDRESS;
+        }
     }
 }

@@ -1537,6 +1537,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         @Override
+        public WasmStringPool getStringPool() {
+            return context.getStringPool();
+        }
+
+        @Override
         public Diagnostics getDiagnostics() {
             return context.getDiagnostics();
         }

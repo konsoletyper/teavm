@@ -25,7 +25,6 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
-import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.Resource;
 
 public class MetadataProviderNativeGenerator implements Generator {
@@ -33,7 +32,6 @@ public class MetadataProviderNativeGenerator implements Generator {
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         ClassReader cls = context.getClassSource().get(methodRef.getClassName());
         MethodReader method = cls.getMethod(methodRef.getDescriptor());
-        AnnotationReader providerAnnot = method.getAnnotations().get(MetadataProvider.class.getName());
 
         AnnotationReader refAnnot = method.getAnnotations().get(MetadataProviderRef.class.getName());
         methodRef = MethodReference.parse(refAnnot.getValue("value").getString());
