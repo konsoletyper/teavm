@@ -18,10 +18,6 @@ package org.teavm.platform;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface PlatformConsole extends JSObject {
     @JSMethod("$rt_putStdout")
     void output(int b);

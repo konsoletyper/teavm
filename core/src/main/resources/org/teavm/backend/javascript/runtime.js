@@ -14,6 +14,7 @@
  *  limitations under the License.
  */
 "use strict";
+var $rt_global = this;
 var $rt_lastObjectId = 1;
 function $rt_nextId() {
     var current = $rt_lastObjectId;
