@@ -21,10 +21,6 @@ import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JavaScriptConvGenerator implements Generator {
     static final MethodReference intValueMethod = new MethodReference(Integer.class, "intValue", int.class);
     static final MethodReference booleanValueMethod = new MethodReference(Boolean.class, "booleanValue", boolean.class);
@@ -66,7 +62,7 @@ public class JavaScriptConvGenerator implements Generator {
     private void generateToJavaScript(GeneratorContext context, SourceWriter writer) throws IOException {
         String obj = context.getParameterName(1);
         writer.append("if (" + obj + " === null || " + obj + " === undefined) {").softNewLine().indent();
-        writer.append("return " + obj + ";").softNewLine();
+        writer.append("return null;").softNewLine();
 
         writer.outdent().append("} else if (typeof " + obj + " === 'number') {").indent().softNewLine();
         writer.append("return " + obj + ";").softNewLine();
@@ -118,7 +114,7 @@ public class JavaScriptConvGenerator implements Generator {
         String type = context.getParameterName(2);
         writer.append("if (" + obj + " === null || " + obj + " === undefined)").ws().append("{")
                 .softNewLine().indent();
-        writer.append("return " + obj + ";").softNewLine();
+        writer.append("return null;").softNewLine();
         writer.outdent().append("} else if (" + type + ".$meta.item) {").indent().softNewLine();
         writer.append("var arr = $rt_createArray(" + type + ".$meta.item, " + obj + ".length);").softNewLine();
         writer.append("for (var i = 0; i < arr.data.length; ++i) {").indent().softNewLine();

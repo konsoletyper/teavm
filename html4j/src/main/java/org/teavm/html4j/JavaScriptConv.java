@@ -17,10 +17,6 @@ package org.teavm.html4j;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class JavaScriptConv {
     private JavaScriptConv() {
     }
