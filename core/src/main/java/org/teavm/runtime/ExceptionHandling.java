@@ -44,7 +44,6 @@ public final class ExceptionHandling {
 
         RuntimeObject exceptionPtr = Address.ofObject(exception).toStructure();
         RuntimeClass exceptionClass = RuntimeClass.getClass(exceptionPtr);
-        IsSupertypeFunction isExceptionSupertype = exceptionClass.isSupertypeOf;
 
         Address stackFrame = ShadowStack.getStackTop();
         stackLoop: while (stackFrame != null) {
@@ -53,7 +52,7 @@ public final class ExceptionHandling {
             ExceptionHandler handler = callSite.firstHandler;
 
             for (int i = 0; i < callSite.handlerCount; ++i) {
-                if (handler.exceptionClass == null || isExceptionSupertype.apply(handler.exceptionClass)) {
+                if (handler.exceptionClass == null || handler.exceptionClass.isSupertypeOf.apply(exceptionClass)) {
                     ShadowStack.setExceptionHandlerId(stackFrame, handler.id);
                     break stackLoop;
                 }
