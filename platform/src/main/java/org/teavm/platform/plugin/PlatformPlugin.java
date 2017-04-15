@@ -34,7 +34,7 @@ public class PlatformPlugin implements TeaVMPlugin {
         if (wasmHost != null) {
             wasmHost.add(ctx -> new MetadataIntrinsic(ctx.getClassSource(), ctx.getClassLoader(), ctx.getServices(),
                     ctx.getProperties()));
-            wasmHost.add(ctx -> new ResourceReadIntrinsic(ctx.getClassSource()));
+            wasmHost.add(ctx -> new ResourceReadIntrinsic(ctx.getClassSource(), ctx.getClassLoader()));
         }
 
         host.add(new AsyncMethodProcessor());

@@ -112,7 +112,7 @@ public class MetadataIntrinsic implements WasmIntrinsic {
     private void writeValueTo(BinaryWriter writer, WasmStringPool stringPool, Class<?> type, DataValue target,
             int index, Object value) {
         if (type == String.class) {
-            target.setAddress(index, stringPool.getStringPointer((String) value));
+            target.setAddress(index, value != null ? stringPool.getStringPointer((String) value) : 0);
         } else if (type == boolean.class) {
             target.setByte(index, (boolean) value ? (byte) 1 : 0);
         } else if (type == byte.class) {
@@ -132,6 +132,8 @@ public class MetadataIntrinsic implements WasmIntrinsic {
         } else if (value instanceof ResourceTypeDescriptorProvider && value instanceof Resource) {
             int address = writeResource(writer, stringPool, (ResourceTypeDescriptorProvider) value);
             target.setAddress(index, address);
+        } else if (value == null) {
+            target.setAddress(index, 0);
         } else {
             throw new IllegalArgumentException("Don't know how to write resource: " + value);
         }
