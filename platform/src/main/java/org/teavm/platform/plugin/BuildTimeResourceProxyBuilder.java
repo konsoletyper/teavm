@@ -95,7 +95,7 @@ class BuildTimeResourceProxyBuilder {
                         methods.put(method, (proxy, args) -> descriptor);
                         break;
                     case "getValues":
-                        methods.put(method, (proxy, args) -> initialData.clone());
+                        methods.put(method, (proxy, args) -> proxy.data.clone());
                         break;
                     case "getPropertyIndex":
                         methods.put(method, (proxy, args) -> propertyIndexes.getOrDefault(args[0], -1));

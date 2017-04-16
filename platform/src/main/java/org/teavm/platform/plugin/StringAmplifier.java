@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,16 +15,12 @@
  */
 package org.teavm.platform.plugin;
 
-class BuildTimeResourceSetter implements BuildTimeResourceMethod {
-    private int index;
+import org.teavm.dependency.PluggableDependency;
 
-    public BuildTimeResourceSetter(int index) {
-        this.index = index;
+final class StringAmplifier {
+    private StringAmplifier() {
     }
 
-    @Override
-    public Object invoke(BuildTimeResourceProxy proxy, Object[] args) throws Throwable {
-        proxy.data[index] = args[0];
-        return null;
-    }
+    @PluggableDependency(StringAmplifierDependencyPlugin.class)
+    static native String amplify(String string);
 }

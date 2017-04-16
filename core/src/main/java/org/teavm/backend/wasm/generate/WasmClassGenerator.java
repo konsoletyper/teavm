@@ -406,7 +406,7 @@ public class WasmClassGenerator {
         data.cls = cls;
 
         for (FieldReader field : cls.getFields()) {
-            int desiredAlignment = getDesiredAlignment(field.getType());
+            int desiredAlignment = getTypeSize(field.getType());
             if (field.hasModifier(ElementModifier.STATIC)) {
                 DataType type = asDataType(field.getType());
                 data.fieldLayout.put(field.getName(), binaryWriter.append(type.createValue()));
@@ -450,7 +450,7 @@ public class WasmClassGenerator {
         return ((base - 1) / alignment + 1) * alignment;
     }
 
-    private int getDesiredAlignment(ValueType type) {
+    public static int getTypeSize(ValueType type) {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:

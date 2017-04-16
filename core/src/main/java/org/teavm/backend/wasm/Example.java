@@ -26,7 +26,6 @@ public final class Example {
     }
 
     public static void main(String[] args) {
-        System.out.println(Integer.parseInt("123"));
         testFibonacci();
         testClasses();
         testVirtualCall();
@@ -39,7 +38,7 @@ public final class Example {
         testArrayIsObject();
         testIsAssignableFrom();
         testExceptions();
-        //testBigInteger();
+        testBigInteger();
         testGC();
     }
 

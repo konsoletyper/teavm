@@ -21,6 +21,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.binary.BinaryWriter;
+import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
@@ -119,8 +121,8 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
         for (Method method : methods) {
             MethodReference methodRef = MethodReference.parse(method);
             ValueType propertyType = methodRef.getReturnType();
-            int size = getPropertySize(propertyType);
-            currentOffset = ((currentOffset + size - 1) / size + 1) * size;
+            int size = WasmClassGenerator.getTypeSize(propertyType);
+            currentOffset = BinaryWriter.align(currentOffset, size);
 
             PropertyDescriptor propertyDescriptor = new PropertyDescriptor();
             propertyDescriptor.offset = currentOffset;
@@ -129,26 +131,6 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
 
             currentOffset += size;
         }
-    }
-
-    private int getPropertySize(ValueType type) {
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
-                case BYTE:
-                    return 1;
-                case SHORT:
-                case CHARACTER:
-                    return 2;
-                case INTEGER:
-                case FLOAT:
-                    return 4;
-                case LONG:
-                case DOUBLE:
-                    return 8;
-            }
-        }
-        return 4;
     }
 
     static class StructureDescriptor {
