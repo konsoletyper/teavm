@@ -47,11 +47,16 @@ import org.testng.Assert;
 public final class KnockoutFXTest extends KnockoutTCK implements Transfer, WSTransfer<WSImpl> {
     private static Class<?> browserClass;
     private static Fn.Presenter browserContext;
+
     private KO4J ko4j = new KO4J();
     private final Map<String, Request> urlMap = new HashMap<>();
     private final Map<String, WSImpl> wsUrlMap = new HashMap<>();
 
     public KnockoutFXTest() {
+    }
+
+    static Class<?>[] allTestClasses() {
+        return testClasses();
     }
 
     static ClassLoader getClassLoader() throws InterruptedException {
