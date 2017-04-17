@@ -35,10 +35,6 @@ import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.PlatformRunnable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class PlatformGenerator implements Generator, Injector, DependencyPlugin {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
@@ -72,6 +68,10 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "marshall":
             case "getPlatformObject":
                 context.writeExpr(context.getArgument(0));
+                break;
+            case "initClass":
+                context.writeExpr(context.getArgument(0));
+                context.getWriter().append(".$clinit()");
                 break;
         }
     }

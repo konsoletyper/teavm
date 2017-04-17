@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.List;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationReader;
@@ -33,26 +34,13 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
 import org.teavm.platform.PlatformAnnotationProvider;
 
 public class AnnotationDependencyListener extends AbstractDependencyListener {
-    @Override
-    public void classReached(DependencyAgent agent, String className, CallLocation location) {
-        ClassReader cls = agent.getClassSource().get(className);
-        if (cls == null) {
-            return;
-        }
-
-        for (AnnotationReader annotation : cls.getAnnotations().all()) {
-            agent.linkClass(annotation.getType(), location);
-        }
-
-        createAnnotationClass(agent, className);
-    }
-
     private String getAnnotationImplementor(DependencyAgent agent, String annotationType) {
         String implementorName = annotationType + "$$_impl";
         if (agent.getClassSource().get(implementorName) == null) {
@@ -145,6 +133,28 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
                 }
             }
         }
+
+        MethodReference methodRef = method.getMethod().getReference();
+        if (methodRef.getClassName().equals("java.lang.Class") && methodRef.getName().equals("getAnnotations")) {
+            reachGetAnnotations(agent, location, method.getVariable(0));
+        }
+    }
+
+    private void reachGetAnnotations(DependencyAgent agent, CallLocation location, DependencyNode node) {
+        node.getClassValueNode().addConsumer(type -> {
+            String className = type.getName();
+
+            ClassReader cls = agent.getClassSource().get(className);
+            if (cls == null) {
+                return;
+            }
+
+            for (AnnotationReader annotation : cls.getAnnotations().all()) {
+                agent.linkClass(annotation.getType(), location);
+            }
+
+            createAnnotationClass(agent, className);
+        });
     }
 
     private void createAnnotationClass(DependencyAgent agent, String className) {
