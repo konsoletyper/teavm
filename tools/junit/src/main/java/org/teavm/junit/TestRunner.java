@@ -33,10 +33,6 @@ class TestRunner {
         this.strategy = strategy;
     }
 
-    public int getNumThreads() {
-        return numThreads;
-    }
-
     public void setNumThreads(int numThreads) {
         this.numThreads = numThreads;
     }
@@ -100,32 +96,11 @@ class TestRunner {
             String status = resultObject.get("status").asText();
             switch (status) {
                 case "ok":
-                    if (!run.getExpectedExceptions().isEmpty()) {
-                        run.getCallback().error(new AssertionError("Expected exception was not thrown"));
-                    } else {
-                        run.getCallback().complete();
-                    }
+                    run.getCallback().complete();
                     break;
                 case "exception": {
                     String stack = resultObject.get("stack").asText();
                     String exception = resultObject.has("exception") ? resultObject.get("exception").asText() : null;
-                    Class<?> exceptionClass;
-                    if (exception != null) {
-                        try {
-                            exceptionClass = Class.forName(exception, false, TestRunner.class.getClassLoader());
-                        } catch (ClassNotFoundException e) {
-                            exceptionClass = null;
-                        }
-                    } else {
-                        exceptionClass = null;
-                    }
-                    if (exceptionClass != null) {
-                        Class<?> caught = exceptionClass;
-                        if (run.getExpectedExceptions().stream().anyMatch(e -> e.isAssignableFrom(caught))) {
-                            run.getCallback().complete();
-                            break;
-                        }
-                    }
                     run.getCallback().error(new AssertionError(exception + "\n" + stack));
                     break;
                 }

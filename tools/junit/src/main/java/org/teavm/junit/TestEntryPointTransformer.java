@@ -15,14 +15,20 @@
  */
 package org.teavm.junit;
 
+import org.junit.Test;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
@@ -33,7 +39,7 @@ class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
     private String runnerClassName;
     private MethodReference testMethod;
 
-    public TestEntryPointTransformer(String runnerClassName, MethodReference testMethod) {
+    TestEntryPointTransformer(String runnerClassName, MethodReference testMethod) {
         this.runnerClassName = runnerClassName;
         this.testMethod = testMethod;
     }
@@ -75,7 +81,27 @@ class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
         pe.getField(TestEntryPoint.class, "testCase", Object.class)
                 .cast(ValueType.object(testMethod.getClassName()))
                 .invokeSpecial(testMethod);
-        pe.exit();
+
+        MethodReader testMethodReader = innerSource.resolve(testMethod);
+        AnnotationReader testAnnotation = testMethodReader.getAnnotations().get(Test.class.getName());
+        AnnotationValue throwsValue = testAnnotation.getValue("expected");
+        if (throwsValue != null) {
+            BasicBlock handler = pe.getProgram().createBasicBlock();
+            TryCatchBlock tryCatch = new TryCatchBlock();
+            tryCatch.setExceptionType(((ValueType.Object) throwsValue.getJavaClass()).getClassName());
+            tryCatch.setHandler(handler);
+            pe.getBlock().getTryCatchBlocks().add(tryCatch);
+
+            BasicBlock nextBlock = pe.getProgram().createBasicBlock();
+            pe.jump(nextBlock);
+            pe.enter(nextBlock);
+            pe.construct(AssertionError.class, pe.constant("Expected exception not thrown")).raise();
+
+            pe.enter(handler);
+            pe.exit();
+        } else {
+            pe.exit();
+        }
         return pe.getProgram();
     }
 }

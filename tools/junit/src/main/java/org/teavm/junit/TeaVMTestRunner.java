@@ -229,13 +229,9 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
             for (TeaVMTestConfiguration configuration : configurations) {
                 try {
-                    TestRun run = compileByTeaVM(child, notifier, expectedExceptions, configuration, onSuccess.get(0));
+                    TestRun run = compileByTeaVM(child, notifier, configuration, onSuccess.get(0));
                     if (run != null) {
                         runs.add(run);
-                    } else {
-                        notifier.fireTestFinished(description);
-                        latch.countDown();
-                        return;
                     }
                 } catch (Throwable e) {
                     notifier.fireTestFailure(new Failure(description, e));
@@ -293,7 +289,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         return true;
     }
 
-    private TestRun compileByTeaVM(Method child, RunNotifier notifier, Set<Class<?>> expectedExceptions,
+    private TestRun compileByTeaVM(Method child, RunNotifier notifier,
             TeaVMTestConfiguration configuration, Consumer<Boolean> onComplete) {
         Description description = describeChild(child);
 
@@ -330,7 +326,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         return new TestRun(compileResult.file.getParentFile(), child,
                 new MethodReference(testClass.getName(), getDescriptor(child)),
-                description, callback, expectedExceptions);
+                description, callback);
     }
 
     private void submitRun(TestRun run) {
