@@ -73,6 +73,7 @@ async function runAll() {
     });
 
     const endTime = new Date().getTime();
+    console.log();
     for (let i = 0; i < stats.testsFailed.length; i++) {
         const failedTest = stats.testsFailed[i];
         console.log("(" + (i + 1) + ") " + failedTest.path +":");
