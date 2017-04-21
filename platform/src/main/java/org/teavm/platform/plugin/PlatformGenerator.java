@@ -126,7 +126,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         writer.append("var $r = $rt_nativeThread().pop();").softNewLine();
         writer.append(cls + ".$$constructor$$($r);").softNewLine();
         writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
-        writer.append("return").ws().append("$rt_nativeThread().push($r);").softNewLine();
+        writer.append("return $rt_nativeThread().push($r);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return $r;").softNewLine();
         writer.outdent().append("}").softNewLine();
