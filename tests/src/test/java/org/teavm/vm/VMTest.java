@@ -270,7 +270,9 @@ public class VMTest {
 
             try {
                 Thread.sleep(1);
-                wait();
+                synchronized (AsyncClinitClass.this) {
+                    wait();
+                }
             } catch (InterruptedException ie) {
                 instanceState = "error";
                 throw new RuntimeException(ie);
