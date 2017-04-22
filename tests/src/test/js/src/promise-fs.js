@@ -14,6 +14,8 @@
  *  limitations under the License.
  */
 
+"use strict";
+
 import * as fs from "fs";
 
 function wrapFsFunction(fsFunction) {

@@ -14,8 +14,10 @@
  *  limitations under the License.
  */
 
+"use strict";
 import * as fs from "./promise-fs.js";
-import { default as CDP } from 'chrome-remote-interface';
+import * as http from "http";
+import { server as WebSocketServer } from "websocket";
 
 const TEST_FILE_NAME = "test.js";
 const RUNTIME_FILE_NAME = "runtime.js";
@@ -24,6 +26,7 @@ const TEST_FILES = [
     { file: "test-min.js", name: "minified" },
     { file: "test-optimized.js", name: "optimized" }
 ];
+let totalTests = 0;
 
 class TestSuite {
     constructor(name) {
@@ -46,30 +49,37 @@ async function runAll() {
 
     console.log("Running tests");
     const stats = { testRun: 0, testsFailed: [] };
+
+    const server = http.createServer((request, response) => {
+        response.writeHead(404);
+        response.end();
+    });
+    server.listen(9090, () => {
+        console.log((new Date()) + ' Server is listening on port 8080');
+    });
+
+    const wsServer = new WebSocketServer({
+        httpServer: server,
+        autoAcceptConnections: true
+    });
+
     const startTime = new Date().getTime();
-
     await new Promise((resolve, reject) => {
-        CDP(async (client) => {
+        wsServer.on("connect", async (conn) => {
             try {
-                const {Page, Runtime} = client;
-                await Promise.all([Runtime.enable(), Page.enable()]);
-                await Page.navigate({url: "about:blank"});
-
-                const runner = new TestRunner(Page, Runtime);
+                const runner = new TestRunner(conn);
                 await runner.runTests(rootSuite, "", 0);
                 stats.testRun = runner.testsRun;
                 stats.testsFailed = runner.testsFailed;
-                await client.close();
                 resolve();
             } catch (e) {
                 reject(e);
             }
-        }).on("error", err => {
-            reject(err);
-        }).on("disconnect", () => {
-            reject("disconnected from chrome");
-        });
+        })
     });
+
+    wsServer.unmount();
+    server.close();
 
     const endTime = new Date().getTime();
     for (let i = 0; i < stats.testsFailed.length; i++) {
@@ -84,6 +94,8 @@ async function runAll() {
 
     if (stats.testsFailed.length > 0) {
         process.exit(1);
+    } else {
+        process.exit(0);
     }
 }
 
@@ -95,6 +107,7 @@ async function walkDir(path, name, suite) {
                 suite.testCases.push(new TestCase(
                     name + " " + profileName,
                     [path + "/" + RUNTIME_FILE_NAME, path + "/" + fileName]));
+                totalTests++;
             }
         }
     } else if (files) {
@@ -111,11 +124,20 @@ async function walkDir(path, name, suite) {
 }
 
 class TestRunner {
-    constructor(page, runtime) {
-        this.page = page;
-        this.runtime = runtime;
+    constructor(ws) {
+        this.ws = ws;
         this.testsRun = 0;
         this.testsFailed = [];
+
+        this.pendingRequests = Object.create(null);
+        this.requestIdGen = 0;
+
+        this.ws.on("message", (message) => {
+            const response = JSON.parse(message.utf8Data);
+            const pendingRequest = this.pendingRequests[response.id];
+            delete this.pendingRequests[response.id];
+            pendingRequest(response.result);
+        })
     }
 
     async runTests(suite, path, depth) {
@@ -123,32 +145,41 @@ class TestRunner {
             console.log("Running " + path);
             let testsFailedInSuite = 0;
             const startTime = new Date().getTime();
-            for (const testCase of suite.testCases) {
-                this.testsRun++;
-                try {
-                    const testRun = Promise.race([
-                        this.runTeaVMTest(testCase),
-                        new Promise(resolve => {
-                            setTimeout(() => resolve({status: "failed", errorMessage: "timeout"}), 1000);
-                        })
-                    ]);
-                    const result = await testRun;
-                    switch (result.status) {
-                        case "OK":
-                            break;
-                        case "failed":
-                            this.logFailure(path, testCase, result.errorMessage);
-                            testsFailedInSuite++;
-                            break;
-                    }
-                } catch (e) {
-                    this.logFailure(path, testCase, e.stack);
-                    testsFailedInSuite++;
+            let request = { id: this.requestIdGen++ };
+            request.tests = suite.testCases.map(testCase => {
+                return {
+                    name: testCase.name,
+                    files: testCase.files.map(fileName => process.cwd() + "/" + fileName)
+                };
+            });
+            this.testsRun += suite.testCases.length;
+
+            const resultPromise = new Promise(resolve => {
+                this.pendingRequests[request.id] = resolve;
+            });
+            const timeoutPromise = new Promise((_, reject) => {
+                setTimeout(() => reject(new Error("connection timeout")), 120000);
+            });
+            this.ws.send(JSON.stringify(request));
+            const result = await Promise.race([resultPromise, timeoutPromise]);
+
+            for (let i = 0; i < suite.testCases.length; i++) {
+                const testCase = suite.testCases[i];
+                const testResult = result[i];
+                switch (testResult.status) {
+                    case "OK":
+                        break;
+                    case "failed":
+                        this.logFailure(path, testCase, testResult.errorMessage);
+                        testsFailedInSuite++;
+                        break;
                 }
             }
             const endTime = new Date().getTime();
+            const percentComplete = (this.testsRun / totalTests * 100).toFixed(1);
             console.log("Tests run: " + suite.testCases.length + ", failed: " + testsFailedInSuite
-                    + ", elapsed: " + ((endTime - startTime) / 1000) + " seconds");
+                    + ", elapsed: " + ((endTime - startTime) / 1000) + " seconds "
+                    + "(" + percentComplete + "% complete)");
             console.log();
         }
 
