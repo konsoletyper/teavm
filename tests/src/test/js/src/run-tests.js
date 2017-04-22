@@ -54,7 +54,6 @@ async function runAll() {
                 const {Page, Runtime} = client;
                 await Promise.all([Runtime.enable(), Page.enable()]);
                 await Page.navigate({url: "about:blank"});
-                //await Page.loadEventFired();
 
                 const runner = new TestRunner(Page, Runtime);
                 await runner.runTests(rootSuite, "", 0);
@@ -73,7 +72,6 @@ async function runAll() {
     });
 
     const endTime = new Date().getTime();
-    console.log();
     for (let i = 0; i < stats.testsFailed.length; i++) {
         const failedTest = stats.testsFailed[i];
         console.log("(" + (i + 1) + ") " + failedTest.path +":");
@@ -82,7 +80,7 @@ async function runAll() {
     }
 
     console.log("Tests run: " + stats.testRun + ", failed: " + stats.testsFailed.length
-            + ", took " + (endTime - startTime) + " millisecond(s)");
+            + ", elapsed " + ((endTime - startTime) / 1000) + " seconds");
 
     if (stats.testsFailed.length > 0) {
         process.exit(1);
@@ -100,12 +98,12 @@ async function walkDir(path, name, suite) {
             }
         }
     } else if (files) {
+        const childSuite = new TestSuite(name);
+        suite.testSuites.push(childSuite);
         await Promise.all(files.map(async file => {
             const filePath = path + "/" + file;
             const stat = await fs.stat(filePath);
             if (stat.isDirectory()) {
-                const childSuite = new TestSuite(file);
-                suite.testSuites.push(childSuite);
                 await walkDir(filePath, file, childSuite);
             }
         }));
@@ -121,43 +119,46 @@ class TestRunner {
     }
 
     async runTests(suite, path, depth) {
-        let prefix = "";
-        for (let i = 0; i < depth; i++) {
-            prefix += "  ";
+        if (suite.testCases.length > 0) {
+            console.log("Running " + path);
+            let testsFailedInSuite = 0;
+            const startTime = new Date().getTime();
+            for (const testCase of suite.testCases) {
+                this.testsRun++;
+                try {
+                    const testRun = Promise.race([
+                        this.runTeaVMTest(testCase),
+                        new Promise(resolve => {
+                            setTimeout(() => resolve({status: "failed", errorMessage: "timeout"}), 1000);
+                        })
+                    ]);
+                    const result = await testRun;
+                    switch (result.status) {
+                        case "OK":
+                            break;
+                        case "failed":
+                            this.logFailure(path, testCase, result.errorMessage);
+                            testsFailedInSuite++;
+                            break;
+                    }
+                } catch (e) {
+                    this.logFailure(path, testCase, e.stack);
+                    testsFailedInSuite++;
+                }
+            }
+            const endTime = new Date().getTime();
+            console.log("Tests run: " + suite.testCases.length + ", failed: " + testsFailedInSuite
+                    + ", elapsed: " + ((endTime - startTime) / 1000) + " seconds");
+            console.log();
         }
 
-        console.log(prefix + suite.name + "/");
-        for (const testCase of suite.testCases) {
-            this.testsRun++;
-            process.stdout.write(prefix + "  " + testCase.name + "... ");
-            try {
-                const testRun = Promise.race([
-                    this.runTeaVMTest(testCase),
-                    new Promise(resolve => {
-                        setTimeout(() => resolve({ status: "failed", errorMessage: "timeout" }), 1000);
-                    })
-                ]);
-                const result = await testRun;
-                switch (result.status) {
-                    case "OK":
-                        process.stdout.write("OK");
-                        break;
-                    case "failed":
-                        this.logFailure(path, testCase, result.errorMessage);
-                        break;
-                }
-            } catch (e) {
-                this.logFailure(path, testCase, e.stack);
-            }
-            process.stdout.write("\n");
-        }
         for (const childSuite of suite.testSuites) {
-            await this.runTests(childSuite, path + "/" + suite.name, depth + 1);
+            await this.runTests(childSuite, path + "/" + childSuite.name, depth + 1);
         }
     }
 
     logFailure(path, testCase, message) {
-        process.stdout.write("failure (" + (this.testsFailed.length + 1) + ")");
+        console.log("  " + testCase.name + "failure (" + (this.testsFailed.length + 1) + ")");
         this.testsFailed.push({
             path: path + "/" + testCase.name,
             message: message
@@ -166,7 +167,6 @@ class TestRunner {
 
     async runTeaVMTest(testCase) {
         await this.page.reload();
-        //await this.page.loadEventFired();
 
         const fileContents = await Promise.all(testCase.files.map(async (file) => {
             return fs.readFile(file, 'utf8');
