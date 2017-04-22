@@ -4,25 +4,38 @@ jdk:
 cache:
   directories:
   - $HOME/.m2
+  - $HOME/.node_modules
+  - $HOME/.chromium_dist
 branches:
   only:
     - master
     - /^release-.+$/
     - /^dev-.+/
 before_install:
+  - CHROMIUM_BUILD=466537
+  - mkdir -p $HOME/.chromium_dist/
+  - wget -nc https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F$CHROMIUM_BUILD%2Fchrome-linux.zip?alt=media -O $HOME/.chromium_dist/chromium-$CHROMIUM_BUILD.zip
+  - unzip $HOME/.chromium_dist/chromium-$CHROMIUM_BUILD.zip
   - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download\w+:)"`
   - NEW_VERSION=${OLD_VERSION%-SNAPSHOT}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
   - echo "Building version $NEW_VERSION"
   - mvn versions:set -DnewVersion=$NEW_VERSION
 install:
   - mvn install -Dteavm.build.all=false -P with-idea -DskipTests=true -Dmaven.javadoc.skip=true -B -V
-script: >
-  mvn -e test \
-   -Dteavm.junit.target=target/js-tests \
-   -Dteavm.junit.js.runner=htmlunit \
-   -Dteavm.junit.js.threads=1 \
-   -Dteavm.junit.optimized=true \
-   -Dteavm.junit.minified=true
+  - pushd tests/src/test/js
+  - npm install --prefix $HOME/.node_modules
+  - npm run build
+  - popd
+script:
+  - mvn -e test -P noHtmlUnit
+  - BASE_PATH=`pwd`
+  - pushd tests/src/test/js
+  - chrome-linux/chrome --headless --remote-debugging-port=9222 --disable-gpu about:blank &
+  - CHROME_PID=$!
+  - node start.js $BASE_PATH/tests/target/js-tests
+  - node start.js $BASE_PATH/html4j/target/js-tests
+  - kill $CHROME_PID
+  - popd
 after_success: >
    if [[ "${TRAVIS_PULL_REQUEST:-unknown}" == "false" && $TRAVIS_BRANCH == dev-* ]] ; then
      export NEW_VERSION

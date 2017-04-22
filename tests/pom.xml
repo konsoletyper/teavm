@@ -86,13 +86,12 @@
         <artifactId>maven-surefire-plugin</artifactId>
         <version>2.16</version>
         <configuration>
+          <argLine>-Xmx512m</argLine>
           <systemProperties>
             <teavm.junit.target>${project.build.directory}/js-tests</teavm.junit.target>
-            <teavm.junit.js.runner>htmlunit</teavm.junit.js.runner>
             <teavm.junit.minified>true</teavm.junit.minified>
             <teavm.junit.optimized>true</teavm.junit.optimized>
           </systemProperties>
-          <argLine>-Xmx512m</argLine>
         </configuration>
       </plugin>
       <plugin>
