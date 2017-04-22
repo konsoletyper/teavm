@@ -49,12 +49,11 @@ async function runAll() {
 
     console.log("Running tests");
 
-
     const server = http.createServer((request, response) => {
         response.writeHead(404);
         response.end();
     });
-    server.listen(9090, () => {
+    server.listen({ host: "localhost", port: 9090 }, () => {
         console.log((new Date()) + ' Server is listening on port 9090');
     });
 

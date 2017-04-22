@@ -1,4 +1,9 @@
 language: java
+sudo: false
+
+addons:
+  firefox: "53.0"
+
 jdk:
   - oraclejdk8
 
@@ -35,7 +40,9 @@ script:
   - mvn -e test -P \!htmlUnit
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
-  - firefox index.html &
+  - mkdir profile
+  - cp user.js profile/user.js
+  - firefox index.html -v --profile profile --setDefaultBrowser &
   - FIREFOX_PID=$!
   - node start.js $BASE_PATH/tests/target/js-tests
   - node start.js $BASE_PATH/html4j/target/js-tests
