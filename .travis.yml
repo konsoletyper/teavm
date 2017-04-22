@@ -17,8 +17,9 @@ before_install:
   - nvm install 7
   - CHROMIUM_BUILD=466537
   - mkdir -p $HOME/.chromium_dist/
-  - wget -nc https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F$CHROMIUM_BUILD%2Fchrome-linux.zip?alt=media -O $HOME/.chromium_dist/chromium-$CHROMIUM_BUILD.zip
-  - unzip -q $HOME/.chromium_dist/chromium-$CHROMIUM_BUILD.zip
+  - CHROMIUM_ZIP=$HOME/.chromium_dist/chromium-$CHROMIUM_BUILD.zip
+  - if [ ! -f $CHROMIUM_ZIP ]; then wget https://www.googleapis.com/download/storage/v1/b/chromium-browser-snapshots/o/Linux_x64%2F$CHROMIUM_BUILD%2Fchrome-linux.zip?alt=media -O $CHROMIUM_ZIP; fi
+  - unzip -q $CHROMIUM_ZIP
   - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download\w+:)"`
   - NEW_VERSION=${OLD_VERSION%-SNAPSHOT}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
   - echo "Building version $NEW_VERSION"
