@@ -15,7 +15,7 @@ branches:
 
 before_install:
   - nvm install 7
-  - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb -O .chromium_dist
+  - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
   - export DISPLAY=:99.0
   - sudo dpkg -i google-chrome*.deb
   - export CHROME_BIN=/usr/bin/google-chrome
