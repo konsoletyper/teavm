@@ -12,6 +12,10 @@ branches:
     - master
     - /^release-.+$/
     - /^dev-.+/
+addons:
+  apt:
+    packages:
+    - libstdc++
 
 before_install:
   - nvm install 7
