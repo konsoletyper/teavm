@@ -34,7 +34,7 @@ install:
   - popd
 
 script:
-  - mvn -e test -P \!htmlUnit
+  - mvn -e test #-P \!htmlUnit
   - BASE_PATH=`pwd`
   #- pushd tests/src/test/js
   #- $BASE_PATH/chrome-linux/chrome --headless --remote-debugging-port=9222 --disable-gpu about:blank &
@@ -42,7 +42,7 @@ script:
   #- node start.js $BASE_PATH/tests/target/js-tests
   #- node start.js $BASE_PATH/html4j/target/js-tests
   #- kill $CHROME_PID
-  - popd
+  #- popd
 
 after_success: >
    if [[ "${TRAVIS_PULL_REQUEST:-unknown}" == "false" && $TRAVIS_BRANCH == dev-* ]] ; then
