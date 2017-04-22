@@ -48,14 +48,14 @@ async function runAll() {
     await walkDir(process.argv[2], "root", rootSuite);
 
     console.log("Running tests");
-    const stats = { testRun: 0, testsFailed: [] };
+
 
     const server = http.createServer((request, response) => {
         response.writeHead(404);
         response.end();
     });
     server.listen(9090, () => {
-        console.log((new Date()) + ' Server is listening on port 8080');
+        console.log((new Date()) + ' Server is listening on port 9090');
     });
 
     const wsServer = new WebSocketServer({
@@ -64,35 +64,30 @@ async function runAll() {
     });
 
     const startTime = new Date().getTime();
-    await new Promise((resolve, reject) => {
-        wsServer.on("connect", async (conn) => {
-            try {
-                const runner = new TestRunner(conn);
-                await runner.runTests(rootSuite, "", 0);
-                stats.testRun = runner.testsRun;
-                stats.testsFailed = runner.testsFailed;
-                resolve();
-            } catch (e) {
-                reject(e);
-            }
-        })
+    const connectPromise = new Promise(resolve => wsServer.on("connect", resolve));
+    const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error("Connection time out")), 15000)
     });
+    const conn = await Promise.race([connectPromise, timeoutPromise]);
+
+    const runner = new TestRunner(conn);
+    await runner.runTests(rootSuite, "", 0);
 
     wsServer.unmount();
     server.close();
 
     const endTime = new Date().getTime();
-    for (let i = 0; i < stats.testsFailed.length; i++) {
-        const failedTest = stats.testsFailed[i];
+    for (let i = 0; i < runner.testsFailed.length; i++) {
+        const failedTest = runner.testsFailed[i];
         console.log("(" + (i + 1) + ") " + failedTest.path +":");
         console.log(failedTest.message);
         console.log();
     }
 
-    console.log("Tests run: " + stats.testRun + ", failed: " + stats.testsFailed.length
+    console.log("Tests run: " + runner.testRun + ", failed: " + runner.testsFailed.length
             + ", elapsed " + ((endTime - startTime) / 1000) + " seconds");
 
-    if (stats.testsFailed.length > 0) {
+    if (runner.testsFailed.length > 0) {
         process.exit(1);
     } else {
         process.exit(0);
