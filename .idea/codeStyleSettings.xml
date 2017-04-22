@@ -14,6 +14,7 @@
             <package name="" withSubpackages="true" static="false" />
           </value>
         </option>
+        <option name="HTML_DO_NOT_INDENT_CHILDREN_OF" value="" />
         <JavaCodeStyleSettings>
           <option name="ANNOTATION_PARAMETER_WRAP" value="1" />
         </JavaCodeStyleSettings>
