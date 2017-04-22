@@ -88,23 +88,20 @@
           <configLocation>../checkstyle.xml</configLocation>
         </configuration>
       </plugin>
+
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-surefire-plugin</artifactId>
+        <version>2.16</version>
+        <configuration>
+          <systemProperties>
+            <teavm.junit.target>${project.build.directory}/js-tests</teavm.junit.target>
+            <teavm.junit.minified>true</teavm.junit.minified>
+            <teavm.junit.optimized>true</teavm.junit.optimized>
+          </systemProperties>
+          <argLine>-Xmx512m</argLine>
+        </configuration>
+      </plugin>
     </plugins>
-    <pluginManagement>
-      <plugins>
-        <plugin>
-          <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.16</version>
-          <configuration>
-            <systemProperties>
-              <teavm.junit.target>${project.build.directory}/js-tests</teavm.junit.target>
-              <teavm.junit.minified>true</teavm.junit.minified>
-              <teavm.junit.optimized>true</teavm.junit.optimized>
-            </systemProperties>
-            <argLine>-Xmx512m</argLine>
-          </configuration>
-        </plugin>
-      </plugins>
-    </pluginManagement>
   </build>
 </project>
