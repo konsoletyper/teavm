@@ -37,7 +37,7 @@ script:
   - mvn -e test -P \!htmlUnit
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
-  - chrome-linux/chrome --headless --remote-debugging-port=9222 --disable-gpu about:blank &
+  - $BASE_PATH/chrome-linux/chrome --headless --remote-debugging-port=9222 --disable-gpu about:blank &
   - CHROME_PID=$!
   - node start.js $BASE_PATH/tests/target/js-tests
   - node start.js $BASE_PATH/html4j/target/js-tests
