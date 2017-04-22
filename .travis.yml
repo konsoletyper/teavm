@@ -16,10 +16,6 @@ branches:
 
 before_install:
   - nvm install 7
-  - wget https://dl.google.com/linux/direct/google-chrome-stable_current_amd64.deb
-  - export DISPLAY=:99.0
-  - sudo dpkg -i google-chrome*.deb
-  - export CHROME_BIN=/usr/bin/google-chrome
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
   - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download\w+:)"`
@@ -39,11 +35,11 @@ script:
   - mvn -e test -P \!htmlUnit
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
-  - $CHROME_BIN --remote-debugging-port=9222 --disable-gpu about:blank &
-  - CHROME_PID=$!
+  - firefox index.html &
+  - FIREFOX_PID=$!
   - node start.js $BASE_PATH/tests/target/js-tests
   - node start.js $BASE_PATH/html4j/target/js-tests
-  - kill $CHROME_PID
+  - kill $FIREFOX_PID
   - popd
 
 after_success: >
