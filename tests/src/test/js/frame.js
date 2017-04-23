@@ -22,19 +22,24 @@ window.addEventListener("message", event => {
         launchTest(response => {
             event.source.postMessage(response, "*");
         });
+    }, error => {
+        event.source.postMessage({ status: "failed", errorMessage: error }, "*");
     });
 });
 
-function appendFiles(files, index, callback) {
+function appendFiles(files, index, callback, errorCallback) {
     if (index === files.length) {
         callback();
     } else {
         let fileName = "file://" + files[index];
         let script = document.createElement("script");
-        script.src = fileName;
         script.onload = () => {
-            appendFiles(files, index + 1, callback);
+            appendFiles(files, index + 1, callback, errorCallback);
         };
+        script.onerror = () => {
+            errorCallback("failed to load script" + fileName);
+        };
+        script.src = fileName;
         document.body.appendChild(script);
     }
 }

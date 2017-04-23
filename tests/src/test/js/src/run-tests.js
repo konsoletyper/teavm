@@ -16,6 +16,7 @@
 
 "use strict";
 import * as fs from "./promise-fs.js";
+import * as nodePath from "path";
 import * as http from "http";
 import { server as WebSocketServer } from "websocket";
 
@@ -83,7 +84,7 @@ async function runAll() {
         console.log();
     }
 
-    console.log("Tests run: " + runner.testRun + ", failed: " + runner.testsFailed.length
+    console.log("Tests run: " + runner.testsRun + ", failed: " + runner.testsFailed.length
             + ", elapsed " + ((endTime - startTime) / 1000) + " seconds");
 
     if (runner.testsFailed.length > 0) {
@@ -143,7 +144,7 @@ class TestRunner {
             request.tests = suite.testCases.map(testCase => {
                 return {
                     name: testCase.name,
-                    files: testCase.files.map(fileName => process.cwd() + "/" + fileName)
+                    files: testCase.files.map(fileName => nodePath.resolve(process.cwd(), fileName))
                 };
             });
             this.testsRun += suite.testCases.length;
