@@ -22,10 +22,6 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JSObjectClassTransformer implements ClassHolderTransformer {
     private JSClassProcessor processor;
     private JSBodyRepository repository;

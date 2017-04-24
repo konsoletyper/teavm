@@ -107,6 +107,7 @@ import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.backend.wasm.model.expression.WasmSwitch;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.backend.wasm.render.WasmTypeInference;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
@@ -1528,6 +1529,21 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         public WasmExpression generate(Expr expr) {
             accept(expr);
             return result;
+        }
+
+        @Override
+        public BinaryWriter getBinaryWriter() {
+            return binaryWriter;
+        }
+
+        @Override
+        public WasmStringPool getStringPool() {
+            return context.getStringPool();
+        }
+
+        @Override
+        public Diagnostics getDiagnostics() {
+            return context.getDiagnostics();
         }
     };
 

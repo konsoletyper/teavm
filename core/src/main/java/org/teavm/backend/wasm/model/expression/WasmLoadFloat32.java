@@ -23,9 +23,14 @@ public class WasmLoadFloat32 extends WasmExpression implements WasmMemoryAccess 
     private int offset;
 
     public WasmLoadFloat32(int alignment, WasmExpression index) {
+        this(alignment, index, 0);
+    }
+
+    public WasmLoadFloat32(int alignment, WasmExpression index, int offset) {
         Objects.requireNonNull(index);
         this.alignment = alignment;
         this.index = index;
+        this.offset = offset;
     }
 
     public int getAlignment() {

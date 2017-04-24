@@ -35,10 +35,6 @@ import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.PlatformRunnable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class PlatformGenerator implements Generator, Injector, DependencyPlugin {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
@@ -72,6 +68,10 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "marshall":
             case "getPlatformObject":
                 context.writeExpr(context.getArgument(0));
+                break;
+            case "initClass":
+                context.writeExpr(context.getArgument(0));
+                context.getWriter().append(".$clinit()");
                 break;
         }
     }
@@ -126,7 +126,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         writer.append("var $r = $rt_nativeThread().pop();").softNewLine();
         writer.append(cls + ".$$constructor$$($r);").softNewLine();
         writer.append("if").ws().append("($rt_suspending())").ws().append("{").indent().softNewLine();
-        writer.append("return").ws().append("$rt_nativeThread().push($r);").softNewLine();
+        writer.append("return $rt_nativeThread().push($r);").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return $r;").softNewLine();
         writer.outdent().append("}").softNewLine();

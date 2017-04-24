@@ -19,10 +19,6 @@ import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 class BuildTimeResourceProxyFactory {
     private Map<Method, BuildTimeResourceMethod> methods = new HashMap<>();
     private Object[] initialData;

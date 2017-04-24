@@ -15,10 +15,6 @@
  */
 package org.teavm.platform.metadata;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface StringResource extends Resource {
     String getValue();
 

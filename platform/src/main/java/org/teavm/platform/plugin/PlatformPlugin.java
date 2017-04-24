@@ -15,16 +15,47 @@
  */
 package org.teavm.platform.plugin;
 
+import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.javascript.TeaVMJavaScriptHost;
+import org.teavm.backend.wasm.TeaVMWasmHost;
+import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
+import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
+import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.model.MethodReference;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 public class PlatformPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
-        host.add(new MetadataProviderTransformer());
-        host.add(new ResourceTransformer());
-        host.add(new ResourceAccessorTransformer(host));
-        host.add(new ResourceAccessorDependencyListener());
+        if (host.getExtension(TeaVMJavaScriptHost.class) != null) {
+            host.add(new MetadataProviderTransformer());
+            host.add(new ResourceTransformer());
+            host.add(new ResourceAccessorTransformer(host));
+            host.add(new ResourceAccessorDependencyListener());
+        } else {
+            host.add(new StringAmplifierTransformer());
+        }
+
+        TeaVMWasmHost wasmHost = host.getExtension(TeaVMWasmHost.class);
+        if (wasmHost != null) {
+            wasmHost.add(ctx -> new MetadataIntrinsic(ctx.getClassSource(), ctx.getClassLoader(), ctx.getServices(),
+                    ctx.getProperties()));
+            wasmHost.add(ctx -> new ResourceReadIntrinsic(ctx.getClassSource(), ctx.getClassLoader()));
+
+            wasmHost.add(ctx -> new WasmIntrinsic() {
+                @Override
+                public boolean isApplicable(MethodReference methodReference) {
+                    return methodReference.getClassName().equals(StringAmplifier.class.getName());
+                }
+
+                @Override
+                public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
+                    return manager.generate(invocation.getArguments().get(0));
+                }
+            });
+        }
+
         host.add(new AsyncMethodProcessor());
         host.add(new NewInstanceDependencySupport());
         host.add(new ClassLookupDependencySupport());

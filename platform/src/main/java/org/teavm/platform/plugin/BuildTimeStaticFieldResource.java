@@ -20,10 +20,6 @@ import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.model.FieldReference;
 import org.teavm.platform.metadata.StaticFieldResource;
 
-/**
- *
- * @author Alexey Andreev
- */
 class BuildTimeStaticFieldResource implements StaticFieldResource, ResourceWriter {
     private FieldReference field;
 

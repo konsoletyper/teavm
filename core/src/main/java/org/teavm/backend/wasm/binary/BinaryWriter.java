@@ -72,7 +72,7 @@ public class BinaryWriter {
         }
     }
 
-    private static int align(int address, int alignment) {
+    public static int align(int address, int alignment) {
         if (address == 0) {
             return 0;
         }

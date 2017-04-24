@@ -15,16 +15,12 @@
  */
 package org.teavm.dependency;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DependencyType {
     private DependencyChecker dependencyChecker;
     private String name;
     int index;
 
-    public DependencyType(DependencyChecker dependencyChecker, String name, int index) {
+    DependencyType(DependencyChecker dependencyChecker, String name, int index) {
         this.dependencyChecker = dependencyChecker;
         this.name = name;
         this.index = index;

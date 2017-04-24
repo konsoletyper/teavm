@@ -18,10 +18,6 @@ package org.teavm.platform.plugin;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 class ResourceTransformer implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {

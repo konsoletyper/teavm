@@ -15,11 +15,6 @@
  */
 package org.teavm.platform.metadata;
 
-/**
- *
- * @author Alexey Andreev
- * @param <T>
- */
 public interface ResourceMap<T extends Resource> extends Resource {
     boolean has(String key);
 

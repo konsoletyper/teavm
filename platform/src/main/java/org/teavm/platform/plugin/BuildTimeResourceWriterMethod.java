@@ -17,10 +17,6 @@ package org.teavm.platform.plugin;
 
 import org.teavm.backend.javascript.codegen.SourceWriter;
 
-/**
- *
- * @author Alexey Andreev
- */
 class BuildTimeResourceWriterMethod implements BuildTimeResourceMethod {
     private String[] propertyNames;
 

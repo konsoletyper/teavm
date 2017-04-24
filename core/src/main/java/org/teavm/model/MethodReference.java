@@ -18,7 +18,9 @@ package org.teavm.model;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonValue;
 import java.io.Serializable;
+import java.lang.reflect.Method;
 import java.util.Arrays;
+import java.util.stream.Stream;
 
 /**
  * <p>Specifies a fully qualified name of a method, including its name, class name, parameter types
@@ -160,6 +162,12 @@ public class MethodReference implements Serializable {
         String className = string.substring(0, index);
         MethodDescriptor desc = MethodDescriptor.parseIfPossible(string.substring(index + 1));
         return desc != null ? new MethodReference(className, desc) : null;
+    }
+
+    public static MethodReference parse(Method method) {
+        ValueType[] signature = Stream.concat(Arrays.stream(method.getParameterTypes()).map(ValueType::parse),
+                Stream.of(ValueType.parse(method.getReturnType()))).toArray(ValueType[]::new);
+        return new MethodReference(method.getDeclaringClass().getName(), method.getName(), signature);
     }
 
     public String signatureToString() {

@@ -20,10 +20,6 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 class ResourceAccessorDependencyListener extends AbstractDependencyListener {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {

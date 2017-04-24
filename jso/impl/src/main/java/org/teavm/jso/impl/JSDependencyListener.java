@@ -90,12 +90,7 @@ class JSDependencyListener extends AbstractDependencyListener {
     }
 
     private ExposedClass getExposedClass(String name) {
-        ExposedClass cls = exposedClasses.get(name);
-        if (cls == null) {
-            cls = createExposedClass(name);
-            exposedClasses.put(name, cls);
-        }
-        return cls;
+        return exposedClasses.computeIfAbsent(name, this::createExposedClass);
     }
 
     private ExposedClass createExposedClass(String name) {
@@ -111,15 +106,17 @@ class JSDependencyListener extends AbstractDependencyListener {
             exposedCls.implementedInterfaces.addAll(parent.implementedInterfaces);
         }
         addInterfaces(exposedCls, cls);
-        for (MethodReader method : cls.getMethods()) {
-            if (method.getName().equals("<init>")) {
-                continue;
-            }
-            if (exposedCls.inheritedMethods.containsKey(method.getDescriptor())
-                    || exposedCls.methods.containsKey(method.getDescriptor())) {
-                MethodDependency methodDep = agent.linkMethod(method.getReference(), null);
-                methodDep.getVariable(0).propagate(agent.getType(name));
-                methodDep.use();
+        if (!cls.hasModifier(ElementModifier.ABSTRACT)) {
+            for (MethodReader method : cls.getMethods()) {
+                if (method.getName().equals("<init>")) {
+                    continue;
+                }
+                if (exposedCls.inheritedMethods.containsKey(method.getDescriptor())
+                        || exposedCls.methods.containsKey(method.getDescriptor())) {
+                    MethodDependency methodDep = agent.linkMethod(method.getReference(), null);
+                    methodDep.getVariable(0).propagate(agent.getType(name));
+                    methodDep.use();
+                }
             }
         }
         if (exposedCls.functorField == null) {

@@ -1,28 +1,53 @@
 language: java
+sudo: false
+
+addons:
+  firefox: "53.0"
+
 jdk:
   - oraclejdk8
+
 cache:
   directories:
   - $HOME/.m2
+  - $HOME/.node_modules
+  - $HOME/.chromium_dist
 branches:
   only:
     - master
+    - travis
     - /^release-.+$/
     - /^dev-.+/
+
 before_install:
+  - nvm install 7
   - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download\w+:)"`
   - NEW_VERSION=${OLD_VERSION%-SNAPSHOT}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
   - echo "Building version $NEW_VERSION"
   - mvn versions:set -DnewVersion=$NEW_VERSION
+
 install:
   - mvn install -Dteavm.build.all=false -P with-idea -DskipTests=true -Dmaven.javadoc.skip=true -B -V
-script: >
-  mvn -e test \
-   -Dteavm.junit.target=target/js-tests \
-   -Dteavm.junit.js.runner=htmlunit \
-   -Dteavm.junit.js.threads=1 \
-   -Dteavm.junit.optimized=true \
-   -Dteavm.junit.minified=true
+  - pushd tests/src/test/js
+  - npm config set prefix=$HOME/.node_modules
+  - npm install
+  - npm run build
+  - popd
+
+script:
+  - mvn -e test -P \!htmlUnit
+  - BASE_PATH=`pwd`
+  - pushd tests/src/test/js
+  - export DISPLAY=:99.0
+  - sh -e /etc/init.d/xvfb start
+  - sleep 3
+  - firefox index.html &
+  - FIREFOX_PID=$!
+  - node start.js $BASE_PATH/tests/target/js-tests
+  - node start.js $BASE_PATH/html4j/target/js-tests
+  - kill $FIREFOX_PID
+  - popd
+
 after_success: >
    if [[ "${TRAVIS_PULL_REQUEST:-unknown}" == "false" && $TRAVIS_BRANCH == dev-* ]] ; then
      export NEW_VERSION

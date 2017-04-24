@@ -22,10 +22,6 @@ import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
 
-/**
- *
- * @author Alexey Andreev
- */
 class BuildTimeResourceArray<T extends Resource> implements ResourceArray<T>, ResourceWriter {
     private List<T> data = new ArrayList<>();
 

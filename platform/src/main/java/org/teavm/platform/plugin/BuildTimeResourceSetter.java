@@ -15,10 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 class BuildTimeResourceSetter implements BuildTimeResourceMethod {
     private int index;
 

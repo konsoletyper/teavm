@@ -108,8 +108,8 @@ public final class Platform {
     @PluggableDependency(PlatformGenerator.class)
     public static native PlatformClass lookupClass(String name);
 
-    @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
+    @InjectedBy(PlatformGenerator.class)
     public static native void initClass(PlatformClass cls);
 
     @InjectedBy(PlatformGenerator.class)

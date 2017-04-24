@@ -22,10 +22,6 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.platform.metadata.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     private ListableClassReaderSource classSource;
     private ClassLoader classLoader;
@@ -33,7 +29,7 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     private BuildTimeResourceProxyBuilder proxyBuilder = new BuildTimeResourceProxyBuilder();
     private ServiceRepository services;
 
-    public DefaultMetadataGeneratorContext(ListableClassReaderSource classSource, ClassLoader classLoader,
+    DefaultMetadataGeneratorContext(ListableClassReaderSource classSource, ClassLoader classLoader,
             Properties properties, ServiceRepository services) {
         this.classSource = classSource;
         this.classLoader = classLoader;
@@ -59,7 +55,7 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     @Override
     public <T extends Resource> T createResource(Class<T> resourceType) {
         return resourceType.cast(Proxy.newProxyInstance(classLoader,
-                new Class<?>[] { resourceType, ResourceWriter.class },
+                new Class<?>[] { resourceType, ResourceWriter.class, ResourceTypeDescriptorProvider.class },
                 proxyBuilder.buildProxy(resourceType)));
     }
 

@@ -18,10 +18,6 @@ package org.teavm.platform.plugin;
 import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 
-/**
- *
- * @author Alexey Andreev
- */
 final class ResourceWriterHelper {
     private ResourceWriterHelper() {
     }

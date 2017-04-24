@@ -67,7 +67,8 @@ public final class RenderingUtil {
                     if (c < ' ') {
                         sb.append("\\u00").append(Character.forDigit(c / 16, 16))
                                 .append(Character.forDigit(c % 16, 16));
-                    } else if (Character.isLowSurrogate(c) || Character.isHighSurrogate(c)) {
+                    } else if (Character.isLowSurrogate(c) || Character.isHighSurrogate(c)
+                            || !Character.isDefined(c)) {
                         sb.append("\\u")
                                 .append(Character.forDigit(c / 0x1000, 0x10))
                                 .append(Character.forDigit((c / 0x100) % 0x10, 0x10))

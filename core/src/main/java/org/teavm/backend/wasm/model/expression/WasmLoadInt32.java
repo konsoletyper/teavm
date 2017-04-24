@@ -24,11 +24,16 @@ public class WasmLoadInt32 extends WasmExpression implements WasmMemoryAccess {
     private int offset;
 
     public WasmLoadInt32(int alignment, WasmExpression index, WasmInt32Subtype convertFrom) {
+        this(alignment, index, convertFrom, 0);
+    }
+
+    public WasmLoadInt32(int alignment, WasmExpression index, WasmInt32Subtype convertFrom, int offset) {
         Objects.requireNonNull(index);
         Objects.requireNonNull(convertFrom);
         this.alignment = alignment;
         this.index = index;
         this.convertFrom = convertFrom;
+        this.offset = offset;
     }
 
     public int getAlignment() {

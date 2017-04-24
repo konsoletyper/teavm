@@ -31,6 +31,7 @@ import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -176,7 +177,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
             case "instantiate":
             case "function":
                 for (int i = 0; i < method.getReference().parameterCount(); ++i) {
-                    method.getVariable(i).addConsumer(type -> achieveFunctorMethods(agent, type.getName(), method));
+                    method.getVariable(i).addConsumer(type -> reachFunctorMethods(agent, type.getName(), method));
                 }
                 break;
             case "unwrapString":
@@ -185,14 +186,16 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
         }
     }
 
-    private void achieveFunctorMethods(DependencyAgent agent, String type, MethodDependency caller) {
+    private void reachFunctorMethods(DependencyAgent agent, String type, MethodDependency caller) {
         if (caller.isMissing()) {
             return;
         }
         ClassReader cls = agent.getClassSource().get(type);
         if (cls != null) {
             for (MethodReader method : cls.getMethods()) {
-                agent.linkMethod(method.getReference(), null).use();
+                if (!method.hasModifier(ElementModifier.STATIC)) {
+                    agent.linkMethod(method.getReference(), null).use();
+                }
             }
         }
     }

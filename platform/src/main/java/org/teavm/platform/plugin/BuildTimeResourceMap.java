@@ -22,10 +22,6 @@ import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceMap;
 
-/**
- *
- * @author Alexey Andreev
- */
 class BuildTimeResourceMap<T extends Resource> implements ResourceMap<T>, ResourceWriter {
     private Map<String, T> data = new HashMap<>();
 
