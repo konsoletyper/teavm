@@ -17,6 +17,7 @@ package org.teavm.model.optimization;
 
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
+import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
@@ -25,6 +26,7 @@ import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.util.InstructionTransitionExtractor;
 
 public class ConstantConditionElimination implements MethodOptimization {
     private int[] constants;
@@ -53,17 +55,37 @@ public class ConstantConditionElimination implements MethodOptimization {
         }
 
         boolean changed = false;
+        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             Instruction insn = block.getLastInstruction();
             BasicBlock target = constantTarget(insn);
             if (target != null) {
+                block.getLastInstruction().acceptVisitor(transitionExtractor);
+
+                for (BasicBlock successor : transitionExtractor.getTargets()) {
+                    if (successor != target) {
+                        for (Phi phi : successor.getPhis()) {
+                            for (int j = 0; j < phi.getIncomings().size(); ++j) {
+                                if (phi.getIncomings().get(j).getSource() == block) {
+                                    phi.getIncomings().remove(j--);
+                                }
+                            }
+                        }
+                    }
+                }
+
                 JumpInstruction jump = new JumpInstruction();
                 jump.setTarget(target);
                 jump.setLocation(insn.getLocation());
                 block.getLastInstruction().replace(jump);
+
                 changed = true;
             }
+        }
+
+        if (changed) {
+            new UnreachableBasicBlockEliminator().optimize(program);
         }
 
         return changed;
