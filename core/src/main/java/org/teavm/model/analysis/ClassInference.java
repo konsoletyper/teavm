@@ -53,6 +53,7 @@ import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ConstructMultiArrayInstruction;
+import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InvocationType;
@@ -81,11 +82,24 @@ public class ClassInference {
     }
 
     public void infer(Program program, MethodReference methodReference) {
-        buildGraphs(program);
-
         MethodDependencyInfo thisMethodDep = dependencyInfo.getMethod(methodReference);
-        for (String thisType : thisMethodDep.getVariable(0).getTypes()) {
-            initialTasks.add(new Task(0, 0, thisType));
+        buildGraphs(program, thisMethodDep);
+
+        for (int i = 0; i <= methodReference.parameterCount(); ++i) {
+            ValueDependencyInfo paramDep = thisMethodDep.getVariable(i);
+            if (paramDep != null) {
+                int degree = 0;
+                while (true) {
+                    for (String paramType : paramDep.getTypes()) {
+                        initialTasks.add(new Task(i, degree, paramType));
+                    }
+                    if (!paramDep.hasArrayType()) {
+                        break;
+                    }
+                    paramDep = paramDep.getArrayItem();
+                    degree++;
+                }
+            }
         }
 
         types = new ArrayList<>(program.variableCount());
@@ -118,8 +132,9 @@ public class ClassInference {
         return finalTypes.get(variableIndex).toArray(new String[0]);
     }
 
-    private void buildGraphs(Program program) {
+    private void buildGraphs(Program program, MethodDependencyInfo thisMethodDep) {
         GraphBuildingVisitor visitor = new GraphBuildingVisitor(program.variableCount(), dependencyInfo);
+        visitor.thisMethodDep = thisMethodDep;
         for (BasicBlock block : program.getBasicBlocks()) {
             visitor.currentBlock = block;
             for (Phi phi : block.getPhis()) {
@@ -279,6 +294,7 @@ public class ClassInference {
         GraphBuilder cloneGraphBuilder;
         GraphBuilder arrayGraphBuilder;
         GraphBuilder itemGraphBuilder;
+        MethodDependencyInfo thisMethodDep;
         List<IntObjectMap<ValueType>> casts = new ArrayList<>();
         IntObjectMap<IntSet> exceptionMap = new IntObjectOpenHashMap<>();
         List<Task> tasks = new ArrayList<>();
@@ -389,6 +405,20 @@ public class ClassInference {
         }
 
         @Override
+        public void visit(ExitInstruction insn) {
+            if (insn.getValueToReturn() != null) {
+                ValueDependencyInfo resultDependency = thisMethodDep.getResult();
+                int resultDegree = 0;
+                while (resultDependency.hasArrayType()) {
+                    resultDependency = resultDependency.getArrayItem();
+                    for (String paramType : resultDependency.getTypes()) {
+                        tasks.add(new Task(insn.getValueToReturn().getIndex(), ++resultDegree, paramType));
+                    }
+                }
+            }
+        }
+
+        @Override
         public void visit(InvokeInstruction insn) {
             if (insn.getType() == InvocationType.VIRTUAL) {
                 int instance = insn.getInstance().getIndex();
@@ -412,17 +442,18 @@ public class ClassInference {
             }
 
             MethodDependencyInfo methodDep = dependencyInfo.getMethod(insn.getMethod());
+            if (methodDep != null) {
+                if (insn.getReceiver() != null) {
+                    readValue(methodDep.getResult(), insn.getReceiver(), tasks);
+                }
 
-            if (insn.getReceiver() != null) {
-                readValue(methodDep.getResult(), insn.getReceiver(), tasks);
-            }
+                for (int i = 0; i < insn.getArguments().size(); ++i) {
+                    writeValue(methodDep.getVariable(i + 1), insn.getArguments().get(i), tasks);
+                }
 
-            for (int i = 0; i < insn.getArguments().size(); ++i) {
-                writeValue(methodDep.getVariable(i + 1), insn.getArguments().get(i), tasks);
-            }
-
-            for (String type : methodDep.getThrown().getTypes()) {
-                tasks.add(new Task(currentBlock.getIndex(), -1, type));
+                for (String type : methodDep.getThrown().getTypes()) {
+                    tasks.add(new Task(currentBlock.getIndex(), -1, type));
+                }
             }
         }
     }
