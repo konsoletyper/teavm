@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.backend.javascript.spi.GeneratedBy;
-
 public class TLong extends TNumber implements TComparable<TLong> {
     public static final long MIN_VALUE = -0x8000000000000000L;
     public static final long MAX_VALUE = 0x7FFFFFFFFFFFFFFFL;
@@ -199,8 +197,9 @@ public class TLong extends TNumber implements TComparable<TLong> {
         return hashCode(value);
     }
 
-    @GeneratedBy(LongNativeGenerator.class)
-    private static native int hashCode(long value);
+    private static int hashCode(long value) {
+        return (int)(value ^ (value>>>32));
+    }
 
     @Override
     public boolean equals(Object other) {
@@ -210,8 +209,9 @@ public class TLong extends TNumber implements TComparable<TLong> {
         return other instanceof TLong && ((TLong) other).value == value;
     }
 
-    @GeneratedBy(LongNativeGenerator.class)
-    public static native int compare(long a, long b);
+    public static int compare(long x, long y) {
+        return x > y ? 1 : x < y ? -1 : 0;
+    }
 
     @Override
     public int compareTo(TLong other) {
