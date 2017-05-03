@@ -184,7 +184,7 @@ class TestRunner {
     }
 
     logFailure(path, testCase, message) {
-        console.log("  " + testCase.name + "failure (" + (this.testsFailed.length + 1) + ")");
+        console.log("  " + testCase.name + " failure (" + (this.testsFailed.length + 1) + ")");
         this.testsFailed.push({
             path: path + "/" + testCase.name,
             message: message
