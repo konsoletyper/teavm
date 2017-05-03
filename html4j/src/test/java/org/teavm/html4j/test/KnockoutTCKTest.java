@@ -67,7 +67,7 @@ public class KnockoutTCKTest {
 
     @Test
     public void paintTheGridOnClick() throws Throwable {
-        minesTest.paintTheGridOnClick();
+        withInterrupt(minesTest::paintTheGridOnClick);
     }
 
     @Test
@@ -126,8 +126,8 @@ public class KnockoutTCKTest {
     }
 
     @Test
-    public void modifyValueAssertAsyncChangeInModel() throws Exception {
-        knockoutTest.modifyValueAssertAsyncChangeInModel();
+    public void modifyValueAssertAsyncChangeInModel() throws Throwable {
+        withInterrupt(knockoutTest::modifyValueAssertAsyncChangeInModel);
     }
 
     @Test
@@ -161,8 +161,8 @@ public class KnockoutTCKTest {
     }
 
     @Test
-    public void displayContentOfAsyncArray() throws Exception {
-        knockoutTest.displayContentOfAsyncArray();
+    public void displayContentOfAsyncArray() throws Throwable {
+        withInterrupt(knockoutTest::displayContentOfAsyncArray);
     }
 
     @Test
@@ -396,4 +396,19 @@ public class KnockoutTCKTest {
         convertTypesTest.parseOnEmptyArray();
     }
 
+    private void withInterrupt(R r) throws Throwable {
+        for (int i = 0; i < 10; i++) {
+            try {
+                r.run();
+                break;
+            } catch (InterruptedException ex) {
+                Thread.sleep(100);
+                continue;
+            }
+        }
+    }
+
+    static interface R {
+        void run() throws Throwable;
+    }
 }
