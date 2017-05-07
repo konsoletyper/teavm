@@ -17,17 +17,17 @@ package org.teavm.classlib.java.lang;
 
 import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
-import org.teavm.dependency.*;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
+import org.teavm.dependency.DependencyAgent;
+import org.teavm.dependency.DependencyNode;
+import org.teavm.dependency.DependencyPlugin;
+import org.teavm.dependency.FieldDependency;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SystemNativeGenerator implements Generator, DependencyPlugin {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
@@ -39,13 +39,11 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
                 generateCurrentTimeMillis(writer);
                 break;
             case "setOut":
-                writer.appendClass("java.lang.System").append('.')
-                        .appendField(new FieldReference("java.lang.System", "out"))
+                writer.appendStaticField(new FieldReference("java.lang.System", "out"))
                         .ws().append('=').ws().append(context.getParameterName(1)).append(";").softNewLine();
                 break;
             case "setErr":
-                writer.appendClass("java.lang.System").append('.')
-                        .appendField(new FieldReference("java.lang.System", "err"))
+                writer.appendStaticField(new FieldReference("java.lang.System", "err"))
                         .ws().append('=').ws().append(context.getParameterName(1)).append(";").softNewLine();
                 break;
         }
