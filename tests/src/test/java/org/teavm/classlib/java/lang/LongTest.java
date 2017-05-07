@@ -15,9 +15,11 @@
  */
 package org.teavm.classlib.java.lang;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
@@ -29,5 +31,11 @@ public class LongTest {
         assertTrue(Long.compare(5, 5) == 0);
         assertTrue(Long.compare(Long.MAX_VALUE, Long.MIN_VALUE) > 0);
         assertTrue(Long.compare(Long.MIN_VALUE, Long.MAX_VALUE) < 0);
+    }
+
+    @Test
+    @SkipJVM
+    public void calculatesHashCode() {
+        assertEquals(23 ^ 42, Long.hashCode((23L << 32) | 42));
     }
 }

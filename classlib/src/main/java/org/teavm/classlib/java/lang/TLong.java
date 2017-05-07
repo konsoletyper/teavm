@@ -198,7 +198,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     private static int hashCode(long value) {
-        return (int) (value ^ (value >>> 32));
+        return (int) value ^ (int) (value >>> 32);
     }
 
     @Override
