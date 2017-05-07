@@ -86,4 +86,11 @@ public class DoubleTest {
         assertEquals("0x0.8p-1022", Double.toHexString(0x0.8p-1022));
         assertEquals("0x0.001p-1022", Double.toHexString(0x0.001p-1022));
     }
+
+    @Test
+    public void compares() {
+        assertTrue(Double.compare(10, 5) > 0);
+        assertTrue(Double.compare(5, 10) < 0);
+        assertTrue(Double.compare(5, 5) == 0);
+    }
 }

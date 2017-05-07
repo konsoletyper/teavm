@@ -203,9 +203,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return (int) (h >>> 32) ^ (int) h;
     }
 
-    public static int compare(double a, double b) {
-        return a > b ? 1 : a < b ? -1 : 0;
-    }
+    public static native int compare(double a, double b);
 
     @Override
     public int compareTo(TDouble other) {

@@ -53,5 +53,7 @@ public class JCLPlugin implements TeaVMPlugin {
                 String.class, MethodType.class, MethodType.class, MethodHandle.class, MethodType.class,
                 CallSite.class), new LambdaMetafactorySubstitutor());
         host.add(new ScalaHacks());
+
+        host.add(new NumericClassTransformer());
     }
 }

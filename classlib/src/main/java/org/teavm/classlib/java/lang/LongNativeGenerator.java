@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -21,10 +21,6 @@ import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class LongNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
@@ -32,10 +28,6 @@ public class LongNativeGenerator implements Generator {
             case "compare":
                 writer.append("return Long_compare(").append(context.getParameterName(1)).append(", ")
                         .append(context.getParameterName(2)).append(");").softNewLine();
-                break;
-            case "hashCode":
-                writer.append("return ").append(context.getParameterName(1)).append(".hi ^ ")
-                        .append(context.getParameterName(1)).append(".lo;").softNewLine();
                 break;
         }
     }

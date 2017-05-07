@@ -244,9 +244,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return compare(value, other.value);
     }
 
-    public static int compare(int x, int y) {
-        return x > y ? 1 : x < y ? -1 : 0;
-    }
+    public static native int compare(int x, int y);
 
     public static int numberOfLeadingZeros(int i) {
         if (i == 0) {
