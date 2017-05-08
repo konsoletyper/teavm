@@ -111,7 +111,7 @@
             <teavm.junit.minified>true</teavm.junit.minified>
             <teavm.junit.optimized>true</teavm.junit.optimized>
           </systemProperties>
-          <argLine>-Xmx512m</argLine>
+          <argLine>-Xmx1024m</argLine>
         </configuration>
       </plugin>
     </plugins>
