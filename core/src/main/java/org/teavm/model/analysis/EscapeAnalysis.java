@@ -126,13 +126,13 @@ public class EscapeAnalysis {
             BitSet usedVars = getUsedVarsInBlock(livenessAnalyzer, block);
             for (Phi phi : block.getPhis()) {
                 if (escapes(phi.getReceiver().getIndex())) {
-                    queue.addLast(phi.getReceiver().getIndex());
+                    queue.addLast(definitionClasses[phi.getReceiver().getIndex()]);
                 }
                 for (Incoming incoming : phi.getIncomings()) {
                     int var = incoming.getValue().getIndex();
-                    graphBuilder.addEdge(var, phi.getReceiver().getIndex());
+                    graphBuilder.addEdge(definitionClasses[var], definitionClasses[phi.getReceiver().getIndex()]);
                     if (escapes(var) || !sharedIncomingVars.add(var) || usedVars.get(var)) {
-                        queue.addLast(var);
+                        queue.addLast(definitionClasses[var]);
                     }
                 }
             }
@@ -143,7 +143,7 @@ public class EscapeAnalysis {
         while (!queue.isEmpty()) {
             int var = queue.removeFirst();
             if (visited.add(var)) {
-                escapingVars[definitionClasses[var]] = true;
+                escapingVars[var] = true;
                 for (int successor : graph.outgoingEdges(var)) {
                     queue.addLast(successor);
                 }

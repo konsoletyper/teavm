@@ -72,6 +72,11 @@ public class ScalarReplacementTest {
         doTest();
     }
 
+    @Test
+    public void reachabilityByClasses() {
+        doTest();
+    }
+
     private void doTest() {
         String originalPath = PREFIX + name.getMethodName() + ".original.txt";
         String expectedPath = PREFIX + name.getMethodName() + ".expected.txt";
