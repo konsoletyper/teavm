@@ -85,4 +85,11 @@ public class FloatTest {
         assertEquals("0x1.0p-126", Float.toHexString((float)Math.pow(2, -126)));
         assertEquals("0x0.001p-126", Float.toHexString(0x0.001p-126f));
     }
+
+    @Test
+    public void compares() {
+        assertTrue(Float.compare(10, 5) > 0);
+        assertTrue(Float.compare(5, 10) < 0);
+        assertTrue(Float.compare(5, 5) == 0);
+    }
 }

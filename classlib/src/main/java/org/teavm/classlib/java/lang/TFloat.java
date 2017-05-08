@@ -230,9 +230,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         return isInfinite(value);
     }
 
-    public static int compare(float f1, float f2) {
-        return f1 > f2 ? 1 : f2 < f1 ? -1 : 0;
-    }
+    public static native int compare(float f1, float f2);
 
     @Override
     public int compareTo(TFloat other) {

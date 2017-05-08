@@ -16,6 +16,8 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.*;
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -103,5 +105,21 @@ public class SystemTest {
     @Test(expected = NullPointerException.class)
     public void failsToCopyToNullTarget() {
         System.arraycopy(new Object[1], 0, null, 0, 1);
+    }
+
+    @Test
+    public void overridesStdErrAndOut() {
+        ByteArrayOutputStream err = new ByteArrayOutputStream();
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        System.setErr(new PrintStream(err));
+        System.setOut(new PrintStream(out));
+
+        System.out.println("out overridden");
+        System.out.flush();
+        System.err.println("err overridden");
+        System.err.flush();
+
+        assertEquals("err overridden\n", new String(err.toByteArray()));
+        assertEquals("out overridden\n", new String(out.toByteArray()));
     }
 }
