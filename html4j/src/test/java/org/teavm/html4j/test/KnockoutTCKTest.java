@@ -151,11 +151,6 @@ public class KnockoutTCKTest {
     }
 
     @Test
-    public static void triggerEvent(String id, String ev) throws Exception {
-        KnockoutTest.triggerEvent(id, ev);
-    }
-
-    @Test
     public void displayContentOfArray() throws Exception {
         knockoutTest.displayContentOfArray();
     }
