@@ -220,6 +220,7 @@ class InstructionStringifier implements InstructionReader {
                 break;
         }
         append(" ").appendLocalVar(second);
+        append(" as ").append(type.name().toLowerCase());
     }
 
     @Override
@@ -242,7 +243,8 @@ class InstructionStringifier implements InstructionReader {
     public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
             NumericOperandType targetType) {
         appendLocalVar(receiver).append(" := cast ").appendLocalVar(value)
-                .append(" from ").append(sourceType.toString()).append(" to ").append(targetType.toString());
+                .append(" from ").append(sourceType.toString().toLowerCase(Locale.ROOT)).append(" to ")
+                .append(targetType.toString().toLowerCase(Locale.ROOT));
     }
 
     @Override
