@@ -99,11 +99,6 @@
             <artifactId>surefire-junit47</artifactId>
             <version>2.13</version>
           </dependency>
-          <dependency>
-            <groupId>org.apache.maven.surefire</groupId>
-            <artifactId>surefire-testng</artifactId>
-            <version>2.13</version>
-          </dependency>
         </dependencies>
         <configuration>
           <systemProperties>
