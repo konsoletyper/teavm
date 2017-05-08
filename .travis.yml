@@ -35,7 +35,7 @@ install:
   - popd
 
 script:
-  - mvn -e test -P \!htmlUnit
+  - travis_wait 60 mvn -e test -P \!htmlUnit
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
   - export DISPLAY=:99.0
