@@ -65,7 +65,7 @@ public class TLogger {
         } else if (record.getLevel().intValue() >= TLevel.WARNING.intValue()) {
             warn(message);
         } else {
-            info(message);
+            inf(message);
         }
     }
 
@@ -142,6 +142,10 @@ public class TLogger {
         log(TLevel.WARNING, msg);
     }
 
+    public void info(TString msg) {
+        log(TLevel.INFO, msg);
+    }
+
     public void config(TString msg) {
         log(TLevel.CONFIG, msg);
     }
@@ -178,7 +182,7 @@ public class TLogger {
             + "if (console) {"
                 + "console.info(message);"
             + "}")
-    public static native void info(TString message);
+    private static native void inf(TString message);
 
     @JSBody(params = "message", script = ""
             + "if (console) {"
