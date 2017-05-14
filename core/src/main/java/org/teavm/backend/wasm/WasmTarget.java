@@ -398,7 +398,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private class IntrinsicFactoryContext implements WasmIntrinsicFactoryContext {
         private ListableClassReaderSource classSource;
 
-        public IntrinsicFactoryContext(ListableClassReaderSource classSource) {
+        IntrinsicFactoryContext(ListableClassReaderSource classSource) {
             this.classSource = classSource;
         }
 
@@ -610,7 +610,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         body.add(new WasmReturn(itemTest));
     }
 
-    private WasmFunction generateStub(WasmModule module, MethodHolder method, MethodHolder implementor) {
+    private void generateStub(WasmModule module, MethodHolder method, MethodHolder implementor) {
         WasmFunction function = module.getFunctions().get(WasmMangling.mangleMethod(method.getReference()));
 
         WasmCall call = new WasmCall(WasmMangling.mangleMethod(implementor.getReference()));
@@ -625,7 +625,6 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         } else {
             function.getBody().add(new WasmReturn(call));
         }
-        return function;
     }
 
     private void renderClinit(ListableClassReaderSource classes, WasmClassGenerator classGenerator,

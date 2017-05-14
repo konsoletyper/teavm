@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.render;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +48,6 @@ public class WasmBinaryRenderer {
     private WasmBinaryVersion version;
     private List<WasmSignature> signatures = new ArrayList<>();
     private Map<WasmSignature, Integer> signatureIndexes = new HashMap<>();
-    private Map<String, Integer> importIndexes = new HashMap<>();
     private Map<String, Integer> functionIndexes = new HashMap<>();
 
     public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version) {
@@ -106,7 +106,6 @@ public class WasmBinaryRenderer {
     }
 
     private void renderImports(WasmModule module) {
-        int index = 0;
         List<WasmFunction> functions = new ArrayList<>();
         for (WasmFunction function : module.getFunctions().values()) {
             if (function.getImportName() == null) {
@@ -332,16 +331,20 @@ public class WasmBinaryRenderer {
     private void renderNames(WasmModule module) {
         WasmBinaryWriter section = new WasmBinaryWriter();
 
-        List<WasmFunction> functions = module.getFunctions().values().stream()
-                .filter(function -> function.getImportName() == null)
-                .collect(Collectors.toList());
+        WasmBinaryWriter functionsSubsection = new WasmBinaryWriter();
+        Collection<WasmFunction> functions = module.getFunctions().values();
 
-        section.writeLEB(functions.size());
+        functionsSubsection.writeLEB(functions.size());
 
         for (WasmFunction function : functions) {
-            section.writeAsciiString(function.getName());
-            section.writeLEB(0);
+            functionsSubsection.writeLEB(functionIndexes.get(function.getName()));
+            functionsSubsection.writeAsciiString(function.getName());
         }
+
+        byte[] payload = functionsSubsection.getData();
+        section.writeLEB(1);
+        section.writeLEB(payload.length);
+        section.writeBytes(payload);
 
         writeSection(SECTION_UNKNOWN, "name", section.getData());
     }
@@ -350,7 +353,7 @@ public class WasmBinaryRenderer {
         WasmType type;
         int count = 1;
 
-        public LocalEntry(WasmType type) {
+        LocalEntry(WasmType type) {
             this.type = type;
         }
     }
