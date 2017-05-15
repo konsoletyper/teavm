@@ -104,7 +104,7 @@
           <systemProperties>
             <teavm.junit.target>${project.build.directory}/js-tests</teavm.junit.target>
             <teavm.junit.minified>true</teavm.junit.minified>
-            <teavm.junit.optimized>true</teavm.junit.optimized>
+            <teavm.junit.optimized>false</teavm.junit.optimized>
           </systemProperties>
           <argLine>-Xmx1024m</argLine>
         </configuration>
