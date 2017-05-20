@@ -343,6 +343,11 @@ public class Parser {
                 desc = desc.substring(1, desc.length() - 1);
             }
             desc = desc.replace('/', '.');
+
+            if (annotations.get(desc) != null) {
+                continue;
+            }
+
             AnnotationHolder annot = new AnnotationHolder(desc);
             parseAnnotationValues(annot, annotNode.values);
             annotations.add(annot);
