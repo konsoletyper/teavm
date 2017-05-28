@@ -1,7 +1,5 @@
 package org.teavm.classlib.java.util;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.ByteBuffer;
 
 /**
@@ -121,10 +119,6 @@ public class TBase64 {
             return decode(src.getBytes());
         }
 
-        public InputStream wrap(InputStream is) {
-            throw new UnsupportedOperationException(":(");
-        }
-
         private int outputLength(byte[] input) {
             if (input.length == 0)
                 return 0;
@@ -212,14 +206,6 @@ public class TBase64 {
         public String encodeToString(byte[] src) {
             byte[] encoded = encode(src);
             return new String(encoded);
-        }
-
-        public Encoder withoutPadding() {
-            throw new UnsupportedOperationException(":(");
-        }
-
-        public OutputStream wrap(OutputStream os) {
-            throw new UnsupportedOperationException(":(");
         }
 
         private int outputLength(int inputLength) {
