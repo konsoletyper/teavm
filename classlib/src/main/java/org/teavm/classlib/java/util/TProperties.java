@@ -15,12 +15,14 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.io.TBufferedInputStream;
+import org.teavm.classlib.java.io.TBufferedReader;
 import org.teavm.classlib.java.io.TIOException;
 import org.teavm.classlib.java.io.TInputStream;
+import org.teavm.classlib.java.io.TInputStreamReader;
 import org.teavm.classlib.java.io.TOutputStream;
 import org.teavm.classlib.java.io.TOutputStreamWriter;
 import org.teavm.classlib.java.io.TPrintStream;
+import org.teavm.classlib.java.io.TReader;
 import org.teavm.classlib.java.io.TWriter;
 import org.teavm.classlib.java.lang.TString;
 
@@ -143,16 +145,19 @@ public class TProperties extends THashtable<Object, Object> {
         }
     }
 
-    @SuppressWarnings("fallthrough")
     public synchronized void load(TInputStream in) throws TIOException {
-        if (in == null) {
-            throw new NullPointerException();
-        }
+        TObjects.requireNonNull(in);
+        load(new TInputStreamReader(in));
+    }
+
+    @SuppressWarnings("fallthrough")
+    public synchronized void load(TReader in) throws TIOException {
+        TObjects.requireNonNull(in);
         int mode = NONE, unicode = 0, count = 0;
         char nextChar, buf[] = new char[40];
         int offset = 0, keyLength = -1, intVal;
         boolean firstChar = true;
-        TBufferedInputStream bis = new TBufferedInputStream(in);
+        TBufferedReader bis = new TBufferedReader(in);
 
         while (true) {
             intVal = bis.read();

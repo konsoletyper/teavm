@@ -54,6 +54,10 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return result;
     }
 
+    public static <X> TClass<X>  wrap(Class<X> clazz) {
+        return (TClass<X>) (Object) clazz;
+    }
+
     public PlatformClass getPlatformClass() {
         return platformClass;
     }
