@@ -21,6 +21,7 @@ import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
@@ -40,14 +41,36 @@ public class FunctorTest {
         assertSame(firstRef, secondRef);
     }
 
+    @Test
+    public void propertyWithNonAlphabeticFirstChar() {
+        WithProperties wp = getWithPropertiesInstance();
+        assertEquals("foo_ok", wp.get_foo());
+        assertEquals("bar_ok", wp.get$bar());
+        assertEquals("baz_ok", wp.propbaz());
+    }
+
     @JSBody(params = { "f", "a", "b" }, script = "return '(' + f(a, b) + ')';")
     private static native String testMethod(JSBiFunction f, int a, int b);
 
     @JSBody(params = "f", script = "return f;")
     private static native JSObject getFunction(JSBiFunction f);
 
+    @JSBody(script = "return { _foo: 'foo_ok', $bar: 'bar_ok', baz: 'baz_ok' };")
+    private static native WithProperties getWithPropertiesInstance();
+
     @JSFunctor
     interface JSBiFunction extends JSObject {
         int apply(int a, int b);
+    }
+
+    interface WithProperties extends JSObject {
+        @JSProperty
+        String get_foo();
+
+        @JSProperty
+        String get$bar();
+
+        @JSProperty("baz")
+        String propbaz();
     }
 }

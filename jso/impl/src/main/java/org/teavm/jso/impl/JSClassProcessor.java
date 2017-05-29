@@ -333,13 +333,12 @@ class JSClassProcessor {
     private boolean processJSBodyInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke,
             MethodHolder methodToProcess) {
         boolean[] byRefParams = new boolean[method.parameterCount()];
-        boolean valid = validateSignature(method, callLocation, byRefParams);
+        validateSignature(method, callLocation, byRefParams);
         if (invoke.getInstance() != null) {
             if (!typeHelper.isSupportedType(ValueType.object(method.getOwnerName()))) {
                 diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript method "
                         + "declaration. It is non-static and declared on a non-overlay class {{c1}}",
                         invoke.getMethod(), method.getOwnerName());
-                valid = false;
             }
         }
 
@@ -351,8 +350,6 @@ class JSClassProcessor {
 
         Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
         InvokeInstruction newInvoke = new InvokeInstruction();
-        ValueType[] signature = new ValueType[method.parameterCount() + 3];
-        Arrays.fill(signature, ValueType.object(JSObject.class.getName()));
         newInvoke.setMethod(delegate);
         newInvoke.setType(InvocationType.SPECIAL);
         newInvoke.setReceiver(result);
@@ -381,12 +378,9 @@ class JSClassProcessor {
     }
 
     private boolean processProperty(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
-        if (isProperGetter(method.getDescriptor())) {
-            String propertyName;
-            AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
-            if (annot.getValue("value") != null) {
-                propertyName = annot.getValue("value").getString();
-            } else {
+        if (isProperGetter(method)) {
+            String propertyName = extractSuggestedPropertyName(method);
+            if (propertyName == null) {
                 propertyName = method.getName().charAt(0) == 'i' ? cutPrefix(method.getName(), 2)
                         : cutPrefix(method.getName(), 3);
             }
@@ -398,12 +392,9 @@ class JSClassProcessor {
             }
             return true;
         }
-        if (isProperSetter(method.getDescriptor())) {
-            String propertyName;
-            AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
-            if (annot.getValue("value") != null) {
-                propertyName = annot.getValue("value").getString();
-            } else {
+        if (isProperSetter(method)) {
+            String propertyName = extractSuggestedPropertyName(method);
+            if (propertyName == null) {
                 propertyName = cutPrefix(method.getName(), 3);
             }
             Variable wrapped = wrapArgument(callLocation, invoke.getArguments().get(0),
@@ -414,6 +405,12 @@ class JSClassProcessor {
         diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript property "
                 + "declaration", invoke.getMethod());
         return false;
+    }
+
+    private String extractSuggestedPropertyName(MethodReader method) {
+        AnnotationReader annot = method.getAnnotations().get(JSProperty.class.getName());
+        AnnotationValue value = annot.getValue("value");
+        return value != null ? value.getString() : null;
     }
 
     private boolean processIndexer(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
@@ -1163,24 +1160,29 @@ class JSClassProcessor {
         return null;
     }
 
-    private boolean isProperGetter(MethodDescriptor desc) {
-        if (desc.parameterCount() > 0 || !typeHelper.isSupportedType(desc.getResultType())) {
+    private boolean isProperGetter(MethodReader method) {
+        if (method.parameterCount() > 0 || !typeHelper.isSupportedType(method.getResultType())) {
             return false;
         }
-        if (desc.getResultType().equals(ValueType.BOOLEAN)) {
-            if (isProperPrefix(desc.getName(), "is")) {
+        if (extractSuggestedPropertyName(method) != null) {
+            return true;
+        }
+
+        if (method.getResultType().equals(ValueType.BOOLEAN)) {
+            if (isProperPrefix(method.getName(), "is")) {
                 return true;
             }
         }
-        return isProperPrefix(desc.getName(), "get");
+        return isProperPrefix(method.getName(), "get");
     }
 
-    private boolean isProperSetter(MethodDescriptor desc) {
-        if (desc.parameterCount() != 1 || !typeHelper.isSupportedType(desc.parameterType(0))
-                || desc.getResultType() != ValueType.VOID) {
+    private boolean isProperSetter(MethodReader method) {
+        if (method.parameterCount() != 1 || !typeHelper.isSupportedType(method.parameterType(0))
+                || method.getResultType() != ValueType.VOID) {
             return false;
         }
-        return isProperPrefix(desc.getName(), "set");
+
+        return extractSuggestedPropertyName(method) != null || isProperPrefix(method.getName(), "set");
     }
 
     private boolean isProperPrefix(String name, String prefix) {
@@ -1188,7 +1190,7 @@ class JSClassProcessor {
             return false;
         }
         char c = name.charAt(prefix.length());
-        return Character.isUpperCase(c);
+        return Character.isUpperCase(c) || !Character.isAlphabetic(c) && Character.isJavaIdentifierStart(c);
     }
 
     private boolean isProperGetIndexer(MethodDescriptor desc) {
@@ -1201,7 +1203,7 @@ class JSClassProcessor {
                 && typeHelper.isSupportedType(desc.parameterType(0)) && desc.getResultType() == ValueType.VOID;
     }
 
-    private String cutPrefix(String name, int prefixLength) {
+    private static String cutPrefix(String name, int prefixLength) {
         if (name.length() == prefixLength + 1) {
             return name.substring(prefixLength).toLowerCase();
         }
