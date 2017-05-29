@@ -17,15 +17,12 @@ package org.teavm.classlib.java.lang;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import org.teavm.classlib.impl.Base64;
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.classlib.impl.Base64;
+import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TClassLoader extends TObject {
     private TClassLoader parent;
     private static TSystemClassLoader systemClassLoader = new TSystemClassLoader();
@@ -51,15 +48,19 @@ public abstract class TClassLoader extends TObject {
         if (resources == null) {
             resources = supplyResources();
         }
-        String data = resources.getResource(name);
-        return data == null ? null : new ByteArrayInputStream(Base64.decode(data));
+        JSObject data = resources.getResource(name);
+        String dataString = resourceToString(data);
+        return dataString == null ? null : new ByteArrayInputStream(Base64.decode(dataString));
     }
+
+    @JSBody(params = "resource", script = "return resource !== null && resource !== void 0 ? resource : null;")
+    private static native String resourceToString(JSObject resource);
 
     @InjectedBy(ClassLoaderNativeGenerator.class)
     private static native ResourceContainer supplyResources();
 
     interface ResourceContainer extends JSObject {
         @JSIndexer
-        String getResource(String name);
+        JSObject getResource(String name);
     }
 }
