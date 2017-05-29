@@ -21,7 +21,7 @@ import org.teavm.classlib.ResourceSupplierContext;
 public class TestResourcesSupplier implements ResourceSupplier {
     @Override
     public String[] supplyResources(ResourceSupplierContext context) {
-        String[] result = { "1", "2", "3", "4", "5", "6", "7", "8" };
+        String[] result = { "1", "2", "3", "4", "5", "6", "7", "8", "9" };
         for (int i = 0; i < result.length; ++i) {
             result[i] = "resources-for-test/" + result[i];
         }
