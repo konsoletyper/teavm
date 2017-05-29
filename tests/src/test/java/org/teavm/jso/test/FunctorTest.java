@@ -43,20 +43,20 @@ public class FunctorTest {
     
     @Test
     public void functorWithDefaultMethodPassed(){
-        JSFunctionWithDefaultMethod javaFunction = (s) -> s+" returned";
+        JSFunctionWithDefaultMethod javaFunction = (a) -> a+100;
         
-        String returned = javaFunction.defaultMethod();
+        int returned = javaFunction.defaultMethod();
         
-        assertEquals(returned, "Content returned");
+        assertEquals(110, returned);
     }
-    
+
     @Test
     public void functorWithStaticMethodPassed(){
-        JSFunctionWithStaticMethod javaFunction = (s) -> s+" returned";
+        JSFunctionWithStaticMethod javaFunction = (a) -> a*2;
         
-        String returned = javaFunction.apply(JSFunctionWithStaticMethod.staticMethod());
+        int returned = javaFunction.apply(JSFunctionWithStaticMethod.staticMethod());
         
-        assertEquals(returned, "Content returned");
+        assertEquals(400, returned);
     }
 
     @Test
@@ -79,23 +79,9 @@ public class FunctorTest {
     @JSFunctor
     interface JSBiFunction extends JSObject {
         int apply(int a, int b);
-    }
-    
-    @JSFunctor
-    interface JSFunctionWithDefaultMethod extends JSObject {
-        String apply(String a);
         
-        default String defaultMethod(){
-            return apply("Content");
-        }
-    }
-        
-    @JSFunctor
-    interface JSFunctionWithStaticMethod extends JSObject {
-        String apply(String a);
-        
-        public static String staticMethod(){
-            return "Content";
+        default String dm(String s){
+        	return s;
         }
     }
 
@@ -109,4 +95,29 @@ public class FunctorTest {
         @JSProperty("baz")
         String propbaz();
     }
+    
+    @JSFunctor
+    interface JSFunctionWithDefaultMethod extends JSObject {
+        int apply(int a);
+        
+        default int defaultMethod(){
+            return apply(10);
+        }
+    }
+        
+    @JSFunctor
+    interface JSFunctionWithStaticMethod extends JSObject {
+        int apply(int a);
+        
+        public static int staticMethod(){
+            return 200;
+        }
+    }
+    
+    static class T implements JSObject {
+    	public static String staticMethod(){
+            return "Content";
+        }
+    }
+      
 }
