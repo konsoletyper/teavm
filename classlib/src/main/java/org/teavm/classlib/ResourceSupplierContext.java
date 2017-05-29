@@ -15,6 +15,13 @@
  */
 package org.teavm.classlib;
 
-public interface ResourceSupplier {
-    String[] supplyResources(ResourceSupplierContext context);
+import java.util.Properties;
+import org.teavm.model.ListableClassReaderSource;
+
+public interface ResourceSupplierContext {
+    ClassLoader getClassLoader();
+
+    ListableClassReaderSource getClassSource();
+
+    Properties getProperties();
 }

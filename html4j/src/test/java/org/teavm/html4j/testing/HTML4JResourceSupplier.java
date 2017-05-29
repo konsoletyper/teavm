@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,8 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib;
+package org.teavm.html4j.testing;
 
-public interface ResourceSupplier {
-    String[] supplyResources(ResourceSupplierContext context);
+import org.teavm.classlib.ResourceSupplier;
+import org.teavm.classlib.ResourceSupplierContext;
+
+public class HTML4JResourceSupplier implements ResourceSupplier {
+    @Override
+    public String[] supplyResources(ResourceSupplierContext context) {
+        return new String[] { "org/teavm/html4j/test/jvm.txt" };
+    }
 }
