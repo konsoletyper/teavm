@@ -39,6 +39,24 @@ public class FunctorTest {
         JSObject secondRef = getFunction(javaFunction);
         assertSame(firstRef, secondRef);
     }
+    
+    @Test
+    public void functorWithDefaultMethodPassed(){
+        JSFunctionWithDefaultMethod javaFunction = (s) -> s+" returned";
+        
+        String returned = javaFunction.defaultMethod();
+        
+        assertEquals(returned, "Content returned");
+    }
+    
+    @Test
+    public void functorWithStaticMethodPassed(){
+        JSFunctionWithStaticMethod javaFunction = (s) -> s+" returned";
+        
+        String returned = javaFunction.apply(JSFunctionWithStaticMethod.staticMethod());
+        
+        assertEquals(returned, "Content returned");
+    }
 
     @JSBody(params = { "f", "a", "b" }, script = "return '(' + f(a, b) + ')';")
     private static native String testMethod(JSBiFunction f, int a, int b);
@@ -49,5 +67,23 @@ public class FunctorTest {
     @JSFunctor
     interface JSBiFunction extends JSObject {
         int apply(int a, int b);
+    }
+    
+    @JSFunctor
+    interface JSFunctionWithDefaultMethod extends JSObject {
+        String apply(String a);
+        
+        default String defaultMethod(){
+            return apply("Content");
+        }
+    }
+        
+    @JSFunctor
+    interface JSFunctionWithStaticMethod extends JSObject {
+        String apply(String a);
+        
+        public static String staticMethod(){
+            return "Content";
+        }
     }
 }
