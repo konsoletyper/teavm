@@ -13,18 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.classlib;
 
-import org.teavm.classlib.ResourceSupplier;
-import org.teavm.classlib.ResourceSupplierContext;
+import java.util.Properties;
+import org.teavm.model.ListableClassReaderSource;
 
-public class TestResourcesSupplier implements ResourceSupplier {
-    @Override
-    public String[] supplyResources(ResourceSupplierContext context) {
-        String[] result = { "1", "2", "3", "4", "5", "6", "7", "8" };
-        for (int i = 0; i < result.length; ++i) {
-            result[i] = "resources-for-test/" + result[i];
-        }
-        return result;
-    }
+public interface ResourceSupplierContext {
+    ClassLoader getClassLoader();
+
+    ListableClassReaderSource getClassSource();
+
+    Properties getProperties();
 }
