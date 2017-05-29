@@ -991,7 +991,9 @@ class JSClassProcessor {
     }
 
     private boolean isProperFunctor(ClassReader type) {
-        return type.hasModifier(ElementModifier.INTERFACE) && type.getMethods().size() == 1;
+        return type.hasModifier(ElementModifier.INTERFACE) 
+             && type.getMethods().stream().filter(it->it.hasModifier(ElementModifier.ABSTRACT))
+             .toArray().length == 1;
     }
 
     private Variable wrapFunctor(CallLocation location, Variable var, ClassReader type) {
@@ -999,7 +1001,8 @@ class JSClassProcessor {
             diagnostics.error(location, "Wrong functor: {{c0}}", type.getName());
             return var;
         }
-        String name = type.getMethods().iterator().next().getName();
+        String name = type.getMethods().stream()
+            .filter(it->it.hasModifier(ElementModifier.ABSTRACT)).findFirst().get().getName();
         Variable functor = program.createVariable();
         Variable nameVar = addStringWrap(addString(name, location.getSourceLocation()), location.getSourceLocation());
         InvokeInstruction insn = new InvokeInstruction();

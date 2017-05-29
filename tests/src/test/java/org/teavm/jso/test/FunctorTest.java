@@ -42,6 +42,24 @@ public class FunctorTest {
     }
 
     @Test
+    public void functorWithDefaultMethodPassed(){
+        JSFunctionWithDefaultMethod javaFunction = (s) -> s+" returned";
+
+        String returned = javaFunction.defaultMethod();
+
+        assertEquals(returned, "Content returned");
+    }
+
+    @Test
+    public void functorWithStaticMethodPassed(){
+        JSFunctionWithStaticMethod javaFunction = (s) -> s+" returned";
+
+        String returned = javaFunction.apply(JSFunctionWithStaticMethod.staticMethod());
+
+        assertEquals(returned, "Content returned");
+    }
+
+    @Test
     public void propertyWithNonAlphabeticFirstChar() {
         WithProperties wp = getWithPropertiesInstance();
         assertEquals("foo_ok", wp.get_foo());
@@ -61,6 +79,24 @@ public class FunctorTest {
     @JSFunctor
     interface JSBiFunction extends JSObject {
         int apply(int a, int b);
+    }
+
+    @JSFunctor
+    interface JSFunctionWithDefaultMethod extends JSObject {
+        String apply(String a);
+
+        default String defaultMethod(){
+            return apply("Content");
+        }
+    }
+
+    @JSFunctor
+    interface JSFunctionWithStaticMethod extends JSObject {
+        String apply(String a);
+
+        public static String staticMethod(){
+            return "Content";
+        }
     }
 
     interface WithProperties extends JSObject {
