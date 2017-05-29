@@ -80,6 +80,17 @@ public class FunctorTest {
     interface JSBiFunction extends JSObject {
         int apply(int a, int b);
     }
+
+    interface WithProperties extends JSObject {
+        @JSProperty
+        String get_foo();
+
+        @JSProperty
+        String get$bar();
+
+        @JSProperty("baz")
+        String propbaz();
+    }
     
     @JSFunctor
     interface JSFunctionWithDefaultMethod extends JSObject {
@@ -98,15 +109,5 @@ public class FunctorTest {
             return "Content";
         }
     }
-
-    interface WithProperties extends JSObject {
-        @JSProperty
-        String get_foo();
-
-        @JSProperty
-        String get$bar();
-
-        @JSProperty("baz")
-        String propbaz();
-    }
+      
 }
