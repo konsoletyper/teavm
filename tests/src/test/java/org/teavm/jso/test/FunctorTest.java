@@ -40,6 +40,24 @@ public class FunctorTest {
         JSObject secondRef = getFunction(javaFunction);
         assertSame(firstRef, secondRef);
     }
+    
+    @Test
+    public void functorWithDefaultMethodPassed(){
+        JSFunctionWithDefaultMethod javaFunction = (a) -> a+100;
+        
+        int returned = javaFunction.defaultMethod();
+        
+        assertEquals(110, returned);
+    }
+
+    @Test
+    public void functorWithStaticMethodPassed(){
+        JSFunctionWithStaticMethod javaFunction = (a) -> a*2;
+        
+        int returned = javaFunction.apply(JSFunctionWithStaticMethod.staticMethod());
+        
+        assertEquals(400, returned);
+    }
 
     @Test
     public void propertyWithNonAlphabeticFirstChar() {
@@ -61,6 +79,10 @@ public class FunctorTest {
     @JSFunctor
     interface JSBiFunction extends JSObject {
         int apply(int a, int b);
+        
+        default String dm(String s){
+        	return s;
+        }
     }
 
     interface WithProperties extends JSObject {
@@ -73,4 +95,23 @@ public class FunctorTest {
         @JSProperty("baz")
         String propbaz();
     }
+    
+    @JSFunctor
+    interface JSFunctionWithDefaultMethod extends JSObject {
+        int apply(int a);
+        
+        default int defaultMethod(){
+            return apply(10);
+        }
+    }
+        
+    @JSFunctor
+    interface JSFunctionWithStaticMethod extends JSObject {
+        int apply(int a);
+        
+        public static int staticMethod(){
+            return 200;
+        }
+    }
+      
 }
