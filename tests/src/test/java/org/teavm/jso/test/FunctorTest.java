@@ -113,11 +113,5 @@ public class FunctorTest {
             return 200;
         }
     }
-    
-    static class T implements JSObject {
-    	public static String staticMethod(){
-            return "Content";
-        }
-    }
       
 }
