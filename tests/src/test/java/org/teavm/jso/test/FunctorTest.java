@@ -42,8 +42,8 @@ public class FunctorTest {
     }
 
     @Test
-    public void functorWithDefaultMethodPassed(){
-        JSFunctionWithDefaultMethod javaFunction = (s) -> s+" returned";
+    public void functorWithDefaultMethodPassed() {
+        JSFunctionWithDefaultMethod javaFunction = (s) -> s + " returned";
 
         String returned = javaFunction.defaultMethod();
 
@@ -51,8 +51,8 @@ public class FunctorTest {
     }
 
     @Test
-    public void functorWithStaticMethodPassed(){
-        JSFunctionWithStaticMethod javaFunction = (s) -> s+" returned";
+    public void functorWithStaticMethodPassed() {
+        JSFunctionWithStaticMethod javaFunction = (s) -> s + " returned";
 
         String returned = javaFunction.apply(JSFunctionWithStaticMethod.staticMethod());
 
@@ -85,7 +85,7 @@ public class FunctorTest {
     interface JSFunctionWithDefaultMethod extends JSObject {
         String apply(String a);
 
-        default String defaultMethod(){
+        default String defaultMethod() {
             return apply("Content");
         }
     }
@@ -94,7 +94,7 @@ public class FunctorTest {
     interface JSFunctionWithStaticMethod extends JSObject {
         String apply(String a);
 
-        public static String staticMethod(){
+        static String staticMethod() {
             return "Content";
         }
     }
