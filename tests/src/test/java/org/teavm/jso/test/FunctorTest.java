@@ -43,21 +43,19 @@ public class FunctorTest {
 
     @Test
     public void functorWithDefaultMethodPassed() {
-        JSFunctionWithDefaultMethod javaFunction = (s) -> s + " returned";
-
-        String returned = javaFunction.defaultMethod();
-
-        assertEquals(returned, "Content returned");
+        assertEquals(123, callFunctionWithDefaultMethod(s -> s + 100));
     }
+
+    @JSBody(params = "f", script = "return f(23);")
+    private static native int callFunctionWithDefaultMethod(JSFunctionWithDefaultMethod f);
 
     @Test
     public void functorWithStaticMethodPassed() {
-        JSFunctionWithStaticMethod javaFunction = (s) -> s + " returned";
-
-        String returned = javaFunction.apply(JSFunctionWithStaticMethod.staticMethod());
-
-        assertEquals(returned, "Content returned");
+        assertEquals(123, callFunctionWithStaticMethod(s -> s + 100));
     }
+
+    @JSBody(params = "f", script = "return f(23);")
+    private static native int callFunctionWithStaticMethod(JSFunctionWithStaticMethod f);
 
     @Test
     public void propertyWithNonAlphabeticFirstChar() {
@@ -78,21 +76,21 @@ public class FunctorTest {
 
     @JSFunctor
     interface JSBiFunction extends JSObject {
-        int apply(int a, int b);
+        int foo(int a, int b);
     }
 
     @JSFunctor
     interface JSFunctionWithDefaultMethod extends JSObject {
-        String apply(String a);
+        int foo(int a);
 
         default String defaultMethod() {
-            return apply("Content");
+            return "Content";
         }
     }
 
     @JSFunctor
     interface JSFunctionWithStaticMethod extends JSObject {
-        String apply(String a);
+        int foo(int a);
 
         static String staticMethod() {
             return "Content";
