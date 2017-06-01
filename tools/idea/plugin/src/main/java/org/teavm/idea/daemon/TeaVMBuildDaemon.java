@@ -37,8 +37,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.teavm.idea.jps.remote.TeaVMRemoteBuildCallback;
@@ -67,6 +69,8 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
     private int port;
     private Registry registry;
     private File incrementalCache;
+    private ClassLoader lastJarClassLoader;
+    private List<String> lastJarClassPath;
 
     static {
         int depth = 0;
@@ -107,9 +111,23 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
             return;
         }
 
+        Thread mainThread = Thread.currentThread();
         try {
             incrementalCache = Files.createTempDirectory("teavm-cache").toFile();
-            incrementalCache.deleteOnExit();
+            Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+                try {
+                    if (incrementalCache != null) {
+                        FileUtils.deleteDirectory(incrementalCache);
+                    }
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+                try {
+                    mainThread.join();
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }));
         } catch (IOException e) {
             System.err.println("Could not setup incremental cache");
             e.printStackTrace(System.err);
@@ -148,7 +166,7 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         }
 
         TeaVMTool tool = new TeaVMTool();
-        tool.setIncremental(incremental);
+        tool.setIncremental(incremental && request.incremental);
         if (tool.isIncremental()) {
             tool.setCacheDirectory(incrementalCache);
         }
@@ -157,7 +175,7 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         tool.setTargetType(request.targetType);
         tool.setMainClass(request.mainClass);
         tool.setTargetDirectory(new File(request.targetDirectory));
-        tool.setClassLoader(buildClassLoader(request.classPath));
+        tool.setClassLoader(buildClassLoader(request.classPath, incremental && request.incremental));
 
         tool.setSourceMapsFileGenerated(request.sourceMapsFileGenerated);
         tool.setDebugInformationGenerated(request.debugInformationGenerated);
@@ -195,16 +213,47 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         return response;
     }
 
-    private ClassLoader buildClassLoader(List<String> classPathEntries) {
-        URL[] urls = classPathEntries.stream().map(entry -> {
+    private ClassLoader buildClassLoader(List<String> classPathEntries, boolean incremental) {
+        System.out.println("Classpath: " + classPathEntries);
+        Function<String, URL> mapper = entry -> {
             try {
                 return new File(entry).toURI().toURL();
             } catch (MalformedURLException e) {
                 throw new RuntimeException(entry);
             }
-        }).toArray(URL[]::new);
+        };
+        List<String> jarEntries = classPathEntries.stream()
+                .filter(entry -> entry.endsWith(".jar"))
+                .collect(Collectors.toList());
 
-        return new URLClassLoader(urls);
+        ClassLoader jarClassLoader = null;
+
+        if (incremental) {
+            if (jarEntries.equals(lastJarClassPath) && lastJarClassLoader != null) {
+                jarClassLoader = lastJarClassLoader;
+                System.out.println("Reusing previous class path");
+            }
+        } else {
+            lastJarClassLoader = null;
+            lastJarClassPath = null;
+        }
+        if (jarClassLoader == null) {
+            URL[] jarUrls = jarEntries.stream()
+                    .map(mapper)
+                    .toArray(URL[]::new);
+            jarClassLoader = new URLClassLoader(jarUrls);
+        }
+        if (incremental) {
+            lastJarClassPath = jarEntries;
+            lastJarClassLoader = jarClassLoader;
+        }
+
+        URL[] urls = classPathEntries.stream()
+                .filter(entry -> !entry.endsWith(".jar"))
+                .map(mapper)
+                .toArray(URL[]::new);
+
+        return new URLClassLoader(urls, jarClassLoader);
     }
 
     private TeaVMProgressListener createProgressListener(TeaVMRemoteBuildCallback callback) {
@@ -259,14 +308,22 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
                 }
                 sb.append(line).append('\n');
             }
+            IOUtils.closeQuietly(stderrReader);
+            IOUtils.closeQuietly(stdoutReader);
             throw new IllegalStateException("Could not start daemon. Stderr: " + sb);
         }
         int port = Integer.parseInt(line.substring(DAEMON_MESSAGE_PREFIX.length()));
 
-        new Thread(new DaemonProcessOutputWatcher(log, stdoutReader, "stdout", false)).start();
-        new Thread(new DaemonProcessOutputWatcher(log, stderrReader, "stderr", true)).start();
+        daemonThread(new DaemonProcessOutputWatcher(log, stdoutReader, "stdout", false)).start();
+        daemonThread(new DaemonProcessOutputWatcher(log, stderrReader, "stderr", true)).start();
 
         return new TeaVMDaemonInfo(port, process);
+    }
+
+    private static Thread daemonThread(Runnable runnable) {
+        Thread thread = new Thread(runnable);
+        thread.setDaemon(true);
+        return thread;
     }
 
     static class DaemonProcessOutputWatcher implements Runnable {
@@ -285,11 +342,16 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         @Override
         public void run() {
             try {
-                String line = reader.readLine();
-                if (isError) {
-                    log.error("Build daemon [" + name + "]: " + line);
-                } else {
-                    log.info("Build daemon [" + name + "]: " + line);
+                while (true) {
+                    String line = reader.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    if (isError) {
+                        log.error("Build daemon [" + name + "]: " + line);
+                    } else {
+                        log.info("Build daemon [" + name + "]: " + line);
+                    }
                 }
             } catch (IOException e) {
                 log.error("Error reading build daemon output", e);

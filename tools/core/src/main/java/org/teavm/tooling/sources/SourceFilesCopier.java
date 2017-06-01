@@ -64,19 +64,20 @@ public class SourceFilesCopier {
         for (String fileName : sourceFiles) {
             try {
                 SourceFileInfo sourceFile = findSourceFile(fileName);
+                if (sourceFile == null) {
+                    log.info("Missing source file: " + fileName);
+                    continue;
+                }
+
                 File outputFile = new File(targetDirectory, fileName);
                 if (outputFile.exists() && outputFile.lastModified() > sourceFile.lastModified()
                         && sourceFile.lastModified() > 0) {
                     continue;
                 }
                 try (InputStream input = sourceFile.open()) {
-                    if (input != null) {
-                        outputFile.getParentFile().mkdirs();
-                        try (OutputStream output = new FileOutputStream(outputFile)) {
-                            IOUtils.copy(input, output);
-                        }
-                    } else {
-                        log.info("Missing source file: " + fileName);
+                    outputFile.getParentFile().mkdirs();
+                    try (OutputStream output = new FileOutputStream(outputFile)) {
+                        IOUtils.copy(input, output);
                     }
                 }
             } catch (IOException e) {

@@ -97,8 +97,8 @@ public class TeaVMSettingsEditorTab implements SearchableConfigurable {
 
         if (incrementalCheckBox.isSelected() && !daemonComponent.isIncremental()) {
             shouldRestartDaemon = true;
-            daemonComponent.setIncremental(incrementalCheckBox.isSelected());
         }
+        daemonComponent.setIncremental(incrementalCheckBox.isSelected());
 
         if (daemonCheckBox.isSelected()) {
             if (!daemonComponent.isDaemonRunning()) {
