@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -16,11 +16,10 @@
 package org.teavm.tooling.sources;
 
 import java.io.IOException;
+import java.io.InputStream;
 
-public interface SourceFileProvider {
-    void open() throws IOException;
+public interface SourceFileInfo {
+    long lastModified();
 
-    void close() throws IOException;
-
-    SourceFileInfo getSourceFile(String fullPath) throws IOException;
+    InputStream open() throws IOException;
 }

@@ -26,10 +26,6 @@ import org.teavm.model.MethodReader;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMToolLog;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SourceFilesCopier {
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private List<SourceFileProvider> sourceFileProviders;
@@ -66,15 +62,22 @@ public class SourceFilesCopier {
         }
         targetDirectory.mkdirs();
         for (String fileName : sourceFiles) {
-            try (InputStream input = findSourceFile(fileName)) {
-                if (input != null) {
-                    File outputFile = new File(targetDirectory, fileName);
-                    outputFile.getParentFile().mkdirs();
-                    try (OutputStream output = new FileOutputStream(outputFile)) {
-                        IOUtils.copy(input, output);
+            try {
+                SourceFileInfo sourceFile = findSourceFile(fileName);
+                File outputFile = new File(targetDirectory, fileName);
+                if (outputFile.exists() && outputFile.lastModified() > sourceFile.lastModified()
+                        && sourceFile.lastModified() > 0) {
+                    continue;
+                }
+                try (InputStream input = sourceFile.open()) {
+                    if (input != null) {
+                        outputFile.getParentFile().mkdirs();
+                        try (OutputStream output = new FileOutputStream(outputFile)) {
+                            IOUtils.copy(input, output);
+                        }
+                    } else {
+                        log.info("Missing source file: " + fileName);
                     }
-                } else {
-                    log.info("Missing source file: " + fileName);
                 }
             } catch (IOException e) {
                 log.warning("Could not copy source file " + fileName, e);
@@ -89,11 +92,11 @@ public class SourceFilesCopier {
         }
     }
 
-    private InputStream findSourceFile(String fileName) throws IOException {
+    private SourceFileInfo findSourceFile(String fileName) throws IOException {
         for (SourceFileProvider provider : sourceFileProviders) {
-            InputStream input = provider.openSourceFile(fileName);
-            if (input != null) {
-                return input;
+            SourceFileInfo sourceFile = provider.getSourceFile(fileName);
+            if (sourceFile != null) {
+                return sourceFile;
             }
         }
         return null;
