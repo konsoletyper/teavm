@@ -15,6 +15,7 @@
  */
 package org.teavm.idea.jps;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
@@ -44,7 +45,7 @@ public class RenamingClassLoader extends URLClassLoader {
         }
 
         try (InputStream input = getResourceAsStream(name.replace('.', '/') + ".class")) {
-            ClassReader classReader = new ClassReader(input);
+            ClassReader classReader = new ClassReader(new BufferedInputStream(input));
             ClassWriter writer = new ClassWriter(0);
             RenamingVisitor visitor = new RenamingVisitor(writer);
             for (Rename rename : renameList) {

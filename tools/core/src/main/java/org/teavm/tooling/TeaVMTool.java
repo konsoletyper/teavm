@@ -15,6 +15,7 @@
  */
 package org.teavm.tooling;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
@@ -558,8 +559,8 @@ public class TeaVMTool implements BaseTeaVMTool {
     private void resourceToFile(String resource, String fileName) throws IOException {
         try (InputStream input = TeaVMTool.class.getClassLoader().getResourceAsStream(resource)) {
             File outputFile = new File(targetDirectory, fileName);
-            try (OutputStream output = new FileOutputStream(outputFile)) {
-                IOUtils.copy(input, output);
+            try (OutputStream output = new BufferedOutputStream(new FileOutputStream(outputFile))) {
+                IOUtils.copy(new BufferedInputStream(input), output);
             }
             generatedFiles.add(outputFile);
         }
@@ -567,7 +568,7 @@ public class TeaVMTool implements BaseTeaVMTool {
 
     private void resourceToWriter(String resource, Writer writer) throws IOException {
         try (InputStream input = TeaVMTool.class.getClassLoader().getResourceAsStream(resource)) {
-            IOUtils.copy(input, writer, "UTF-8");
+            IOUtils.copy(new BufferedInputStream(input), writer, "UTF-8");
         }
     }
 }

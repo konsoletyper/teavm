@@ -15,6 +15,7 @@
  */
 package org.teavm.metaprogramming.impl;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
@@ -42,7 +43,7 @@ public class MetaprogrammingClassLoader extends ClassLoader {
             return super.loadClass(name, resolve);
         } else {
             try (InputStream input = getResourceAsStream(name.replace('.', '/') + ".class")) {
-                byte[] array = instrumentation.instrument(IOUtils.toByteArray(input));
+                byte[] array = instrumentation.instrument(IOUtils.toByteArray(new BufferedInputStream(input)));
                 return defineClass(name, array, 0, array.length);
             } catch (IOException e) {
                 throw new ClassNotFoundException("Error reading bytecode of class " + name, e);
@@ -84,7 +85,8 @@ public class MetaprogrammingClassLoader extends ClassLoader {
             if (input == null) {
                 return false;
             }
-            new ClassReader(input).accept(visitor, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG);
+            new ClassReader(new BufferedInputStream(input))
+                    .accept(visitor, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG);
         } catch (IOException e) {
             return false;
         }
@@ -109,7 +111,8 @@ public class MetaprogrammingClassLoader extends ClassLoader {
             if (input == null) {
                 return false;
             }
-            new ClassReader(input).accept(visitor, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG);
+            new ClassReader(new BufferedInputStream(input))
+                    .accept(visitor, ClassReader.SKIP_CODE | ClassReader.SKIP_DEBUG);
         } catch (IOException e) {
             return false;
         }

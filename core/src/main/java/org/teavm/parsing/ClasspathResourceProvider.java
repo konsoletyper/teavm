@@ -15,12 +15,9 @@
  */
 package org.teavm.parsing;
 
+import java.io.BufferedInputStream;
 import java.io.InputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ClasspathResourceProvider implements ResourceProvider {
     private ClassLoader classLoader;
 
@@ -35,6 +32,7 @@ public class ClasspathResourceProvider implements ResourceProvider {
 
     @Override
     public InputStream openResource(String name) {
-        return classLoader.getResourceAsStream(name);
+        InputStream result = classLoader.getResourceAsStream(name);
+        return result != null ? new BufferedInputStream(result) : null;
     }
 }

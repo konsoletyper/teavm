@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.impl.currency;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -24,15 +25,11 @@ import java.util.List;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CountriesGenerator implements MetadataGenerator {
     @Override
     public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
-        try (InputStream input = context.getClassLoader().getResourceAsStream(
-                "org/teavm/classlib/impl/currency/iso3166.csv")) {
+        try (InputStream input = new BufferedInputStream(context.getClassLoader().getResourceAsStream(
+                "org/teavm/classlib/impl/currency/iso3166.csv"))) {
             if (input == null) {
                 throw new AssertionError("ISO 3166 table was not found");
             }

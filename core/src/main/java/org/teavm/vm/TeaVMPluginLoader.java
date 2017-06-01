@@ -15,6 +15,7 @@
  */
 package org.teavm.vm;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -120,7 +121,7 @@ public final class TeaVMPluginLoader {
             if (input == null) {
                 return false;
             }
-            ClassReader reader = new ClassReader(input);
+            ClassReader reader = new ClassReader(new BufferedInputStream(input));
             PluginDescriptorFiller filler = new PluginDescriptorFiller(descriptor);
             reader.accept(filler, 0);
             return true;

@@ -15,13 +15,10 @@
  */
 package org.teavm.parsing.resource;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ClasspathResourceReader implements ResourceReader {
     private ClassLoader classLoader;
 
@@ -51,6 +48,7 @@ public class ClasspathResourceReader implements ResourceReader {
 
     @Override
     public InputStream openResource(String name) throws IOException {
-        return classLoader.getResourceAsStream(name);
+        InputStream result = classLoader.getResourceAsStream(name);
+        return result != null ? new BufferedInputStream(result) : null;
     }
 }

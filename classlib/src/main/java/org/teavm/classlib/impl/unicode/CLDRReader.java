@@ -18,6 +18,7 @@ package org.teavm.classlib.impl.unicode;
 import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -33,10 +34,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CLDRReader {
     private static String[] weekdayKeys = { "sun", "mon", "tue", "wed", "thu", "fri", "sat" };
     private Map<String, CLDRLocale> knownLocales = new LinkedHashMap<>();
@@ -82,8 +79,8 @@ public class CLDRReader {
     }
 
     private void readCLDR(ClassLoader classLoader) {
-        try (ZipInputStream input = new ZipInputStream(classLoader.getResourceAsStream(
-                "org/teavm/classlib/impl/unicode/cldr-json.zip"))) {
+        try (ZipInputStream input = new ZipInputStream(new BufferedInputStream(classLoader.getResourceAsStream(
+                "org/teavm/classlib/impl/unicode/cldr-json.zip")))) {
             while (true) {
                 ZipEntry entry = input.getNextEntry();
                 if (entry == null) {

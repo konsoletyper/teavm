@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
@@ -68,7 +69,7 @@ public class ClassLoaderNativeGenerator implements Injector {
                 }
                 first = false;
                 writer.newLine();
-                String data = Base64.getEncoder().encodeToString(IOUtils.toByteArray(input));
+                String data = Base64.getEncoder().encodeToString(IOUtils.toByteArray(new BufferedInputStream(input)));
                 writer.append("\"").append(RenderingUtil.escapeString(resource)).append("\"");
                 writer.ws().append(':').ws();
                 writer.append("\"").append(data).append("\"");
