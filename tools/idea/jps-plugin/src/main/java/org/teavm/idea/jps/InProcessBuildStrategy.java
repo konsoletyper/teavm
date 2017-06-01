@@ -111,6 +111,10 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
     }
 
     @Override
+    public void setIncremental(boolean incremental) {
+    }
+
+    @Override
     public TeaVMBuildResult build() {
         TeaVMTool tool = new TeaVMTool();
         tool.setProgressListener(progressListener);

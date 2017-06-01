@@ -42,5 +42,7 @@ public interface TeaVMBuildStrategy {
 
     void setProgressListener(TeaVMProgressListener progressListener);
 
+    void setIncremental(boolean incremental);
+
     TeaVMBuildResult build();
 }

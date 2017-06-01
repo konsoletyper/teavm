@@ -30,4 +30,5 @@ public class TeaVMRemoteBuildRequest implements Serializable {
     public boolean sourceMapsFileGenerated;
     public boolean debugInformationGenerated;
     public boolean sourceFilesCopied;
+    public boolean incremental;
 }

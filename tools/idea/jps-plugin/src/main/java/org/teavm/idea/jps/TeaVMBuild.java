@@ -113,6 +113,7 @@ class TeaVMBuild {
         buildStrategy.setTargetType(config.getTargetType());
         buildStrategy.setTargetDirectory(config.getTargetDirectory());
         buildStrategy.setProgressListener(createProgressListener(context));
+        buildStrategy.setIncremental(!isRebuild(target));
         TeaVMBuildResult buildResult = buildStrategy.build();
 
         if (!buildResult.isErrorOccurred() && buildResult.getProblems().getSevereProblems().isEmpty()) {
@@ -399,9 +400,13 @@ class TeaVMBuild {
         return lines.getAll();
     }
 
+    private boolean isRebuild(TeaVMBuildTarget target) {
+        return !context.getScope().isBuildIncrementally(target.getTargetType())
+                || context.getScope().isBuildForced(target);
+    }
+
     private boolean hasChanges(TeaVMBuildTarget target) {
-        if (!context.getScope().isBuildIncrementally(target.getTargetType())
-                || context.getScope().isBuildForced(target)) {
+        if (isRebuild(target)) {
             return true;
         }
 

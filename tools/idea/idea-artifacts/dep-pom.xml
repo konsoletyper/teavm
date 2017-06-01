@@ -251,6 +251,17 @@
               <artifactId>jps-builders</artifactId>
             </configuration>
           </execution>
+          <execution>
+            <id>log4j</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <file>dependencies/idea/lib/commons-logging-1.2.jar</file>
+              <artifactId>commons-logging</artifactId>
+            </configuration>
+          </execution>
         </executions>
         <configuration>
           <localRepositoryPath>dependencies/maven</localRepositoryPath>

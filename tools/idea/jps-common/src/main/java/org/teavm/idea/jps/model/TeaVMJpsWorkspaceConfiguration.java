@@ -20,6 +20,7 @@ import org.jetbrains.jps.model.ex.JpsElementBase;
 
 public class TeaVMJpsWorkspaceConfiguration extends JpsElementBase<TeaVMJpsWorkspaceConfiguration> {
     private boolean daemonEnabled;
+    private boolean incremental;
 
     public boolean isDaemonEnabled() {
         return daemonEnabled;
@@ -27,6 +28,14 @@ public class TeaVMJpsWorkspaceConfiguration extends JpsElementBase<TeaVMJpsWorks
 
     public void setDaemonEnabled(boolean daemonEnabled) {
         this.daemonEnabled = daemonEnabled;
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
     }
 
     @NotNull
@@ -40,5 +49,6 @@ public class TeaVMJpsWorkspaceConfiguration extends JpsElementBase<TeaVMJpsWorks
     @Override
     public void applyChanges(@NotNull TeaVMJpsWorkspaceConfiguration configuration) {
         daemonEnabled = configuration.daemonEnabled;
+        incremental = configuration.incremental;
     }
 }

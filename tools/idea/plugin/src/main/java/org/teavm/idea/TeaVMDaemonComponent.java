@@ -25,6 +25,7 @@ import org.teavm.idea.jps.model.TeaVMJpsWorkspaceConfiguration;
 
 public class TeaVMDaemonComponent implements ApplicationComponent {
     private TeaVMDaemonInfo daemonInfo;
+    private boolean incremental;
 
     @Override
     public void initComponent() {
@@ -32,6 +33,7 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
                 TeaVMWorkspaceConfigurationStorage.class);
         if (configurationStorage != null) {
             TeaVMJpsWorkspaceConfiguration configuration = configurationStorage.getState();
+            incremental = configuration.isIncremental();
             if (configuration.isDaemonEnabled()) {
                 startDaemon();
             }
@@ -60,7 +62,7 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
     public void startDaemon() {
         if (daemonInfo == null) {
             try {
-                daemonInfo = TeaVMBuildDaemon.start();
+                daemonInfo = TeaVMBuildDaemon.start(incremental);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -74,6 +76,21 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
             daemonInfo = null;
             updateConfiguration(false);
         }
+    }
+
+    public boolean isIncremental() {
+        return incremental;
+    }
+
+    public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
+    }
+
+    public void applyChanges() {
+        TeaVMWorkspaceConfigurationStorage configurationStorage = getConfigurationStorage();
+        TeaVMJpsWorkspaceConfiguration configuration = configurationStorage.getState();
+        configuration.setIncremental(incremental);
+        configurationStorage.loadState(configuration);
     }
 
     private void updateConfiguration(boolean daemonEnabled) {

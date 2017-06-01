@@ -98,6 +98,11 @@ public class RemoteBuildStrategy implements TeaVMBuildStrategy {
     }
 
     @Override
+    public void setIncremental(boolean incremental) {
+        request.incremental = incremental;
+    }
+
+    @Override
     public TeaVMBuildResult build() {
         TeaVMRemoteBuildResponse response;
         try {

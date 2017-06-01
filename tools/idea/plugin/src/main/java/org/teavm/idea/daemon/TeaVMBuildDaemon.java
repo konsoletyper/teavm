@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.file.Files;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -37,6 +38,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.apache.commons.io.FileUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.teavm.idea.jps.remote.TeaVMRemoteBuildCallback;
 import org.teavm.idea.jps.remote.TeaVMRemoteBuildRequest;
 import org.teavm.idea.jps.remote.TeaVMRemoteBuildResponse;
@@ -58,8 +62,11 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
     private static final String DAEMON_CLASS = TeaVMBuildDaemon.class.getName().replace('.', '/') + ".class";
     private static final int DAEMON_CLASS_DEPTH;
     private static final String DAEMON_MESSAGE_PREFIX = "TeaVM daemon port: ";
+    private static final String INCREMENTAL_PROPERTY = "teavm.daemon.incremental";
+    private boolean incremental;
     private int port;
     private Registry registry;
+    private File incrementalCache;
 
     static {
         int depth = 0;
@@ -71,8 +78,9 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         DAEMON_CLASS_DEPTH = depth;
     }
 
-    TeaVMBuildDaemon() throws RemoteException {
+    TeaVMBuildDaemon(boolean incremental) throws RemoteException {
         super();
+        this.incremental = incremental;
         Random random = new Random();
         for (int i = 0; i < 20; ++i) {
             port = random.nextInt(MAX_PORT - MIN_PORT) + MIN_PORT;
@@ -86,14 +94,36 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
             } catch (RemoteException | AlreadyBoundException e) {
                 throw new IllegalStateException("Could not bind remote build assistant service", e);
             }
+
+            setupIncrementalCache();
+
             return;
         }
         throw new IllegalStateException("Could not create RMI registry");
     }
 
+    private void setupIncrementalCache() {
+        if (!incremental) {
+            return;
+        }
+
+        try {
+            incrementalCache = Files.createTempDirectory("teavm-cache").toFile();
+            incrementalCache.deleteOnExit();
+        } catch (IOException e) {
+            System.err.println("Could not setup incremental cache");
+            e.printStackTrace(System.err);
+            incremental = false;
+        }
+    }
+
     public static void main(String[] args) throws RemoteException {
-        TeaVMBuildDaemon daemon = new TeaVMBuildDaemon();
+        boolean incremental = Boolean.parseBoolean(System.getProperty(INCREMENTAL_PROPERTY, "false"));
+        TeaVMBuildDaemon daemon = new TeaVMBuildDaemon(incremental);
         System.out.println(DAEMON_MESSAGE_PREFIX + daemon.port);
+        if (daemon.incrementalCache != null) {
+            System.out.println("Incremental cache set up in " + daemon.incrementalCache);
+        }
         while (true) {
             try {
                 Thread.sleep(1000);
@@ -106,7 +136,22 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
     @Override
     public TeaVMRemoteBuildResponse build(TeaVMRemoteBuildRequest request, TeaVMRemoteBuildCallback callback)
             throws RemoteException {
+        System.out.println("Build started");
+
+        if (!request.incremental && incremental) {
+            try {
+                System.out.println("Dropping incremental cache");
+                FileUtils.cleanDirectory(incrementalCache);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        }
+
         TeaVMTool tool = new TeaVMTool();
+        tool.setIncremental(incremental);
+        if (tool.isIncremental()) {
+            tool.setCacheDirectory(incrementalCache);
+        }
         tool.setProgressListener(createProgressListener(callback));
         tool.setLog(new EmptyTeaVMToolLog());
         tool.setTargetType(request.targetType);
@@ -130,6 +175,7 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         boolean errorOccurred = false;
         try {
             tool.generate();
+            System.out.println("Build complete");
         } catch (TeaVMToolException | RuntimeException | Error e) {
             e.printStackTrace(System.err);
             errorOccurred = true;
@@ -190,19 +236,24 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         };
     }
 
-    public static TeaVMDaemonInfo start() throws IOException {
+    public static TeaVMDaemonInfo start(boolean incremental) throws IOException {
         String javaHome = System.getProperty("java.home");
         String javaCommand = javaHome + "/bin/java";
         String classPath = detectClassPath().stream().collect(Collectors.joining(File.pathSeparator));
-        ProcessBuilder builder = new ProcessBuilder(javaCommand, "-cp", classPath, TeaVMBuildDaemon.class.getName());
+        ProcessBuilder builder = new ProcessBuilder(javaCommand, "-cp", classPath,
+                "-D" + INCREMENTAL_PROPERTY + "=" + incremental,
+                TeaVMBuildDaemon.class.getName());
         Process process = builder.start();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"));
-        String line = reader.readLine();
+
+        Log log = LogFactory.getLog(TeaVMBuildDaemon.class);
+
+        BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"));
+        BufferedReader stderrReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), "UTF-8"));
+        String line = stdoutReader.readLine();
         if (line == null || !line.startsWith(DAEMON_MESSAGE_PREFIX)) {
             StringBuilder sb = new StringBuilder();
-            reader = new BufferedReader(new InputStreamReader(process.getErrorStream(), "UTF-8"));
             while (true) {
-                line = reader.readLine();
+                line = stderrReader.readLine();
                 if (line == null) {
                     break;
                 }
@@ -211,7 +262,39 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
             throw new IllegalStateException("Could not start daemon. Stderr: " + sb);
         }
         int port = Integer.parseInt(line.substring(DAEMON_MESSAGE_PREFIX.length()));
+
+        new Thread(new DaemonProcessOutputWatcher(log, stdoutReader, "stdout", false)).start();
+        new Thread(new DaemonProcessOutputWatcher(log, stderrReader, "stderr", true)).start();
+
         return new TeaVMDaemonInfo(port, process);
+    }
+
+    static class DaemonProcessOutputWatcher implements Runnable {
+        private Log log;
+        private BufferedReader reader;
+        private String name;
+        private boolean isError;
+
+        public DaemonProcessOutputWatcher(Log log, BufferedReader reader, String name, boolean isError) {
+            this.log = log;
+            this.reader = reader;
+            this.name = name;
+            this.isError = isError;
+        }
+
+        @Override
+        public void run() {
+            try {
+                String line = reader.readLine();
+                if (isError) {
+                    log.error("Build daemon [" + name + "]: " + line);
+                } else {
+                    log.info("Build daemon [" + name + "]: " + line);
+                }
+            } catch (IOException e) {
+                log.error("Error reading build daemon output", e);
+            }
+        }
     }
 
     private static List<String> detectClassPath() {
