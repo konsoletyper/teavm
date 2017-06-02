@@ -13,17 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.xml;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSMethod;
+import org.teavm.jso.dom.html.use.UseHTMLValue;
 
 /**
- * @author Alexey Andreev
+ * https://developer.mozilla.org/en-US/docs/Web/API/NodeFilter
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+@JSFunctor
+public interface NodeFilter {
 
-    E item(int index);
+    NodeAccept filter(Node node);
 
-    E namedItem(String name);
+    @JSMethod
+    default short acceptNode(Node node) {
+        return UseHTMLValue.getHtmlValue(filter(node));
+    }
 }

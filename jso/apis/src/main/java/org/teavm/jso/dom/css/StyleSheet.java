@@ -13,17 +13,38 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.dom.html;
+package org.teavm.jso.dom.css;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.xml.Node;
 
 /**
- * @author Alexey Andreev
+ * https://developer.mozilla.org/en-US/docs/Web/API/StyleSheet
  */
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+public interface StyleSheet extends JSObject {
 
-    E item(int index);
+    @JSProperty
+    boolean isDisabled();
 
-    E namedItem(String name);
+    @JSProperty
+    void setDisabled(boolean disabled);
+
+    @JSProperty
+    String getHref();
+
+    @JSProperty
+    MediaList getMedia();
+
+    @JSProperty
+    Node getOwnerNode();
+
+    @JSProperty
+    StyleSheet getParentStyleSheet();
+
+    @JSProperty
+    String getTitle();
+
+    @JSProperty
+    String getType();
 }
