@@ -110,7 +110,7 @@ public class AsyncMethodFinder {
         loop: for (String clsName : classSource.getClassNames()) {
             ClassReader cls = classSource.get(clsName);
             for (MethodReader method : cls.getMethods()) {
-                if (!asyncMethods.contains(method.getReference()) || method.getProgram() == null) {
+                if (asyncMethods.contains(method.getReference()) || method.getProgram() == null) {
                     continue;
                 }
                 if (hasMonitor(method)) {
