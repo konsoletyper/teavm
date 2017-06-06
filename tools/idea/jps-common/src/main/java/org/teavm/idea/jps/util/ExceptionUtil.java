@@ -13,24 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.jps.model;
+package org.teavm.idea.jps.util;
 
-import java.util.Collection;
-import org.teavm.callgraph.CallGraph;
-import org.teavm.diagnostics.ProblemProvider;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 
-public interface TeaVMBuildResult {
-    CallGraph getCallGraph();
+public final class ExceptionUtil {
+    private ExceptionUtil() {
+    }
 
-    boolean isErrorOccurred();
-
-    String getStackTrace();
-
-    ProblemProvider getProblems();
-
-    Collection<String> getUsedResources();
-
-    Collection<String> getClasses();
-
-    Collection<String> getGeneratedFiles();
+    public static String exceptionToString(Throwable e) {
+        StringWriter writer = new StringWriter();
+        PrintWriter output = new PrintWriter(writer);
+        e.printStackTrace(output);
+        output.close();
+        return writer.toString();
+    }
 }

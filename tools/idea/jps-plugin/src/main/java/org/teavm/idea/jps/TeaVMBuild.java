@@ -122,8 +122,16 @@ class TeaVMBuild {
 
         reportProblems(buildResult.getProblems(), buildResult.getCallGraph());
 
-        for (String fileName : buildResult.getGeneratedFiles()) {
-            outputConsumer.registerOutputFile(new File(fileName), Collections.emptyList());
+        if (!buildResult.isErrorOccurred()) {
+            for (String fileName : buildResult.getGeneratedFiles()) {
+                outputConsumer.registerOutputFile(new File(fileName), Collections.emptyList());
+            }
+        }
+
+        if (buildResult.getStackTrace() != null) {
+            context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.ERROR,
+                    "Compiler crashed:\n" + buildResult.getStackTrace(), "",
+                    -1, -1, -1, -1, -1));
         }
 
         return true;

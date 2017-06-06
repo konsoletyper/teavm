@@ -47,6 +47,7 @@ import org.teavm.idea.jps.remote.TeaVMRemoteBuildCallback;
 import org.teavm.idea.jps.remote.TeaVMRemoteBuildRequest;
 import org.teavm.idea.jps.remote.TeaVMRemoteBuildResponse;
 import org.teavm.idea.jps.remote.TeaVMRemoteBuildService;
+import org.teavm.idea.jps.util.ExceptionUtil;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
@@ -191,16 +192,18 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         }
 
         boolean errorOccurred = false;
+        String stackTrace = null;
         try {
             tool.generate();
             System.out.println("Build complete");
         } catch (TeaVMToolException | RuntimeException | Error e) {
-            e.printStackTrace(System.err);
+            stackTrace = ExceptionUtil.exceptionToString(e);
             errorOccurred = true;
         }
 
         TeaVMRemoteBuildResponse response = new TeaVMRemoteBuildResponse();
         response.errorOccurred = errorOccurred;
+        response.stackTrace = stackTrace;
         response.callGraph = tool.getDependencyInfo().getCallGraph();
         response.problems.addAll(tool.getProblemProvider().getProblems());
         response.severeProblems.addAll(tool.getProblemProvider().getSevereProblems());

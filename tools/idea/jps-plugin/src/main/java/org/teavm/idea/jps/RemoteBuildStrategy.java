@@ -134,6 +134,11 @@ public class RemoteBuildStrategy implements TeaVMBuildStrategy {
             }
 
             @Override
+            public String getStackTrace() {
+                return response.stackTrace;
+            }
+
+            @Override
             public ProblemProvider getProblems() {
                 return problems;
             }
