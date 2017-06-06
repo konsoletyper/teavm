@@ -21,6 +21,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.ClassNode;
@@ -39,6 +40,7 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassReaderSource;
@@ -281,8 +283,6 @@ public class Renderer implements RenderingManager {
         }
         for (ClassNode cls : classes) {
             renderDeclaration(cls);
-        }
-        for (ClassNode cls : classes) {
             renderMethodBodies(cls);
         }
         renderClassMetadata(classes);
@@ -481,12 +481,13 @@ public class Renderer implements RenderingManager {
                 }
                 writer.append(',').ws();
 
-                List<MethodNode> virtualMethods = new ArrayList<>();
+                List<MethodReference> virtualMethods = new ArrayList<>();
                 for (MethodNode method : cls.getMethods()) {
                     if (!method.getModifiers().contains(ElementModifier.STATIC)) {
-                        virtualMethods.add(method);
+                        virtualMethods.add(method.getReference());
                     }
                 }
+                collectMethodsToCopyFromInterfaces(classSource.get(cls.getName()), virtualMethods);
 
                 renderVirtualDeclarations(virtualMethods);
             }
@@ -495,6 +496,43 @@ public class Renderer implements RenderingManager {
             throw new RenderingException("Error rendering class metadata. See a cause for details", e);
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
+        }
+    }
+
+    private void collectMethodsToCopyFromInterfaces(ClassReader cls, List<MethodReference> targetList) {
+        Set<MethodDescriptor> implementedMethods = new HashSet<>();
+        implementedMethods.addAll(targetList.stream().map(method -> method.getDescriptor())
+                .collect(Collectors.toList()));
+
+        Set<String> visitedClasses = new HashSet<>();
+        for (String ifaceName : cls.getInterfaces()) {
+            ClassReader iface = classSource.get(ifaceName);
+            if (iface != null) {
+                collectMethodsToCopyFromInterfacesImpl(iface, targetList, implementedMethods, visitedClasses);
+            }
+        }
+    }
+
+    private void collectMethodsToCopyFromInterfacesImpl(ClassReader cls, List<MethodReference> targetList,
+            Set<MethodDescriptor> visited, Set<String> visitedClasses) {
+        if (!visitedClasses.add(cls.getName())) {
+            return;
+        }
+
+        for (MethodReader method : cls.getMethods()) {
+            if (!method.hasModifier(ElementModifier.STATIC)
+                    && !method.hasModifier(ElementModifier.ABSTRACT)) {
+                if (visited.add(method.getDescriptor())) {
+                    targetList.add(method.getReference());
+                }
+            }
+        }
+
+        for (String ifaceName : cls.getInterfaces()) {
+            ClassReader iface = classSource.get(ifaceName);
+            if (iface != null) {
+                collectMethodsToCopyFromInterfacesImpl(iface, targetList, visited, visitedClasses);
+            }
         }
     }
 
@@ -551,17 +589,16 @@ public class Renderer implements RenderingManager {
         return minifying ? RenderingUtil.indexToId(index) : "var_" + index;
     }
 
-    private void renderVirtualDeclarations(List<MethodNode> methods) throws NamingException, IOException {
+    private void renderVirtualDeclarations(Iterable<MethodReference> methods) throws NamingException, IOException {
         writer.append("[");
         boolean first = true;
-        for (MethodNode method : methods) {
-            debugEmitter.emitMethod(method.getReference().getDescriptor());
-            MethodReference ref = method.getReference();
+        for (MethodReference method : methods) {
+            debugEmitter.emitMethod(method.getDescriptor());
             if (!first) {
                 writer.append(",").ws();
             }
             first = false;
-            emitVirtualDeclaration(ref);
+            emitVirtualDeclaration(method);
             debugEmitter.emitMethod(null);
         }
         writer.append("]");

@@ -225,6 +225,52 @@ public class VMTest {
         callback.complete(value);
     }
 
+    @Test
+    public void defaultMethodsSupported() {
+        WithDefaultMethod[] instances = { new WithDefaultMethodDerivedA(), new WithDefaultMethodDerivedB(),
+                new WithDefaultMethodDerivedC() };
+        StringBuilder sb = new StringBuilder();
+        for (WithDefaultMethod instance : instances) {
+            sb.append(instance.foo() + "," + instance.bar() + ";");
+        }
+
+        assertEquals("default,A;default,B;overridden,C;", sb.toString());
+    }
+
+    interface WithDefaultMethod {
+        default String foo() {
+            return "default";
+        }
+
+        String bar();
+    }
+
+    class WithDefaultMethodDerivedA implements WithDefaultMethod {
+        @Override
+        public String bar() {
+            return "A";
+        }
+    }
+
+    class WithDefaultMethodDerivedB implements WithDefaultMethod {
+        @Override
+        public String bar() {
+            return "B";
+        }
+    }
+    class WithDefaultMethodDerivedC implements WithDefaultMethod {
+        @Override
+        public String foo() {
+            return "overridden";
+        }
+
+        @Override
+        public String bar() {
+            return "C";
+        }
+    }
+
+
     @JSBody(script = "return [1, 2]")
     private static native int[] createArray();
 
