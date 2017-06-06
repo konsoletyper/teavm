@@ -23,10 +23,6 @@ import org.teavm.model.MethodHandle;
 import org.teavm.model.RuntimeConstant;
 import org.teavm.model.emit.ValueEmitter;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DynamicCallSite {
     private MethodDescriptor calledMethod;
     private ValueEmitter instance;

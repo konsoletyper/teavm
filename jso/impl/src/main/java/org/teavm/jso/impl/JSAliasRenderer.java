@@ -16,29 +16,24 @@
 package org.teavm.jso.impl;
 
 import java.io.IOException;
+import java.util.HashMap;
 import java.util.Map;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingManager;
-import org.teavm.jso.impl.JSDependencyListener.ExposedClass;
+import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldReader;
+import org.teavm.model.FieldReference;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.spi.RendererListener;
 
-/**
- *
- * @author Alexey Andreev
- */
 class JSAliasRenderer implements RendererListener {
     private static String variableChars = "abcdefghijklmnopqrstuvwxyz";
-    private JSDependencyListener dependencyListener;
     private SourceWriter writer;
-    private ClassReaderSource classSource;
-
-    public JSAliasRenderer(JSDependencyListener dependencyListener) {
-        this.dependencyListener = dependencyListener;
-    }
+    private ListableClassReaderSource classSource;
 
     @Override
     public void begin(RenderingManager context, BuildTarget buildTarget) throws IOException {
@@ -48,25 +43,32 @@ class JSAliasRenderer implements RendererListener {
 
     @Override
     public void complete() throws IOException {
-        if (!dependencyListener.isAnyAliasExists()) {
+        if (!hasClassesToExpose()) {
             return;
         }
 
         writer.append("(function()").ws().append("{").softNewLine().indent();
         writer.append("var c;").softNewLine();
-        for (Map.Entry<String, ExposedClass> entry : dependencyListener.getExposedClasses().entrySet()) {
-            ExposedClass cls = entry.getValue();
-            ClassReader classReader = classSource.get(entry.getKey());
-            if (classReader == null || cls.methods.isEmpty()) {
+        for (String className : classSource.getClassNames()) {
+            ClassReader classReader = classSource.get(className);
+            Map<MethodDescriptor, String> methods = new HashMap<>();
+            for (MethodReader method : classReader.getMethods()) {
+                String methodAlias = getPublicAlias(method);
+                if (methodAlias != null) {
+                    methods.put(method.getDescriptor(), methodAlias);
+                }
+            }
+            if (methods.isEmpty()) {
                 continue;
             }
+
             boolean first = true;
-            for (Map.Entry<MethodDescriptor, String> aliasEntry : cls.methods.entrySet()) {
+            for (Map.Entry<MethodDescriptor, String> aliasEntry : methods.entrySet()) {
                 if (classReader.getMethod(aliasEntry.getKey()) == null) {
                     continue;
                 }
                 if (first) {
-                    writer.append("c").ws().append("=").ws().appendClass(entry.getKey()).append(".prototype;")
+                    writer.append("c").ws().append("=").ws().appendClass(className).append(".prototype;")
                             .softNewLine();
                     first = false;
                 }
@@ -78,11 +80,31 @@ class JSAliasRenderer implements RendererListener {
                 writer.ws().append("=").ws().append("c.").appendMethod(aliasEntry.getKey()).append(";").softNewLine();
             }
 
-            if (cls.functorField != null) {
-                writeFunctor(cls);
+            FieldReader functorField = getFunctorField(classReader);
+            if (functorField != null) {
+                writeFunctor(classReader, functorField.getReference());
             }
         }
         writer.outdent().append("})();").newLine();
+    }
+
+    private boolean hasClassesToExpose() {
+        for (String className : classSource.getClassNames()) {
+            ClassReader cls = classSource.get(className);
+            if (cls.getMethods().stream().anyMatch(method -> getPublicAlias(method) != null)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String getPublicAlias(MethodReader method) {
+        AnnotationReader annot = method.getAnnotations().get(JSMethodToExpose.class.getName());
+        return annot != null ? annot.getValue("name").getString() : null;
+    }
+
+    private FieldReader getFunctorField(ClassReader cls) {
+        return cls.getField("$$jso_functor$$");
     }
 
     private boolean isKeyword(String id) {
@@ -104,28 +126,31 @@ class JSAliasRenderer implements RendererListener {
         }
     }
 
-    private void writeFunctor(ExposedClass cls) throws IOException {
-        String alias = cls.methods.get(cls.functorMethod);
+    private void writeFunctor(ClassReader cls, FieldReference functorField) throws IOException {
+        AnnotationReader implAnnot = cls.getAnnotations().get(FunctorImpl.class.getName());
+        MethodDescriptor functorMethod = MethodDescriptor.parse(implAnnot.getValue("value").getString());
+        String alias = cls.getMethod(functorMethod).getAnnotations()
+                .get(JSMethodToExpose.class.getName()).getValue("name").getString();
         if (alias == null) {
             return;
         }
 
         writer.append("c.jso$functor$").append(alias).ws().append("=").ws().append("function()").ws().append("{")
                 .indent().softNewLine();
-        writer.append("if").ws().append("(!this.").appendField(cls.functorField).append(")").ws().append("{")
+        writer.append("if").ws().append("(!this.").appendField(functorField).append(")").ws().append("{")
                 .indent().softNewLine();
         writer.append("var self").ws().append('=').ws().append("this;").softNewLine();
 
-        writer.append("this.").appendField(cls.functorField).ws().append('=').ws().append("function(");
-        appendArguments(cls.functorMethod.parameterCount());
+        writer.append("this.").appendField(functorField).ws().append('=').ws().append("function(");
+        appendArguments(functorMethod.parameterCount());
         writer.append(")").ws().append('{').indent().softNewLine();
-        writer.append("return self.").appendMethod(cls.functorMethod).append('(');
-        appendArguments(cls.functorMethod.parameterCount());
+        writer.append("return self.").appendMethod(functorMethod).append('(');
+        appendArguments(functorMethod.parameterCount());
         writer.append(");").softNewLine();
         writer.outdent().append("};").softNewLine();
 
         writer.outdent().append("}").softNewLine();
-        writer.append("return this.").appendField(cls.functorField).append(';').softNewLine();
+        writer.append("return this.").appendField(functorField).append(';').softNewLine();
         writer.outdent().append("};").softNewLine();
     }
 
