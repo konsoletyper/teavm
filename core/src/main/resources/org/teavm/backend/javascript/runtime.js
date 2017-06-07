@@ -124,7 +124,7 @@ function $rt_arraycls(cls) {
     if (result === null) {
         var arraycls = function(data) {
             this.data = data;
-            this.$id = 0;
+            this.$id$ = 0;
         };
         arraycls.prototype = new ($rt_objcls())();
         arraycls.prototype.constructor = arraycls;

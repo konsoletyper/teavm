@@ -34,10 +34,6 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeJavaObject;
 import org.teavm.runtime.RuntimeObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 @Superclass("")
 public class TObject {
     Monitor monitor;

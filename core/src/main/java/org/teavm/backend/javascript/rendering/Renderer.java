@@ -323,7 +323,7 @@ public class Renderer implements RenderingManager {
             }
 
             if (cls.getName().equals("java.lang.Object")) {
-                writer.append("this.$id").ws().append('=').ws().append("0;").softNewLine();
+                writer.append("this.$id$").ws().append('=').ws().append("0;").softNewLine();
             }
 
             writer.outdent().append("}").newLine();
