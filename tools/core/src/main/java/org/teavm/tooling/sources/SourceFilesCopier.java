@@ -19,6 +19,7 @@ import java.io.*;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import org.apache.commons.io.IOUtils;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ListableClassReaderSource;
@@ -30,9 +31,11 @@ public class SourceFilesCopier {
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private List<SourceFileProvider> sourceFileProviders;
     private Set<String> sourceFiles = new HashSet<>();
+    private Consumer<File> copiesConsumer;
 
-    public SourceFilesCopier(List<SourceFileProvider> sourceFileProviders) {
+    public SourceFilesCopier(List<SourceFileProvider> sourceFileProviders, Consumer<File> copiesConsumer) {
         this.sourceFileProviders = sourceFileProviders;
+        this.copiesConsumer = copiesConsumer;
     }
 
     public void setLog(TeaVMToolLog log) {
@@ -80,6 +83,7 @@ public class SourceFilesCopier {
                         IOUtils.copy(input, output);
                     }
                 }
+                copiesConsumer.accept(outputFile);
             } catch (IOException e) {
                 log.warning("Could not copy source file " + fileName, e);
             }

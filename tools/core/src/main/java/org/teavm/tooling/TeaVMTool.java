@@ -540,7 +540,7 @@ public class TeaVMTool implements BaseTeaVMTool {
         if (vm.getWrittenClasses() == null) {
             return;
         }
-        SourceFilesCopier copier = new SourceFilesCopier(sourceFileProviders);
+        SourceFilesCopier copier = new SourceFilesCopier(sourceFileProviders, generatedFiles::add);
         copier.addClasses(vm.getWrittenClasses());
         copier.setLog(log);
         copier.copy(new File(targetDirectory, "src"));
