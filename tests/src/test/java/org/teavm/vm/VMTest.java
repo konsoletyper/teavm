@@ -145,6 +145,7 @@ public class VMTest {
     }
 
     @Test
+    @SkipJVM
     public void asyncClinit() {
         assertEquals(0, initCount);
         assertEquals("foo", AsyncClinitClass.foo());
