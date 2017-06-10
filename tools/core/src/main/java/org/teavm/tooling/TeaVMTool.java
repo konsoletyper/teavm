@@ -513,6 +513,7 @@ public class TeaVMTool implements BaseTeaVMTool {
             try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(sourceMapsFile), "UTF-8")) {
                 debugInfo.writeAsSourceMaps(sourceMapsOut, "src", getResolvedTargetFileName());
             }
+            generatedFiles.add(sourceMapsFile);
             log.info("Source maps successfully written");
         }
         if (sourceFilesCopied) {
