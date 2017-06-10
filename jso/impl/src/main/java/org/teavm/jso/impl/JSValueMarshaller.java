@@ -18,10 +18,14 @@ package org.teavm.jso.impl;
 import java.util.List;
 import java.util.function.Function;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSArrayReader;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -32,22 +36,66 @@ import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
 
 class JSValueMarshaller {
     private Diagnostics diagnostics;
     private JSTypeHelper typeHelper;
+    private ClassReaderSource classSource;
     private Program program;
     private List<Instruction> replacement;
 
-    JSValueMarshaller(Diagnostics diagnostics, JSTypeHelper typeHelper, Program program,
-            List<Instruction> replacement) {
+    JSValueMarshaller(Diagnostics diagnostics, JSTypeHelper typeHelper, ClassReaderSource classSource,
+            Program program, List<Instruction> replacement) {
         this.diagnostics = diagnostics;
         this.typeHelper = typeHelper;
+        this.classSource = classSource;
         this.program = program;
         this.replacement = replacement;
     }
 
-    public Variable wrap(Variable var, ValueType type, TextLocation location, boolean byRef) {
+    Variable wrapArgument(CallLocation location, Variable var, ValueType type, boolean byRef) {
+        if (type instanceof ValueType.Object) {
+            String className = ((ValueType.Object) type).getClassName();
+            ClassReader cls = classSource.get(className);
+            if (cls.getAnnotations().get(JSFunctor.class.getName()) != null) {
+                return wrapFunctor(location, var, cls);
+            }
+        }
+        return wrap(var, type, location.getSourceLocation(), byRef);
+    }
+
+    boolean isProperFunctor(ClassReader type) {
+        if (!type.hasModifier(ElementModifier.INTERFACE)) {
+            return false;
+        }
+        return type.getMethods().stream()
+                .filter(method -> method.hasModifier(ElementModifier.ABSTRACT))
+                .count() == 1;
+    }
+
+    private Variable wrapFunctor(CallLocation location, Variable var, ClassReader type) {
+        if (!isProperFunctor(type)) {
+            diagnostics.error(location, "Wrong functor: {{c0}}", type.getName());
+            return var;
+        }
+        String name = type.getMethods().stream()
+                .filter(method -> method.hasModifier(ElementModifier.ABSTRACT))
+                .findFirst().get().getName();
+        Variable functor = program.createVariable();
+        Variable nameVar = addStringWrap(addString(name, location.getSourceLocation()), location.getSourceLocation());
+        InvokeInstruction insn = new InvokeInstruction();
+        insn.setType(InvocationType.SPECIAL);
+        insn.setMethod(new MethodReference(JS.class, "function", JSObject.class, JSObject.class, JSObject.class));
+        insn.setReceiver(functor);
+        insn.getArguments().add(var);
+        insn.getArguments().add(nameVar);
+        insn.setLocation(location.getSourceLocation());
+        replacement.add(insn);
+        return functor;
+    }
+
+    Variable wrap(Variable var, ValueType type, TextLocation location, boolean byRef) {
         if (byRef) {
             InvokeInstruction insn = new InvokeInstruction();
             insn.setMethod(new MethodReference(JS.class, "arrayData", Object.class, JSObject.class));
@@ -167,6 +215,17 @@ class JSValueMarshaller {
             return new MethodReference(JS.class, "stringArrayWrapper", Function.class);
         }
         return new MethodReference(JS.class, "arrayWrapper", Function.class);
+    }
+
+    Variable unwrapReturnValue(CallLocation location, Variable var, ValueType type) {
+        if (type instanceof ValueType.Object) {
+            String className = ((ValueType.Object) type).getClassName();
+            ClassReader cls = classSource.get(className);
+            if (cls.getAnnotations().get(JSFunctor.class.getName()) != null) {
+                return unwrapFunctor(location, var, cls);
+            }
+        }
+        return unwrap(location, var, type);
     }
 
     Variable unwrap(CallLocation location, Variable var, ValueType type) {
@@ -401,5 +460,41 @@ class JSValueMarshaller {
         insn.setLocation(location);
         replacement.add(insn);
         return result;
+    }
+
+    private Variable unwrapFunctor(CallLocation location, Variable var, ClassReader type) {
+        if (!isProperFunctor(type)) {
+            diagnostics.error(location, "Wrong functor: {{c0}}", type.getName());
+            return var;
+        }
+        String name = type.getMethods().stream()
+                .filter(method -> method.hasModifier(ElementModifier.ABSTRACT))
+                .findFirst().get().getName();
+        Variable functor = program.createVariable();
+        Variable nameVar = addStringWrap(addString(name, location.getSourceLocation()), location.getSourceLocation());
+        InvokeInstruction insn = new InvokeInstruction();
+        insn.setType(InvocationType.SPECIAL);
+        insn.setMethod(new MethodReference(JS.class, "functionAsObject", JSObject.class, JSObject.class,
+                JSObject.class));
+        insn.setReceiver(functor);
+        insn.getArguments().add(var);
+        insn.getArguments().add(nameVar);
+        insn.setLocation(location.getSourceLocation());
+        replacement.add(insn);
+        return functor;
+    }
+
+    Variable addStringWrap(Variable var, TextLocation location) {
+        return wrap(var, ValueType.object("java.lang.String"), location, false);
+    }
+
+    Variable addString(String str, TextLocation location) {
+        Variable var = program.createVariable();
+        StringConstantInstruction nameInsn = new StringConstantInstruction();
+        nameInsn.setReceiver(var);
+        nameInsn.setConstant(str);
+        nameInsn.setLocation(location);
+        replacement.add(nameInsn);
+        return var;
     }
 }

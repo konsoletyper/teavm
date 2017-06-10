@@ -15,7 +15,8 @@
  */
 package org.teavm.jso.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;
@@ -31,6 +32,11 @@ public class FunctorTest {
     @Test
     public void functorPassed() {
         assertEquals("(5)", testMethod((a, b) -> a + b, 2, 3));
+    }
+
+    @Test
+    public void functorParamsMarshaled() {
+        assertEquals("(q,w)", testMethod((a, b) -> a + "," + b, "q", "w"));
     }
 
     @Test
@@ -65,8 +71,35 @@ public class FunctorTest {
         assertEquals("baz_ok", wp.propbaz());
     }
 
+    @Test
+    public void functorPassedBack() {
+        JSBiFunction function = getBiFunction();
+        assertEquals(23042, function.foo(23, 42));
+    }
+
+    @Test
+    public void functorParamsMarshaledBack() {
+        JSStringBiFunction function = getStringBiFunction();
+        assertEquals("q,w", function.foo("q", "w"));
+    }
+
     @JSBody(params = { "f", "a", "b" }, script = "return '(' + f(a, b) + ')';")
     private static native String testMethod(JSBiFunction f, int a, int b);
+
+    @JSBody(params = { "f", "a", "b" }, script = "return '(' + f(a, b) + ')';")
+    private static native String testMethod(JSStringBiFunction f, String a, String b);
+
+    @JSBody(script = ""
+            + "return function(a, b) {"
+                + "return a * 1000 + b;"
+            + "};")
+    private static native JSBiFunction getBiFunction();
+
+    @JSBody(script = ""
+            + "return function(a, b) {"
+            + "return a + ',' + b;"
+            + "};")
+    private static native JSStringBiFunction getStringBiFunction();
 
     @JSBody(params = "f", script = "return f;")
     private static native JSObject getFunction(JSBiFunction f);
@@ -77,6 +110,11 @@ public class FunctorTest {
     @JSFunctor
     interface JSBiFunction extends JSObject {
         int foo(int a, int b);
+    }
+
+    @JSFunctor
+    interface JSStringBiFunction extends JSObject {
+        String foo(String a, String b);
     }
 
     @JSFunctor

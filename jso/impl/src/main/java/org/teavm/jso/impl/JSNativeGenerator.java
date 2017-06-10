@@ -44,6 +44,9 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
             case "function":
                 writeFunction(context, writer);
                 break;
+            case "functionAsObject":
+                writeFunctionAsObject(context, writer);
+                break;
         }
     }
 
@@ -67,6 +70,16 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
 
         writer.outdent().append('}').softNewLine();
         writer.append("return ").append(thisName).append("[name]();").softNewLine();
+    }
+
+    private void writeFunctionAsObject(GeneratorContext context, SourceWriter writer) throws IOException {
+        String thisName = context.getParameterName(1);
+        String methodName = context.getParameterName(2);
+
+        writer.append("var result").ws().append("=").ws().append("{};").softNewLine();
+        writer.append("result[").append(methodName).append("]").ws().append("=").ws().append(thisName)
+                .append(";").softNewLine();
+        writer.append("return result;").softNewLine();
     }
 
     @Override
@@ -143,9 +156,6 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                     context.writeExpr(context.getArgument(0), context.getPrecedence());
                 }
                 break;
-            case "function":
-                generateFunction(context);
-                break;
             case "unwrapString":
                 writer.append("$rt_str(");
                 context.writeExpr(context.getArgument(0), Precedence.min());
@@ -200,17 +210,6 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
         }
     }
 
-    private void generateFunction(InjectorContext context) throws IOException {
-        SourceWriter writer = context.getWriter();
-        writer.append("(function($instance,").ws().append("$property)").ws().append("{").ws()
-                .append("return function()").ws().append("{").indent().softNewLine();
-        writer.append("return $instance[$property].apply($instance,").ws().append("arguments);").softNewLine();
-        writer.outdent().append("};})(");
-        context.writeExpr(context.getArgument(0));
-        writer.append(",").ws();
-        context.writeExpr(context.getArgument(1));
-        writer.append(")");
-    }
 
     private void renderProperty(Expr property, InjectorContext context) throws IOException {
         SourceWriter writer = context.getWriter();

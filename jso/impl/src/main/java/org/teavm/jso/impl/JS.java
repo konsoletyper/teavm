@@ -405,4 +405,8 @@ final class JS {
     @GeneratedBy(JSNativeGenerator.class)
     @PluggableDependency(JSNativeGenerator.class)
     public static native JSObject function(JSObject instance, JSObject property);
+
+    @GeneratedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject functionAsObject(JSObject instance, JSObject property);
 }
