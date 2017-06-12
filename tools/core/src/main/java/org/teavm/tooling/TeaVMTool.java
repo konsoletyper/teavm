@@ -21,10 +21,8 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -77,7 +75,6 @@ public class TeaVMTool implements BaseTeaVMTool {
     private String mainClass;
     private RuntimeCopyOperation runtime = RuntimeCopyOperation.SEPARATE;
     private Properties properties = new Properties();
-    private boolean mainPageIncluded;
     private boolean debugInformationGenerated;
     private boolean sourceMapsFileGenerated;
     private boolean sourceFilesCopied;
@@ -153,14 +150,6 @@ public class TeaVMTool implements BaseTeaVMTool {
 
     public void setRuntime(RuntimeCopyOperation runtime) {
         this.runtime = runtime;
-    }
-
-    public boolean isMainPageIncluded() {
-        return mainPageIncluded;
-    }
-
-    public void setMainPageIncluded(boolean mainPageIncluded) {
-        this.mainPageIncluded = mainPageIncluded;
     }
 
     public boolean isDebugInformationGenerated() {
@@ -523,17 +512,6 @@ public class TeaVMTool implements BaseTeaVMTool {
 
         if (runtime == RuntimeCopyOperation.SEPARATE) {
             resourceToFile("org/teavm/backend/javascript/runtime.js", "runtime.js");
-        }
-        if (mainPageIncluded) {
-            String text;
-            try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream(
-                    "org/teavm/tooling/main.html"), "UTF-8")) {
-                text = IOUtils.toString(reader).replace("${classes.js}", getResolvedTargetFileName());
-            }
-            File mainPageFile = new File(targetDirectory, "main.html");
-            try (Writer mainPageWriter = new OutputStreamWriter(new FileOutputStream(mainPageFile), "UTF-8")) {
-                mainPageWriter.append(text);
-            }
         }
     }
 

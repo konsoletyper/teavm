@@ -87,10 +87,6 @@ public final class TeaVMRunner {
                 .withLongOpt("runtime")
                 .create("r"));
         options.addOption(OptionBuilder
-                .withDescription("causes TeaVM to include default main page")
-                .withLongOpt("mainpage")
-                .create());
-        options.addOption(OptionBuilder
                 .withDescription("Generate debug information")
                 .withLongOpt("debug")
                 .create('g'));
@@ -184,9 +180,6 @@ public final class TeaVMRunner {
                     printUsage(options);
                     return;
             }
-        }
-        if (commandLine.hasOption("mainpage")) {
-            tool.setMainPageIncluded(true);
         }
         if (commandLine.hasOption('g')) {
             tool.setDebugInformationGenerated(true);
