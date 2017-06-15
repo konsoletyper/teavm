@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.jps.incremental.CompileContext;
@@ -50,6 +51,7 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
     private boolean sourceFilesCopied;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private TeaVMProgressListener progressListener;
+    private Properties properties = new Properties();
 
     public InProcessBuildStrategy(CompileContext context) {
         this.context = context;
@@ -116,6 +118,12 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
     }
 
     @Override
+    public void setProperties(Properties properties) {
+        this.properties.clear();
+        this.properties.putAll(properties);
+    }
+
+    @Override
     public TeaVMBuildResult build() {
         TeaVMTool tool = new TeaVMTool();
         tool.setProgressListener(progressListener);
@@ -130,6 +138,8 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
         tool.setSourceFilesCopied(sourceFilesCopied);
 
         tool.setMinifying(false);
+
+        tool.getProperties().putAll(properties);
 
         for (SourceFileProvider fileProvider : sourceFileProviders) {
             tool.addSourceFileProvider(fileProvider);

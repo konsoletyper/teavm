@@ -181,6 +181,7 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         tool.setSourceMapsFileGenerated(request.sourceMapsFileGenerated);
         tool.setDebugInformationGenerated(request.debugInformationGenerated);
         tool.setSourceFilesCopied(request.sourceFilesCopied);
+        tool.getProperties().putAll(request.properties);
 
         tool.setMinifying(false);
 

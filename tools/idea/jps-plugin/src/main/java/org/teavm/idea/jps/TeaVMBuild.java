@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -59,6 +60,7 @@ import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.idea.jps.model.TeaVMBuildResult;
 import org.teavm.idea.jps.model.TeaVMBuildStrategy;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
+import org.teavm.idea.jps.model.TeaVMProperty;
 import org.teavm.idea.jps.remote.TeaVMBuilderAssistant;
 import org.teavm.idea.jps.remote.TeaVMElementLocation;
 import org.teavm.model.CallLocation;
@@ -114,6 +116,13 @@ class TeaVMBuild {
         buildStrategy.setTargetDirectory(config.getTargetDirectory());
         buildStrategy.setProgressListener(createProgressListener(context));
         buildStrategy.setIncremental(!isRebuild(target));
+
+        Properties properties = new Properties();
+        for (TeaVMProperty property : config.getProperties()) {
+            properties.put(property.getKey(), property.getValue());
+        }
+        buildStrategy.setProperties(properties);
+
         TeaVMBuildResult buildResult = buildStrategy.build();
 
         if (!buildResult.isErrorOccurred() && buildResult.getProblems().getSevereProblems().isEmpty()) {

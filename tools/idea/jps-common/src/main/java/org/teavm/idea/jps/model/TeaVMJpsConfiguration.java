@@ -15,10 +15,13 @@
  */
 package org.teavm.idea.jps.model;
 
+import com.intellij.util.xmlb.annotations.AbstractCollection;
+import com.intellij.util.xmlb.annotations.Tag;
 import com.intellij.util.xmlb.annotations.Transient;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.jps.model.JpsElementChildRole;
 import org.jetbrains.jps.model.ex.JpsElementBase;
@@ -38,9 +41,9 @@ public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration>
 
     private String mainClass;
     private String targetDirectory;
-    private boolean minifying;
     private boolean sourceMapsFileGenerated = true;
     private boolean sourceFilesCopied = true;
+    private List<TeaVMProperty> properties = new ArrayList<>();
 
     public TeaVMTargetType getTargetType() {
         return targetType;
@@ -82,6 +85,16 @@ public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration>
         this.sourceFilesCopied = sourceFilesCopied;
     }
 
+    @Tag("properties")
+    @AbstractCollection(surroundWithTag = false)
+    public List<TeaVMProperty> getProperties() {
+        return properties;
+    }
+
+    public void setProperties(List<TeaVMProperty> properties) {
+        this.properties = properties;
+    }
+
     public static List<TeaVMJpsConfiguration> getAll(JpsModule module) {
         List<TeaVMJpsConfiguration> configurations = new ArrayList<>();
         for (JpsElementChildRole<TeaVMJpsConfiguration> role : Arrays.asList(JS_ROLE, WEBASSEMBLY_ROLE)) {
@@ -105,8 +118,12 @@ public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration>
     public void applyChanges(@NotNull TeaVMJpsConfiguration modified) {
         mainClass = modified.mainClass;
         targetDirectory = modified.targetDirectory;
-        minifying = modified.minifying;
         sourceMapsFileGenerated = modified.sourceMapsFileGenerated;
         sourceFilesCopied = modified.sourceFilesCopied;
+
+        properties.clear();
+        properties.addAll(modified.properties.stream()
+                .map(property -> property.createCopy())
+                .collect(Collectors.toList()));
     }
 }

@@ -18,6 +18,7 @@ package org.teavm.idea.jps.remote;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Properties;
 import org.teavm.tooling.TeaVMTargetType;
 
 public class TeaVMRemoteBuildRequest implements Serializable {
@@ -31,4 +32,5 @@ public class TeaVMRemoteBuildRequest implements Serializable {
     public boolean debugInformationGenerated;
     public boolean sourceFilesCopied;
     public boolean incremental;
+    public Properties properties;
 }
