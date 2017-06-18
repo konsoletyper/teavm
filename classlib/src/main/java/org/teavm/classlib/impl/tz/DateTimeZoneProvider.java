@@ -23,16 +23,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 import org.teavm.jso.JSBody;
 import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.ResourceMap;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class DateTimeZoneProvider {
     private static Map<String, DateTimeZone> cache = new HashMap<>();
 
@@ -75,7 +72,14 @@ public final class DateTimeZoneProvider {
         return ids.toArray(new String[ids.size()]);
     }
 
+    @GeneratedBy(DateTimeZoneProviderGenerator.class)
+    private static native boolean timeZoneDetectionEnabled();
+
     public static DateTimeZone detectTimezone() {
+        if (!timeZoneDetectionEnabled()) {
+            return null;
+        }
+
         List<Score> zones = new ArrayList<>();
         long time = System.currentTimeMillis();
         int offset = -getNativeOffset(System.currentTimeMillis());
@@ -123,11 +127,7 @@ public final class DateTimeZoneProvider {
                         scoreTable.remove(score);
                         continue;
                     }
-                    List<Score> prevZones = zoneMap.get(prev);
-                    if (prevZones == null) {
-                        prevZones = new ArrayList<>();
-                        zoneMap.put(prev, prevZones);
-                    }
+                    List<Score> prevZones = zoneMap.computeIfAbsent(prev, k -> new ArrayList<>());
                     prevZones.add(score);
                     if (timeInQueue.add(prev)) {
                         queue.add(prev);

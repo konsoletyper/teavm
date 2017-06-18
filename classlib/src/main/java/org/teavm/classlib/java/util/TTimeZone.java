@@ -21,7 +21,6 @@ import org.teavm.classlib.impl.tz.DateTimeZone;
 import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 import org.teavm.classlib.impl.tz.FixedDateTimeZone;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
-import org.teavm.classlib.java.lang.TThreadInterruptHandler;
 
 /**
  * {@code TimeZone} represents a time zone offset, taking into account
@@ -153,8 +152,10 @@ public abstract class TTimeZone implements Serializable, Cloneable {
      */
     public static TTimeZone getDefault() {
         if (defaultTz == null) {
-            //defaultTz = new TIANATimeZone(DateTimeZoneProvider.detectTimezone());
-            defaultTz = TTimeZone.getTimeZone("UTC");
+            defaultTz = new TIANATimeZone(DateTimeZoneProvider.detectTimezone());
+            if (defaultTz == null) {
+                defaultTz = TTimeZone.getTimeZone("UTC");
+            }
         }
         return (TTimeZone) defaultTz.clone();
     }
