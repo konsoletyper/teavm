@@ -15,10 +15,6 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class RuntimeConstant {
     public static final byte INT = 0;
     public static final byte LONG = 1;

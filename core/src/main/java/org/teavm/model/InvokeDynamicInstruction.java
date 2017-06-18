@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.teavm.model.instructions.InstructionVisitor;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class InvokeDynamicInstruction extends Instruction {
     private MethodDescriptor method;
     private MethodHandle bootstrapMethod;

@@ -49,9 +49,14 @@ public class JCLPlugin implements TeaVMPlugin {
 
         host.add(new ClassForNameTransformer());
         host.add(new AnnotationDependencyListener());
+
+        LambdaMetafactorySubstitutor lms = new LambdaMetafactorySubstitutor();
         host.add(new MethodReference(LambdaMetafactory.class, "metafactory", MethodHandles.Lookup.class,
                 String.class, MethodType.class, MethodType.class, MethodHandle.class, MethodType.class,
-                CallSite.class), new LambdaMetafactorySubstitutor());
+                CallSite.class), lms);
+        host.add(new MethodReference(LambdaMetafactory.class, "altMetafactory", MethodHandles.Lookup.class,
+                String.class, MethodType.class, Object[].class, CallSite.class), lms);
+
         host.add(new ScalaHacks());
 
         host.add(new NumericClassTransformer());
