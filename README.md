@@ -35,7 +35,7 @@ The easiest way to create a new TeaVM project is to type in the command line:
     mvn -DarchetypeCatalog=local \
       -DarchetypeGroupId=org.teavm \
       -DarchetypeArtifactId=teavm-maven-webapp \
-      -DarchetypeVersion=0.4.3 archetype:generate
+      -DarchetypeVersion=0.5.0 archetype:generate
 
 Now you can execute `mvn clean package` and get the generated `war` file.
 Deploy this `war` in Tomcat or another container, or simply unzip it and open the `index.html` page.

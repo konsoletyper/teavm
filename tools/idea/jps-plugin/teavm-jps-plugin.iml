@@ -17,6 +17,6 @@
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:jps-model:2016.3.4" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:jps-builders:2016.3.4" level="project" />
     <orderEntry type="module" module-name="teavm-jps-common" />
-    <orderEntry type="library" name="Maven: org.teavm.idea:teavm:0.5.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" name="Maven: org.teavm.idea:teavm:0.6.0-SNAPSHOT" level="project" />
   </component>
 </module>
