@@ -82,10 +82,10 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
     @JSBody(params = "message", script = "alert(message);")
     public static native void alert(String message);
 
-    @JSBody(params = "message", script = "confirm(message);")
+    @JSBody(params = "message", script = "return confirm(message);")
     public static native boolean confirm(JSObject message);
 
-    @JSBody(params = "message", script = "confirm(message);")
+    @JSBody(params = "message", script = "return confirm(message);")
     public static native boolean confirm(String message);
 
     public static String prompt(String message) {
