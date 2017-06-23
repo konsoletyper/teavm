@@ -143,13 +143,6 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         if (daemon.incrementalCache != null) {
             System.out.println("Incremental cache set up in " + daemon.incrementalCache);
         }
-        while (true) {
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                break;
-            }
-        }
     }
 
     @Override
