@@ -24,4 +24,8 @@ import org.teavm.classlib.java.util.TIterator;
  */
 public interface TIterable<T> {
     TIterator<T> iterator();
+
+    static <X> Iterable<X> unwrap(TIterable<X> tIterable) {
+        return (Iterable<X>) tIterable;
+    }
 }

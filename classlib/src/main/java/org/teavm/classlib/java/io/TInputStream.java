@@ -17,12 +17,19 @@ package org.teavm.classlib.java.io;
 
 import org.teavm.classlib.java.lang.TInteger;
 import org.teavm.classlib.java.lang.TObject;
+import org.teavm.classlib.java.lang.TString;
+
+import java.io.InputStream;
 
 /**
  *
  * @author Alexey Andreev
  */
 public abstract class TInputStream extends TObject implements TCloseable {
+    public static TInputStream wrap(InputStream inputStream) {
+        return (TInputStream) (Object) inputStream;
+    }
+
     public TInputStream() {
     }
 
