@@ -581,7 +581,10 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         if (buffer.length >= capacity) {
             return;
         }
-        buffer = TArrays.copyOf(buffer, capacity * 2 + 1);
+        int newLength = buffer.length < Integer.MAX_VALUE / 2
+                ? Math.max(capacity, Math.max(buffer.length * 2, 5))
+                : Integer.MAX_VALUE;
+        buffer = TArrays.copyOf(buffer, newLength);
     }
 
     public void trimToSize() {
