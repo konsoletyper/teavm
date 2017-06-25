@@ -78,7 +78,7 @@ public class CurrencyTest {
 
         currency = Currency.getInstance("RUB");
         assertEquals("RUB", currency.getSymbol(english));
-        assertEquals("руб.", currency.getSymbol(russian));
+        assertEquals("\u20BD", currency.getSymbol(russian));
     }
 
     @Test(expected = IllegalArgumentException.class)

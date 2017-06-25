@@ -24,6 +24,7 @@ public class NumberFormatTest {
     }
 
     @Test
+    @SkipJVM
     public void formatsCurrency() {
         NumberFormat format = NumberFormat.getCurrencyInstance(new Locale("en", "US"));
         format.setCurrency(Currency.getInstance("RUB"));
@@ -31,7 +32,7 @@ public class NumberFormatTest {
 
         format = NumberFormat.getCurrencyInstance(new Locale("ru", "RU"));
         format.setCurrency(Currency.getInstance("RUB"));
-        assertEquals("123 456,79 руб.", format.format(123456.789123).replace('\u00A0', ' '));
+        assertEquals("123 456,79 \u20BD", format.format(123456.789123).replace('\u00A0', ' '));
     }
 
     @Test
