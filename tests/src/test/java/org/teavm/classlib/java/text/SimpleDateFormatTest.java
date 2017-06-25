@@ -21,6 +21,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
@@ -30,8 +31,9 @@ public class SimpleDateFormatTest {
     }
 
     @Test
+    @SkipJVM
     public void firstDayOfWeekMatches() {
-        assertEquals(Calendar.SUNDAY, new GregorianCalendar(Locale.ENGLISH).getFirstDayOfWeek());
+        assertEquals(Calendar.MONDAY, new GregorianCalendar(Locale.ENGLISH).getFirstDayOfWeek());
         assertEquals(1, new GregorianCalendar(Locale.ENGLISH).getMinimalDaysInFirstWeek());
     }
 
@@ -62,22 +64,26 @@ public class SimpleDateFormatTest {
     }
 
     @Test
+    @SkipJVM
     public void weekInYearHandled() throws ParseException {
         long day = 24 * 3600 * 1000;
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss www", Locale.ENGLISH);
         assertEquals("2014-06-24 09:33:49 026", format.format(getDateWithZoneOffset(1403602429504L)));
         assertEquals("2014-06-28 09:33:49 026", format.format(getDateWithZoneOffset(1403602429504L + day * 4)));
-        assertEquals("2014-06-29 09:33:49 027", format.format(getDateWithZoneOffset(1403602429504L + day * 5)));
+        assertEquals("2014-06-29 09:33:49 026", format.format(getDateWithZoneOffset(1403602429504L + day * 5)));
+        assertEquals("2014-06-30 09:33:49 027", format.format(getDateWithZoneOffset(1403602429504L + day * 6)));
         assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 09:33:49 026")));
         assertEquals(1403602429000L + day * 4, getTimeWithoutZoneOffset(format.parse("2014-06-28 09:33:49 026")));
-        assertEquals(1403602429000L + day * 5, getTimeWithoutZoneOffset(format.parse("2014-06-29 09:33:49 027")));
+        assertEquals(1403602429000L + day * 5, getTimeWithoutZoneOffset(format.parse("2014-06-29 09:33:49 026")));
+        assertEquals(1403602429000L + day * 6, getTimeWithoutZoneOffset(format.parse("2014-06-30 09:33:49 027")));
     }
 
     @Test
+    @SkipJVM
     public void weekInMonthHandled() throws ParseException {
         SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss WW", Locale.ENGLISH);
-        assertEquals("2014-06-24 09:33:49 04", format.format(getDateWithZoneOffset(1403602429504L)));
-        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 09:33:49 04")));
+        assertEquals("2014-06-24 09:33:49 05", format.format(getDateWithZoneOffset(1403602429504L)));
+        assertEquals(1403602429000L, getTimeWithoutZoneOffset(format.parse("2014-06-24 09:33:49 05")));
     }
 
     @Test
