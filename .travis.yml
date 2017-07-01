@@ -35,7 +35,7 @@ install:
   - popd
 
 script:
-  - travis_wait 60 mvn -e test -P \!htmlUnit
+  - travis_wait 60 mvn -e test -P \!htmlUnit -Dteavm.junit.optimized=false -Dteavm.junit.js.runner=none
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
   - export DISPLAY=:99.0

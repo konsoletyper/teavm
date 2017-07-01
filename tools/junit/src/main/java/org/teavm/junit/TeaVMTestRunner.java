@@ -124,6 +124,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 case "htmlunit":
                     runStrategy = new HtmlUnitRunStrategy();
                     break;
+                case "":
+                case "none":
+                    runStrategy = null;
+                    break;
                 default:
                     throw new InitializationError("Unknown run strategy: " + runStrategyName);
             }
