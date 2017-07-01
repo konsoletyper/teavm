@@ -61,11 +61,11 @@ abstract class TAbstractSet {
      */
     static int counter = 1;
 
-    protected boolean isSecondPassVisited = false;
+    protected boolean isSecondPassVisited;
 
     protected String index = new Integer(TAbstractSet.counter++).toString();
 
-    private int type = 0;
+    private int type;
 
     public TAbstractSet() {
     }
@@ -239,7 +239,7 @@ abstract class TAbstractSet {
                 /*
                  * Add here code to do during the pass
                  */
-                if (next instanceof TSingleSet && ((TFSet)((TJointSet)next).fSet).isBackReferenced) {
+                if (next instanceof TSingleSet && ((TFSet) ((TJointSet) next).fSet).isBackReferenced) {
                     next = next.next;
                 }
 

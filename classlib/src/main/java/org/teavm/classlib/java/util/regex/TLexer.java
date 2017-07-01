@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -145,23 +161,23 @@ class TLexer {
     static final int NCount = 588;
 
     // table that contains canonical decomposition mappings
-    private static TIntArrHash decompTable = null;
+    private static TIntArrHash decompTable;
     /*
      * Table that contains information about Unicode codepoints with single
      * codepoint decomposition
      */
-    private static TIntHash singleDecompTable = null;
+    private static TIntHash singleDecompTable;
 
     private static int singleDecompTableSize;
 
-    private char[] pattern = null;
+    private char[] pattern;
 
-    private int flags = 0;
+    private int flags;
 
     private int mode = 1;
 
     // when in literal mode, this field will save the previous one
-    private int saved_mode = 0;
+    private int savedMode;
 
     // previous char read
     private int lookBack;
@@ -173,28 +189,28 @@ class TLexer {
     private int lookAhead;
 
     // index of last char in pattern plus one
-    private int patternFullLength = 0;
+    private int patternFullLength;
 
     // cur special token
-    private TSpecialToken curST = null;
+    private TSpecialToken curST;
 
     // next special token
-    private TSpecialToken lookAheadST = null;
+    private TSpecialToken lookAheadST;
 
     // cur char being processed
-    private int index = 0;
+    private int index;
 
     // previous non-whitespace character index;
-    private int prevNW = 0;
+    private int prevNW;
 
     // cur token start index
-    private int curToc = 0;
+    private int curToc;
 
     // look ahead token index
-    private int lookAheadToc = 0;
+    private int lookAheadToc;
 
     // original string representing pattern
-    private String orig = null;
+    private String orig;
 
     public TLexer(String pattern, int flags) {
         orig = pattern;
@@ -353,7 +369,7 @@ class TLexer {
 
                     switch (lookAhead) {
                         case 'E': {
-                            mode = saved_mode;
+                            mode = savedMode;
 
                             lookAhead = (index <= pattern.length - 2) ? nextCodePoint() : 0;
                             break;
@@ -381,8 +397,9 @@ class TLexer {
                         String cs = parseCharClassName();
                         boolean negative = false;
 
-                        if (lookAhead == 'P')
+                        if (lookAhead == 'P') {
                             negative = true;
+                        }
                         try {
                             lookAheadST = TAbstractCharClass.getPredefinedClass(cs, negative);
                         } catch (MissingResourceException mre) {
@@ -404,7 +421,7 @@ class TLexer {
                     }
 
                     case 'Q': {
-                        saved_mode = mode;
+                        savedMode = mode;
                         mode = TLexer.MODE_ESCAPE;
                         reread = true;
                         break;
@@ -476,7 +493,7 @@ class TLexer {
                         if (index < pattern.length - 2) {
 
                             // need not care about supplementary codepoints here
-                            lookAhead = (pattern[nextIndex()] & 0x1f);
+                            lookAhead = pattern[nextIndex()] & 0x1f;
                             break;
                         } else {
                             throw new TPatternSyntaxException("", this.toString(), index);
@@ -585,7 +602,7 @@ class TLexer {
                                             if (lookAhead >= 256) {
 
                                                 // Erase auxiliary bit
-                                                lookAhead = (lookAhead & 0xff);
+                                                lookAhead = lookAhead & 0xff;
                                                 flags = lookAhead;
                                                 lookAhead = lookAhead << 16;
                                                 lookAhead = CHAR_FLAGS | lookAhead;
@@ -682,19 +699,26 @@ class TLexer {
 
             nextIndex();
             char ch = 0;
-            while (index < pattern.length - 2 && (ch = pattern[nextIndex()]) != '}') {
+            while (index < pattern.length - 2) {
+                ch = pattern[nextIndex()];
+                if (ch == '}') {
+                    break;
+                }
                 sb.append(ch);
             }
-            if (ch != '}')
+            if (ch != '}') {
                 throw new TPatternSyntaxException("", this.toString(), index);
+            }
         }
 
-        if (sb.length() == 0)
+        if (sb.length() == 0) {
             throw new TPatternSyntaxException("", this.toString(), index);
+        }
 
         String res = sb.toString();
-        if (res.length() == 1)
+        if (res.length() == 1) {
             return "Is" + res;
+        }
         return (res.length() > 3 && (res.startsWith("Is") || res.startsWith("In"))) ? res.substring(2) : res;
     }
 
@@ -705,7 +729,11 @@ class TLexer {
         StringBuilder sb = new StringBuilder(4);
         int min = -1;
         int max = Integer.MAX_VALUE;
-        while (index < pattern.length && (ch = pattern[nextIndex()]) != '}') {
+        while (index < pattern.length) {
+            ch = pattern[nextIndex()];
+            if (ch == '}') {
+                break;
+            }
             if (ch == ',' && min < 0) {
                 try {
                     min = Integer.parseInt(sb.toString(), 10);
@@ -714,7 +742,7 @@ class TLexer {
                     throw new TPatternSyntaxException("", this.toString(), index);
                 }
             } else {
-                sb.append((char)ch);
+                sb.append((char) ch);
             }
         }
         if (ch != '}') {
@@ -723,8 +751,9 @@ class TLexer {
         if (sb.length() > 0) {
             try {
                 max = Integer.parseInt(sb.toString(), 10);
-                if (min < 0)
+                if (min < 0) {
                     min = max;
+                }
             } catch (NumberFormatException nfe) {
                 throw new TPatternSyntaxException("", this.toString(), index);
             }
@@ -818,6 +847,7 @@ class TLexer {
             try {
                 return Integer.parseInt(st.toString(), 16);
             } catch (NumberFormatException nfe) {
+                // do nothing
             }
         }
 
@@ -834,18 +864,24 @@ class TLexer {
         int res;
         int length = pattern.length - 2;
 
-        switch (first = Character.digit(pattern[index], 8)) {
+        first = Character.digit(pattern[index], 8);
+        switch (first) {
             case -1:
                 throw new TPatternSyntaxException("", this.toString(), index);
             default: {
-                if (first > 3)
+                if (first > 3) {
                     max--;
+                }
                 nextIndex();
                 res = first;
             }
         }
 
-        while (i < max && index < length && (first = Character.digit(pattern[index], 8)) >= 0) {
+        while (i < max && index < length) {
+            first = Character.digit(pattern[index], 8);
+            if (first < 0) {
+                break;
+            }
             res = res * 8 + first;
             nextIndex();
             i++;
@@ -938,19 +974,22 @@ class TLexer {
         int length = pattern.length - 2;
         index++;
         do {
-            while (index < length && Character.isWhitespace(pattern[index]))
+            while (index < length && Character.isWhitespace(pattern[index])) {
                 index++;
+            }
             if (index < length && pattern[index] == '#') {
                 index++;
-                while (index < length && !isLineSeparator(pattern[index]))
+                while (index < length && !isLineSeparator(pattern[index])) {
                     index++;
-            } else
+                }
+            } else {
                 return index;
+            }
         } while (true);
     }
 
     private boolean isLineSeparator(int ch) {
-        return (ch == '\n' || ch == '\r' || ch == '\u0085' || (ch | 1) == '\u2029');
+        return ch == '\n' || ch == '\r' || ch == '\u0085' || (ch | 1) == '\u2029';
     }
 
     /**
@@ -975,21 +1014,21 @@ class TLexer {
      * @return canonical decomposition of ch.
      */
     static int[] getHangulDecomposition(int ch) {
-        int SIndex = ch - SBase;
+        int sIndex = ch - SBase;
 
-        if (SIndex < 0 || SIndex >= SCount) {
+        if (sIndex < 0 || sIndex >= SCount) {
             return null;
         } else {
-            int L = LBase + SIndex / NCount;
-            int V = VBase + (SIndex % NCount) / TCount;
-            int T = SIndex % TCount;
-            int decomp[];
+            int l = LBase + sIndex / NCount;
+            int v = VBase + (sIndex % NCount) / TCount;
+            int t = sIndex % TCount;
+            int[] decomp;
 
-            if (T == 0) {
-                decomp = new int[] { L, V };
+            if (t == 0) {
+                decomp = new int[] { l, v };
             } else {
-                T = TBase + T;
-                decomp = new int[] { L, V, T };
+                t = TBase + t;
+                decomp = new int[] { l, v, t };
             }
             return decomp;
         }

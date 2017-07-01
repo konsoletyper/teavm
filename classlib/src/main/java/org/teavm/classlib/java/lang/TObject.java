@@ -185,6 +185,11 @@ public class TObject {
         return identity();
     }
 
+    @Override
+    public boolean equals(Object obj) {
+        return equals0((TObject) obj);
+    }
+
     @Rename("equals")
     public boolean equals0(TObject other) {
         return this == other;

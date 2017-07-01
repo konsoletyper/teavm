@@ -91,7 +91,7 @@ public class TTimer extends TObject {
                         return;
                     }
                     long nextDelay = nextStartTime[0] - System.currentTimeMillis();
-                    if (nextDelay < 0 ) {
+                    if (nextDelay < 0) {
                         nextDelay = 0;
                     }
                     task.nativeTimerId = Window.setTimeout(this, (int) nextDelay);

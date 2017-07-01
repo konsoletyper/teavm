@@ -41,9 +41,9 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 abstract class TAbstractLineTerminator {
-    static TAbstractLineTerminator unixLT = null;
+    static TAbstractLineTerminator unixLT;
 
-    static TAbstractLineTerminator unicodeLT = null;
+    static TAbstractLineTerminator unicodeLT;
 
     public abstract boolean isLineTerminator(int ch);
 
@@ -51,8 +51,9 @@ abstract class TAbstractLineTerminator {
 
     public static TAbstractLineTerminator getInstance(int flag) {
         if ((flag & TPattern.UNIX_LINES) != 0) {
-            if (unixLT != null)
+            if (unixLT != null) {
                 return unixLT;
+            }
             unixLT = new TAbstractLineTerminator() {
                 @Override
                 public boolean isLineTerminator(int ch) {
@@ -66,12 +67,13 @@ abstract class TAbstractLineTerminator {
             };
             return unixLT;
         } else {
-            if (unicodeLT != null)
+            if (unicodeLT != null) {
                 return unicodeLT;
+            }
             unicodeLT = new TAbstractLineTerminator() {
                 @Override
                 public boolean isLineTerminator(int ch) {
-                    return (ch == '\n' || ch == '\r' || ch == '\u0085' || (ch | 1) == '\u2029');
+                    return ch == '\n' || ch == '\r' || ch == '\u0085' || (ch | 1) == '\u2029';
                 }
 
                 @Override

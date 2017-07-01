@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -32,7 +48,7 @@ class TDecomposedCharSet extends TJointSet {
     /**
      * UTF-16 encoding of decomposedChar
      */
-    private String decomposedCharUTF16 = null;
+    private String decomposedCharUTF16;
 
     /**
      * Decomposition of the Unicode codepoint
@@ -109,7 +125,7 @@ class TDecomposedCharSet extends TJointSet {
              * Read testString until we met a decomposed char boundary and
              * decompose obtained portion of testString
              */
-            while ((readCodePoints < TLexer.MAX_DECOMPOSITION_LENGTH)) {
+            while (readCodePoints < TLexer.MAX_DECOMPOSITION_LENGTH) {
 
                 if (TLexer.hasDecompositionNonNullCanClass(curChar)) {
 
@@ -214,8 +230,8 @@ class TDecomposedCharSet extends TJointSet {
 
     @Override
     public boolean first(TAbstractSet set) {
-        return (set instanceof TDecomposedCharSet) ? ((TDecomposedCharSet)set).getDecomposedChar().equals(
-                getDecomposedChar()) : true;
+        return !(set instanceof TDecomposedCharSet)
+                || ((TDecomposedCharSet) set).getDecomposedChar().equals(getDecomposedChar());
     }
 
     @Override

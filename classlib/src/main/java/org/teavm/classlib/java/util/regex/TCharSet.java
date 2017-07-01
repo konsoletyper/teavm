@@ -42,7 +42,7 @@ package org.teavm.classlib.java.util.regex;
  */
 class TCharSet extends TLeafSet {
 
-    private char ch = 0;
+    private char ch;
 
     public TCharSet(char ch) {
         this.ch = ch;
@@ -61,13 +61,14 @@ class TCharSet extends TLeafSet {
     @Override
     public int find(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         if (testString instanceof String) {
-            String testStr = (String)testString;
+            String testStr = (String) testString;
             int strLength = matchResult.getRightBound();
 
             while (strIndex < strLength) {
                 strIndex = testStr.indexOf(ch, strIndex);
-                if (strIndex < 0)
+                if (strIndex < 0) {
                     return -1;
+                }
                 if (next.matches(strIndex + 1, testString, matchResult) >= 0) {
                     return strIndex;
                 }
@@ -83,7 +84,7 @@ class TCharSet extends TLeafSet {
     @Override
     public int findBack(int strIndex, int lastIndex, CharSequence testString, TMatchResultImpl matchResult) {
         if (testString instanceof String) {
-            String testStr = (String)testString;
+            String testStr = (String) testString;
 
             while (lastIndex >= strIndex) {
                 lastIndex = testStr.lastIndexOf(ch, lastIndex);
@@ -116,11 +117,11 @@ class TCharSet extends TLeafSet {
     @Override
     public boolean first(TAbstractSet set) {
         if (set instanceof TCharSet) {
-            return ((TCharSet)set).getChar() == ch;
+            return ((TCharSet) set).getChar() == ch;
         } else if (set instanceof TRangeSet) {
-            return ((TRangeSet)set).accepts(0, Character.toString(ch)) > 0;
+            return ((TRangeSet) set).accepts(0, Character.toString(ch)) > 0;
         } else if (set instanceof TSupplRangeSet) {
-            return ((TSupplRangeSet)set).contains(ch);
+            return ((TSupplRangeSet) set).contains(ch);
         } else if (set instanceof TSupplCharSet) {
             return false;
         }

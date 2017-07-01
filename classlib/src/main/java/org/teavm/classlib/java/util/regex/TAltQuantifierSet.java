@@ -48,13 +48,9 @@ class TAltQuantifierSet extends TLeafQuantifierSet {
 
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
-        int shift = 0;
+        int shift = innerSet.matches(stringIndex, testString, matchResult);
 
-        if ((shift = innerSet.matches(stringIndex, testString, matchResult)) >= 0) {
-            return shift;
-        } else {
-            return next.matches(stringIndex, testString, matchResult);
-        }
+        return shift >= 0 ? shift : next.matches(stringIndex, testString, matchResult);
     }
 
     @Override

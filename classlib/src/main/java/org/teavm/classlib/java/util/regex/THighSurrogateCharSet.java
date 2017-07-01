@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -151,14 +167,15 @@ class THighSurrogateCharSet extends TJointSet {
     @Override
     public int find(int strIndex, CharSequence testString, TMatchResultImpl matchResult) {
         if (testString instanceof String) {
-            String testStr = (String)testString;
+            String testStr = (String) testString;
             int strLength = matchResult.getRightBound();
 
             while (strIndex < strLength) {
 
                 strIndex = testStr.indexOf(high, strIndex);
-                if (strIndex < 0)
+                if (strIndex < 0) {
                     return -1;
+                }
 
                 if (strIndex + 1 < strLength) {
 
@@ -187,7 +204,7 @@ class THighSurrogateCharSet extends TJointSet {
     @Override
     public int findBack(int strIndex, int lastIndex, CharSequence testString, TMatchResultImpl matchResult) {
         if (testString instanceof String) {
-            String testStr = (String)testString;
+            String testStr = (String) testString;
             int strLength = matchResult.getRightBound();
 
             while (lastIndex >= strIndex) {
@@ -243,7 +260,7 @@ class THighSurrogateCharSet extends TJointSet {
         } else if (set instanceof TLowSurrogateCharSet) {
             return false;
         } else if (set instanceof THighSurrogateCharSet) {
-            return ((THighSurrogateCharSet)set).high == this.high;
+            return ((THighSurrogateCharSet) set).high == this.high;
         }
 
         return true;

@@ -89,7 +89,9 @@ public class TRandom extends TObject implements TSerializable {
             return storedGaussian;
         }
 
-        double v1, v2, s;
+        double v1;
+        double v2;
+        double s;
         do {
             v1 = 2 * nextDouble() - 1;
             v2 = 2 * nextDouble() - 1;
