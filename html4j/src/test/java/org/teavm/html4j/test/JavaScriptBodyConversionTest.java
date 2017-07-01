@@ -30,7 +30,7 @@ public class JavaScriptBodyConversionTest {
         assertEquals(23, returnAsInt(23));
         assertEquals(Integer.valueOf(23), returnAsInteger(23));
         assertEquals(23, returnAsObject(23));
-        assertEquals(24, addOne((Object)23));
+        assertEquals(24, addOne((Object) 23));
         assertEquals(Integer.valueOf(24), addOne(Integer.valueOf(23)));
         assertEquals(24, addOne(23));
     }
@@ -58,7 +58,7 @@ public class JavaScriptBodyConversionTest {
     @Test
     public void copiesArray() {
         Integer[] array = { 23, 42 };
-        Integer[] arrayCopy = (Integer[])modifyIntegerArray(array);
+        Integer[] arrayCopy = (Integer[]) modifyIntegerArray(array);
         assertEquals(Integer.valueOf(23), array[0]);
         assertEquals(Integer.valueOf(1), arrayCopy[0]);
     }

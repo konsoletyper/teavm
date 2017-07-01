@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -17,7 +33,8 @@
 
 package org.teavm.classlib.java.math;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -250,7 +267,7 @@ public class BigDecimalArithmeticTest {
 
     /**
      * Subtract two numbers of different scales using MathContext;
-     *  the first is positive
+     * the first is positive
      */
     @Test
     public void testSubtractMathContextDiffScalePosNeg() {
@@ -288,7 +305,7 @@ public class BigDecimalArithmeticTest {
 
     /**
      * Subtract two numbers of different scales using MathContext;
-     *  the first is negative
+     * the first is negative
      */
     @Test
     public void testSubtractMathContextDiffScaleNegPos() {
@@ -443,10 +460,10 @@ public class BigDecimalArithmeticTest {
         String a = "123121247898748298842980";
         int aScale = 10;
         int exp = 10;
-        String c = "8004424019039195734129783677098845174704975003788210729597" +
-                   "4875206425711159855030832837132149513512555214958035390490" +
-                   "798520842025826.594316163502809818340013610490541783276343" +
-                   "6514490899700151256484355936102754469438371850240000000000";
+        String c = "8004424019039195734129783677098845174704975003788210729597"
+                + "4875206425711159855030832837132149513512555214958035390490"
+                + "798520842025826.594316163502809818340013610490541783276343"
+                + "6514490899700151256484355936102754469438371850240000000000";
         int cScale = 100;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal result = aNumber.pow(exp);
@@ -1163,9 +1180,9 @@ public class BigDecimalArithmeticTest {
         int bScale = 45;
         int newScale = 3;
         RoundingMode rm = RoundingMode.HALF_UP;
-        String c = "50000260373164286401361913262100972218038099522752460421" +
-                   "05959924024355721031761947728703598332749334086415670525" +
-                   "3761096961.670";
+        String c = "50000260373164286401361913262100972218038099522752460421"
+                + "05959924024355721031761947728703598332749334086415670525"
+                + "3761096961.670";
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
         BigDecimal result = aNumber.divide(bNumber, newScale, rm);
@@ -1358,22 +1375,21 @@ public class BigDecimalArithmeticTest {
         assertEquals("incorrect scale", resScale, result.scale());
     }
 
-
     /**
      * BigDecimal.divide with a scale that's too large
-     *
+     * <p>
      * Regression test for HARMONY-6271
      */
     @Test
     public void testDivideLargeScale() {
-    	BigDecimal arg1 = new BigDecimal("320.0E+2147483647");
-		BigDecimal arg2 = new BigDecimal("6E-2147483647");
-    	try {
-    		arg1.divide(arg2, Integer.MAX_VALUE, java.math.RoundingMode.CEILING);
-    		fail("Expected ArithmeticException when dividing with a scale that's too large");
-    	} catch (ArithmeticException e) {
-    		// expected behaviour
-    	}
+        BigDecimal arg1 = new BigDecimal("320.0E+2147483647");
+        BigDecimal arg2 = new BigDecimal("6E-2147483647");
+        try {
+            arg1.divide(arg2, Integer.MAX_VALUE, java.math.RoundingMode.CEILING);
+            fail("Expected ArithmeticException when dividing with a scale that's too large");
+        } catch (ArithmeticException e) {
+            // expected behaviour
+        }
     }
 
     /**
@@ -1451,7 +1467,7 @@ public class BigDecimalArithmeticTest {
         int remScale = 70;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
-        BigDecimal result[] = aNumber.divideAndRemainder(bNumber);
+        BigDecimal[] result = aNumber.divideAndRemainder(bNumber);
         assertEquals("incorrect quotient value", res, result[0].toString());
         assertEquals("incorrect quotient scale", resScale, result[0].scale());
         assertEquals("incorrect remainder value", rem, result[1].toString());
@@ -1467,15 +1483,15 @@ public class BigDecimalArithmeticTest {
         int aScale = -45;
         String b = "134432345432345748766876876723342238476237823787879183470";
         int bScale = 70;
-        String res = "2779231855146903674747706830969461168692256919247547952" +
-                     "2608549363170374005512836303475980101168105698072946555" +
-                     "6862849";
+        String res = "2779231855146903674747706830969461168692256919247547952"
+                + "2608549363170374005512836303475980101168105698072946555"
+                + "6862849";
         int resScale = 0;
         String rem = "3.4935796954060524114470681810486417234751682675102093970E-15";
         int remScale = 70;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
-        BigDecimal result[] = aNumber.divideAndRemainder(bNumber);
+        BigDecimal[] result = aNumber.divideAndRemainder(bNumber);
         assertEquals("incorrect quotient value", res, result[0].toString());
         assertEquals("incorrect quotient scale", resScale, result[0].scale());
         assertEquals("incorrect remainder value", rem, result[1].toString());
@@ -1500,7 +1516,7 @@ public class BigDecimalArithmeticTest {
         int remScale = 70;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
-        BigDecimal result[] = aNumber.divideAndRemainder(bNumber, mc);
+        BigDecimal[] result = aNumber.divideAndRemainder(bNumber, mc);
         assertEquals("incorrect quotient value", res, result[0].toString());
         assertEquals("incorrect quotient scale", resScale, result[0].scale());
         assertEquals("incorrect remainder value", rem, result[1].toString());
@@ -1525,7 +1541,7 @@ public class BigDecimalArithmeticTest {
         int remScale = 45;
         BigDecimal aNumber = new BigDecimal(new BigInteger(a), aScale);
         BigDecimal bNumber = new BigDecimal(new BigInteger(b), bScale);
-        BigDecimal result[] = aNumber.divideAndRemainder(bNumber, mc);
+        BigDecimal[] result = aNumber.divideAndRemainder(bNumber, mc);
         assertEquals("incorrect quotient value", res, result[0].toString());
         assertEquals("incorrect quotient scale", resScale, result[0].scale());
         assertEquals("incorrect remainder value", rem, result[1].toString());
@@ -1662,7 +1678,6 @@ public class BigDecimalArithmeticTest {
         assertEquals("incorrect quotient value", res, result.toString());
         assertEquals("incorrect quotient scale", aScale, result.scale());
     }
-
 
     /**
      * ulp() of a positive BigDecimal

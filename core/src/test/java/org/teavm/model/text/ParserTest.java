@@ -17,9 +17,6 @@ package org.teavm.model.text;
 
 import static org.junit.Assert.assertEquals;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import org.junit.Assert;
 import org.junit.Test;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ListingParseUtils;

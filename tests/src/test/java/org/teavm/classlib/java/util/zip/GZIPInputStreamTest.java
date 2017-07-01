@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.util.zip;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.util.zip.GZIPInputStream;
@@ -27,13 +27,13 @@ import org.teavm.junit.TeaVMTestRunner;
 public class GZIPInputStreamTest {
     @Test
     public void gzipInputWorks() throws IOException {
-        String hex = "1f8b08086c1d59540003746561766d2d7a6970000b494d0cf355708ff20c5028cf2fca2e5648cbcc" +
-                "4b05005727a59115000000";
+        String hex = "1f8b08086c1d59540003746561766d2d7a6970000b494d0cf355708ff20c5028cf2fca2e5648cbcc"
+                + "4b05005727a59115000000";
         byte[] data = new byte[hex.length() / 2];
         for (int i = 0; i < data.length; ++i) {
             int h = Character.digit(hex.charAt(i * 2), 16);
             int l = Character.digit(hex.charAt(i * 2 + 1), 16);
-            data[i] = (byte)((h << 4) | l);
+            data[i] = (byte) ((h << 4) | l);
         }
         GZIPInputStream input = new GZIPInputStream(new ByteArrayInputStream(data));
         byte[] uncompressed = new byte[500];

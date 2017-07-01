@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2017 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -16,8 +32,14 @@
  */
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.*;
-import java.io.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import java.io.BufferedInputStream;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -25,8 +47,6 @@ import org.teavm.junit.TeaVMTestRunner;
 @SuppressWarnings("resource")
 @RunWith(TeaVMTestRunner.class)
 public class BufferedInputStreamTest {
-    byte[] ibuf = new byte[4096];
-
     @Test
     public void test_ConstructorLjava_io_InputStream() {
         try {
@@ -40,13 +60,13 @@ public class BufferedInputStreamTest {
 
     @Test
     public void test_available() throws IOException {
-        ByteArrayInputStream isFile = new ByteArrayInputStream(new byte[] { 2, 3, 5, 7, 11 });
+        ByteArrayInputStream isFile = new ByteArrayInputStream(new byte[]{2, 3, 5, 7, 11});
         BufferedInputStream is = new BufferedInputStream(isFile);
         assertTrue("Returned incorrect number of available bytes", is.available() == 5);
 
         // Test that a closed stream throws an IOE for available()
-        BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(new byte[] { 'h', 'e', 'l', 'l',
-                'o', ' ', 't', 'i', 'm' }));
+        BufferedInputStream bis = new BufferedInputStream(new ByteArrayInputStream(new byte[]{'h', 'e', 'l', 'l',
+                'o', ' ', 't', 'i', 'm'}));
         int available = bis.available();
         bis.close();
         assertTrue(available != 0);
@@ -85,7 +105,7 @@ public class BufferedInputStreamTest {
 
         byte[] bytes = new byte[256];
         for (int i = 0; i < 256; i++) {
-            bytes[i] = (byte)i;
+            bytes[i] = (byte) i;
         }
         InputStream in = new BufferedInputStream(new ByteArrayInputStream(bytes), 12);
         in.skip(6);
@@ -101,7 +121,7 @@ public class BufferedInputStreamTest {
         in.reset();
         assertTrue("Wrong bytes 2", in.read() == 6 && in.read() == 7);
 
-        BufferedInputStream buf = new BufferedInputStream(new ByteArrayInputStream(new byte[] { 0, 1, 2, 3, 4 }), 2);
+        BufferedInputStream buf = new BufferedInputStream(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), 2);
         buf.mark(3);
         bytes = new byte[3];
         int result = buf.read(bytes);
@@ -111,7 +131,7 @@ public class BufferedInputStreamTest {
         assertEquals("Assert 2:", 2, bytes[2]);
         assertEquals("Assert 3:", 3, buf.read());
 
-        buf = new BufferedInputStream(new ByteArrayInputStream(new byte[] { 0, 1, 2, 3, 4 }), 2);
+        buf = new BufferedInputStream(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), 2);
         buf.mark(3);
         bytes = new byte[4];
         result = buf.read(bytes);
@@ -123,7 +143,7 @@ public class BufferedInputStreamTest {
         assertEquals("Assert 8:", 4, buf.read());
         assertEquals("Assert 9:", -1, buf.read());
 
-        buf = new BufferedInputStream(new ByteArrayInputStream(new byte[] { 0, 1, 2, 3, 4 }), 2);
+        buf = new BufferedInputStream(new ByteArrayInputStream(new byte[]{0, 1, 2, 3, 4}), 2);
         buf.mark(Integer.MAX_VALUE);
         buf.read();
         buf.close();
@@ -139,7 +159,7 @@ public class BufferedInputStreamTest {
 
         byte[] bytes = new byte[256];
         for (int i = 0; i < 256; i++) {
-            bytes[i] = (byte)i;
+            bytes[i] = (byte) i;
         }
         InputStream in = new BufferedInputStream(new ByteArrayInputStream(bytes), 12);
         assertEquals("Wrong initial byte", 0, in.read()); // Fill the
@@ -195,7 +215,8 @@ public class BufferedInputStreamTest {
         is.read(buf1, 0, buf1.length);
 
         BufferedInputStream bufin = new BufferedInputStream(new InputStream() {
-            int size = 2, pos = 0;
+            int size = 2;
+            int pos;
 
             byte[] contents = new byte[size];
 

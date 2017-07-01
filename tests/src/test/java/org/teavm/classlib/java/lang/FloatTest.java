@@ -15,7 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -55,7 +56,7 @@ public class FloatTest {
 
     @Test
     public void floatBitsExtracted2() {
-        assertEquals(0x800000, Float.floatToIntBits((float)Math.pow(2, -126)));
+        assertEquals(0x800000, Float.floatToIntBits((float) Math.pow(2, -126)));
     }
 
     @Test
@@ -82,7 +83,7 @@ public class FloatTest {
         assertEquals("0x1.8p1", Float.toHexString(3));
         assertEquals("0x1.0p-1", Float.toHexString(0.5f));
         assertEquals("0x1.0p-2", Float.toHexString(0.25f));
-        assertEquals("0x1.0p-126", Float.toHexString((float)Math.pow(2, -126)));
+        assertEquals("0x1.0p-126", Float.toHexString((float) Math.pow(2, -126)));
         assertEquals("0x0.001p-126", Float.toHexString(0x0.001p-126f));
     }
 

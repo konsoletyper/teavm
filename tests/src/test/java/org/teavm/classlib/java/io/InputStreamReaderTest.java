@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.io;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -30,7 +30,7 @@ public class InputStreamReaderTest {
         String str = "foo bar baz";
         byte[] bytes = new byte[str.length()];
         for (int i = 0; i < str.length(); ++i) {
-            bytes[i] = (byte)str.charAt(i);
+            bytes[i] = (byte) str.charAt(i);
         }
         ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
         InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
@@ -47,7 +47,7 @@ public class InputStreamReaderTest {
         String str = "foo bar baz";
         byte[] bytes = new byte[str.length()];
         for (int i = 0; i < str.length(); ++i) {
-            bytes[i] = (byte)str.charAt(i);
+            bytes[i] = (byte) str.charAt(i);
         }
         ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
         InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
@@ -67,7 +67,7 @@ public class InputStreamReaderTest {
         str = sb.toString();
         byte[] bytes = new byte[str.length()];
         for (int i = 0; i < str.length(); ++i) {
-            bytes[i] = (byte)str.charAt(i);
+            bytes[i] = (byte) str.charAt(i);
         }
         ByteArrayInputStream stream = new ByteArrayInputStream(bytes);
         InputStreamReader reader = new InputStreamReader(stream, "UTF-8");
