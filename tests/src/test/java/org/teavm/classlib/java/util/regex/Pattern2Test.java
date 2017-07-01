@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2015 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 /* Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -19,8 +34,8 @@ package org.teavm.classlib.java.util.regex;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
-import org.junit.Test;
 import junit.framework.TestCase;
+import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 
@@ -260,24 +275,28 @@ public class Pattern2Test extends TestCase {
             p = Pattern.compile("\\u");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\u;");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\u002");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\u002;");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         // Test invalid hex sequences
@@ -285,24 +304,28 @@ public class Pattern2Test extends TestCase {
             p = Pattern.compile("\\x");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\x;");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\xa");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\xa;");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         // Test \0 (octal) sequences (1, 2 and 3 digit)
@@ -321,6 +344,7 @@ public class Pattern2Test extends TestCase {
             p = Pattern.compile("\\08");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         // originally contributed test did not check the result
@@ -335,12 +359,14 @@ public class Pattern2Test extends TestCase {
             p = Pattern.compile("\\0");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\0;");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         // Test \c (control character) sequence
@@ -360,18 +386,19 @@ public class Pattern2Test extends TestCase {
         // Ensure that each escape matches exactly the corresponding
         // character
         // code and no others (well, from 0-255 at least)
-        int i, j;
+        int i;
+        int j;
         for (i = 0; i < 26; i++) {
             p = Pattern.compile("\\c" + Character.toString((char) ('A' + i)));
-            int match_char = -1;
+            int matchChar = -1;
             for (j = 0; j < 255; j++) {
                 m = p.matcher(Character.toString((char) j));
                 if (m.matches()) {
-                    assertEquals(-1, match_char);
-                    match_char = j;
+                    assertEquals(-1, matchChar);
+                    matchChar = j;
                 }
             }
-            assertTrue(match_char == i + 1);
+            assertTrue(matchChar == i + 1);
         }
 
         // Test invalid control escapes
@@ -379,6 +406,7 @@ public class Pattern2Test extends TestCase {
             p = Pattern.compile("\\c");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         // originally contributed test did not check the result
@@ -536,6 +564,7 @@ public class Pattern2Test extends TestCase {
             p = Pattern.compile("[[abc]&&");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         p = Pattern.compile("[[abc]\\&&[xyz]]");
@@ -671,7 +700,8 @@ public class Pattern2Test extends TestCase {
         // Graph, Print, Blank, Space, Cntrl
         // Test \p{Lower}
         /*
-         * FIXME: Requires complex range processing p = Pattern.compile("<\\p{Lower}\\d\\P{Lower}:[\\p{Lower}Z]\\s[^\\P{Lower}]>");
+         * FIXME: Requires complex range processing p = Pattern.compile
+         * ("<\\p{Lower}\\d\\P{Lower}:[\\p{Lower}Z]\\s[^\\P{Lower}]>");
          * m = p.matcher("<a4P:g x>"); assertTrue(m.matches()); m = p.matcher("<p4%:Z\tq>");
          * assertTrue(m.matches()); m = p.matcher("<A6#:e e>");
          * assertFalse(m.matches());
@@ -685,41 +715,48 @@ public class Pattern2Test extends TestCase {
             p = Pattern.compile("\\p");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\p;");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\p{");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\p{;");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\p{Lower");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\p{Lower;");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         // Test \p{Upper}
         /*
-         * FIXME: Requires complex range processing p = Pattern.compile("<\\p{Upper}\\d\\P{Upper}:[\\p{Upper}z]\\s[^\\P{Upper}]>");
+         * FIXME: Requires complex range processing p = Pattern.compile
+         * ("<\\p{Upper}\\d\\P{Upper}:[\\p{Upper}z]\\s[^\\P{Upper}]>");
          * m = p.matcher("<A4p:G X>"); assertTrue(m.matches()); m = p.matcher("<P4%:z\tQ>");
          * assertTrue(m.matches()); m = p.matcher("<a6#:E E>");
          * assertFalse(m.matches());
@@ -733,17 +770,20 @@ public class Pattern2Test extends TestCase {
             p = Pattern.compile("\\p{Upper");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\p{Upper;");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         // Test \p{ASCII}
         /*
-         * FIXME: Requires complex range processing p = Pattern.compile("<\\p{ASCII}\\d\\P{ASCII}:[\\p{ASCII}\u1234]\\s[^\\P{ASCII}]>");
+         * FIXME: Requires complex range processing p = Pattern.compile
+         * ("<\\p{ASCII}\\d\\P{ASCII}:[\\p{ASCII}\u1234]\\s[^\\P{ASCII}]>");
          * m = p.matcher("<A4\u0080:G X>"); assertTrue(m.matches()); m =
          * p.matcher("<P4\u00ff:\u1234\t\n>"); assertTrue(m.matches()); m =
          * p.matcher("<\u00846#:E E>"); assertFalse(m.matches())
@@ -764,12 +804,14 @@ public class Pattern2Test extends TestCase {
             p = Pattern.compile("\\p{ASCII");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         try {
             p = Pattern.compile("\\p{ASCII;");
             fail("PatternSyntaxException expected");
         } catch (PatternSyntaxException e) {
+            // ok
         }
 
         // Test \p{Alpha}
@@ -856,66 +898,67 @@ public class Pattern2Test extends TestCase {
     public void testUnicodeBlocks() throws PatternSyntaxException {
         Pattern p;
         Matcher m;
-        int i, j;
+        int i;
+        int j;
 
         // Test Unicode blocks using \p and \P
         // FIXME:
         // Note that LatinExtended-B and ArabicPresentations-B are unrecognized
         // by the reference JDK.
-        for (i = 0; i < UBlocks.length; i++) {
+        for (i = 0; i < uBlocks.length; i++) {
             /*
-             * p = Pattern.compile("\\p{"+UBlocks[i].name+"}");
+             * p = Pattern.compile("\\p{"+uBlocks[i].name+"}");
              *
-             * if (UBlocks[i].low > 0) { m =
-             * p.matcher(Character.toString((char)(UBlocks[i].low-1)));
-             * assertFalse(m.matches()); } for (j=UBlocks[i].low; j <=
-             * UBlocks[i].high; j++) { m =
+             * if (uBlocks[i].low > 0) { m =
+             * p.matcher(Character.toString((char)(uBlocks[i].low-1)));
+             * assertFalse(m.matches()); } for (j=uBlocks[i].low; j <=
+             * uBlocks[i].high; j++) { m =
              * p.matcher(Character.toString((char)j)); assertTrue(m.matches()); }
-             * if (UBlocks[i].high < 0xFFFF) { m =
-             * p.matcher(Character.toString((char)(UBlocks[i].high+1)));
+             * if (uBlocks[i].high < 0xFFFF) { m =
+             * p.matcher(Character.toString((char)(uBlocks[i].high+1)));
              * assertFalse(m.matches()); }
              *
-             * p = Pattern.compile("\\P{"+UBlocks[i].name+"}");
+             * p = Pattern.compile("\\P{"+uBlocks[i].name+"}");
              *
-             * if (UBlocks[i].low > 0) { m =
-             * p.matcher(Character.toString((char)(UBlocks[i].low-1)));
-             * assertTrue(m.matches()); } for (j=UBlocks[i].low; j <
-             * UBlocks[i].high; j++) { m =
+             * if (uBlocks[i].low > 0) { m =
+             * p.matcher(Character.toString((char)(uBlocks[i].low-1)));
+             * assertTrue(m.matches()); } for (j=uBlocks[i].low; j <
+             * uBlocks[i].high; j++) { m =
              * p.matcher(Character.toString((char)j)); assertFalse(m.matches()); }
-             * if (UBlocks[i].high < 0xFFFF) { m =
-             * p.matcher(Character.toString((char)(UBlocks[i].high+1)));
+             * if (uBlocks[i].high < 0xFFFF) { m =
+             * p.matcher(Character.toString((char)(uBlocks[i].high+1)));
              * assertTrue(m.matches()); }
              */
 
-            p = Pattern.compile("\\p{In" + UBlocks[i].name + "}");
+            p = Pattern.compile("\\p{In" + uBlocks[i].name + "}");
 
-            if (UBlocks[i].low > 0) {
-                m = p.matcher(Character.toString((char) (UBlocks[i].low - 1)));
+            if (uBlocks[i].low > 0) {
+                m = p.matcher(Character.toString((char) (uBlocks[i].low - 1)));
                 assertFalse(m.matches());
             }
-            for (j = UBlocks[i].low; j <= UBlocks[i].high; j++) {
+            for (j = uBlocks[i].low; j <= uBlocks[i].high; j++) {
                 m = p.matcher(Character.toString((char) j));
                 // TODO investigate, why this fails and uncomment
                 //assertTrue(m.matches());
             }
-            if (UBlocks[i].high < 0xFFFF) {
-                m = p.matcher(Character.toString((char) (UBlocks[i].high + 1)));
+            if (uBlocks[i].high < 0xFFFF) {
+                m = p.matcher(Character.toString((char) (uBlocks[i].high + 1)));
                 // TODO investigate, why this fails and uncomment
                 //assertFalse(m.matches());
             }
 
-            p = Pattern.compile("\\P{In" + UBlocks[i].name + "}");
+            p = Pattern.compile("\\P{In" + uBlocks[i].name + "}");
 
-            if (UBlocks[i].low > 0) {
-                m = p.matcher(Character.toString((char) (UBlocks[i].low - 1)));
+            if (uBlocks[i].low > 0) {
+                m = p.matcher(Character.toString((char) (uBlocks[i].low - 1)));
                 assertTrue(m.matches());
             }
-            for (j = UBlocks[i].low; j < UBlocks[i].high; j++) {
+            for (j = uBlocks[i].low; j < uBlocks[i].high; j++) {
                 m = p.matcher(Character.toString((char) j));
                 assertFalse(m.matches());
             }
-            if (UBlocks[i].high < 0xFFFF) {
-                m = p.matcher(Character.toString((char) (UBlocks[i].high + 1)));
+            if (uBlocks[i].high < 0xFFFF) {
+                m = p.matcher(Character.toString((char) (uBlocks[i].high + 1)));
                 // TODO investigate, why this fails and uncomment
                 //assertTrue(m.matches());
             }
@@ -1187,7 +1230,7 @@ public class Pattern2Test extends TestCase {
     @Test
     public void testCompile5() throws PatternSyntaxException {
         Pattern p = Pattern.compile("^[0-9]");
-        String s[] = p.split("12", -1);
+        String[] s = p.split("12", -1);
         assertEquals("", s[0]);
         assertEquals("2", s[1]);
         assertEquals(2, s.length);
@@ -1214,7 +1257,8 @@ public class Pattern2Test extends TestCase {
 
         public String name;
 
-        public int low, high;
+        public int low;
+        public int high;
     }
 
     // A table representing the unicode categories
@@ -1252,9 +1296,9 @@ public class Pattern2Test extends TestCase {
     // };
 
     // A table representing the unicode character blocks
-    private static UBInfo[] UBlocks = {
+    private static UBInfo[] uBlocks = {
     /* 0000; 007F; Basic Latin */
-    new UBInfo(0x0000, 0x007F, "BasicLatin"), // Character.UnicodeBlock.BASIC_LATIN
+            new UBInfo(0x0000, 0x007F, "BasicLatin"), // Character.UnicodeBlock.BASIC_LATIN
             /* 0080; 00FF; Latin-1 Supplement */
             new UBInfo(0x0080, 0x00FF, "Latin-1Supplement"), // Character.UnicodeBlock.LATIN_1_SUPPLEMENT
             /* 0100; 017F; Latin Extended-A */
@@ -1267,7 +1311,8 @@ public class Pattern2Test extends TestCase {
             /* 02B0; 02FF; Spacing Modifier Letters */
             new UBInfo(0x02B0, 0x02FF, "SpacingModifierLetters"), // Character.UnicodeBlock.SPACING_MODIFIER_LETTERS
             /* 0300; 036F; Combining Diacritical Marks */
-            new UBInfo(0x0300, 0x036F, "CombiningDiacriticalMarks"), // Character.UnicodeBlock.COMBINING_DIACRITICAL_MARKS
+            new UBInfo(0x0300, 0x036F, "CombiningDiacriticalMarks"),
+            // Character.UnicodeBlock.COMBINING_DIACRITICAL_MARKS
             /* 0370; 03FF; Greek */
             new UBInfo(0x0370, 0x03FF, "Greek"), // Character.UnicodeBlock.GREEK
             /* 0400; 04FF; Cyrillic */
@@ -1319,7 +1364,8 @@ public class Pattern2Test extends TestCase {
             /* 13A0; 13FF; Cherokee */
             new UBInfo(0x13A0, 0x13FF, "Cherokee"), // Character.UnicodeBlock.CHEROKEE
             /* 1400; 167F; Unified Canadian Aboriginal Syllabics */
-            new UBInfo(0x1400, 0x167F, "UnifiedCanadianAboriginalSyllabics"), // Character.UnicodeBlock.UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS
+            new UBInfo(0x1400, 0x167F, "UnifiedCanadianAboriginalSyllabics"),
+            // Character.UnicodeBlock.UNIFIED_CANADIAN_ABORIGINAL_SYLLABICS
             /* 1680; 169F; Ogham */
             new UBInfo(0x1680, 0x169F, "Ogham"), // Character.UnicodeBlock.OGHAM
             /* 16A0; 16FF; Runic */
@@ -1335,11 +1381,13 @@ public class Pattern2Test extends TestCase {
             /* 2000; 206F; General Punctuation */
             new UBInfo(0x2000, 0x206F, "GeneralPunctuation"), // Character.UnicodeBlock.GENERAL_PUNCTUATION
             /* 2070; 209F; Superscripts and Subscripts */
-            new UBInfo(0x2070, 0x209F, "SuperscriptsandSubscripts"), // Character.UnicodeBlock.SUPERSCRIPTS_AND_SUBSCRIPTS
+            new UBInfo(0x2070, 0x209F, "SuperscriptsandSubscripts"),
+            // Character.UnicodeBlock.SUPERSCRIPTS_AND_SUBSCRIPTS
             /* 20A0; 20CF; Currency Symbols */
             new UBInfo(0x20A0, 0x20CF, "CurrencySymbols"), // Character.UnicodeBlock.CURRENCY_SYMBOLS
             /* 20D0; 20FF; Combining Marks for Symbols */
-            new UBInfo(0x20D0, 0x20FF, "CombiningMarksforSymbols"), // Character.UnicodeBlock.COMBINING_MARKS_FOR_SYMBOLS
+            new UBInfo(0x20D0, 0x20FF, "CombiningMarksforSymbols"),
+            // Character.UnicodeBlock.COMBINING_MARKS_FOR_SYMBOLS
             /* 2100; 214F; Letterlike Symbols */
             new UBInfo(0x2100, 0x214F, "LetterlikeSymbols"), // Character.UnicodeBlock.LETTERLIKE_SYMBOLS
             /* 2150; 218F; Number Forms */
@@ -1353,7 +1401,8 @@ public class Pattern2Test extends TestCase {
             /* 2400; 243F; Control Pictures */
             new UBInfo(0x2400, 0x243F, "ControlPictures"), // Character.UnicodeBlock.CONTROL_PICTURES
             /* 2440; 245F; Optical Character Recognition */
-            new UBInfo(0x2440, 0x245F, "OpticalCharacterRecognition"), // Character.UnicodeBlock.OPTICAL_CHARACTER_RECOGNITION
+            new UBInfo(0x2440, 0x245F, "OpticalCharacterRecognition"),
+            // Character.UnicodeBlock.OPTICAL_CHARACTER_RECOGNITION
             /* 2460; 24FF; Enclosed Alphanumerics */
             new UBInfo(0x2460, 0x24FF, "EnclosedAlphanumerics"), // Character.UnicodeBlock.ENCLOSED_ALPHANUMERICS
             /* 2500; 257F; Box Drawing */
@@ -1373,9 +1422,11 @@ public class Pattern2Test extends TestCase {
             /* 2F00; 2FDF; Kangxi Radicals */
             new UBInfo(0x2F00, 0x2FDF, "KangxiRadicals"), // Character.UnicodeBlock.KANGXI_RADICALS
             /* 2FF0; 2FFF; Ideographic Description Characters */
-            new UBInfo(0x2FF0, 0x2FFF, "IdeographicDescriptionCharacters"), // Character.UnicodeBlock.IDEOGRAPHIC_DESCRIPTION_CHARACTERS
+            new UBInfo(0x2FF0, 0x2FFF, "IdeographicDescriptionCharacters"),
+            // Character.UnicodeBlock.IDEOGRAPHIC_DESCRIPTION_CHARACTERS
             /* 3000; 303F; CJK Symbols and Punctuation */
-            new UBInfo(0x3000, 0x303F, "CJKSymbolsandPunctuation"), // Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION
+            new UBInfo(0x3000, 0x303F, "CJKSymbolsandPunctuation"),
+            // Character.UnicodeBlock.CJK_SYMBOLS_AND_PUNCTUATION
             /* 3040; 309F; Hiragana */
             new UBInfo(0x3040, 0x309F, "Hiragana"), // Character.UnicodeBlock.HIRAGANA
             /* 30A0; 30FF; Katakana */
@@ -1389,11 +1440,13 @@ public class Pattern2Test extends TestCase {
             /* 31A0; 31BF; Bopomofo Extended */
             new UBInfo(0x31A0, 0x31BF, "BopomofoExtended"), // Character.UnicodeBlock.BOPOMOFO_EXTENDED
             /* 3200; 32FF; Enclosed CJK Letters and Months */
-            new UBInfo(0x3200, 0x32FF, "EnclosedCJKLettersandMonths"), // Character.UnicodeBlock.ENCLOSED_CJK_LETTERS_AND_MONTHS
+            new UBInfo(0x3200, 0x32FF, "EnclosedCJKLettersandMonths"),
+            // Character.UnicodeBlock.ENCLOSED_CJK_LETTERS_AND_MONTHS
             /* 3300; 33FF; CJK Compatibility */
             new UBInfo(0x3300, 0x33FF, "CJKCompatibility"), // Character.UnicodeBlock.CJK_COMPATIBILITY
             /* 3400; 4DB5; CJK Unified Ideographs Extension A */
-            new UBInfo(0x3400, 0x4DB5, "CJKUnifiedIdeographsExtensionA"), // Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A
+            new UBInfo(0x3400, 0x4DB5, "CJKUnifiedIdeographsExtensionA"),
+            // Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS_EXTENSION_A
             /* 4E00; 9FFF; CJK Unified Ideographs */
             new UBInfo(0x4E00, 0x9FFF, "CJKUnifiedIdeographs"), // Character.UnicodeBlock.CJK_UNIFIED_IDEOGRAPHS
             /* A000; A48F; Yi Syllables */
@@ -1407,11 +1460,14 @@ public class Pattern2Test extends TestCase {
             /* DC00; DFFF; Low Surrogates */
             /* E000; F8FF; Private Use */
             /* F900; FAFF; CJK Compatibility Ideographs */
-            new UBInfo(0xF900, 0xFAFF, "CJKCompatibilityIdeographs"), // Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS
+            new UBInfo(0xF900, 0xFAFF, "CJKCompatibilityIdeographs"),
+            // Character.UnicodeBlock.CJK_COMPATIBILITY_IDEOGRAPHS
             /* FB00; FB4F; Alphabetic Presentation Forms */
-            new UBInfo(0xFB00, 0xFB4F, "AlphabeticPresentationForms"), // Character.UnicodeBlock.ALPHABETIC_PRESENTATION_FORMS
+            new UBInfo(0xFB00, 0xFB4F, "AlphabeticPresentationForms"),
+            // Character.UnicodeBlock.ALPHABETIC_PRESENTATION_FORMS
             /* FB50; FDFF; Arabic Presentation Forms-A */
-            new UBInfo(0xFB50, 0xFDFF, "ArabicPresentationForms-A"), // Character.UnicodeBlock.ARABIC_PRESENTATION_FORMS_A
+            new UBInfo(0xFB50, 0xFDFF, "ArabicPresentationForms-A"),
+            // Character.UnicodeBlock.ARABIC_PRESENTATION_FORMS_A
             /* FE20; FE2F; Combining Half Marks */
             new UBInfo(0xFE20, 0xFE2F, "CombiningHalfMarks"), // Character.UnicodeBlock.COMBINING_HALF_MARKS
             /* FE30; FE4F; CJK Compatibility Forms */
@@ -1424,7 +1480,8 @@ public class Pattern2Test extends TestCase {
             /* FEFF; FEFF; Specials */
             new UBInfo(0xFEFF, 0xFEFF, "Specials"), // Character.UnicodeBlock.SPECIALS
             /* FF00; FFEF; Halfwidth and Fullwidth Forms */
-            new UBInfo(0xFF00, 0xFFEF, "HalfwidthandFullwidthForms"), // Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS
+            new UBInfo(0xFF00, 0xFFEF, "HalfwidthandFullwidthForms"),
+            // Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS
             /* FFF0; FFFD; Specials */
             new UBInfo(0xFFF0, 0xFFFD, "Specials") // Character.UnicodeBlock.SPECIALS
     };

@@ -15,7 +15,9 @@
  */
 package org.teavm.vm;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
@@ -101,8 +103,12 @@ public class VMTest {
             assertEquals(2, n);
         }
     }
-    private int foo() { return 2; }
-    private void bar() { throw new RuntimeException(); }
+    private int foo() {
+        return 2;
+    }
+    private void bar() {
+        throw new RuntimeException();
+    }
 
     // See https://github.com/konsoletyper/teavm/issues/167
     @Test
@@ -275,7 +281,7 @@ public class VMTest {
     @JSBody(script = "return [1, 2]")
     private static native int[] createArray();
 
-    static int initCount = 0;
+    static int initCount;
 
     private static class AsyncClinitClass {
         static String state = "";

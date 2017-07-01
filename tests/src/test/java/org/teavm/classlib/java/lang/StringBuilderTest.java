@@ -330,7 +330,7 @@ public class StringBuilderTest {
     public void deletesRange() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= 9; ++i) {
-            sb.append((char)('0' + i));
+            sb.append((char) ('0' + i));
         }
         sb.delete(4, 6);
         assertEquals(8, sb.length());
@@ -351,7 +351,7 @@ public class StringBuilderTest {
     public void replacesRangeWithSequenceOfSameLength() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= 9; ++i) {
-            sb.append((char)('0' + i));
+            sb.append((char) ('0' + i));
         }
         sb.replace(4, 6, "ab");
         assertEquals(10, sb.length());
@@ -366,7 +366,7 @@ public class StringBuilderTest {
     public void replacesRangeWithShorterSequence() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= 9; ++i) {
-            sb.append((char)('0' + i));
+            sb.append((char) ('0' + i));
         }
         sb.replace(4, 6, "a");
         assertEquals(9, sb.length());
@@ -381,7 +381,7 @@ public class StringBuilderTest {
     public void replacesRangeWithLongerSequence() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= 9; ++i) {
-            sb.append((char)('0' + i));
+            sb.append((char) ('0' + i));
         }
         sb.replace(4, 6, "abc");
         assertEquals(11, sb.length());
@@ -397,7 +397,7 @@ public class StringBuilderTest {
     public void searchedBackward() {
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i <= 9; ++i) {
-            sb.append((char)('0' + i));
+            sb.append((char) ('0' + i));
         }
         assertEquals(3, sb.lastIndexOf("345"));
         assertEquals(-1, sb.lastIndexOf("35"));

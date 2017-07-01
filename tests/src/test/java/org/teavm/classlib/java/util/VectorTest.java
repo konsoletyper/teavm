@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2017 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -38,28 +54,33 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import java.util.*;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Enumeration;
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Vector;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.classlib.support.Support_ListTest;
+import org.teavm.classlib.support.ListTestSupport;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
 public class VectorTest {
-    private Vector<Object> tVector = new Vector<>();
-
     Object[] objArray;
-
-    private String vString = "[Test 0, Test 1, Test 2, Test 3, Test 4, Test 5, Test 6, Test 7, Test 8, Test 9, " +
-            "Test 10, Test 11, Test 12, Test 13, Test 14, Test 15, Test 16, Test 17, Test 18, Test 19, Test 20, " +
-            "Test 21, Test 22, Test 23, Test 24, Test 25, Test 26, Test 27, Test 28, Test 29, Test 30, Test 31, " +
-            "Test 32, Test 33, Test 34, Test 35, Test 36, Test 37, Test 38, Test 39, Test 40, Test 41, Test 42, " +
-            "Test 43, Test 44, Test 45, Test 46, Test 47, Test 48, Test 49, Test 50, Test 51, Test 52, Test 53, " +
-            "Test 54, Test 55, Test 56, Test 57, Test 58, Test 59, Test 60, Test 61, Test 62, Test 63, Test 64, " +
-            "Test 65, Test 66, Test 67, Test 68, Test 69, Test 70, Test 71, Test 72, Test 73, Test 74, Test 75, " +
-            "Test 76, Test 77, Test 78, Test 79, Test 80, Test 81, Test 82, Test 83, Test 84, Test 85, Test 86, " +
-            "Test 87, Test 88, Test 89, Test 90, Test 91, Test 92, Test 93, Test 94, Test 95, Test 96, Test 97, " +
-            "Test 98, Test 99]";
+    private Vector<Object> tVector = new Vector<>();
+    private String vString = "[Test 0, Test 1, Test 2, Test 3, Test 4, Test 5, Test 6, Test 7, Test 8, Test 9, "
+            + "Test 10, Test 11, Test 12, Test 13, Test 14, Test 15, Test 16, Test 17, Test 18, Test 19, Test 20, "
+            + "Test 21, Test 22, Test 23, Test 24, Test 25, Test 26, Test 27, Test 28, Test 29, Test 30, Test 31, "
+            + "Test 32, Test 33, Test 34, Test 35, Test 36, Test 37, Test 38, Test 39, Test 40, Test 41, Test 42, "
+            + "Test 43, Test 44, Test 45, Test 46, Test 47, Test 48, Test 49, Test 50, Test 51, Test 52, Test 53, "
+            + "Test 54, Test 55, Test 56, Test 57, Test 58, Test 59, Test 60, Test 61, Test 62, Test 63, Test 64, "
+            + "Test 65, Test 66, Test 67, Test 68, Test 69, Test 70, Test 71, Test 72, Test 73, Test 74, Test 75, "
+            + "Test 76, Test 77, Test 78, Test 79, Test 80, Test 81, Test 82, Test 83, Test 84, Test 85, Test 86, "
+            + "Test 87, Test 88, Test 89, Test 90, Test 91, Test 92, Test 93, Test 94, Test 95, Test 96, Test 97, "
+            + "Test 98, Test 99]";
 
     public VectorTest() {
         for (int i = 0; i < 100; i++) {
@@ -77,13 +98,13 @@ public class VectorTest {
         for (int i = 0; i < 100; i++) {
             tv.addElement(i);
         }
-        new Support_ListTest(tv).runTest();
+        new ListTestSupport(tv).runTest();
 
         tv = new Vector<>(200);
         for (int i = -50; i < 150; i++) {
             tv.addElement(i);
         }
-        new Support_ListTest(tv.subList(50, 150)).runTest();
+        new ListTestSupport(tv.subList(50, 150)).runTest();
 
         Vector<String> v = new Vector<>();
         assertEquals("Vector creation failed", 0, v.size());
@@ -137,12 +158,14 @@ public class VectorTest {
     public void test_ConstructorLjava_util_Collection() {
         // Test for method java.util.Vector(java.util.Collection)
         Collection<String> l = new LinkedList<>();
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++) {
             l.add("Test " + i);
+        }
         Vector<String> myVector = new Vector<>(l);
         assertTrue("Vector is not correct size", myVector.size() == objArray.length);
-        for (int counter = 0; counter < objArray.length; counter++)
+        for (int counter = 0; counter < objArray.length; counter++) {
             assertTrue("Vector does not contain correct elements", myVector.contains(((List<?>) l).get(counter)));
+        }
     }
 
     @Test
@@ -180,12 +203,14 @@ public class VectorTest {
         // Test for method boolean java.util.Vector.addAll(int,
         // java.util.Collection)
         Collection<String> l = new LinkedList<>();
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++) {
             l.add("Test " + i);
+        }
         Vector<String> v = new Vector<>();
         tVector.addAll(50, l);
-        for (int i = 50; i < 100; i++)
+        for (int i = 50; i < 100; i++) {
             assertTrue("Failed to add all elements", tVector.get(i) == ((List<String>) l).get(i - 50));
+        }
         v = new Vector<>();
         v.add("one");
         int r = 0;
@@ -217,15 +242,17 @@ public class VectorTest {
         // Test for method boolean java.util.Vector.addAll(java.util.Collection)
         Vector<String> v = new Vector<>();
         Collection<String> l = new LinkedList<>();
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++) {
             l.add("Test " + i);
+        }
         v.addAll(l);
         assertTrue("Failed to add all elements", tVector.equals(v));
 
         v.addAll(l);
         int vSize = tVector.size();
-        for (int counter = vSize - 1; counter >= 0; counter--)
+        for (int counter = vSize - 1; counter >= 0; counter--) {
             assertTrue("Failed to add elements correctly", v.get(counter) == v.get(counter + vSize));
+        }
 
         l = new LinkedList<>();
         l.add(null);
@@ -276,15 +303,17 @@ public class VectorTest {
         tVector.clear();
         assertEquals("a) Cleared Vector has non-zero size", 0, tVector.size());
         Enumeration<Object> e = orgVector.elements();
-        while (e.hasMoreElements())
+        while (e.hasMoreElements()) {
             assertTrue("a) Cleared vector contained elements", !tVector.contains(e.nextElement()));
+        }
 
         tVector.add(null);
         tVector.clear();
         assertEquals("b) Cleared Vector has non-zero size", 0, tVector.size());
         e = orgVector.elements();
-        while (e.hasMoreElements())
+        while (e.hasMoreElements()) {
             assertTrue("b) Cleared vector contained elements", !tVector.contains(e.nextElement()));
+        }
     }
 
     @Test
@@ -302,7 +331,6 @@ public class VectorTest {
             assertTrue("Vector cloned improperly, elements do not match", orgNum.nextElement() == cnum.nextElement());
         }
         assertTrue("Not enough elements copied", !cnum.hasMoreElements());
-
     }
 
     @Test
@@ -320,8 +348,9 @@ public class VectorTest {
         // Test for method boolean
         // java.util.Vector.containsAll(java.util.Collection)
         Collection<Object> s = new HashSet<>();
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++) {
             s.add("Test " + i);
+        }
 
         assertTrue("Returned false for valid collection", tVector.containsAll(s));
         s.add(null);
@@ -341,8 +370,9 @@ public class VectorTest {
         tVector.setElementAt(null, 20);
         tVector.copyInto(a);
 
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++) {
             assertTrue("copyInto failed", a[i] == tVector.elementAt(i));
+        }
     }
 
     @Test
@@ -351,7 +381,6 @@ public class VectorTest {
         assertEquals("Incorrect element returned", "Test 18", tVector.elementAt(18));
         tVector.setElementAt(null, 20);
         assertNull("Incorrect element returned--wanted null", tVector.elementAt(20));
-
     }
 
     @Test
@@ -401,8 +430,9 @@ public class VectorTest {
     public void test_equalsLjava_lang_Object() {
         // Test for method boolean java.util.Vector.equals(java.lang.Object)
         Vector<Object> v = new Vector<>();
-        for (int i = 0; i < 100; i++)
+        for (int i = 0; i < 100; i++) {
             v.addElement("Test " + i);
+        }
         assertTrue("a) Equal vectors returned false", tVector.equals(v));
         v.addElement(null);
         assertTrue("b) UnEqual vectors returned true", !tVector.equals(v));
@@ -466,7 +496,7 @@ public class VectorTest {
     public void test_indexOfLjava_lang_ObjectI() {
         // Test for method int java.util.Vector.indexOf(java.lang.Object, int)
         assertEquals("Failed to find correct index", tVector.indexOf("Test 98", 50), 98);
-        assertTrue("Found index of bogus element", (tVector.indexOf("Test 1001", 50) == -1));
+        assertTrue("Found index of bogus element", tVector.indexOf("Test 1001", 50) == -1);
         tVector.setElementAt(null, 20);
         tVector.setElementAt(null, 40);
         tVector.setElementAt(null, 60);
@@ -478,7 +508,7 @@ public class VectorTest {
             tVector.indexOf("Test 98", -1);
             fail("should throw ArrayIndexOutOfBoundsException");
         } catch (ArrayIndexOutOfBoundsException e) {
-
+            // ok
         }
         assertEquals(-1, tVector.indexOf("Test 98", 1000));
         assertEquals(-1, tVector.indexOf("Test 98", Integer.MAX_VALUE));
@@ -488,7 +518,7 @@ public class VectorTest {
             tVector.indexOf("Test 98", Integer.MIN_VALUE);
             fail("should throw ArrayIndexOutOfBoundsException");
         } catch (ArrayIndexOutOfBoundsException e) {
-
+            // ok
         }
     }
 
@@ -562,8 +592,9 @@ public class VectorTest {
     public void test_lastIndexOfLjava_lang_Object() {
         // Test for method int java.util.Vector.lastIndexOf(java.lang.Object)
         Vector<String> v = new Vector<>(9);
-        for (int i = 0; i < 9; i++)
+        for (int i = 0; i < 9; i++) {
             v.addElement("Test");
+        }
         v.addElement("z");
         assertEquals("Failed to return correct index", 8, v.lastIndexOf("Test"));
         tVector.setElementAt(null, 20);
@@ -577,7 +608,7 @@ public class VectorTest {
         // Test for method int java.util.Vector.lastIndexOf(java.lang.Object,
         // int)
         assertEquals("Failed to find object", 0, tVector.lastIndexOf("Test 0", 0));
-        assertTrue("Found Object outside of index", (tVector.lastIndexOf("Test 0", 10) > -1));
+        assertTrue("Found Object outside of index", tVector.lastIndexOf("Test 0", 10) > -1);
         tVector.setElementAt(null, 20);
         tVector.setElementAt(null, 40);
         tVector.setElementAt(null, 60);
@@ -592,21 +623,25 @@ public class VectorTest {
             assertEquals(-1, tVector.lastIndexOf("Test 98", 1000));
             fail("should throw IndexOutOfBoundsException");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
         try {
             assertEquals(-1, tVector.lastIndexOf("Test 98", Integer.MAX_VALUE));
             fail("should throw IndexOutOfBoundsException");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
         try {
             tVector.lastIndexOf("Test 98", tVector.size());
             fail("should throw IndexOutOfBoundsException");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
         try {
             tVector.indexOf("Test 98", Integer.MIN_VALUE);
             fail("should throw ArrayIndexOutOfBoundsException");
         } catch (ArrayIndexOutOfBoundsException e) {
+            // ok
         }
     }
 
@@ -662,13 +697,14 @@ public class VectorTest {
         // java.util.Vector.removeAll(java.util.Collection)
         Vector<Object> v = new Vector<>();
         Collection<String> l = new LinkedList<>();
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 5; i++) {
             l.add("Test " + i);
+        }
         v.addElement(l);
 
         Collection<Object> s = new HashSet<>();
-        Object o;
-        s.add(o = v.firstElement());
+        Object o = v.firstElement();
+        s.add(o);
         v.removeAll(s);
         assertTrue("Failed to remove items in collection", !v.contains(o));
         v.removeAll(l);
@@ -928,9 +964,9 @@ public class VectorTest {
         // Test for method java.util.List java.util.Vector.subList(int, int)
         List<Object> sl = tVector.subList(10, 25);
         assertEquals("Returned sublist of incorrect size", 15, sl.size());
-        for (int i = 10; i < 25; i++)
+        for (int i = 10; i < 25; i++) {
             assertTrue("Returned incorrect sublist", sl.contains(tVector.get(i)));
-
+        }
     }
 
     @Test
@@ -945,44 +981,14 @@ public class VectorTest {
         // java.util.Vector.toArray(java.lang.Object [])
         Object[] o = new Object[1000];
         Object f = new Object();
-        for (int i = 0; i < o.length; i++)
+        for (int i = 0; i < o.length; i++) {
             o[i] = f;
+        }
         tVector.toArray(o);
         assertNull("Failed to set slot to null", o[100]);
-        for (int i = 0; i < tVector.size(); i++)
+        for (int i = 0; i < tVector.size(); i++) {
             assertTrue("Returned incorrect array", tVector.elementAt(i) == o[i]);
-    }
-
-    class SubVector<E> extends Vector<E> {
-
-        private static final long serialVersionUID = 1L;
-
-        public SubVector() {
-            super();
         }
-
-        @Override
-        public synchronized boolean add(E obj) {
-            super.addElement(obj);
-            return true;
-        }
-
-        @Override
-        public synchronized void addElement(E obj) {
-            super.add(obj);
-        }
-
-        /**
-         * @tests java.util.Vector#add(Object)
-         */
-        @SuppressWarnings("nls")
-        public void test_add() {
-            SubVector<String> subvector = new SubVector<>();
-            subvector.add("foo");
-            subvector.addElement("bar");
-            assertEquals("Expected two elements in vector", 2, subvector.size());
-        }
-
     }
 
     @Test
@@ -1036,6 +1042,37 @@ public class VectorTest {
     @SuppressWarnings("unchecked")
     protected <T> Vector<T> vectorClone(Vector<T> s) {
         return (Vector<T>) s.clone();
+    }
+
+    class SubVector<E> extends Vector<E> {
+
+        private static final long serialVersionUID = 1L;
+
+        public SubVector() {
+            super();
+        }
+
+        @Override
+        public synchronized boolean add(E obj) {
+            super.addElement(obj);
+            return true;
+        }
+
+        @Override
+        public synchronized void addElement(E obj) {
+            super.add(obj);
+        }
+
+        /**
+         * @tests java.util.Vector#add(Object)
+         */
+        @SuppressWarnings("nls")
+        public void test_add() {
+            SubVector<String> subvector = new SubVector<>();
+            subvector.add("foo");
+            subvector.addElement("bar");
+            assertEquals("Expected two elements in vector", 2, subvector.size());
+        }
     }
 
     public class MockVector<T> extends Vector<T> {

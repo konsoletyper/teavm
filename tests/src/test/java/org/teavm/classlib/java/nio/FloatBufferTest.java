@@ -19,7 +19,11 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.fail;
-import java.nio.*;
+import java.nio.BufferOverflowException;
+import java.nio.BufferUnderflowException;
+import java.nio.FloatBuffer;
+import java.nio.InvalidMarkException;
+import java.nio.ReadOnlyBufferException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -67,9 +71,9 @@ public class FloatBufferTest {
             // ok
         }
         array[0] = 23;
-        assertThat(buffer.get(0), is((float)23));
+        assertThat(buffer.get(0), is((float) 23));
         buffer.put(1, 24);
-        assertThat(array[1], is((float)24));
+        assertThat(array[1], is((float) 24));
     }
 
     @Test
@@ -119,11 +123,11 @@ public class FloatBufferTest {
         assertThat(slice.isDirect(), is(false));
         assertThat(slice.isReadOnly(), is(false));
         slice.put(3, 23);
-        assertThat(buffer.get(18), is((float)23));
+        assertThat(buffer.get(18), is((float) 23));
         slice.put(24);
-        assertThat(buffer.get(15), is((float)24));
+        assertThat(buffer.get(15), is((float) 24));
         buffer.put(16, 25);
-        assertThat(slice.get(1), is((float)25));
+        assertThat(slice.get(1), is((float) 25));
     }
 
     @Test
@@ -146,11 +150,11 @@ public class FloatBufferTest {
         assertThat(duplicate.isDirect(), is(false));
         assertThat(duplicate.isReadOnly(), is(false));
         duplicate.put(3, 23);
-        assertThat(buffer.get(3), is((float)23));
+        assertThat(buffer.get(3), is((float) 23));
         duplicate.put(24);
-        assertThat(buffer.get(15), is((float)24));
+        assertThat(buffer.get(15), is((float) 24));
         buffer.put(1, 25);
-        assertThat(duplicate.get(1), is((float)25));
+        assertThat(duplicate.get(1), is((float) 25));
         assertThat(duplicate.array(), is(sameInstance(buffer.array())));
     }
 
@@ -158,11 +162,11 @@ public class FloatBufferTest {
     public void getsFloat() {
         float[] array = { 2, 3, 5, 7 };
         FloatBuffer buffer = FloatBuffer.wrap(array);
-        assertThat(buffer.get(), is((float)2));
-        assertThat(buffer.get(), is((float)3));
+        assertThat(buffer.get(), is((float) 2));
+        assertThat(buffer.get(), is((float) 3));
         buffer = buffer.slice();
-        assertThat(buffer.get(), is((float)5));
-        assertThat(buffer.get(), is((float)7));
+        assertThat(buffer.get(), is((float) 5));
+        assertThat(buffer.get(), is((float) 7));
     }
 
     @Test
@@ -198,7 +202,7 @@ public class FloatBufferTest {
             buffer.put(5);
             fail("Should have thrown error");
         } catch (BufferOverflowException e) {
-            assertThat(array[2], is((float)0));
+            assertThat(array[2], is((float) 0));
         }
     }
 
@@ -213,12 +217,12 @@ public class FloatBufferTest {
     public void getsFloatFromGivenLocation() {
         float[] array = { 2, 3, 5, 7 };
         FloatBuffer buffer = FloatBuffer.wrap(array);
-        assertThat(buffer.get(0), is((float)2));
-        assertThat(buffer.get(1), is((float)3));
+        assertThat(buffer.get(0), is((float) 2));
+        assertThat(buffer.get(1), is((float) 3));
         buffer.get();
         buffer = buffer.slice();
-        assertThat(buffer.get(1), is((float)5));
-        assertThat(buffer.get(2), is((float)7));
+        assertThat(buffer.get(1), is((float) 5));
+        assertThat(buffer.get(2), is((float) 7));
     }
 
     @Test
@@ -334,7 +338,7 @@ public class FloatBufferTest {
         float[] data = { 2, 3 };
         buffer.put(data, 0, 2);
         assertThat(buffer.position(), is(3));
-        assertThat(array, is(new float[] {0, 2, 3, 0 }));
+        assertThat(array, is(new float[] { 0, 2, 3, 0 }));
     }
 
     @Test

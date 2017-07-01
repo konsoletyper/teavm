@@ -44,7 +44,7 @@ public class ClassTest {
         assertEquals("int", int.class.getSimpleName());
         assertEquals("int[]", int[].class.getSimpleName());
         assertEquals("InnerClass", InnerClass.class.getSimpleName());
-        assertEquals("", new Object(){}.getClass().getSimpleName());
+        assertEquals("", new Object() { }.getClass().getSimpleName());
     }
 
     @Test
@@ -111,10 +111,10 @@ public class ClassTest {
 
     @Test
     public void instanceCreatedThroughReflection() throws Exception {
-        Runnable instance = (Runnable)Class.forName(TestObject.class.getName()).newInstance();
+        Runnable instance = (Runnable) Class.forName(TestObject.class.getName()).newInstance();
         instance.run();
         assertEquals(TestObject.class, instance.getClass());
-        assertEquals(1, ((TestObject)instance).getCounter());
+        assertEquals(1, ((TestObject) instance).getCounter());
     }
 
     @Test
@@ -122,7 +122,7 @@ public class ClassTest {
         Runnable instance = TestObjectAsync.class.newInstance();
         instance.run();
         assertEquals(TestObjectAsync.class, instance.getClass());
-        assertEquals(2, ((TestObjectAsync)instance).getCounter());
+        assertEquals(2, ((TestObjectAsync) instance).getCounter());
     }
 
     @Test
@@ -149,8 +149,8 @@ public class ClassTest {
     public void annotationFieldTypesSupported() {
         AnnotWithVariousFields annot = D.class.getAnnotation(AnnotWithVariousFields.class);
         assertEquals(true, annot.a());
-        assertEquals((byte)2, annot.b());
-        assertEquals((short)3, annot.c());
+        assertEquals((byte) 2, annot.b());
+        assertEquals((short) 3, annot.c());
         assertEquals(4, annot.d());
         assertEquals(5L, annot.e());
         assertEquals(6.5, annot.f(), 0.01);

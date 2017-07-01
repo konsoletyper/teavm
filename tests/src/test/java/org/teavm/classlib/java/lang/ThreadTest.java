@@ -15,7 +15,10 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.ArrayList;
 import java.util.List;
 import org.junit.Test;
@@ -41,6 +44,7 @@ public class ThreadTest {
                 try {
                     Thread.sleep(50);
                 } catch (InterruptedException e) {
+                    // ok
                 }
                 mainThread.interrupt();
             }

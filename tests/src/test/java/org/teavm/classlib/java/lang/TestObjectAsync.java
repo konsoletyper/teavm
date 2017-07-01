@@ -25,8 +25,7 @@ public class TestObjectAsync extends Object implements Runnable {
             Thread.sleep(1);
             Thread.sleep(1);
             counter = 1;
-        }
-        catch (InterruptedException ie) {
+        } catch (InterruptedException ie) {
             throw new RuntimeException(ie);
         }
     }

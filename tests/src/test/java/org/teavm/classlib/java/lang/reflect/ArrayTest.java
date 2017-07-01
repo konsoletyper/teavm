@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import java.lang.reflect.Array;
 import org.junit.Test;
 import org.junit.runner.RunWith;

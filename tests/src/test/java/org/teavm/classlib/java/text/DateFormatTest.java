@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.text;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.util.Calendar;

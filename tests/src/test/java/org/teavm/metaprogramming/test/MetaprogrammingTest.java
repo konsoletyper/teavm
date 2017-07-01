@@ -36,7 +36,6 @@ import org.teavm.metaprogramming.Value;
 import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
 import org.teavm.metaprogramming.test.subpackage.MetaprogrammingGenerator;
-import org.teavm.model.ValueType;
 
 @CompileTime
 @RunWith(TeaVMTestRunner.class)
@@ -412,7 +411,7 @@ public class MetaprogrammingTest {
         });
     }
 
-    private static int counter = 0;
+    private static int counter;
 
     @Test
     public void arrayTypeSelected() {

@@ -49,7 +49,7 @@ public class ImplementationTest {
     private static native void wrongInlineCandidate(JSObject a);
 
     static class ForInliningTest implements JSObject {
-        public int counter = 0;
+        public int counter;
 
         public ForInliningTest foo() {
             ++counter;

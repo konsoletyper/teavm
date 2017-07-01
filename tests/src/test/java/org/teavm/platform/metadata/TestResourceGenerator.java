@@ -38,8 +38,8 @@ public class TestResourceGenerator implements MetadataGenerator {
         TestResource resource = context.createResource(TestResource.class);
         resource.setA(23);
         resource.setB(false);
-        resource.setD((byte)24);
-        resource.setE((short)25);
+        resource.setD((byte) 24);
+        resource.setE((short) 25);
         resource.setF(3.14f);
         resource.setG(2.72);
         resource.setFoo("qwe");

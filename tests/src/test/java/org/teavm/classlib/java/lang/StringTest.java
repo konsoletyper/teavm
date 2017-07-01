@@ -15,7 +15,11 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 import java.io.UnsupportedEncodingException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -103,28 +107,28 @@ public class StringTest {
 
     @Test
     public void exposesSupplementaryCodePoint() {
-        String str = new String(new char[] { (char)56178, (char)56972 });
+        String str = new String(new char[] { (char) 56178, (char) 56972 });
         assertEquals(969356, str.codePointAt(0));
         assertEquals(56972, str.codePointAt(1));
     }
 
     @Test
     public void exposesWrongSurrogates() {
-        String str = new String(new char[] { (char)56972, (char)56178 });
+        String str = new String(new char[] { (char) 56972, (char) 56178 });
         assertEquals(56972, str.codePointAt(0));
         assertEquals(56178, str.codePointAt(1));
     }
 
     @Test
     public void exposesSupplementaryCodePointBefore() {
-        String str = new String(new char[] { (char)56178, (char)56972 });
+        String str = new String(new char[] { (char) 56178, (char) 56972 });
         assertEquals(969356, str.codePointBefore(2));
         assertEquals(56178, str.codePointBefore(1));
     }
 
     @Test
     public void countsCodePoints() {
-        String str = new String(new char[] { (char)56178, (char)56972, 'a', 'b' });
+        String str = new String(new char[] { (char) 56178, (char) 56972, 'a', 'b' });
         assertEquals(3, str.codePointCount(0, 4));
         assertEquals(1, str.codePointCount(0, 2));
         assertEquals(2, str.codePointCount(2, 4));
@@ -133,7 +137,7 @@ public class StringTest {
 
     @Test
     public void givesOffsetByCodePoint() {
-        String str = new String(new char[] { (char)56178, (char)56972, 'a', 'b' });
+        String str = new String(new char[] { (char) 56178, (char) 56972, 'a', 'b' });
         assertEquals(2, str.offsetByCodePoints(0, 1));
         assertEquals(2, str.offsetByCodePoints(1, 1));
         assertEquals(4, str.offsetByCodePoints(0, 3));
@@ -142,16 +146,16 @@ public class StringTest {
 
     @Test
     public void findsCodePoint() {
-        String str = new String(new char[] { 'a', 'b', (char)56178, (char)56972, 'c',
-                (char)56178, (char)56972, 'c', 'd' });
+        String str = new String(new char[] { 'a', 'b', (char) 56178, (char) 56972, 'c',
+                (char) 56178, (char) 56972, 'c', 'd' });
         assertEquals(2, str.indexOf(969356));
         assertEquals(4, str.indexOf('c'));
     }
 
     @Test
     public void findsCodePointBackward() {
-        String str = new String(new char[] { 'a', 'b', (char)56178, (char)56972, 'c',
-                (char)56178, (char)56972, 'c', 'd' });
+        String str = new String(new char[] { 'a', 'b', (char) 56178, (char) 56972, 'c',
+                (char) 56178, (char) 56972, 'c', 'd' });
         assertEquals(5, str.lastIndexOf(969356));
         assertEquals(7, str.lastIndexOf('c'));
     }
@@ -219,10 +223,10 @@ public class StringTest {
     public void createFromLongUTF8ByteArray() throws UnsupportedEncodingException {
         byte[] bytes = new byte[16384];
         for (int i = 0; i < bytes.length;) {
-             bytes[i++] = -16;
-             bytes[i++] = -66;
-             bytes[i++] = -78;
-             bytes[i++] = -69;
+            bytes[i++] = -16;
+            bytes[i++] = -66;
+            bytes[i++] = -78;
+            bytes[i++] = -69;
         }
         String str = new String(bytes, "UTF-8");
         assertEquals('\uD8BB', str.charAt(8190));
@@ -246,8 +250,8 @@ public class StringTest {
     public void getUTF8ByteArrayOfLongString() throws UnsupportedEncodingException {
         char[] chars = new char[8192];
         for (int i = 0; i < chars.length;) {
-             chars[i++] = '\uD8BB';
-             chars[i++] = '\uDCBB';
+            chars[i++] = '\uD8BB';
+            chars[i++] = '\uDCBB';
         }
         byte[] bytes = new String(chars).getBytes("UTF-8");
         assertEquals(-16, bytes[16380]);

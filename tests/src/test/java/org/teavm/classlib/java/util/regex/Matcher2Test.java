@@ -1,3 +1,19 @@
+/*
+ *  Copyright 2015 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
 /* Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -16,13 +32,17 @@
 
 package org.teavm.classlib.java.util.regex;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import static org.junit.Assert.*;
 
 @RunWith(TeaVMTestRunner.class)
 @SuppressWarnings("nls")
@@ -45,36 +65,42 @@ public class Matcher2Test {
             m.start();
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         try {
             m.end();
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         try {
             m.group();
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         try {
             m.start(1);
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         try {
             m.end(1);
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         try {
             m.group(1);
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         // regression test for HARMONY-2418
@@ -104,36 +130,42 @@ public class Matcher2Test {
             m.start(3);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.end(3);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.group(3);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.start(-1);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.end(-1);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.group(-1);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         assertTrue(m.find());
@@ -148,36 +180,42 @@ public class Matcher2Test {
             m.start(3);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.end(3);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.group(3);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.start(-1);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.end(-1);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.group(-1);
             fail("IndexOutOfBoundsException expected");
         } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         assertFalse(m.find());
@@ -186,36 +224,42 @@ public class Matcher2Test {
             m.start(3);
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         try {
             m.end(3);
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         try {
             m.group(3);
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         try {
             m.start(-1);
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         try {
             m.end(-1);
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
 
         try {
             m.group(-1);
             fail("IllegalStateException expected");
         } catch (IllegalStateException e) {
+            // ok
         }
     }
 
@@ -233,6 +277,7 @@ public class Matcher2Test {
             mat.replaceAll(substitutionString);
             fail("IndexOutOfBoundsException should be thrown");
         } catch (IndexOutOfBoundsException | IllegalArgumentException e) {
+            // ok
         }
     }
 }

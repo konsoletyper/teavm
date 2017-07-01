@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import java.util.ServiceLoader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -28,6 +28,6 @@ public class ServiceLoaderTest {
         TestService instance = ServiceLoader.load(TestService.class).iterator().next();
         instance.foo();
         assertEquals(TestServiceImpl.class, instance.getClass());
-        assertEquals(1, ((TestServiceImpl)instance).getCounter());
+        assertEquals(1, ((TestServiceImpl) instance).getCounter());
     }
 }

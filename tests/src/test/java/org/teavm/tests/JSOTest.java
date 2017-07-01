@@ -21,11 +21,10 @@ import static org.junit.Assert.assertThat;
 import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.junit.Test;
-import org.teavm.diagnostics.Problem;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.diagnostics.Problem;
 import org.teavm.jso.JSBody;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
 

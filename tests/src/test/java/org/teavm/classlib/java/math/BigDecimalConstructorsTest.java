@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -20,7 +36,8 @@
 
 package org.teavm.classlib.java.math;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.math.MathContext;
@@ -77,9 +94,9 @@ public class BigDecimalConstructorsTest {
 
         try {
             new BigDecimal((BigInteger) null);
-        	fail("No NullPointerException");
+            fail("No NullPointerException");
         } catch (NullPointerException e) {
-        	//expected
+            //expected
         }
     }
 
@@ -136,7 +153,7 @@ public class BigDecimalConstructorsTest {
      */
     @Test
     public void testConstrChar() {
-        char value[] = {'-', '1', '2', '3', '8', '0', '.', '4', '7', '3', '8', 'E', '-', '4', '2', '3'};
+        char[] value = {'-', '1', '2', '3', '8', '0', '.', '4', '7', '3', '8', 'E', '-', '4', '2', '3'};
         BigDecimal result = new BigDecimal(value);
         String res = "-1.23804738E-419";
         int resScale = 427;
@@ -145,18 +162,19 @@ public class BigDecimalConstructorsTest {
 
         try {
             // Regression for HARMONY-783
-            new BigDecimal(new char[] {});
+            new BigDecimal(new char[]{});
             fail("NumberFormatException has not been thrown");
         } catch (NumberFormatException e) {
+            // ok
         }
-     }
+    }
 
     /**
      * new BigDecimal(char[] value, int offset, int len);
      */
     @Test
     public void testConstrCharIntInt() {
-        char value[] = {'-', '1', '2', '3', '8', '0', '.', '4', '7', '3', '8', 'E', '-', '4', '2', '3'};
+        char[] value = {'-', '1', '2', '3', '8', '0', '.', '4', '7', '3', '8', 'E', '-', '4', '2', '3'};
         int offset = 3;
         int len = 12;
         BigDecimal result = new BigDecimal(value, offset, len);
@@ -167,18 +185,19 @@ public class BigDecimalConstructorsTest {
 
         try {
             // Regression for HARMONY-783
-            new BigDecimal(new char[] {}, 0, 0);
+            new BigDecimal(new char[]{}, 0, 0);
             fail("NumberFormatException has not been thrown");
         } catch (NumberFormatException e) {
+            // ok
         }
-     }
+    }
 
     /**
      * new BigDecimal(char[] value, int offset, int len, MathContext mc);
      */
     @Test
     public void testConstrCharIntIntMathContext() {
-        char value[] = {'-', '1', '2', '3', '8', '0', '.', '4', '7', '3', '8', 'E', '-', '4', '2', '3'};
+        char[] value = {'-', '1', '2', '3', '8', '0', '.', '4', '7', '3', '8', 'E', '-', '4', '2', '3'};
         int offset = 3;
         int len = 12;
         int precision = 4;
@@ -192,18 +211,19 @@ public class BigDecimalConstructorsTest {
 
         try {
             // Regression for HARMONY-783
-            new BigDecimal(new char[] {}, 0, 0, MathContext.DECIMAL32);
+            new BigDecimal(new char[]{}, 0, 0, MathContext.DECIMAL32);
             fail("NumberFormatException has not been thrown");
         } catch (NumberFormatException e) {
+            // ok
         }
-     }
+    }
 
     /**
      * new BigDecimal(char[] value, int offset, int len, MathContext mc);
      */
     @Test
     public void testConstrCharIntIntMathContextException1() {
-        char value[] = {'-', '1', '2', '3', '8', '0', '.', '4', '7', '3', '8', 'E', '-', '4', '2', '3'};
+        char[] value = {'-', '1', '2', '3', '8', '0', '.', '4', '7', '3', '8', 'E', '-', '4', '2', '3'};
         int offset = 3;
         int len = 120;
         int precision = 4;
@@ -213,15 +233,16 @@ public class BigDecimalConstructorsTest {
             new BigDecimal(value, offset, len, mc);
             fail("NumberFormatException has not been thrown");
         } catch (NumberFormatException e) {
+            // ok
         }
-     }
+    }
 
     /**
      * new BigDecimal(char[] value, int offset, int len, MathContext mc);
      */
     @Test
     public void testConstrCharIntIntMathContextException2() {
-        char value[] = {'-', '1', '2', '3', '8', '0', ',', '4', '7', '3', '8', 'E', '-', '4', '2', '3'};
+        char[] value = {'-', '1', '2', '3', '8', '0', ',', '4', '7', '3', '8', 'E', '-', '4', '2', '3'};
         int offset = 3;
         int len = 120;
         int precision = 4;
@@ -231,8 +252,9 @@ public class BigDecimalConstructorsTest {
             new BigDecimal(value, offset, len, mc);
             fail("NumberFormatException has not been thrown");
         } catch (NumberFormatException e) {
+            // ok
         }
-     }
+    }
 
     /**
      * new BigDecimal(char[] value, MathContext mc);
@@ -241,9 +263,10 @@ public class BigDecimalConstructorsTest {
     public void testConstrCharMathContext() {
         try {
             // Regression for HARMONY-783
-            new BigDecimal(new char[] {}, MathContext.DECIMAL32);
+            new BigDecimal(new char[]{}, MathContext.DECIMAL32);
             fail("NumberFormatException has not been thrown");
         } catch (NumberFormatException e) {
+            // ok
         }
     }
 
@@ -422,7 +445,16 @@ public class BigDecimalConstructorsTest {
     public void testConstrDoubleDenormalized() {
         double a = 2.274341322658976E-309;
         int aScale = 1073;
-        BigInteger bA = new BigInteger("227434132265897633950269241702666687639731047124115603942986140264569528085692462493371029187342478828091760934014851133733918639492582043963243759464684978401240614084312038547315281016804838374623558434472007664427140169018817050565150914041833284370702366055678057809362286455237716100382057360123091641959140448783514464639706721250400288267372238950016114583259228262046633530468551311769574111763316146065958042194569102063373243372766692713192728878701004405568459288708477607744497502929764155046100964958011009313090462293046650352146796805866786767887226278836423536035611825593567576424943331337401071583562754098901412372708947790843318760718495117047155597276492717187936854356663665005157041552436478744491526494952982062613955349661409854888916015625");
+        BigInteger bA = new BigInteger("22743413226589763395026924170266668763973104712411560394298614026"
+                + "4569528085692462493371029187342478828091760934014851133733918639492582043963"
+                + "24375946468497840124061408431203854731528101680483837462355843447200766442714"
+                + "0169018817050565150914041833284370702366055678057809362286455237716100382057360"
+                + "1230916419591404487835144646397067212504002882673722389500161145832592282620466"
+                + "33530468551311769574111763316146065958042194569102063373243372766692713192728878"
+                + "70100440556845928870847760774449750292976415504610096495801100931309046229304665"
+                + "035214679680586678676788722627883642353603561182559356757642494333133740107158356"
+                + "2754098901412372708947790843318760718495117047155597276492717187936854356663665005"
+                + "157041552436478744491526494952982062613955349661409854888916015625");
         BigDecimal aNumber = new BigDecimal(a);
         assertEquals("incorrect value", bA, aNumber.unscaledValue());
         assertEquals("incorrect scale", aScale, aNumber.scale());
@@ -438,7 +470,9 @@ public class BigDecimalConstructorsTest {
         try {
             new BigDecimal(a);
             fail("NumberFormatException has not been caught");
-        } catch (NumberFormatException e) {}
+        } catch (NumberFormatException e) {
+            // ok
+        }
     }
 
     /**
@@ -451,6 +485,7 @@ public class BigDecimalConstructorsTest {
             new BigDecimal(a);
             fail("NumberFormatException has not been caught");
         } catch (NumberFormatException e) {
+            // ok
         }
     }
 
@@ -464,6 +499,7 @@ public class BigDecimalConstructorsTest {
             new BigDecimal(a);
             fail("NumberFormatException has not been caught");
         } catch (NumberFormatException e) {
+            // ok
         }
     }
 
@@ -478,6 +514,7 @@ public class BigDecimalConstructorsTest {
             new BigDecimal(a);
             fail("NumberFormatException has not been caught");
         } catch (NumberFormatException e) {
+            // ok
         }
     }
 
@@ -492,6 +529,7 @@ public class BigDecimalConstructorsTest {
             new BigDecimal(a);
             fail("NumberFormatException has not been caught");
         } catch (NumberFormatException e) {
+            // ok
         }
     }
 
@@ -517,18 +555,17 @@ public class BigDecimalConstructorsTest {
     public void testConstrStringExponentIntegerMin() {
         String a = ".238768e-2147483648";
         try {
-           new BigDecimal(a);
-           fail("NumberFormatException expected");
-       } catch (NumberFormatException e) {
-           assertEquals("Improper exception message","Scale out of range.",
-               e.getMessage());
-       }
+            new BigDecimal(a);
+            fail("NumberFormatException expected");
+        } catch (NumberFormatException e) {
+            assertEquals("Improper exception message", "Scale out of range.", e.getMessage());
+        }
     }
 
     /**
      * new BigDecimal(String value); value does not contain exponent
      */
-      @Test
+    @Test
     public void testConstrStringWithoutExpPos1() {
         String a = "732546982374982347892379283571094797.287346782359284756";
         int aScale = 18;
@@ -541,7 +578,7 @@ public class BigDecimalConstructorsTest {
     /**
      * new BigDecimal(String value); value does not contain exponent
      */
-      @Test
+    @Test
     public void testConstrStringWithoutExpPos2() {
         String a = "+732546982374982347892379283571094797.287346782359284756";
         int aScale = 18;
@@ -554,7 +591,7 @@ public class BigDecimalConstructorsTest {
     /**
      * new BigDecimal(String value); value does not contain exponent
      */
-      @Test
+    @Test
     public void testConstrStringWithoutExpNeg() {
         String a = "-732546982374982347892379283571094797.287346782359284756";
         int aScale = 18;
@@ -568,7 +605,7 @@ public class BigDecimalConstructorsTest {
      * new BigDecimal(String value); value does not contain exponent
      * and decimal point
      */
-      @Test
+    @Test
     public void testConstrStringWithoutExpWithoutPoint() {
         String a = "-732546982374982347892379283571094797287346782359284756";
         int aScale = 0;
@@ -578,19 +615,19 @@ public class BigDecimalConstructorsTest {
         assertEquals("incorrect scale", aScale, aNumber.scale());
     }
 
-      /**
-       * new BigDecimal(String value); value contains exponent
-       * and does not contain decimal point
-       */
-      @Test
+    /**
+     * new BigDecimal(String value); value contains exponent
+     * and does not contain decimal point
+     */
+    @Test
     public void testConstrStringWithExponentWithoutPoint1() {
-          String a = "-238768787678287e214";
-          int aScale = -214;
-          BigInteger bA = new BigInteger("-238768787678287");
-          BigDecimal aNumber = new BigDecimal(a);
-          assertEquals("incorrect value", bA, aNumber.unscaledValue());
-          assertEquals("incorrect scale", aScale, aNumber.scale());
-      }
+        String a = "-238768787678287e214";
+        int aScale = -214;
+        BigInteger bA = new BigInteger("-238768787678287");
+        BigDecimal aNumber = new BigDecimal(a);
+        assertEquals("incorrect value", bA, aNumber.unscaledValue());
+        assertEquals("incorrect scale", aScale, aNumber.scale());
+    }
 
     /**
      * new BigDecimal(String value); value contains exponent

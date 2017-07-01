@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2017 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,19 +48,20 @@
 
 package org.teavm.classlib.support;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 
-public class Support_ListTest {
+public class ListTestSupport {
     List<Integer> list; // must contain the Integers 0 to 99 in order
 
-    public Support_ListTest() {
+    public ListTestSupport() {
     }
 
-    public Support_ListTest(List<Integer> l) {
+    public ListTestSupport(List<Integer> l) {
         list = l;
     }
 
@@ -114,7 +131,7 @@ public class Support_ListTest {
             assertTrue("ListTest - listIterator failed", elem.equals(new Integer(counter)));
         }
 
-        new Support_CollectionTest(list).runTest();
+        new CollectionTestSupport(list).runTest();
 
     }
 
