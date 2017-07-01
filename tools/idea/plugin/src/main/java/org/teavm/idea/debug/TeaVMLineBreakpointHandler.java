@@ -15,7 +15,6 @@
  */
 package org.teavm.idea.debug;
 
-import com.intellij.debugger.ui.breakpoints.JavaLineBreakpointType;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectFileIndex;
 import com.intellij.openapi.roots.ProjectRootManager;
@@ -23,31 +22,32 @@ import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.xdebugger.breakpoints.XBreakpointHandler;
+import com.intellij.xdebugger.breakpoints.XBreakpointType;
 import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.java.debugger.breakpoints.properties.JavaLineBreakpointProperties;
 import org.teavm.debugging.Breakpoint;
 import org.teavm.debugging.Debugger;
 
-public class TeaVMLineBreakpointHandler extends XBreakpointHandler<XLineBreakpoint<JavaLineBreakpointProperties>> {
+public class TeaVMLineBreakpointHandler<B extends XLineBreakpoint<?>> extends XBreakpointHandler<B> {
     private Debugger innerDebugger;
     private VirtualFileManager vfs;
     private ProjectFileIndex fileIndex;
 
     @SuppressWarnings("unchecked")
-    public TeaVMLineBreakpointHandler(Project project, Debugger innerDebugger) {
-        super(JavaLineBreakpointType.class);
+    public TeaVMLineBreakpointHandler(Class<? extends XBreakpointType<B, ?>> breakpointType,
+            Project project, Debugger innerDebugger) {
+        super(breakpointType);
         this.innerDebugger = innerDebugger;
         vfs = VirtualFileManager.getInstance();
         fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
     }
 
     @Override
-    public void registerBreakpoint(@NotNull XLineBreakpoint<JavaLineBreakpointProperties> breakpoint) {
+    public void registerBreakpoint(@NotNull B breakpoint) {
         VirtualFile virtualFile = vfs.findFileByUrl(breakpoint.getFileUrl());
         if (virtualFile == null) {
             return;
@@ -81,8 +81,7 @@ public class TeaVMLineBreakpointHandler extends XBreakpointHandler<XLineBreakpoi
     }
 
     @Override
-    public void unregisterBreakpoint(@NotNull XLineBreakpoint<JavaLineBreakpointProperties> breakpoint,
-            boolean temporary) {
+    public void unregisterBreakpoint(@NotNull B breakpoint, boolean temporary) {
         Breakpoint innerBreakpoint = breakpoint.getUserData(TeaVMDebugProcess.INNER_BREAKPOINT_KEY);
         if (innerBreakpoint != null) {
             breakpoint.putUserData(TeaVMDebugProcess.INNER_BREAKPOINT_KEY, null);

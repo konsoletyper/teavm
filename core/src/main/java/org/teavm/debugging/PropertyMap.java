@@ -74,7 +74,7 @@ class PropertyMap extends AbstractMap<String, Variable> {
                 }
             }
             Value value = new Value(debugger, jsVar.getValue());
-            vars.put(entry.getKey(), new Variable(name, value));
+            vars.put(name, new Variable(name, value));
         }
         backingMap.compareAndSet(null, vars);
     }

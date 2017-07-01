@@ -15,12 +15,17 @@
  */
 package org.teavm.idea.debug;
 
+import com.intellij.debugger.ui.breakpoints.JavaLineBreakpointType;
+import com.intellij.openapi.extensions.ExtensionPoint;
+import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.util.Key;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XSourcePosition;
 import com.intellij.xdebugger.breakpoints.XBreakpointHandler;
 import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider;
+import java.util.ArrayList;
+import java.util.List;
 import org.jetbrains.annotations.NotNull;
 import org.teavm.chromerdp.ChromeRDPDebugger;
 import org.teavm.chromerdp.ChromeRDPServer;
@@ -33,7 +38,7 @@ public class TeaVMDebugProcess extends XDebugProcess {
     public static final Key<Breakpoint> INNER_BREAKPOINT_KEY = new Key<>("TeaVM breakpoint");
     private TeaVMDebuggerEditorsProvider editorsProvider;
     private final Debugger innerDebugger;
-    private final TeaVMLineBreakpointHandler breakpointHandler;
+    private final List<TeaVMLineBreakpointHandler<?>> breakpointHandlers = new ArrayList<>();
     private final int port;
     private ChromeRDPServer debugServer;
 
@@ -64,7 +69,17 @@ public class TeaVMDebugProcess extends XDebugProcess {
             }
         });
 
-        breakpointHandler = new TeaVMLineBreakpointHandler(session.getProject(), innerDebugger);
+        breakpointHandlers.add(new TeaVMLineBreakpointHandler<>(JavaLineBreakpointType.class, session.getProject(),
+                innerDebugger));
+
+        ExtensionPoint<TeaVMBreakpointProvider<?>> breakpointProvider = Extensions.getArea(
+                session.getProject()).getExtensionPoint("org.teavm.extensions.breakpointProvider");
+        if (breakpointProvider != null) {
+            for (TeaVMBreakpointProvider<?> provider : breakpointProvider.getExtensions()) {
+                breakpointHandlers.add(new TeaVMLineBreakpointHandler<>(provider.getBreakpointType(),
+                        session.getProject(), innerDebugger));
+            }
+        }
     }
 
     private Debugger initDebugger() {
@@ -121,6 +136,6 @@ public class TeaVMDebugProcess extends XDebugProcess {
     @NotNull
     @Override
     public XBreakpointHandler<?>[] getBreakpointHandlers() {
-        return new XBreakpointHandler[] { breakpointHandler };
+        return breakpointHandlers.toArray(new XBreakpointHandler<?>[0]);
     }
 }
