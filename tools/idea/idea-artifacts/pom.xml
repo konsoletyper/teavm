@@ -34,9 +34,7 @@
     <profile>
       <id>download-dependencies</id>
       <activation>
-        <file>
-          <missing>dependencies/teavm.jar</missing>
-        </file>
+        <activeByDefault>true</activeByDefault>
       </activation>
 
       <build>

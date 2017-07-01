@@ -95,6 +95,20 @@
     </dependency>
 
     <dependency>
+      <groupId>org.teavm.idea</groupId>
+      <artifactId>kotlin-plugin</artifactId>
+      <version>${idea.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
+      <groupId>org.teavm.idea</groupId>
+      <artifactId>scala-plugin</artifactId>
+      <version>${idea.version}</version>
+      <scope>provided</scope>
+    </dependency>
+
+    <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-jps-common</artifactId>
       <version>${project.version}</version>

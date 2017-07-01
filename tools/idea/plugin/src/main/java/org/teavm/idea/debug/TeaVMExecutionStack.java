@@ -22,6 +22,7 @@ import com.intellij.xdebugger.frame.XExecutionStack;
 import com.intellij.xdebugger.frame.XStackFrame;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.stream.Stream;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.teavm.debugging.CallFrame;
@@ -66,7 +67,10 @@ public class TeaVMExecutionStack extends XExecutionStack {
 
     @Nullable
     VirtualFile findVirtualFile(@NotNull String partialPath) {
-        return Arrays.stream(rootManager.getContentSourceRoots())
+        Stream<VirtualFile> roots = Stream.concat(
+                Arrays.stream(rootManager.getContentSourceRoots()),
+                Arrays.stream(rootManager.orderEntries().getAllSourceRoots()));
+        return roots
                 .map(sourceRoot -> sourceRoot.findFileByRelativePath(partialPath))
                 .filter(Objects::nonNull)
                 .findFirst()
