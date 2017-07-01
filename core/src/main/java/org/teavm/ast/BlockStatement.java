@@ -18,10 +18,6 @@ package org.teavm.ast;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class BlockStatement extends IdentifiedStatement {
     private List<Statement> body = new ArrayList<>();
 

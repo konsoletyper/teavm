@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TDoubleBufferOverByteBuffer extends TDoubleBufferImpl {
     private TByteBufferImpl byteByffer;
     TByteOrder byteOrder = TByteOrder.BIG_ENDIAN;

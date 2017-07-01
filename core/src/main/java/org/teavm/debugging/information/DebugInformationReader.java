@@ -23,10 +23,6 @@ import java.util.List;
 import org.teavm.common.RecordArray;
 import org.teavm.common.RecordArrayBuilder;
 
-/**
- *
- * @author Alexey Andreev
- */
 class DebugInformationReader {
     private InputStream input;
     private int lastNumber;

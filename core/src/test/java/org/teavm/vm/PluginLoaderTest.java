@@ -27,10 +27,6 @@ import org.teavm.vm.spi.Requires;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class PluginLoaderTest {
     @Test
     public void loadsPlugins() {

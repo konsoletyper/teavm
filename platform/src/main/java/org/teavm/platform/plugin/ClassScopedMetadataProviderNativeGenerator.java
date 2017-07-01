@@ -34,10 +34,6 @@ import org.teavm.platform.metadata.ClassScopedMetadataGenerator;
 import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 import org.teavm.platform.metadata.Resource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ClassScopedMetadataProviderNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {

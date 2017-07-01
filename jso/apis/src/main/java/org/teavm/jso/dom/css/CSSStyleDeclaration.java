@@ -19,10 +19,6 @@ import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface CSSStyleDeclaration extends JSObject {
     @JSProperty
     String getCssText();

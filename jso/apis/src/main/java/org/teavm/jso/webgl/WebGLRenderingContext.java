@@ -30,10 +30,6 @@ import org.teavm.jso.typedarrays.ArrayBufferView;
 import org.teavm.jso.typedarrays.Float32Array;
 import org.teavm.jso.typedarrays.Int32Array;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface WebGLRenderingContext extends JSObject {
     int DEPTH_BUFFER_BIT               = 0x00000100;
     int STENCIL_BUFFER_BIT             = 0x00000400;

@@ -17,9 +17,5 @@ package org.teavm.jso.canvas;
 
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface CanvasImageSource extends JSObject {
 }

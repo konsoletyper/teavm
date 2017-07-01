@@ -18,10 +18,6 @@ package org.teavm.debugging.information;
 import java.io.IOException;
 import java.io.Writer;
 
-/**
- *
- * @author Alexey Andreev
- */
 class SourceMapsWriter {
     private static final String BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
     private Writer output;

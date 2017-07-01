@@ -18,10 +18,6 @@ package org.teavm.model;
 import java.util.Collection;
 import java.util.Set;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ClassReader extends ElementReader {
     String getParent();
 

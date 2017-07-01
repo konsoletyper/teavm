@@ -15,9 +15,5 @@
  */
 package org.teavm.jso.dom.html;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HTMLHtmlElement extends HTMLElement {
 }

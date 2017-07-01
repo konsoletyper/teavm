@@ -17,10 +17,6 @@ package org.teavm.classlib.java.nio.charset;
 
 import org.teavm.classlib.java.lang.TRuntimeException;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TBufferOverflowException extends TRuntimeException {
     private static final long serialVersionUID = -94154470269902198L;
 

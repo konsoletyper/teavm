@@ -20,10 +20,6 @@ import org.teavm.classlib.java.nio.TByteBuffer;
 import org.teavm.classlib.java.nio.TCharBuffer;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TCharset implements Comparable<TCharset> {
     private String canonicalName;
     private String[] aliases;

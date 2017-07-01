@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 abstract class TIntBufferOverByteBuffer extends TIntBufferImpl {
     TByteBufferImpl byteByffer;
     boolean readOnly;

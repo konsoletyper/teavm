@@ -2,10 +2,6 @@ package org.teavm.eclipse.debugger;
 
 import java.util.Comparator;
 
-/**
- *
- * @author Alexey Andreev
- */
 abstract class PropertyNameComparator<T> implements Comparator<T> {
     abstract String getName(T value);
 

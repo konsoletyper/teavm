@@ -17,10 +17,6 @@ package org.teavm.platform;
 
 import java.lang.annotation.Annotation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface PlatformAnnotationProvider {
     Annotation[] getAnnotations();
 }

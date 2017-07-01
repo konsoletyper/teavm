@@ -17,10 +17,6 @@ package org.teavm.model.emit;
 
 import org.teavm.model.BasicBlock;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ConditionEmitter {
     private ProgramEmitter pe;
     ForkEmitter fork;

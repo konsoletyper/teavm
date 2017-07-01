@@ -19,10 +19,6 @@ import org.teavm.classlib.java.lang.TException;
 import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TThrowable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TIOException extends TException {
     private static final long serialVersionUID = 3626109154700059455L;
 

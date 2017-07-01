@@ -18,10 +18,6 @@ package org.teavm.jso.browser;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface Location extends JSObject {
     @JSProperty("href")
     String getFullURL();

@@ -20,10 +20,6 @@ import java.util.Map;
 import org.slf4j.ILoggerFactory;
 import org.slf4j.Logger;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMLoggerFactory implements ILoggerFactory {
     private Map<String, TeaVMLogger> loggers = new HashMap<>();
 

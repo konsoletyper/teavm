@@ -17,10 +17,6 @@ package org.teavm.common;
 
 import java.util.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class RangeTree {
     public static class Range {
         public final int left;

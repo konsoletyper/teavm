@@ -20,10 +20,6 @@ import java.util.List;
 import org.teavm.classlib.java.util.TCalendar;
 import org.teavm.classlib.java.util.TLocale;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TSimpleDatePatternParser {
     private TDateFormatSymbols symbols;
     private TLocale locale;

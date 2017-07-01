@@ -17,10 +17,6 @@ package org.teavm.dependency;
 
 import org.teavm.model.CallLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class AbstractDependencyListener implements DependencyListener {
     @Override
     public void started(DependencyAgent agent) {

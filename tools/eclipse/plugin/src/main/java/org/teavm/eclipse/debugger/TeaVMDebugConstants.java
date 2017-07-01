@@ -17,10 +17,6 @@ package org.teavm.eclipse.debugger;
 
 import org.teavm.eclipse.TeaVMEclipsePlugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class TeaVMDebugConstants {
     private TeaVMDebugConstants() {
     }

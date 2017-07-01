@@ -17,10 +17,6 @@ package org.teavm.debugging.information;
 
 import org.teavm.model.MethodDescriptor;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MethodIterator {
     private DebugInformation debugInformation;
     private int index;

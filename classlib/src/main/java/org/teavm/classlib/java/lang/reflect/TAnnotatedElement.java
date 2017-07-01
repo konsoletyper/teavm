@@ -18,10 +18,6 @@ package org.teavm.classlib.java.lang.reflect;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TAnnotatedElement {
     boolean isAnnotationPresent(TClass<? extends TAnnotation> annotationClass);
 

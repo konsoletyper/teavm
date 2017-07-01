@@ -25,10 +25,6 @@ import org.teavm.eclipse.TeaVMProfile;
 import org.teavm.eclipse.TeaVMProjectSettings;
 import org.teavm.eclipse.TeaVMRuntimeMode;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
     private static final String TOOL_ID = "teavm-eclipse-m2e-plugin.tool";
     private static final String TEAVM_ARTIFACT_ID = "teavm-maven-plugin";

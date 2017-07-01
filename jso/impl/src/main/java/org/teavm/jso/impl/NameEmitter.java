@@ -17,10 +17,6 @@ package org.teavm.jso.impl;
 
 import java.io.IOException;
 
-/**
- *
- * @author Alexey Andreev
- */
 interface NameEmitter {
     void emit(int precedence) throws IOException;
 }

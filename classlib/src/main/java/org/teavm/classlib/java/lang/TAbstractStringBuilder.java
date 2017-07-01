@@ -18,10 +18,6 @@ package org.teavm.classlib.java.lang;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.util.TArrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequence {
     private static final float[] powersOfTen = { 1E1f, 1E2f, 1E4f, 1E8f, 1E16f, 1E32f };
     private static final double[] doublePowersOfTen = { 1E1, 1E2, 1E4, 1E8, 1E16, 1E32, 1E64, 1E128, 1E256 };

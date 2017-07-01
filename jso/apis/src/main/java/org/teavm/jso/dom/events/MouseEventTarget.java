@@ -15,10 +15,6 @@
  */
 package org.teavm.jso.dom.events;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface MouseEventTarget extends EventTarget {
     default void listenClick(EventListener<MouseEvent> listener) {
         addEventListener("click", listener);

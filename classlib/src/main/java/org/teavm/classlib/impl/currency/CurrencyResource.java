@@ -17,10 +17,6 @@ package org.teavm.classlib.impl.currency;
 
 import org.teavm.platform.metadata.Resource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface CurrencyResource extends Resource {
     String getCode();
 

@@ -15,10 +15,6 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class MemberHolder extends ElementHolder implements MemberReader {
     public MemberHolder(String name) {
         super(name);

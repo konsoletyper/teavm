@@ -12,10 +12,6 @@ import org.eclipse.ui.IPersistableElement;
 import org.eclipse.ui.IStorageEditorInput;
 import org.eclipse.ui.PlatformUI;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class URLEditorInput extends PlatformObject implements IStorageEditorInput {
     private URL url;
 

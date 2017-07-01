@@ -17,10 +17,6 @@ package org.teavm.parsing;
 
 import java.io.InputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ResourceProvider {
     boolean hasResource(String name);
 

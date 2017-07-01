@@ -17,10 +17,6 @@ package org.teavm.classlib.java.lang.annotation;
 
 import org.teavm.interop.Rename;
 
-/**
- *
- * @author Alexey Andreev
- */
 public @interface TAnnotation {
     @Rename("annotationType")
     Class<?> annotationType0();

@@ -19,10 +19,6 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HTMLBodyElement extends HTMLElement {
     @JSProperty("onbeforeunload")
     void setOnBeforeUnload(EventListener<Event> listener);

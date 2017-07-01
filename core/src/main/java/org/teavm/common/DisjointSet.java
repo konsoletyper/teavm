@@ -17,10 +17,6 @@ package org.teavm.common;
 
 import java.util.Arrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DisjointSet {
     private int[] parent = new int[16];
     private int[] rank = new int[16];

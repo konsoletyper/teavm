@@ -15,10 +15,6 @@
  */
 package org.teavm.common;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class LCATree {
     private int[] depths;
     private int[][] pathsToRoot;

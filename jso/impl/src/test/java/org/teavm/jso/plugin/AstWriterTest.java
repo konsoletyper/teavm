@@ -28,10 +28,6 @@ import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
 import org.teavm.jso.impl.AstWriter;
 import org.teavm.jso.impl.JSParser;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AstWriterTest {
     private StringBuilder sb = new StringBuilder();
     private SourceWriter sourceWriter;

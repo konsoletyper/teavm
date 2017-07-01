@@ -15,10 +15,6 @@
  */
 package org.teavm.jso.dom.events;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface FocusEventTarget extends EventTarget {
     default void listenFocus(EventListener<Event> listener) {
         addEventListener("focus", listener);

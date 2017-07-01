@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CLDRCurrency {
     String symbol;
     String name;

@@ -20,10 +20,6 @@ import java.lang.reflect.Method;
 import java.util.Arrays;
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 class BuildTimeResourceProxy implements InvocationHandler {
     private Map<Method, BuildTimeResourceMethod> methods;
     Object[] data;

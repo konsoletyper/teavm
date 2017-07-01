@@ -24,10 +24,6 @@ import org.teavm.classlib.java.nio.TCharBuffer;
 import org.teavm.classlib.java.nio.charset.*;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TPrintStream extends TFilterOutputStream {
     private boolean autoFlush;
     private boolean errorState;

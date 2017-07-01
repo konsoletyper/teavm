@@ -20,10 +20,6 @@ import org.eclipse.debug.core.model.*;
 import org.teavm.debugging.javascript.JavaScriptCallFrame;
 import org.teavm.debugging.javascript.JavaScriptDebugger;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMJSStackFrame extends TeaVMStackFrame {
     JavaScriptCallFrame callFrame;
     JavaScriptDebugger jsDebugger;

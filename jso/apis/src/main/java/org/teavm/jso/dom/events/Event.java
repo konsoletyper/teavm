@@ -18,10 +18,6 @@ package org.teavm.jso.dom.events;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface Event extends JSObject {
     short CAPTURING_PHASE = 1;
     short AT_TARGET = 2;

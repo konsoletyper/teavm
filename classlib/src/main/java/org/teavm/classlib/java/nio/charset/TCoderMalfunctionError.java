@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TCoderMalfunctionError extends Error {
     private static final long serialVersionUID = 8030591981317653860L;
 

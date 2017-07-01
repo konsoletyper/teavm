@@ -17,10 +17,6 @@ package org.teavm.eclipse.debugger;
 
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TeaVMVariablesHolder {
     private AtomicReference<TeaVMVariable[]> variables = new AtomicReference<>();
 

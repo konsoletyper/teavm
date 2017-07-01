@@ -17,10 +17,6 @@ package org.teavm.model.instructions;
 
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ConstructArrayInstruction extends Instruction {
     private Variable size;
     private ValueType itemType;

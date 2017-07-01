@@ -26,10 +26,6 @@ import org.teavm.classlib.java.util.TGregorianCalendar;
 import org.teavm.classlib.java.util.TLocale;
 import org.teavm.classlib.java.util.TTimeZone;
 
-/**
- *
- * @author Alexey Andreev
- */
 abstract class TDateFormatElement {
     public abstract void format(TCalendar date, StringBuffer buffer);
 

@@ -15,10 +15,6 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface MethodReader extends MemberReader {
     ValueType getResultType();
 

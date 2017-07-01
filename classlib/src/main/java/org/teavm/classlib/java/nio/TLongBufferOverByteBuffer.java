@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 abstract class TLongBufferOverByteBuffer extends TLongBufferImpl {
     TByteBufferImpl byteByffer;
     boolean readOnly;

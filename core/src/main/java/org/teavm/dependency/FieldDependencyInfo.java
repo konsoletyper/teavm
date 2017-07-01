@@ -17,10 +17,6 @@ package org.teavm.dependency;
 
 import org.teavm.model.FieldReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface FieldDependencyInfo {
     ValueDependencyInfo getValue();
 

@@ -20,10 +20,6 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.util.ModelUtils;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class LoggerFactoryTransformer implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {

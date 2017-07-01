@@ -18,10 +18,6 @@ package org.teavm.eclipse.debugger;
 import org.eclipse.debug.core.DebugException;
 import org.teavm.debugging.javascript.JavaScriptValue;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMJSScope extends TeaVMVariable {
     private String name;
     private JavaScriptValue value;

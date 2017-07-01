@@ -21,10 +21,6 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DeclaringClassMetadataGenerator implements ClassScopedMetadataGenerator {
     @Override
     public Map<String, Resource> generateMetadata(MetadataGeneratorContext context, MethodReference method) {

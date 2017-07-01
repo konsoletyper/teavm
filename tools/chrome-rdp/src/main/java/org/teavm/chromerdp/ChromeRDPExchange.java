@@ -15,10 +15,6 @@
  */
 package org.teavm.chromerdp;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ChromeRDPExchange {
     void send(String message);
 

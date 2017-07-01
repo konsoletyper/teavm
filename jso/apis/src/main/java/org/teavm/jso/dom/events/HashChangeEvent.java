@@ -17,10 +17,6 @@ package org.teavm.jso.dom.events;
 
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HashChangeEvent extends Event {
     @JSProperty
     String getOldURL();

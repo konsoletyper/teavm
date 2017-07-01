@@ -19,10 +19,6 @@ import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TInteger;
 import org.teavm.classlib.java.lang.TObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TLevel extends TObject implements TSerializable {
     public static final TLevel OFF = new TLevel("OFF", TInteger.MAX_VALUE);
     public static final TLevel SEVERE = new TLevel("SEVERE", 1000);

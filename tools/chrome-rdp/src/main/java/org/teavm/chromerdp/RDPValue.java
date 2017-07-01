@@ -21,10 +21,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.teavm.debugging.javascript.JavaScriptValue;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class RDPValue implements JavaScriptValue {
     private AtomicReference<String> representation = new AtomicReference<>();
     private AtomicReference<String> className = new AtomicReference<>();

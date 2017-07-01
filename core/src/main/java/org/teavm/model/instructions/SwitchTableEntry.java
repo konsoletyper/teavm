@@ -17,10 +17,6 @@ package org.teavm.model.instructions;
 
 import org.teavm.model.BasicBlock;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SwitchTableEntry implements SwitchTableEntryReader {
     private int condition;
     private BasicBlock target;

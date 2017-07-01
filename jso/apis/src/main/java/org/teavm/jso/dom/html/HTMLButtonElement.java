@@ -18,10 +18,6 @@ package org.teavm.jso.dom.html;
 import org.teavm.jso.JSProperty;
 import org.w3c.dom.html.HTMLFormElement;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HTMLButtonElement extends HTMLElement {
     String TYPE_BUTTON = "button";
 

@@ -15,10 +15,6 @@
  */
 package org.teavm.debugging;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Variable {
     private String name;
     private Value value;

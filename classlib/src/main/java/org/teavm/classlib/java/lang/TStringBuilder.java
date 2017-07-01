@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TStringBuilder extends TAbstractStringBuilder implements TAppendable {
     public TStringBuilder(int capacity) {
         super(capacity);

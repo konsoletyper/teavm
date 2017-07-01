@@ -17,10 +17,6 @@ package org.teavm.classlib.java.util.concurrent;
 
 import org.teavm.classlib.java.lang.TRunnable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TExecutor {
     void execute(TRunnable command);
 }

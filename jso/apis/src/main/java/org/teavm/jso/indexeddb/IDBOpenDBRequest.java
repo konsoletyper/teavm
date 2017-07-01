@@ -18,10 +18,6 @@ package org.teavm.jso.indexeddb;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventListener;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface IDBOpenDBRequest extends IDBRequest {
     @JSProperty
     IDBDatabase getResult();

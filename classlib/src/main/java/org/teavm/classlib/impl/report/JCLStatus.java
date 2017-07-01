@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.impl.report;
 
-/**
- *
- * @author Alexey Andreev
- */
 enum JCLStatus {
     FOUND,
     MISSING,

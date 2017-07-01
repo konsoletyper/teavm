@@ -19,10 +19,6 @@ import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.impl.unicode.DecimalData;
 import org.teavm.classlib.java.util.TLocale;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TDecimalFormatSymbols implements Cloneable {
     private TLocale locale;
     private char zeroDigit;

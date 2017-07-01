@@ -18,10 +18,6 @@ package org.teavm.jso.dom.css;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ElementCSSInlineStyle extends JSObject {
     @JSProperty
     CSSStyleDeclaration getStyle();

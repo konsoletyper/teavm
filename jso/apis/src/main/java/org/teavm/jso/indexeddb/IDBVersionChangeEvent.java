@@ -18,10 +18,6 @@ package org.teavm.jso.indexeddb;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.Event;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface IDBVersionChangeEvent extends Event {
     @JSProperty
     int getOldVersion();

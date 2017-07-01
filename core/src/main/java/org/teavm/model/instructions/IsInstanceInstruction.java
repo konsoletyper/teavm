@@ -17,10 +17,6 @@ package org.teavm.model.instructions;
 
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class IsInstanceInstruction extends Instruction {
     private Variable value;
     private ValueType type;

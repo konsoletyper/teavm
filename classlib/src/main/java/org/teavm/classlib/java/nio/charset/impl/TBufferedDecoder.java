@@ -21,10 +21,6 @@ import org.teavm.classlib.java.nio.charset.TCharset;
 import org.teavm.classlib.java.nio.charset.TCharsetDecoder;
 import org.teavm.classlib.java.nio.charset.TCoderResult;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TBufferedDecoder extends TCharsetDecoder {
     public TBufferedDecoder(TCharset cs, float averageCharsPerByte, float maxCharsPerByte) {
         super(cs, averageCharsPerByte, maxCharsPerByte);

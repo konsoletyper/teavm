@@ -33,10 +33,6 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 class JavaInvocationProcessor implements NodeVisitor {
     private ClassReaderSource classSource;
     private JSTypeHelper typeHelper;

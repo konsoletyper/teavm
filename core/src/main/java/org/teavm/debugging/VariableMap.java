@@ -23,10 +23,6 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
-/**
- *
- * @author Alexey Andreev
- */
 class VariableMap extends AbstractMap<String, Variable> {
     private AtomicReference<Map<String, Variable>> backingMap = new AtomicReference<>();
     private Map<String, JavaScriptVariable> jsVariables;

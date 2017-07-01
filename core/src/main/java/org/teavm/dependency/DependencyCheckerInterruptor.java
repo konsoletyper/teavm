@@ -15,10 +15,6 @@
  */
 package org.teavm.dependency;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface DependencyCheckerInterruptor {
     boolean shouldContinue();
 }

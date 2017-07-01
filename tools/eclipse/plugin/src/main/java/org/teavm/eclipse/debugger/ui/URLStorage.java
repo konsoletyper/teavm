@@ -9,10 +9,6 @@ import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.PlatformObject;
 import org.teavm.eclipse.TeaVMEclipsePlugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class URLStorage extends PlatformObject implements IStorage {
     private URL url;
 

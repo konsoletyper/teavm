@@ -19,10 +19,6 @@ import org.teavm.jso.JSFunctor;
 
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 @JSFunctor
 public interface ReadyStateChangeHandler extends JSObject {
     void stateChanged();

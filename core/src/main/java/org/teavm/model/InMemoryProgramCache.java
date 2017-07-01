@@ -19,10 +19,6 @@ import java.util.HashMap;
 import java.util.Map;
 import org.teavm.model.util.ProgramUtils;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class InMemoryProgramCache implements ProgramCache {
     private Map<MethodReference, Program> cache = new HashMap<>();
 

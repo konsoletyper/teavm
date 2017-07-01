@@ -15,10 +15,6 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface MemberReader extends ElementReader {
     String getOwnerName();
 }

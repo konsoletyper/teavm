@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TCoderResult {
     public static final TCoderResult UNDERFLOW = new TCoderResult((byte) 0, 0);
     public static final TCoderResult OVERFLOW = new TCoderResult((byte) 1, 0);

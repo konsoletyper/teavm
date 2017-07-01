@@ -18,10 +18,6 @@ package org.teavm.jso.dom.html;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TextRectangle extends JSObject {
     @JSProperty
     int getLeft();

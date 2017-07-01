@@ -17,10 +17,6 @@ package org.teavm.ast;
 
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ConstantExpr extends Expr {
     private Object value;
 

@@ -17,10 +17,6 @@ package org.teavm.interop;
 
 import java.lang.annotation.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @Inherited

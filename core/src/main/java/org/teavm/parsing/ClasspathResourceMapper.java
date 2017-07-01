@@ -25,10 +25,6 @@ import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, ClassDateProvider {
     private static final String PACKAGE_PREFIX = "packagePrefix.";
     private static final String CLASS_PREFIX = "classPrefix.";

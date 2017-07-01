@@ -15,11 +15,6 @@
  */
 package org.teavm.model;
 
-
-/**
- *
- * @author Alexey Andreev
- */
 public class FieldHolder extends MemberHolder implements FieldReader {
     private ValueType type;
     private Object initialValue;

@@ -18,10 +18,6 @@ package org.teavm.ast;
 import java.util.Map;
 import org.teavm.model.FieldReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class QualificationExpr extends Expr {
     private Expr qualified;
     private FieldReference field;

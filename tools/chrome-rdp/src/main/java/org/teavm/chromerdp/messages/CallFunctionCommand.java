@@ -18,10 +18,6 @@ package org.teavm.chromerdp.messages;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.teavm.chromerdp.data.CallArgumentDTO;
 
-/**
- *
- * @author Alexey Andreev
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CallFunctionCommand {
     private String objectId;

@@ -15,10 +15,6 @@
  */
 package org.teavm.dependency;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DependencyGraphCreatorProduct {
     public DependencyNode[] variableNodes;
     public DependencyNode resultNode;

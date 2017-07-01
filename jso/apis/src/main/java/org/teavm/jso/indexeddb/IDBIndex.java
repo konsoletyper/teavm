@@ -20,10 +20,6 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.core.JSString;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class IDBIndex implements JSObject, IDBCursorSource {
     @JSProperty
     public abstract String getName();

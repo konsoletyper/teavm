@@ -15,10 +15,6 @@
  */
 package org.teavm.testing;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SimpleTestRunner implements TestRunner {
     @Override
     public void run(TestLauncher launcher) throws Throwable {

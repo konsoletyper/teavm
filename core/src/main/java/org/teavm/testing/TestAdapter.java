@@ -17,10 +17,6 @@ package org.teavm.testing;
 
 import org.teavm.model.MethodReader;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TestAdapter {
     boolean acceptClass(Class<?> cls);
 

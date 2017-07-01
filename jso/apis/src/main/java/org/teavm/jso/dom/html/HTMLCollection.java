@@ -18,10 +18,6 @@ package org.teavm.jso.dom.html;
 import org.teavm.jso.core.JSArrayReader;
 import org.teavm.jso.dom.xml.Element;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HTMLCollection extends JSArrayReader<Element> {
     Element item(int index);
 

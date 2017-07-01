@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.util.zip;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TDataFormatException extends Exception {
     private static final long serialVersionUID = 7856637411580418624L;
 

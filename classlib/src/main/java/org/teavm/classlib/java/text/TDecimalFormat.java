@@ -26,10 +26,6 @@ import org.teavm.classlib.java.lang.TDouble;
 import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.util.TLocale;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TDecimalFormat extends TNumberFormat {
     private static final long[] POW10_ARRAY = { 1, 10, 100, 1000, 1_0000, 1_0_0000, 1_00_0000,
             1_000_0000, 1_0000_0000, 1_0_0000_0000, 1_00_0000_0000L, 1_000_0000_0000L, 1_0000_0000_0000L,

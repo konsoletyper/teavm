@@ -17,10 +17,6 @@ package org.teavm.classlib.impl;
 
 import java.util.Arrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class Base64 {
     private static char[] alphabet = new char[64];
     private static int[] reverse = new int[256];

@@ -15,10 +15,6 @@
  */
 package org.teavm.jso.dom.events;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface LoadEventTarget extends EventTarget {
     default void listenLoad(EventListener<Event> listener) {
         addEventListener("load", listener);

@@ -17,10 +17,6 @@ package org.teavm.callgraph;
 
 import org.teavm.model.TextLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ClassAccessSite {
     TextLocation getLocation();
 

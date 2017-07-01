@@ -17,10 +17,6 @@ package org.teavm.model;
 
 import java.util.EnumSet;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ElementReader {
     AccessLevel getLevel();
 

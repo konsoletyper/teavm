@@ -17,10 +17,6 @@ package org.teavm.debugging.javascript;
 
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface JavaScriptCallFrame {
     JavaScriptDebugger getDebugger();
 

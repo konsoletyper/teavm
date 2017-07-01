@@ -18,10 +18,6 @@ package org.teavm.eclipse.debugger;
 import org.eclipse.debug.core.DebugException;
 import org.teavm.debugging.Variable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMJavaVariable extends TeaVMVariable {
     private Variable var;
 

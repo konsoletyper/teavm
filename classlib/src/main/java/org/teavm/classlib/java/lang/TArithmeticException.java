@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TArithmeticException extends TRuntimeException {
     private static final long serialVersionUID = 8084592456171302650L;
 

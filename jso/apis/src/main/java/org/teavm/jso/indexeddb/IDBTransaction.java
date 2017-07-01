@@ -19,10 +19,6 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventTarget;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface IDBTransaction extends JSObject, EventTarget {
     @JSProperty
     String getMode();

@@ -25,10 +25,6 @@ import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 class JSBodyAstEmitter implements JSBodyEmitter {
     private boolean isStatic;
     private AstNode ast;

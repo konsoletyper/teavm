@@ -18,10 +18,6 @@ package org.teavm.model.emit;
 import org.teavm.model.ValueType;
 import org.teavm.model.instructions.IntegerSubtype;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class StringBuilderEmitter {
     private ProgramEmitter pe;
     private ValueEmitter sb;

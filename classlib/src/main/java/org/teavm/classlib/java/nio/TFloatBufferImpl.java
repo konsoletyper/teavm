@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 abstract class TFloatBufferImpl extends TFloatBuffer {
     public TFloatBufferImpl(int capacity, int position, int limit) {
         super(capacity, position, limit);

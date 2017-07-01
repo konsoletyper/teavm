@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TClassCastException extends TRuntimeException {
     private static final long serialVersionUID = 5744987817019231273L;
 

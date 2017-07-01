@@ -27,10 +27,6 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.Platform;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class EnumDependencySupport extends AbstractDependencyListener {
     private DependencyNode allEnums;
 

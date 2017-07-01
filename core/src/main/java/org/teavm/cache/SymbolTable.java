@@ -15,10 +15,6 @@
  */
 package org.teavm.cache;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface SymbolTable {
     String at(int index);
 

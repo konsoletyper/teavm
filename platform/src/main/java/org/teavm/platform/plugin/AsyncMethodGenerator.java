@@ -30,10 +30,6 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.async.AsyncCallback;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     private static final MethodReference completeMethod = new MethodReference(AsyncCallback.class, "complete",
             Object.class, void.class);

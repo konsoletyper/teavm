@@ -21,10 +21,6 @@ import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 class JSBodyBloatedEmitter implements JSBodyEmitter {
     private boolean isStatic;
     private MethodReference method;

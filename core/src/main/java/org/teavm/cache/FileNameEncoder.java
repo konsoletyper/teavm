@@ -15,10 +15,6 @@
  */
 package org.teavm.cache;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class FileNameEncoder {
     private FileNameEncoder() {
     }

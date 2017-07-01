@@ -18,10 +18,6 @@ package org.teavm.jso.json;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class JSON {
     private JSON() {
     }

@@ -27,10 +27,6 @@ import org.mozilla.javascript.ast.ThrowStatement;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 final class JSBodyInlineUtil {
     private static final int COMPLEXITY_THRESHOLD = 20;
     private JSBodyInlineUtil() {

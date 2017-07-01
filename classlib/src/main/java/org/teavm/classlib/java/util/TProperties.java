@@ -24,10 +24,6 @@ import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.io.TWriter;
 import org.teavm.classlib.java.lang.TString;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TProperties extends THashtable<Object, Object> {
     /**
      * The default values for keys not found in this {@code Properties}

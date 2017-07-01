@@ -22,10 +22,6 @@ import org.teavm.debugging.javascript.JavaScriptCallFrame;
 import org.teavm.debugging.javascript.JavaScriptDebugger;
 import org.teavm.debugging.javascript.JavaScriptDebuggerListener;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMJSThread extends TeaVMThread {
     private JavaScriptDebugger jsDebugger;
 

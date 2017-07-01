@@ -19,10 +19,6 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.typedarrays.Uint8ClampedArray;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ImageData extends JSObject {
     @JSProperty
     int getWidth();

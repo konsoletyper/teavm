@@ -24,10 +24,6 @@ import org.teavm.classlib.java.nio.charset.TCodingErrorAction;
 import org.teavm.classlib.java.nio.charset.TUnsupportedCharsetException;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TInputStreamReader extends TReader {
     private TInputStream stream;
     private TCharsetDecoder decoder;

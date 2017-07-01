@@ -23,10 +23,6 @@ import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DebugInformation {
     String[] fileNames;
     Map<String, Integer> fileNameMap;

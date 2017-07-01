@@ -21,10 +21,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class RDPScope extends AbstractMap<String, RDPLocalVariable> {
     private AtomicReference<Map<String, RDPLocalVariable>> backingMap = new AtomicReference<>();
     private ChromeRDPDebugger debugger;

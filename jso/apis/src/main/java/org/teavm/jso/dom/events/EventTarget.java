@@ -17,10 +17,6 @@ package org.teavm.jso.dom.events;
 
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface EventTarget extends JSObject {
     void addEventListener(String type, EventListener<?> listener, boolean useCapture);
 

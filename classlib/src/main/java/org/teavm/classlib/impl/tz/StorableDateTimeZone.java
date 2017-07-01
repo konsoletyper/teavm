@@ -20,10 +20,6 @@ import org.teavm.classlib.impl.CharFlow;
 import org.teavm.classlib.impl.tz.DateTimeZoneBuilder.DSTZone;
 import org.teavm.classlib.impl.tz.DateTimeZoneBuilder.PrecalculatedZone;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class StorableDateTimeZone extends DateTimeZone {
     public static final int PRECALCULATED = 0;
     public static final int FIXED = 1;

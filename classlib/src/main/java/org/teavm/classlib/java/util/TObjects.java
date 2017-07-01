@@ -17,10 +17,6 @@ package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.lang.TObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class TObjects extends TObject {
     public static boolean equals(Object a, Object b) {
         if (a == b) {

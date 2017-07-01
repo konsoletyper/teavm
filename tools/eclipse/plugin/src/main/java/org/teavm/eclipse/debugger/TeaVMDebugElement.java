@@ -17,10 +17,6 @@ package org.teavm.eclipse.debugger;
 
 import org.eclipse.debug.core.model.DebugElement;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TeaVMDebugElement extends DebugElement {
     public TeaVMDebugElement(TeaVMDebugTarget target) {
         super(target);

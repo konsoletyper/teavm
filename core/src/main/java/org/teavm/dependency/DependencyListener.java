@@ -17,10 +17,6 @@ package org.teavm.dependency;
 
 import org.teavm.model.CallLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface DependencyListener {
     void started(DependencyAgent agent);
 

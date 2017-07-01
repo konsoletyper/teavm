@@ -37,10 +37,6 @@ import org.eclipse.jdt.launching.IRuntimeClasspathEntry;
 import org.eclipse.jdt.launching.JavaRuntime;
 import org.eclipse.jdt.launching.sourcelookup.containers.ClasspathContainerSourceContainer;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMSourcePathComputerDelegate implements ISourcePathComputerDelegate {
     @Override
     public ISourceContainer[] computeSourceContainers(ILaunchConfiguration config, IProgressMonitor monitor)

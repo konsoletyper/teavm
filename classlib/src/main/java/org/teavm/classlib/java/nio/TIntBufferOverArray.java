@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TIntBufferOverArray extends TIntBufferImpl {
     boolean readOnly;
     int start;

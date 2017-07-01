@@ -19,10 +19,6 @@ import static org.junit.Assert.*;
 import java.io.UnsupportedEncodingException;
 import org.junit.Test;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Base64Test {
     @Test
     public void decoderWorks() {

@@ -21,10 +21,6 @@ import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
 import org.teavm.eclipse.TeaVMEclipsePlugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TeaVMVariable extends TeaVMDebugElement implements IVariable {
     private String id;
     private TeaVMValue value;

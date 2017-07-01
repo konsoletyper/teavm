@@ -15,10 +15,6 @@
  */
 package org.teavm.testing;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TestLauncher {
     void launch() throws Throwable;
 }

@@ -24,10 +24,6 @@ import org.teavm.debugging.information.*;
 import org.teavm.debugging.javascript.*;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Debugger {
     private static final Object dummyObject = new Object();
     private ConcurrentMap<DebuggerListener, Object> listeners = new ConcurrentHashMap<>();

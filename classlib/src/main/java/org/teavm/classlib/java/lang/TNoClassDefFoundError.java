@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TNoClassDefFoundError extends TLinkageError {
     private static final long serialVersionUID = -7662272618403764942L;
 

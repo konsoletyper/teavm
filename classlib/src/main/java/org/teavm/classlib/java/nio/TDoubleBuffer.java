@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubleBuffer> {
     TDoubleBuffer(int capacity, int position, int limit) {
         super(capacity);

@@ -18,10 +18,6 @@ package org.teavm.classlib.java.io;
 import org.teavm.classlib.java.lang.TInteger;
 import org.teavm.classlib.java.lang.TObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TInputStream extends TObject implements TCloseable {
     public TInputStream() {
     }

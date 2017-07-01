@@ -35,10 +35,6 @@ import org.teavm.ast.ThrowStatement;
 import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.WhileStatement;
 
-/**
- *
- * @author Alexey Andreev
- */
 class EscapingStatementFinder implements StatementVisitor {
     AllBlocksCountVisitor blockCountVisitor;
     public boolean escaping;

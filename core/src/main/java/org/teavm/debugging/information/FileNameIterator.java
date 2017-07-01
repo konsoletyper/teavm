@@ -15,11 +15,6 @@
  */
 package org.teavm.debugging.information;
 
-
-/**
- *
- * @author Alexey Andreev
- */
 public class FileNameIterator {
     private DebugInformation debugInformation;
     private int index;

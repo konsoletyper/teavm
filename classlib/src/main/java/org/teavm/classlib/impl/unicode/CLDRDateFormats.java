@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CLDRDateFormats {
     private String shortFormat;
     private String mediumFormat;

@@ -17,10 +17,6 @@ package org.teavm.debugging.javascript;
 
 import java.util.Objects;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JavaScriptLocation {
     private String script;
     private int line;

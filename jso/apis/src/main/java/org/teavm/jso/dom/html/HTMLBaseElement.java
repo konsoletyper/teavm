@@ -17,10 +17,6 @@ package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HTMLBaseElement extends HTMLElement {
     @JSProperty
     String getHref();

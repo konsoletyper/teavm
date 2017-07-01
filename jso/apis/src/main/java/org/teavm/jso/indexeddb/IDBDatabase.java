@@ -18,10 +18,6 @@ package org.teavm.jso.indexeddb;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.EventTarget;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface IDBDatabase extends EventTarget {
     String TRANSACTION_READONLY = "readonly";
 

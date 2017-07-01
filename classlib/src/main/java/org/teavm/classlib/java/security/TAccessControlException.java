@@ -18,10 +18,6 @@ package org.teavm.classlib.java.security;
 import org.teavm.classlib.java.lang.TSecurityException;
 import org.teavm.classlib.java.lang.TString;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TAccessControlException extends TSecurityException {
     private static final long serialVersionUID = 8282514874369266797L;
     private TPermission permission;
