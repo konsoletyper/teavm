@@ -26,10 +26,6 @@ import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
 import org.teavm.parsing.ClasspathClassHolderSource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JCLComparisonBuilder {
     private static final String JAR_PREFIX = "jar:file:";
     private static final String JAR_SUFFIX = "!/java/lang/Object.class";

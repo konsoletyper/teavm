@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TBufferUnderflowException extends RuntimeException {
     private static final long serialVersionUID = 1162643612868888150L;
 

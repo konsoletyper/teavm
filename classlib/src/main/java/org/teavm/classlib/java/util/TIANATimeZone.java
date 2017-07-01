@@ -18,10 +18,6 @@ package org.teavm.classlib.java.util;
 import java.util.Objects;
 import org.teavm.classlib.impl.tz.DateTimeZone;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TIANATimeZone extends TTimeZone {
     private static final long serialVersionUID = -8196006595542230951L;
     private DateTimeZone underlyingZone;

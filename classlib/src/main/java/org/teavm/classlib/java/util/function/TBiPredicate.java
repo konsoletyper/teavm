@@ -17,10 +17,6 @@ package org.teavm.classlib.java.util.function;
 
 import java.util.function.BiPredicate;
 
-/**
- *
- * @author Alexey Andreev
- */
 @FunctionalInterface
 public interface TBiPredicate<T, U> {
     boolean test(T t, U u);

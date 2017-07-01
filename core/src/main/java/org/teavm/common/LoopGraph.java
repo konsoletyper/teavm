@@ -17,10 +17,6 @@ package org.teavm.common;
 
 import java.util.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class LoopGraph implements Graph {
     private static class LoopImpl implements Loop {
         public int head;

@@ -19,10 +19,6 @@ import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.teavm.chromerdp.data.CallFrameDTO;
 
-/**
- *
- * @author Alexey Andreev
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SuspendedNotification {
     private CallFrameDTO[] callFrames;

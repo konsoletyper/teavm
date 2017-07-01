@@ -2,10 +2,6 @@ package org.teavm.html4j.test;
 
 import org.netbeans.html.json.spi.JSONCall;
 
-/**
- *
- * @author Alexey Andreev
- */
 class WSImpl {
     String url;
     JSONCall callback;

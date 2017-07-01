@@ -15,10 +15,6 @@
  */
 package org.teavm.debugging.information;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class DebuggerCallSite {
     static final int NONE = 0;
     static final int STATIC = 1;

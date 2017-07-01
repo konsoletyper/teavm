@@ -24,10 +24,6 @@ import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TMap;
 import org.teavm.jso.JSBody;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TLogger {
     public static final TString GLOBAL_LOGGER_NAME = TString.wrap("global");
     private static TMap<TString, TLogger> loggerCache = new THashMap<>();

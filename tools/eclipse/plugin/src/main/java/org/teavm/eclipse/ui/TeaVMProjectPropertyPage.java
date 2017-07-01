@@ -33,10 +33,6 @@ import org.teavm.eclipse.TeaVMEclipsePlugin;
 import org.teavm.eclipse.TeaVMProfile;
 import org.teavm.eclipse.TeaVMProjectSettings;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMProjectPropertyPage extends PropertyPage implements IWorkbenchPropertyPage {
     private Button natureButton;
     private Table profilesTable;

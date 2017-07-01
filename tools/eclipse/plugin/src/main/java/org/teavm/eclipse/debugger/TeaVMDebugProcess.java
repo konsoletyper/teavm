@@ -23,10 +23,6 @@ import org.eclipse.debug.core.ILaunch;
 import org.eclipse.debug.core.model.IProcess;
 import org.eclipse.debug.core.model.IStreamsProxy;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMDebugProcess extends PlatformObject implements IProcess {
     private TeaVMDebugTarget debugTarget;
     private Map<String, String> attributes = new HashMap<>();

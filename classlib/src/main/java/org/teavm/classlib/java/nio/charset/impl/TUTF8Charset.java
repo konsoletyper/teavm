@@ -19,10 +19,6 @@ import org.teavm.classlib.java.nio.charset.TCharset;
 import org.teavm.classlib.java.nio.charset.TCharsetDecoder;
 import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TUTF8Charset extends TCharset {
     public TUTF8Charset() {
         super("UTF-8", new String[0]);

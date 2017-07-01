@@ -19,10 +19,6 @@ import org.teavm.classlib.java.io.TEOFException;
 import org.teavm.classlib.java.io.TIOException;
 import org.teavm.classlib.java.io.TInputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TConsoleInputStream extends TInputStream {
     @Override
     public int read(byte[] b) throws TIOException {

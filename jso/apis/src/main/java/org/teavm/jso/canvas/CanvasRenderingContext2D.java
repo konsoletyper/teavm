@@ -22,10 +22,6 @@ import org.teavm.jso.core.JSArrayReader;
 import org.teavm.jso.dom.html.HTMLCanvasElement;
 import org.teavm.jso.dom.xml.Element;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface CanvasRenderingContext2D extends JSObject {
     // Path
 

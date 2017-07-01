@@ -17,10 +17,6 @@ package org.teavm.classlib.java.nio.charset;
 
 import java.io.IOException;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TCharacterCodingException extends IOException {
     private static final long serialVersionUID = -2432441010404243409L;
 

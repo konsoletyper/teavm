@@ -21,10 +21,6 @@ import org.teavm.classlib.java.lang.TObject;
 import org.teavm.interop.Import;
 import org.teavm.jso.JSBody;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TRandom extends TObject implements TSerializable {
 
     /** A stored gaussian value for nextGaussian() */

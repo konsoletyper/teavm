@@ -19,10 +19,6 @@ import java.io.IOException;
 import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.vm.BuildTarget;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface RendererListener {
     void begin(RenderingManager context, BuildTarget buildTarget) throws IOException;
 

@@ -20,10 +20,6 @@ import java.util.List;
 import java.util.Map;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class NewMultiArrayExpr extends Expr {
     private ValueType type;
     private List<Expr> dimensions = new ArrayList<>();

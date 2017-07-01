@@ -21,10 +21,6 @@ import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TStringBuilder;
 import org.teavm.classlib.java.util.TArrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TBufferedReader extends TReader {
     private TReader innerReader;
     private char[] buffer;

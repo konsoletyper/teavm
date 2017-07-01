@@ -17,10 +17,6 @@ package org.teavm.model;
 
 import java.util.EnumSet;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class ElementHolder implements ElementReader {
     private EnumSet<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
     private AnnotationContainer annotations = new AnnotationContainer();

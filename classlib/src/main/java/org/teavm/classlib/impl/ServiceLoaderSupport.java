@@ -39,10 +39,6 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ServiceLoaderSupport extends AbstractDependencyListener implements Generator {
     private Set<String> achievedClasses = new HashSet<>();
     private Map<String, List<String>> serviceMap = new HashMap<>();

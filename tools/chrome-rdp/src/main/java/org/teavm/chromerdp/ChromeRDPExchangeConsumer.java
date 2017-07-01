@@ -15,10 +15,6 @@
  */
 package org.teavm.chromerdp;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ChromeRDPExchangeConsumer {
     void setExchange(ChromeRDPExchange exchange);
 }

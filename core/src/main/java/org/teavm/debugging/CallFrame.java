@@ -22,10 +22,6 @@ import org.teavm.debugging.javascript.JavaScriptCallFrame;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CallFrame {
     private Debugger debugger;
     private JavaScriptCallFrame originalCallFrame;

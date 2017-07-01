@@ -23,10 +23,6 @@ import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JSBodyGenerator implements Injector, Generator {
     @Override
     public void generate(InjectorContext context, MethodReference methodRef) throws IOException {

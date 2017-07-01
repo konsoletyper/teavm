@@ -18,10 +18,6 @@ package org.teavm.eclipse.debugger;
 import java.util.*;
 import org.teavm.debugging.Variable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMJavaVariablesHolder extends TeaVMVariablesHolder {
     private String idPrefix;
     private TeaVMDebugTarget debugTarget;

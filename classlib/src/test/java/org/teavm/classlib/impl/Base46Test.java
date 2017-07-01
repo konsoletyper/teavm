@@ -18,10 +18,6 @@ package org.teavm.classlib.impl;
 import static org.junit.Assert.*;
 import org.junit.Test;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Base46Test {
     @Test
     public void encode() {

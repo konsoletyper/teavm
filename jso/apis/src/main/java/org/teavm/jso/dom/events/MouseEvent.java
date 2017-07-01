@@ -18,10 +18,6 @@ package org.teavm.jso.dom.events;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface MouseEvent extends Event {
     short LEFT_BUTTON = 0;
     short MIDDLE_BUTTON = 1;

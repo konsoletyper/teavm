@@ -20,10 +20,6 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class InstructionTransitionExtractor implements InstructionVisitor {
     private BasicBlock[] targets;
 

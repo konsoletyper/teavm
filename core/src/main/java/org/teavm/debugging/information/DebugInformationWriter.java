@@ -25,10 +25,6 @@ import org.teavm.common.IntegerArray;
 import org.teavm.common.RecordArray;
 import org.teavm.debugging.information.DebugInformation.ClassMetadata;
 
-/**
- *
- * @author Alexey Andreev
- */
 class DebugInformationWriter {
     private DataOutput output;
     private int lastNumber;

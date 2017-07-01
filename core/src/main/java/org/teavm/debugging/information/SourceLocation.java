@@ -15,10 +15,6 @@
  */
 package org.teavm.debugging.information;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SourceLocation {
     private String fileName;
     private int line;

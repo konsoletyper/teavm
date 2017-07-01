@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TCharBufferOverArray extends TCharBufferImpl {
     boolean readOnly;
     int start;

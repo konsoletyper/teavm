@@ -18,10 +18,6 @@ package org.teavm.jso.dom.html;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HTMLOptionsCollection extends HTMLCollection {
     @Override
     HTMLOptionElement item(int index);

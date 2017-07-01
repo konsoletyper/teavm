@@ -15,10 +15,6 @@
  */
 package org.teavm.debugging.javascript;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface JavaScriptDebuggerListener {
     void paused();
 

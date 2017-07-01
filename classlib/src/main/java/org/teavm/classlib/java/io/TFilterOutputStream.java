@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.io;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TFilterOutputStream extends TOutputStream {
     protected TOutputStream out;
 

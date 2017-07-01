@@ -19,10 +19,6 @@ import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class UsageExtractor implements InstructionVisitor {
     private Variable[] usedVariables;
 

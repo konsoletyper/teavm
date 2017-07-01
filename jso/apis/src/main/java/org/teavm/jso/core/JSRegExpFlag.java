@@ -15,10 +15,6 @@
  */
 package org.teavm.jso.core;
 
-/**
- *
- * @author Alexey Andreev
- */
 public enum JSRegExpFlag {
     GLOBAL,
     IGNORE_CASE,

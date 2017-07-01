@@ -20,10 +20,6 @@ import org.objectweb.asm.*;
 import org.teavm.model.*;
 import org.teavm.model.ClassReader;
 
-/**
- *
- * @author Alexey Andreev
- */
 class JCLComparisonVisitor extends ClassVisitor {
     private Map<String, JCLPackage> packageMap;
     private ClassReaderSource classSource;

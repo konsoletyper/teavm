@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ConstructMultiArrayInstruction extends Instruction {
     private List<Variable> dimensions = new ArrayList<>();
     private ValueType itemType;

@@ -17,10 +17,6 @@ package org.teavm.jso.indexeddb;
 
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface IDBCountRequest extends IDBRequest {
     @JSProperty
     int getResult();

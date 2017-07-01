@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.impl;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CharFlow {
     public final char[] characters;
     public int pointer;

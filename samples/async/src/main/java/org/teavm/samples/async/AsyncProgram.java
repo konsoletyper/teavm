@@ -17,10 +17,6 @@ package org.teavm.samples.async;
 
 import java.util.Arrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class AsyncProgram {
     private static long start = System.currentTimeMillis();
 

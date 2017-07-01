@@ -19,10 +19,6 @@ import com.jcraft.jzlib.GZIPInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TGZIPInputStream extends TInflaterInputStream {
     public TGZIPInputStream(InputStream in, int size) throws IOException {
         super(in);

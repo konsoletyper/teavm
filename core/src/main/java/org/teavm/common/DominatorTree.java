@@ -15,10 +15,6 @@
  */
 package org.teavm.common;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface DominatorTree {
     boolean directlyDominates(int a, int b);
 

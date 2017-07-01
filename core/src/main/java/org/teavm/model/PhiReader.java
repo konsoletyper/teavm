@@ -17,10 +17,6 @@ package org.teavm.model;
 
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface PhiReader {
     BasicBlockReader getBasicBlock();
 

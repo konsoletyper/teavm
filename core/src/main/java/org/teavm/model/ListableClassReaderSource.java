@@ -17,10 +17,6 @@ package org.teavm.model;
 
 import java.util.Set;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ListableClassReaderSource extends ClassReaderSource {
     Set<String> getClassNames();
 }

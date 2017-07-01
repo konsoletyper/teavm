@@ -17,10 +17,6 @@ package org.teavm.dependency;
 
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface DependencyGraphCreatorProvider {
     DependencyGraphCreator get(MethodReference method);
 }

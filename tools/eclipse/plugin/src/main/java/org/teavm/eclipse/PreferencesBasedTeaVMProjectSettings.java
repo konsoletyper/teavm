@@ -25,10 +25,6 @@ import org.eclipse.core.variables.VariablesPlugin;
 import org.osgi.service.prefs.BackingStoreException;
 import org.osgi.service.prefs.Preferences;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSettings {
     public static final String ENABLED = "enabled";
     public static final String MAIN_CLASS = "mainClass";

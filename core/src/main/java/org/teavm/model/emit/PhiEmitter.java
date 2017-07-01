@@ -17,10 +17,6 @@ package org.teavm.model.emit;
 
 import org.teavm.model.Phi;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class PhiEmitter {
     Phi phi;
     ValueEmitter value;

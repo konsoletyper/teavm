@@ -21,10 +21,6 @@ import org.teavm.classlib.java.lang.TString;
 import org.teavm.jso.browser.TimerHandler;
 import org.teavm.jso.browser.Window;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TTimer extends TObject {
     TSet<TTimerTask> tasks = new THashSet<>();
     private boolean cancelled;

@@ -39,7 +39,6 @@ import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.platform.metadata.IntResource;
 import org.teavm.platform.metadata.ResourceMap;
 
-
 public abstract class TCalendar implements TSerializable, TCloneable, TComparable<TCalendar> {
     protected boolean areFieldsSet;
 

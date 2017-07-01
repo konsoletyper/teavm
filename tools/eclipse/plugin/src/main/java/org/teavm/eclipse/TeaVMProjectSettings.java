@@ -17,10 +17,6 @@ package org.teavm.eclipse;
 
 import org.eclipse.core.runtime.CoreException;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TeaVMProjectSettings {
     TeaVMProfile[] getProfiles();
 

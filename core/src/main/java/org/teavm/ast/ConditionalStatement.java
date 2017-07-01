@@ -18,10 +18,6 @@ package org.teavm.ast;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ConditionalStatement extends Statement {
     private Expr condition;
     private List<Statement> consequent = new ArrayList<>();

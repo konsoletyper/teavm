@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TCodingErrorAction {
     public static final TCodingErrorAction IGNORE = new TCodingErrorAction("IGNORE");
     public static final TCodingErrorAction REPLACE = new TCodingErrorAction("REPLACE");

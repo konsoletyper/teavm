@@ -25,10 +25,6 @@ import org.teavm.jso.dom.events.LoadEventTarget;
 import org.teavm.jso.dom.events.MessageEvent;
 import org.teavm.jso.dom.events.MouseEventTarget;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface WindowEventTarget extends EventTarget, FocusEventTarget, MouseEventTarget, KeyboardEventTarget,
         LoadEventTarget {
     default void listenBeforeOnload(EventListener<Event> listener) {

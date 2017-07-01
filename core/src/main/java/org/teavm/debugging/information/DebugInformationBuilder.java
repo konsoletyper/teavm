@@ -22,10 +22,6 @@ import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DebugInformationBuilder implements DebugInformationEmitter {
     private LocationProvider locationProvider;
     private DebugInformation debugInformation;

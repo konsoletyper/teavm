@@ -17,10 +17,6 @@ package org.teavm.common;
 
 import java.util.Arrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class IntegerArray {
     private static final int[] emptyData = new int[0];
     private int[] data;

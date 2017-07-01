@@ -18,10 +18,6 @@ package org.teavm.jso.core;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 @JSFunctor
 public interface JSReplaceFunction extends JSObject {
     String apply(String matched);

@@ -15,10 +15,6 @@
  */
 package org.teavm.platform.plugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 interface BuildTimeResourceMethod {
     Object invoke(BuildTimeResourceProxy proxy, Object[] args) throws Throwable;
 }

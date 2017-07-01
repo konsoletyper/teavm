@@ -15,11 +15,6 @@
  */
 package org.teavm.model;
 
-
-/**
- *
- * @author Alexey Andreev
- */
 public interface ProgramCache {
     Program get(MethodReference method);
 

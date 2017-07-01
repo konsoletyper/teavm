@@ -19,10 +19,6 @@ import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.ErrorReporter;
 import org.mozilla.javascript.Parser;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JSParser extends Parser {
     public JSParser(CompilerEnvirons compilerEnv, ErrorReporter errorReporter) {
         super(compilerEnv, errorReporter);

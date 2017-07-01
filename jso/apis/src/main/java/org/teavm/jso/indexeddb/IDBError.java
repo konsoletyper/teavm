@@ -18,10 +18,6 @@ package org.teavm.jso.indexeddb;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class IDBError implements JSObject {
     @JSProperty
     public abstract String getName();

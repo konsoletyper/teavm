@@ -21,10 +21,6 @@ import org.teavm.classlib.java.math.TRoundingMode;
 import org.teavm.classlib.java.util.TCurrency;
 import org.teavm.classlib.java.util.TLocale;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TNumberFormat extends TFormat {
     public static final int INTEGER_FIELD = 0;
     public static final int FRACTION_FIELD = 1;

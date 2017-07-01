@@ -17,10 +17,6 @@ package org.teavm.classlib.java.io;
 
 import org.teavm.classlib.java.lang.TString;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TDataInput {
     void readFully(byte[] b) throws TIOException;
 

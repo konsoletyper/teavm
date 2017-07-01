@@ -25,10 +25,6 @@ import org.eclipse.jdt.core.search.SearchMatch;
 import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.swt.widgets.Shell;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MainClassSelectionDialog extends ClassSelectionDialog {
     public MainClassSelectionDialog(Shell shell, IJavaProject javaProject) {
         super(shell, javaProject);

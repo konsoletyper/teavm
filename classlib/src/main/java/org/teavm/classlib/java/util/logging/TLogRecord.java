@@ -18,10 +18,6 @@ package org.teavm.classlib.java.util.logging;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TLogRecord extends TObject implements TSerializable {
     private static long sequenceNumberGenerator;
     private TLevel level;

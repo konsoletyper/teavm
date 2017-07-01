@@ -20,10 +20,6 @@ import org.eclipse.debug.core.model.IVariable;
 import org.teavm.debugging.CallFrame;
 import org.teavm.debugging.Debugger;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMJavaStackFrame extends TeaVMStackFrame {
     Debugger teavmDebugger;
     CallFrame callFrame;

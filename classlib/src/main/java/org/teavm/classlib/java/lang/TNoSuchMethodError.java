@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TNoSuchMethodError extends TIncompatibleClassChangeError {
     private static final long serialVersionUID = 7907885242472547035L;
 

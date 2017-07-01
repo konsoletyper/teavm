@@ -17,10 +17,6 @@ package org.teavm.jso.indexeddb;
 
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface IDBCursorRequest extends IDBRequest {
     @JSProperty
     IDBCursor getResult();

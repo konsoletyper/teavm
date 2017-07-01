@@ -19,10 +19,6 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.SwitchTableEntry;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ChooseEmitter {
     private ProgramEmitter pe;
     private SwitchInstruction insn;

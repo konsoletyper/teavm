@@ -17,10 +17,6 @@ package org.teavm.jso.dom.xml;
 
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ProcessingInstruction extends Node {
     @JSProperty
     String getData();

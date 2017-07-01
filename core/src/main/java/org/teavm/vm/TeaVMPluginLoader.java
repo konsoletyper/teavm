@@ -42,10 +42,6 @@ import org.teavm.vm.spi.Before;
 import org.teavm.vm.spi.Requires;
 import org.teavm.vm.spi.TeaVMPlugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class TeaVMPluginLoader {
     private static final String DESCRIPTOR_LOCATION = "META-INF/services/org.teavm.vm.spi.TeaVMPlugin";
     private static final String REQUIRES_DESC = Type.getDescriptor(Requires.class);

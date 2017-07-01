@@ -18,10 +18,6 @@ package org.teavm.ast;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SwitchStatement extends IdentifiedStatement {
     private Expr value;
     private List<SwitchClause> clauses = new ArrayList<>();

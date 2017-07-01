@@ -19,10 +19,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class URLDebugInformationProvider implements DebugInformationProvider {
     private String baseURL;
 

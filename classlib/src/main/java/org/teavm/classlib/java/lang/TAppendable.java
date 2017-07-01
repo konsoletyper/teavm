@@ -17,10 +17,6 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TIOException;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TAppendable {
     TAppendable append(TCharSequence csq) throws TIOException;
 

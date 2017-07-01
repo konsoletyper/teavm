@@ -18,10 +18,6 @@ package org.teavm.classlib.java.io;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TReader implements TCloseable {
     protected TObject lock;
 

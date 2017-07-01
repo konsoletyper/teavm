@@ -18,10 +18,6 @@ package org.teavm.eclipse.debugger;
 import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TeaVMStackFrame extends TeaVMDebugElement implements IStackFrame {
     TeaVMThread thread;
 

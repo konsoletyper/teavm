@@ -22,10 +22,6 @@ import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 import org.teavm.platform.Platform;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class PlatformDependencyListener extends AbstractDependencyListener {
     private DependencyNode allClasses;
 

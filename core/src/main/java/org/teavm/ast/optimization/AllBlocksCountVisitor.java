@@ -38,10 +38,6 @@ import org.teavm.ast.ThrowStatement;
 import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.WhileStatement;
 
-/**
- *
- * @author Alexey Andreev
- */
 class AllBlocksCountVisitor implements StatementVisitor {
     private Map<IdentifiedStatement, Integer> blocksCount = new HashMap<>();
     private IdentifiedStatement currentBlock;

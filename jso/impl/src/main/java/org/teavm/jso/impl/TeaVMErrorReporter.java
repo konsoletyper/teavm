@@ -20,10 +20,6 @@ import org.mozilla.javascript.EvaluatorException;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.CallLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMErrorReporter implements ErrorReporter {
     private Diagnostics diagnostics;
     private CallLocation location;

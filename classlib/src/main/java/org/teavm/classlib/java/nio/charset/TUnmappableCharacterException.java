@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TUnmappableCharacterException extends TCharacterCodingException {
     private static final long serialVersionUID = 4225770757749997199L;
     private int length;

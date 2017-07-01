@@ -20,10 +20,6 @@ import org.teavm.classlib.impl.unicode.CLDRReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class WeekMetadataGenerator implements MetadataGenerator {
     @Override
     public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {

@@ -19,10 +19,6 @@ import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.util.TArrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TByteArrayOutputStream extends TOutputStream {
     protected byte[] buf;
     protected int count;

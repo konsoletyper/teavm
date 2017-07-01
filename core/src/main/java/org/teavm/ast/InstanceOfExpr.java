@@ -18,10 +18,6 @@ package org.teavm.ast;
 import java.util.Map;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class InstanceOfExpr extends Expr {
     private ValueType type;
     private Expr expr;

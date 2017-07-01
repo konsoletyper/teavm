@@ -20,10 +20,6 @@ import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TSystem;
 import org.teavm.jso.core.JSDate;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TDate implements TComparable<TDate> {
     private long value;
 

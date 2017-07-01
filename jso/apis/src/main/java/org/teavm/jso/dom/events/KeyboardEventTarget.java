@@ -15,10 +15,6 @@
  */
 package org.teavm.jso.dom.events;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface KeyboardEventTarget extends EventTarget {
     default void listenKeyDown(EventListener<KeyboardEvent> listener) {
         addEventListener("keydown", listener);

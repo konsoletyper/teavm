@@ -17,10 +17,6 @@ package org.teavm.classlib.java.io;
 
 import org.teavm.classlib.java.lang.TString;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TEOFException extends TIOException {
     private static final long serialVersionUID = 3045477060413545010L;
 

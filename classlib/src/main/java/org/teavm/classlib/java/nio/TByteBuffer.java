@@ -17,10 +17,6 @@ package org.teavm.classlib.java.nio;
 
 import org.teavm.classlib.java.lang.TComparable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBuffer> {
     int start;
     byte[] array;

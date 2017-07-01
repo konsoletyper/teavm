@@ -15,10 +15,6 @@
  */
 package org.teavm.eclipse;
 
-/**
- *
- * @author Alexey Andreev
- */
 public enum TeaVMRuntimeMode {
     SEPARATE,
     MERGE,

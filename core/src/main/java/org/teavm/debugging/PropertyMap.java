@@ -21,10 +21,6 @@ import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
-/**
- *
- * @author Alexey Andreev
- */
 class PropertyMap extends AbstractMap<String, Variable> {
     private String className;
     private AtomicReference<Map<String, Variable>> backingMap = new AtomicReference<>();

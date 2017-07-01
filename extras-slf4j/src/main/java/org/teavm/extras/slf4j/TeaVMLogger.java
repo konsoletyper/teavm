@@ -18,10 +18,6 @@ package org.teavm.extras.slf4j;
 import org.slf4j.Logger;
 import org.slf4j.Marker;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMLogger implements Logger {
     private String name;
 

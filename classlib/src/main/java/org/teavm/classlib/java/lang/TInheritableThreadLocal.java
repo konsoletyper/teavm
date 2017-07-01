@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TInheritableThreadLocal<T> extends TThreadLocal<T> {
     protected T childValue(T parentValue) {
         return parentValue;

@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TIllegalCharsetNameException extends IllegalArgumentException {
     private static final long serialVersionUID = -6848948447254188722L;
     private String charsetName;

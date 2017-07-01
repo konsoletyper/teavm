@@ -19,10 +19,6 @@ import java.util.ArrayList;
 import java.util.List;
 import org.teavm.classlib.java.text.TDecimalFormat.FormatField;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TDecimalFormatParser {
     private FormatField[] positivePrefix;
     private FormatField[] positiveSuffix;

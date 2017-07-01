@@ -19,10 +19,6 @@ import java.util.RandomAccess;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.classlib.java.util.TMap.Entry;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TCollections extends TObject {
     @SuppressWarnings("rawtypes")
     public static final TSet EMPTY_SET = emptySet();

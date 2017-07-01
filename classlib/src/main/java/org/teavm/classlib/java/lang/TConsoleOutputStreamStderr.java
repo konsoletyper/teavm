@@ -21,10 +21,6 @@ import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
 import org.teavm.platform.Platform;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TConsoleOutputStreamStderr extends TOutputStream {
     @Override
     @DelegateTo("writeLowLevel")

@@ -19,10 +19,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import org.teavm.debugging.javascript.JavaScriptBreakpoint;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class RDPBreakpoint implements JavaScriptBreakpoint {
     volatile String chromeId;
     ChromeRDPDebugger debugger;

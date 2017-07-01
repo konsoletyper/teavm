@@ -20,10 +20,6 @@ import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TNullPointerException;
 import org.teavm.classlib.java.lang.TString;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TStringReader extends TReader {
     private TString string;
     private int index;

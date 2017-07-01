@@ -19,10 +19,6 @@ import org.teavm.classlib.impl.FirstDayOfWeekMetadataGenerator;
 import org.teavm.classlib.impl.MinimalDaysInFirstWeekMetadataGenerator;
 import org.teavm.platform.metadata.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class CLDRHelper {
     private CLDRHelper() {
     }

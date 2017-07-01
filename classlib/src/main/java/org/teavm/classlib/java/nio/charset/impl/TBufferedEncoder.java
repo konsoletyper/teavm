@@ -21,10 +21,6 @@ import org.teavm.classlib.java.nio.charset.TCharset;
 import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
 import org.teavm.classlib.java.nio.charset.TCoderResult;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TBufferedEncoder extends TCharsetEncoder {
     public TBufferedEncoder(TCharset cs, float averageBytesPerChar, float maxBytesPerChar, byte[] replacement) {
         super(cs, averageBytesPerChar, maxBytesPerChar, replacement);

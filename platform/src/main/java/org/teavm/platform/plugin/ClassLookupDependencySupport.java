@@ -19,10 +19,6 @@ import org.teavm.dependency.*;
 import org.teavm.model.*;
 import org.teavm.platform.Platform;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ClassLookupDependencySupport extends AbstractDependencyListener {
     private DependencyNode allClasses;
 

@@ -26,10 +26,6 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     private static final String[] primitives = { "Byte", "Short", "Char", "Int", "Long", "Float", "Double",
             "Boolean" };

@@ -32,10 +32,6 @@ import org.eclipse.jface.operation.IRunnableWithProgress;
 import org.eclipse.ui.plugin.AbstractUIPlugin;
 import org.osgi.service.prefs.BackingStoreException;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMEclipsePlugin extends AbstractUIPlugin {
     public static final String ID = "teavm-eclipse-plugin";
     public static final String NATURE_ID = ID + ".nature";

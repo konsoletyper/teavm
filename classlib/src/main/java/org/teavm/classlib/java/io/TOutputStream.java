@@ -17,10 +17,6 @@ package org.teavm.classlib.java.io;
 
 import org.teavm.classlib.java.lang.TObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TOutputStream extends TObject implements TCloseable, TFlushable {
     public abstract void write(int b) throws TIOException;
 

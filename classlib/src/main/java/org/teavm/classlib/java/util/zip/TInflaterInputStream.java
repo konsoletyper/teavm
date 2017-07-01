@@ -20,10 +20,6 @@ import java.io.FilterInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TInflaterInputStream extends FilterInputStream {
     public TInflaterInputStream(InputStream in) throws IOException {
         super(in);

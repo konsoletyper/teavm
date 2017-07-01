@@ -17,7 +17,6 @@ package org.teavm.classlib.java.math;
 
 import java.io.Serializable;
 
-
 /**
  * This class represents immutable arbitrary precision decimal numbers. Each
  * {@code BigDecimal} instance is represented with a unscaled arbitrary

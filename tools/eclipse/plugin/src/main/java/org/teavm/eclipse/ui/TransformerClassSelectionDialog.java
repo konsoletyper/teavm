@@ -25,10 +25,6 @@ import org.eclipse.jdt.core.search.SearchPattern;
 import org.eclipse.swt.widgets.Shell;
 import org.teavm.model.ClassHolderTransformer;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TransformerClassSelectionDialog extends ClassSelectionDialog {
     public TransformerClassSelectionDialog(Shell shell, IJavaProject javaProject) {
         super(shell, javaProject);

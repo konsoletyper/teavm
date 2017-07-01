@@ -15,10 +15,6 @@
  */
 package org.teavm.backend.javascript.codegen;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SourceWriterBuilder {
     private NamingStrategy naming;
     private boolean minified;

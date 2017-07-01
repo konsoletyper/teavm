@@ -18,10 +18,6 @@ package org.teavm.classlib.java.util;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TRunnable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TTimerTask extends TObject implements TRunnable {
     TTimer timer;
     int nativeTimerId = -1;

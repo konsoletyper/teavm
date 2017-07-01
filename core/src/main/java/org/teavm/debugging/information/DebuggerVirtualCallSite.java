@@ -17,10 +17,6 @@ package org.teavm.debugging.information;
 
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DebuggerVirtualCallSite extends DebuggerCallSite {
     private MethodReference method;
 

@@ -15,10 +15,6 @@
  */
 package org.teavm.debugging;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface DebuggerListener {
     void resumed();
 

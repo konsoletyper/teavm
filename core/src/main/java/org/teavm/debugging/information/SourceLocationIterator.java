@@ -17,10 +17,6 @@ package org.teavm.debugging.information;
 
 import org.teavm.common.RecordArray;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SourceLocationIterator {
     private DebugInformation debugInformation;
     private int lineIndex;

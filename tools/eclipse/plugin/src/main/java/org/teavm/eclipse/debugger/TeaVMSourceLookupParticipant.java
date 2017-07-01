@@ -35,10 +35,6 @@ import org.teavm.debugging.CallFrame;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMSourceLookupParticipant extends AbstractSourceLookupParticipant {
     private Map<ISourceContainer, ISourceContainer> delegateContainers = new HashMap<>();
 

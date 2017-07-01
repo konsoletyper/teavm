@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TIllegalAccessException extends ReflectiveOperationException {
     private static final long serialVersionUID = 8240407889170934565L;
 

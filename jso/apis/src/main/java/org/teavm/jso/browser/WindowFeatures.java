@@ -15,10 +15,6 @@
  */
 package org.teavm.jso.browser;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class WindowFeatures {
     StringBuilder sb = new StringBuilder();
 

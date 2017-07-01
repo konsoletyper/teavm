@@ -22,10 +22,6 @@ import org.teavm.dependency.FieldDependencyInfo;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.diagnostics.Problem;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface Violations {
     Set<MethodDependencyInfo> getMissingMethods();
 

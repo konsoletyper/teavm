@@ -18,10 +18,6 @@ package org.teavm.chromerdp;
 import org.teavm.debugging.javascript.JavaScriptValue;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class RDPLocalVariable implements JavaScriptVariable {
     private String name;
     private RDPValue value;

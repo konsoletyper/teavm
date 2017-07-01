@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TOutOfMemoryError extends TVirtualMachineError {
     private static final long serialVersionUID = -1891949851728458692L;
 

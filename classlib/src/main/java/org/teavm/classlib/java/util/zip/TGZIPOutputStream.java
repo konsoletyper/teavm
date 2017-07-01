@@ -19,10 +19,6 @@ import com.jcraft.jzlib.GZIPOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TGZIPOutputStream extends TDeflaterOutputStream {
     public TGZIPOutputStream(OutputStream out, int size, boolean syncFlush) throws IOException {
         super(out);

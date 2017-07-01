@@ -26,10 +26,6 @@ import org.teavm.model.MethodReference;
 import org.teavm.platform.PlatformObject;
 import org.teavm.platform.PlatformQueue;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class PlatformQueueGenerator implements Injector, DependencyPlugin {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {

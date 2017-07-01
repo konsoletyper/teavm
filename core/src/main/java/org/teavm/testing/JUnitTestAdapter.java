@@ -24,10 +24,6 @@ import org.teavm.model.AnnotationValue;
 import org.teavm.model.MethodReader;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JUnitTestAdapter implements TestAdapter {
     @Override
     public boolean acceptClass(Class<?> cls) {

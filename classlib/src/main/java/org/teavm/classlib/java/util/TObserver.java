@@ -15,7 +15,6 @@
  */
 package org.teavm.classlib.java.util;
 
-
 /**
  *
  * @author shannah

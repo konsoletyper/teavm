@@ -18,10 +18,6 @@ package org.teavm.ast;
 import java.util.Map;
 import org.teavm.model.instructions.ArrayElementType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class UnwrapArrayExpr extends Expr {
     private ArrayElementType elementType;
     private Expr array;

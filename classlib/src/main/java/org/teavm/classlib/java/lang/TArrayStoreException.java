@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TArrayStoreException extends TRuntimeException {
     private static final long serialVersionUID = 3911921304974631232L;
 

@@ -18,10 +18,6 @@ package org.teavm.eclipse.debugger;
 import org.eclipse.debug.core.sourcelookup.AbstractSourceLookupDirector;
 import org.eclipse.debug.core.sourcelookup.ISourceLookupParticipant;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMSourceLookupDirector extends AbstractSourceLookupDirector {
     @Override
     public void initializeParticipants() {

@@ -18,10 +18,6 @@ package org.teavm.classlib.java.nio;
 import org.teavm.classlib.java.io.TIOException;
 import org.teavm.classlib.java.lang.TReadable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuffer>, Appendable,
         CharSequence, TReadable {
     TCharBuffer(int capacity, int position, int limit) {

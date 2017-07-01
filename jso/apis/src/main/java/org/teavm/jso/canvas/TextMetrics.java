@@ -18,10 +18,6 @@ package org.teavm.jso.canvas;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TextMetrics extends JSObject {
     @JSProperty
     int getWidth();

@@ -21,10 +21,6 @@ import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 interface JSBodyEmitter {
     void emit(InjectorContext context) throws IOException;
 

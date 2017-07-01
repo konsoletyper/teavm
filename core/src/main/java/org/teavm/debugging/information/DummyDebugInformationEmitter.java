@@ -19,10 +19,6 @@ import org.teavm.backend.javascript.codegen.LocationProvider;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DummyDebugInformationEmitter implements DebugInformationEmitter {
     @Override
     public void emitLocation(String fileName, int line) {

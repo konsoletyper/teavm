@@ -15,10 +15,6 @@
  */
 package org.teavm.model.emit;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class EmitException extends RuntimeException {
     private static final long serialVersionUID = 7479098357353665286L;
 

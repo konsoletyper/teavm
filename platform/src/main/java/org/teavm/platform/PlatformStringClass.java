@@ -17,10 +17,6 @@ package org.teavm.platform;
 
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 interface PlatformStringClass extends JSObject {
     PlatformString fromCharCode(int charCode);
 }

@@ -17,9 +17,5 @@ package org.teavm.jso.indexeddb;
 
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface IDBRequestSource extends JSObject {
 }

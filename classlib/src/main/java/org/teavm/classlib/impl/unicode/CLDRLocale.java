@@ -20,10 +20,6 @@ import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CLDRLocale {
     final Map<String, String> languages = new LinkedHashMap<>();
     final Map<String, String> territories = new LinkedHashMap<>();

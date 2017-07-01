@@ -26,10 +26,6 @@ import org.teavm.chromerdp.ChromeRDPServer;
 import org.teavm.debugging.Debugger;
 import org.teavm.debugging.information.URLDebugInformationProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMLaunchConfigurationDelegate extends LaunchConfigurationDelegate {
     @Override
     public void launch(ILaunchConfiguration configuration, String mode, ILaunch launch, IProgressMonitor monitor)

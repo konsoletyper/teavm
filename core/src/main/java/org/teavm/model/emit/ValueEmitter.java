@@ -52,10 +52,6 @@ import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ValueEmitter {
     ProgramEmitter pe;
     BasicBlock block;

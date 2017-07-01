@@ -26,10 +26,6 @@ import org.teavm.model.ValueType;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformAnnotationProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AnnotationDependencySupport extends AbstractDependencyListener {
     private DependencyNode allClasses;
 

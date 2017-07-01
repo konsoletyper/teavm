@@ -19,10 +19,6 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface MessageEvent extends Event {
     @JSProperty
     JSObject getData();

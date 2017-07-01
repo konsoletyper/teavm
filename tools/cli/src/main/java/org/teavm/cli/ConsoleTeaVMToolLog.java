@@ -17,10 +17,6 @@ package org.teavm.cli;
 
 import org.teavm.tooling.TeaVMToolLog;
 
-/**
- *
- * @author Alexey Andreev
- */
 class ConsoleTeaVMToolLog implements TeaVMToolLog {
     @Override
     public void info(String text) {
