@@ -45,22 +45,22 @@ import java.util.BitSet;
  */
 class TCharClass extends TAbstractCharClass {
     // Flag indicates if we add supplement upper/lower case
-    boolean ci = false;
+    boolean ci;
 
-    boolean uci = false;
+    boolean uci;
 
     // Flag indicates if there are unicode supplements
-    boolean hasUCI = false;
+    boolean hasUCI;
 
-    boolean invertedSurrogates = false;
+    boolean invertedSurrogates;
 
-    boolean inverted = false;
+    boolean inverted;
 
-    boolean hideBits = false;
+    boolean hideBits;
 
     BitSet bits = new BitSet();
 
-    TAbstractCharClass nonBitSet = null;
+    TAbstractCharClass nonBitSet;
 
     public TCharClass() {
     }
@@ -83,9 +83,9 @@ class TCharClass extends TAbstractCharClass {
         if (ci) {
             if ((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z')) {
                 if (!inverted) {
-                    bits.set(TPattern.getSupplement((char)ch));
+                    bits.set(TPattern.getSupplement((char) ch));
                 } else {
-                    bits.clear(TPattern.getSupplement((char)ch));
+                    bits.clear(TPattern.getSupplement((char) ch));
                 }
             } else if (uci && ch > 128) {
                 hasUCI = true;
@@ -104,8 +104,9 @@ class TCharClass extends TAbstractCharClass {
 
         if (!inverted) {
             bits.set(ch);
-        } else
+        } else {
             bits.clear(ch);
+        }
 
         if (!mayContainSupplCodepoints && Character.isSupplementaryCodePoint(ch)) {
             mayContainSupplCodepoints = true;
@@ -242,8 +243,9 @@ class TCharClass extends TAbstractCharClass {
     }
 
     public TCharClass add(int st, int end) {
-        if (st > end)
+        if (st > end) {
             throw new IllegalArgumentException();
+        }
         if (!ci
 
         // no intersection with surrogate characters
@@ -268,8 +270,9 @@ class TCharClass extends TAbstractCharClass {
             mayContainSupplCodepoints = true;
         }
 
-        if (clazz.hasUCI())
+        if (clazz.hasUCI()) {
             this.hasUCI = true;
+        }
 
         if (altSurrogates ^ clazz.altSurrogates) {
 
@@ -395,8 +398,9 @@ class TCharClass extends TAbstractCharClass {
             mayContainSupplCodepoints = true;
         }
 
-        if (clazz.hasUCI())
+        if (clazz.hasUCI()) {
             this.hasUCI = true;
+        }
 
         if (altSurrogates ^ clazz.altSurrogates) {
 
@@ -538,8 +542,9 @@ class TCharClass extends TAbstractCharClass {
 
     @Override
     protected BitSet getBits() {
-        if (hideBits)
+        if (hideBits) {
             return null;
+        }
         return bits;
     }
 
@@ -568,8 +573,9 @@ class TCharClass extends TAbstractCharClass {
                         temp.append('|');
                     }
 
-                    if (temp.length() > 0)
+                    if (temp.length() > 0) {
                         temp.deleteCharAt(temp.length() - 1);
+                    }
 
                     return temp.toString();
                 }
@@ -590,8 +596,9 @@ class TCharClass extends TAbstractCharClass {
             temp.append('|');
         }
 
-        if (temp.length() > 0)
+        if (temp.length() > 0) {
             temp.deleteCharAt(temp.length() - 1);
+        }
 
         return temp.toString();
     }

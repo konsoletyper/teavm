@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2015 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -36,7 +52,7 @@ package org.teavm.classlib.java.util.regex;
  */
 class TSequenceSet extends TLeafSet {
 
-    private String string = null;
+    private String string;
 
     private IntHash leftToRight;
 
@@ -68,10 +84,12 @@ class TSequenceSet extends TLeafSet {
         while (strIndex <= strLength) {
             strIndex = indexOf(testString, strIndex, strLength);
 
-            if (strIndex < 0)
+            if (strIndex < 0) {
                 return -1;
-            if (next.matches(strIndex + charCount, testString, matchResult) >= 0)
+            }
+            if (next.matches(strIndex + charCount, testString, matchResult) >= 0) {
                 return strIndex;
+            }
 
             strIndex++;
         }
@@ -86,10 +104,12 @@ class TSequenceSet extends TLeafSet {
         while (lastIndex >= strIndex) {
             lastIndex = lastIndexOf(testString, strIndex, lastIndex);
 
-            if (lastIndex < 0)
+            if (lastIndex < 0) {
                 return -1;
-            if (next.matches(lastIndex + charCount, testString, matchResult) >= 0)
+            }
+            if (next.matches(lastIndex + charCount, testString, matchResult) >= 0) {
                 return lastIndex;
+            }
 
             lastIndex--;
         }
@@ -112,12 +132,10 @@ class TSequenceSet extends TLeafSet {
             return ((TSupplRangeSet) set).contains(string.charAt(0))
                     || ((string.length() > 1) && ((TSupplRangeSet) set).contains(Character
                            .toCodePoint(string.charAt(0), string.charAt(1))));
-        } else if ((set instanceof TSupplCharSet)) {
-            return  (string.length() > 1)
-                    ? ((TSupplCharSet) set).getCodePoint()
-                            == Character.toCodePoint(string.charAt(0),
-                            string.charAt(1))
-                    : false;
+        } else if (set instanceof TSupplCharSet) {
+            return (string.length() > 1)
+                    && ((TSupplCharSet) set).getCodePoint() == Character.toCodePoint(string.charAt(0),
+                            string.charAt(1));
         }
 
         return true;
@@ -141,8 +159,8 @@ class TSequenceSet extends TLeafSet {
     protected int lastIndexOf(CharSequence str, int to, int from) {
         int first = string.charAt(0);
         int size = str.length();
-        int delta;
-        int i = ((delta = size - from - charCount) > 0) ? from : from + delta;
+        int delta = size - from - charCount;
+        int i = delta > 0 ? from : from + delta;
 
         while (i >= to) {
             char ch = str.charAt(i);
@@ -157,14 +175,16 @@ class TSequenceSet extends TLeafSet {
 
     protected boolean startsWith(CharSequence str, int from) {
         for (int i = 0; i < charCount; i++) {
-            if (str.charAt(i + from) != string.charAt(i))
+            if (str.charAt(i + from) != string.charAt(i)) {
                 return false;
+            }
         }
         return true;
     }
 
     static class IntHash {
-        int[] table, values;
+        int[] table;
+        int[] values;
 
         int mask;
 
@@ -186,7 +206,7 @@ class TSequenceSet extends TLeafSet {
 
             for (;;) {
                 if (table[hashCode] == 0 // empty
-                        || table[hashCode] == key) {// rewrite
+                        || table[hashCode] == key) { // rewrite
                     table[hashCode] = key;
                     values[hashCode] = value;
                     return;

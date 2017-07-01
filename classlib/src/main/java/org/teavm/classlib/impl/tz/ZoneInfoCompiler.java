@@ -414,8 +414,7 @@ public class ZoneInfoCompiler {
         /**
          * Adds a recurring savings rule to the builder.
          */
-        public void addRecurring(DateTimeZoneBuilder builder, int saveMillis, int fromYear, int toYear)
-        {
+        public void addRecurring(DateTimeZoneBuilder builder, int saveMillis, int fromYear, int toYear) {
             builder.addRecurringSavings(saveMillis,
                                         fromYear, toYear,
                                         iZoneChar,

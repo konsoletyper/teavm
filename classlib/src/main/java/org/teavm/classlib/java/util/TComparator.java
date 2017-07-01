@@ -50,7 +50,7 @@ public interface TComparator<T> {
     }
 
     default <U extends Comparable<? super U>> TComparator<T> thenComparing(
-            TFunction<? super T,? extends U> keyExtractor) {
+            TFunction<? super T, ? extends U> keyExtractor) {
         return (a, b) -> {
             int r = compare(a, b);
             if (r == 0) {

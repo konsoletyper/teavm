@@ -63,7 +63,7 @@ class TAtomicJointSet extends TNonCapJointSet {
             if (shift >= 0) {
                 // AtomicFset always returns true, but saves the index to run
                 // this next.match() from;
-                return next.matches(((TAtomicFSet)fSet).getIndex(), testString, matchResult);
+                return next.matches(((TAtomicFSet) fSet).getIndex(), testString, matchResult);
             }
         }
 

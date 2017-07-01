@@ -49,8 +49,9 @@ class TBackReferenceSet extends TCIBackReferenceSet {
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
         String group = getString(matchResult);
-        if (group == null || (stringIndex + group.length()) > matchResult.getRightBound())
+        if (group == null || (stringIndex + group.length()) > matchResult.getRightBound()) {
             return -1;
+        }
         int shift = testString.toString().startsWith(group, stringIndex) ? group.length() : -1;
 
         if (shift < 0) {
@@ -65,16 +66,18 @@ class TBackReferenceSet extends TCIBackReferenceSet {
         String group = getString(matchResult);
         int strLength = matchResult.getLeftBound();
 
-        if (group == null || (strIndex + group.length()) > strLength)
+        if (group == null || (strIndex + group.length()) > strLength) {
             return -1;
+        }
 
         String testStr = testString.toString();
 
         while (strIndex <= strLength) {
             strIndex = testStr.indexOf(group, strIndex);
 
-            if (strIndex < 0)
+            if (strIndex < 0) {
                 return -1;
+            }
             if (next.matches(strIndex + group.length(), testString, matchResult) >= 0) {
                 return strIndex;
             }
@@ -89,16 +92,18 @@ class TBackReferenceSet extends TCIBackReferenceSet {
     public int findBack(int strIndex, int lastIndex, CharSequence testString, TMatchResultImpl matchResult) {
         String group = getString(matchResult);
 
-        if (group == null)
+        if (group == null) {
             return -1;
+        }
 
         String testStr = testString.toString();
 
         while (lastIndex >= strIndex) {
             lastIndex = testStr.lastIndexOf(group, lastIndex);
 
-            if (lastIndex < 0 || lastIndex < strIndex)
+            if (lastIndex < 0 || lastIndex < strIndex) {
                 return -1;
+            }
             if (next.matches(lastIndex + group.length(), testString, matchResult) >= 0) {
                 return lastIndex;
             }

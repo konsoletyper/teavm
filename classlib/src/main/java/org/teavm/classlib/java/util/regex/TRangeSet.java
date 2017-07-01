@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2015 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -30,7 +46,7 @@ class TRangeSet extends TLeafSet {
 
     private TAbstractCharClass chars;
 
-    private boolean alt = false;
+    private boolean alt;
 
     public TRangeSet(TAbstractCharClass cs, TAbstractSet next) {
         super(next);
@@ -56,11 +72,11 @@ class TRangeSet extends TLeafSet {
     @Override
     public boolean first(TAbstractSet set) {
         if (set instanceof TCharSet) {
-            return TAbstractCharClass.intersects(chars, ((TCharSet)set).getChar());
+            return TAbstractCharClass.intersects(chars, ((TCharSet) set).getChar());
         } else if (set instanceof TRangeSet) {
-            return TAbstractCharClass.intersects(chars, ((TRangeSet)set).chars);
+            return TAbstractCharClass.intersects(chars, ((TRangeSet) set).chars);
         } else if (set instanceof TSupplRangeSet) {
-            return TAbstractCharClass.intersects(chars, ((TSupplRangeSet)set).getChars());
+            return TAbstractCharClass.intersects(chars, ((TSupplRangeSet) set).getChars());
         } else if (set instanceof TSupplCharSet) {
             return false;
         }

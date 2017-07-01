@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -30,17 +46,17 @@ import java.util.Arrays;
  */
 class TMatchResultImpl implements TMatchResult {
 
-    private int[] groupBounds = null;
+    private int[] groupBounds;
 
-    private int[] consumers = null;
+    private int[] consumers;
 
-    private int[] compQuantCounters = null;
+    private int[] compQuantCounters;
 
-    private CharSequence string = null;
+    private CharSequence string;
 
-    private int groupCount = 0;
+    private int groupCount;
 
-    private boolean valid = false;
+    private boolean valid;
 
     private int leftBound;
 
@@ -48,13 +64,13 @@ class TMatchResultImpl implements TMatchResult {
 
     int startIndex;
 
-    private boolean transparentBounds = false;
+    private boolean transparentBounds;
 
-    private boolean anchoringBounds = false;
+    private boolean anchoringBounds;
 
-    boolean hitEnd = false;
+    boolean hitEnd;
 
-    boolean requireEnd = false;
+    boolean requireEnd;
 
     int previousMatch = -1;
 
@@ -68,15 +84,16 @@ class TMatchResultImpl implements TMatchResult {
         this.consumers = new int[consumersCount];
         Arrays.fill(consumers, -1);
 
-        if (compQuantCount > 0)
+        if (compQuantCount > 0) {
             this.compQuantCounters = new int[compQuantCount];
+        }
         Arrays.fill(groupBounds, -1);
         reset(string, leftBound, rightBound);
     }
 
     TMatchResult cloneImpl() {
-        TMatchResultImpl res = new TMatchResultImpl(this.string, this.leftBound, this.rightBound, this.groupCount - 1, 0,
-                0);
+        TMatchResultImpl res = new TMatchResultImpl(this.string, this.leftBound, this.rightBound, this.groupCount - 1,
+                0, 0);
 
         res.valid = valid;
         if (valid) {
@@ -127,16 +144,18 @@ class TMatchResultImpl implements TMatchResult {
 
     @Override
     public String group(int group) {
-        if (start(group) < 0)
+        if (start(group) < 0) {
             return null;
+        }
         return string.subSequence(start(group), end(group)).toString();
     }
 
     String getGroupNoCheck(int group) {
         int st = getStart(group);
         int end = getEnd(group);
-        if ((end | st | (end - st)) < 0 || end > string.length())
+        if ((end | st | (end - st)) < 0 || end > string.length()) {
             return null;
+        }
 
         return string.subSequence(st, end).toString();
     }
@@ -208,10 +227,12 @@ class TMatchResultImpl implements TMatchResult {
         Arrays.fill(groupBounds, -1);
         Arrays.fill(consumers, -1);
 
-        if (newSequence != null)
+        if (newSequence != null) {
             this.string = newSequence;
-        if (leftBound >= 0)
+        }
+        if (leftBound >= 0) {
             this.setBounds(leftBound, rightBound);
+        }
         this.startIndex = this.leftBound;
     }
 

@@ -42,7 +42,7 @@ package org.teavm.classlib.java.util.regex;
  */
 class TCompositeGroupQuantifierSet extends TGroupQuantifierSet {
 
-    protected TQuantifier quantifier = null;
+    protected TQuantifier quantifier;
 
     int setCounter;
 
@@ -57,8 +57,9 @@ class TCompositeGroupQuantifierSet extends TGroupQuantifierSet {
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
         int enterCounter = matchResult.getEnterCounter(setCounter);
 
-        if (!innerSet.hasConsumed(matchResult))
+        if (!innerSet.hasConsumed(matchResult)) {
             return next.matches(stringIndex, testString, matchResult);
+        }
 
         // can't go inner set;
         if (enterCounter >= quantifier.max()) {

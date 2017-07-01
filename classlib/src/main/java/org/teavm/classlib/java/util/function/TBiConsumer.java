@@ -19,7 +19,7 @@ package org.teavm.classlib.java.util.function;
 public interface TBiConsumer<T, U> {
     void accept(T t, U u);
 
-    default TBiConsumer<T,U> andThen(TBiConsumer<? super T,? super U> after) {
+    default TBiConsumer<T, U> andThen(TBiConsumer<? super T, ? super U> after) {
         return (t, u) -> {
             this.accept(t, u);
             after.accept(t, u);

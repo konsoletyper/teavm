@@ -42,7 +42,7 @@ package org.teavm.classlib.java.util.regex;
  */
 class TCompositeQuantifierSet extends TLeafQuantifierSet {
 
-    protected TQuantifier quantifier = null;
+    protected TQuantifier quantifier;
 
     public TCompositeQuantifierSet(TQuantifier quant, TLeafSet innerSet, TAbstractSet next, int type) {
         super(innerSet, next, type);
@@ -71,8 +71,11 @@ class TCompositeQuantifierSet extends TLeafQuantifierSet {
 
         for (; i < max; i++) {
             int shift;
-            if (stringIndex + leaf.charCount() > matchResult.getRightBound() ||
-                    (shift = leaf.accepts(stringIndex, testString)) < 1) {
+            if (stringIndex + leaf.charCount() > matchResult.getRightBound()) {
+                break;
+            }
+            shift = leaf.accepts(stringIndex, testString);
+            if (shift < 1) {
                 break;
             }
             stringIndex += shift;
