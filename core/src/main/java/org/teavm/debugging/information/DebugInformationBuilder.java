@@ -70,7 +70,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         }
     }
 
-    private  RecordArrayBuilder.Record add(RecordArrayBuilder builder) {
+    private RecordArrayBuilder.Record add(RecordArrayBuilder builder) {
         if (builder.size() > 1) {
             RecordArrayBuilder.Record lastRecord = builder.get(builder.size() - 1);
             if (lastRecord.get(0) == locationProvider.getLine() && lastRecord.get(1) == locationProvider.getColumn()) {
@@ -132,11 +132,8 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         }
         Arrays.sort(sourceIndexes);
         int generatedIndex = variableNames.index(generatedName);
-        RecordArrayBuilder mapping = variableMappings.get(generatedIndex);
-        if (mapping == null) {
-            mapping = new RecordArrayBuilder(2, 1);
-            variableMappings.put(generatedIndex, mapping);
-        }
+        RecordArrayBuilder mapping = variableMappings.computeIfAbsent(generatedIndex,
+                k -> new RecordArrayBuilder(2, 1));
 
         RecordArrayBuilder.Record record = add(mapping);
         RecordArrayBuilder.SubArray array = record.getArray(0);

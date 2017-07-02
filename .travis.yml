@@ -40,7 +40,7 @@ script:
   - pushd tests/src/test/js
   - export DISPLAY=:99.0
   - sh -e /etc/init.d/xvfb start
-  - sleep 3
+  - sleep 10
   - firefox index.html &
   - FIREFOX_PID=$!
   - node start.js $BASE_PATH/tests/target/js-tests

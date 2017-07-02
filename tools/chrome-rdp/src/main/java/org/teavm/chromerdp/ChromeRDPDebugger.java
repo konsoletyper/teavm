@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -119,7 +121,12 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                         }
                     }
                     CompletableFuture<Object> future = futures.remove(response.getId());
-                    responseHandlers.remove(response.getId()).received(response.getResult(), future);
+                    try {
+                        responseHandlers.remove(response.getId()).received(response.getResult(), future);
+                    } catch (RuntimeException e) {
+                        logger.warn("Error processing message ${}", response.getId(), e);
+                        future.completeExceptionally(e);
+                    }
                 } else {
                     Message message = mapper.reader(Message.class).readValue(messageText);
                     if (message.getMethod() == null) {
@@ -386,7 +393,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
 
         try {
             return read(sync);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | TimeoutException e) {
             return Collections.emptyList();
         }
     }
@@ -421,6 +428,8 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             return result.isEmpty() ? null : result;
         } catch (InterruptedException e) {
             return null;
+        } catch (TimeoutException e) {
+            return "<timed out>";
         }
     }
 
@@ -454,6 +463,8 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             return result.repr;
         } catch (InterruptedException e) {
             return null;
+        } catch (TimeoutException e) {
+            return "<timed out>";
         }
     }
 
@@ -559,9 +570,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         void received(JsonNode node, CompletableFuture<T> out) throws IOException;
     }
 
-    private static <T> T read(Future<T> future) throws InterruptedException {
+    private static <T> T read(Future<T> future) throws InterruptedException, TimeoutException {
         try {
-            return future.get();
+            return future.get(1500, TimeUnit.MILLISECONDS);
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof RuntimeException) {
