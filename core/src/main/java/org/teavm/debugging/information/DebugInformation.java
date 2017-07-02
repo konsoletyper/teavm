@@ -216,7 +216,7 @@ public class DebugInformation {
         int[] valueIndexes = mapping.get(keyIndex).getArray(0);
         String[] result = new String[valueIndexes.length];
         for (int i = 0; i < result.length; ++i) {
-            result[i] = variableNames[valueIndexes[i]];
+            result[i] = valueIndexes[i] >= 0 ? variableNames[valueIndexes[i]] : null;
         }
         return result;
     }

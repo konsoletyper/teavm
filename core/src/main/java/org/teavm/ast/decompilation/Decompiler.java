@@ -91,14 +91,16 @@ public class Decompiler {
     private List<TryCatchBookmark> tryCatchBookmarks = new ArrayList<>();
     private Deque<Block> stack;
     private Program program;
+    private boolean friendlyToDebugger;
 
     public Decompiler(ClassHolderSource classSource, ClassLoader classLoader, Set<MethodReference> asyncMethods,
-            Set<MethodReference> asyncFamilyMethods) {
+            Set<MethodReference> asyncFamilyMethods, boolean friendlyToDebugger) {
         this.classSource = classSource;
         this.classLoader = classLoader;
         this.asyncMethods = asyncMethods;
         splitMethods.addAll(asyncMethods);
         splitMethods.addAll(asyncFamilyMethods);
+        this.friendlyToDebugger = friendlyToDebugger;
     }
 
     public MethodNodeCache getRegularMethodCache() {
@@ -275,7 +277,7 @@ public class Decompiler {
         }
 
         Optimizer optimizer = new Optimizer();
-        optimizer.optimize(methodNode, method.getProgram());
+        optimizer.optimize(methodNode, method.getProgram(), friendlyToDebugger);
         methodNode.getModifiers().addAll(method.getModifiers());
 
         return methodNode;
@@ -339,7 +341,7 @@ public class Decompiler {
         }
 
         Optimizer optimizer = new Optimizer();
-        optimizer.optimize(node, splitter);
+        optimizer.optimize(node, splitter, friendlyToDebugger);
         node.getModifiers().addAll(method.getModifiers());
 
         return node;

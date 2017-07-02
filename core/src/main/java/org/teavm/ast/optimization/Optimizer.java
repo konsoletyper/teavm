@@ -18,7 +18,9 @@ package org.teavm.ast.optimization;
 import java.util.BitSet;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
+import org.teavm.ast.MethodNode;
 import org.teavm.ast.RegularMethodNode;
+import org.teavm.ast.VariableNode;
 import org.teavm.common.Graph;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
@@ -31,13 +33,14 @@ import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
 
 public class Optimizer {
-    public void optimize(RegularMethodNode method, Program program) {
+    public void optimize(RegularMethodNode method, Program program, boolean friendlyToDebugger) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
         stats.analyze(program);
         boolean[] preservedVars = new boolean[stats.writes.length];
         BreakEliminator breakEliminator = new BreakEliminator();
         breakEliminator.eliminate(method.getBody());
-        OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads);
+        OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads,
+                friendlyToDebugger);
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);
         int paramCount = method.getReference().parameterCount();
@@ -55,7 +58,7 @@ public class Optimizer {
         }
     }
 
-    public void optimize(AsyncMethodNode method, AsyncProgramSplitter splitter) {
+    public void optimize(AsyncMethodNode method, AsyncProgramSplitter splitter, boolean friendlyToDebugger) {
         LivenessAnalyzer liveness = new LivenessAnalyzer();
         liveness.analyze(splitter.getOriginalProgram());
 
@@ -70,7 +73,8 @@ public class Optimizer {
             BreakEliminator breakEliminator = new BreakEliminator();
             breakEliminator.eliminate(part.getStatement());
             findEscapingLiveVars(liveness, cfg, splitter, i, preservedVars);
-            OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads);
+            OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads,
+                    friendlyToDebugger);
             part.getStatement().acceptVisitor(optimizer);
             part.setStatement(optimizer.resultStmt);
         }
@@ -90,6 +94,14 @@ public class Optimizer {
 
         for (int i = 0; i < method.getVariables().size(); ++i) {
             method.getVariables().get(i).setIndex(i);
+        }
+    }
+
+    private void preserveDebuggableVars(boolean[] variablesToPreserve, MethodNode methodNode) {
+        for (VariableNode varNode : methodNode.getVariables()) {
+            if (varNode.getName() != null) {
+                variablesToPreserve[varNode.getIndex()] = true;
+            }
         }
     }
 

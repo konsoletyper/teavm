@@ -926,7 +926,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     break;
             }
             if (expr.getLocation() != null) {
-                pushLocation(expr.getLocation());
+                popLocation();
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occured", e);

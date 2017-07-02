@@ -15,8 +15,11 @@
  */
 package org.teavm.ast.optimization;
 
+import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Deque;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.Objects;
 import java.util.stream.Collectors;
@@ -58,6 +61,7 @@ import org.teavm.ast.UnaryOperation;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
+import org.teavm.model.TextLocation;
 
 class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private Expr resultExpr;
@@ -66,11 +70,17 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private final int[] writeFrequencies;
     private final int[] readFrequencies;
     private List<Statement> resultSequence;
+    private boolean friendlyToDebugger;
+    private TextLocation currentLocation;
+    private Deque<TextLocation> locationStack = new LinkedList<>();
+    private Deque<TextLocation> notNullLocationStack = new ArrayDeque<>();
 
-    OptimizingVisitor(boolean[] preservedVars, int[] writeFrequencies, int[] readFrequencies) {
+    OptimizingVisitor(boolean[] preservedVars, int[] writeFrequencies, int[] readFrequencies,
+            boolean friendlyToDebugger) {
         this.preservedVars = preservedVars;
         this.writeFrequencies = writeFrequencies;
         this.readFrequencies = readFrequencies;
+        this.friendlyToDebugger = friendlyToDebugger;
     }
 
     private static boolean isZero(Expr expr) {
@@ -81,74 +91,100 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         return expr instanceof BinaryExpr && ((BinaryExpr) expr).getOperation() == BinaryOperation.COMPARE;
     }
 
+    private void pushLocation(TextLocation location) {
+        locationStack.push(location);
+        if (location != null) {
+            if (currentLocation != null) {
+                notNullLocationStack.push(currentLocation);
+            }
+            currentLocation = location;
+        }
+    }
+
+    private void popLocation() {
+        if (locationStack.pop() != null) {
+            currentLocation = notNullLocationStack.pollFirst();
+        }
+    }
+
     @Override
     public void visit(BinaryExpr expr) {
-        switch (expr.getOperation()) {
-            case AND:
-            case OR:
-                resultExpr = expr;
-                return;
-            default:
-                break;
-        }
-        expr.getSecondOperand().acceptVisitor(this);
-        Expr b = resultExpr;
-        if (b instanceof ConstantExpr && expr.getOperation() == BinaryOperation.SUBTRACT) {
-            if (tryMakePositive((ConstantExpr) b)) {
-                expr.setOperation(BinaryOperation.ADD);
-            }
-        }
-        expr.getFirstOperand().acceptVisitor(this);
-        Expr a = resultExpr;
-        Expr p = a;
-        Expr q = b;
-        boolean invert = false;
-        if (isZero(p)) {
-            Expr tmp = p;
-            p = q;
-            q = tmp;
-            invert = true;
-        }
-        if (isComparison(p) && isZero(q)) {
+        pushLocation(expr.getLocation());
+        try {
             switch (expr.getOperation()) {
-                case EQUALS:
-                case NOT_EQUALS:
-                case LESS:
-                case LESS_OR_EQUALS:
-                case GREATER:
-                case GREATER_OR_EQUALS: {
-                    BinaryExpr comparison = (BinaryExpr) p;
-                    Expr result = BinaryExpr.binary(expr.getOperation(), comparison.getType(),
-                            comparison.getFirstOperand(), comparison.getSecondOperand());
-                    result.setLocation(comparison.getLocation());
-                    if (invert) {
-                        result = ExprOptimizer.invert(result);
-                    }
-                    resultExpr = result;
+                case AND:
+                case OR:
+                    resultExpr = expr;
                     return;
-                }
                 default:
                     break;
             }
+            expr.getSecondOperand().acceptVisitor(this);
+            Expr b = resultExpr;
+            if (b instanceof ConstantExpr && expr.getOperation() == BinaryOperation.SUBTRACT) {
+                if (tryMakePositive((ConstantExpr) b)) {
+                    expr.setOperation(BinaryOperation.ADD);
+                }
+            }
+            expr.getFirstOperand().acceptVisitor(this);
+            Expr a = resultExpr;
+            Expr p = a;
+            Expr q = b;
+            boolean invert = false;
+            if (isZero(p)) {
+                Expr tmp = p;
+                p = q;
+                q = tmp;
+                invert = true;
+            }
+            if (isComparison(p) && isZero(q)) {
+                switch (expr.getOperation()) {
+                    case EQUALS:
+                    case NOT_EQUALS:
+                    case LESS:
+                    case LESS_OR_EQUALS:
+                    case GREATER:
+                    case GREATER_OR_EQUALS: {
+                        BinaryExpr comparison = (BinaryExpr) p;
+                        Expr result = BinaryExpr.binary(expr.getOperation(), comparison.getType(),
+                                comparison.getFirstOperand(), comparison.getSecondOperand());
+                        result.setLocation(comparison.getLocation());
+                        if (invert) {
+                            result = ExprOptimizer.invert(result);
+                        }
+                        resultExpr = result;
+                        return;
+                    }
+                    default:
+                        break;
+                }
+            }
+            expr.setFirstOperand(a);
+            expr.setSecondOperand(b);
+            resultExpr = expr;
+        } finally {
+            popLocation();
         }
-        expr.setFirstOperand(a);
-        expr.setSecondOperand(b);
-        resultExpr = expr;
     }
 
     @Override
     public void visit(UnaryExpr expr) {
-        expr.getOperand().acceptVisitor(this);
-        Expr operand = resultExpr;
-        if (expr.getOperation() == UnaryOperation.NEGATE && operand instanceof ConstantExpr) {
-            ConstantExpr constantExpr = (ConstantExpr) operand;
-            if (tryMakePositive(constantExpr)) {
-                resultExpr = expr;
-                return;
+        pushLocation(expr.getLocation());
+        try {
+            expr.getOperand().acceptVisitor(this);
+            Expr operand = resultExpr;
+            if (expr.getOperation() == UnaryOperation.NEGATE && operand instanceof ConstantExpr) {
+                ConstantExpr constantExpr = (ConstantExpr) operand;
+                if (tryMakePositive(constantExpr)) {
+                    resultExpr = expr;
+                    return;
+                }
             }
+            expr.setOperand(operand);
+            resultExpr = expr;
+        } finally {
+             popLocation();
         }
-        expr.setOperand(operand);
-        resultExpr = expr;
     }
 
     private boolean tryMakePositive(ConstantExpr constantExpr) {
@@ -177,16 +213,21 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(ConditionalExpr expr) {
-        expr.getCondition().acceptVisitor(this);
-        Expr cond = resultExpr;
-        expr.getConsequent().acceptVisitor(this);
-        Expr consequent = resultExpr;
-        expr.getAlternative().acceptVisitor(this);
-        Expr alternative = resultExpr;
-        expr.setCondition(cond);
-        expr.setConsequent(consequent);
-        expr.setAlternative(alternative);
-        resultExpr = expr;
+        pushLocation(expr.getLocation());
+        try {
+            expr.getCondition().acceptVisitor(this);
+            Expr cond = resultExpr;
+            expr.getConsequent().acceptVisitor(this);
+            Expr consequent = resultExpr;
+            expr.getAlternative().acceptVisitor(this);
+            Expr alternative = resultExpr;
+            expr.setCondition(cond);
+            expr.setConsequent(consequent);
+            expr.setAlternative(alternative);
+            resultExpr = expr;
+        } finally {
+            popLocation();
+        }
     }
 
     @Override
@@ -196,70 +237,92 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(VariableExpr expr) {
-        int index = expr.getIndex();
-        resultExpr = expr;
-        if (writeFrequencies[index] != 1) {
-            return;
-        }
-        if (readFrequencies[index] != 1 || preservedVars[index]) {
-            return;
-        }
-        if (resultSequence.isEmpty()) {
-            return;
-        }
-        Statement last = resultSequence.get(resultSequence.size() - 1);
-        if (!(last instanceof AssignmentStatement)) {
-            return;
-        }
-        AssignmentStatement assignment = (AssignmentStatement) last;
-        if (assignment.isAsync()) {
-            return;
-        }
-        if (!(assignment.getLeftValue() instanceof VariableExpr)) {
-            return;
-        }
-        VariableExpr var = (VariableExpr) assignment.getLeftValue();
-        if (var.getLocation() != null && assignment.getLocation() != null
-                && !assignment.getLocation().equals(var.getLocation())) {
-            return;
-        }
-        if (var.getIndex() == index) {
-            resultSequence.remove(resultSequence.size() - 1);
-            assignment.getRightValue().setLocation(assignment.getLocation());
-            assignment.getRightValue().acceptVisitor(this);
+        pushLocation(expr.getLocation());
+        try {
+            int index = expr.getIndex();
+            resultExpr = expr;
+            if (writeFrequencies[index] != 1) {
+                return;
+            }
+            if (readFrequencies[index] != 1 || preservedVars[index]) {
+                return;
+            }
+            if (resultSequence.isEmpty()) {
+                return;
+            }
+            Statement last = resultSequence.get(resultSequence.size() - 1);
+            if (!(last instanceof AssignmentStatement)) {
+                return;
+            }
+            AssignmentStatement assignment = (AssignmentStatement) last;
+            if (assignment.isAsync()) {
+                return;
+            }
+            if (!(assignment.getLeftValue() instanceof VariableExpr)) {
+                return;
+            }
+            VariableExpr var = (VariableExpr) assignment.getLeftValue();
+            if (friendlyToDebugger) {
+                if (currentLocation != null && assignment.getLocation() != null
+                        && !assignment.getLocation().equals(currentLocation)) {
+                    return;
+                }
+            }
+            if (var.getIndex() == index) {
+                resultSequence.remove(resultSequence.size() - 1);
+                assignment.getRightValue().setLocation(assignment.getLocation());
+                assignment.getRightValue().acceptVisitor(this);
+            }
+        } finally {
+            popLocation();
         }
     }
 
     @Override
     public void visit(SubscriptExpr expr) {
-        expr.getIndex().acceptVisitor(this);
-        Expr index = resultExpr;
-        expr.getArray().acceptVisitor(this);
-        Expr array = resultExpr;
-        expr.setArray(array);
-        expr.setIndex(index);
-        resultExpr = expr;
+        pushLocation(expr.getLocation());
+        try {
+            expr.getIndex().acceptVisitor(this);
+            Expr index = resultExpr;
+            expr.getArray().acceptVisitor(this);
+            Expr array = resultExpr;
+            expr.setArray(array);
+            expr.setIndex(index);
+            resultExpr = expr;
+        } finally {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(UnwrapArrayExpr expr) {
-        expr.getArray().acceptVisitor(this);
-        Expr arrayExpr = resultExpr;
-        expr.setArray(arrayExpr);
-        resultExpr = expr;
+        pushLocation(expr.getLocation());
+        try {
+            expr.getArray().acceptVisitor(this);
+            Expr arrayExpr = resultExpr;
+            expr.setArray(arrayExpr);
+            resultExpr = expr;
+        } finally {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(InvocationExpr expr) {
-        Expr[] args = new Expr[expr.getArguments().size()];
-        for (int i = expr.getArguments().size() - 1; i >= 0; --i) {
-            expr.getArguments().get(i).acceptVisitor(this);
-            args[i] = resultExpr;
+        pushLocation(expr.getLocation());
+        try {
+            Expr[] args = new Expr[expr.getArguments().size()];
+            for (int i = expr.getArguments().size() - 1; i >= 0; --i) {
+                expr.getArguments().get(i).acceptVisitor(this);
+                args[i] = resultExpr;
+            }
+            for (int i = 0; i < args.length; ++i) {
+                expr.getArguments().set(i, args[i]);
+            }
+            resultExpr = expr;
+        } finally {
+            popLocation();
         }
-        for (int i = 0; i < args.length; ++i) {
-            expr.getArguments().set(i, args[i]);
-        }
-        resultExpr = expr;
     }
 
     private boolean tryApplyConstructor(InvocationExpr expr) {
@@ -303,12 +366,17 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(QualificationExpr expr) {
-        if (expr.getQualified() != null) {
-            expr.getQualified().acceptVisitor(this);
-            Expr qualified = resultExpr;
-            expr.setQualified(qualified);
+        pushLocation(expr.getLocation());
+        try {
+            if (expr.getQualified() != null) {
+                expr.getQualified().acceptVisitor(this);
+                Expr qualified = resultExpr;
+                expr.setQualified(qualified);
+            }
+            resultExpr = expr;
+        } finally {
+            popLocation();
         }
-        resultExpr = expr;
     }
 
     @Override
@@ -318,64 +386,94 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(NewArrayExpr expr) {
-        expr.getLength().acceptVisitor(this);
-        Expr length = resultExpr;
-        expr.setLength(length);
-        resultExpr = expr;
+        pushLocation(expr.getLocation());
+        try {
+            expr.getLength().acceptVisitor(this);
+            Expr length = resultExpr;
+            expr.setLength(length);
+            resultExpr = expr;
+        } finally {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
-        for (int i = 0; i < expr.getDimensions().size(); ++i) {
-            Expr dimension = expr.getDimensions().get(i);
-            dimension.acceptVisitor(this);
-            expr.getDimensions().set(i, resultExpr);
+        pushLocation(expr.getLocation());
+        try {
+            for (int i = 0; i < expr.getDimensions().size(); ++i) {
+                Expr dimension = expr.getDimensions().get(i);
+                dimension.acceptVisitor(this);
+                expr.getDimensions().set(i, resultExpr);
+            }
+            resultExpr = expr;
+        } finally {
+            popLocation();
         }
-        resultExpr = expr;
     }
 
     @Override
     public void visit(InstanceOfExpr expr) {
-        expr.getExpr().acceptVisitor(this);
-        expr.setExpr(resultExpr);
-        resultExpr = expr;
+        pushLocation(expr.getLocation());
+        try {
+            expr.getExpr().acceptVisitor(this);
+            expr.setExpr(resultExpr);
+            resultExpr = expr;
+        } finally {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(CastExpr expr) {
-        expr.getValue().acceptVisitor(this);
-        expr.setValue(resultExpr);
-        resultExpr = expr;
+        pushLocation(expr.getLocation());
+        try {
+            expr.getValue().acceptVisitor(this);
+            expr.setValue(resultExpr);
+            resultExpr = expr;
+        } finally {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(PrimitiveCastExpr expr) {
-        expr.getValue().acceptVisitor(this);
-        expr.setValue(resultExpr);
-        resultExpr = expr;
+        pushLocation(expr.getLocation());
+        try {
+            expr.getValue().acceptVisitor(this);
+            expr.setValue(resultExpr);
+            resultExpr = expr;
+        } finally {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(AssignmentStatement statement) {
-        if (statement.getLeftValue() == null) {
-            statement.getRightValue().acceptVisitor(this);
-            if (resultExpr instanceof InvocationExpr && tryApplyConstructor((InvocationExpr) resultExpr)) {
-                resultStmt = new SequentialStatement();
+        pushLocation(statement.getLocation());
+        try {
+            if (statement.getLeftValue() == null) {
+                statement.getRightValue().acceptVisitor(this);
+                if (resultExpr instanceof InvocationExpr && tryApplyConstructor((InvocationExpr) resultExpr)) {
+                    resultStmt = new SequentialStatement();
+                } else {
+                    statement.setRightValue(resultExpr);
+                    resultStmt = statement;
+                }
             } else {
-                statement.setRightValue(resultExpr);
+                statement.getRightValue().acceptVisitor(this);
+                Expr right = resultExpr;
+                Expr left = statement.getLeftValue();
+                if (!(statement.getLeftValue() instanceof VariableExpr)) {
+                    statement.getLeftValue().acceptVisitor(this);
+                    left = resultExpr;
+                }
+                statement.setLeftValue(left);
+                statement.setRightValue(right);
                 resultStmt = statement;
             }
-        } else {
-            statement.getRightValue().acceptVisitor(this);
-            Expr right = resultExpr;
-            Expr left = statement.getLeftValue();
-            if (!(statement.getLeftValue() instanceof VariableExpr)) {
-                statement.getLeftValue().acceptVisitor(this);
-                left = resultExpr;
-            }
-            statement.setLeftValue(left);
-            statement.setRightValue(right);
-            resultStmt = statement;
+        } finally {
+            popLocation();
         }
     }
 
@@ -724,23 +822,38 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(ReturnStatement statement) {
-        if (statement.getResult() != null) {
-            statement.getResult().acceptVisitor(this);
-            statement.setResult(resultExpr);
+        pushLocation(statement.getLocation());
+        try {
+            if (statement.getResult() != null) {
+                statement.getResult().acceptVisitor(this);
+                statement.setResult(resultExpr);
+            }
+            resultStmt = statement;
+        } finally {
+            popLocation();
         }
-        resultStmt = statement;
     }
 
     @Override
     public void visit(ThrowStatement statement) {
-        statement.getException().acceptVisitor(this);
-        statement.setException(resultExpr);
-        resultStmt = statement;
+        pushLocation(statement.getLocation());
+        try {
+            statement.getException().acceptVisitor(this);
+            statement.setException(resultExpr);
+            resultStmt = statement;
+        } finally {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(InitClassStatement statement) {
-        resultStmt = statement;
+        pushLocation(statement.getLocation());
+        try {
+            resultStmt = statement;
+        } finally {
+            popLocation();
+        }
     }
 
     @Override
@@ -761,15 +874,25 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(MonitorEnterStatement statement) {
-        statement.getObjectRef().acceptVisitor(this);
-        statement.setObjectRef(resultExpr);
-        resultStmt = statement;
+        pushLocation(statement.getLocation());
+        try {
+            statement.getObjectRef().acceptVisitor(this);
+            statement.setObjectRef(resultExpr);
+            resultStmt = statement;
+        } finally {
+            popLocation();
+        }
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
-        statement.getObjectRef().acceptVisitor(this);
-        statement.setObjectRef(resultExpr);
-        resultStmt = statement;
+        pushLocation(statement.getLocation());
+        try {
+            statement.getObjectRef().acceptVisitor(this);
+            statement.setObjectRef(resultExpr);
+            resultStmt = statement;
+        } finally {
+            popLocation();
+        }
     }
 }

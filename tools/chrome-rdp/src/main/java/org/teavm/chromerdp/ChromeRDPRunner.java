@@ -51,6 +51,11 @@ public final class ChromeRDPRunner {
         new Thread(server::start).start();
         debugger = new Debugger(jsDebugger, new URLDebugInformationProvider(""));
         debugger.addListener(listener);
+
+        Thread.setDefaultUncaughtExceptionHandler((t, e) -> {
+            System.err.println("Uncaught exception in thread " + t);
+            e.printStackTrace();
+        });
     }
 
     private DebuggerListener listener = new DebuggerListener() {
@@ -221,11 +226,54 @@ public final class ChromeRDPRunner {
             System.out.println("Expected 2 arguments");
             return;
         }
-        Breakpoint bp = debugger.createBreakpoint(args[1], Integer.parseInt(args[2]));
+
+        String[] fileNames = resolveFileName(args[1]);
+        if (fileNames.length == 0) {
+            System.out.println("Unknown file: " + args[1]);
+            return;
+        } else if (fileNames.length > 1) {
+            System.out.println("Ambiguous file name: " + args[1] + ". Possible names are: "
+                    + Arrays.toString(fileNames));
+            return;
+        }
+
+        Breakpoint bp = debugger.createBreakpoint(fileNames[0], Integer.parseInt(args[2]));
         int id = breakpointIdGen++;
         breakpointIds.put(bp, id);
         System.out.println("Breakpoint #" + id + " was set at " + bp.getLocation());
     };
+
+    private String[] resolveFileName(String fileName) {
+        if (debugger.getSourceFiles().contains(fileName)) {
+            return new String[] { fileName };
+        }
+
+        String[] result = debugger.getSourceFiles().stream()
+                .filter(f -> f.endsWith(fileName) && isPrecededByPathSeparator(f, fileName))
+                .toArray(String[]::new);
+        if (result.length == 1) {
+            return result;
+        }
+
+        return debugger.getSourceFiles().stream()
+                .filter(f -> {
+                    int index = f.lastIndexOf('.');
+                    if (index <= 0) {
+                        return false;
+                    }
+                    String nameWithoutExt = f.substring(0, index);
+                    return nameWithoutExt.endsWith(fileName)  && isPrecededByPathSeparator(nameWithoutExt, fileName);
+                })
+                .toArray(String[]::new);
+    }
+
+    private static boolean isPrecededByPathSeparator(String actualName, String specifiedName) {
+        if (actualName.length() < specifiedName.length() + 1) {
+            return false;
+        }
+        char c = actualName.charAt(actualName.length() - specifiedName.length() - 1);
+        return c == '/' || c == '\\';
+    }
 
     private Command backtraceCommand = args -> {
         CallFrame[] callStack = debugger.getCallStack();
