@@ -23,7 +23,6 @@ import com.intellij.execution.configurations.RunnerSettings;
 import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.GenericProgramRunner;
-import com.intellij.execution.runners.RunContentBuilder;
 import com.intellij.execution.ui.RunContentDescriptor;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -49,6 +48,6 @@ public class TeaVMDebugRunner extends GenericProgramRunner<RunnerSettings> {
             return null;
         }
 
-        return new RunContentBuilder(executionResult, environment).showRunContent(environment.getContentToReuse());
+        return null;
     }
 }
