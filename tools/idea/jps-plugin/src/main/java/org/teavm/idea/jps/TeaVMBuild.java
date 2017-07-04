@@ -206,6 +206,10 @@ class TeaVMBuild {
 
             List<ProblemToReport> problemsToReport = resolveProblemLocation(problem, callGraph);
 
+            if (problemsToReport.isEmpty()) {
+                context.processMessage(new CompilerMessage("TeaVM", kind, problem.getText(), null,
+                        -1, -1, -1, -1, -1));
+            }
             for (ProblemToReport problemToReport : problemsToReport) {
                 String text = baseText + buildCallStack(problemToReport.locations);
                 context.processMessage(new CompilerMessage("TeaVM", kind, text, problemToReport.path,
