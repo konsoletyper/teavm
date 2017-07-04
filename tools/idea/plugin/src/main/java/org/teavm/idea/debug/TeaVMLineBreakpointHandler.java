@@ -36,14 +36,16 @@ public class TeaVMLineBreakpointHandler<B extends XLineBreakpoint<?>> extends XB
     private Debugger innerDebugger;
     private VirtualFileManager vfs;
     private ProjectFileIndex fileIndex;
+    private TeaVMDebugProcess debugProcess;
 
     @SuppressWarnings("unchecked")
     public TeaVMLineBreakpointHandler(Class<? extends XBreakpointType<B, ?>> breakpointType,
-            Project project, Debugger innerDebugger) {
+            Project project, Debugger innerDebugger, TeaVMDebugProcess debugProcess) {
         super(breakpointType);
         this.innerDebugger = innerDebugger;
         vfs = VirtualFileManager.getInstance();
         fileIndex = ProjectRootManager.getInstance(project).getFileIndex();
+        this.debugProcess = debugProcess;
     }
 
     @Override
@@ -63,6 +65,7 @@ public class TeaVMLineBreakpointHandler<B extends XLineBreakpoint<?>> extends XB
 
         Breakpoint innerBreakpoint = innerDebugger.createBreakpoint(path, breakpoint.getLine() + 1);
         breakpoint.putUserData(TeaVMDebugProcess.INNER_BREAKPOINT_KEY, innerBreakpoint);
+        debugProcess.breakpointMap.put(innerBreakpoint, breakpoint);
     }
 
     @Nullable
@@ -86,6 +89,7 @@ public class TeaVMLineBreakpointHandler<B extends XLineBreakpoint<?>> extends XB
         if (innerBreakpoint != null) {
             breakpoint.putUserData(TeaVMDebugProcess.INNER_BREAKPOINT_KEY, null);
             innerBreakpoint.destroy();
+            debugProcess.breakpointMap.remove(innerBreakpoint);
         }
     }
 }

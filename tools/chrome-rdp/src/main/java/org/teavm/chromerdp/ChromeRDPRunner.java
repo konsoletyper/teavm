@@ -67,11 +67,14 @@ public final class ChromeRDPRunner {
         }
 
         @Override
-        public void paused() {
+        public void paused(Breakpoint breakpoint) {
             CallFrame[] stack = debugger.getCallStack();
             if (stack.length > 0) {
                 System.out.println();
                 System.out.println("Suspended at " + stack[0].getLocation());
+            }
+            if (breakpoint != null) {
+                System.out.println("Breakpoint #" + breakpointIds.get(breakpoint) + " hit");
             }
             currentFrame = 0;
             if (suspendListener != null) {

@@ -22,11 +22,16 @@ import com.intellij.openapi.util.Key;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XSourcePosition;
+import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import com.intellij.xdebugger.breakpoints.XBreakpointHandler;
 import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider;
+import com.intellij.xdebugger.frame.XSuspendContext;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.teavm.chromerdp.ChromeRDPDebugger;
 import org.teavm.chromerdp.ChromeRDPServer;
 import org.teavm.debugging.Breakpoint;
@@ -41,6 +46,7 @@ public class TeaVMDebugProcess extends XDebugProcess {
     private final List<TeaVMLineBreakpointHandler<?>> breakpointHandlers = new ArrayList<>();
     private final int port;
     private ChromeRDPServer debugServer;
+    ConcurrentMap<Breakpoint, XBreakpoint<?>> breakpointMap = new ConcurrentHashMap<>();
 
     public TeaVMDebugProcess(@NotNull XDebugSession session, int port) {
         super(session);
@@ -52,8 +58,14 @@ public class TeaVMDebugProcess extends XDebugProcess {
             }
 
             @Override
-            public void paused() {
-                handlePaused();
+            public void paused(Breakpoint breakpoint) {
+                XBreakpoint<?> xBreakpoint = breakpoint != null ? breakpointMap.get(breakpoint) : null;
+                if (xBreakpoint != null) {
+                    getSession().breakpointReached(xBreakpoint, null,
+                            new TeaVMSuspendContext(innerDebugger, getSession().getProject()));
+                } else {
+                    handlePaused();
+                }
             }
 
             @Override
@@ -70,14 +82,14 @@ public class TeaVMDebugProcess extends XDebugProcess {
         });
 
         breakpointHandlers.add(new TeaVMLineBreakpointHandler<>(JavaLineBreakpointType.class, session.getProject(),
-                innerDebugger));
+                innerDebugger, this));
 
         ExtensionPoint<TeaVMBreakpointProvider<?>> breakpointProvider = Extensions.getArea(
                 session.getProject()).getExtensionPoint("org.teavm.extensions.breakpointProvider");
         if (breakpointProvider != null) {
             for (TeaVMBreakpointProvider<?> provider : breakpointProvider.getExtensions()) {
                 breakpointHandlers.add(new TeaVMLineBreakpointHandler<>(provider.getBreakpointType(),
-                        session.getProject(), innerDebugger));
+                        session.getProject(), innerDebugger, this));
             }
         }
     }
@@ -100,22 +112,22 @@ public class TeaVMDebugProcess extends XDebugProcess {
     }
 
     @Override
-    public void startStepOver() {
+    public void startStepOver(@Nullable XSuspendContext context) {
         innerDebugger.stepOver();
     }
 
     @Override
-    public void startStepInto() {
+    public void startStepInto(@Nullable XSuspendContext context) {
         innerDebugger.stepInto();
     }
 
     @Override
-    public void startStepOut() {
+    public void startStepOut(@Nullable XSuspendContext context) {
         innerDebugger.stepOut();
     }
 
     @Override
-    public void resume() {
+    public void resume(@Nullable XSuspendContext context) {
         innerDebugger.resume();
     }
 
@@ -125,7 +137,7 @@ public class TeaVMDebugProcess extends XDebugProcess {
     }
 
     @Override
-    public void runToPosition(@NotNull XSourcePosition position) {
+    public void runToPosition(@NotNull XSourcePosition position, @Nullable XSuspendContext context) {
         innerDebugger.continueToLocation(position.getFile().getPath(), position.getLine());
     }
 
