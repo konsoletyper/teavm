@@ -432,10 +432,14 @@ public class Debugger {
         }
 
         @Override
-        public void paused() {
+        public void paused(JavaScriptBreakpoint breakpoint) {
             callStack = null;
+            Breakpoint javaBreakpoint = null;
+            if (breakpoint != null && !temporaryBreakpoints.contains(breakpoint)) {
+                javaBreakpoint = breakpointMap.get(breakpoint);
+            }
             for (DebuggerListener listener : getListeners()) {
-                listener.paused();
+                listener.paused(javaBreakpoint);
             }
         }
 

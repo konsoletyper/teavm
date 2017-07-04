@@ -18,7 +18,7 @@ package org.teavm.debugging;
 public interface DebuggerListener {
     void resumed();
 
-    void paused();
+    void paused(Breakpoint breakpoint);
 
     void breakpointStatusChanged(Breakpoint breakpoint);
 
