@@ -16,6 +16,7 @@
 package org.teavm.idea.debug;
 
 import com.intellij.debugger.ui.breakpoints.JavaLineBreakpointType;
+import com.intellij.icons.AllIcons;
 import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.util.Key;
@@ -24,6 +25,7 @@ import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XSourcePosition;
 import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import com.intellij.xdebugger.breakpoints.XBreakpointHandler;
+import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
 import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider;
 import com.intellij.xdebugger.frame.XSuspendContext;
 import java.util.ArrayList;
@@ -70,14 +72,17 @@ public class TeaVMDebugProcess extends XDebugProcess {
 
             @Override
             public void breakpointStatusChanged(Breakpoint breakpoint) {
+                updateBreakpointStatus(breakpoint);
             }
 
             @Override
             public void attached() {
+                updateAllBreakpoints();
             }
 
             @Override
             public void detached() {
+                updateAllBreakpoints();
             }
         });
 
@@ -143,6 +148,39 @@ public class TeaVMDebugProcess extends XDebugProcess {
 
     private void handlePaused() {
         getSession().positionReached(new TeaVMSuspendContext(innerDebugger, getSession().getProject()));
+    }
+
+    @Override
+    public boolean checkCanPerformCommands() {
+        return innerDebugger.isSuspended() && innerDebugger.isAttached();
+    }
+
+    void updateBreakpointStatus(Breakpoint breakpoint) {
+        XBreakpoint<?> xBreakpoint = breakpointMap.get(breakpoint);
+        if (xBreakpoint instanceof XLineBreakpoint) {
+            XLineBreakpoint<?> xLineBreakpoint = (XLineBreakpoint<?>) xBreakpoint;
+            if (!innerDebugger.isAttached()) {
+                getSession().updateBreakpointPresentation(xLineBreakpoint, null,
+                        null);
+            } else if (breakpoint.isValid()) {
+                getSession().updateBreakpointPresentation(xLineBreakpoint, AllIcons.Debugger.Db_verified_breakpoint,
+                        null);
+            } else {
+                getSession().updateBreakpointPresentation(xLineBreakpoint, AllIcons.Debugger.Db_invalid_breakpoint,
+                        "Could not set breakpoint in remote process");
+            }
+        }
+    }
+
+    @Override
+    public String getCurrentStateMessage() {
+        return !innerDebugger.isAttached() ? "Detached" : super.getCurrentStateMessage();
+    }
+
+    private void updateAllBreakpoints() {
+        for (Breakpoint breakpoint : breakpointMap.keySet().toArray(new Breakpoint[0])) {
+            updateBreakpointStatus(breakpoint);
+        }
     }
 
     @NotNull
