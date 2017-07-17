@@ -76,6 +76,8 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
         String thisName = context.getParameterName(1);
         String methodName = context.getParameterName(2);
 
+        writer.append("if").ws().append("(").append(thisName).ws().append("===").ws().append("null)").ws()
+                .append("return null;").softNewLine();
         writer.append("var result").ws().append("=").ws().append("{};").softNewLine();
         writer.append("result[").append(methodName).append("]").ws().append("=").ws().append(thisName)
                 .append(";").softNewLine();
