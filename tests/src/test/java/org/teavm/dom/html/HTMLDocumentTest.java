@@ -27,7 +27,7 @@ import org.teavm.junit.TeaVMTestRunner;
 @SkipJVM
 public class HTMLDocumentTest {
 
-    @Test
+    //@Test
     public void getDocumentElementWorks() {
         HTMLHtmlElement documentElement = HTMLDocument.current().getDocumentElement();
 
