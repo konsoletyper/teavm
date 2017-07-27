@@ -15,7 +15,6 @@
  */
 package org.teavm.dom.html;
 
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.dom.html.HTMLDocument;
 import org.teavm.jso.dom.html.HTMLElement;
