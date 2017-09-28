@@ -254,12 +254,14 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
                 for (int i = index + 1; i < tail; ++i) {
                     array[i - 1] = array[i];
                 }
-                array[tail - 1] = null;
+                tail -= 1;
+                array[tail] = null;
             } else {
                 for (int i = index - 1; i >= head; --i) {
                     array[i + 1] = array[i];
                 }
                 array[head] = null;
+                head++;
             }
         } else {
             if (index >= head) {
@@ -267,11 +269,13 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
                     array[i + 1] = array[i];
                 }
                 array[head] = null;
+                head++;
             } else {
                 for (int i = index + 1; i < tail; ++i) {
                     array[i - 1] = array[i];
                 }
-                array[tail - 1] = null;
+                tail -= 1;
+                array[tail] = null;
             }
         }
     }
