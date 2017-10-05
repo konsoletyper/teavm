@@ -1,7 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<module type="PLUGIN_MODULE" version="4">
-  <component name="DevKit.ModuleBuildProperties" url="file://$MODULE_DIR$/src/main/resources/META-INF/plugin.xml" />
-  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8" inherit-compiler-output="false">
+<module org.jetbrains.idea.maven.project.MavenProjectsManager.isMavenModule="true" type="JAVA_MODULE" version="4">
+  <component name="NewModuleRootManager" LANGUAGE_LEVEL="JDK_1_8">
     <output url="file://$MODULE_DIR$/target/classes" />
     <output-test url="file://$MODULE_DIR$/target/test-classes" />
     <content url="file://$MODULE_DIR$">
@@ -9,20 +8,21 @@
       <sourceFolder url="file://$MODULE_DIR$/src/main/resources" type="java-resource" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
-    <orderEntry type="jdk" jdkName="IntelliJ IDEA" jdkType="IDEA JDK" />
+    <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:openapi:2016.3.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:annotations:2016.3.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:util:2016.3.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:extensions:2016.3.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:jdom:2016.3.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:maven:2016.3.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:maven-server-api:2016.3.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:idea:2016.3.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:commons-logging:2016.3.4" level="project" />
+    <orderEntry type="library" name="Maven: org.teavm.idea:teavm:0.6.0-SNAPSHOT" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:kotlin-plugin:2016.3.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:scala-plugin:2016.3.4" level="project" />
     <orderEntry type="module" module-name="teavm-jps-common" />
-    <orderEntry type="module" module-name="teavm-jps-plugin" exported="" scope="RUNTIME" />
-    <orderEntry type="module-library" exported="">
-      <library>
-        <CLASSES>
-          <root url="jar://$MODULE_DIR$/../idea-artifacts/dependencies/teavm.jar!/" />
-        </CLASSES>
-        <JAVADOC />
-        <SOURCES>
-          <root url="file://$MODULE_DIR$/../../../core/src/main/java" />
-        </SOURCES>
-      </library>
-    </orderEntry>
+    <orderEntry type="module" module-name="teavm-jps-plugin" scope="RUNTIME" />
   </component>
 </module>

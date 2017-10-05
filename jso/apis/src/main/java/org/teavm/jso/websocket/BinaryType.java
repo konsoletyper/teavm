@@ -18,6 +18,6 @@ package org.teavm.jso.websocket;
 /** A string indicating the type of binary data being transmitted by the connection. This should be
  * either "blob" if DOM Blob objects are being used or "arraybuffer" if ArrayBuffer objects are being used. */
 public enum BinaryType {
-    blob,
-    arraybuffer,
+    BLOB,
+    ARRAY_BUFFER,
 }

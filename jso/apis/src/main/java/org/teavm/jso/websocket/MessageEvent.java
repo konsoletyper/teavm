@@ -17,6 +17,7 @@ package org.teavm.jso.websocket;
 
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.core.JSString;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 
@@ -25,15 +26,15 @@ public abstract class MessageEvent implements Event {
     @JSBody(script = "return this.data;")
     public native JSObject data();
     @JSBody(script = "return this.data;")
-    public native String dataAsString();
+    public native JSString dataAsString();
     @JSBody(script = "return this.data;")
     public native ArrayBuffer dataAsArray();
     /** @return a String representing the origin of the message emitter. */
     @JSBody(script = "return this.origin;")
-    public native /*USV*/String origin();
+    public native JSString origin();
     /** @return a String representing a unique ID for the event. */
     @JSBody(script = "return this.lastEventId;")
-    public native /*DOM*/String lastEventId();
+    public native JSString lastEventId();
     /** @return a MessageEventSource (which can be a WindowProxy, MessagePort, or ServiceWorker object) representing the
      * message emitter. */
     @JSBody(script = "return this.source;")

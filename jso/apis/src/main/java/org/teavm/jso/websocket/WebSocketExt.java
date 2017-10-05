@@ -16,6 +16,9 @@
 package org.teavm.jso.websocket;
 
 import java.io.IOException;
+import org.teavm.jso.core.JSArray;
+import org.teavm.jso.core.JSNumber;
+import org.teavm.jso.core.JSString;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.typedarrays.ArrayBuffer;
@@ -28,15 +31,20 @@ public class WebSocketExt {
     }
 
     public static void newInstance(String url, String[] protocols, ConsumerCallback<WebSocketExt> callback) {
-        WebSocket webSocket = WebSocket.newInstance(url, protocols);
-        webSocket.onOpen(event -> {
-            webSocket.onOpen(e -> {
+        JSArray<JSString> jsProtocols = JSArray.create();
+        int length = protocols == null ? 0 : protocols.length;
+        while (0 < --length) {
+            jsProtocols.push(JSString.valueOf(protocols[length]));
+        }
+        WebSocket webSocket = WebSocket.newInstance(JSString.valueOf(url), jsProtocols);
+        webSocket.setOnopen(event -> {
+            webSocket.setOnopen(e -> {
             });
-            webSocket.onError(e -> {
+            webSocket.setOnerror(e -> {
             });
             callback.accept(new WebSocketExt(webSocket));
         });
-        webSocket.onError(event -> callback.exception(new IOException("Unable to open WebSocket.")));
+        webSocket.setOnerror(event -> callback.exception(new IOException("Unable to open WebSocket.")));
     }
 
     private WebSocketExt(WebSocket webSocket) {
@@ -45,31 +53,31 @@ public class WebSocketExt {
 
     /** @return The URL as resolved by the constructor. This is always an absolute URL. */
     public String url() {
-        return webSocket.url();
+        return webSocket.getUrl().stringValue();
     }
 
     /** @return A string indicating the name of the sub-protocol the server selected; this will be one of the strings
      * specified in the protocols parameter when creating the WebSocket object. */
     public String protocol() {
-        return webSocket.protocol();
+        return webSocket.getProtocol().stringValue();
     }
 
     /** @return The extensions selected by the server. This is currently only the empty string or a list of extensions
      * as negotiated by the connection. */
     public String extensions() {
-        return webSocket.extensions();
+        return webSocket.getExtensions().stringValue();
     }
 
     /** A string indicating the type of binary data being transmitted by the connection. This should be
      * either "blob" if DOM Blob objects are being used or "arraybuffer" if ArrayBuffer objects are being used. */
     public void binaryType(BinaryType binaryType) {
-        webSocket.binaryType(binaryType.name());
+        webSocket.setBinaryType(JSString.valueOf(binaryType.name()));
     }
 
-    /** See {@link WebSocket#binaryType(String)} */
+    /** See {@link WebSocket#setBinaryType(JSString)} */
     public BinaryType binaryType() {
         try {
-            return BinaryType.valueOf(webSocket.binaryType());
+            return BinaryType.valueOf(webSocket.getBinaryType().stringValue());
         } catch (Exception e) {
             return null;
         }
@@ -78,14 +86,14 @@ public class WebSocketExt {
     /** @return The number of bytes of data that have been queued using calls to send() but not yet transmitted to
      * the network. This value resets to zero once all queued data has been sent. This value does not reset to zero
      * when the connection is closed; if you keep calling send(), this will continue to climb. */
-    public long bufferedAmount() {
-        return webSocket.bufferedAmount();
+    public int bufferedAmount() {
+        return webSocket.getBufferedAmount().intValue();
     }
 
     /** The current state of the connection */
     public ReadyState readyState() {
         try {
-            return ReadyState.values()[webSocket.readyState()];
+            return ReadyState.values()[webSocket.getReadyState().intValue()];
         } catch (Exception e) {
             return null;
         }
@@ -94,54 +102,54 @@ public class WebSocketExt {
     /** An event listener to be called when the WebSocket connection's readyState changes to OPEN; this indicates
      * that the connection is ready to send and receive data. The event is a simple one with the name "open". */
     public void onOpen(EventListener<Event> onOpen) {
-        webSocket.onOpen(onOpen);
+        webSocket.setOnopen(onOpen);
     }
 
-    /** See {@link WebSocket#onOpen(EventListener)} */
+    /** See {@link WebSocket#setOnopen(EventListener)} */
     public EventListener<Event> onOpen() {
-        return webSocket.onOpen();
+        return webSocket.getOnopen();
     }
 
     /** An event listener to be called when the WebSocket connection's readyState changes to CLOSED. The listener
      * receives a CloseEvent named "close". */
     public void onClose(EventListener<CloseEvent> onClose) {
-        webSocket.onClose(onClose);
+        webSocket.setOnclose(onClose);
     }
 
-    /** See {@link WebSocket#onClose(EventListener)} */
+    /** See {@link WebSocket#setOnclose(EventListener)} */
     public EventListener<CloseEvent> onClose() {
-        return webSocket.onClose();
+        return webSocket.getOnclose();
     }
 
     /** An event listener to be called when a message is received from the server. The listener receives a
      * MessageEvent named "message". */
     public void onMessage(EventListener<MessageEvent> onMessage) {
-        webSocket.onMessage(onMessage);
+        webSocket.setOnmessage(onMessage);
     }
 
-    /** See {@link WebSocket#onMessage(EventListener)} */
+    /** See {@link WebSocket#setOnmessage(EventListener)} */
     public EventListener<MessageEvent> onMessage() {
-        return webSocket.onMessage();
+        return webSocket.getOnmessage();
     }
 
     /** An event listener to be called when an error occurs. This is a simple event named "error". */
     public void onError(EventListener<Event> onError) {
-        webSocket.onError(onError);
+        webSocket.setOnerror(onError);
     }
 
-    /** See {@link WebSocket#onError(EventListener)} */
+    /** See {@link WebSocket#setOnerror(EventListener)} */
     public EventListener<Event> onError() {
-        return webSocket.onError();
+        return webSocket.getOnerror();
     }
 
-    /** See {@link WebSocket#close(short, String)} */
+    /** See {@link WebSocket#close(JSNumber, JSString)} */
     public void close() {
         webSocket.close();
     }
 
-    /** See {@link WebSocket#close(short, String)} */
+    /** See {@link WebSocket#close(JSNumber, JSString)} */
     public void close(short code) {
-        webSocket.close(code);
+        webSocket.close(JSNumber.valueOf(code));
     }
 
     /** Closes the WebSocket connection or connection attempt, if any. If the connection is already CLOSED, this
@@ -153,12 +161,12 @@ public class WebSocketExt {
      * than 123 bytes of UTF-8 text (not characters). */
     public void close(short code, String reason) // throws InvalidAccessException, SyntaxError;
     {
-        webSocket.close(code, reason);
+        webSocket.close(JSNumber.valueOf(code), JSString.valueOf(reason));
     }
 
     public void send(String data) // throws InvalidStateException, SyntaxError;
     {
-        webSocket.send(data);
+        webSocket.send(JSString.valueOf(data));
     }
 
     public void send(ArrayBuffer data) // throws InvalidStateException, SyntaxError;

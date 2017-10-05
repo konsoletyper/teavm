@@ -17,98 +17,106 @@ package org.teavm.jso.websocket;
 
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.core.JSArray;
+import org.teavm.jso.core.JSNumber;
+import org.teavm.jso.core.JSString;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 
 public abstract class WebSocket implements JSObject {
-    public static WebSocket newInstance(String url, String... protocols) {
+    public static WebSocket newInstance(JSString url, JSString...protocols) {
+        return protocols == null ? newInstance(url) : newInstance(url, JSArray.of(protocols));
+    }
+
+    public static WebSocket newInstance(JSString url, JSArray<JSString> protocols) {
         return protocols == null ? newInstance(url) : newInstance_(url, protocols);
     }
 
     @JSBody(params = { "url" }, script = "return new WebSocket(url);")
-    public static native WebSocket newInstance(String url);
+    public static native WebSocket newInstance(JSString url);
 
     private WebSocket() {
     }
 
     /** @return The URL as resolved by the constructor. This is always an absolute URL. */
-    @JSBody(script = "return this.url;")
-    public native /*DOM*/String url();
+    @JSProperty
+    public native JSString getUrl();
 
     /** @return A string indicating the name of the sub-protocol the server selected; this will be one of the strings
      * specified in the protocols parameter when creating the WebSocket object. */
-    @JSBody(script = "return this.protocol;")
-    public native /*DOM*/String protocol();
+    @JSProperty
+    public native JSString getProtocol();
 
     /** @return The extensions selected by the server. This is currently only the empty string or a list of extensions
      * as negotiated by the connection. */
-    @JSBody(script = "return this.extensions;")
-    public native /*DOM*/String extensions();
+    @JSProperty
+    public native JSString getExtensions();
 
     /** A string indicating the type of binary data being transmitted by the connection. This should be
      * either "blob" if DOM Blob objects are being used or "arraybuffer" if ArrayBuffer objects are being used. */
-    @JSBody(params = "binaryType", script = "this.binaryType = binaryType;")
-    public native void binaryType(/*DOM*/String binaryType);
+    @JSProperty
+    public native void setBinaryType(JSString binaryType);
 
-    /** See {@link WebSocket#binaryType(String)} */
-    @JSBody(script = "return this.binaryType;")
-    public native /*DOM*/String binaryType();
+    /** See {@link WebSocket#setBinaryType(JSString)} */
+    @JSProperty
+    public native JSString getBinaryType();
 
     /** @return The number of bytes of data that have been queued using calls to send() but not yet transmitted to
      * the network. This value resets to zero once all queued data has been sent. This value does not reset to zero
      * when the connection is closed; if you keep calling send(), this will continue to climb. */
-    @JSBody(script = "return this.bufferedAmount;")
-    public native /*unsigned long*/int bufferedAmount();
+    @JSProperty
+    public native JSNumber getBufferedAmount();
 
     /** The current state of the connection, can be one of:<br>
      * 0 CONNECTING: The connection is not yet open.<br>
      * 1 OPEN: The connection is open and ready to communicate.<br>
      * 2 CLOSING: The connection is in the process of closing.<br>
      * 3 CLOSED: The connection is closed or couldn't be opened. */
-    @JSBody(script = "return this.readyState;")
-    public native /*unsigned*/short readyState();
+    @JSProperty
+    public native JSNumber getReadyState();
 
     /** An event listener to be called when the WebSocket connection's readyState changes to OPEN; this indicates
      * that the connection is ready to send and receive data. The event is a simple one with the name "open". */
-    @JSBody(params = "onOpen", script = "this.onopen = onOpen;")
-    public native void onOpen(EventListener<Event> onOpen);
+    @JSProperty
+    public native void setOnopen(EventListener<Event> onOpen);
 
-    /** See {@link WebSocket#onOpen(EventListener)} */
-    @JSBody(script = "return this.onopen;")
-    public native EventListener<Event> onOpen();
+    /** See {@link WebSocket#setOnopen(EventListener)} */
+    @JSProperty
+    public native EventListener<Event> getOnopen();
 
     /** An event listener to be called when the WebSocket connection's readyState changes to CLOSED. The listener
      * receives a CloseEvent named "close". */
-    @JSBody(params = "onClose", script = "this.onclose = onClose;")
-    public native void onClose(EventListener<CloseEvent> onClose);
+    @JSProperty
+    public native void setOnclose(EventListener<CloseEvent> onClose);
 
-    /** See {@link WebSocket#onClose(EventListener)} */
-    @JSBody(script = "return this.onclose;")
-    public native EventListener<CloseEvent> onClose();
+    /** See {@link WebSocket#setOnclose(EventListener)} */
+    @JSProperty
+    public native EventListener<CloseEvent> getOnclose();
 
     /** An event listener to be called when a message is received from the server. The listener receives a
      * MessageEvent named "message". */
-    @JSBody(params = "onMessage", script = "this.onmessage = onMessage;")
-    public native void onMessage(EventListener<MessageEvent> onMessage);
+    @JSProperty
+    public native void setOnmessage(EventListener<MessageEvent> onMessage);
 
-    /** See {@link WebSocket#onMessage(EventListener)} */
-    @JSBody(script = "return this.onmessage;")
-    public native EventListener<MessageEvent> onMessage();
+    /** See {@link WebSocket#setOnmessage(EventListener)} */
+    @JSProperty
+    public native EventListener<MessageEvent> getOnmessage();
 
     /** An event listener to be called when an error occurs. This is a simple event named "error". */
-    @JSBody(params = "onError", script = "this.onerror = onError;")
-    public native void onError(EventListener<Event> onError);
+    @JSProperty
+    public native void setOnerror(EventListener<Event> onError);
 
-    /** See {@link WebSocket#onError(EventListener)} */
-    @JSBody(script = "return this.onerror;")
-    public native EventListener<Event> onError();
+    /** See {@link WebSocket#setOnerror(EventListener)} */
+    @JSProperty
+    public native EventListener<Event> getOnerror();
 
-    /** See {@link WebSocket#close(short, String)} */
+    /** See {@link WebSocket#close(JSNumber, JSString)} */
     public abstract void close();
 
-    /** See {@link WebSocket#close(short, String)} */
-    public abstract void close(/*unsigned*/short code);
+    /** See {@link WebSocket#close(JSNumber, JSString)} */
+    public abstract void close(JSNumber code);
 
     /** Closes the WebSocket connection or connection attempt, if any. If the connection is already CLOSED, this
      * method does nothing.
@@ -117,14 +125,14 @@ public abstract class WebSocket implements JSObject {
      * assumed. See the list of status codes on the CloseEvent page for permitted values.
      * @param reason A human-readable string explaining why the connection is closing. This string must be no longer
      * than 123 bytes of UTF-8 text (not characters). */
-    public abstract void close(/*unsigned*/short code, /*DOM*/String reason); //throw InvalidAccessException,SyntaxError
+    public abstract void close(JSNumber code, JSString reason); //throw InvalidAccessException,SyntaxError
 
-    public abstract void send(/*DOM*/String data); // throws InvalidStateException, SyntaxError;
+    public abstract void send(JSString data); // throws InvalidStateException, SyntaxError;
 
     public abstract void send(ArrayBuffer data); // throws InvalidStateException, SyntaxError;
 
 //    public abstract void send( Blob data ); // throws InvalidStateException, SyntaxError; //TODO
 
     @JSBody(params = { "url", "protocols" }, script = "return new WebSocket( url, protocols );")
-    private static native WebSocket newInstance_(String url, String... protocols);
+    private static native WebSocket newInstance_(JSString url, JSArray<JSString> protocols);
 }
