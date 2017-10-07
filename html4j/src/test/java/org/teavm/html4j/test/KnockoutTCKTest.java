@@ -221,6 +221,11 @@ public class KnockoutTCKTest {
     }
 
     @Test
+    public void fromJsonWithUTF8() throws Throwable {
+        jsonTest.fromJsonWithUTF8();
+    }
+
+    @Test
     public void toJSONInABrowser() throws Throwable {
         jsonTest.toJSONInABrowser();
     }

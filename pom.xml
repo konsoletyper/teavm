@@ -66,7 +66,7 @@
   <properties>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
-    <html4j.version>1.4</html4j.version>
+    <html4j.version>1.5</html4j.version>
     <jetty.version>9.2.1.v20140609</jetty.version>
     <slf4j.version>1.7.7</slf4j.version>
     <selenium.version>2.47.2</selenium.version>

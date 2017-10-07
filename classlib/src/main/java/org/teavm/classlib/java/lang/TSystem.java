@@ -119,6 +119,10 @@ public final class TSystem extends TObject {
         return value != null ? value : def;
     }
 
+    public static String setProperty(TString key, TString value) {
+        throw new TSecurityException();
+    }
+
     @GeneratedBy(SystemNativeGenerator.class)
     @PluggableDependency(SystemNativeGenerator.class)
     public static native void setErr(TPrintStream err);

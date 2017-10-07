@@ -84,6 +84,11 @@ public abstract class TCharset implements Comparable<TCharset> {
         return charset;
     }
 
+    public static TCharset defaultCharset() {
+        return charsets.get("UTF-8");
+    }
+
+
     public final String name() {
         return canonicalName;
     }

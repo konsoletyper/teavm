@@ -21,6 +21,7 @@ import java.util.Map;
 import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
 import org.teavm.classlib.java.lang.annotation.TAnnotation;
 import org.teavm.classlib.java.lang.reflect.TAnnotatedElement;
+import org.teavm.classlib.java.lang.reflect.TField;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
@@ -214,6 +215,10 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     @Override
     public TAnnotation[] getDeclaredAnnotations() {
         return getAnnotations();
+    }
+
+    public TField getDeclaredField(String name) {
+        throw new TSecurityException();
     }
 
     private void ensureAnnotationsByType() {
