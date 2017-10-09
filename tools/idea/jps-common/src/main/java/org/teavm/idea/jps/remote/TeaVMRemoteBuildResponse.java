@@ -31,4 +31,5 @@ public class TeaVMRemoteBuildResponse implements Serializable {
     public final Set<String> usedResources = new HashSet<>();
     public final Set<String> classes = new HashSet<>();
     public final Set<String> generatedFiles = new HashSet<>();
+    public String stackTrace;
 }

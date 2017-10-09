@@ -20,10 +20,6 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class NamingOrderer implements NameFrequencyConsumer {
     private Map<String, Entry> entries = new HashMap<>();
 

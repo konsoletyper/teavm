@@ -78,10 +78,6 @@ import org.teavm.tooling.sources.DirectorySourceFileProvider;
 import org.teavm.tooling.sources.JarSourceFileProvider;
 import org.teavm.tooling.sources.SourceFileProvider;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
     private static final int TICKS_PER_PROFILE = 10000;
     private URL[] classPath;

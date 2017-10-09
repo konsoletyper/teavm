@@ -24,6 +24,8 @@ public interface TeaVMBuildResult {
 
     boolean isErrorOccurred();
 
+    String getStackTrace();
+
     ProblemProvider getProblems();
 
     Collection<String> getUsedResources();

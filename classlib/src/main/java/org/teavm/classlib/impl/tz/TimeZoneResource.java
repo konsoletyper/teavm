@@ -17,10 +17,6 @@ package org.teavm.classlib.impl.tz;
 
 import org.teavm.platform.metadata.Resource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TimeZoneResource extends Resource {
     String getData();
 

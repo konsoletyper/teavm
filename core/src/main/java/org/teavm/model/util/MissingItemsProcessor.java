@@ -91,6 +91,7 @@ public class MissingItemsProcessor {
             instruction.getNext().delete();
         }
         instruction.insertNextAll(instructionsToAdd);
+        instruction.delete();
     }
 
     private void emitExceptionThrow(TextLocation location, String exceptionName, String text) {

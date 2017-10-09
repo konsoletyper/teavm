@@ -15,9 +15,11 @@
  */
 package org.teavm.classlib.java.lang;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -35,6 +37,13 @@ public class ClassLoaderTest {
         assertEquals("qwerty", loadResource("6"));
         assertEquals("qwertyu", loadResource("7"));
         assertEquals("qwertyui", loadResource("8"));
+        assertEquals("qwertyuiopasdfghjklzxcvbnm", loadResource("9"));
+    }
+
+    @Test
+    public void returnsNullForNonExistentResource() {
+        InputStream input = ClassLoader.getSystemClassLoader().getResourceAsStream("non-existent-resource.txt");
+        assertNull(input);
     }
 
     private static String loadResource(String name) {

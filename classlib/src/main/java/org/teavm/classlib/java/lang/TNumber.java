@@ -17,10 +17,6 @@ package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TSerializable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TNumber extends TObject implements TSerializable {
     public abstract int intValue();
 

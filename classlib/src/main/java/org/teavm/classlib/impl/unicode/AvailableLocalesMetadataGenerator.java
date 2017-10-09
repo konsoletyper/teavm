@@ -18,10 +18,6 @@ package org.teavm.classlib.impl.unicode;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AvailableLocalesMetadataGenerator implements MetadataGenerator {
     @Override
     public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {

@@ -24,10 +24,6 @@ import org.teavm.debugging.information.*;
 import org.teavm.debugging.javascript.*;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Debugger {
     private static final Object dummyObject = new Object();
     private ConcurrentMap<DebuggerListener, Object> listeners = new ConcurrentHashMap<>();
@@ -38,8 +34,8 @@ public class Debugger {
     private ConcurrentMap<String, ConcurrentMap<DebugInformation, Object>> debugInformationFileMap =
             new ConcurrentHashMap<>();
     private ConcurrentMap<DebugInformation, String> scriptMap = new ConcurrentHashMap<>();
-    final ConcurrentMap<JavaScriptBreakpoint, Breakpoint> breakpointMap = new ConcurrentHashMap<>();
-    ConcurrentMap<Breakpoint, Object> breakpoints = new ConcurrentHashMap<>();
+    private final ConcurrentMap<JavaScriptBreakpoint, Breakpoint> breakpointMap = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Breakpoint, Object> breakpoints = new ConcurrentHashMap<>();
     private volatile CallFrame[] callStack;
 
     public Debugger(JavaScriptDebugger javaScriptDebugger, DebugInformationProvider debugInformationProvider) {
@@ -130,12 +126,12 @@ public class Debugger {
         javaScriptDebugger.resume();
     }
 
-    private static class CallSiteSuccessorFinder implements DebuggerCallSiteVisitor {
+    static class CallSiteSuccessorFinder implements DebuggerCallSiteVisitor {
         private DebugInformation debugInfo;
         private String script;
         Set<JavaScriptLocation> locations;
 
-        public CallSiteSuccessorFinder(DebugInformation debugInfo, String script, Set<JavaScriptLocation> locations) {
+        CallSiteSuccessorFinder(DebugInformation debugInfo, String script, Set<JavaScriptLocation> locations) {
             this.debugInfo = debugInfo;
             this.script = script;
             this.locations = locations;
@@ -189,7 +185,7 @@ public class Debugger {
 
     private List<DebugInformation> debugInformationBySource(String sourceFile) {
         Map<DebugInformation, Object> list = debugInformationFileMap.get(sourceFile);
-        return list != null ? new ArrayList<>(list.keySet()) : Collections.<DebugInformation>emptyList();
+        return list != null ? new ArrayList<>(list.keySet()) : Collections.emptyList();
     }
 
     public void continueToLocation(SourceLocation location) {
@@ -222,6 +218,10 @@ public class Debugger {
         return createBreakpoint(new SourceLocation(file, line));
     }
 
+    public Collection<? extends String> getSourceFiles() {
+        return debugInformationFileMap.keySet();
+    }
+
     public Breakpoint createBreakpoint(SourceLocation location) {
         synchronized (breakpointMap) {
             Breakpoint breakpoint = new Breakpoint(this, location);
@@ -236,7 +236,7 @@ public class Debugger {
         return new HashSet<>(breakpoints.keySet());
     }
 
-    void updateInternalBreakpoints(Breakpoint breakpoint) {
+    private void updateInternalBreakpoints(Breakpoint breakpoint) {
         if (breakpoint.isDestroyed()) {
             return;
         }
@@ -263,7 +263,7 @@ public class Debugger {
         return listeners.keySet().toArray(new DebuggerListener[0]);
     }
 
-    void updateBreakpointStatus(Breakpoint breakpoint, boolean fireEvent) {
+    private void updateBreakpointStatus(Breakpoint breakpoint, boolean fireEvent) {
         boolean valid = false;
         for (JavaScriptBreakpoint jsBreakpoint : breakpoint.jsBreakpoints) {
             if (jsBreakpoint.isValid()) {
@@ -432,10 +432,14 @@ public class Debugger {
         }
 
         @Override
-        public void paused() {
+        public void paused(JavaScriptBreakpoint breakpoint) {
             callStack = null;
+            Breakpoint javaBreakpoint = null;
+            if (breakpoint != null && !temporaryBreakpoints.contains(breakpoint)) {
+                javaBreakpoint = breakpointMap.get(breakpoint);
+            }
             for (DebuggerListener listener : getListeners()) {
-                listener.paused();
+                listener.paused(javaBreakpoint);
             }
         }
 

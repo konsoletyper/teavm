@@ -17,10 +17,6 @@ package org.teavm.classlib.java.security;
 
 import org.teavm.classlib.java.lang.TSecurityException;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TGuard {
     void checkGuard(Object object) throws TSecurityException;
 }

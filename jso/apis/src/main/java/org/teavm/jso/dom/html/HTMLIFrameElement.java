@@ -18,10 +18,6 @@ package org.teavm.jso.dom.html;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.browser.Window;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HTMLIFrameElement extends HTMLElement {
     @JSProperty
     HTMLDocument getContentDocument();

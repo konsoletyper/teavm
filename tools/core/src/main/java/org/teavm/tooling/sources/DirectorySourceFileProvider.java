@@ -20,10 +20,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DirectorySourceFileProvider implements SourceFileProvider {
     private File baseDirectory;
 
@@ -40,8 +36,26 @@ public class DirectorySourceFileProvider implements SourceFileProvider {
     }
 
     @Override
-    public InputStream openSourceFile(String fullPath) throws IOException {
+    public SourceFileInfo getSourceFile(String fullPath) throws IOException {
         File file = new File(baseDirectory, fullPath);
-        return file.exists() ? new FileInputStream(file) : null;
+        return file.exists() ? new DirectorySourceFile(file) : null;
+    }
+
+    static class DirectorySourceFile implements SourceFileInfo {
+        private File file;
+
+        DirectorySourceFile(File file) {
+            this.file = file;
+        }
+
+        @Override
+        public long lastModified() {
+            return file.lastModified();
+        }
+
+        @Override
+        public InputStream open() throws IOException {
+            return new FileInputStream(file);
+        }
     }
 }

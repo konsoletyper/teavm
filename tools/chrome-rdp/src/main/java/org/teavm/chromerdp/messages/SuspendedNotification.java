@@ -15,19 +15,17 @@
  */
 package org.teavm.chromerdp.messages;
 
+import java.util.List;
 import org.codehaus.jackson.JsonNode;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.teavm.chromerdp.data.CallFrameDTO;
 
-/**
- *
- * @author Alexey Andreev
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class SuspendedNotification {
     private CallFrameDTO[] callFrames;
     private String reason;
     private JsonNode data;
+    private List<String> hitBreakpoints;
 
     public CallFrameDTO[] getCallFrames() {
         return callFrames;
@@ -51,5 +49,13 @@ public class SuspendedNotification {
 
     public void setData(JsonNode data) {
         this.data = data;
+    }
+
+    public List<String> getHitBreakpoints() {
+        return hitBreakpoints;
+    }
+
+    public void setHitBreakpoints(List<String> hitBreakpoints) {
+        this.hitBreakpoints = hitBreakpoints;
     }
 }

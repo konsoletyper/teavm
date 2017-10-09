@@ -15,13 +15,25 @@
  */
 package org.teavm.idea.debug;
 
+import com.intellij.debugger.ui.breakpoints.JavaLineBreakpointType;
+import com.intellij.icons.AllIcons;
+import com.intellij.openapi.extensions.ExtensionPoint;
+import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.util.Key;
 import com.intellij.xdebugger.XDebugProcess;
 import com.intellij.xdebugger.XDebugSession;
 import com.intellij.xdebugger.XSourcePosition;
+import com.intellij.xdebugger.breakpoints.XBreakpoint;
 import com.intellij.xdebugger.breakpoints.XBreakpointHandler;
+import com.intellij.xdebugger.breakpoints.XLineBreakpoint;
 import com.intellij.xdebugger.evaluation.XDebuggerEditorsProvider;
+import com.intellij.xdebugger.frame.XSuspendContext;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.teavm.chromerdp.ChromeRDPDebugger;
 import org.teavm.chromerdp.ChromeRDPServer;
 import org.teavm.debugging.Breakpoint;
@@ -33,9 +45,10 @@ public class TeaVMDebugProcess extends XDebugProcess {
     public static final Key<Breakpoint> INNER_BREAKPOINT_KEY = new Key<>("TeaVM breakpoint");
     private TeaVMDebuggerEditorsProvider editorsProvider;
     private final Debugger innerDebugger;
-    private final TeaVMLineBreakpointHandler breakpointHandler;
+    private final List<TeaVMLineBreakpointHandler<?>> breakpointHandlers = new ArrayList<>();
     private final int port;
     private ChromeRDPServer debugServer;
+    ConcurrentMap<Breakpoint, XBreakpoint<?>> breakpointMap = new ConcurrentHashMap<>();
 
     public TeaVMDebugProcess(@NotNull XDebugSession session, int port) {
         super(session);
@@ -47,24 +60,43 @@ public class TeaVMDebugProcess extends XDebugProcess {
             }
 
             @Override
-            public void paused() {
-                handlePaused();
+            public void paused(Breakpoint breakpoint) {
+                XBreakpoint<?> xBreakpoint = breakpoint != null ? breakpointMap.get(breakpoint) : null;
+                if (xBreakpoint != null) {
+                    getSession().breakpointReached(xBreakpoint, null,
+                            new TeaVMSuspendContext(innerDebugger, getSession().getProject()));
+                } else {
+                    handlePaused();
+                }
             }
 
             @Override
             public void breakpointStatusChanged(Breakpoint breakpoint) {
+                updateBreakpointStatus(breakpoint);
             }
 
             @Override
             public void attached() {
+                updateAllBreakpoints();
             }
 
             @Override
             public void detached() {
+                updateAllBreakpoints();
             }
         });
 
-        breakpointHandler = new TeaVMLineBreakpointHandler(session.getProject(), innerDebugger);
+        breakpointHandlers.add(new TeaVMLineBreakpointHandler<>(JavaLineBreakpointType.class, session.getProject(),
+                innerDebugger, this));
+
+        ExtensionPoint<TeaVMBreakpointProvider<?>> breakpointProvider = Extensions.getArea(
+                session.getProject()).getExtensionPoint("org.teavm.extensions.breakpointProvider");
+        if (breakpointProvider != null) {
+            for (TeaVMBreakpointProvider<?> provider : breakpointProvider.getExtensions()) {
+                breakpointHandlers.add(new TeaVMLineBreakpointHandler<>(provider.getBreakpointType(),
+                        session.getProject(), innerDebugger, this));
+            }
+        }
     }
 
     private Debugger initDebugger() {
@@ -85,22 +117,22 @@ public class TeaVMDebugProcess extends XDebugProcess {
     }
 
     @Override
-    public void startStepOver() {
+    public void startStepOver(@Nullable XSuspendContext context) {
         innerDebugger.stepOver();
     }
 
     @Override
-    public void startStepInto() {
+    public void startStepInto(@Nullable XSuspendContext context) {
         innerDebugger.stepInto();
     }
 
     @Override
-    public void startStepOut() {
+    public void startStepOut(@Nullable XSuspendContext context) {
         innerDebugger.stepOut();
     }
 
     @Override
-    public void resume() {
+    public void resume(@Nullable XSuspendContext context) {
         innerDebugger.resume();
     }
 
@@ -110,7 +142,7 @@ public class TeaVMDebugProcess extends XDebugProcess {
     }
 
     @Override
-    public void runToPosition(@NotNull XSourcePosition position) {
+    public void runToPosition(@NotNull XSourcePosition position, @Nullable XSuspendContext context) {
         innerDebugger.continueToLocation(position.getFile().getPath(), position.getLine());
     }
 
@@ -118,9 +150,42 @@ public class TeaVMDebugProcess extends XDebugProcess {
         getSession().positionReached(new TeaVMSuspendContext(innerDebugger, getSession().getProject()));
     }
 
+    @Override
+    public boolean checkCanPerformCommands() {
+        return innerDebugger.isSuspended() && innerDebugger.isAttached();
+    }
+
+    void updateBreakpointStatus(Breakpoint breakpoint) {
+        XBreakpoint<?> xBreakpoint = breakpointMap.get(breakpoint);
+        if (xBreakpoint instanceof XLineBreakpoint) {
+            XLineBreakpoint<?> xLineBreakpoint = (XLineBreakpoint<?>) xBreakpoint;
+            if (!innerDebugger.isAttached()) {
+                getSession().updateBreakpointPresentation(xLineBreakpoint, null,
+                        null);
+            } else if (breakpoint.isValid()) {
+                getSession().updateBreakpointPresentation(xLineBreakpoint, AllIcons.Debugger.Db_verified_breakpoint,
+                        null);
+            } else {
+                getSession().updateBreakpointPresentation(xLineBreakpoint, AllIcons.Debugger.Db_invalid_breakpoint,
+                        "Could not set breakpoint in remote process");
+            }
+        }
+    }
+
+    @Override
+    public String getCurrentStateMessage() {
+        return !innerDebugger.isAttached() ? "Detached" : super.getCurrentStateMessage();
+    }
+
+    private void updateAllBreakpoints() {
+        for (Breakpoint breakpoint : breakpointMap.keySet().toArray(new Breakpoint[0])) {
+            updateBreakpointStatus(breakpoint);
+        }
+    }
+
     @NotNull
     @Override
     public XBreakpointHandler<?>[] getBreakpointHandlers() {
-        return new XBreakpointHandler[] { breakpointHandler };
+        return breakpointHandlers.toArray(new XBreakpointHandler<?>[0]);
     }
 }

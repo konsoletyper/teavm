@@ -1,0 +1,31 @@
+var @this as this
+
+$start
+    @cond := invokeStatic `Foo.cond()I`
+    if @cond == 0 then goto $then1 else goto $else1
+$then1
+    @a1_then := new A
+    @foo1 := 23
+    field A.foo @a1_then := @foo1 as I
+    goto $joint1
+$else1
+    @a1_else := new A
+    @foo2 := 42
+    field A.foo @a1_else := @foo2 as I
+    goto $joint1
+
+$joint1
+    @a1 := phi @a1_then from $then1, @a1_else from $else1
+    @a2 := @a1
+    if @cond == 0 then goto $then2 else goto $else2
+$then2
+    @a3_then := new A
+    goto $joint2
+$else2
+    @a3_else := @a2
+    goto $joint2
+
+$joint2
+    @a3 := phi @a3_then from $then2, @a3_else from $else2
+    invokeStatic `Foo.accept(LA;)V` @a3
+    return

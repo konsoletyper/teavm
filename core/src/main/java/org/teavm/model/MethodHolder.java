@@ -15,10 +15,6 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class MethodHolder extends MemberHolder implements MethodReader {
     private MethodDescriptor descriptor;
     private ClassHolder owner;

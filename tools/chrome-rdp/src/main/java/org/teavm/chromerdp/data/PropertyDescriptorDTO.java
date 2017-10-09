@@ -17,10 +17,6 @@ package org.teavm.chromerdp.data;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
-/**
- *
- * @author Alexey Andreev
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PropertyDescriptorDTO {
     private String name;

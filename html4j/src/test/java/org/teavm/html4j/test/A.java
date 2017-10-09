@@ -15,10 +15,6 @@
  */
 package org.teavm.html4j.test;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface A {
     int foo();
 }

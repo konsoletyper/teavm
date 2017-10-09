@@ -26,10 +26,16 @@ import com.intellij.openapi.util.Computable;
 import com.intellij.psi.PsiClass;
 import com.intellij.psi.search.GlobalSearchScope;
 import com.intellij.psi.util.PsiMethodUtil;
+import com.intellij.ui.IdeBorderFactory;
+import com.intellij.ui.ToolbarDecorator;
 import com.intellij.ui.components.JBLabel;
+import com.intellij.ui.table.JBTable;
+import com.intellij.util.ui.EditableModel;
+import java.awt.BorderLayout;
 import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
@@ -37,16 +43,21 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import javax.swing.DefaultComboBoxModel;
 import javax.swing.JComboBox;
 import javax.swing.JPanel;
+import javax.swing.table.AbstractTableModel;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
+import org.teavm.idea.jps.model.TeaVMProperty;
 
 class TeaVMConfigurationPanel extends JPanel {
     private final TextFieldWithBrowseButton mainClassField = new TextFieldWithBrowseButton(event -> chooseMainClass());
     private final TextFieldWithBrowseButton targetDirectoryField = new TextFieldWithBrowseButton();
     private final JComboBox<ComboBoxItem<Boolean>> sourceMapsField = new JComboBox<>(new DefaultComboBoxModel<>());
     private final JComboBox<ComboBoxItem<Boolean>> copySourcesField = new JComboBox<>(new DefaultComboBoxModel<>());
+    private final JBTable propertiesTable = new JBTable();
+    private final PropertiesModel propertiesModel = new PropertiesModel();
     private final TeaVMJpsConfiguration initialConfiguration = new TeaVMJpsConfiguration();
     private final Project project;
 
@@ -73,6 +84,7 @@ class TeaVMConfigurationPanel extends JPanel {
 
     TeaVMConfigurationPanel(Project project) {
         this.project = project;
+        propertiesTable.setModel(propertiesModel);
         setupLayout();
 
         FileChooserDescriptor targetDirectoryChooserDescriptor = FileChooserDescriptorFactory
@@ -134,7 +146,12 @@ class TeaVMConfigurationPanel extends JPanel {
         constraints.fill = GridBagConstraints.BOTH;
         constraints.weighty = 100;
         constraints.weightx = 1;
-        add(new JPanel(), constraints);
+
+        JPanel propertiesPanel = new JPanel(new BorderLayout());
+        propertiesPanel.setBorder(IdeBorderFactory.createTitledBorder("Properties"));
+        propertiesPanel.add(ToolbarDecorator.createDecorator(propertiesTable).createPanel(), BorderLayout.CENTER);
+
+        add(propertiesPanel, constraints);
     }
 
     private static JBLabel bold(JBLabel label) {
@@ -150,27 +167,54 @@ class TeaVMConfigurationPanel extends JPanel {
         for (Field<?> field : fields) {
             loadField(field, config);
         }
+
+        copyProperties(config.getProperties(), propertiesModel.getProperties());
     }
 
     void save(TeaVMJpsConfiguration config) {
         for (Field<?> field : fields) {
             saveField(field, config);
         }
+        copyProperties(propertiesModel.getProperties(), config.getProperties());
         updateInitialConfiguration(config);
     }
 
     boolean isModified() {
-        return fields.stream().anyMatch(this::isFieldModified);
+        return fields.stream().anyMatch(this::isFieldModified) || arePropertiesModified();
     }
 
     private <T> boolean isFieldModified(Field<T> field) {
         return !Objects.equals(field.dataSupplier.apply(initialConfiguration), field.editSupplier.get());
     }
 
+    private boolean arePropertiesModified() {
+        if (initialConfiguration.getProperties().size() != propertiesModel.getProperties().size()) {
+            return true;
+        }
+
+        for (int i = 0; i < initialConfiguration.getProperties().size(); ++i) {
+            TeaVMProperty initialProperty = initialConfiguration.getProperties().get(i);
+            TeaVMProperty property = propertiesModel.getProperties().get(i);
+            if (!initialProperty.getKey().equals(property.getKey())
+                    || !initialProperty.getValue().equals(property.getValue())) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void updateInitialConfiguration(TeaVMJpsConfiguration config) {
         for (Field<?> field : fields) {
             copyField(field, config);
         }
+
+        copyProperties(config.getProperties(), initialConfiguration.getProperties());
+    }
+
+    private void copyProperties(List<TeaVMProperty> from, List<TeaVMProperty> to) {
+        to.clear();
+        to.addAll(from.stream().map(property -> property.createCopy()).collect(Collectors.toList()));
     }
 
     private <T> void copyField(Field<T> field, TeaVMJpsConfiguration config) {
@@ -230,6 +274,89 @@ class TeaVMConfigurationPanel extends JPanel {
             this.dataSupplier = dataSupplier;
             this.editConsumer = editConsumer;
             this.editSupplier = editSupplier;
+        }
+    }
+
+    class PropertiesModel extends AbstractTableModel implements EditableModel {
+        private List<TeaVMProperty> properties = new ArrayList<>();
+
+        List<TeaVMProperty> getProperties() {
+            return properties;
+        }
+
+        @Override
+        public void addRow() {
+            properties.add(new TeaVMProperty());
+        }
+
+        @Override
+        public void exchangeRows(int oldIndex, int newIndex) {
+            TeaVMProperty old = properties.get(oldIndex);
+            properties.set(oldIndex, properties.get(newIndex));
+            properties.set(newIndex, old);
+        }
+
+        @Override
+        public boolean canExchangeRows(int oldIndex, int newIndex) {
+            return true;
+        }
+
+        @Override
+        public void removeRow(int idx) {
+            properties.remove(idx);
+        }
+
+        @Override
+        public int getRowCount() {
+            return properties.size();
+        }
+
+        @Override
+        public int getColumnCount() {
+            return 2;
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            switch (column) {
+                case 0:
+                    return "Name";
+                case 1:
+                    return "Value";
+                default:
+                    throw new IllegalArgumentException();
+            }
+        }
+
+        @Override
+        public Object getValueAt(int rowIndex, int columnIndex) {
+            switch (columnIndex) {
+                case 0:
+                    return properties.get(rowIndex).getKey();
+                case 1:
+                    return properties.get(rowIndex).getValue();
+                default:
+                    throw new IllegalArgumentException();
+            }
+        }
+
+        @Override
+        public void setValueAt(Object aValue, int rowIndex, int columnIndex) {
+            switch (columnIndex) {
+                case 0:
+                    properties.get(rowIndex).setKey((String) aValue);
+                    break;
+                case 1:
+                    properties.get(rowIndex).setValue((String) aValue);
+                    break;
+                default:
+                    throw new IllegalArgumentException();
+            }
+        }
+
+        @Override
+        public boolean isCellEditable(int rowIndex, int columnIndex) {
+            return true;
         }
     }
 }

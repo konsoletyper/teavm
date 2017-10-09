@@ -18,10 +18,6 @@ package org.teavm.jso.webgl;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface WebGLShaderPrecisionFormat extends JSObject {
     @JSProperty
     int getRangeMin();

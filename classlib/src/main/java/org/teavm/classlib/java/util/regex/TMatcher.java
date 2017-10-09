@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -48,17 +64,17 @@ import java.util.ArrayList;
  */
 public final class TMatcher implements TMatchResult {
 
-    static int MODE_FIND = 1;
+    static final int MODE_FIND = 1;
 
-    static int MODE_MATCH = 1 << 1;
+    static final int MODE_MATCH = 1 << 1;
 
-    private TPattern pat = null;
+    private TPattern pat;
 
-    private TAbstractSet start = null;
+    private TAbstractSet start;
 
-    private CharSequence string = null;
+    private CharSequence string;
 
-    private TMatchResultImpl matchResult = null;
+    private TMatchResultImpl matchResult;
 
     // bounds
     private int leftBound = -1;
@@ -66,13 +82,13 @@ public final class TMatcher implements TMatchResult {
     private int rightBound = -1;
 
     // replacements
-    private int appendPos = 0;
+    private int appendPos;
 
-    private String replacement = null;
+    private String replacement;
 
-    private String processedRepl = null;
+    private String processedRepl;
 
-    private ArrayList<Object> replacementParts = null;
+    private ArrayList<Object> replacementParts;
 
     /**
      * Appends a literal part of the input plus a replacement for the current
@@ -379,15 +395,16 @@ public final class TMatcher implements TMatchResult {
      */
     public boolean find() {
         int length = string.length();
-        if (!hasTransparentBounds())
+        if (!hasTransparentBounds()) {
             length = rightBound;
+        }
         if (matchResult.startIndex >= 0 && matchResult.mode() == TMatcher.MODE_FIND) {
             matchResult.startIndex = matchResult.end();
             if (matchResult.end() == matchResult.start()) {
                 matchResult.startIndex++;
             }
 
-            return matchResult.startIndex <= length ? find(matchResult.startIndex) : false;
+            return matchResult.startIndex <= length && find(matchResult.startIndex);
         } else {
             return find(leftBound);
         }
@@ -447,15 +464,16 @@ public final class TMatcher implements TMatchResult {
      */
     public static String quoteReplacement(String s) {
         // first check whether we have smth to quote
-        if (s.indexOf('\\') < 0 && s.indexOf('$') < 0)
+        if (s.indexOf('\\') < 0 && s.indexOf('$') < 0) {
             return s;
+        }
         StringBuilder res = new StringBuilder(s.length() * 2);
         char ch;
         int len = s.length();
 
         for (int i = 0; i < len; i++) {
-
-            switch (ch = s.charAt(i)) {
+            ch = s.charAt(i);
+            switch (ch) {
                 case '$':
                     res.append('\\');
                     res.append('$');
@@ -680,7 +698,8 @@ public final class TMatcher implements TMatchResult {
         this.string = cs;
         this.leftBound = 0;
         this.rightBound = string.length();
-        matchResult = new TMatchResultImpl(cs, leftBound, rightBound, pat.groupCount(), pat.compCount(), pat.consCount());
+        matchResult = new TMatchResultImpl(cs, leftBound, rightBound, pat.groupCount(), pat.compCount(),
+                pat.consCount());
     }
 
     @Override
@@ -689,8 +708,9 @@ public final class TMatcher implements TMatchResult {
         try {
             lastMatch = Integer.toString(start());
         } catch (IllegalStateException e) {
+            // do nothing
         }
-        return "Regex[pattern=" + pat + " region=" + matchResult.getLeftBound() + "," + matchResult.getRightBound() +
-                " lastmatch=" + lastMatch + "]";
+        return "Regex[pattern=" + pat + " region=" + matchResult.getLeftBound() + "," + matchResult.getRightBound()
+                + " lastmatch=" + lastMatch + "]";
     }
 }

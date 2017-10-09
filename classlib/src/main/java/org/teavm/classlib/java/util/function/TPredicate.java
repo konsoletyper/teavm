@@ -17,10 +17,6 @@ package org.teavm.classlib.java.util.function;
 
 import org.teavm.classlib.java.util.TObjects;
 
-/**
- *
- * @author Alexey Andreev
- */
 @FunctionalInterface
 public interface TPredicate<T> {
     boolean test(T t);

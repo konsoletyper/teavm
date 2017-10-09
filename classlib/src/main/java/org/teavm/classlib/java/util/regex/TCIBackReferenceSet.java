@@ -57,12 +57,13 @@ class TCIBackReferenceSet extends TJointSet {
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
         String group = getString(matchResult);
 
-        if (group == null || (stringIndex + group.length()) > matchResult.getRightBound())
+        if (group == null || (stringIndex + group.length()) > matchResult.getRightBound()) {
             return -1;
+        }
 
         for (int i = 0; i < group.length(); i++) {
-            if (group.charAt(i) != testString.charAt(stringIndex + i) &&
-                    TPattern.getSupplement(group.charAt(i)) != testString.charAt(stringIndex + i)) {
+            if (group.charAt(i) != testString.charAt(stringIndex + i)
+                    && TPattern.getSupplement(group.charAt(i)) != testString.charAt(stringIndex + i)) {
                 return -1;
             }
         }
@@ -92,8 +93,7 @@ class TCIBackReferenceSet extends TJointSet {
 
     @Override
     public boolean hasConsumed(TMatchResultImpl matchResult) {
-        int cons;
-        boolean res = ((cons = matchResult.getConsumed(consCounter)) < 0 || cons > 0);
+        boolean res = matchResult.getConsumed(consCounter) != 0;
         matchResult.setConsumed(consCounter, -1);
         return res;
     }

@@ -18,10 +18,6 @@ package org.teavm.html4j.testing;
 import org.teavm.testing.TestLauncher;
 import org.teavm.testing.TestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class KOTestRunner implements TestRunner {
     @Override
     public void run(TestLauncher launcher) throws Throwable {

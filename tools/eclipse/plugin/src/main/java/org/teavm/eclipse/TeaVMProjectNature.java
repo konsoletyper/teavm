@@ -23,10 +23,6 @@ import org.eclipse.core.resources.IProjectNature;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.NullProgressMonitor;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMProjectNature implements IProjectNature {
     private IProject project;
 

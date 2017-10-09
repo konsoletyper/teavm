@@ -17,10 +17,6 @@ package org.teavm.classlib.java.util.function;
 
 import org.teavm.classlib.java.util.TComparator;
 
-/**
- *
- * @author Alexey Andreev
- */
 @FunctionalInterface
 public interface TBinaryOperator<T> extends TBiFunction<T, T, T> {
     static <T> TBinaryOperator<T> minBy(TComparator<? super T> comparator) {

@@ -58,6 +58,7 @@ import org.teavm.model.instructions.DoubleConstantInstruction;
 import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
@@ -509,6 +510,9 @@ public class ListingParser {
             case SHIFT_RIGHT_UNSIGNED:
                 parseBinary(receiver, variable, BinaryOperation.SHIFT_RIGHT_UNSIGNED);
                 break;
+            case LEFT_SQUARE_BRACKET:
+                parseSubscript(receiver, variable);
+                break;
             case IDENTIFIER:
                 switch ((String) lexer.getTokenValue()) {
                     case "compareTo":
@@ -545,6 +549,23 @@ public class ListingParser {
         insn.setFirstOperand(first);
         insn.setSecondOperand(second);
         insn.setReceiver(receiver);
+
+        addInstruction(insn);
+    }
+
+    private void parseSubscript(Variable receiver, Variable array) throws IOException, ListingParseException {
+        lexer.nextToken();
+        Variable index = expectVariable();
+        expect(ListingToken.RIGHT_SQUARE_BRACKET);
+        lexer.nextToken();
+        expectKeyword("as");
+
+        ArrayElementType type = expectArrayType();
+
+        GetElementInstruction insn = new GetElementInstruction(type);
+        insn.setReceiver(receiver);
+        insn.setArray(array);
+        insn.setIndex(index);
 
         addInstruction(insn);
     }

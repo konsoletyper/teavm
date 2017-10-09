@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TCharBufferOverByteBufferBigEndian extends TCharBufferOverByteBuffer {
     public TCharBufferOverByteBufferBigEndian(int start, int capacity, TByteBufferImpl byteBuffer, int position,
             int limit, boolean readOnly) {

@@ -17,10 +17,6 @@ package org.teavm.model.instructions;
 
 import org.teavm.model.BasicBlockReader;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface SwitchTableEntryReader {
     int getCondition();
 

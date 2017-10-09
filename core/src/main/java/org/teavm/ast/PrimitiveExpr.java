@@ -15,10 +15,6 @@
  */
 package org.teavm.ast;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class PrimitiveExpr {
     private Object value;
 

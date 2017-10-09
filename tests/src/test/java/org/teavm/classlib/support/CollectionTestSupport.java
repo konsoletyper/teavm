@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2017 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -32,26 +48,23 @@
 
 package org.teavm.classlib.support;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertTrue;
 import java.util.Collection;
 import java.util.TreeSet;
 
-/**
- * @tests java.util.Collection
- */
-public class Support_CollectionTest {
+public class CollectionTestSupport {
 
     Collection<Integer> col; // must contain the Integers 0 to 99
 
-    public Support_CollectionTest() {
+    public CollectionTestSupport() {
     }
 
-    public Support_CollectionTest(Collection<Integer> c) {
+    public CollectionTestSupport(Collection<Integer> c) {
         col = c;
     }
 
     public void runTest() {
-        new Support_UnmodifiableCollectionTest(col).runTest();
+        new UnmodifiableCollectionTestSupport(col).runTest();
 
         // setup
         Collection<Integer> myCollection = new TreeSet<>();

@@ -24,10 +24,6 @@ import java.util.Set;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JarSourceFileProvider implements SourceFileProvider {
     private File file;
     private ZipFile zipFile;
@@ -58,11 +54,31 @@ public class JarSourceFileProvider implements SourceFileProvider {
     }
 
     @Override
-    public InputStream openSourceFile(String fullPath) throws IOException {
+    public SourceFileInfo getSourceFile(String fullPath) throws IOException {
         if (zipFile == null || !sourceFiles.contains(fullPath)) {
             return null;
         }
         ZipEntry entry = zipFile.getEntry(fullPath);
-        return entry != null ? zipFile.getInputStream(entry) : null;
+        return entry != null ? new JarSourceFile(zipFile, entry) : null;
+    }
+
+    static class JarSourceFile implements SourceFileInfo {
+        private ZipFile file;
+        private ZipEntry entry;
+
+        JarSourceFile(ZipFile file, ZipEntry entry) {
+            this.file = file;
+            this.entry = entry;
+        }
+
+        @Override
+        public long lastModified() {
+            return entry.getTime();
+        }
+
+        @Override
+        public InputStream open() throws IOException {
+            return file.getInputStream(entry);
+        }
     }
 }

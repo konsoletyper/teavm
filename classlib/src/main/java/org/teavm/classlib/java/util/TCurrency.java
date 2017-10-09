@@ -28,10 +28,6 @@ import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 import org.teavm.platform.metadata.StringResource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class TCurrency implements TSerializable {
     private static Map<String, TCurrency> currencies;
     private CurrencyResource resource;

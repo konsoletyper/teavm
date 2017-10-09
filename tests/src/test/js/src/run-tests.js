@@ -18,7 +18,7 @@
 import * as fs from "./promise-fs.js";
 import * as nodePath from "path";
 import * as http from "http";
-import { server as WebSocketServer } from "websocket";
+import {server as WebSocketServer} from "websocket";
 
 const TEST_FILE_NAME = "test.js";
 const RUNTIME_FILE_NAME = "runtime.js";

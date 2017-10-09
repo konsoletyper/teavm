@@ -17,10 +17,6 @@ package org.teavm.chromerdp.messages;
 
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
-/**
- *
- * @author Alexey Andreev
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GetPropertiesCommand {
     private String objectId;

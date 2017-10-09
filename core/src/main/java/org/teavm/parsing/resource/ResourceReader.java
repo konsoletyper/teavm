@@ -18,10 +18,6 @@ package org.teavm.parsing.resource;
 import java.io.IOException;
 import java.io.InputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ResourceReader {
     boolean hasResource(String name);
 

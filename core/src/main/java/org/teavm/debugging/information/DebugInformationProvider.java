@@ -15,10 +15,6 @@
  */
 package org.teavm.debugging.information;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface DebugInformationProvider {
     DebugInformation getDebugInformation(String script);
 }

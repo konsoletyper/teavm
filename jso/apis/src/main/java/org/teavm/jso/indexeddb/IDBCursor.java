@@ -19,10 +19,6 @@ import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface IDBCursor extends JSObject {
     String DIRECTION_NEXT = "next";
 

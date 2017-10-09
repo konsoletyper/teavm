@@ -18,10 +18,6 @@ package org.teavm.jso.dom.events;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 @JSFunctor
 public interface EventListener<E extends Event> extends JSObject {
     void handleEvent(E evt);

@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TIntBuffer extends TBuffer implements Comparable<TIntBuffer> {
     TIntBuffer(int capacity, int position, int limit) {
         super(capacity);

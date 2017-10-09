@@ -15,10 +15,6 @@
  */
 package org.teavm.common;
 
-/**
- *
- * @author Alexey Andreev
- */
 class DefaultDominatorTree implements DominatorTree {
     private LCATree lcaTree;
     private int[] indexes;

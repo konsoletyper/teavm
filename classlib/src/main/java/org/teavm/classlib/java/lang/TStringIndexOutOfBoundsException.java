@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TStringIndexOutOfBoundsException extends TIndexOutOfBoundsException {
     private static final long serialVersionUID = 6706349858694463085L;
 

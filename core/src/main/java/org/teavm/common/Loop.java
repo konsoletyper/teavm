@@ -15,10 +15,6 @@
  */
 package org.teavm.common;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface Loop {
     int getHead();
 

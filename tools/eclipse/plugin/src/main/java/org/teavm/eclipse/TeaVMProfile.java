@@ -18,10 +18,6 @@ package org.teavm.eclipse;
 import java.util.Map;
 import java.util.Properties;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TeaVMProfile {
     String getName();
 

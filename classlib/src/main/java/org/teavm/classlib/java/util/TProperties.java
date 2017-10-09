@@ -24,10 +24,6 @@ import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.io.TWriter;
 import org.teavm.classlib.java.lang.TString;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TProperties extends THashtable<Object, Object> {
     /**
      * The default values for keys not found in this {@code Properties}
@@ -35,7 +31,12 @@ public class TProperties extends THashtable<Object, Object> {
      */
     protected TProperties defaults;
 
-    private static final int NONE = 0, SLASH = 1, UNICODE = 2, CONTINUE = 3,  KEY_DONE = 4, IGNORE = 5;
+    private static final int NONE = 0;
+    private static final int SLASH = 1;
+    private static final int UNICODE = 2;
+    private static final int CONTINUE = 3;
+    private static final int KEY_DONE = 4;
+    private static final int IGNORE = 5;
 
     public TProperties() {
         super();
@@ -46,7 +47,8 @@ public class TProperties extends THashtable<Object, Object> {
     }
 
     private void dumpString(StringBuilder buffer, String string, boolean isKey) {
-        int index = 0, length = string.length();
+        int index = 0;
+        int length = string.length();
         if (!isKey && index < length && string.charAt(index) == ' ') {
             buffer.append("\\ "); //$NON-NLS-1$
             index++;
@@ -82,7 +84,9 @@ public class TProperties extends THashtable<Object, Object> {
 
     private char[] toHexaDecimal(final int ch) {
         char[] hexChars = { '\\', 'u', '0', '0', '0', '0' };
-        int hexChar, index = hexChars.length, copyOfCh = ch;
+        int hexChar;
+        int index = hexChars.length;
+        int copyOfCh = ch;
         do {
             hexChar = copyOfCh & 15;
             if (hexChar > 9) {
@@ -91,7 +95,8 @@ public class TProperties extends THashtable<Object, Object> {
                 hexChar += '0';
             }
             hexChars[--index] = (char) hexChar;
-        } while ((copyOfCh >>>= 4) != 0);
+            copyOfCh >>>= 4;
+        } while (copyOfCh != 0);
         return hexChars;
     }
 
@@ -148,9 +153,14 @@ public class TProperties extends THashtable<Object, Object> {
         if (in == null) {
             throw new NullPointerException();
         }
-        int mode = NONE, unicode = 0, count = 0;
-        char nextChar, buf[] = new char[40];
-        int offset = 0, keyLength = -1, intVal;
+        int mode = NONE;
+        int unicode = 0;
+        int count = 0;
+        char nextChar;
+        char[] buf = new char[40];
+        int offset = 0;
+        int keyLength = -1;
+        int intVal;
         boolean firstChar = true;
         TBufferedInputStream bis = new TBufferedInputStream(in);
 
@@ -218,7 +228,8 @@ public class TProperties extends THashtable<Object, Object> {
                     break;
                 case 'u':
                     mode = UNICODE;
-                    unicode = count = 0;
+                    unicode = 0;
+                    count = 0;
                     continue;
                 }
             } else {
@@ -246,7 +257,13 @@ public class TProperties extends THashtable<Object, Object> {
                         continue;
                     }
                     // fall into the next case
+                    break;
                 case '\r':
+                    if (mode == CONTINUE) { // Part of a \r\n sequence
+                        mode = IGNORE; // Ignore whitespace on the next line
+                        continue;
+                    }
+
                     mode = NONE;
                     firstChar = true;
                     if (offset > 0 || (offset == 0 && keyLength == 0)) {
@@ -315,7 +332,7 @@ public class TProperties extends THashtable<Object, Object> {
     }
 
     private void selectProperties(THashtable<Object, Object> selected) {
-        if(defaults != null) {
+        if (defaults != null) {
             defaults.selectProperties(selected);
         }
         selected.putAll(this);
@@ -326,6 +343,7 @@ public class TProperties extends THashtable<Object, Object> {
         try {
             store(out, comment);
         } catch (TIOException e) {
+            // do nothing
         }
     }
 

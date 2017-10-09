@@ -19,10 +19,6 @@ import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceMap;
 import org.teavm.platform.metadata.StringResource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TimeZoneLocalization extends Resource {
     ResourceMap<ResourceMap<StringResource>> getTimeZones();
 

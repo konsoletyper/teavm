@@ -21,6 +21,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.jetbrains.jps.incremental.CompileContext;
@@ -29,6 +30,7 @@ import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.idea.jps.model.TeaVMBuildResult;
 import org.teavm.idea.jps.model.TeaVMBuildStrategy;
+import org.teavm.idea.jps.util.ExceptionUtil;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
@@ -49,6 +51,7 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
     private boolean sourceFilesCopied;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private TeaVMProgressListener progressListener;
+    private Properties properties = new Properties();
 
     public InProcessBuildStrategy(CompileContext context) {
         this.context = context;
@@ -111,6 +114,16 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
     }
 
     @Override
+    public void setIncremental(boolean incremental) {
+    }
+
+    @Override
+    public void setProperties(Properties properties) {
+        this.properties.clear();
+        this.properties.putAll(properties);
+    }
+
+    @Override
     public TeaVMBuildResult build() {
         TeaVMTool tool = new TeaVMTool();
         tool.setProgressListener(progressListener);
@@ -126,15 +139,19 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
 
         tool.setMinifying(false);
 
+        tool.getProperties().putAll(properties);
+
         for (SourceFileProvider fileProvider : sourceFileProviders) {
             tool.addSourceFileProvider(fileProvider);
         }
 
         boolean errorOccurred = false;
+        String stackTrace = null;
         try {
             tool.generate();
         } catch (TeaVMToolException | RuntimeException | Error e) {
             e.printStackTrace(System.err);
+            stackTrace = ExceptionUtil.exceptionToString(e);
             context.processMessage(new CompilerMessage("TeaVM", e));
             errorOccurred = true;
         }
@@ -143,7 +160,7 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
                 .map(File::getAbsolutePath)
                 .collect(Collectors.toSet());
 
-        return new InProcessBuildResult(tool.getDependencyInfo().getCallGraph(), errorOccurred,
+        return new InProcessBuildResult(tool.getDependencyInfo().getCallGraph(), errorOccurred, stackTrace,
                 tool.getProblemProvider(), tool.getClasses(), tool.getUsedResources(), generatedFiles);
     }
 
@@ -164,15 +181,18 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
     static class InProcessBuildResult implements TeaVMBuildResult {
         private CallGraph callGraph;
         private boolean errorOccurred;
+        private String stackTrace;
         private ProblemProvider problemProvider;
         private Collection<String> classes;
         private Collection<String> usedResources;
         private Collection<String> generatedFiles;
 
-        InProcessBuildResult(CallGraph callGraph, boolean errorOccurred, ProblemProvider problemProvider,
-                Collection<String> classes, Collection<String> usedResources, Collection<String> generatedFiles) {
+        InProcessBuildResult(CallGraph callGraph, boolean errorOccurred, String stackTrace,
+                ProblemProvider problemProvider, Collection<String> classes, Collection<String> usedResources,
+                Collection<String> generatedFiles) {
             this.callGraph = callGraph;
             this.errorOccurred = errorOccurred;
+            this.stackTrace = stackTrace;
             this.problemProvider = problemProvider;
             this.classes = classes;
             this.usedResources = usedResources;
@@ -187,6 +207,11 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
         @Override
         public boolean isErrorOccurred() {
             return errorOccurred;
+        }
+
+        @Override
+        public String getStackTrace() {
+            return stackTrace;
         }
 
         @Override

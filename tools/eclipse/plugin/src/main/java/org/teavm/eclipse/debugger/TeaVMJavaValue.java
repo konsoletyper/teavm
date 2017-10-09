@@ -18,10 +18,6 @@ package org.teavm.eclipse.debugger;
 import org.eclipse.debug.core.DebugException;
 import org.teavm.debugging.Value;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMJavaValue extends TeaVMValue {
     private Value teavmValue;
     private boolean innerStructure;

@@ -19,10 +19,6 @@ import java.util.*;
 import org.teavm.debugging.javascript.JavaScriptValue;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMJSVariablesHolder extends TeaVMVariablesHolder {
     private String idPrefix;
     private TeaVMDebugTarget debugTarget;

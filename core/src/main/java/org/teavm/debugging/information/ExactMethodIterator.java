@@ -19,10 +19,6 @@ import org.teavm.common.RecordArray;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ExactMethodIterator {
     private DebugInformation debugInformation;
     private GeneratedLocation location;

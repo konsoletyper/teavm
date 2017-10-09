@@ -18,10 +18,6 @@ package org.teavm.jso.dom.xml;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface Node extends JSObject {
     short ELEMENT_NODE = 1;
     short ATTRIBUTE_NODE = 2;

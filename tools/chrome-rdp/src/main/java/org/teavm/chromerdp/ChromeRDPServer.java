@@ -26,10 +26,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ChromeRDPServer {
     private int port = 2357;
     private ChromeRDPExchangeConsumer exchangeConsumer;

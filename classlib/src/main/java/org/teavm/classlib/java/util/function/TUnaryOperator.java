@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.util.function;
 
-/**
- *
- * @author Alexey Andreev
- */
 @FunctionalInterface
 public interface TUnaryOperator<T> extends TFunction<T, T> {
     static <T> TUnaryOperator<T> identity() {

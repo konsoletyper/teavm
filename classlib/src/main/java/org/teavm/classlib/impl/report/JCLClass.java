@@ -18,10 +18,6 @@ package org.teavm.classlib.impl.report;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 class JCLClass {
     public final String name;
     public JCLStatus status;

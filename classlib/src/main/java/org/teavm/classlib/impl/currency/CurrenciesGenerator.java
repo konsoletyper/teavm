@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.impl.currency;
 
+import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Iterator;
@@ -29,10 +30,6 @@ import org.teavm.platform.metadata.ResourceArray;
 import org.w3c.dom.*;
 import org.xml.sax.SAXException;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CurrenciesGenerator implements MetadataGenerator {
     @Override
     public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
@@ -41,7 +38,7 @@ public class CurrenciesGenerator implements MetadataGenerator {
                 "org/teavm/classlib/impl/currency/iso4217.xml")) {
             DocumentBuilderFactory builderFactory = DocumentBuilderFactory.newInstance();
             DocumentBuilder builder = builderFactory.newDocumentBuilder();
-            doc = builder.parse(input);
+            doc = builder.parse(new BufferedInputStream(input));
         } catch (IOException | ParserConfigurationException | SAXException e) {
             throw new RuntimeException("Error reading ISO 4217 medata from file");
         }

@@ -19,10 +19,6 @@ import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 interface PlatformHelper extends JSObject {
     @JSMethod("$rt_nextId")
     int nextId();

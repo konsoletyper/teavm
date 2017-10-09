@@ -20,10 +20,6 @@ import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TDeflaterOutputStream extends FilterOutputStream {
     public TDeflaterOutputStream(OutputStream out) throws IOException {
         super(out);

@@ -19,10 +19,6 @@ import org.teavm.model.Instruction;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CastInstruction extends Instruction {
     private Variable value;
     private Variable receiver;

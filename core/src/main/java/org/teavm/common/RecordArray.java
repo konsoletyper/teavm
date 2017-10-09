@@ -17,10 +17,6 @@ package org.teavm.common;
 
 import java.util.Arrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class RecordArray {
     private int recordSize;
     private int arraysPerRecord;

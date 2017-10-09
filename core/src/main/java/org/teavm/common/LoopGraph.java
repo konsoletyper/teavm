@@ -17,10 +17,6 @@ package org.teavm.common;
 
 import java.util.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class LoopGraph implements Graph {
     private static class LoopImpl implements Loop {
         public int head;
@@ -175,7 +171,7 @@ public class LoopGraph implements Graph {
                 if (loop == testLoop) {
                     return bestLoop;
                 }
-                if (loop.walkIndex < testLoop.walkIndex) {
+                if (loop.parent.walkIndex < testLoop.walkIndex) {
                     testLoop.parent = loop.parent;
                     loop.parent = testLoop;
                     break;

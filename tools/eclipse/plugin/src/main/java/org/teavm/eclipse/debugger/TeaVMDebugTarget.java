@@ -36,10 +36,6 @@ import org.teavm.debugging.Debugger;
 import org.teavm.debugging.DebuggerListener;
 import org.teavm.debugging.javascript.JavaScriptDebugger;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMDebugTarget extends PlatformObject implements IDebugTarget, IStep {
     ILaunch launch;
     Debugger teavmDebugger;

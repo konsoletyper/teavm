@@ -79,9 +79,9 @@ public final class KnockoutFXTest extends KnockoutTCK implements Transfer, WSTra
     private static native void setProperty(Object json, String key, Object value);
 
     @Override
-    @JavaScriptBody(args = { "s", "args" }, body =
-        "var f = new Function(s); " +
-        "return f.apply(null, args);"
+    @JavaScriptBody(args = { "s", "args" }, body = ""
+        + "var f = new Function(s);"
+        + "return f.apply(null, args);"
     )
     public native Object executeScript(String s, Object[] args);
 

@@ -19,10 +19,6 @@ import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.platform.metadata.ClassResource;
 
-/**
- *
- * @author Alexey Andreev
- */
 class BuildTimeClassResource implements ClassResource, ResourceWriter {
     private String className;
 

@@ -17,10 +17,6 @@ package org.teavm.platform;
 
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface PlatformString extends JSObject {
     PlatformString toUpperCase();
 

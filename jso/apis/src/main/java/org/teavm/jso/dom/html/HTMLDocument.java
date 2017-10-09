@@ -21,10 +21,6 @@ import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.xml.Document;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HTMLDocument extends Document, EventTarget {
     @JSProperty
     @Override

@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2017 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,14 +47,28 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.Serializable;
-import java.util.*;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.NavigableMap;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 
-@SuppressWarnings({"UnnecessaryTemporaryOnConversionToString", "SuspiciousMethodCalls"})
+@SuppressWarnings({ "UnnecessaryTemporaryOnConversionToString", "SuspiciousMethodCalls" })
 @RunWith(TeaVMTestRunner.class)
 public class TreeMapTest {
 
@@ -94,11 +124,11 @@ public class TreeMapTest {
     public TreeMapTest() {
         tm = new TreeMap<>();
         for (int i = 0; i < objArray.length; i++) {
-            Object x = objArray[i] = new Integer(i);
+            Object x = new Integer(i);
+            objArray[i] = x;
             tm.put(x.toString(), x);
         }
     }
-
 
     @Test
     public void test_ConstructorLjava_util_Comparator() {
@@ -113,7 +143,6 @@ public class TreeMapTest {
                 reversedTreeMap.firstKey().equals(new Integer(2).toString()));
         assertTrue("TreeMap does not use comparator (lastKey was incorrect)",
                 reversedTreeMap.lastKey().equals(new Integer(1).toString()));
-
     }
 
     @Test
@@ -140,7 +169,6 @@ public class TreeMapTest {
                 anotherTreeMap.firstKey().equals(new Integer(2).toString()));
         assertTrue("TreeMap does not use comparator (lastKey was incorrect)",
                 anotherTreeMap.lastKey().equals(new Integer(1).toString()));
-
     }
 
     @Test
@@ -241,7 +269,6 @@ public class TreeMapTest {
         Object o = new Object();
         tm.put("Hello", o);
         assertTrue("Failed to get mapping", tm.get("Hello") == o);
-
     }
 
     @Test
@@ -295,58 +322,58 @@ public class TreeMapTest {
         SortedMap<String, String> headMap = treemap.headMap("100");
         headMap.headMap("100");
 
-        SortedMap<Integer,Integer> intMap,sub;
+        SortedMap<Integer, Integer> intMap;
+        SortedMap<Integer, Integer> sub;
         int size = 16;
         intMap = new TreeMap<>();
-        for(int i=0; i<size; i++) {
-            intMap.put(i,i);
+        for (int i = 0; i < size; i++) {
+            intMap.put(i, i);
         }
         sub = intMap.headMap(-1);
-        assertEquals("size should be zero",sub.size(),0);
-        assertTrue("submap should be empty",sub.isEmpty());
-        try{
+        assertEquals("size should be zero", sub.size(), 0);
+        assertTrue("submap should be empty", sub.isEmpty());
+        try {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
-        } catch(java.util.NoSuchElementException e) {
+        } catch (java.util.NoSuchElementException e) {
             // as expected
         }
 
-        try{
+        try {
             sub.lastKey();
             fail("java.util.NoSuchElementException should be thrown");
-        } catch(java.util.NoSuchElementException e) {
+        } catch (java.util.NoSuchElementException e) {
             // as expected
         }
 
         size = 256;
         intMap = new TreeMap<>();
-        for(int i=0; i<size; i++) {
-            intMap.put(i,i);
+        for (int i = 0; i < size; i++) {
+            intMap.put(i, i);
         }
         sub = intMap.headMap(-1);
-        assertEquals("size should be zero",sub.size(),0);
-        assertTrue("submap should be empty",sub.isEmpty());
-        try{
+        assertEquals("size should be zero", sub.size(), 0);
+        assertTrue("submap should be empty", sub.isEmpty());
+        try {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
-        } catch(java.util.NoSuchElementException e) {
+        } catch (java.util.NoSuchElementException e) {
             // as expected
         }
 
-        try{
+        try {
             sub.lastKey();
             fail("java.util.NoSuchElementException should be thrown");
-        } catch(java.util.NoSuchElementException e) {
+        } catch (java.util.NoSuchElementException e) {
             // as expected
         }
-
     }
 
     @Test
     public void test_keySet() {
         // Test for method java.util.Set java.util.TreeMap.keySet()
         Set<Object> ks = tm.keySet();
-        assertTrue("Returned set of incorrect size",ks.size() == objArray.length);
+        assertTrue("Returned set of incorrect size", ks.size() == objArray.length);
         for (int i = 0; i < tm.size(); i++) {
             assertTrue("Returned set is missing keys", ks.contains(new Integer(i).toString()));
         }
@@ -387,7 +414,6 @@ public class TreeMapTest {
         // java.util.TreeMap.remove(java.lang.Object)
         tm.remove("990");
         assertTrue("Failed to remove mapping", !tm.containsKey("990"));
-
     }
 
     @Test
@@ -432,7 +458,6 @@ public class TreeMapTest {
         assertEquals("2", sub.lastKey()); //$NON-NLS-1$
     }
 
-
     @Test
     public void test_subMap_Iterator() {
         TreeMap<String, String> map = new TreeMap<>();
@@ -464,7 +489,6 @@ public class TreeMapTest {
         assertEquals(map.size(), size);
     }
 
-
     @Test
     public void test_tailMapLjava_lang_Object() {
         // Test for method java.util.SortedMap
@@ -478,51 +502,51 @@ public class TreeMapTest {
         // Regression for Harmony-1066
         assertTrue(tail instanceof Serializable);
 
-        SortedMap<Integer,Integer> intMap,sub;
+        SortedMap<Integer, Integer> intMap;
+        SortedMap<Integer, Integer> sub;
         int size = 16;
         intMap = new TreeMap<>();
-        for(int i=0; i<size; i++) {
-            intMap.put(i,i);
+        for (int i = 0; i < size; i++) {
+            intMap.put(i, i);
         }
         sub = intMap.tailMap(size);
-        assertEquals("size should be zero",sub.size(),0);
-        assertTrue("submap should be empty",sub.isEmpty());
-        try{
+        assertEquals("size should be zero", sub.size(), 0);
+        assertTrue("submap should be empty", sub.isEmpty());
+        try {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
-        } catch(java.util.NoSuchElementException e) {
+        } catch (java.util.NoSuchElementException e) {
             // as expected
         }
 
-        try{
+        try {
             sub.lastKey();
             fail("java.util.NoSuchElementException should be thrown");
-        } catch(java.util.NoSuchElementException e) {
+        } catch (java.util.NoSuchElementException e) {
             // as expected
         }
 
         size = 256;
         intMap = new TreeMap<>();
-        for(int i=0; i<size; i++) {
-            intMap.put(i,i);
+        for (int i = 0; i < size; i++) {
+            intMap.put(i, i);
         }
         sub = intMap.tailMap(size);
-        assertEquals("size should be zero",sub.size(),0);
-        assertTrue("submap should be empty",sub.isEmpty());
-        try{
+        assertEquals("size should be zero", sub.size(), 0);
+        assertTrue("submap should be empty", sub.isEmpty());
+        try {
             sub.firstKey();
             fail("java.util.NoSuchElementException should be thrown");
-        } catch(java.util.NoSuchElementException e) {
+        } catch (java.util.NoSuchElementException e) {
             // as expected
         }
 
-        try{
+        try {
             sub.lastKey();
             fail("java.util.NoSuchElementException should be thrown");
-        } catch(java.util.NoSuchElementException e) {
+        } catch (java.util.NoSuchElementException e) {
             // as expected
         }
-
     }
 
     @Test
@@ -554,27 +578,27 @@ public class TreeMapTest {
     @Test
     public void test_entrySet_contains() throws Exception {
         TreeMap<String, String> master = new TreeMap<>();
-        TreeMap<String, String> test_map = new TreeMap<>();
+        TreeMap<String, String> testMap = new TreeMap<>();
 
         master.put("null", null);
         Object[] entry = master.entrySet().toArray();
         assertFalse("Empty map should not contain the null-valued entry",
-                    test_map.entrySet().contains(entry[0]));
+                testMap.entrySet().contains(entry[0]));
 
-        Map<String, String> submap = test_map.subMap("a","z");
+        Map<String, String> submap = testMap.subMap("a", "z");
         entry = master.entrySet().toArray();
         assertFalse("Empty submap should not contain the null-valued entry",
-                    submap.entrySet().contains(entry[0]));
+                submap.entrySet().contains(entry[0]));
 
-        test_map.put("null", null);
+        testMap.put("null", null);
         assertTrue("entrySet().containsAll(...) should work with null values",
-                   test_map.entrySet().containsAll(master.entrySet()));
+                testMap.entrySet().containsAll(master.entrySet()));
 
         master.clear();
         master.put("null", "0");
         entry = master.entrySet().toArray();
         assertFalse("Null-valued entry should not equal non-null-valued entry",
-                test_map.entrySet().contains(entry[0]));
+                testMap.entrySet().contains(entry[0]));
     }
 
     @Test

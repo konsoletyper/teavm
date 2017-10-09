@@ -18,10 +18,6 @@ package org.teavm.dependency;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class FieldDependency implements FieldDependencyInfo {
     DependencyNode value;
     private FieldReader field;

@@ -20,10 +20,6 @@ import java.util.*;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TimeZoneCache {
     public void write(OutputStream output, Collection<StorableDateTimeZone> timeZones) throws IOException {
         BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, "UTF-8"));

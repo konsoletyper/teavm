@@ -19,10 +19,6 @@ import java.util.Arrays;
 import org.teavm.classlib.java.nio.TByteBuffer;
 import org.teavm.classlib.java.nio.TCharBuffer;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TCharsetEncoder {
     private static final int READY = 4;
     private static final int ONGOING = 1;

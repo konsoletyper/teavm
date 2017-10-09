@@ -15,7 +15,9 @@
  */
 package org.teavm.vm;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
@@ -101,8 +103,12 @@ public class VMTest {
             assertEquals(2, n);
         }
     }
-    private int foo() { return 2; }
-    private void bar() { throw new RuntimeException(); }
+    private int foo() {
+        return 2;
+    }
+    private void bar() {
+        throw new RuntimeException();
+    }
 
     // See https://github.com/konsoletyper/teavm/issues/167
     @Test
@@ -145,6 +151,7 @@ public class VMTest {
     }
 
     @Test
+    @SkipJVM
     public void asyncClinit() {
         assertEquals(0, initCount);
         assertEquals("foo", AsyncClinitClass.foo());
@@ -225,10 +232,56 @@ public class VMTest {
         callback.complete(value);
     }
 
+    @Test
+    public void defaultMethodsSupported() {
+        WithDefaultMethod[] instances = { new WithDefaultMethodDerivedA(), new WithDefaultMethodDerivedB(),
+                new WithDefaultMethodDerivedC() };
+        StringBuilder sb = new StringBuilder();
+        for (WithDefaultMethod instance : instances) {
+            sb.append(instance.foo() + "," + instance.bar() + ";");
+        }
+
+        assertEquals("default,A;default,B;overridden,C;", sb.toString());
+    }
+
+    interface WithDefaultMethod {
+        default String foo() {
+            return "default";
+        }
+
+        String bar();
+    }
+
+    class WithDefaultMethodDerivedA implements WithDefaultMethod {
+        @Override
+        public String bar() {
+            return "A";
+        }
+    }
+
+    class WithDefaultMethodDerivedB implements WithDefaultMethod {
+        @Override
+        public String bar() {
+            return "B";
+        }
+    }
+    class WithDefaultMethodDerivedC implements WithDefaultMethod {
+        @Override
+        public String foo() {
+            return "overridden";
+        }
+
+        @Override
+        public String bar() {
+            return "C";
+        }
+    }
+
+
     @JSBody(script = "return [1, 2]")
     private static native int[] createArray();
 
-    static int initCount = 0;
+    static int initCount;
 
     private static class AsyncClinitClass {
         static String state = "";

@@ -15,7 +15,7 @@
  */
 package org.teavm.jso.test;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.jso.JSBody;

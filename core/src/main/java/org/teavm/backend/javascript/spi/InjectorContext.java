@@ -24,10 +24,6 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface InjectorContext extends ServiceRepository {
     Expr getArgument(int index);
 

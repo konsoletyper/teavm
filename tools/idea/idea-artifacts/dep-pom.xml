@@ -92,6 +92,27 @@
       </plugin>
 
       <plugin>
+        <artifactId>maven-antrun-plugin</artifactId>
+        <version>1.8</version>
+        <executions>
+          <execution>
+            <phase>process-resources</phase>
+            <configuration>
+              <target>
+                <mkdir dir="${basedir}/dependencies/"/>
+                <get src="https://download.plugins.jetbrains.com/1347/34745/scala-intellij-bin-SNAPSHOT.zip?updateId=34745&amp;pluginId=1347"
+                     dest="${basedir}/dependencies/scala.zip"/>
+                <unzip src="${basedir}/dependencies/scala.zip" dest="${basedir}/dependencies"/>
+              </target>
+            </configuration>
+            <goals>
+              <goal>run</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <version>3.0.0</version>
@@ -249,6 +270,39 @@
             <configuration>
               <file>dependencies/idea/lib/jps-builders.jar</file>
               <artifactId>jps-builders</artifactId>
+            </configuration>
+          </execution>
+          <execution>
+            <id>log4j</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <file>dependencies/idea/lib/commons-logging-1.2.jar</file>
+              <artifactId>commons-logging</artifactId>
+            </configuration>
+          </execution>
+          <execution>
+            <id>kotlin</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <file>dependencies/idea/plugins/Kotlin/lib/kotlin-plugin.jar</file>
+              <artifactId>kotlin-plugin</artifactId>
+            </configuration>
+          </execution>
+          <execution>
+            <id>scala</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <file>dependencies/Scala/lib/scala-plugin.jar</file>
+              <artifactId>scala-plugin</artifactId>
             </configuration>
           </execution>
         </executions>

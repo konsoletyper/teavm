@@ -62,7 +62,7 @@ class TBackReferencedSingleSet extends TSingleSet {
     }
 
     public TBackReferencedSingleSet(TSingleSet node) {
-        super(node.kid, ((TFSet)node.fSet));
+        super(node.kid, (TFSet) node.fSet);
     }
 
     @Override

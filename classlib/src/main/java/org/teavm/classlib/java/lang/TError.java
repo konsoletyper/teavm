@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TError extends TThrowable {
     private static final long serialVersionUID = 3256540693876647405L;
 

@@ -22,10 +22,6 @@ import org.teavm.model.MethodReader;
 import org.teavm.testing.TestAdapter;
 import org.teavm.testing.TestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class KOTestAdapter implements TestAdapter {
     static final String KO_TEST_CLASS = "org.netbeans.html.json.tck.KOTest";
 

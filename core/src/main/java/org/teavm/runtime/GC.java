@@ -125,7 +125,7 @@ public final class GC {
 
         Address staticRoots = Mutator.getStaticGCRoots();
         int staticCount = staticRoots.getInt();
-        staticRoots.add(8);
+        staticRoots = staticRoots.add(8);
         while (staticCount-- > 0) {
             RuntimeObject object = staticRoots.getAddress().getAddress().toStructure();
             if (object != null) {

@@ -65,7 +65,7 @@ public class PriorityQueueTest {
 
     private PriorityQueue<Integer> fillQueue() {
         PriorityQueue<Integer> queue = new PriorityQueue<>();
-        for (int i : new int[] { 5, 2, 4, 3, 6, 7, 0, 1 } ) {
+        for (int i : new int[] { 5, 2, 4, 3, 6, 7, 0, 1 }) {
             queue.offer(i);
         }
         return queue;

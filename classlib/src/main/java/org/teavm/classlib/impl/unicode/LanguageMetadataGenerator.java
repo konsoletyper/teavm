@@ -17,10 +17,6 @@ package org.teavm.classlib.impl.unicode;
 
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class LanguageMetadataGenerator extends LocaleMetadataGenerator {
     @Override
     protected Map<String, String> getNameMap(CLDRLocale locale) {

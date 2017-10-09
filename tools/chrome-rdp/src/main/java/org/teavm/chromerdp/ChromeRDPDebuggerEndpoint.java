@@ -21,10 +21,6 @@ import java.util.List;
 import javax.websocket.*;
 import javax.websocket.server.ServerEndpoint;
 
-/**
- *
- * @author Alexey Andreev
- */
 @ServerEndpoint("/")
 public class ChromeRDPDebuggerEndpoint implements ChromeRDPExchange {
     public static final int MAX_MESSAGE_SIZE = 65534;

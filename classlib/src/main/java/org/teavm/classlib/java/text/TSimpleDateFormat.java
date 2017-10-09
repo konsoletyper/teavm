@@ -21,10 +21,6 @@ import org.teavm.classlib.java.util.TDate;
 import org.teavm.classlib.java.util.TGregorianCalendar;
 import org.teavm.classlib.java.util.TLocale;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TSimpleDateFormat extends TDateFormat {
     private TDateFormatSymbols dateFormatSymbols;
     private TDateFormatElement[] elements;

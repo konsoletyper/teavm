@@ -18,10 +18,6 @@ package org.teavm.jso.dom.html;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.canvas.CanvasImageSource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface HTMLImageElement extends HTMLElement, CanvasImageSource {
     @JSProperty
     String getAlt();

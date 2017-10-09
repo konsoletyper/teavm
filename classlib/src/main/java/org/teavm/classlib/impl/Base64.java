@@ -17,11 +17,7 @@ package org.teavm.classlib.impl;
 
 import java.util.Arrays;
 
-/**
- *
- * @author Alexey Andreev
- */
-public class Base64 {
+public final class Base64 {
     private static char[] alphabet = new char[64];
     private static int[] reverse = new int[256];
 
@@ -45,9 +41,13 @@ public class Base64 {
         }
     }
 
+    private Base64() {
+    }
+
     public static byte[] decode(String text) {
         int outputSize = ((text.length() - 1) / 4 + 1) * 3;
-        int i, j;
+        int i;
+        int j;
         for (i = text.length() - 1; i >= 0 && text.charAt(i) == '='; --i) {
             --outputSize;
         }
@@ -55,7 +55,7 @@ public class Base64 {
 
         int triples = (outputSize / 3) * 3;
         i = 0;
-        for (j = 0; i < triples;) {
+        for (j = 0; j < triples;) {
             int a = decode(text.charAt(i++));
             int b = decode(text.charAt(i++));
             int c = decode(text.charAt(i++));
@@ -63,7 +63,7 @@ public class Base64 {
             int out = (a << 18) | (b << 12) | (c << 6) | d;
             output[j++] = (byte) (out >>> 16);
             output[j++] = (byte) (out >>> 8);
-            output[j++] = (byte) (out);
+            output[j++] = (byte) out;
         }
         int rem = output.length - j;
         if (rem == 1) {

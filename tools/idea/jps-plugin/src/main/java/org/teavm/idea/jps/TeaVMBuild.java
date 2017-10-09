@@ -31,6 +31,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Queue;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -59,6 +60,7 @@ import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.idea.jps.model.TeaVMBuildResult;
 import org.teavm.idea.jps.model.TeaVMBuildStrategy;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
+import org.teavm.idea.jps.model.TeaVMProperty;
 import org.teavm.idea.jps.remote.TeaVMBuilderAssistant;
 import org.teavm.idea.jps.remote.TeaVMElementLocation;
 import org.teavm.model.CallLocation;
@@ -113,6 +115,14 @@ class TeaVMBuild {
         buildStrategy.setTargetType(config.getTargetType());
         buildStrategy.setTargetDirectory(config.getTargetDirectory());
         buildStrategy.setProgressListener(createProgressListener(context));
+        buildStrategy.setIncremental(!isRebuild(target));
+
+        Properties properties = new Properties();
+        for (TeaVMProperty property : config.getProperties()) {
+            properties.put(property.getKey(), property.getValue());
+        }
+        buildStrategy.setProperties(properties);
+
         TeaVMBuildResult buildResult = buildStrategy.build();
 
         if (!buildResult.isErrorOccurred() && buildResult.getProblems().getSevereProblems().isEmpty()) {
@@ -121,8 +131,16 @@ class TeaVMBuild {
 
         reportProblems(buildResult.getProblems(), buildResult.getCallGraph());
 
-        for (String fileName : buildResult.getGeneratedFiles()) {
-            outputConsumer.registerOutputFile(new File(fileName), Collections.emptyList());
+        if (!buildResult.isErrorOccurred()) {
+            for (String fileName : buildResult.getGeneratedFiles()) {
+                outputConsumer.registerOutputFile(new File(fileName), Collections.emptyList());
+            }
+        }
+
+        if (buildResult.getStackTrace() != null) {
+            context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.ERROR,
+                    "Compiler crashed:\n" + buildResult.getStackTrace(), "",
+                    -1, -1, -1, -1, -1));
         }
 
         return true;
@@ -188,6 +206,10 @@ class TeaVMBuild {
 
             List<ProblemToReport> problemsToReport = resolveProblemLocation(problem, callGraph);
 
+            if (problemsToReport.isEmpty()) {
+                context.processMessage(new CompilerMessage("TeaVM", kind, problem.getText(), null,
+                        -1, -1, -1, -1, -1));
+            }
             for (ProblemToReport problemToReport : problemsToReport) {
                 String text = baseText + buildCallStack(problemToReport.locations);
                 context.processMessage(new CompilerMessage("TeaVM", kind, text, problemToReport.path,
@@ -399,9 +421,13 @@ class TeaVMBuild {
         return lines.getAll();
     }
 
+    private boolean isRebuild(TeaVMBuildTarget target) {
+        return !context.getScope().isBuildIncrementally(target.getTargetType())
+                || context.getScope().isBuildForced(target);
+    }
+
     private boolean hasChanges(TeaVMBuildTarget target) {
-        if (!context.getScope().isBuildIncrementally(target.getTargetType())
-                || context.getScope().isBuildForced(target)) {
+        if (isRebuild(target)) {
             return true;
         }
 

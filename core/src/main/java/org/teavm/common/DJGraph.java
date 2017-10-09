@@ -22,10 +22,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DJGraph {
     private DominatorTree domTree;
     private MutableDirectedGraph cfg;

@@ -19,10 +19,6 @@ import java.io.IOException;
 import org.eclipse.debug.core.model.IStreamMonitor;
 import org.eclipse.debug.core.model.IStreamsProxy;
 
-/**
- *
- * @author Alexey Andreev
- */
 // TODO: implement interaction with browser console
 public class TeaVMStreamsProxy implements IStreamsProxy {
     @Override

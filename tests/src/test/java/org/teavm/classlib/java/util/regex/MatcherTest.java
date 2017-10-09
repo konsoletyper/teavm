@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2015 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -17,7 +32,11 @@
 
 package org.teavm.classlib.java.util.regex;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import org.junit.Test;
@@ -54,25 +73,29 @@ public class MatcherTest {
         try {
             m.region(1, 0);
             fail("expected an IOOBE");
-        } catch(IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.region(-1, 2);
             fail("expected an IOOBE");
-        } catch(IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.region(10, 11);
             fail("expected an IOOBE");
-        } catch(IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
+            // ok
         }
 
         try {
             m.region(1, 10);
             fail("expected an IOOBE");
-        } catch(IndexOutOfBoundsException e) {
+        } catch (IndexOutOfBoundsException e) {
+            // ok
         }
     }
 
@@ -124,6 +147,7 @@ public class MatcherTest {
             m.reset(null);
             fail("expected a NPE");
         } catch (NullPointerException e) {
+            // ok
         }
     }
 
@@ -137,7 +161,6 @@ public class MatcherTest {
         }
         m.appendTail(sb);
         assertEquals("one\\cat\\two\\cats\\in\\the\\yard", sb.toString());
-
     }
 
     @Test
@@ -192,6 +215,7 @@ public class MatcherTest {
                 mat.group(-100);
                 fail("IndexOutBoundsException expected");
             } catch (IndexOutOfBoundsException iobe) {
+                // ok
             }
         }
 
@@ -208,9 +232,7 @@ public class MatcherTest {
                 assertEquals("i: " + i + " j: " + j, groupResults[i][j], mat
                         .group(j + 1));
             }
-
         }
-
     }
 
     @Test
@@ -236,6 +258,7 @@ public class MatcherTest {
                 mat.group();
                 fail("IllegalStateException expected for <false> matches result");
             } catch (IllegalStateException ise) {
+                // ok
             }
         }
     }
@@ -283,7 +306,6 @@ public class MatcherTest {
                 { "ababbaAabababblice", "ababbaAliceababab", "ababbAabliceaaa",
                         "abbbAbbbliceaaa", "Alice" },
                 { "a123", "bnxnvgds156", "for", "while", "if", "struct" }
-
         };
 
         for (int i = 0; i < testPatterns.length; i++) {
@@ -317,7 +339,7 @@ public class MatcherTest {
                         + " : " + stringSingles[i][j], pat.matcher(
                         stringSingles[i][j * 2]).matches());
                 assertFalse("Match failure expected, but match succeed: "
-                        + pat.pattern() + " : " + stringSingles[i][j * 2 + 1],
+                                + pat.pattern() + " : " + stringSingles[i][j * 2 + 1],
                         pat.matcher(stringSingles[i][j * 2 + 1]).matches());
             }
         }
@@ -410,7 +432,6 @@ public class MatcherTest {
             Matcher mat = test.matcher("ababababbaaabb");
             mat.matches();
             assertEquals(i + 1, mat.groupCount());
-
         }
     }
 
@@ -456,7 +477,6 @@ public class MatcherTest {
         }
 
         assertTrue(Pattern.matches("(aa|bb){1,3}+bb", "aabbaabb"));
-
     }
 
     @Test
@@ -526,7 +546,6 @@ public class MatcherTest {
         pat = Pattern.compile("[a-e]*", Pattern.CASE_INSENSITIVE);
         mat = pat.matcher("aAebbAEaEdebbedEccEdebbedEaedaebEbdCCdbBDcdcdADa");
         assertTrue(mat.matches());
-
     }
 
     @Test
@@ -558,7 +577,6 @@ public class MatcherTest {
         assertEquals("1", mat.group(1));
         assertEquals("1", mat.group(4));
         assertNull(mat.group(3));
-
     }
 
     @Test
@@ -568,7 +586,6 @@ public class MatcherTest {
         assertTrue(Pattern.matches("\\u0061a", "aa"));
         assertTrue(Pattern.matches("\\0141a", "aa"));
         assertTrue(Pattern.matches("\\0777", "?7"));
-
     }
 
     @Test
@@ -597,7 +614,6 @@ public class MatcherTest {
 
         // assertTrue(Pattern.matches("[\\p{L}&&[^\\p{Lu}&&[^K]]]", "K"));
         assertFalse(Pattern.matches("[\\p{L}&&[^\\p{Lu}&&[^G]]]", "K"));
-
     }
 
     @Test
@@ -639,7 +655,6 @@ public class MatcherTest {
         matcher.region(0, 2);
         matcher.find();
         assertEquals("ab", matcher.group());
-
     }
 
     @Test

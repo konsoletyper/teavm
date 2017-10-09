@@ -15,10 +15,6 @@
  */
 package org.teavm.model.emit;
 
-/**
- *
- * @author Alexey Andreev
- */
 @FunctionalInterface
 public interface ConditionProducer {
     ConditionEmitter produce();

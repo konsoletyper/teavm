@@ -19,10 +19,6 @@ import java.util.Map;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class LikelySubtagsMetadataGenerator implements MetadataGenerator {
     @Override
     public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {

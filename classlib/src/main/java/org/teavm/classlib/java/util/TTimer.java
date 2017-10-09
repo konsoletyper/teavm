@@ -21,10 +21,6 @@ import org.teavm.classlib.java.lang.TString;
 import org.teavm.jso.browser.TimerHandler;
 import org.teavm.jso.browser.Window;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TTimer extends TObject {
     TSet<TTimerTask> tasks = new THashSet<>();
     private boolean cancelled;
@@ -95,7 +91,7 @@ public class TTimer extends TObject {
                         return;
                     }
                     long nextDelay = nextStartTime[0] - System.currentTimeMillis();
-                    if (nextDelay < 0 ) {
+                    if (nextDelay < 0) {
                         nextDelay = 0;
                     }
                     task.nativeTimerId = Window.setTimeout(this, (int) nextDelay);

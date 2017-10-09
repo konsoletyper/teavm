@@ -35,10 +35,6 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMDebugModelPresentation extends LabelProvider implements IDebugModelPresentation {
     @Override
     public String getEditorId(IEditorInput input, Object element) {

@@ -21,10 +21,6 @@ import org.teavm.platform.metadata.MetadataGeneratorContext;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.StringResource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DefaultLocaleMetadataGenerator implements MetadataGenerator {
     @Override
     public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {

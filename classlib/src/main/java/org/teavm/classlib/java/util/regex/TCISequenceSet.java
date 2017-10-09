@@ -41,7 +41,7 @@ package org.teavm.classlib.java.util.regex;
  * @author Nikolay A. Kuznetsov
  */
 class TCISequenceSet extends TLeafSet {
-    private String string = null;
+    private String string;
 
     TCISequenceSet(StringBuffer substring) {
         this.string = substring.toString();
@@ -51,8 +51,8 @@ class TCISequenceSet extends TLeafSet {
     @Override
     public int accepts(int strIndex, CharSequence testString) {
         for (int i = 0; i < string.length(); i++) {
-            if (string.charAt(i) != testString.charAt(strIndex + i) &&
-                    TPattern.getSupplement(string.charAt(i)) != testString.charAt(strIndex + i)) {
+            if (string.charAt(i) != testString.charAt(strIndex + i)
+                    && TPattern.getSupplement(string.charAt(i)) != testString.charAt(strIndex + i)) {
                 return -1;
             }
         }

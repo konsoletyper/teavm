@@ -23,10 +23,6 @@ import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class DebugInformation {
     String[] fileNames;
     Map<String, Integer> fileNameMap;
@@ -220,7 +216,7 @@ public class DebugInformation {
         int[] valueIndexes = mapping.get(keyIndex).getArray(0);
         String[] result = new String[valueIndexes.length];
         for (int i = 0; i < result.length; ++i) {
-            result[i] = variableNames[valueIndexes[i]];
+            result[i] = valueIndexes[i] >= 0 ? variableNames[valueIndexes[i]] : null;
         }
         return result;
     }

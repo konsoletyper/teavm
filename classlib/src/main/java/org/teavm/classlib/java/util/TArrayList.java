@@ -53,7 +53,10 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
 
     public void ensureCapacity(int minCapacity) {
         if (array.length < minCapacity) {
-            array = TArrays.copyOf(array, array.length + TMath.max(5, array.length / 2));
+            int newLength = array.length < Integer.MAX_VALUE / 2
+                    ? Math.max(minCapacity, Math.max(array.length * 2, 5))
+                    : Integer.MAX_VALUE;
+            array = TArrays.copyOf(array, newLength);
         }
     }
 

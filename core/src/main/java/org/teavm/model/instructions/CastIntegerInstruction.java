@@ -18,10 +18,6 @@ package org.teavm.model.instructions;
 import org.teavm.model.Instruction;
 import org.teavm.model.Variable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class CastIntegerInstruction extends Instruction {
     private Variable value;
     private Variable receiver;

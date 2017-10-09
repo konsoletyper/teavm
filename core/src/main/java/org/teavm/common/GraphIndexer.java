@@ -23,10 +23,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class GraphIndexer {
     static final byte NONE = 0;
     static final byte VISITING = 1;

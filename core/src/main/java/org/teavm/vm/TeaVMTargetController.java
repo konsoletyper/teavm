@@ -39,6 +39,8 @@ public interface TeaVMTargetController {
 
     boolean isIncremental();
 
+    boolean isFriendlyToDebugger();
+
     Map<String, TeaVMEntryPoint> getEntryPoints();
 
     Map<String, String> getExportedClasses();

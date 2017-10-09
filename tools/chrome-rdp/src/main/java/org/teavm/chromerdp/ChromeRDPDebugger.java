@@ -24,6 +24,8 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
@@ -62,6 +64,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
     private ConcurrentMap<JavaScriptDebuggerListener, Object> listeners = new ConcurrentHashMap<>();
     private ConcurrentMap<JavaScriptLocation, RDPBreakpoint> breakpointLocationMap = new ConcurrentHashMap<>();
     private ConcurrentMap<RDPBreakpoint, Object> breakpoints = new ConcurrentHashMap<>();
+    private ConcurrentMap<String, RDPBreakpoint> breakpointsByChromeId = new ConcurrentHashMap<>();
     private volatile RDPCallFrame[] callStack = new RDPCallFrame[0];
     private ConcurrentMap<String, String> scripts = new ConcurrentHashMap<>();
     private ConcurrentMap<String, String> scriptIds = new ConcurrentHashMap<>();
@@ -104,7 +107,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         }
     }
 
-    private ChromeRDPExchangeListener exchangeListener = messageText -> receiveMessage(messageText);
+    private ChromeRDPExchangeListener exchangeListener = this::receiveMessage;
 
     private void receiveMessage(final String messageText) {
         new Thread(() -> {
@@ -119,7 +122,12 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                         }
                     }
                     CompletableFuture<Object> future = futures.remove(response.getId());
-                    responseHandlers.remove(response.getId()).received(response.getResult(), future);
+                    try {
+                        responseHandlers.remove(response.getId()).received(response.getResult(), future);
+                    } catch (RuntimeException e) {
+                        logger.warn("Error processing message ${}", response.getId(), e);
+                        future.completeExceptionally(e);
+                    }
                 } else {
                     Message message = mapper.reader(Message.class).readValue(messageText);
                     if (message.getMethod() == null) {
@@ -153,8 +161,14 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             callStack[i] = map(callFrameDTOs[i]);
         }
         this.callStack = callStack;
+
+        RDPBreakpoint breakpoint = null;
+        if (params.getHitBreakpoints() != null && !params.getHitBreakpoints().isEmpty()) {
+            breakpoint = breakpointsByChromeId.get(params.getHitBreakpoints().get(0));
+        }
+
         for (JavaScriptDebuggerListener listener : getListeners()) {
-            listener.paused();
+            listener.paused(breakpoint);
         }
     }
 
@@ -309,6 +323,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             breakpointLocationMap.remove(breakpoint.getLocation());
             breakpoints.remove(breakpoint);
             if (breakpoint.chromeId != null) {
+                breakpointsByChromeId.remove(breakpoint.chromeId);
                 if (logger.isInfoEnabled()) {
                     logger.info("Removing breakpoint at {}", breakpoint.getLocation());
                 }
@@ -326,13 +341,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         }
     }
 
-    void fireScriptAdded(String script) {
-        for (JavaScriptDebuggerListener listener : getListeners()) {
-            listener.scriptAdded(script);
-        }
-    }
-
-    void updateBreakpoint(final RDPBreakpoint breakpoint) {
+    private void updateBreakpoint(final RDPBreakpoint breakpoint) {
         if (exchange == null || breakpoint.chromeId != null) {
             return;
         }
@@ -346,9 +355,15 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             logger.info("Setting breakpoint at {}, message id is ", breakpoint.getLocation(), message.getId());
         }
         setResponseHandler(message.getId(), (node, out) -> {
+            if (breakpoint.chromeId != null) {
+                breakpointsByChromeId.remove(breakpoint.chromeId);
+            }
             if (node != null) {
                 SetBreakpointResponse response = mapper.reader(SetBreakpointResponse.class).readValue(node);
                 breakpoint.chromeId = response.getBreakpointId();
+                if (breakpoint.chromeId != null) {
+                    breakpointsByChromeId.put(breakpoint.chromeId, breakpoint);
+                }
             } else {
                 if (logger.isWarnEnabled()) {
                     logger.warn("Error setting breakpoint at {}, message id is {}",
@@ -386,7 +401,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
 
         try {
             return read(sync);
-        } catch (InterruptedException e) {
+        } catch (InterruptedException | TimeoutException e) {
             return Collections.emptyList();
         }
     }
@@ -421,6 +436,8 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             return result.isEmpty() ? null : result;
         } catch (InterruptedException e) {
             return null;
+        } catch (TimeoutException e) {
+            return "<timed out>";
         }
     }
 
@@ -454,13 +471,15 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             return result.repr;
         } catch (InterruptedException e) {
             return null;
+        } catch (TimeoutException e) {
+            return "<timed out>";
         }
     }
 
-    private static class RepresentationWrapper {
+    static class RepresentationWrapper {
         String repr;
 
-        public RepresentationWrapper(String repr) {
+        RepresentationWrapper(String repr) {
             super();
             this.repr = repr;
         }
@@ -512,7 +531,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         }
     }
 
-    RDPCallFrame map(CallFrameDTO dto) {
+    private RDPCallFrame map(CallFrameDTO dto) {
         String scopeId = null;
         RDPValue thisObject = null;
         RDPValue closure = null;
@@ -535,11 +554,11 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                 thisObject, closure);
     }
 
-    JavaScriptLocation map(LocationDTO dto) {
+    private JavaScriptLocation map(LocationDTO dto) {
         return new JavaScriptLocation(scripts.get(dto.getScriptId()), dto.getLineNumber(), dto.getColumnNumber());
     }
 
-    LocationDTO unmap(JavaScriptLocation location) {
+    private LocationDTO unmap(JavaScriptLocation location) {
         LocationDTO dto = new LocationDTO();
         dto.setScriptId(scriptIds.get(location.getScript()));
         dto.setLineNumber(location.getLine());
@@ -559,9 +578,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         void received(JsonNode node, CompletableFuture<T> out) throws IOException;
     }
 
-    private static <T> T read(Future<T> future) throws InterruptedException {
+    private static <T> T read(Future<T> future) throws InterruptedException, TimeoutException {
         try {
-            return future.get();
+            return future.get(1500, TimeUnit.MILLISECONDS);
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
             if (cause instanceof RuntimeException) {

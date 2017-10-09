@@ -18,10 +18,6 @@ package org.teavm.classlib.java.nio.charset.impl;
 import org.teavm.classlib.java.nio.charset.TCharset;
 import org.teavm.classlib.java.nio.charset.TCoderResult;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TUTF8Encoder extends TBufferedEncoder {
     TUTF8Encoder(TCharset cs) {
         super(cs, 2, 4);

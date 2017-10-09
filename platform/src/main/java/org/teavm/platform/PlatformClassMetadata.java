@@ -36,4 +36,10 @@ public interface PlatformClassMetadata extends JSObject {
 
     @JSProperty
     boolean isEnum();
+
+    @JSProperty
+    int getFlags();
+
+    @JSProperty
+    int getAccessLevel();
 }

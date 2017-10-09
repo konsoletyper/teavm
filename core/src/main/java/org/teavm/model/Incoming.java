@@ -15,10 +15,6 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class Incoming implements IncomingReader {
     private Phi phi;
     private Variable value;

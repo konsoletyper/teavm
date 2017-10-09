@@ -17,10 +17,6 @@ package org.teavm.jso.webgl;
 
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface WebGLShader extends JSObject {
 
 }

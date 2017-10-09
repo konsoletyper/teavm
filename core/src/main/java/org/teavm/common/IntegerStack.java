@@ -17,10 +17,6 @@ package org.teavm.common;
 
 import java.util.Arrays;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class IntegerStack {
     private int[] buffer;
     private int head;

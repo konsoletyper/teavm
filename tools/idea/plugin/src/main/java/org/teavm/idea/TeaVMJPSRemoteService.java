@@ -17,10 +17,13 @@ package org.teavm.idea;
 
 import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.components.ApplicationComponent;
+import com.intellij.openapi.editor.Document;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.project.ProjectManager;
 import com.intellij.psi.JavaPsiFacade;
 import com.intellij.psi.PsiClass;
+import com.intellij.psi.PsiElement;
+import com.intellij.psi.PsiFile;
 import com.intellij.psi.PsiMethod;
 import com.intellij.psi.PsiParameter;
 import com.intellij.psi.PsiType;
@@ -134,7 +137,16 @@ public class TeaVMJPSRemoteService extends UnicastRemoteObject implements Applic
     }
 
     private TeaVMElementLocation getMethodLocation(PsiMethod method) {
-        return new TeaVMElementLocation(method.getTextOffset(), method.getTextOffset() + method.getTextLength(),
-                -1, -1, method.getContainingFile().getVirtualFile().getPath());
+        PsiElement element = method.getNameIdentifier();
+        if (element == null) {
+            element = method.getNavigationElement();
+        }
+        PsiFile psiFile = element.getContainingFile();
+        Document document = psiFile.getViewProvider().getDocument();
+        int offset = element.getTextRange().getStartOffset();
+        int line = offset >= 0 ? document.getLineNumber(offset) + 1 : -1;
+        int column = offset >= 0 ? offset - document.getLineStartOffset(line) + 1 : -1;
+        return new TeaVMElementLocation(offset, element.getTextRange().getEndOffset(),
+                line, column, psiFile.getVirtualFile().getPath());
     }
 }

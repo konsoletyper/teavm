@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TDoubleBufferOverArray extends TDoubleBufferImpl {
     boolean readOnly;
     int start;

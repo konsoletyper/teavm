@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TByteBufferImpl extends TByteBuffer {
     private boolean direct;
     private boolean readOnly;

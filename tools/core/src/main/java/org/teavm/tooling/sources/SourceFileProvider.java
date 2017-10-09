@@ -16,16 +16,11 @@
 package org.teavm.tooling.sources;
 
 import java.io.IOException;
-import java.io.InputStream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface SourceFileProvider {
     void open() throws IOException;
 
     void close() throws IOException;
 
-    InputStream openSourceFile(String fullPath) throws IOException;
+    SourceFileInfo getSourceFile(String fullPath) throws IOException;
 }

@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.util.function;
 
-/**
- *
- * @author Alexey Andreev
- */
 @FunctionalInterface
 public interface TDoubleBinaryOperator {
     double applyAsDouble(double left, double right);

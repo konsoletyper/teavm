@@ -17,10 +17,6 @@ package org.teavm.jso.canvas;
 
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface CanvasGradient extends JSObject {
     /**
      * <p>The CanvasGradient.addColorStop() method adds a new stop, defined by an

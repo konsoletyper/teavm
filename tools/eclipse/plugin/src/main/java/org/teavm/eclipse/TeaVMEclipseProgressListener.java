@@ -20,10 +20,6 @@ import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TeaVMEclipseProgressListener implements TeaVMProgressListener {
     private TeaVMProjectBuilder builder;
     private IProgressMonitor progressMonitor;

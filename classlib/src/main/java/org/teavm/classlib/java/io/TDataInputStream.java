@@ -17,10 +17,6 @@ package org.teavm.classlib.java.io;
 
 import org.teavm.classlib.java.lang.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TDataInputStream extends TFilterInputStream implements TDataInput {
     byte[] buff;
 

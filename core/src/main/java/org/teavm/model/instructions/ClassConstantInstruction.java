@@ -17,10 +17,6 @@ package org.teavm.model.instructions;
 
 import org.teavm.model.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ClassConstantInstruction extends Instruction {
     private ValueType constant;
     private Variable receiver;

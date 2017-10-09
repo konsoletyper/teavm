@@ -20,10 +20,6 @@ import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.xml.Document;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class XMLHttpRequest implements JSObject {
     public static final int UNSET = 0;
 

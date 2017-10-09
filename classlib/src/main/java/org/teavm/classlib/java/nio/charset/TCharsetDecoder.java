@@ -19,10 +19,6 @@ import java.util.Arrays;
 import org.teavm.classlib.java.nio.TByteBuffer;
 import org.teavm.classlib.java.nio.TCharBuffer;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TCharsetDecoder {
     private static final int INIT = 0;
     private static final int IN_PROGRESS = 1;

@@ -18,10 +18,6 @@ package org.teavm.ast;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TryCatchStatement extends Statement {
     private List<Statement> protectedBody = new ArrayList<>();
     private List<Statement> handler = new ArrayList<>();

@@ -20,10 +20,6 @@ import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformRunnable;
 import org.teavm.platform.async.AsyncCallback;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TThread extends TObject implements TRunnable {
     private static TThread mainThread = new TThread(TString.wrap("main"));
     private static TThread currentThread = mainThread;

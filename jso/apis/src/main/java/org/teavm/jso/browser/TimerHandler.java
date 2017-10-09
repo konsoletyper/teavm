@@ -18,10 +18,6 @@ package org.teavm.jso.browser;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 @JSFunctor
 public interface TimerHandler extends JSObject {
     void onTimer();

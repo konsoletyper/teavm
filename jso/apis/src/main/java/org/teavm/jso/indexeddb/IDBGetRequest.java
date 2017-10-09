@@ -18,10 +18,6 @@ package org.teavm.jso.indexeddb;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface IDBGetRequest extends IDBRequest {
     @JSProperty
     JSObject getResult();

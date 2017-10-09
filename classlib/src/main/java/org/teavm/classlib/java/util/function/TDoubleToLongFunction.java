@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.util.function;
 
-/**
- *
- * @author Alexey Andreev
- */
 @FunctionalInterface
 public interface TDoubleToLongFunction {
     long applyAsLong(double value);

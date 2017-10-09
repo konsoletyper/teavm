@@ -15,6 +15,8 @@
  */
 package org.teavm.model;
 
+import java.util.Set;
+
 /**
  * Represents flags for classes and class members.
  * @see ElementHolder
@@ -37,5 +39,19 @@ public enum ElementModifier {
     SYNTHETIC,
     TRANSIENT,
     VARARGS,
-    VOLATILE
+    VOLATILE;
+
+    public static int pack(Set<ElementModifier> elementModifiers) {
+        ElementModifier[] knownModifiers = ElementModifier.values();
+        int value = 0;
+        int bit = 1;
+        for (int i = 0; i < knownModifiers.length; ++i) {
+            ElementModifier modifier = knownModifiers[i];
+            if (elementModifiers.contains(modifier)) {
+                value |= bit;
+            }
+            bit <<= 1;
+        }
+        return value;
+    }
 }

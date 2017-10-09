@@ -17,10 +17,6 @@ package org.teavm.model;
 
 import java.util.stream.Stream;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ClassHolderSource extends ClassReaderSource {
     @Override
     ClassHolder get(String name);

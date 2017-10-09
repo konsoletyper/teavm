@@ -19,6 +19,7 @@ import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.Problem;
 import org.teavm.diagnostics.ProblemProvider;
@@ -98,6 +99,17 @@ public class RemoteBuildStrategy implements TeaVMBuildStrategy {
     }
 
     @Override
+    public void setIncremental(boolean incremental) {
+        request.incremental = incremental;
+    }
+
+    @Override
+    public void setProperties(Properties properties) {
+        request.properties = new Properties();
+        request.properties.putAll(properties);
+    }
+
+    @Override
     public TeaVMBuildResult build() {
         TeaVMRemoteBuildResponse response;
         try {
@@ -126,6 +138,11 @@ public class RemoteBuildStrategy implements TeaVMBuildStrategy {
             @Override
             public boolean isErrorOccurred() {
                 return response.errorOccurred;
+            }
+
+            @Override
+            public String getStackTrace() {
+                return response.stackTrace;
             }
 
             @Override

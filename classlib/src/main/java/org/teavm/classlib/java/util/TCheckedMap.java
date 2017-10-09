@@ -18,10 +18,6 @@ package org.teavm.classlib.java.util;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TCheckedMap<K, V> implements TMap<K, V> {
     private TMap<K, V> innerMap;
     private TClass<K> keyType;

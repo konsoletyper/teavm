@@ -15,15 +15,14 @@
  */
 package org.teavm.tooling;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.Reader;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
@@ -76,7 +75,6 @@ public class TeaVMTool implements BaseTeaVMTool {
     private String mainClass;
     private RuntimeCopyOperation runtime = RuntimeCopyOperation.SEPARATE;
     private Properties properties = new Properties();
-    private boolean mainPageIncluded;
     private boolean debugInformationGenerated;
     private boolean sourceMapsFileGenerated;
     private boolean sourceFilesCopied;
@@ -152,14 +150,6 @@ public class TeaVMTool implements BaseTeaVMTool {
 
     public void setRuntime(RuntimeCopyOperation runtime) {
         this.runtime = runtime;
-    }
-
-    public boolean isMainPageIncluded() {
-        return mainPageIncluded;
-    }
-
-    public void setMainPageIncluded(boolean mainPageIncluded) {
-        this.mainPageIncluded = mainPageIncluded;
     }
 
     public boolean isDebugInformationGenerated() {
@@ -512,6 +502,7 @@ public class TeaVMTool implements BaseTeaVMTool {
             try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(sourceMapsFile), "UTF-8")) {
                 debugInfo.writeAsSourceMaps(sourceMapsOut, "src", getResolvedTargetFileName());
             }
+            generatedFiles.add(sourceMapsFile);
             log.info("Source maps successfully written");
         }
         if (sourceFilesCopied) {
@@ -522,24 +513,13 @@ public class TeaVMTool implements BaseTeaVMTool {
         if (runtime == RuntimeCopyOperation.SEPARATE) {
             resourceToFile("org/teavm/backend/javascript/runtime.js", "runtime.js");
         }
-        if (mainPageIncluded) {
-            String text;
-            try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream(
-                    "org/teavm/tooling/main.html"), "UTF-8")) {
-                text = IOUtils.toString(reader).replace("${classes.js}", getResolvedTargetFileName());
-            }
-            File mainPageFile = new File(targetDirectory, "main.html");
-            try (Writer mainPageWriter = new OutputStreamWriter(new FileOutputStream(mainPageFile), "UTF-8")) {
-                mainPageWriter.append(text);
-            }
-        }
     }
 
     private void copySourceFiles() {
         if (vm.getWrittenClasses() == null) {
             return;
         }
-        SourceFilesCopier copier = new SourceFilesCopier(sourceFileProviders);
+        SourceFilesCopier copier = new SourceFilesCopier(sourceFileProviders, generatedFiles::add);
         copier.addClasses(vm.getWrittenClasses());
         copier.setLog(log);
         copier.copy(new File(targetDirectory, "src"));
@@ -558,8 +538,8 @@ public class TeaVMTool implements BaseTeaVMTool {
     private void resourceToFile(String resource, String fileName) throws IOException {
         try (InputStream input = TeaVMTool.class.getClassLoader().getResourceAsStream(resource)) {
             File outputFile = new File(targetDirectory, fileName);
-            try (OutputStream output = new FileOutputStream(outputFile)) {
-                IOUtils.copy(input, output);
+            try (OutputStream output = new BufferedOutputStream(new FileOutputStream(outputFile))) {
+                IOUtils.copy(new BufferedInputStream(input), output);
             }
             generatedFiles.add(outputFile);
         }
@@ -567,7 +547,7 @@ public class TeaVMTool implements BaseTeaVMTool {
 
     private void resourceToWriter(String resource, Writer writer) throws IOException {
         try (InputStream input = TeaVMTool.class.getClassLoader().getResourceAsStream(resource)) {
-            IOUtils.copy(input, writer, "UTF-8");
+            IOUtils.copy(new BufferedInputStream(input), writer, "UTF-8");
         }
     }
 }

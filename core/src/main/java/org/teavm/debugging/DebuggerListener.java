@@ -15,14 +15,10 @@
  */
 package org.teavm.debugging;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface DebuggerListener {
     void resumed();
 
-    void paused();
+    void paused(Breakpoint breakpoint);
 
     void breakpointStatusChanged(Breakpoint breakpoint);
 

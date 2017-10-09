@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2017 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Copyright 2014 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
@@ -31,7 +47,9 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.BitSet;
 import org.junit.Test;
@@ -65,7 +83,7 @@ public class BitSetTest {
     public void constructFromBytes() {
         for (int i = 4; i < 8; ++i) {
             byte[] bytes = new byte[i];
-            Arrays.fill(bytes, (byte)0x80);
+            Arrays.fill(bytes, (byte) 0x80);
             BitSet bs = BitSet.valueOf(bytes);
             assertEquals("Wrong length of BitSet", i * 8, bs.length());
             for (int j = 0; j < bs.length(); ++j) {
@@ -138,8 +156,9 @@ public class BitSetTest {
         assertFalse("Failed to clear bit", eightbs.get(7));
 
         // Check to see all other bits are still set
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 7; i++) {
             assertTrue("Clear cleared incorrect bits", eightbs.get(i));
+        }
 
         eightbs.clear(165);
         assertFalse("Failed to clear bit", eightbs.get(165));
@@ -184,19 +203,22 @@ public class BitSetTest {
         bs.clear(15);
         bs.clear(7, 11);
         for (int i = 0; i < 7; i++) {
-            if (i == 5)
+            if (i == 5) {
                 assertFalse("Shouldn't have flipped bit " + i, bs.get(i));
-            else
+            } else {
                 assertTrue("Shouldn't have cleared bit " + i, bs.get(i));
+            }
         }
-        for (int i = 7; i < 11; i++)
+        for (int i = 7; i < 11; i++) {
             assertFalse("Failed to clear bit " + i, bs.get(i));
+        }
 
         for (int i = 11; i < initialSize; i++) {
-            if (i == 15)
+            if (i == 15) {
                 assertFalse("Shouldn't have flipped bit " + i, bs.get(i));
-            else
+            } else {
                 assertTrue("Shouldn't have cleared bit " + i, bs.get(i));
+            }
         }
 
         for (int i = initialSize; i < bs.size(); i++) {
@@ -208,10 +230,12 @@ public class BitSetTest {
         initialSize = bs.size();
         bs.set(0, initialSize);
         bs.clear(7, 64);
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 7; i++) {
             assertTrue("Shouldn't have cleared bit " + i, bs.get(i));
-        for (int i = 7; i < 64; i++)
+        }
+        for (int i = 7; i < 64; i++) {
             assertFalse("Failed to clear bit " + i, bs.get(i));
+        }
         for (int i = 64; i < bs.size(); i++) {
             assertTrue("Shouldn't have flipped bit " + i, !bs.get(i));
         }
@@ -220,8 +244,9 @@ public class BitSetTest {
         initialSize = bs.size();
         bs.set(0, initialSize);
         bs.clear(0, 64);
-        for (int i = 0; i < 64; i++)
+        for (int i = 0; i < 64; i++) {
             assertFalse("Failed to clear bit " + i, bs.get(i));
+        }
         for (int i = 64; i < bs.size(); i++) {
             assertFalse("Shouldn't have flipped bit " + i, bs.get(i));
         }
@@ -230,8 +255,9 @@ public class BitSetTest {
         initialSize = bs.size();
         bs.set(0, initialSize);
         bs.clear(0, 65);
-        for (int i = 0; i < 65; i++)
+        for (int i = 0; i < 65; i++) {
             assertFalse("Failed to clear bit " + i, bs.get(i));
+        }
         for (int i = 65; i < bs.size(); i++) {
             assertFalse("Shouldn't have flipped bit " + i, bs.get(i));
         }
@@ -244,18 +270,21 @@ public class BitSetTest {
         bs.clear(110);
         bs.clear(9, 74);
         for (int i = 0; i < 9; i++) {
-            if (i == 7)
+            if (i == 7) {
                 assertFalse("Shouldn't have flipped bit " + i, bs.get(i));
-            else
+            } else {
                 assertTrue("Shouldn't have cleared bit " + i, bs.get(i));
+            }
         }
-        for (int i = 9; i < 74; i++)
+        for (int i = 9; i < 74; i++) {
             assertFalse("Failed to clear bit " + i, bs.get(i));
+        }
         for (int i = 74; i < initialSize; i++) {
-            if (i == 110)
+            if (i == 110) {
                 assertFalse("Shouldn't have flipped bit " + i, bs.get(i));
-            else
+            } else {
                 assertTrue("Shouldn't have cleared bit " + i, bs.get(i));
+            }
         }
         for (int i = initialSize; i < bs.size(); i++) {
             assertFalse("Shouldn't have flipped bit " + i, bs.get(i));
@@ -268,20 +297,24 @@ public class BitSetTest {
         bs.clear(255);
         bs.clear(9, 219);
         for (int i = 0; i < 9; i++) {
-            if (i == 7)
+            if (i == 7) {
                 assertFalse("Shouldn't have flipped bit " + i, bs.get(i));
-            else
+            } else {
                 assertTrue("Shouldn't have cleared bit " + i, bs.get(i));
+            }
         }
 
-        for (int i = 9; i < 219; i++)
+        for (int i = 9; i < 219; i++) {
             assertFalse("failed to clear bit " + i, bs.get(i));
+        }
 
-        for (int i = 219; i < 255; i++)
+        for (int i = 219; i < 255; i++) {
             assertTrue("Shouldn't have cleared bit " + i, bs.get(i));
+        }
 
-        for (int i = 255; i < bs.size(); i++)
+        for (int i = 255; i < bs.size(); i++) {
             assertFalse("Shouldn't have flipped bit " + i, bs.get(i));
+        }
 
         bs.set(2, 4);
         bs.clear(2, 2);
@@ -354,7 +387,6 @@ public class BitSetTest {
 
         bs.get(70);
         assertEquals("Test3: Wrong length,", 0, bs.length());
-
     }
 
     @Test
@@ -363,7 +395,9 @@ public class BitSetTest {
         bitset.get(3, 3);
 
         // Test for method boolean java.util.BitSet.get(int, int)
-        BitSet bs, resultbs, correctbs;
+        BitSet bs;
+        BitSet resultbs;
+        BitSet correctbs;
         bs = new BitSet(512);
         bs.set(3, 9);
         bs.set(10, 20);
@@ -481,7 +515,6 @@ public class BitSetTest {
 
         bs.get(25);
         assertEquals("Test9: Wrong length,", 26, bs.length());
-
     }
 
     @Test
@@ -519,7 +552,7 @@ public class BitSetTest {
         for (int i = bs.size(); --i >= 0;) {
             bs.flip(i);
             assertTrue("Test1: Incorrectly flipped bit" + i, bs.get(i));
-            assertEquals("Incorrect length", i+1, bs.length());
+            assertEquals("Incorrect length", i + 1, bs.length());
             for (int j = bs.size(); --j > i;) {
                 assertTrue("Test2: Incorrectly flipped bit" + j, !bs.get(j));
             }
@@ -542,8 +575,9 @@ public class BitSetTest {
         assertTrue("Failed to flip bit 7", !eightbs.get(7));
 
         // Check to see all other bits are still set
-        for (int i = 0; i < 7; i++)
+        for (int i = 0; i < 7; i++) {
             assertTrue("Flip flipped incorrect bits", eightbs.get(i));
+        }
 
         eightbs.flip(127);
         assertTrue("Failed to flip bit 127", eightbs.get(127));
@@ -690,11 +724,14 @@ public class BitSetTest {
         for (int i = bs.size(); --i >= 0;) {
             bs.set(i);
             assertTrue("Incorrectly set", bs.get(i));
-            assertEquals("Incorrect length", i+1, bs.length());
-            for (int j = bs.size(); --j > i;)
+            assertEquals("Incorrect length", i + 1, bs.length());
+            for (int j = bs.size(); --j > i;) {
                 assertFalse("Incorrectly set bit " + j, bs.get(j));
-            for (int j = i; --j >= 0;)
+            }
+            int j = i;
+            while (--j >= 0) {
                 assertFalse("Incorrectly set bit " + j, bs.get(j));
+            }
             bs.clear(i);
         }
 
@@ -726,18 +763,21 @@ public class BitSetTest {
         bs.set(15);
         bs.set(7, 11);
         for (int i = 0; i < 7; i++) {
-            if (i == 5)
+            if (i == 5) {
                 assertTrue("Shouldn't have flipped bit " + i, bs.get(i));
-            else
+            } else {
                 assertFalse("Shouldn't have set bit " + i, bs.get(i));
+            }
         }
-        for (int i = 7; i < 11; i++)
+        for (int i = 7; i < 11; i++) {
             assertTrue("Failed to set bit " + i, bs.get(i));
+        }
         for (int i = 11; i < bs.size(); i++) {
-            if (i == 15)
+            if (i == 15) {
                 assertTrue("Shouldn't have flipped bit " + i, bs.get(i));
-            else
+            } else {
                 assertFalse("Shouldn't have set bit " + i, bs.get(i));
+            }
         }
 
         // pos1 and pos2 is in the same bitset element, boundry testing
@@ -772,19 +812,21 @@ public class BitSetTest {
         bs.set(110);
         bs.set(9, 74);
         for (int i = 0; i < 9; i++) {
-            if (i == 7)
+            if (i == 7) {
                 assertTrue("Shouldn't have flipped bit " + i, bs.get(i));
-            else
+            } else {
                 assertFalse("Shouldn't have set bit " + i, bs.get(i));
+            }
         }
         for (int i = 9; i < 74; i++) {
             assertTrue("Failed to set bit " + i, bs.get(i));
         }
         for (int i = 74; i < bs.size(); i++) {
-            if (i == 110)
+            if (i == 110) {
                 assertTrue("Shouldn't have flipped bit " + i, bs.get(i));
-            else
+            } else {
                 assertFalse("Shouldn't have set bit " + i, bs.get(i));
+            }
         }
 
         // pos1 and pos2 are in two non-sequential bitset elements
@@ -793,10 +835,11 @@ public class BitSetTest {
         bs.set(255);
         bs.set(9, 219);
         for (int i = 0; i < 9; i++) {
-            if (i == 7)
+            if (i == 7) {
                 assertTrue("Shouldn't have set flipped " + i, bs.get(i));
-            else
+            } else {
                 assertFalse("Shouldn't have set bit " + i, bs.get(i));
+            }
         }
 
         for (int i = 9; i < 219; i++) {
@@ -824,7 +867,6 @@ public class BitSetTest {
 
         eightbs.set(3, 6, true);
         assertTrue("Should have set bits 3, 4, and 5 to true", eightbs.get(3) && eightbs.get(4) && eightbs.get(5));
-
     }
 
     @Test
@@ -889,8 +931,9 @@ public class BitSetTest {
         BitSet bs = new BitSet(128);
         // Initialize the bottom half of the BitSet
 
-        for (int i = 64; i < 128; i++)
+        for (int i = 64; i < 128; i++) {
             bs.set(i);
+        }
         eightbs.and(bs);
         assertFalse("AND failed to clear bits", eightbs.equals(bs));
         eightbs.set(3);
@@ -939,7 +982,6 @@ public class BitSetTest {
         assertFalse("OR set a bit which should be off", bs.get(5));
     }
 
-
     @Test
     public void xor() {
         // Test for method void java.util.BitSet.xor(java.util.BitSet)
@@ -970,10 +1012,10 @@ public class BitSetTest {
     public void toStringComputed() {
         // Test for method java.lang.String java.util.BitSet.toString()
         assertEquals("Returned incorrect string representation",
-                     "{0, 1, 2, 3, 4, 5, 6, 7}", eightbs.toString());
+                "{0, 1, 2, 3, 4, 5, 6, 7}", eightbs.toString());
         eightbs.clear(2);
         assertEquals("Returned incorrect string representation",
-                     "{0, 1, 3, 4, 5, 6, 7}", eightbs.toString());
+                "{0, 1, 3, 4, 5, 6, 7}", eightbs.toString());
     }
 
     @Test
@@ -1050,7 +1092,7 @@ public class BitSetTest {
         // Test for method int java.util.BitSet.nextSetBit()
         BitSet bs = new BitSet(500);
         bs.set(0, bs.size() - 1); // ensure all the bits from 0 to bs.size()
-                                    // -1
+        // -1
         bs.set(bs.size() - 1); // are set to true
         bs.clear(5);
         bs.clear(32);

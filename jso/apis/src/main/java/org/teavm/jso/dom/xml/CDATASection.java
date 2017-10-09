@@ -15,10 +15,6 @@
  */
 package org.teavm.jso.dom.xml;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface CDATASection extends Node {
 
 }

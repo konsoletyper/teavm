@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio.charset;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TMalformedInputException extends TCharacterCodingException {
     private static final long serialVersionUID = -7677315548693161814L;
     private int length;

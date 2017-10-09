@@ -19,10 +19,6 @@ import org.eclipse.debug.core.DebugException;
 import org.eclipse.debug.core.model.IValue;
 import org.eclipse.debug.core.model.IVariable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TeaVMValue extends TeaVMDebugElement implements IValue {
     private String id;
     private TeaVMVariablesHolder variablesHolder;

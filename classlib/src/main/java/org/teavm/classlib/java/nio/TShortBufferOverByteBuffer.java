@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 abstract class TShortBufferOverByteBuffer extends TShortBufferImpl {
     TByteBufferImpl byteByffer;
     boolean readOnly;

@@ -15,10 +15,6 @@
  */
 package org.teavm.html4j.test;
 
-/**
- *
- * @author Alexey Andreev
- */
 interface B {
     int bar(A foo);
 }

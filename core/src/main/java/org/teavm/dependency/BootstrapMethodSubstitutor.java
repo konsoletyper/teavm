@@ -18,10 +18,6 @@ package org.teavm.dependency;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
 
-/**
- *
- * @author Alexey Andreev
- */
 @FunctionalInterface
 public interface BootstrapMethodSubstitutor {
     ValueEmitter substitute(DynamicCallSite callSite, ProgramEmitter pe);

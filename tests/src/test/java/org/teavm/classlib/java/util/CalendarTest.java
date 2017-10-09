@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  * Copyright 2015 Steve Hannah.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -15,6 +31,10 @@
  */
 package org.teavm.classlib.java.util;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
@@ -23,10 +43,9 @@ import java.util.TimeZone;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import static org.junit.Assert.*;
 
 @RunWith(TeaVMTestRunner.class)
-public class CalendarTest  {
+public class CalendarTest {
     Locale defaultLocale;
 
     /**
@@ -300,7 +319,7 @@ public class CalendarTest  {
         assertTrue("Incorrect result 9d: " + cal.getTime(), cal.getTime()
                 .getTime() == 1015822800000L);
 
-		// DAY_OF_YEAR has priority when DAY_OF_MONTH set last and other fields
+        // DAY_OF_YEAR has priority when DAY_OF_MONTH set last and other fields
         // not set
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
@@ -309,7 +328,7 @@ public class CalendarTest  {
         assertTrue("Incorrect result 10: " + cal.getTime(), cal.getTime()
                 .getTime() == 1015822800000L);
 
-		// MONTH/DATE has priority when DAY_OF_WEEK_IN_MONTH set last but
+        // MONTH/DATE has priority when DAY_OF_WEEK_IN_MONTH set last but
         // DAY_OF_WEEK not set
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
@@ -319,7 +338,7 @@ public class CalendarTest  {
         assertTrue("Incorrect result 11: " + cal.getTime(), cal.getTime()
                 .getTime() == 1015822800000L);
 
-		// MONTH/DATE has priority when WEEK_OF_YEAR set last but DAY_OF_WEEK
+        // MONTH/DATE has priority when WEEK_OF_YEAR set last but DAY_OF_WEEK
         // not set
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
@@ -329,7 +348,7 @@ public class CalendarTest  {
         assertTrue("Incorrect result 12: " + cal.getTime(), cal.getTime()
                 .getTime() == 1015822800000L);
 
-		// MONTH/DATE has priority when WEEK_OF_MONTH set last but DAY_OF_WEEK
+        // MONTH/DATE has priority when WEEK_OF_MONTH set last but DAY_OF_WEEK
         // not set
         cal.clear();
         cal.set(Calendar.YEAR, 2002);
@@ -603,22 +622,22 @@ public class CalendarTest  {
     @Test
     public void test_getInstance() {
         // test getInstance(Locale)
-        Calendar us_calendar = Calendar.getInstance(Locale.US);
+        Calendar usCalendar = Calendar.getInstance(Locale.US);
         //Calendar ch_calendar = Calendar.getInstance(Locale.CHINESE);
-        assertEquals(Calendar.SUNDAY, us_calendar
+        assertEquals(Calendar.SUNDAY, usCalendar
                 .getFirstDayOfWeek());
         //assertEquals(Calendar.MONDAY, ch_calendar
         //        .getFirstDayOfWeek());
 
         // test getInstance(Locale, TimeZone)
-        Calendar gmt_calendar = Calendar.getInstance(TimeZone
+        Calendar gmtCalendar = Calendar.getInstance(TimeZone
                 .getTimeZone("GMT"), Locale.US);
         assertEquals(TimeZone.getTimeZone("GMT"),
-                gmt_calendar.getTimeZone());
-        Calendar est_calendar = Calendar.getInstance(TimeZone
+                gmtCalendar.getTimeZone());
+        Calendar estCalendar = Calendar.getInstance(TimeZone
                 .getTimeZone("EST"), Locale.US);
         assertEquals(TimeZone.getTimeZone("EST")
-                .getID(), est_calendar.getTimeZone().getID());
+                .getID(), estCalendar.getTimeZone().getID());
     }
 
     /**
@@ -664,7 +683,6 @@ public class CalendarTest  {
         calendar.set(2008, 1, 31, 17, 28, 12);
         calendar.roll(Calendar.MONTH, 1);
         assertEquals(2, calendar.get(Calendar.DATE));
-
     }
 
     @Test
@@ -872,7 +890,7 @@ public class CalendarTest  {
 //            }
 //        }
 //
-//		// invalid value for an un-related field when the calendar is not
+//        // invalid value for an un-related field when the calendar is not
 //        // lenient
 //        cal.setLenient(false);
 //        assertNotNull(cal.getDisplayName(Calendar.MONTH, Calendar.SHORT,
@@ -997,7 +1015,7 @@ public class CalendarTest  {
 //        cal.set(Calendar.SECOND, 999);
 //        cal.getDisplayNames(Calendar.MONTH, Calendar.SHORT, Locale.US);
 //
-//		// RI fails here
+//        // RI fails here
 //        // invalid value for an un-related field when the calendar is not
 //        // lenient
 //        cal.setLenient(false);

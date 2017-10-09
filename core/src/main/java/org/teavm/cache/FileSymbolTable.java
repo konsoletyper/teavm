@@ -21,10 +21,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class FileSymbolTable implements SymbolTable {
     private File file;
     private List<String> symbols = new ArrayList<>();

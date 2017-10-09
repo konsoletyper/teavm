@@ -124,6 +124,10 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 case "htmlunit":
                     runStrategy = new HtmlUnitRunStrategy();
                     break;
+                case "":
+                case "none":
+                    runStrategy = null;
+                    break;
                 default:
                     throw new InitializationError("Unknown run strategy: " + runStrategyName);
             }
@@ -298,6 +302,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             compileResult = compileTest(child, configuration);
         } catch (Exception e) {
             notifier.fireTestFailure(new Failure(description, e));
+            notifier.fireTestFinished(description);
+            latch.countDown();
             return null;
         }
 

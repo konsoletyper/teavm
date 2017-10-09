@@ -17,10 +17,6 @@ package org.teavm.parsing;
 
 import java.util.Date;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface ClassDateProvider {
     Date getModificationDate(String className);
 }

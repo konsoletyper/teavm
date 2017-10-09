@@ -26,10 +26,6 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import org.teavm.common.IntegerArray;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class UnicodeSupport {
     private static AtomicBoolean filled = new AtomicBoolean();
     private static volatile CountDownLatch latch = new CountDownLatch(1);

@@ -34,10 +34,6 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeJavaObject;
 import org.teavm.runtime.RuntimeObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 @Superclass("")
 public class TObject {
     Monitor monitor;
@@ -187,6 +183,11 @@ public class TObject {
     @Override
     public int hashCode() {
         return identity();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return equals0((TObject) obj);
     }
 
     @Rename("equals")

@@ -20,10 +20,6 @@ import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import java.util.zip.ZipEntry;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class JarFileResourceProvider implements ResourceProvider {
     private File file;
 

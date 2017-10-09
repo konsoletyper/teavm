@@ -18,10 +18,6 @@ package org.teavm.classlib.java.util;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TObject;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TCheckedCollection<E> implements TCollection<E> {
     TCollection<E> innerCollection;
     TClass<E> type;

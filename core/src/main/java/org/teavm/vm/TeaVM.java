@@ -661,5 +661,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         public Map<String, String> getExportedClasses() {
             return readonlyExportedClasses;
         }
+
+        @Override
+        public boolean isFriendlyToDebugger() {
+            return optimizationLevel == TeaVMOptimizationLevel.SIMPLE;
+        }
     };
 }

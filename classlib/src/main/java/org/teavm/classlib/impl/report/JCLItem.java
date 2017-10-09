@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.impl.report;
 
-/**
- *
- * @author Alexey Andreev
- */
 class JCLItem {
     public final JCLItemType type;
     public final String name;

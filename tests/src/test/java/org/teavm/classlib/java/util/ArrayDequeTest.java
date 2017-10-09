@@ -15,7 +15,8 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.Iterator;
@@ -32,8 +33,8 @@ public class ArrayDequeTest {
         deque.addFirst(2);
         Iterator<Integer> iter = deque.iterator();
         assertEquals(2, deque.size());
-        assertEquals((Integer)2, iter.next());
-        assertEquals((Integer)1, iter.next());
+        assertEquals((Integer) 2, iter.next());
+        assertEquals((Integer) 1, iter.next());
         assertFalse(iter.hasNext());
     }
 
@@ -44,8 +45,8 @@ public class ArrayDequeTest {
         deque.addLast(2);
         Iterator<Integer> iter = deque.iterator();
         assertEquals(2, deque.size());
-        assertEquals((Integer)1, iter.next());
-        assertEquals((Integer)2, iter.next());
+        assertEquals((Integer) 1, iter.next());
+        assertEquals((Integer) 2, iter.next());
         assertFalse(iter.hasNext());
     }
 
@@ -57,15 +58,15 @@ public class ArrayDequeTest {
         }
         assertEquals(1000, deque.size());
         Iterator<Integer> iter = deque.iterator();
-        assertEquals((Integer)999, iter.next());
+        assertEquals((Integer) 999, iter.next());
         for (int i = 2; i < 500; ++i) {
             iter.next();
         }
-        assertEquals((Integer)500, iter.next());
+        assertEquals((Integer) 500, iter.next());
         for (int i = 1; i < 500; ++i) {
             iter.next();
         }
-        assertEquals((Integer)0, iter.next());
+        assertEquals((Integer) 0, iter.next());
     }
 
     @Test
@@ -76,15 +77,15 @@ public class ArrayDequeTest {
         }
         assertEquals(1000, deque.size());
         Iterator<Integer> iter = deque.iterator();
-        assertEquals((Integer)0, iter.next());
+        assertEquals((Integer) 0, iter.next());
         for (int i = 1; i < 500; ++i) {
             iter.next();
         }
-        assertEquals((Integer)500, iter.next());
+        assertEquals((Integer) 500, iter.next());
         for (int i = 2; i < 500; ++i) {
             iter.next();
         }
-        assertEquals((Integer)999, iter.next());
+        assertEquals((Integer) 999, iter.next());
     }
 
     @Test
@@ -92,8 +93,8 @@ public class ArrayDequeTest {
         Deque<Integer> deque = new ArrayDeque<>();
         deque.addFirst(1);
         deque.addFirst(2);
-        assertEquals((Integer)2, deque.removeFirst());
-        assertEquals((Integer)1, deque.removeFirst());
+        assertEquals((Integer) 2, deque.removeFirst());
+        assertEquals((Integer) 1, deque.removeFirst());
         assertEquals(0, deque.size());
     }
 
@@ -102,8 +103,8 @@ public class ArrayDequeTest {
         Deque<Integer> deque = new ArrayDeque<>();
         deque.addFirst(1);
         deque.addFirst(2);
-        assertEquals((Integer)1, deque.removeLast());
-        assertEquals((Integer)2, deque.removeLast());
+        assertEquals((Integer) 1, deque.removeLast());
+        assertEquals((Integer) 2, deque.removeLast());
         assertEquals(0, deque.size());
     }
 
@@ -113,18 +114,18 @@ public class ArrayDequeTest {
         for (int i = 0; i < 100; ++i) {
             deque.addLast(i);
         }
-        assertEquals((Integer)0, deque.removeFirst());
+        assertEquals((Integer) 0, deque.removeFirst());
         for (int i = 1; i < 20; ++i) {
             deque.removeFirst();
         }
-        assertEquals((Integer)20, deque.removeFirst());
+        assertEquals((Integer) 20, deque.removeFirst());
         for (int i = 101; i < 111; ++i) {
             deque.addLast(i);
         }
-        assertEquals((Integer)110, deque.removeLast());
+        assertEquals((Integer) 110, deque.removeLast());
         for (int i = 2; i < 40; ++i) {
             deque.removeLast();
         }
-        assertEquals((Integer)70, deque.removeLast());
+        assertEquals((Integer) 70, deque.removeLast());
     }
 }

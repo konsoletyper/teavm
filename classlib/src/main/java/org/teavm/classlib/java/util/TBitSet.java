@@ -19,10 +19,6 @@ import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
 import org.teavm.interop.Rename;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TBitSet extends TObject implements TCloneable, TSerializable {
     private int[] data;
     private int length;

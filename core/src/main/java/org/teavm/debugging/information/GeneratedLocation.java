@@ -15,10 +15,6 @@
  */
 package org.teavm.debugging.information;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class GeneratedLocation implements Comparable<GeneratedLocation> {
     private int line;
     private int column;

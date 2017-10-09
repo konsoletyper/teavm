@@ -15,6 +15,7 @@
  */
 package org.teavm.vm;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -41,10 +42,6 @@ import org.teavm.vm.spi.Before;
 import org.teavm.vm.spi.Requires;
 import org.teavm.vm.spi.TeaVMPlugin;
 
-/**
- *
- * @author Alexey Andreev
- */
 public final class TeaVMPluginLoader {
     private static final String DESCRIPTOR_LOCATION = "META-INF/services/org.teavm.vm.spi.TeaVMPlugin";
     private static final String REQUIRES_DESC = Type.getDescriptor(Requires.class);
@@ -120,7 +117,7 @@ public final class TeaVMPluginLoader {
             if (input == null) {
                 return false;
             }
-            ClassReader reader = new ClassReader(input);
+            ClassReader reader = new ClassReader(new BufferedInputStream(input));
             PluginDescriptorFiller filler = new PluginDescriptorFiller(descriptor);
             reader.accept(filler, 0);
             return true;

@@ -15,10 +15,6 @@
  */
 package org.teavm.model;
 
-/**
- *
- * @author Alexey Andreev
- */
 public enum MethodHandleType {
     GET_FIELD,
     GET_STATIC_FIELD,

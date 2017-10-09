@@ -160,7 +160,6 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
         }
     }
 
-
     @Override
     public int hashCode() {
         int hashCode = 1;
@@ -169,6 +168,11 @@ public abstract class TAbstractList<E> extends TAbstractCollection<E> implements
             hashCode = 31 * hashCode + (elem != null ? elem.hashCode() : 0);
         }
         return hashCode;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        return equals0((TObject) obj);
     }
 
     @Override

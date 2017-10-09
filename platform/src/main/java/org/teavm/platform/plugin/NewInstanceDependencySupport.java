@@ -19,10 +19,6 @@ import org.teavm.dependency.*;
 import org.teavm.model.*;
 import org.teavm.platform.Platform;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class NewInstanceDependencySupport extends AbstractDependencyListener {
     private DependencyNode allClassesNode;
 

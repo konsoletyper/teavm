@@ -1,4 +1,20 @@
 /*
+ *  Copyright 2014 Alexey Andreev.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+
+/*
  *  Licensed to the Apache Software Foundation (ASF) under one or more
  *  contributor license agreements.  See the NOTICE file distributed with
  *  this work for additional information regarding copyright ownership.
@@ -17,6 +33,9 @@
 
 package org.teavm.classlib.java.io;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
@@ -26,7 +45,6 @@ import java.io.UnsupportedEncodingException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
-import static org.junit.Assert.*;
 
 @RunWith(TeaVMTestRunner.class)
 public class OutputStreamWriterTest {
@@ -34,24 +52,16 @@ public class OutputStreamWriterTest {
     private static final int UPPER = 0xd800;
 
     private static final int BUFFER_SIZE = 10000;
-
-    private ByteArrayOutputStream out;
-
-    private OutputStreamWriter writer;
-
     static private final String source = "This is a test message with Unicode character. "
             + "\u4e2d\u56fd is China's name in Chinese";
-
     static private final String[] MINIMAL_CHARSETS = { "UTF-8" };
-
     OutputStreamWriter osw;
-
     InputStreamReader isr;
-
-    private ByteArrayOutputStream fos;
-
     String testString = "Test_All_Tests\nTest_java_io_BufferedInputStream\nTest_java_io_BufferedOutputStream"
             + "\nTest_java_io_ByteArrayInputStream\nTest_java_io_ByteArrayOutputStream\nTest_java_io_DataInputStream\n";
+    private ByteArrayOutputStream out;
+    private OutputStreamWriter writer;
+    private ByteArrayOutputStream fos;
 
     public OutputStreamWriterTest() throws UnsupportedEncodingException {
         out = new ByteArrayOutputStream();
@@ -87,7 +97,7 @@ public class OutputStreamWriterTest {
 
         // Throws IndexOutOfBoundsException if offset is negative
         try {
-            writer.write((char[])null, -1, -1);
+            writer.write((char[]) null, -1, -1);
             fail("should throw IndexOutOfBoundsException");
         } catch (NullPointerException | IndexOutOfBoundsException e) {
             // Expected
@@ -95,14 +105,14 @@ public class OutputStreamWriterTest {
 
         // throws NullPointerException though count is negative
         try {
-            writer.write((char[])null, 1, -1);
+            writer.write((char[]) null, 1, -1);
             fail("should throw NullPointerException");
         } catch (NullPointerException | IndexOutOfBoundsException e) {
             // Expected
         }
 
         try {
-            writer.write((char[])null, 1, 1);
+            writer.write((char[]) null, 1, 1);
             fail();
         } catch (NullPointerException e) {
             // Expected
@@ -141,7 +151,7 @@ public class OutputStreamWriterTest {
         writer.close();
         // After the stream is closed, should throw IOException first
         try {
-            writer.write((char[])null, -1, -1);
+            writer.write((char[]) null, -1, -1);
             fail("should throw IOException");
         } catch (IOException e) {
             // Expected
@@ -183,7 +193,7 @@ public class OutputStreamWriterTest {
     @Test
     public void testWriteStringintint() throws IOException {
         try {
-            writer.write((String)null, 1, 1);
+            writer.write((String) null, 1, 1);
             fail();
         } catch (NullPointerException e) {
             // Expected
@@ -216,7 +226,7 @@ public class OutputStreamWriterTest {
         // Throws IndexOutOfBoundsException before NullPointerException if count
         // is negative
         try {
-            writer.write((String)null, -1, -1);
+            writer.write((String) null, -1, -1);
             fail("should throw IndexOutOfBoundsException");
         } catch (IndexOutOfBoundsException | NullPointerException e) {
             // Expected
@@ -224,7 +234,7 @@ public class OutputStreamWriterTest {
 
         // Throws NullPointerException before StringIndexOutOfBoundsException
         try {
-            writer.write((String)null, -1, 0);
+            writer.write((String) null, -1, 0);
             fail("should throw NullPointerException");
         } catch (IndexOutOfBoundsException | NullPointerException e) {
             // expected
@@ -240,14 +250,14 @@ public class OutputStreamWriterTest {
         writer.close();
         // Throws IndexOutOfBoundsException first if count is negative
         try {
-            writer.write((String)null, 0, -1);
+            writer.write((String) null, 0, -1);
             fail("should throw IndexOutOfBoundsException");
         } catch (NullPointerException | IndexOutOfBoundsException e) {
             // Expected
         }
 
         try {
-            writer.write((String)null, -1, 0);
+            writer.write((String) null, -1, 0);
             fail("should throw NullPointerException");
         } catch (NullPointerException | IndexOutOfBoundsException e) {
             // Expected
@@ -302,7 +312,7 @@ public class OutputStreamWriterTest {
             // Expected
         }
         try {
-            writer = new OutputStreamWriter(out, (String)null);
+            writer = new OutputStreamWriter(out, (String) null);
             fail();
         } catch (NullPointerException e) {
             // Expected
@@ -341,10 +351,12 @@ public class OutputStreamWriterTest {
                 try {
                     isr.close();
                 } catch (Exception e) {
+                    // ok
                 }
                 try {
                     writer.close();
                 } catch (Exception e) {
+                    // ok
                 }
             }
         }
@@ -371,7 +383,7 @@ public class OutputStreamWriterTest {
 
                 int m = 0;
                 for (int c = 0; c < upper; ++c) {
-                    largeBuffer[m++] = (char)c;
+                    largeBuffer[m++] = (char) c;
                     if (m == BUFFER_SIZE) {
                         writer.write(largeBuffer);
                         m = 0;
@@ -382,7 +394,9 @@ public class OutputStreamWriterTest {
                 byte[] result = out.toByteArray();
 
                 isr = new InputStreamReader(new ByteArrayInputStream(result), MINIMAL_CHARSETS[i]);
-                int expected = 0, read = 0, j = 0;
+                int expected = 0;
+                int read = 0;
+                int j = 0;
                 while (expected < upper) {
                     if (j == read) {
                         read = isr.read(largeBuffer);
@@ -394,10 +408,12 @@ public class OutputStreamWriterTest {
                 try {
                     isr.close();
                 } catch (Exception e) {
+                    // ok
                 }
                 try {
                     writer.close();
                 } catch (Exception e) {
+                    // ok
                 }
             }
         }
@@ -490,7 +506,7 @@ public class OutputStreamWriterTest {
         osw.close();
         openInputStream();
         int c = isr.read();
-        assertEquals("Incorrect char returned", 'T', (char)c);
+        assertEquals("Incorrect char returned", 'T', (char) c);
     }
 
     @Test

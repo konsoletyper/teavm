@@ -17,10 +17,6 @@ package org.teavm.ast;
 
 import java.util.Map;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ConditionalExpr extends Expr {
     private Expr condition;
     private Expr consequent;

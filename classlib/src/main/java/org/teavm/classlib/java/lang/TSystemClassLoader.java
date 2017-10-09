@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 class TSystemClassLoader extends TClassLoader {
     TSystemClassLoader() {
     }

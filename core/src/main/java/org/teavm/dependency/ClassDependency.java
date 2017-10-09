@@ -18,10 +18,6 @@ package org.teavm.dependency;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class ClassDependency implements ClassDependencyInfo {
     private DependencyChecker checker;
     private String className;

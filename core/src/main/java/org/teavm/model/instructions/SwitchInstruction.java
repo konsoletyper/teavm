@@ -22,10 +22,6 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.Variable;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class SwitchInstruction extends Instruction {
     private Variable condition;
     private List<SwitchTableEntry> entries = new ArrayList<>();

@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TIllegalArgumentException extends TRuntimeException {
     private static final long serialVersionUID = -1225768288500984373L;
 

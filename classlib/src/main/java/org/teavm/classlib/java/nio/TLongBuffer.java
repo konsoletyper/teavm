@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.nio;
 
-/**
- *
- * @author Alexey Andreev
- */
 public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuffer> {
     TLongBuffer(int capacity, int position, int limit) {
         super(capacity);

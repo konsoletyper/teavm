@@ -15,7 +15,9 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -55,13 +57,13 @@ public class CollectionsTest {
     @Test
     public void findsMinimum() {
         List<Integer> list = Arrays.asList(6, 5, 7, 3, 5, 6);
-        assertEquals((Integer)3, Collections.min(list));
+        assertEquals((Integer) 3, Collections.min(list));
     }
 
     @Test
     public void findsMaximum() {
         List<Integer> list = Arrays.asList(6, 5, 7, 3, 5, 6);
-        assertEquals((Integer)7, Collections.max(list));
+        assertEquals((Integer) 7, Collections.max(list));
     }
 
     @Test
@@ -69,9 +71,9 @@ public class CollectionsTest {
         List<Integer> list = new ArrayList<>(Arrays.asList(6, 5, 7, 3, 5, 6));
         Collections.fill(list, 9);
         assertEquals(6, list.size());
-        assertEquals((Integer)9, list.get(0));
-        assertEquals((Integer)9, list.get(5));
-        assertEquals((Integer)9, list.get(2));
+        assertEquals((Integer) 9, list.get(0));
+        assertEquals((Integer) 9, list.get(5));
+        assertEquals((Integer) 9, list.get(2));
     }
 
     @Test
@@ -80,11 +82,11 @@ public class CollectionsTest {
         List<Integer> dest = new ArrayList<>(Arrays.asList(1, 2, 3, 4, 5, 6, 7));
         Collections.copy(dest, list);
         assertEquals(7, dest.size());
-        assertEquals((Integer)6, dest.get(0));
-        assertEquals((Integer)5, dest.get(1));
-        assertEquals((Integer)5, dest.get(4));
-        assertEquals((Integer)6, dest.get(5));
-        assertEquals((Integer)7, dest.get(6));
+        assertEquals((Integer) 6, dest.get(0));
+        assertEquals((Integer) 5, dest.get(1));
+        assertEquals((Integer) 5, dest.get(4));
+        assertEquals((Integer) 6, dest.get(5));
+        assertEquals((Integer) 7, dest.get(6));
     }
 
     @Test

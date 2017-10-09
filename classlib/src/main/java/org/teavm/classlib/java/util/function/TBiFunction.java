@@ -15,15 +15,11 @@
  */
 package org.teavm.classlib.java.util.function;
 
-/**
- *
- * @author Alexey Andreev
- */
 @FunctionalInterface
 public interface TBiFunction<T, U, R> {
     R apply(T t, U u);
 
-    default <V> TBiFunction<T,U,V> andThen(TFunction<? super R, ? extends V> after) {
+    default <V> TBiFunction<T, U, V> andThen(TFunction<? super R, ? extends V> after) {
         return (t, u) -> after.apply(apply(t, u));
     }
 }

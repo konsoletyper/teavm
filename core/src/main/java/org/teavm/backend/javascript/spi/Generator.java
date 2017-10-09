@@ -19,10 +19,6 @@ import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.model.MethodReference;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface Generator {
     void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException;
 }

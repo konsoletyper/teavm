@@ -18,10 +18,6 @@ package org.teavm.classlib.impl;
 import java.util.Map;
 import org.teavm.classlib.impl.unicode.CLDRReader;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class FirstDayOfWeekMetadataGenerator extends WeekMetadataGenerator {
     @Override
     protected Map<String, Integer> getWeekData(CLDRReader reader) {

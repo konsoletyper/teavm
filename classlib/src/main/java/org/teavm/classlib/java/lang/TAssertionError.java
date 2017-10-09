@@ -15,10 +15,6 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TAssertionError extends TError {
     private static final long serialVersionUID = -4113942229209340013L;
 

@@ -17,10 +17,6 @@ package org.teavm.classlib.impl.unicode;
 
 import org.teavm.platform.metadata.Resource;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface CurrencyLocalization extends Resource {
     String getName();
 

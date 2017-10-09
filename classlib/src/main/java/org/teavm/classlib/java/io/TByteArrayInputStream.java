@@ -17,10 +17,6 @@ package org.teavm.classlib.java.io;
 
 import org.teavm.classlib.java.lang.TMath;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TByteArrayInputStream extends TInputStream {
     protected byte[] buf;
     protected int pos;

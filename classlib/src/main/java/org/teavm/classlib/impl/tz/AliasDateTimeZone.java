@@ -17,10 +17,6 @@ package org.teavm.classlib.impl.tz;
 
 import org.teavm.classlib.impl.Base46;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class AliasDateTimeZone extends StorableDateTimeZone {
     private DateTimeZone innerZone;
 

@@ -21,10 +21,6 @@ import org.eclipse.jface.resource.ImageDescriptor;
 import org.eclipse.ui.IPersistableElement;
 import org.eclipse.ui.IStorageEditorInput;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class StorageEditorInput extends PlatformObject implements IStorageEditorInput {
     private IStorage storage;
 

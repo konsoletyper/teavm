@@ -15,10 +15,6 @@
  */
 package org.teavm.vm;
 
-/**
- *
- * @author Alexey Andreev
- */
 public interface TeaVMProgressListener {
     TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count);
 

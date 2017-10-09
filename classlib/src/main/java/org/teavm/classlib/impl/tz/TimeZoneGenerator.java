@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.impl.tz;
 
+import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
@@ -27,17 +28,13 @@ import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
 import org.teavm.platform.metadata.ResourceMap;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TimeZoneGenerator implements MetadataGenerator {
-    public static final String TIMEZONE_DB_VERSION = "2015d";
+    public static final String TIMEZONE_DB_VERSION = "2017b";
     public static final String TIMEZONE_DB_PATH = "org/teavm/classlib/impl/tz/tzdata" + TIMEZONE_DB_VERSION + ".zip";
 
     public static void compile(ZoneInfoCompiler compiler, ClassLoader classLoader) {
         try (InputStream input = classLoader.getResourceAsStream(TIMEZONE_DB_PATH)) {
-            try (ZipInputStream zip = new ZipInputStream(input)) {
+            try (ZipInputStream zip = new ZipInputStream(new BufferedInputStream(input))) {
                 while (true) {
                     ZipEntry entry = zip.getNextEntry();
                     if (entry == null) {
@@ -76,7 +73,7 @@ public class TimeZoneGenerator implements MetadataGenerator {
         try (InputStream input = context.getClassLoader().getResourceAsStream("org/teavm/classlib/impl/tz/cache")) {
             if (input != null) {
                 TimeZoneCache cache = new TimeZoneCache();
-                zones = cache.read(input).values();
+                zones = cache.read(new BufferedInputStream(input)).values();
             } else {
                 compile(compiler, context.getClassLoader());
                 zones = compiler.compile().values();

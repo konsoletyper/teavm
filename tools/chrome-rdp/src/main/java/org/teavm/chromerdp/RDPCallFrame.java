@@ -19,10 +19,6 @@ import java.util.Collections;
 import java.util.Map;
 import org.teavm.debugging.javascript.*;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class RDPCallFrame implements JavaScriptCallFrame {
     private JavaScriptDebugger debugger;
     private String chromeId;

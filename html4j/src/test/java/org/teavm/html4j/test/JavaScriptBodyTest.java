@@ -15,23 +15,19 @@
  */
 package org.teavm.html4j.test;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import static org.junit.Assert.assertEquals;
 import java.util.Calendar;
 import net.java.html.js.JavaScriptBody;
-import static org.junit.Assert.assertNotNull;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Alexey Andreev
- */
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
 public class JavaScriptBodyTest {
@@ -52,21 +48,21 @@ public class JavaScriptBodyTest {
 
     @Test
     public void dependencyPropagated() {
-        A a = (A)returnValuePassed(new AImpl());
+        A a = (A) returnValuePassed(new AImpl());
         assertEquals(23, a.foo());
     }
 
     @Test
     public void dependencyPropagatedThroughProperty() {
         storeObject(new AImpl());
-        A a = (A)retrieveObject();
+        A a = (A) retrieveObject();
         assertEquals(23, a.foo());
     }
 
     @Test
     public void dependencyPropagatedThroughArray() {
         storeObject(new Object[] { new AImpl() });
-        A[] array = (A[])retrieveObject();
+        A[] array = (A[]) retrieveObject();
         assertEquals(23, array[0].foo());
     }
 
@@ -93,12 +89,6 @@ public class JavaScriptBodyTest {
         assertEquals(23, array[0]);
     }
 
-    private static class AImpl implements A {
-        @Override public int foo() {
-            return 23;
-        }
-    }
-
     @JavaScriptBody(args = {}, body = "return 23;")
     private native int simpleNativeMethod();
 
@@ -111,25 +101,33 @@ public class JavaScriptBodyTest {
     @JavaScriptBody(args = {}, body = "return window._global_;")
     private native Object retrieveObject();
 
-    @JavaScriptBody(args = { "callback" }, body = "return callback." +
-            "@org.teavm.html4j.test.A::foo()()", javacall = true)
+    @JavaScriptBody(args = { "callback" }, body = "return callback.@org.teavm.html4j.test.A::foo()()", javacall = true)
     private native int invokeCallback(A callback);
 
-    @JavaScriptBody(args = { "callback" }, body = "return callback." +
-            "@org.teavm.html4j.test.B::bar(" +
-            "Lorg/teavm/html4j/test/A;)(_global_)", javacall = true)
+    @JavaScriptBody(args = { "callback" }, body = ""
+            + "return callback."
+                + "@org.teavm.html4j.test.B::bar("
+                + "Lorg/teavm/html4j/test/A;)(_global_)",
+            javacall = true)
     private native int invokeCallback(B callback);
 
     public static int staticCallback(A a) {
         return a.foo();
     }
 
-    @JavaScriptBody(args = { "a" }, body = "return " +
-            "@org.teavm.html4j.test.JavaScriptBodyTest::staticCallback(" +
-            "Lorg/teavm/html4j/test/A;)(a)", javacall = true)
+    @JavaScriptBody(args = { "a" }, body = "return "
+            + "@org.teavm.html4j.test.JavaScriptBodyTest::staticCallback("
+            + "Lorg/teavm/html4j/test/A;)(a)", javacall = true)
     private native int invokeStaticCallback(A a);
 
-    @JavaScriptBody(args = "callback", body = "callback.@org.teavm.html4j.test.Callback::exec(" +
-            "Ljava/util/Calendar;)(null)", javacall = true)
+    @JavaScriptBody(args = "callback", body = "callback.@org.teavm.html4j.test.Callback::exec("
+            + "Ljava/util/Calendar;)(null)", javacall = true)
     private native void invokeCallback(Callback callback);
+
+    private static class AImpl implements A {
+        @Override
+        public int foo() {
+            return 23;
+        }
+    }
 }

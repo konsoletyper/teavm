@@ -47,8 +47,9 @@ class TAltGroupQuantifierSet extends TGroupQuantifierSet {
 
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
-        if (!innerSet.hasConsumed(matchResult))
+        if (!innerSet.hasConsumed(matchResult)) {
             return next.matches(stringIndex, testString, matchResult);
+        }
 
         int nextIndex = innerSet.matches(stringIndex, testString, matchResult);
 

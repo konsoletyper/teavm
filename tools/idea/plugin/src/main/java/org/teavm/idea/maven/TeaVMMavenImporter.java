@@ -20,6 +20,7 @@ import com.intellij.facet.FacetType;
 import com.intellij.facet.ModifiableFacetModel;
 import com.intellij.openapi.externalSystem.service.project.IdeModifiableModelsProvider;
 import com.intellij.openapi.module.Module;
+import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,6 +38,7 @@ import org.teavm.idea.TeaVMFacetConfiguration;
 import org.teavm.idea.TeaVMFacetType;
 import org.teavm.idea.TeaVMWebAssemblyFacetType;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
+import org.teavm.idea.jps.model.TeaVMProperty;
 import org.teavm.tooling.TeaVMTargetType;
 
 public class TeaVMMavenImporter extends MavenImporter {
@@ -127,10 +129,24 @@ public class TeaVMMavenImporter extends MavenImporter {
                 case "mainClass":
                     configuration.setMainClass(child.getTextTrim());
                     break;
+                case "properties":
+                    configuration.setProperties(extractProperties(child));
+                    break;
             }
         }
 
         facet.getConfiguration().loadState(configuration);
+    }
+
+    private List<TeaVMProperty> extractProperties(Element element) {
+        List<TeaVMProperty> properties = new ArrayList<>();
+        for (Element child : element.getChildren()) {
+            TeaVMProperty property = new TeaVMProperty();
+            property.setKey(child.getName());
+            property.setValue(child.getTextTrim());
+            properties.add(property);
+        }
+        return properties;
     }
 
     private TeaVMTargetType getTargetType(Element source) {

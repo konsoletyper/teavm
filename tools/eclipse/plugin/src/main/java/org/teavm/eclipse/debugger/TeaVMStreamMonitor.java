@@ -18,10 +18,6 @@ package org.teavm.eclipse.debugger;
 import org.eclipse.debug.core.IStreamListener;
 import org.eclipse.debug.core.model.IStreamMonitor;
 
-/**
- *
- * @author Alexey Andreev
- */
 public class TeaVMStreamMonitor implements IStreamMonitor {
     @Override
     public void addListener(IStreamListener listener) {

@@ -145,8 +145,8 @@ public class Program implements ProgramReader {
 
     @Override
     public Variable variableAt(int index) {
-        if (index < 0) {
-            throw new IllegalArgumentException("Index " + index + " is negative");
+        if (index < 0 || index >= variables.size()) {
+            throw new IllegalArgumentException("Index " + index + " is out of range");
         }
         return variables.get(index);
     }
