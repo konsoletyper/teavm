@@ -16,13 +16,16 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
+import java.util.Properties;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
@@ -124,5 +127,26 @@ public class SystemTest {
 
         assertEquals("err overridden\n", new String(err.toByteArray()));
         assertEquals("out overridden\n", new String(out.toByteArray()));
+    }
+
+    @Test
+    @SkipJVM
+    public void propertiesWork() {
+        Properties properties = System.getProperties();
+        assertNotNull(properties);
+        assertNotNull(properties.getProperty("java.version"));
+
+        System.setProperty("myprop", "foo");
+        assertNull(properties.getProperty("foo"));
+        assertEquals("foo", System.getProperty("myprop"));
+        properties = System.getProperties();
+        assertEquals("foo", properties.getProperty("myprop"));
+
+        Properties newProps = new Properties();
+        newProps.setProperty("myprop2", "bar");
+        System.setProperties(newProps);
+        assertNotNull(System.getProperty("java.version"));
+        assertNull(System.getProperty("myprop"));
+        assertEquals("bar", System.getProperty("myprop2"));
     }
 }

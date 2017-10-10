@@ -172,7 +172,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     public static TInteger getInteger(TString nm, TInteger val) {
-        TString result = TSystem.getProperty(nm);
+        TString result = TString.wrap(TSystem.getProperty(nm.toString()));
         return result != null ? TInteger.valueOf(result) : val;
     }
 
