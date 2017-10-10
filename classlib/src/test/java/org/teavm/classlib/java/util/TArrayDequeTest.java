@@ -18,7 +18,7 @@ package org.teavm.classlib.java.util;
 import org.junit.Assert;
 import org.junit.Test;
 
-public class TestTArrayDeque {
+public class TArrayDequeTest {
     @Test
     public void eachRemovedObjectShouldReduceTheSizeByOne() {
         TArrayDeque<Object> arrayDeque = new TArrayDeque<>();
