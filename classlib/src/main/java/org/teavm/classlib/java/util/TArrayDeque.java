@@ -254,24 +254,24 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
                 for (int i = index + 1; i < tail; ++i) {
                     array[i - 1] = array[i];
                 }
-                array[tail - 1] = null;
+                array[--tail] = null;
             } else {
                 for (int i = index - 1; i >= head; --i) {
                     array[i + 1] = array[i];
                 }
-                array[head] = null;
+                array[head++] = null;
             }
         } else {
             if (index >= head) {
                 for (int i = index - 1; i >= head; --i) {
                     array[i + 1] = array[i];
                 }
-                array[head] = null;
+                array[head++] = null;
             } else {
                 for (int i = index + 1; i < tail; ++i) {
                     array[i - 1] = array[i];
                 }
-                array[tail - 1] = null;
+                array[--tail] = null;
             }
         }
     }

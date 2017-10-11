@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.Enumeration;
+import java.util.Properties;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.java.io.TConsole;
 import org.teavm.classlib.java.io.TInputStream;
@@ -34,6 +36,7 @@ public final class TSystem extends TObject {
     public static final TPrintStream out = new TPrintStream(new TConsoleOutputStreamStdout(), false);
     public static final TPrintStream err = new TPrintStream(new TConsoleOutputStreamStderr(), false);
     public static final TInputStream in = new TConsoleInputStream();
+    private static Properties properties;
 
     private TSystem() {
     }
@@ -109,18 +112,58 @@ public final class TSystem extends TObject {
     @Import(name = "currentTimeMillis", module = "runtime")
     private static native double currentTimeMillisImpl();
 
-    public static TString getProperty(@SuppressWarnings("unused") TString key) {
-        // TODO: make implementation
-        return null;
+    private static void initPropertiesIfNeeded() {
+        if (properties == null) {
+            Properties defaults = new Properties();
+            defaults.put("java.version", "1.8");
+            defaults.put("os.name", "TeaVM");
+            defaults.put("file.separator", "/");
+            defaults.put("path.separator", ":");
+            defaults.put("line.separator", lineSeparator());
+            properties = new Properties(defaults);
+        }
     }
 
-    public static TString getProperty(TString key, TString def) {
-        TString value = getProperty(key);
+    public static String getProperty(@SuppressWarnings("unused") String key) {
+        initPropertiesIfNeeded();
+        return properties.getProperty(key);
+    }
+
+    public static String getProperty(String key, String def) {
+        String value = getProperty(key);
         return value != null ? value : def;
     }
 
-    public static String setProperty(TString key, TString value) {
-        throw new TSecurityException();
+    public static Properties getProperties() {
+        initPropertiesIfNeeded();
+        Properties result = new Properties();
+        copyProperties(properties, result);
+        return result;
+    }
+
+    public static void setProperties(Properties props) {
+        initPropertiesIfNeeded();
+        copyProperties(props, properties);
+    }
+
+    private static void copyProperties(Properties from, Properties to) {
+        to.clear();
+        if (from != null) {
+            Enumeration<?> e = from.propertyNames();
+            while (e.hasMoreElements()) {
+                String key = (String) e.nextElement();
+                to.setProperty(key, from.getProperty(key));
+            }
+        }
+    }
+
+    public static String setProperty(String key, String value) {
+        initPropertiesIfNeeded();
+        return (String) properties.put(key, value);
+    }
+
+    public static String clearProperty(String key) {
+        return (String) properties.remove(key);
     }
 
     @GeneratedBy(SystemNativeGenerator.class)
@@ -152,7 +195,7 @@ public final class TSystem extends TObject {
         return ((TObject) x).identity();
     }
 
-    public static TString lineSeparator() {
-        return TString.wrap("\n");
+    public static String lineSeparator() {
+        return "\n";
     }
 }

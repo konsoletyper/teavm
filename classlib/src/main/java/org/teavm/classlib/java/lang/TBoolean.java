@@ -88,6 +88,6 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
     }
 
     public boolean getBoolean(TString key) {
-        return valueOf(TSystem.getProperty(key)).booleanValue();
+        return valueOf(TString.wrap(TSystem.getProperty(key.toString()))).booleanValue();
     }
 }

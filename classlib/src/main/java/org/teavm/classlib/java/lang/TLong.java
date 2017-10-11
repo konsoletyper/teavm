@@ -225,7 +225,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static TLong getLong(TString nm, TLong val) {
-        TString result = TSystem.getProperty(nm);
+        TString result = TString.wrap(TSystem.getProperty(nm.toString()));
         return result != null ? TLong.valueOf(result) : val;
     }
 
