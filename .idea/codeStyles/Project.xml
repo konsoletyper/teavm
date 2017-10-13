@@ -8,8 +8,8 @@
       </option>
       <option name="IMPORT_LAYOUT_TABLE">
         <value>
-          <package name="" withSubpackages="true" static="false" />
           <package name="" withSubpackages="true" static="true" />
+          <package name="" withSubpackages="true" static="false" />
         </value>
       </option>
     </JavaCodeStyleSettings>

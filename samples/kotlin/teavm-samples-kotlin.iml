@@ -23,7 +23,7 @@
         <compilerSettings />
         <compilerArguments>
           <option name="languageVersion" value="1.1" />
-          <option name="apiVersion" value="1.1" />
+          <option name="apiVersion" value="1.0" />
           <option name="pluginOptions">
             <array />
           </option>
@@ -43,8 +43,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.0.3" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.jetbrains.kotlin:kotlin-runtime:1.0.3" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.objenesis:objenesis:2.4" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.1.2-5" level="project" />
     <orderEntry type="library" scope="PROVIDED" name="Maven: org.jetbrains:annotations:13.0" level="project" />
