@@ -16,6 +16,8 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -27,5 +29,16 @@ public class BooleanTest {
         assertEquals(true, new Boolean("TruE"));
         assertEquals(false, new Boolean("False"));
         assertEquals(false, new Boolean("True15"));
+    }
+
+    @Test
+    public void getFromSystemProperty() {
+        System.setProperty("test.foo", "true");
+        System.setProperty("test.bar", "false");
+
+        assertTrue(Boolean.getBoolean("test.foo"));
+        assertFalse(Boolean.getBoolean("test.bar"));
+        assertFalse(Boolean.getBoolean("test.baz"));
+        assertFalse(Boolean.getBoolean(null));
     }
 }

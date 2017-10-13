@@ -225,8 +225,12 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static TLong getLong(TString nm, TLong val) {
-        TString result = TString.wrap(TSystem.getProperty(nm.toString()));
-        return result != null ? TLong.valueOf(result) : val;
+        TString result = nm != null ? TString.wrap(TSystem.getProperty(nm.toString())) : null;
+        try {
+            return result != null ? TLong.valueOf(result) : val;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     public static long highestOneBit(long i) {

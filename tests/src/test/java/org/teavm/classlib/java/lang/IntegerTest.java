@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -136,5 +137,17 @@ public class IntegerTest {
         assertTrue(Integer.compare(5, 5) == 0);
         assertTrue(Integer.compare(Integer.MAX_VALUE, Integer.MIN_VALUE) > 0);
         assertTrue(Integer.compare(Integer.MIN_VALUE, Integer.MAX_VALUE) < 0);
+    }
+
+
+    @Test
+    public void getFromSystemProperty() {
+        System.setProperty("test.foo", "23");
+        System.setProperty("test.bar", "q");
+
+        assertEquals((Object) 23, Integer.getInteger("test.foo"));
+        assertNull(Integer.getInteger("test.bar"));
+        assertNull(Integer.getInteger("test.baz"));
+        assertNull(Integer.getInteger(null));
     }
 }

@@ -172,8 +172,12 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     public static TInteger getInteger(TString nm, TInteger val) {
-        TString result = TString.wrap(TSystem.getProperty(nm.toString()));
-        return result != null ? TInteger.valueOf(result) : val;
+        TString result = nm != null ? TString.wrap(TSystem.getProperty(nm.toString())) : null;
+        try {
+            return result != null ? TInteger.valueOf(result) : val;
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     public static TInteger decode(TString nm) throws TNumberFormatException {
