@@ -7,20 +7,20 @@ import org.teavm.samples.scala.Calculator.{eval, parse, print}
 
 object Client {
   def main(args: Array[String]) {
-    val doc = HTMLDocument.current
+    val doc:HTMLDocument = HTMLDocument.current
     val exprElem = doc.getElementById("expr").asInstanceOf[HTMLInputElement]
-    val calcElem = doc.getElementById("calculate")
-    val resultList = doc.getElementById("result-list")
+    val calcElem:HTMLElement = doc.getElementById("calculate")
+    val resultList:HTMLElement = doc.getElementById("result-list")
     calcElem.listenClick((e: MouseEvent) => {
       parse(exprElem.getValue.toSeq) match {
         case (None, _) => Window.alert("Error parsing expression");
         case (Some(x), Nil) =>
-          resultList.insertBefore(doc.createElement("div", (elem: HTMLElement) => {
+          resultList.insertBefore(doc.createElement("div", /*(elem: HTMLElement) => {
             elem.withChild("span", (child: HTMLElement) =>
               child.withAttr("class", "plan").withText(print(x) + " = "))
             elem.withChild("span", (child: HTMLElement) =>
               child.withAttr("class", "result").withText(eval(x).toString))
-          }), resultList.getFirstChild)
+          }*/), resultList.getFirstChild)
         case (_, err) => Window.alert("Error parsing expression: " + err);
       }
     })

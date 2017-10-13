@@ -16,9 +16,11 @@
 package org.teavm.samples.kotlin
 
 import org.teavm.jso.browser.*
+import org.teavm.jso.dom.html.HTMLElement
 
 fun main(args : Array<String>) {
     val document = Window.current().document
 
-    document.getElementById("hello-kotlin").addEventListener("click") { Window.alert("Hello, developer!") }
+    val htmlElement = document.getElementById<HTMLElement>("hello-kotlin")
+    htmlElement.addEventListener("click") { Window.alert("Hello, developer!") }
 }

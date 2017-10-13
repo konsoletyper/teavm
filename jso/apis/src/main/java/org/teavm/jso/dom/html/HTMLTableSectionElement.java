@@ -15,12 +15,23 @@
  */
 package org.teavm.jso.dom.html;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSMethod;
+import org.teavm.jso.JSProperty;
 
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/API/HTMLTableSectionElement
+ */
+public interface HTMLTableSectionElement extends HTMLElement {
 
-    E item(int index);
+    @JSProperty
+    HTMLCollection<HTMLTableRowElement> getRows();
 
-    E namedItem(String name);
+    @JSMethod
+    HTMLTableRowElement insertRow();
+
+    @JSMethod
+    HTMLTableRowElement insertRow(int index);
+
+    @JSMethod
+    void deleteRow(int index);
 }

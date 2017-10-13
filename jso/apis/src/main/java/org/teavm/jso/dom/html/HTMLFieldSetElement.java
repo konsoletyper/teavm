@@ -15,12 +15,14 @@
  */
 package org.teavm.jso.dom.html;
 
-import org.teavm.jso.core.JSArrayReader;
-import org.teavm.jso.dom.xml.Element;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.html.use.UseHTMLFormControl;
 
-public interface HTMLCollection<E extends Element> extends JSArrayReader<E> {
+/**
+ * https://developer.mozilla.org/en-US/docs/Web/API/HTMLFieldSetElement
+ */
+public interface HTMLFieldSetElement extends HTMLElement, UseHTMLFormControl {
 
-    E item(int index);
-
-    E namedItem(String name);
+  @JSProperty
+  <E extends HTMLElement> HTMLCollection<E> getElements();
 }
