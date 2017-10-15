@@ -97,7 +97,7 @@ public abstract class TNumberFormat extends TFormat {
         return TLocale.getAvailableLocales();
     }
 
-    public final static TNumberFormat getIntegerInstance() {
+    public static TNumberFormat getIntegerInstance() {
         return getIntegerInstance(TLocale.getDefault());
     }
 
@@ -111,7 +111,7 @@ public abstract class TNumberFormat extends TFormat {
         return format;
     }
 
-    public final static TNumberFormat getInstance() {
+    public static TNumberFormat getInstance() {
         return getNumberInstance();
     }
 
@@ -135,7 +135,7 @@ public abstract class TNumberFormat extends TFormat {
         return minimumIntegerDigits;
     }
 
-    public final static TNumberFormat getNumberInstance() {
+    public static TNumberFormat getNumberInstance() {
         return getNumberInstance(TLocale.getDefault());
     }
 
@@ -144,7 +144,7 @@ public abstract class TNumberFormat extends TFormat {
         return new TDecimalFormat(pattern, new TDecimalFormatSymbols(locale));
     }
 
-    public final static TNumberFormat getPercentInstance() {
+    public static TNumberFormat getPercentInstance() {
         return getPercentInstance(TLocale.getDefault());
     }
 
@@ -153,11 +153,11 @@ public abstract class TNumberFormat extends TFormat {
         return new TDecimalFormat(pattern, new TDecimalFormatSymbols(locale));
     }
 
-    public final static TNumberFormat getCurrencyInstance() {
+    public static TNumberFormat getCurrencyInstance() {
         return getCurrencyInstance(TLocale.getDefault());
     }
 
-    public final static TNumberFormat getCurrencyInstance(TLocale locale) {
+    public static TNumberFormat getCurrencyInstance(TLocale locale) {
         String pattern = CLDRHelper.resolveCurrencyFormat(locale.getLanguage(), locale.getCountry());
         return new TDecimalFormat(pattern, new TDecimalFormatSymbols(locale));
     }
