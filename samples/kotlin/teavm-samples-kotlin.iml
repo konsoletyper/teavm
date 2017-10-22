@@ -23,7 +23,7 @@
         <compilerSettings />
         <compilerArguments>
           <option name="languageVersion" value="1.1" />
-          <option name="apiVersion" value="1.0" />
+          <option name="apiVersion" value="1.1" />
           <option name="pluginOptions">
             <array />
           </option>
