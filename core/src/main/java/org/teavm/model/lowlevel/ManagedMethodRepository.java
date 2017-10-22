@@ -44,6 +44,6 @@ public class ManagedMethodRepository {
             return false;
         }
         MethodReader method = cls.getMethod(methodReference.getDescriptor());
-        return method.getAnnotations().get(Unmanaged.class.getName()) == null;
+        return method == null || method.getAnnotations().get(Unmanaged.class.getName()) == null;
     }
 }

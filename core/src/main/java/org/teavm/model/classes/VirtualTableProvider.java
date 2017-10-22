@@ -61,6 +61,9 @@ public class VirtualTableProvider {
         VirtualTable table = new VirtualTable(className);
         virtualTables.put(className, table);
         ClassReader cls = classSource.get(className);
+        if (cls == null) {
+            return;
+        }
         if (cls.getParent() != null) {
             fillClass(cls.getParent());
             VirtualTable parentTable = virtualTables.get(cls.getParent());
