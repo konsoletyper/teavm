@@ -459,6 +459,8 @@ public class TeaVMTool implements BaseTeaVMTool {
                 fileTable.flush();
                 log.info("Cache updated");
             }
+
+            printStats();
         } catch (IOException e) {
             throw new TeaVMToolException("IO error occurred", e);
         }
@@ -513,6 +515,18 @@ public class TeaVMTool implements BaseTeaVMTool {
         if (runtime == RuntimeCopyOperation.SEPARATE) {
             resourceToFile("org/teavm/backend/javascript/runtime.js", "runtime.js");
         }
+    }
+
+    private void printStats() {
+        int classCount = vm.getWrittenClasses().getClassNames().size();
+        int methodCount = 0;
+        for (String className : vm.getWrittenClasses().getClassNames()) {
+            ClassReader cls = vm.getWrittenClasses().get(className);
+            methodCount += cls.getMethods().size();
+        }
+
+        log.info("Classes compiled: " + classCount);
+        log.info("Methods compiled: " + methodCount);
     }
 
     private void copySourceFiles() {
