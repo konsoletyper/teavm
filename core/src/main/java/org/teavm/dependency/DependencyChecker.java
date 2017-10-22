@@ -84,7 +84,7 @@ public class DependencyChecker implements DependencyInfo {
         this.classSource = new DependencyClassSource(classSource, diagnostics);
         this.classLoader = classLoader;
         this.services = services;
-        methodReaderCache = new CachedMapper<>(preimage -> this.classSource.resolveMutable(preimage));
+        methodReaderCache = new CachedMapper<>(preimage -> this.classSource.resolveMutableImplementation(preimage));
         fieldReaderCache = new CachedMapper<>(preimage -> this.classSource.resolveMutable(preimage));
         methodCache = new CachedMapper<>(preimage ->  {
             MethodHolder method = methodReaderCache.map(preimage);

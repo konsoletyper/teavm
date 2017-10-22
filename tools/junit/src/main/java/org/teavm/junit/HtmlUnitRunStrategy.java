@@ -16,6 +16,7 @@
 package org.teavm.junit;
 
 import com.gargoylesoftware.htmlunit.BrowserVersion;
+import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.WebWindow;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
@@ -69,7 +70,10 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
     }
 
     private void cleanUp() {
-        page.get().cleanUp();
+        Page p = page.get();
+        if (p != null) {
+            p.cleanUp();
+        }
         for (WebWindow window : webClient.get().getWebWindows()) {
             window.getJobManager().removeAllJobs();
         }

@@ -305,7 +305,7 @@ class DependencyGraphBuilder {
 
     private static class VirtualCallConsumer implements DependencyConsumer {
         private final DependencyNode node;
-        private final ClassReader filterClass;
+        private final String filterClass;
         private final MethodDescriptor methodDesc;
         private final DependencyChecker checker;
         private final DependencyNode[] parameters;
@@ -315,7 +315,7 @@ class DependencyGraphBuilder {
         private final Set<MethodReference> knownMethods = new HashSet<>();
         private ExceptionConsumer exceptionConsumer;
 
-        public VirtualCallConsumer(DependencyNode node, ClassReader filterClass,
+        public VirtualCallConsumer(DependencyNode node, String filterClass,
                 MethodDescriptor methodDesc, DependencyChecker checker, DependencyNode[] parameters,
                 DependencyNode result, DefaultCallGraphNode caller, TextLocation location,
                 ExceptionConsumer exceptionConsumer) {
@@ -342,7 +342,7 @@ class DependencyGraphBuilder {
             }
 
             ClassReaderSource classSource = checker.getClassSource();
-            if (!classSource.isSuperType(filterClass.getName(), className).orElse(false)) {
+            if (!classSource.isSuperType(filterClass, className).orElse(false)) {
                 return;
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
@@ -642,19 +642,13 @@ class DependencyGraphBuilder {
 
         private void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
-            MethodDependency methodDep = dependencyChecker.linkMethod(method,
-                    new CallLocation(caller.getMethod(), currentLocation));
-            if (methodDep.isMissing()) {
-                return;
-            }
             DependencyNode[] actualArgs = new DependencyNode[arguments.size() + 1];
             for (int i = 0; i < arguments.size(); ++i) {
                 actualArgs[i + 1] = nodes[arguments.get(i).getIndex()];
             }
             actualArgs[0] = nodes[instance.getIndex()];
             DependencyConsumer listener = new VirtualCallConsumer(nodes[instance.getIndex()],
-                    dependencyChecker.getClassSource().get(methodDep.getMethod().getOwnerName()),
-                    method.getDescriptor(), dependencyChecker, actualArgs,
+                    method.getClassName(), method.getDescriptor(), dependencyChecker, actualArgs,
                     receiver != null ? nodes[receiver.getIndex()] : null, caller, currentLocation,
                     currentExceptionConsumer);
             nodes[instance.getIndex()].addConsumer(listener);

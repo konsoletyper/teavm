@@ -90,7 +90,7 @@ public class AsyncMethodFinder {
             }
         }
         for (MethodReference method : asyncMethods) {
-            addOverridenToFamily(method);
+            addOverriddenToFamily(method);
         }
         for (String clsName : classSource.getClassNames()) {
             ClassReader cls = classSource.get(clsName);
@@ -175,11 +175,11 @@ public class AsyncMethodFinder {
         }
     }
 
-    private class CallStack {
+    static class CallStack {
         MethodReference method;
         CallStack next;
 
-        public CallStack(MethodReference method, CallStack next) {
+        CallStack(MethodReference method, CallStack next) {
             this.method = method;
             this.next = next;
         }
@@ -196,14 +196,14 @@ public class AsyncMethodFinder {
         }
     }
 
-    private void addOverridenToFamily(MethodReference methodRef) {
+    private void addOverriddenToFamily(MethodReference methodRef) {
         asyncFamilyMethods.put(methodRef, true);
         ClassReader cls = classSource.get(methodRef.getClassName());
         if (cls == null) {
             return;
         }
-        for (MethodReference overridenMethod : findOverriddenMethods(cls, methodRef)) {
-            addOverridenToFamily(overridenMethod);
+        for (MethodReference overriddenMethod : findOverriddenMethods(cls, methodRef)) {
+            addOverriddenToFamily(overriddenMethod);
         }
     }
 
@@ -225,8 +225,8 @@ public class AsyncMethodFinder {
         if (cls == null) {
             return false;
         }
-        for (MethodReference overridenMethod : findOverriddenMethods(cls, methodRef)) {
-            if (addToFamily(overridenMethod)) {
+        for (MethodReference overriddenMethod : findOverriddenMethods(cls, methodRef)) {
+            if (addToFamily(overriddenMethod)) {
                 return true;
             }
         }
@@ -241,11 +241,11 @@ public class AsyncMethodFinder {
         parents.addAll(cls.getInterfaces());
 
         Set<MethodReference> visited = new HashSet<>();
-        Set<MethodReference> overriden = new HashSet<>();
+        Set<MethodReference> overridden = new HashSet<>();
         for (String parent : parents) {
-            findOverriddenMethods(new MethodReference(parent, methodRef.getDescriptor()), overriden, visited);
+            findOverriddenMethods(new MethodReference(parent, methodRef.getDescriptor()), overridden, visited);
         }
-        return overriden;
+        return overridden;
     }
 
     private void findOverriddenMethods(MethodReference methodRef, Set<MethodReference> result,

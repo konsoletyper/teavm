@@ -19,7 +19,6 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -48,7 +47,7 @@ public class AsyncProgramSplitter {
     private List<Part> parts = new ArrayList<>();
     private Map<Instruction, Integer> partMap = new HashMap<>();
     private ClassReaderSource classSource;
-    private Set<MethodReference> asyncMethods = new HashSet<>();
+    private Set<MethodReference> asyncMethods;
     private Program program;
 
     public AsyncProgramSplitter(ClassReaderSource classSource, Set<MethodReference> asyncMethods) {

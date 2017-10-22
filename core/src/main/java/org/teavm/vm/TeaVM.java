@@ -398,6 +398,17 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return cutClasses;
         }
         int index = 0;
+
+        for (String className : dependency.getReachableClasses()) {
+            ClassReader clsReader = dependency.getClassSource().get(className);
+            if (clsReader != null) {
+                linker.prepare(dependency, clsReader);
+            }
+        }
+        if (wasCancelled()) {
+            return cutClasses;
+        }
+
         for (String className : dependency.getReachableClasses()) {
             ClassReader clsReader = dependency.getClassSource().get(className);
             if (clsReader == null) {
@@ -522,11 +533,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         method.setProgram(optimizedProgram);
     }
 
-    private class MethodOptimizationContextImpl implements MethodOptimizationContext {
+    class MethodOptimizationContextImpl implements MethodOptimizationContext {
         private MethodReader method;
         private ClassReaderSource classSource;
 
-        public MethodOptimizationContextImpl(MethodReader method, ClassReaderSource classSource) {
+        MethodOptimizationContextImpl(MethodReader method, ClassReaderSource classSource) {
             this.method = method;
             this.classSource = classSource;
         }

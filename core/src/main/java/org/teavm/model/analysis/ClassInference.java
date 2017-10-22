@@ -165,8 +165,7 @@ public class ClassInference {
     private void propagate(Program program) {
         ClassReaderSource classSource = dependencyInfo.getClassSource();
 
-        Queue<Task> queue = new ArrayDeque<>();
-        queue.addAll(initialTasks);
+        Queue<Task> queue = new ArrayDeque<>(initialTasks);
         initialTasks = null;
 
         while (!queue.isEmpty()) {
@@ -239,7 +238,7 @@ public class ClassInference {
                     for (VirtualCallSite callSite : callSites) {
                         MethodReference rawMethod = new MethodReference(task.className,
                                 callSite.method.getDescriptor());
-                        MethodReader resolvedMethod = classSource.resolve(rawMethod);
+                        MethodReader resolvedMethod = classSource.resolveImplementation(rawMethod);
                         if (resolvedMethod == null) {
                             continue;
                         }
@@ -295,10 +294,10 @@ public class ClassInference {
         GraphBuilder arrayGraphBuilder;
         GraphBuilder itemGraphBuilder;
         MethodDependencyInfo thisMethodDep;
-        List<IntObjectMap<ValueType>> casts = new ArrayList<>();
+        List<IntObjectMap<ValueType>> casts;
         IntObjectMap<IntSet> exceptionMap = new IntObjectOpenHashMap<>();
         List<Task> tasks = new ArrayList<>();
-        List<List<VirtualCallSite>> virtualCallSites = new ArrayList<>();
+        List<List<VirtualCallSite>> virtualCallSites;
         BasicBlock currentBlock;
 
         GraphBuildingVisitor(int variableCount, DependencyInfo dependencyInfo) {

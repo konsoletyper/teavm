@@ -19,7 +19,6 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
-import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.PrimitiveType;
@@ -436,10 +435,6 @@ public class ValueEmitter {
         if (!pe.classSource.isSuperType(method.getClassName(), ((ValueType.Object) type).getClassName())
                 .orElse(true)) {
             throw new EmitException("Can't call " + method + " on non-compatible class " + type);
-        }
-        MethodReader resolvedMethod = pe.classSource.resolve(method);
-        if (resolvedMethod != null) {
-            method = resolvedMethod.getReference();
         }
 
         Variable result = null;

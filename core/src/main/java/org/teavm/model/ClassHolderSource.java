@@ -33,11 +33,15 @@ public interface ClassHolderSource extends ClassReaderSource {
         return (MethodHolder) resolve(method);
     }
 
+    default MethodHolder resolveMutableImplementation(MethodReference method) {
+        return (MethodHolder) resolveImplementation(method);
+    }
+
     default FieldHolder resolveMutable(FieldReference field) {
         return (FieldHolder) resolve(field);
     }
 
-    default Stream<MethodHolder> mutableOverridenMethods(MethodReference method) {
+    default Stream<MethodHolder> mutableOverriddenMethods(MethodReference method) {
         return overriddenMethods(method).map(m -> (MethodHolder) m);
     }
 }

@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import org.teavm.dependency.DependencyInfo;
+import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
@@ -31,20 +32,20 @@ public class MissingItemsProcessor {
     private MethodHolder methodHolder;
     private Program program;
     private Collection<String> achievableClasses;
-    private Collection<MethodReference> achievableMethods;
+    private Collection<MethodReference> reachableMethods;
     private Collection<FieldReference> achievableFields;
 
     public MissingItemsProcessor(DependencyInfo dependencyInfo, Diagnostics diagnostics) {
         this.dependencyInfo = dependencyInfo;
         this.diagnostics = diagnostics;
         achievableClasses = dependencyInfo.getReachableClasses();
-        achievableMethods = dependencyInfo.getReachableMethods();
+        reachableMethods = dependencyInfo.getReachableMethods();
         achievableFields = dependencyInfo.getReachableFields();
     }
 
     public void processClass(ClassHolder cls) {
         for (MethodHolder method : cls.getMethods()) {
-            if (achievableMethods.contains(method.getReference()) && method.getProgram() != null) {
+            if (reachableMethods.contains(method.getReference()) && method.getProgram() != null) {
                 processMethod(method);
             }
         }
@@ -148,9 +149,14 @@ public class MissingItemsProcessor {
         if (!checkClass(location, method.getClassName())) {
             return false;
         }
-        if (!achievableMethods.contains(method) || !dependencyInfo.getMethod(method).isMissing()) {
+        if (!reachableMethods.contains(method)) {
             return true;
         }
+        MethodDependencyInfo methodDep = dependencyInfo.getMethod(method);
+        if (!methodDep.isMissing() || !methodDep.isUsed()) {
+            return true;
+        }
+
         diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Method {{m0}} was not found",
                 method);
         emitExceptionThrow(location, NoSuchMethodError.class.getName(), "Method not found: " + method);

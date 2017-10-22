@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.Deque;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Stream;
@@ -89,14 +90,19 @@ public interface ClassReaderSource {
     default MethodReader resolve(MethodReference method) {
         return getAncestors(method.getClassName())
                 .map(cls -> cls.getMethod(method.getDescriptor()))
-                .filter(candidate -> candidate != null)
+                .filter(Objects::nonNull)
                 .findFirst().orElse(null);
+    }
+
+    default MethodReader resolveImplementation(MethodReference methodReference) {
+        return ClassReaderSourceHelper.resolveMethodImplementation(this, methodReference.getClassName(),
+                methodReference.getDescriptor(), new HashSet<>());
     }
 
     default FieldReader resolve(FieldReference field) {
         return getAncestors(field.getClassName())
                 .map(cls -> cls.getField(field.getFieldName()))
-                .filter(candidate -> candidate != null)
+                .filter(Objects::nonNull)
                 .findFirst().orElse(null);
     }
 

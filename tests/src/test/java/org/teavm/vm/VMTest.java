@@ -371,4 +371,26 @@ public class VMTest {
             super(ONE);
         }
     }
+
+    @Test
+    public void indirectDefaultMethod() {
+        PathJoint o = new PathJoint();
+        assertEquals("SecondPath.foo", o.foo());
+    }
+
+    interface FirstPath {
+        default String foo() {
+            return "FirstPath.foo";
+        }
+    }
+
+    interface SecondPath extends FirstPath {
+        @Override
+        default String foo() {
+            return "SecondPath.foo";
+        }
+    }
+
+    class PathJoint implements FirstPath, SecondPath {
+    }
 }

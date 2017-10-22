@@ -20,7 +20,13 @@ import java.util.Set;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.dependency.ValueDependencyInfo;
-import org.teavm.model.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.Instruction;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 

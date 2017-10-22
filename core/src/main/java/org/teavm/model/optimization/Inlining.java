@@ -324,7 +324,7 @@ public class Inlining {
                 Set<MethodReference> implementations = new HashSet<>();
                 for (String className : inference.classesOf(invoke.getInstance().getIndex())) {
                     MethodReference rawMethod = new MethodReference(className, invoke.getMethod().getDescriptor());
-                    MethodReader resolvedMethod = dependencyInfo.getClassSource().resolve(rawMethod);
+                    MethodReader resolvedMethod = dependencyInfo.getClassSource().resolveImplementation(rawMethod);
                     if (resolvedMethod != null) {
                         implementations.add(resolvedMethod.getReference());
                     }
