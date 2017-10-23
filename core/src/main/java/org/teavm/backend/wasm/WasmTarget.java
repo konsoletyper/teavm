@@ -297,7 +297,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 vtableProvider, tagRegistry, stringPool);
 
         context.addIntrinsic(new AddressIntrinsic(classGenerator));
-        context.addIntrinsic(new StructureIntrinsic(classGenerator));
+        context.addIntrinsic(new StructureIntrinsic(classes, classGenerator));
         context.addIntrinsic(new FunctionIntrinsic(classGenerator));
         WasmRuntimeIntrinsic wasmRuntimeIntrinsic = new WasmRuntimeIntrinsic();
         context.addIntrinsic(wasmRuntimeIntrinsic);

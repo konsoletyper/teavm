@@ -67,7 +67,7 @@ public class CachedMapper<T, R> implements Mapper<T, R> {
     }
 
     public Collection<T> getCachedPreimages() {
-        return new HashSet<>(cache.keySet());
+        return new LinkedHashSet<>(cache.keySet());
     }
 
     public void addKeyListener(KeyListener<T> listener) {

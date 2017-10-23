@@ -24,19 +24,32 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.interop.Structure;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public class StructureIntrinsic implements WasmIntrinsic {
+    private ClassReaderSource classSource;
     private WasmClassGenerator classGenerator;
 
-    public StructureIntrinsic(WasmClassGenerator classGenerator) {
+    public StructureIntrinsic(ClassReaderSource classSource, WasmClassGenerator classGenerator) {
+        this.classSource = classSource;
         this.classGenerator = classGenerator;
     }
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        return methodReference.getClassName().equals(Structure.class.getName());
+        if (!classSource.isSuperType(Structure.class.getName(), methodReference.getClassName()).orElse(false)) {
+            return false;
+        }
+        switch (methodReference.getName()) {
+            case "toAddress":
+            case "cast":
+            case "sizeOf":
+            case "add":
+                return true;
+        }
+        return false;
     }
 
     @Override

@@ -41,6 +41,7 @@ import org.teavm.model.instructions.PutFieldInstruction;
 
 public class Linker {
     private Set<MethodReference> methodsToPreserve = new HashSet<>();
+    private Set<String> additionalClasses = new HashSet<>();
 
     public void prepare(DependencyInfo dependency, ClassReader cls) {
         for (MethodReader method : cls.getMethods().toArray(new MethodReader[0])) {
@@ -59,14 +60,19 @@ public class Linker {
                 public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
                         List<? extends VariableReader> arguments, InvocationType type) {
                     methodsToPreserve.add(method);
+                    additionalClasses.add(method.getClassName());
                 }
             });
         }
     }
 
+    public Set<String> getAdditionalClasses() {
+        return additionalClasses;
+    }
+
     public void link(DependencyInfo dependency, ClassHolder cls) {
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
-            MethodReference methodRef = new MethodReference(cls.getName(), method.getDescriptor());
+            MethodReference methodRef = method.getReference();
             MethodDependencyInfo methodDep = dependency.getMethod(methodRef);
             if (methodDep == null) {
                 if (methodsToPreserve.contains(methodRef)) {

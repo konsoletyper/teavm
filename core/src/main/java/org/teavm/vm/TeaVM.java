@@ -22,10 +22,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.teavm.cache.NoCache;
 import org.teavm.common.ServiceRepository;
@@ -409,7 +411,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return cutClasses;
         }
 
-        for (String className : dependency.getReachableClasses()) {
+        Set<String> allClasses = new LinkedHashSet<>(dependency.getReachableClasses());
+        allClasses.addAll(linker.getAdditionalClasses());
+
+        for (String className : allClasses) {
             ClassReader clsReader = dependency.getClassSource().get(className);
             if (clsReader == null) {
                 continue;
