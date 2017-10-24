@@ -85,6 +85,14 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
     }
 
     @Override
+    public boolean add(E element) {
+        ensureCapacity(size + 1);
+        array[size++] = element;
+        ++modCount;
+        return true;
+    }
+
+    @Override
     public void add(int index, E element) {
         checkIndexForAdd(index);
         ensureCapacity(size + 1);
