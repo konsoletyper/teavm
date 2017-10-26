@@ -518,6 +518,10 @@ public class TeaVMTool implements BaseTeaVMTool {
     }
 
     private void printStats() {
+        if (vm == null || vm.getWrittenClasses() == null) {
+            return;
+        }
+
         int classCount = vm.getWrittenClasses().getClassNames().size();
         int methodCount = 0;
         for (String className : vm.getWrittenClasses().getClassNames()) {

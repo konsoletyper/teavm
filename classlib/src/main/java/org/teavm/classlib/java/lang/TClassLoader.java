@@ -53,6 +53,10 @@ public abstract class TClassLoader extends TObject {
         return dataString == null ? null : new ByteArrayInputStream(Base64.decode(dataString));
     }
 
+    public static InputStream getSystemResourceAsStream(String name) {
+        return getSystemClassLoader().getResourceAsStream(name);
+    }
+
     @JSBody(params = "resource", script = "return resource !== null && resource !== void 0 ? resource : null;")
     private static native String resourceToString(JSObject resource);
 

@@ -84,7 +84,7 @@ public class ResourceBundleTest {
             // would be loaded.
             ResourceBundle.getBundle("org.apache.harmony.luni.tests.java.util.ResourceBundleTest$GetBundleTest");
         }
-    };
+    }
 
     @Test
     public void getBundleLjava_lang_String() {
@@ -95,10 +95,4 @@ public class ResourceBundleTest {
             // expected
         }
     }
-
-	protected void setUp() {
-	}
-
-	protected void tearDown() {
-	}
 }
