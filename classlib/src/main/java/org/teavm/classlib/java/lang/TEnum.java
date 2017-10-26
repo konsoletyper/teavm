@@ -57,7 +57,8 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
 
     @SuppressWarnings("unchecked")
     public final TClass<E> getDeclaringClass() {
-        return (TClass<E>) (Object) getClass();
+        Class<E> result = (Class<E>) getClass();
+        return (TClass<E>) (Object) (result.getSuperclass().equals(Enum.class) ? result : result.getSuperclass());
     }
 
     @Override
