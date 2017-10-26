@@ -615,10 +615,10 @@ class DependencyGraphBuilder {
             CallLocation callLocation = new CallLocation(caller.getMethod(), currentLocation);
             dependencyChecker.linkClass(method.getClassName(), callLocation).initClass(callLocation);
             MethodDependency methodDep = dependencyChecker.linkMethod(method, callLocation);
+            methodDep.use();
             if (methodDep.isMissing()) {
                 return;
             }
-            methodDep.use();
             DependencyNode[] targetParams = methodDep.getVariables();
             for (int i = 0; i < arguments.size(); ++i) {
                 DependencyNode value = nodes[arguments.get(i).getIndex()];
