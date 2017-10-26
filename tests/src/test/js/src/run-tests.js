@@ -127,10 +127,15 @@ class TestRunner {
         this.pendingRequests = Object.create(null);
         this.requestIdGen = 0;
 
+        this.timeout = null;
+
         this.ws.on("message", (message) => {
             const response = JSON.parse(message.utf8Data);
-            const pendingRequest = this.pendingRequests[response.id];
+            const pendingRequest = this.pendingRequests[response.id + "-" + response.index];
             delete this.pendingRequests[response.id];
+            if (this.timeout) {
+                this.timeout.refresh();
+            }
             pendingRequest(response.result);
         })
     }
@@ -149,14 +154,17 @@ class TestRunner {
             });
             this.testsRun += suite.testCases.length;
 
-            const resultPromise = new Promise(resolve => {
-                this.pendingRequests[request.id] = resolve;
-            });
-            const timeoutPromise = new Promise((_, reject) => {
-                setTimeout(() => reject(new Error("connection timeout")), 120000);
-            });
+            const resultPromises = [];
+
+            this.timeout = createRefreshableTimeoutPromise(10000);
+            for (let i = 0; i < suite.testCases.length; ++i) {
+                resultPromises.push(new Promise(resolve => {
+                    this.pendingRequests[request.id + "-" + i] = resolve;
+                }));
+            }
+
             this.ws.send(JSON.stringify(request));
-            const result = await Promise.race([resultPromise, timeoutPromise]);
+            const result = await Promise.race([Promise.all(resultPromises), this.timeout.promise]);
 
             for (let i = 0; i < suite.testCases.length; i++) {
                 const testCase = suite.testCases[i];
@@ -262,6 +270,31 @@ function runTeaVM() {
             return stack;
         }
     })
+}
+
+
+function createRefreshableTimeoutPromise(timeout) {
+    const obj = {
+        currentId: 0,
+        resolveFun: () => {},
+        refresh: () => {
+            const expectedId = ++obj.currentId;
+            setTimeout(() => {
+                if (expectedId === obj.currentId) {
+                    obj.resolveFun(new Error("Connection timeout"))
+                }
+            }, timeout);
+        }
+    };
+
+    const result = {
+        promise: new Promise((_, reject) => {
+            obj.resolveFun = reject;
+        }),
+        refresh: () => obj.refresh()
+    };
+    obj.refresh();
+    return result;
 }
 
 runAll().catch(e => {

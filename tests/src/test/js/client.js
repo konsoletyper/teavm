@@ -34,29 +34,26 @@ function tryConnect() {
 
 function listen(ws) {
     ws.onmessage = (event) => {
-        let resultConsumer = [];
         let request = JSON.parse(event.data);
         console.log("Request #" + request.id + " received");
-        runTests(request.tests, resultConsumer, 0, () => {
-            console.log("Sending response #" + request.id);
-            ws.send(JSON.stringify({
-                id: request.id,
-                result: resultConsumer
-            }));
-        });
+        runTests(ws, request.id, request.tests, 0);
     }
 }
 
-function runTests(tests, consumer, index, callback) {
+function runTests(ws, suiteId, tests, index) {
     if (index === tests.length) {
-        callback();
-    } else {
-        let test = tests[index];
-        runSingleTest(test, result => {
-            consumer.push(result);
-            runTests(tests, consumer, index + 1, callback);
-        });
+        return;
     }
+    let test = tests[index];
+    runSingleTest(test, result => {
+        console.log("Sending response #" + suiteId);
+        ws.send(JSON.stringify({
+            id: suiteId,
+            index: index,
+            result: result
+        }));
+        runTests(ws, suiteId, tests, index + 1);
+    });
 }
 
 function runSingleTest(test, callback) {
