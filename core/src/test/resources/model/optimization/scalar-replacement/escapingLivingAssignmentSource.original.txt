@@ -1,0 +1,10 @@
+var @this as this
+
+$start
+    @first := new A
+    field A.foo @first := @this as `Ljava/lang/Object;`
+    @second := @first
+    @t := null
+    field A.foo @first := @t as `Ljava/lang/Object;`
+    @s := field A.foo @second as `Ljava/lang/Object;`
+    return @s

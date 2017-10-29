@@ -68,6 +68,11 @@ public class ScalarReplacementTest {
     }
 
     @Test
+    public void escapingLivingAssignmentSource() {
+        doTest();
+    }
+
+    @Test
     public void copy() {
         doTest();
     }

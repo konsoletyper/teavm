@@ -9,5 +9,4 @@ $start
     field A.bar @b := @tmp2 as I
     @r := field A.foo @b as I
     @s := field A.bar @b as I
-    @t := field A.bar @a as I
     return @r

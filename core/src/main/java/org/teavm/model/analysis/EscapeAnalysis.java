@@ -63,6 +63,7 @@ import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
+import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionTransitionExtractor;
 import org.teavm.model.util.LivenessAnalyzer;
 import org.teavm.model.util.UsageExtractor;
@@ -122,8 +123,31 @@ public class EscapeAnalysis {
         GraphBuilder graphBuilder = new GraphBuilder(program.variableCount());
         IntDeque queue = new IntArrayDeque();
         for (BasicBlock block : program.getBasicBlocks()) {
-            IntSet sharedIncomingVars = new IntOpenHashSet();
             BitSet usedVars = getUsedVarsInBlock(livenessAnalyzer, block);
+
+            // For instructions like A = B if B lives after instruction, mark both A and B as escaping
+            UsageExtractor useExtractor = new UsageExtractor();
+            DefinitionExtractor defExtractor = new DefinitionExtractor();
+            for (Instruction insn = block.getLastInstruction(); insn != null; insn = insn.getPrevious()) {
+                if (insn instanceof AssignInstruction) {
+                    AssignInstruction assign = (AssignInstruction) insn;
+                    if (usedVars.get(assign.getAssignee().getIndex())) {
+                        queue.addLast(definitionClasses[assign.getAssignee().getIndex()]);
+                    }
+                }
+
+                insn.acceptVisitor(useExtractor);
+                insn.acceptVisitor(defExtractor);
+                for (Variable var : useExtractor.getUsedVariables()) {
+                    usedVars.set(var.getIndex());
+                }
+                for (Variable var : defExtractor.getDefinedVariables()) {
+                    usedVars.clear(var.getIndex());
+                }
+            }
+
+            // If incoming variables of phi functions live after phi, mark them as escaping
+            IntSet sharedIncomingVars = new IntOpenHashSet();
             for (Phi phi : block.getPhis()) {
                 if (escapes(phi.getReceiver().getIndex())) {
                     queue.addLast(definitionClasses[phi.getReceiver().getIndex()]);
@@ -165,13 +189,6 @@ public class EscapeAnalysis {
             usedVars.or(liveness.liveIn(tryCatch.getHandler().getIndex()));
         }
 
-        UsageExtractor useExtractor = new UsageExtractor();
-        for (Instruction instruction : block) {
-            instruction.acceptVisitor(useExtractor);
-            for (Variable variable : useExtractor.getUsedVariables()) {
-                usedVars.set(variable.getIndex());
-            }
-        }
         return usedVars;
     }
 

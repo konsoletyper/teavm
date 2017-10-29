@@ -11,5 +11,4 @@ $start
     @b$bar_1 := @tmp2
     @r := @b$foo
     @s := @b$bar_1
-    @t := @a$bar
     return @r
