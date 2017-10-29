@@ -24,7 +24,6 @@ import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
-import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
@@ -63,7 +62,7 @@ public class JavaScriptBodyGenerator implements Generator {
         }
         writer.append(");").softNewLine();
         writer.append("return ");
-        unwrapValue(context, writer, method.getResultType(), "result");
+        unwrapValue(context, writer, method.getResultType());
         writer.append(";").softNewLine();
     }
 
@@ -72,10 +71,10 @@ public class JavaScriptBodyGenerator implements Generator {
         writer.append("(").append(param).append(")");
     }
 
-    private void unwrapValue(GeneratorContext context, SourceWriter writer, ValueType type, String param)
+    private void unwrapValue(GeneratorContext context, SourceWriter writer, ValueType type)
             throws IOException {
         writer.appendMethodBody(JavaScriptConvGenerator.fromJsMethod);
-        writer.append("(").append(param).append(",").ws().append(context.typeToClassString(type))
+        writer.append("(").append("result").append(",").ws().append(context.typeToClassString(type))
                 .append(")");
     }
 
@@ -83,20 +82,28 @@ public class JavaScriptBodyGenerator implements Generator {
         private GeneratorContext context;
         private ClassReaderSource classSource;
         private NamingStrategy naming;
-        public GeneratorJsCallback(GeneratorContext context, ClassReaderSource classSource, NamingStrategy naming) {
+
+        GeneratorJsCallback(GeneratorContext context, ClassReaderSource classSource, NamingStrategy naming) {
             this.context = context;
             this.classSource = classSource;
             this.naming = naming;
         }
-        @Override protected CharSequence callMethod(String ident, String fqn, String method, String params) {
+
+        @Override
+        protected CharSequence callMethod(String ident, String fqn, String method, String params) {
             MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
-            MethodReader reader = findMethod(fqn, desc);
+            MethodReader reader = JavaScriptBodyDependency.findMethod(classSource, fqn, desc);
+            if (reader == null) {
+                return "";
+            }
+            desc = reader.getDescriptor();
+
             StringBuilder sb = new StringBuilder();
             sb.append("(function(");
             if (ident != null) {
                 sb.append("$this");
             }
-            for (int i = 0; i < reader.parameterCount(); ++i) {
+            for (int i = 0; i < desc.parameterCount(); ++i) {
                 if (ident != null || i > 0) {
                     sb.append(", ");
                 }
@@ -106,14 +113,14 @@ public class JavaScriptBodyGenerator implements Generator {
             if (ident == null) {
                 sb.append(naming.getFullNameFor(reader.getReference()));
             } else {
-                sb.append("$this.").append(naming.getNameFor(reader.getDescriptor()));
+                sb.append("$this.").append(naming.getNameFor(desc));
             }
             sb.append("(");
-            for (int i = 0; i < reader.parameterCount(); ++i) {
+            for (int i = 0; i < desc.parameterCount(); ++i) {
                 if (i > 0) {
                     sb.append(", ");
                 }
-                ValueType paramType = simplifyParamType(reader.parameterType(i));
+                ValueType paramType = simplifyParamType(desc.parameterType(i));
                 sb.append(naming.getFullNameFor(JavaScriptConvGenerator.fromJsMethod)).append("(p").append(i)
                         .append(", ")
                         .append(context.typeToClassString(paramType)).append(")");
@@ -124,6 +131,7 @@ public class JavaScriptBodyGenerator implements Generator {
             }
             return sb.toString();
         }
+
         private ValueType simplifyParamType(ValueType type) {
             if (type instanceof ValueType.Object) {
                 return ValueType.object("java.lang.Object");
@@ -133,29 +141,6 @@ public class JavaScriptBodyGenerator implements Generator {
             } else {
                 return type;
             }
-        }
-        private MethodReader findMethod(String clsName, MethodDescriptor desc) {
-            while (clsName != null) {
-                ClassReader cls = classSource.get(clsName);
-                for (MethodReader method : cls.getMethods()) {
-                    if (method.getName().equals(desc.getName()) && sameParams(method.getDescriptor(), desc)) {
-                        return method;
-                    }
-                }
-                clsName = cls.getParent();
-            }
-            return null;
-        }
-        private boolean sameParams(MethodDescriptor a, MethodDescriptor b) {
-            if (a.parameterCount() != b.parameterCount()) {
-                return false;
-            }
-            for (int i = 0; i < a.parameterCount(); ++i) {
-                if (!a.parameterType(i).equals(b.parameterType(i))) {
-                    return false;
-                }
-            }
-            return true;
         }
     }
 }

@@ -21,7 +21,6 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.util.Calendar;
 import net.java.html.js.JavaScriptBody;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -79,12 +78,9 @@ public class JavaScriptBodyTest {
 
     @Test
     public void unusedArgumentIgnored() {
-        final int[] array = new int[1];
-        invokeCallback(new Callback() {
-            @Override
-            public void exec(Calendar input) {
-                array[0] = 23;
-            }
+        int[] array = new int[1];
+        invokeCallback(input -> {
+            array[0] = 23;
         });
         assertEquals(23, array[0]);
     }
