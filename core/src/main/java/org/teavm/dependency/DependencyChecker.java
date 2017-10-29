@@ -292,7 +292,7 @@ public class DependencyChecker implements DependencyInfo {
         }
         ClassReader cls = classSource.get(className);
         if (cls != null) {
-            if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            if (cls.getParent() != null) {
                 addClassAccess(node, cls.getParent(), loc);
             }
             for (String iface : cls.getInterfaces()) {
@@ -306,7 +306,7 @@ public class DependencyChecker implements DependencyInfo {
         ClassReader cls = classSource.get(className);
         ClassDependency dependency = new ClassDependency(this, className, cls);
         if (!dependency.isMissing()) {
-            if (cls.getParent() != null && !cls.getParent().equals(className)) {
+            if (cls.getParent() != null) {
                 linkClass(cls.getParent(), null);
             }
             for (String ifaceName : cls.getInterfaces()) {

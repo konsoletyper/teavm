@@ -184,7 +184,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
         if (cls.hasModifier(ElementModifier.INTERFACE)) {
             return;
         }
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+        if (cls.getParent() != null) {
             ExposedClass parent = getExposedClass(cls.getParent());
             exposedCls.inheritedMethods.putAll(parent.inheritedMethods);
             exposedCls.inheritedMethods.putAll(parent.methods);

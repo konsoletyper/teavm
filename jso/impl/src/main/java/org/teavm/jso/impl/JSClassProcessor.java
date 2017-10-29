@@ -213,7 +213,7 @@ class JSClassProcessor {
                 }
             }
         } else if (typeHelper.isJavaScriptImplementation(cls.getName())) {
-            if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            if (cls.getParent() != null) {
                 ClassReader parentCls = classSource.get(cls.getParent());
                 if (parentCls != null) {
                     findInheritedMethods(parentCls, methods, visited);
@@ -718,8 +718,7 @@ class JSClassProcessor {
         if (method != null) {
             return method;
         }
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())
-                && !cls.getParent().equals("java.lang.Object")) {
+        if (cls.getParent() != null && !cls.getParent().equals("java.lang.Object")) {
             method = getMethod(new MethodReference(cls.getParent(), ref.getDescriptor()));
             if (method != null) {
                 return method;

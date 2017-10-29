@@ -75,7 +75,7 @@ public class ClassInitializerEliminator {
             if (cls == null) {
                 return false;
             }
-            if (cls.getParent() == null || cls.getName().equals(cls.getParent())) {
+            if (cls.getParent() == null) {
                 return false;
             }
             className = cls.getParent();

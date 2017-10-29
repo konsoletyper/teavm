@@ -235,7 +235,7 @@ public class AsyncMethodFinder {
 
     private Set<MethodReference> findOverriddenMethods(ClassReader cls, MethodReference methodRef) {
         List<String> parents = new ArrayList<>();
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+        if (cls.getParent() != null) {
             parents.add(cls.getParent());
         }
         parents.addAll(cls.getInterfaces());
@@ -266,7 +266,7 @@ public class AsyncMethodFinder {
                 result.add(methodRef);
             }
         } else {
-            if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+            if (cls.getParent() != null) {
                 findOverriddenMethods(new MethodReference(cls.getParent(), methodRef.getDescriptor()), result, visited);
             }
             for (String iface : cls.getInterfaces()) {

@@ -33,7 +33,7 @@ public interface ClassReaderSource {
             ClassReader currentClass = get(name);
             @Override public ClassReader next() {
                 ClassReader result = currentClass;
-                if (currentClass.getParent() != null && !currentClass.getName().equals(currentClass.getParent())) {
+                if (currentClass.getParent() != null) {
                     currentClass = get(currentClass.getParent());
                 } else {
                     currentClass = null;
@@ -120,7 +120,7 @@ public interface ClassReaderSource {
         if (cls == null) {
             return Optional.empty();
         }
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+        if (cls.getParent() != null) {
             if (isSuperType(superType, cls.getParent()).orElse(false)) {
                 return Optional.of(true);
             }

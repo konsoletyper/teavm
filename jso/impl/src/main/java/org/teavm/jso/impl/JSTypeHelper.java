@@ -47,7 +47,7 @@ class JSTypeHelper {
         if (cls == null || !(cls.hasModifier(ElementModifier.INTERFACE) || cls.hasModifier(ElementModifier.ABSTRACT))) {
             return false;
         }
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+        if (cls.getParent() != null) {
             if (isJavaScriptClass(cls.getParent())) {
                 return true;
             }
@@ -63,7 +63,7 @@ class JSTypeHelper {
         if (cls == null) {
             return false;
         }
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+        if (cls.getParent() != null) {
             if (isJavaScriptClass(cls.getParent())) {
                 return true;
             }

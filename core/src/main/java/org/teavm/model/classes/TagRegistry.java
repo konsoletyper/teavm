@@ -94,7 +94,7 @@ public class TagRegistry {
             return null;
         }
 
-        if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+        if (cls.getParent() != null) {
             String candidate = findTopmostImplementor(classSource, cls.getParent(), ifaceName);
             if (candidate != null) {
                 return candidate;

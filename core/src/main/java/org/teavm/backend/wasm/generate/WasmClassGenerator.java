@@ -302,7 +302,7 @@ public class WasmClassGenerator {
                 if (cls.getName().equals(Structure.class.getName()) || cls.getName().equals(Function.class.getName())) {
                     return false;
                 }
-                if (cls.getParent() == null || cls.getParent().equals(cls.getName())) {
+                if (cls.getParent() == null) {
                     return true;
                 }
                 cls = classSource.get(cls.getParent());
@@ -385,7 +385,7 @@ public class WasmClassGenerator {
             data.start = -1;
             data.function = true;
             return;
-        } else if (cls.getParent() != null && !cls.getParent().equals(cls.getName())) {
+        } else if (cls.getParent() != null) {
             addClass(ValueType.object(cls.getParent()));
             ClassBinaryData parentData = binaryDataMap.get(ValueType.object(cls.getParent()));
             data.size = parentData.size;
