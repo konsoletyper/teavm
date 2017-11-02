@@ -82,14 +82,14 @@ abstract class TFloatBufferImpl extends TFloatBuffer {
         if (isReadOnly()) {
             throw new TReadOnlyBufferException();
         }
+        int sz = remaining();
         if (position > 0) {
-            int sz = remaining();
             int src = position;
             for (int i = 0; i < sz; ++i) {
                 putElement(i, getElement(src++));
             }
-            position = sz;
         }
+        position = sz;
         limit = capacity;
         mark = -1;
         return this;

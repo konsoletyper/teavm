@@ -90,15 +90,15 @@ class TByteBufferImpl extends TByteBuffer {
         if (readOnly) {
             throw new TReadOnlyBufferException();
         }
+        int sz = remaining();
         if (position > 0) {
-            int sz = remaining();
             int dst = start;
             int src = start + position;
             for (int i = 0; i < sz; ++i) {
                 array[dst++] = array[src++];
             }
-            position = sz;
         }
+        position = sz;
         limit = capacity;
         mark = -1;
         return this;
