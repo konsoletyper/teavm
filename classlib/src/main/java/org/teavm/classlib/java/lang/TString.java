@@ -26,6 +26,7 @@ import org.teavm.classlib.java.util.TArrays;
 import org.teavm.classlib.java.util.TComparator;
 import org.teavm.classlib.java.util.TFormatter;
 import org.teavm.classlib.java.util.THashMap;
+import org.teavm.classlib.java.util.TLocale;
 import org.teavm.classlib.java.util.TMap;
 import org.teavm.classlib.java.util.regex.TPattern;
 
@@ -597,6 +598,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return new TString(codePoints, 0, codePointCount);
     }
 
+    public TString toLowerCase(TLocale locale) {
+        return toLowerCase();
+    }
+
     public TString toUpperCase() {
         if (isEmpty()) {
             return this;
@@ -614,6 +619,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             }
         }
         return new TString(codePoints, 0, codePointCount);
+    }
+
+    public TString toUpperCase(TLocale locale) {
+        return toUpperCase();
     }
 
     public TString intern() {
