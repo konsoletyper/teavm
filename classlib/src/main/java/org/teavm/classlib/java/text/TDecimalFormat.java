@@ -47,6 +47,7 @@ public class TDecimalFormat extends TNumberFormat {
     private boolean decimalSeparatorAlwaysShown;
     private boolean parseBigDecimal;
     int exponentDigits;
+    String pattern;
 
     public TDecimalFormat() {
         this(CLDRHelper.resolveNumberFormat(TLocale.getDefault().getLanguage(), TLocale.getDefault().getCountry()));
@@ -65,6 +66,11 @@ public class TDecimalFormat extends TNumberFormat {
         TDecimalFormatParser parser = new TDecimalFormatParser();
         parser.parse(pattern);
         parser.apply(this);
+        this.pattern = pattern;
+    }
+
+    String toPattern() {
+        return pattern;
     }
 
     public DecimalFormatSymbols getDecimalFormatSymbols() {
