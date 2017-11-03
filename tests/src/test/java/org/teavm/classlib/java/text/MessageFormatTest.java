@@ -38,12 +38,9 @@ import java.util.TimeZone;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.teavm.junit.TeaVMProperties;
-import org.teavm.junit.TeaVMProperty;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
-@TeaVMProperties(value = { @TeaVMProperty(key = "java.util.Locale.available", value = "en, en_US, fr") })
 public class MessageFormatTest {
     private MessageFormat format1;
     private MessageFormat format2;
@@ -173,13 +170,6 @@ public class MessageFormatTest {
         assertTrue("Wrong long time format", format.getFormats()[0].equals(
                 DateFormat.getTimeInstance(DateFormat.LONG)));
         assertEquals("Wrong long time pattern", "{0,time,long}", format.toPattern());
-        format.setLocale(Locale.FRENCH); // use French since English has the
-        // same LONG and FULL time patterns
-        format.applyPattern("{0,time, Full}");
-        assertTrue("Wrong full time format", format.getFormats()[0]
-                .equals(DateFormat.getTimeInstance(DateFormat.FULL, Locale.FRENCH)));
-        assertEquals("Wrong full time pattern", "{0,time,full}", format.toPattern());
-        format.setLocale(Locale.getDefault());
 
         format.applyPattern("{0, date}");
         assertTrue("Wrong date format", format.getFormats()[0].equals(DateFormat.getDateInstance()));
@@ -203,10 +193,9 @@ public class MessageFormatTest {
         assertEquals("Wrong full date pattern", "{0,date,full}", format.toPattern());
 
         format.applyPattern("{0, date, MMM d {hh:mm:ss}}");
-        assertEquals("Wrong time/date format", " MMM d {hh:mm:ss}", ((SimpleDateFormat) (format
-                .getFormats()[0])).toPattern());
-        assertEquals("Wrong time/date pattern",
-                "{0,date, MMM d {hh:mm:ss}}", format.toPattern());
+        assertEquals("Wrong time/date format", " MMM d {hh:mm:ss}",
+                ((SimpleDateFormat) (format.getFormats()[0])).toPattern());
+        assertEquals("Wrong time/date pattern", "{0,date, MMM d {hh:mm:ss}}", format.toPattern());
 
         format.applyPattern("{0, number}");
         assertTrue("Wrong number format", format.getFormats()[0].equals(NumberFormat.getNumberInstance()));

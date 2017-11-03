@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.text;
 
 import java.util.Arrays;
+import java.util.Objects;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TCloneable;
@@ -84,7 +85,7 @@ public class TDateFormatSymbols implements TSerializable, TCloneable {
         if (!locale.equals(obj.locale)) {
             return false;
         }
-        if (!localPatternChars.equals(obj.localPatternChars)) {
+        if (!Objects.equals(localPatternChars, obj.localPatternChars)) {
             return false;
         }
         if (!Arrays.equals(ampms, obj.ampms)) {
@@ -105,20 +106,7 @@ public class TDateFormatSymbols implements TSerializable, TCloneable {
         if (!Arrays.equals(weekdays, obj.weekdays)) {
             return false;
         }
-        if (zoneStrings.length != obj.zoneStrings.length) {
-            return false;
-        }
-        for (String[] element : zoneStrings) {
-            if (element.length != element.length) {
-                return false;
-            }
-            for (int j = 0; j < element.length; j++) {
-                if (!(element[j].equals(element[j]))) {
-                    return false;
-                }
-            }
-        }
-        return true;
+        return Arrays.equals(zoneStrings, obj.zoneStrings);
     }
 
     public String[] getAmPmStrings() {

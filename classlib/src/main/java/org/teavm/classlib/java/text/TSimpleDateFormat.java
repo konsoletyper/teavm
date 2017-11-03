@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.text;
 
+import java.util.Arrays;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.util.TCalendar;
 import org.teavm.classlib.java.util.TDate;
@@ -109,5 +110,33 @@ public class TSimpleDateFormat extends TDateFormat {
 
     public String toPattern() {
         return pattern;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object == this) {
+            return true;
+        }
+        if (!(object instanceof TSimpleDateFormat)) {
+            return false;
+        }
+
+        TSimpleDateFormat other = (TSimpleDateFormat) object;
+        if (!super.equals(other)) {
+            return false;
+        }
+
+        return Arrays.equals(elements, other.elements)
+                && dateFormatSymbols.equals(other.dateFormatSymbols)
+                && locale.equals(other.locale);
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(new int[] {
+                super.hashCode(),
+                dateFormatSymbols.hashCode(),
+                Arrays.hashCode(elements),
+                locale.hashCode() });
     }
 }

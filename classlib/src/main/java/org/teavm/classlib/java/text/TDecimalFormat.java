@@ -1226,6 +1226,23 @@ public class TDecimalFormat extends TNumberFormat {
         public void render(TDecimalFormat format, StringBuffer buffer) {
             buffer.append(text);
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof TextField)) {
+                return false;
+            }
+            TextField other = (TextField) obj;
+            return text.equals(other.text);
+        }
+
+        @Override
+        public int hashCode() {
+            return text.hashCode();
+        }
     }
 
     static class CurrencyField implements FormatField {
@@ -1237,12 +1254,32 @@ public class TDecimalFormat extends TNumberFormat {
                 buffer.append(format.getCurrency().getSymbol(format.symbols.getLocale()));
             }
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof CurrencyField;
+        }
+
+        @Override
+        public int hashCode() {
+            return 0;
+        }
     }
 
     static class PercentField implements FormatField {
         @Override
         public void render(TDecimalFormat format, StringBuffer buffer) {
             buffer.append(format.symbols.getPercent());
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof PercentField;
+        }
+
+        @Override
+        public int hashCode() {
+            return 1;
         }
     }
 
@@ -1251,12 +1288,32 @@ public class TDecimalFormat extends TNumberFormat {
         public void render(TDecimalFormat format, StringBuffer buffer) {
             buffer.append(format.symbols.getPerMill());
         }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof PerMillField;
+        }
+
+        @Override
+        public int hashCode() {
+            return 2;
+        }
     }
 
     static class MinusField implements FormatField {
         @Override
         public void render(TDecimalFormat format, StringBuffer buffer) {
             buffer.append(format.symbols.getMinusSign());
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            return obj instanceof MinusField;
+        }
+
+        @Override
+        public int hashCode() {
+            return 3;
         }
     }
 }
