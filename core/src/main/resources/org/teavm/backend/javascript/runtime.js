@@ -139,6 +139,9 @@ function $rt_arraycls(cls) {
             str += "]";
             return str;
         };
+        $rt_setCloneMethod(arraycls.prototype, function () {
+            return new arraycls(this.data.slice());
+        });
         var name = "[" + cls.$meta.binaryName;
         arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls(),
                 name : name, binaryName : name, enum : false };

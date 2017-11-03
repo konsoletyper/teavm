@@ -17,6 +17,7 @@ package org.teavm.vm;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -392,5 +393,14 @@ public class VMTest {
     }
 
     class PathJoint implements FirstPath, SecondPath {
+    }
+
+    @Test
+    public void cloneArray() {
+        String[] a = new String[] { "foo" };
+        String[] b = a.clone();
+        assertNotSame(a, b);
+        a[0] = "bar";
+        assertEquals("foo", b[0]);
     }
 }
