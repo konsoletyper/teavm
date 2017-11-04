@@ -120,6 +120,21 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     @JSProperty
     void setClassName(String className);
 
+    @JSProperty
+    HTMLElement getOffsetParent();
+
+    @JSProperty
+    int getOffsetTop();
+
+    @JSProperty
+    int getOffsetLeft();
+
+    @JSProperty
+    int getOffsetWidth();
+
+    @JSProperty
+    int getOffsetHeight();
+
     default HTMLElement withAttr(String name, String value) {
         setAttribute(name, value);
         return this;
