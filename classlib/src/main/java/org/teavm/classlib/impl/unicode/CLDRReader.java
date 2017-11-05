@@ -35,7 +35,8 @@ import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
 
 public class CLDRReader {
-    private static String[] weekdayKeys = { "sun", "mon", "tue", "wed", "thu", "fri", "sat" };
+    private static final String[] weekdayKeys = { "sun", "mon", "tue", "wed", "thu", "fri", "sat" };
+    private static CLDRReader lastInstance;
     private Map<String, CLDRLocale> knownLocales = new LinkedHashMap<>();
     private Map<String, Integer> minDaysMap = new LinkedHashMap<>();
     private Map<String, Integer> firstDayMap = new LinkedHashMap<>();
@@ -44,24 +45,32 @@ public class CLDRReader {
     private Set<String> availableLanguages = new LinkedHashSet<>();
     private Set<String> availableCountries = new LinkedHashSet<>();
     private boolean initialized;
-    private Properties properties;
     private ClassLoader classLoader;
+    private String availableLocalesString;
 
-    public CLDRReader(Properties properties, ClassLoader classLoader) {
-        this.properties = properties;
+    private CLDRReader(ClassLoader classLoader, String availableLocalesString) {
         this.classLoader = classLoader;
+        this.availableLocalesString = availableLocalesString;
+    }
+
+    public static CLDRReader getInstance(Properties properties, ClassLoader classLoader) {
+        String availableLocalesString = properties.getProperty("java.util.Locale.available", "en_EN").trim();
+        if (lastInstance == null || !lastInstance.availableLocalesString.equals(availableLocalesString)
+                || lastInstance.classLoader != classLoader) {
+            lastInstance = new CLDRReader(classLoader, availableLocalesString);
+        }
+        return lastInstance;
     }
 
     private synchronized void ensureInitialized() {
         if (!initialized) {
             initialized = true;
-            findAvailableLocales(properties);
+            findAvailableLocales();
             readCLDR(classLoader);
         }
     }
 
-    private void findAvailableLocales(Properties properties) {
-        String availableLocalesString = properties.getProperty("java.util.Locale.available", "en_EN").trim();
+    private void findAvailableLocales() {
         for (String locale : Arrays.asList(availableLocalesString.split(" *, *"))) {
             int countryIndex = locale.indexOf('_');
             if (countryIndex > 0) {

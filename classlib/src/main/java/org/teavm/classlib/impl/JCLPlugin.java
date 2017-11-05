@@ -48,7 +48,7 @@ public class JCLPlugin implements TeaVMPlugin {
         JavacSupport javacSupport = new JavacSupport();
         host.add(javacSupport);
 
-        host.registerService(CLDRReader.class, new CLDRReader(host.getProperties(), host.getClassLoader()));
+        host.registerService(CLDRReader.class, CLDRReader.getInstance(host.getProperties(), host.getClassLoader()));
 
         host.add(new ClassForNameTransformer());
         host.add(new AnnotationDependencyListener());
