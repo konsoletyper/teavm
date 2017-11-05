@@ -149,7 +149,7 @@ function $rt_arraycls(cls) {
                     dataCopy[i] = this.data[i];
                 }
             }
-            return new arraycls(this.data.slice());
+            return new arraycls(dataCopy);
         });
         var name = "[" + cls.$meta.binaryName;
         arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls(),
