@@ -140,6 +140,15 @@ function $rt_arraycls(cls) {
             return str;
         };
         $rt_setCloneMethod(arraycls.prototype, function () {
+            var dataCopy;
+            if ('slice' in this.data) {
+                dataCopy = this.data.slice();
+            } else {
+                dataCopy = new this.data.constructor(this.data.length);
+                for (var i = 0; i < dataCopy.length; ++i) {
+                    dataCopy[i] = this.data[i];
+                }
+            }
             return new arraycls(this.data.slice());
         });
         var name = "[" + cls.$meta.binaryName;
