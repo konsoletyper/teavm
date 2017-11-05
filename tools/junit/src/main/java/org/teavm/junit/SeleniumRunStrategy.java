@@ -32,7 +32,6 @@ class SeleniumRunStrategy implements TestRunStrategy {
     private URL url;
     private ThreadLocal<WebDriver> webDriver = new ThreadLocal<>();
     private ThreadLocal<Integer> commandsSent = new ThreadLocal<>();
-    private int rebootRate = Integer.getInteger("teavm.junit.js.selenium.rebootAfter", 1000);
 
     public SeleniumRunStrategy(URL url) {
         this.url = url;
@@ -68,7 +67,7 @@ class SeleniumRunStrategy implements TestRunStrategy {
             return (String) js.executeAsyncScript(
                     readResource("teavm-selenium.js"),
                     readFile(new File(run.getBaseDirectory(), "runtime.js")),
-                    readFile(new File(run.getBaseDirectory(), "test.js")),
+                    readFile(new File(run.getBaseDirectory(), run.getFileName())),
                     readResource("teavm-selenium-adapter.js"));
         } catch (Throwable e) {
             run.getCallback().error(e);

@@ -59,7 +59,7 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
             throw new RuntimeException(e);
         }
         page.get().executeJavaScript(readFile(new File(run.getBaseDirectory(), "runtime.js")));
-        page.get().executeJavaScript(readFile(new File(run.getBaseDirectory(), "test.js")));
+        page.get().executeJavaScript(readFile(new File(run.getBaseDirectory(), run.getFileName())));
 
         AsyncResult asyncResult = new AsyncResult();
         Function function = (Function) page.get().executeJavaScript(readResource("teavm-htmlunit-adapter.js"))

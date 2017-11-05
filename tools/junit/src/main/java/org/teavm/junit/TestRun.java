@@ -26,14 +26,16 @@ class TestRun {
     private MethodReference reference;
     private Description description;
     private TestRunCallback callback;
+    private String fileName;
 
-    TestRun(File baseDirectory, Method method, MethodReference reference, Description description,
+    TestRun(File baseDirectory, Method method, MethodReference reference, Description description, String fileName,
             TestRunCallback callback) {
         this.baseDirectory = baseDirectory;
         this.method = method;
         this.reference = reference;
         this.description = description;
         this.callback = callback;
+        this.fileName = fileName;
     }
 
     public File getBaseDirectory() {
@@ -54,5 +56,9 @@ class TestRun {
 
     public TestRunCallback getCallback() {
         return callback;
+    }
+
+    public String getFileName() {
+        return fileName;
     }
 }

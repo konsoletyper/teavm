@@ -332,7 +332,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         return new TestRun(compileResult.file.getParentFile(), child,
                 new MethodReference(testClass.getName(), getDescriptor(child)),
-                description, callback);
+                description, compileResult.file.getName(), callback);
     }
 
     private void submitRun(TestRun run) {
@@ -402,16 +402,17 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
                 .build();
+
+        Properties properties = new Properties();
+        applyProperties(method.getDeclaringClass(), properties);
+        vm.setProperties(properties);
+
         vm.setIncremental(false);
         configuration.apply(vm);
         vm.installPlugins();
 
         new TestExceptionPlugin().install(vm);
         new TestEntryPointTransformer(runnerType.getName(), methodHolder.getReference()).install(vm);
-
-        Properties properties = new Properties();
-        applyProperties(method.getDeclaringClass(), properties);
-        vm.setProperties(properties);
 
         MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",
                 Throwable.class, String.class);
