@@ -29,7 +29,7 @@ class InterferenceGraphBuilder {
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         InstructionTransitionExtractor succExtractor = new InstructionTransitionExtractor();
         List<List<Incoming>> outgoings = ProgramUtils.getPhiOutputs(program);
-        Set<MutableGraphNode> live = new HashSet<>(128);
+        BitSet live = new BitSet();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             block.getLastInstruction().acceptVisitor(succExtractor);
@@ -44,34 +44,34 @@ class InterferenceGraphBuilder {
             live.clear();
             for (int j = 0; j < liveOut.length(); ++j) {
                 if (liveOut.get(j)) {
-                    live.add(nodes.get(j));
+                    live.set(j);
                 }
             }
 
             for (Incoming outgoing : outgoings.get(i)) {
-                live.add(nodes.get(outgoing.getValue().getIndex()));
+                live.set(outgoing.getValue().getIndex());
             }
 
             for (Instruction insn = block.getLastInstruction(); insn != null; insn = insn.getPrevious()) {
                 insn.acceptVisitor(useExtractor);
                 insn.acceptVisitor(defExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {
-                    nodes.get(var.getIndex()).connectAll(live);
+                    connect(nodes, var.getIndex(), live);
                 }
                 for (Variable var : defExtractor.getDefinedVariables()) {
-                    live.remove(nodes.get(var.getIndex()));
+                    live.clear(var.getIndex());
                 }
                 for (Variable var : useExtractor.getUsedVariables()) {
-                    live.add(nodes.get(var.getIndex()));
+                    live.set(var.getIndex());
                 }
             }
             if (block.getExceptionVariable() != null) {
-                nodes.get(block.getExceptionVariable().getIndex()).connectAll(live);
-                live.remove(nodes.get(block.getExceptionVariable().getIndex()));
+                connect(nodes, block.getExceptionVariable().getIndex(), live);
+                live.clear(block.getExceptionVariable().getIndex());
             }
             if (block.getIndex() == 0) {
                 for (int j = 0; j <= paramCount; ++j) {
-                    nodes.get(j).connectAll(live);
+                    connect(nodes, j, live);
                 }
             }
 
@@ -79,18 +79,27 @@ class InterferenceGraphBuilder {
             live.clear();
             for (int j = 0; j < liveOut.length(); ++j) {
                 if (liveIn.get(j)) {
-                    live.add(nodes.get(j));
+                    live.set(j);
                 }
             }
 
             for (Phi phi : block.getPhis()) {
-                live.add(nodes.get(phi.getReceiver().getIndex()));
+                live.set(phi.getReceiver().getIndex());
             }
 
             for (Phi phi : block.getPhis()) {
-                nodes.get(phi.getReceiver().getIndex()).connectAll(live);
+                connect(nodes, phi.getReceiver().getIndex(), live);
             }
         }
         return nodes;
+    }
+
+    private void connect(List<MutableGraphNode> nodes, int fromIndex, BitSet to) {
+        MutableGraphNode from = nodes.get(fromIndex);
+        List<MutableGraphNode> toList = new ArrayList<>(to.cardinality());
+        for (int i = to.nextSetBit(0); i >= 0; i = to.nextSetBit(i + 1)) {
+            toList.add(nodes.get(i));
+        }
+        from.connectAll(toList);
     }
 }

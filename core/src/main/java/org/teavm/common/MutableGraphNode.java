@@ -15,9 +15,11 @@
  */
 package org.teavm.common;
 
-import com.carrotsearch.hppc.ObjectIntMap;
-import com.carrotsearch.hppc.ObjectIntOpenHashMap;
-import java.util.*;
+import java.util.Collection;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 
 public class MutableGraphNode {
     private int tag;
@@ -77,15 +79,14 @@ public class MutableGraphNode {
     }
 
     public static Graph toGraph(List<MutableGraphNode> nodes) {
-        ObjectIntMap<MutableGraphNode> map = new ObjectIntOpenHashMap<>();
         for (int i = 0; i < nodes.size(); ++i) {
-            map.put(nodes.get(i), i);
+            nodes.get(i).setTag(i);
         }
 
         GraphBuilder builder = new GraphBuilder(nodes.size());
         for (int i = 0; i < nodes.size(); ++i) {
             for (MutableGraphEdge edge : nodes.get(i).getEdges()) {
-                int successor = map.get(edge.getSecond());
+                int successor = edge.getSecond().getTag();
                 builder.addEdge(i, successor);
             }
         }

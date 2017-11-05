@@ -102,9 +102,6 @@ public class InstructionCopyReader implements InstructionReader {
     }
 
     private Variable copyVar(VariableReader var) {
-        if (var == null) {
-            throw new NullPointerException();
-        }
         return programCopy.variableAt(var.getIndex());
     }
 
