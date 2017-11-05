@@ -15,6 +15,8 @@
  */
 package org.teavm.dependency;
 
+import java.util.Arrays;
+
 class DependencyNodeToNodeTransition implements DependencyConsumer {
     private DependencyNode source;
     DependencyNode destination;
@@ -41,6 +43,37 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
         }
         if (!destination.hasType(type)) {
             destination.propagate(type);
+        }
+    }
+
+    void consume(DependencyType[] types) {
+        DependencyType[] filtered = new DependencyType[types.length];
+        int j = 0;
+        for (DependencyType type : types) {
+            if (type.getName().startsWith("[")) {
+                source.getArrayItem().connect(destination.getArrayItem());
+                destination.getArrayItem().connect(source.getArrayItem());
+            }
+            if (type.getName().equals("java.lang.Class")) {
+                source.getClassValueNode().connect(destination.getClassValueNode());
+            }
+            if ((filter == null || filter.match(type)) && !destination.hasType(type)) {
+                filtered[j++] = type;
+            }
+        }
+
+        if (j == 0) {
+            return;
+        }
+
+        if (j == 1) {
+            destination.propagate(filtered[0]);
+        } else {
+            if (j < filtered.length) {
+                filtered = Arrays.copyOf(filtered, j);
+            }
+
+            destination.propagate(filtered);
         }
     }
 }

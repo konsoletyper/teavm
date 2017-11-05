@@ -18,6 +18,7 @@ package org.teavm.dependency;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -67,7 +68,7 @@ public class DependencyChecker implements DependencyInfo {
     private CachedMapper<String, ClassDependency> classCache;
     private List<DependencyListener> listeners = new ArrayList<>();
     private ServiceRepository services;
-    private Queue<Runnable> tasks = new ArrayDeque<>();
+    private Deque<Runnable> tasks = new ArrayDeque<>();
     private Queue<Runnable> deferredTasks = new ArrayDeque<>();
     List<DependencyType> types = new ArrayList<>();
     private Map<String, DependencyType> typeMap = new HashMap<>();
@@ -245,7 +246,35 @@ public class DependencyChecker implements DependencyInfo {
         }
     }
 
+    void schedulePropagation(DependencyNodeToNodeTransition consumer, DependencyType[] types) {
+        if (types.length == 0) {
+            return;
+        }
+        if (types.length == 1) {
+            schedulePropagation(consumer, types[0]);
+            return;
+        }
+
+        if (propagationDepth < 50) {
+            ++propagationDepth;
+            consumer.consume(types);
+            --propagationDepth;
+        } else {
+            tasks.add(() -> {
+                consumer.consume(types);
+            });
+        }
+    }
+
     void schedulePropagation(DependencyConsumer consumer, DependencyType[] types) {
+        if (types.length == 0) {
+            return;
+        }
+        if (types.length == 1) {
+            schedulePropagation(consumer, types[0]);
+            return;
+        }
+
         if (propagationDepth < 50) {
             ++propagationDepth;
             for (DependencyType type : types) {
@@ -511,7 +540,7 @@ public class DependencyChecker implements DependencyInfo {
         int index = 0;
         while (true) {
             while (!tasks.isEmpty()) {
-                tasks.poll().run();
+                tasks.removeLast().run();
                 if (++index == 100) {
                     if (interruptor != null && !interruptor.shouldContinue()) {
                         interrupted = true;

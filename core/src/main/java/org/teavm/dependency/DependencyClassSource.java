@@ -72,7 +72,6 @@ class DependencyClassSource implements ClassHolderSource {
             for (ClassHolderTransformer transformer : transformers) {
                 transformer.transformClass(cls, innerSource, diagnostics);
             }
-            cls = ModelUtils.copyClass(cls);
         }
         return cls;
     }
