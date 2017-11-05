@@ -153,19 +153,7 @@ public class DependencyNode implements ValueDependencyInfo {
         }
         followers.add(consumer);
 
-        if (this.types != null) {
-            List<DependencyType> types = new ArrayList<>();
-            for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
-                types.add(dependencyChecker.types.get(index));
-            }
-            dependencyChecker.schedulePropagation(consumer, types.toArray(new DependencyType[types.size()]));
-        } else if (this.smallTypes != null) {
-            DependencyType[] types = new DependencyType[smallTypes.length];
-            for (int i = 0; i < types.length; ++i) {
-                types[i] = dependencyChecker.types.get(smallTypes[i]);
-            }
-            dependencyChecker.schedulePropagation(consumer, types);
-        }
+        propagateTypes(consumer, null);
     }
 
     public void connect(DependencyNode node, DependencyTypeFilter filter) {
@@ -192,16 +180,30 @@ public class DependencyNode implements ValueDependencyInfo {
             System.out.println("Connecting " + tag + " to " + node.tag);
         }
 
+        propagateTypes(transition, filter);
+    }
+
+    private void propagateTypes(DependencyConsumer transition, DependencyTypeFilter filter) {
         if (this.types != null) {
             List<DependencyType> types = new ArrayList<>();
             for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
-                types.add(dependencyChecker.types.get(index));
+                DependencyType type = dependencyChecker.types.get(index);
+                if (filter == null || filter.match(type)) {
+                    types.add(type);
+                }
             }
             dependencyChecker.schedulePropagation(transition, types.toArray(new DependencyType[types.size()]));
         } else if (this.smallTypes != null) {
             DependencyType[] types = new DependencyType[smallTypes.length];
+            int j = 0;
             for (int i = 0; i < types.length; ++i) {
-                types[i] = dependencyChecker.types.get(smallTypes[i]);
+                DependencyType type = dependencyChecker.types.get(smallTypes[i]);
+                if (filter == null || filter.match(type)) {
+                    types[j++] = type;
+                }
+            }
+            if (j < types.length) {
+                types = Arrays.copyOf(types, j);
             }
             dependencyChecker.schedulePropagation(transition, types);
         }

@@ -68,6 +68,7 @@ public class DependencyChecker implements DependencyInfo {
     private List<DependencyListener> listeners = new ArrayList<>();
     private ServiceRepository services;
     private Queue<Runnable> tasks = new ArrayDeque<>();
+    private Queue<Runnable> deferredTasks = new ArrayDeque<>();
     List<DependencyType> types = new ArrayList<>();
     private Map<String, DependencyType> typeMap = new HashMap<>();
     private DependencyCheckerInterruptor interruptor;
@@ -199,7 +200,7 @@ public class DependencyChecker implements DependencyInfo {
 
             dep.used = false;
             lock(dep, false);
-            tasks.add(() -> {
+            deferredTasks.add(() -> {
                 DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
                 graphBuilder.buildGraph(dep);
                 dep.used = true;
@@ -277,7 +278,7 @@ public class DependencyChecker implements DependencyInfo {
             added = classesAddedByRoot.add(className);
         }
         if (!dep.isMissing() && added) {
-            tasks.add(() -> {
+            deferredTasks.add(() -> {
                 for (DependencyListener listener : listeners) {
                     listener.classReached(agent, className, callLocation);
                 }
@@ -352,7 +353,7 @@ public class DependencyChecker implements DependencyInfo {
         ClassReader reader = cls.getClassReader();
         MethodReader method = reader.getMethod(new MethodDescriptor("<clinit>", void.class));
         if (method != null) {
-            tasks.add(() -> linkMethod(method.getReference(), callLocation).use());
+            deferredTasks.add(() -> linkMethod(method.getReference(), callLocation).use());
         }
     }
 
@@ -385,7 +386,7 @@ public class DependencyChecker implements DependencyInfo {
         MethodDependency dep = new MethodDependency(this, parameterNodes, paramCount, resultNode, thrown,
                 method, methodRef);
         if (method != null) {
-            tasks.add(() -> {
+            deferredTasks.add(() -> {
                 CallLocation caller = new CallLocation(dep.getMethod().getReference());
                 linkClass(dep.getMethod().getOwnerName(), caller).initClass(caller);
             });
@@ -394,7 +395,7 @@ public class DependencyChecker implements DependencyInfo {
     }
 
     void scheduleMethodAnalysis(MethodDependency dep) {
-        tasks.add(() -> {
+        deferredTasks.add(() -> {
             DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
             graphBuilder.buildGraph(dep);
         });
@@ -429,7 +430,7 @@ public class DependencyChecker implements DependencyInfo {
         }
         FieldDependency dep = fieldCache.map(fieldRef);
         if (!dep.isMissing()) {
-            tasks.add(() -> linkClass(fieldRef.getClassName(), location).initClass(location));
+            deferredTasks.add(() -> linkClass(fieldRef.getClassName(), location).initClass(location));
         }
         if (!dep.isMissing() && added) {
             for (DependencyListener listener : listeners) {
@@ -508,15 +509,21 @@ public class DependencyChecker implements DependencyInfo {
             return;
         }
         int index = 0;
-        while (!tasks.isEmpty()) {
-            tasks.poll().run();
-            if (++index == 100) {
-                if (interruptor != null && !interruptor.shouldContinue()) {
-                    interrupted = true;
-                    break;
+        while (true) {
+            while (!tasks.isEmpty()) {
+                tasks.poll().run();
+                if (++index == 100) {
+                    if (interruptor != null && !interruptor.shouldContinue()) {
+                        interrupted = true;
+                        break;
+                    }
+                    index = 0;
                 }
-                index = 0;
             }
+            if (deferredTasks.isEmpty()) {
+                break;
+            }
+            deferredTasks.poll().run();
         }
     }
 
