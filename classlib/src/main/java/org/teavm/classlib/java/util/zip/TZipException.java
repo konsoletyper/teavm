@@ -16,12 +16,14 @@
 
 package org.teavm.classlib.java.util.zip;
 
-public class TDataFormatException extends Exception {
-    public TDataFormatException() {
+import java.io.IOException;
+
+public class TZipException extends IOException {
+    public TZipException() {
         super();
     }
 
-    public TDataFormatException(String detailMessage) {
+    public TZipException(String detailMessage) {
         super(detailMessage);
     }
 }

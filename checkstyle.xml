@@ -20,7 +20,6 @@
     <module name="LeftCurly"/>
     <module name="NeedBraces"/>
     <module name="RightCurly"/>
-    <module name="InterfaceIsType"/>
     <module name="HideUtilityClassConstructor"/>
     <module name="EmptyStatement"/>
     <module name="EqualsHashCode"/>

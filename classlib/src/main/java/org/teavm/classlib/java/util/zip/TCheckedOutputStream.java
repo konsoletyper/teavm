@@ -16,12 +16,31 @@
 
 package org.teavm.classlib.java.util.zip;
 
-public class TDataFormatException extends Exception {
-    public TDataFormatException() {
-        super();
+import java.io.FilterOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+
+public class TCheckedOutputStream extends FilterOutputStream {
+    private final TChecksum check;
+
+    public TCheckedOutputStream(OutputStream os, TChecksum cs) {
+        super(os);
+        check = cs;
     }
 
-    public TDataFormatException(String detailMessage) {
-        super(detailMessage);
+    public TChecksum getChecksum() {
+        return check;
+    }
+
+    @Override
+    public void write(int val) throws IOException {
+        out.write(val);
+        check.update(val);
+    }
+
+    @Override
+    public void write(byte[] buf, int off, int nbytes) throws IOException {
+        out.write(buf, off, nbytes);
+        check.update(buf, off, nbytes);
     }
 }

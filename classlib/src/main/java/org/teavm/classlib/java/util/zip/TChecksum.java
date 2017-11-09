@@ -16,12 +16,12 @@
 
 package org.teavm.classlib.java.util.zip;
 
-public class TDataFormatException extends Exception {
-    public TDataFormatException() {
-        super();
-    }
+public interface TChecksum {
+    long getValue();
 
-    public TDataFormatException(String detailMessage) {
-        super(detailMessage);
-    }
+    void reset();
+
+    void update(byte[] buf, int off, int nbytes);
+
+    void update(int val);
 }
