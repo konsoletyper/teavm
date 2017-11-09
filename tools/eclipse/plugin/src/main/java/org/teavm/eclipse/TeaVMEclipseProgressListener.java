@@ -46,8 +46,8 @@ class TeaVMEclipseProgressListener implements TeaVMProgressListener {
                 case DEPENDENCY_CHECKING:
                     taskName = "Dependency checking";
                     break;
-                case DEVIRTUALIZATION:
-                    taskName = "Applying devirtualization";
+                case OPTIMIZATION:
+                    taskName = "Optimizing";
                     break;
                 case LINKING:
                     taskName = "Linking";

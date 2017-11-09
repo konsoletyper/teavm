@@ -1,10 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-  <feature id="teavm-eclipse-feature" version="0.0.0">
-    <category name="teavm-category"/>
-  </feature>
-  <feature id="teavm-eclipse-m2e-feature" version="0.0.0">
-    <category name="teavm-category"/>
-  </feature>
-  <category-def name="teavm-category" label="TeaVM"/>
+   <feature id="teavm-eclipse-feature" version="0.0.0">
+      <category name="teavm-category"/>
+   </feature>
+   <feature id="teavm-eclipse-m2e-feature" version="0.0.0">
+      <category name="teavm-category"/>
+   </feature>
+   <category-def name="teavm-category" label="TeaVM"/>
 </site>

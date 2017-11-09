@@ -36,7 +36,7 @@ public class TeaVMJavaThread extends TeaVMThread {
             }
 
             @Override
-            public void paused() {
+            public void paused(Breakpoint breakpoint) {
                 updateStackTrace();
                 fireEvent(new DebugEvent(TeaVMJavaThread.this, DebugEvent.SUSPEND));
             }

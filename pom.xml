@@ -325,10 +325,18 @@
         <module>tools/idea</module>
       </modules>
     </profile>
+    
     <profile>
       <id>with-idea</id>
       <modules>
         <module>tools/idea</module>
+      </modules>
+    </profile>
+    
+    <profile>
+      <id>with-eclipse</id>
+      <modules>
+        <module>tools/eclipse</module>
       </modules>
     </profile>
 

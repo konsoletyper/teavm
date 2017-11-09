@@ -73,7 +73,7 @@ public class TeaVMDebugTarget extends PlatformObject implements IDebugTarget, IS
             }
 
             @Override
-            public void paused() {
+            public void paused(Breakpoint breakpoint) {
                 fireEvent(new DebugEvent(TeaVMDebugTarget.this, DebugEvent.SUSPEND));
                 thread.fireSuspendEvent(0);
                 thread.fireChangeEvent(0);
