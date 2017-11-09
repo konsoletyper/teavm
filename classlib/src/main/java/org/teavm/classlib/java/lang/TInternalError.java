@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
+
 package org.teavm.classlib.java.lang;
 
-public class TVirtualMachineError extends TError {
-    private static final long serialVersionUID = -4246822614122675559L;
-
-    public TVirtualMachineError() {
-        super();
+public class TInternalError extends TVirtualMachineError {
+    public TInternalError() {
     }
 
-    public TVirtualMachineError(TString message) {
+    public TInternalError(TString message) {
         super(message);
     }
 
-    public TVirtualMachineError(TThrowable cause) {
-        super(cause);
+    public TInternalError(TString message, TThrowable cause) {
+        super(message, cause);
     }
 
-    public TVirtualMachineError(TString message, TThrowable cause) {
-        super(message, cause);
+    public TInternalError(TThrowable cause) {
+        super(cause);
     }
 }
