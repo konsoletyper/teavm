@@ -17,6 +17,7 @@ package org.teavm.dependency;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -65,7 +66,7 @@ class DependencyGraphBuilder {
     private TextLocation currentLocation;
     private ExceptionConsumer currentExceptionConsumer;
 
-    public DependencyGraphBuilder(DependencyChecker dependencyChecker) {
+    DependencyGraphBuilder(DependencyChecker dependencyChecker) {
         this.dependencyChecker = dependencyChecker;
     }
 
@@ -303,9 +304,8 @@ class DependencyGraphBuilder {
         }
     }
 
-    private static class VirtualCallConsumer implements DependencyConsumer {
+    static class VirtualCallConsumer implements DependencyConsumer {
         private final DependencyNode node;
-        private final String filterClass;
         private final MethodDescriptor methodDesc;
         private final DependencyChecker checker;
         private final DependencyNode[] parameters;
@@ -313,14 +313,16 @@ class DependencyGraphBuilder {
         private final DefaultCallGraphNode caller;
         private final TextLocation location;
         private final Set<MethodReference> knownMethods = new HashSet<>();
+        private final BitSet knownTypes = new BitSet();
         private ExceptionConsumer exceptionConsumer;
+        private SuperClassFilter filter;
 
-        public VirtualCallConsumer(DependencyNode node, String filterClass,
+        VirtualCallConsumer(DependencyNode node, String filterClass,
                 MethodDescriptor methodDesc, DependencyChecker checker, DependencyNode[] parameters,
                 DependencyNode result, DefaultCallGraphNode caller, TextLocation location,
                 ExceptionConsumer exceptionConsumer) {
             this.node = node;
-            this.filterClass = filterClass;
+            this.filter = checker.getSuperClassFilter(filterClass);
             this.methodDesc = methodDesc;
             this.checker = checker;
             this.parameters = parameters;
@@ -332,6 +334,11 @@ class DependencyGraphBuilder {
 
         @Override
         public void consume(DependencyType type) {
+            if (knownTypes.get(type.index)) {
+                return;
+            }
+            knownTypes.set(type.index);
+
             String className = type.getName();
             if (DependencyChecker.shouldLog) {
                 System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". "
@@ -339,10 +346,10 @@ class DependencyGraphBuilder {
             }
             if (className.startsWith("[")) {
                 className = "java.lang.Object";
+                type = checker.getType(className);
             }
 
-            ClassReaderSource classSource = checker.getClassSource();
-            if (!classSource.isSuperType(filterClass, className).orElse(false)) {
+            if (!filter.match(type)) {
                 return;
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
@@ -351,8 +358,8 @@ class DependencyGraphBuilder {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
                 if (parameters[0] != null && targetParams[0] != null) {
-                    parameters[0].connect(targetParams[0], thisType -> classSource.isSuperType(
-                            methodDep.getMethod().getOwnerName(), thisType.getName()).orElse(false));
+                    parameters[0].connect(targetParams[0],
+                            checker.getSuperClassFilter(methodDep.getMethod().getOwnerName()));
                 }
                 for (int i = 1; i < parameters.length; ++i) {
                     if (parameters[i] != null && targetParams[i] != null) {
@@ -429,14 +436,9 @@ class DependencyGraphBuilder {
             if (targetType instanceof ValueType.Object) {
                 String targetClsName = ((ValueType.Object) targetType).getClassName();
                 final ClassReader targetClass = classSource.get(targetClsName);
-                if (targetClass != null) {
+                if (targetClass != null && !(targetClass.getName().equals("java.lang.Object"))) {
                     if (valueNode != null && receiverNode != null) {
-                        valueNode.connect(receiverNode, type -> {
-                            if (targetClass.getName().equals("java.lang.Object")) {
-                                return true;
-                            }
-                            return classSource.isSuperType(targetClass.getName(), type.getName()).orElse(false);
-                        });
+                        valueNode.connect(receiverNode, dependencyChecker.getSuperClassFilter(targetClass.getName()));
                     }
                     return;
                 }

@@ -37,7 +37,7 @@ class DependencyClassSource implements ClassHolderSource {
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
     private Map<String, ClassHolder> cache = new LinkedHashMap<>();
 
-    public DependencyClassSource(ClassReaderSource innerSource, Diagnostics diagnostics) {
+    DependencyClassSource(ClassReaderSource innerSource, Diagnostics diagnostics) {
         this.innerSource = innerSource;
         this.diagnostics = diagnostics;
     }

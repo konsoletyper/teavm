@@ -15,15 +15,18 @@
  */
 package org.teavm.dependency;
 
+import com.carrotsearch.hppc.IntSet;
 import java.util.Arrays;
+import java.util.BitSet;
 
 class DependencyNodeToNodeTransition implements DependencyConsumer {
     private DependencyNode source;
     DependencyNode destination;
     private DependencyTypeFilter filter;
+    private BitSet knownFilteredOffTypes;
+    IntSet pendingTypes;
 
-    public DependencyNodeToNodeTransition(DependencyNode source, DependencyNode destination,
-            DependencyTypeFilter filter) {
+    DependencyNodeToNodeTransition(DependencyNode source, DependencyNode destination, DependencyTypeFilter filter) {
         this.source = source;
         this.destination = destination;
         this.filter = filter;
@@ -31,7 +34,7 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
 
     @Override
     public void consume(DependencyType type) {
-        if (filter != null && !filter.match(type)) {
+        if (!filterType(type)) {
             return;
         }
         if (type.getName().startsWith("[")) {
@@ -47,18 +50,20 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
     }
 
     void consume(DependencyType[] types) {
-        DependencyType[] filtered = new DependencyType[types.length];
         int j = 0;
         for (DependencyType type : types) {
-            if (type.getName().startsWith("[")) {
-                source.getArrayItem().connect(destination.getArrayItem());
-                destination.getArrayItem().connect(source.getArrayItem());
-            }
-            if (type.getName().equals("java.lang.Class")) {
-                source.getClassValueNode().connect(destination.getClassValueNode());
-            }
-            if ((filter == null || filter.match(type)) && !destination.hasType(type)) {
-                filtered[j++] = type;
+            if (filterType(type)) {
+                if (!destination.hasType(type)) {
+                    types[j++] = type;
+                }
+
+                if (type.getName().startsWith("[")) {
+                    source.getArrayItem().connect(destination.getArrayItem());
+                    destination.getArrayItem().connect(source.getArrayItem());
+                }
+                if (type.getName().equals("java.lang.Class")) {
+                    source.getClassValueNode().connect(destination.getClassValueNode());
+                }
             }
         }
 
@@ -67,13 +72,32 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
         }
 
         if (j == 1) {
-            destination.propagate(filtered[0]);
+            destination.propagate(types[0]);
         } else {
-            if (j < filtered.length) {
-                filtered = Arrays.copyOf(filtered, j);
+            if (j < types.length) {
+                types = Arrays.copyOf(types, j);
             }
 
-            destination.propagate(filtered);
+            destination.propagate(types);
         }
+    }
+
+    private boolean filterType(DependencyType type) {
+        if (filter == null) {
+            return true;
+        }
+
+        if (knownFilteredOffTypes != null && knownFilteredOffTypes.get(type.index)) {
+            return false;
+        }
+        if (!filter.match(type)) {
+            if (knownFilteredOffTypes == null) {
+                knownFilteredOffTypes = new BitSet(64);
+            }
+            knownFilteredOffTypes.set(type.index);
+            return false;
+        }
+
+        return true;
     }
 }

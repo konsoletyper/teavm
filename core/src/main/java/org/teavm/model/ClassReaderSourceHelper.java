@@ -17,6 +17,7 @@ package org.teavm.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.Set;
 
 final class ClassReaderSourceHelper {
@@ -58,5 +59,57 @@ final class ClassReaderSourceHelper {
         }
 
         return mostSpecificMethod;
+    }
+
+    static Optional<Boolean> isSuperType(ClassReaderSource classSource, String superType, String subType) {
+        if (superType.equals("java.lang.Object")) {
+            return Optional.of(true);
+        }
+
+        ClassReader cls = classSource.get(superType);
+        if (cls != null && !cls.hasModifier(ElementModifier.INTERFACE)) {
+            return isSuperTypeSimple(classSource, superType, subType);
+        }
+
+        return isSuperTypeInterface(classSource, superType, subType);
+    }
+
+    private static Optional<Boolean> isSuperTypeSimple(ClassReaderSource classSource,
+            String superType, String subType) {
+        while (!superType.equals(subType)) {
+            ClassReader cls = classSource.get(subType);
+            if (cls == null) {
+                return Optional.empty();
+            }
+
+            subType = cls.getParent();
+            if (subType == null) {
+                return Optional.of(false);
+            }
+        }
+
+        return Optional.of(true);
+    }
+
+    private static Optional<Boolean> isSuperTypeInterface(ClassReaderSource classSource,
+            String superType, String subType) {
+        if (superType.equals(subType)) {
+            return Optional.of(true);
+        }
+        ClassReader cls = classSource.get(subType);
+        if (cls == null) {
+            return Optional.empty();
+        }
+        if (cls.getParent() != null) {
+            if (isSuperTypeInterface(classSource, superType, cls.getParent()).orElse(false)) {
+                return Optional.of(true);
+            }
+        }
+        for (String iface : cls.getInterfaces()) {
+            if (isSuperTypeInterface(classSource, superType, iface).orElse(false)) {
+                return Optional.of(true);
+            }
+        }
+        return Optional.of(false);
     }
 }

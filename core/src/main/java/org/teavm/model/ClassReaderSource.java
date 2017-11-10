@@ -113,24 +113,7 @@ public interface ClassReaderSource {
     }
 
     default Optional<Boolean> isSuperType(String superType, String subType) {
-        if (superType.equals(subType)) {
-            return Optional.of(true);
-        }
-        ClassReader cls = get(subType);
-        if (cls == null) {
-            return Optional.empty();
-        }
-        if (cls.getParent() != null) {
-            if (isSuperType(superType, cls.getParent()).orElse(false)) {
-                return Optional.of(true);
-            }
-        }
-        for (String iface : cls.getInterfaces()) {
-            if (isSuperType(superType, iface).orElse(false)) {
-                return Optional.of(true);
-            }
-        }
-        return Optional.of(false);
+        return ClassReaderSourceHelper.isSuperType(this, superType, subType);
     }
 
     default Optional<Boolean> isSuperType(ValueType superType, ValueType subType) {

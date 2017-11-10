@@ -15,6 +15,9 @@
  */
 package org.teavm.dependency;
 
+import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntSet;
+import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -57,6 +60,7 @@ import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.Parser;
 
 public class DependencyChecker implements DependencyInfo {
+    private static final int PROPAGATION_STACK_THRESHOLD = 50;
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     private int classNameSuffix;
     private DependencyClassSource classSource;
@@ -68,6 +72,7 @@ public class DependencyChecker implements DependencyInfo {
     private CachedMapper<String, ClassDependency> classCache;
     private List<DependencyListener> listeners = new ArrayList<>();
     private ServiceRepository services;
+    private Deque<DependencyNodeToNodeTransition> pendingTransitions = new ArrayDeque<>();
     private Deque<Runnable> tasks = new ArrayDeque<>();
     private Queue<Runnable> deferredTasks = new ArrayDeque<>();
     List<DependencyType> types = new ArrayList<>();
@@ -79,6 +84,7 @@ public class DependencyChecker implements DependencyInfo {
     private DependencyAgent agent;
     Map<MethodReference, BootstrapMethodSubstitutor> bootstrapMethodSubstitutors = new HashMap<>();
     private boolean completing;
+    private Map<String, SuperClassFilter> superClassFilters = new HashMap<>();
 
     public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics) {
@@ -237,12 +243,26 @@ public class DependencyChecker implements DependencyInfo {
     private int propagationDepth;
 
     void schedulePropagation(DependencyConsumer consumer, DependencyType type) {
-        if (propagationDepth < 50) {
+        if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
             ++propagationDepth;
             consumer.consume(type);
             --propagationDepth;
         } else {
             tasks.add(() -> consumer.consume(type));
+        }
+    }
+
+    void schedulePropagation(DependencyNodeToNodeTransition consumer, DependencyType type) {
+        if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD) {
+            ++propagationDepth;
+            consumer.consume(type);
+            --propagationDepth;
+        } else {
+            if (consumer.pendingTypes == null) {
+                pendingTransitions.add(consumer);
+                consumer.pendingTypes = new IntOpenHashSet();
+            }
+            consumer.pendingTypes.add(type.index);
         }
     }
 
@@ -255,14 +275,18 @@ public class DependencyChecker implements DependencyInfo {
             return;
         }
 
-        if (propagationDepth < 50) {
+        if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD) {
             ++propagationDepth;
             consumer.consume(types);
             --propagationDepth;
         } else {
-            tasks.add(() -> {
-                consumer.consume(types);
-            });
+            if (consumer.pendingTypes == null) {
+                pendingTransitions.add(consumer);
+                consumer.pendingTypes = new IntOpenHashSet();
+            }
+            for (DependencyType type : types) {
+                consumer.pendingTypes.add(type.index);
+            }
         }
     }
 
@@ -275,7 +299,7 @@ public class DependencyChecker implements DependencyInfo {
             return;
         }
 
-        if (propagationDepth < 50) {
+        if (propagationDepth < PROPAGATION_STACK_THRESHOLD) {
             ++propagationDepth;
             for (DependencyType type : types) {
                 consumer.consume(type);
@@ -486,7 +510,7 @@ public class DependencyChecker implements DependencyInfo {
         }
         FieldDependency dep = new FieldDependency(node, field, fieldRef);
         if (!dep.isMissing()) {
-            tasks.add(() -> linkClass(fieldRef.getClassName(), null).initClass(null));
+            deferredTasks.add(() -> linkClass(fieldRef.getClassName(), null).initClass(null));
         }
         return dep;
     }
@@ -538,9 +562,13 @@ public class DependencyChecker implements DependencyInfo {
             return;
         }
         int index = 0;
-        while (true) {
-            while (!tasks.isEmpty()) {
-                tasks.removeLast().run();
+        while (!deferredTasks.isEmpty() || !tasks.isEmpty() || !pendingTransitions.isEmpty()) {
+            while (true) {
+                processNodeToNodeTransitionQueue();
+                if (tasks.isEmpty()) {
+                    break;
+                }
+                tasks.remove().run();
                 if (++index == 100) {
                     if (interruptor != null && !interruptor.shouldContinue()) {
                         interrupted = true;
@@ -549,10 +577,31 @@ public class DependencyChecker implements DependencyInfo {
                     index = 0;
                 }
             }
-            if (deferredTasks.isEmpty()) {
-                break;
+
+            propagationDepth = PROPAGATION_STACK_THRESHOLD;
+            while (!deferredTasks.isEmpty()) {
+                deferredTasks.remove().run();
             }
-            deferredTasks.poll().run();
+            propagationDepth = 0;
+        }
+    }
+
+    private void processNodeToNodeTransitionQueue() {
+        while (!pendingTransitions.isEmpty()) {
+            DependencyNodeToNodeTransition transition = pendingTransitions.remove();
+            IntSet pendingTypes = transition.pendingTypes;
+            transition.pendingTypes = null;
+            if (pendingTypes.size() == 1) {
+                DependencyType type = types.get(pendingTypes.iterator().next().value);
+                transition.consume(type);
+            } else {
+                DependencyType[] typesToPropagate = new DependencyType[pendingTypes.size()];
+                int index = 0;
+                for (IntCursor cursor : pendingTypes) {
+                    typesToPropagate[index++] = types.get(cursor.value);
+                }
+                transition.consume(typesToPropagate);
+            }
         }
     }
 
@@ -610,5 +659,9 @@ public class DependencyChecker implements DependencyInfo {
 
     public void addBootstrapMethodSubstitutor(MethodReference method, BootstrapMethodSubstitutor substitutor) {
         bootstrapMethodSubstitutors.put(method, substitutor);
+    }
+
+    SuperClassFilter getSuperClassFilter(String superClass) {
+        return superClassFilters.computeIfAbsent(superClass, s -> new SuperClassFilter(classSource, s));
     }
 }
