@@ -20,6 +20,7 @@ import static org.teavm.metaprogramming.Metaprogramming.exit;
 import static org.teavm.metaprogramming.Metaprogramming.findClass;
 import static org.teavm.metaprogramming.Metaprogramming.getClassLoader;
 import static org.teavm.metaprogramming.Metaprogramming.lazy;
+import static org.teavm.metaprogramming.Metaprogramming.lazyFragment;
 import static org.teavm.metaprogramming.Metaprogramming.proxy;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -31,12 +32,12 @@ import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.ListResourceBundle;
 import java.util.Map;
 import java.util.Properties;
+import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.function.Supplier;
-import org.teavm.classlib.java.util.TListResourceBundle;
-import org.teavm.classlib.java.util.TResourceBundle;
 import org.teavm.metaprogramming.CompileTime;
 import org.teavm.metaprogramming.Meta;
 import org.teavm.metaprogramming.ReflectClass;
@@ -49,7 +50,7 @@ public class ResourceBundleImpl {
     }
 
     @Meta
-    public static native Map<String, Supplier<TResourceBundle>> createBundleMap(boolean b);
+    public static native Map<String, Supplier<ResourceBundle>> createBundleMap(boolean b);
     private static void createBundleMap(Value<Boolean> b) throws IOException {
         ClassLoader loader = getClassLoader();
 
@@ -73,42 +74,46 @@ public class ResourceBundleImpl {
             }
         }
 
-        Value<Map<String, Supplier<TResourceBundle>>> result = emit(() -> new HashMap<>());
+        Value<Map<String, Supplier<ResourceBundle>>> result = emit(() -> new HashMap<>());
 
         for (String implementation : implementations) {
             String path = implementation.replace('.', '/');
             ReflectClass<?> cls = findClass(implementation);
-            Value<? extends TResourceBundle> lazyResource;
+            Value<? extends ResourceBundle> lazyResource;
             if (cls != null) {
                 ReflectMethod constructor = cls.getMethod("<init>");
                 if (constructor != null) {
-                    lazyResource = lazy(() -> (TResourceBundle) constructor.construct());
+                    lazyResource = lazy(() -> (ResourceBundle) constructor.construct());
                 } else {
                     continue;
                 }
             } else if (loader.getResource(path + ".properties") != null) {
-                Properties properties = new Properties();
-                try (InputStream input = loader.getResourceAsStream(path + ".properties")) {
-                    properties.load(input);
-                }
-
-                lazyResource = lazy(() -> proxy(TListResourceBundle.class, (instance, methodName, args) -> {
-                    Value<List<Object[]>> contentsBuilder = emit(() -> new ArrayList<>());
-                    for (Object propertyName : properties.keySet()) {
-                        if (!(propertyName instanceof String)) {
-                            continue;
-                        }
-                        String key = (String) propertyName;
-                        String value = properties.getProperty(key);
-                        if (value == null) {
-                            continue;
-                        }
-
-                        emit(() -> contentsBuilder.get().add(new Object[] { key, value }));
+                lazyResource = lazyFragment(() -> {
+                    Properties properties = new Properties();
+                    try (InputStream input = loader.getResourceAsStream(path + ".properties")) {
+                        properties.load(input);
+                    } catch (IOException e) {
+                        // do nothing
                     }
 
-                    exit(() -> contentsBuilder.get().toArray(new Object[0][]));
-                }).get());
+                    return proxy(ListResourceBundle.class, (instance, methodName, args) -> {
+                        Value<List<Object[]>> contentsBuilder = emit(() -> new ArrayList<>());
+                        for (Object propertyName : properties.keySet()) {
+                            if (!(propertyName instanceof String)) {
+                                continue;
+                            }
+                            String key = (String) propertyName;
+                            String value = properties.getProperty(key);
+                            if (value == null) {
+                                continue;
+                            }
+
+                            emit(() -> contentsBuilder.get().add(new Object[] { key, value }));
+                        }
+
+                        exit(() -> contentsBuilder.get().toArray(new Object[0][]));
+                    });
+                });
             } else {
                 continue;
             }
@@ -119,7 +124,7 @@ public class ResourceBundleImpl {
                         exit(() -> lazyResource.get());
                     });
             @SuppressWarnings("unchecked")
-            Value<Supplier<TResourceBundle>> supplierValue = emit(() -> supplierValueRaw.get());
+            Value<Supplier<ResourceBundle>> supplierValue = emit(() -> supplierValueRaw.get());
 
             emit(() -> result.get().put(implementation, supplierValue.get()));
         }
