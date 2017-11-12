@@ -51,10 +51,13 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
 
     void consume(DependencyType[] types) {
         int j = 0;
+        boolean copied = false;
         for (DependencyType type : types) {
+            boolean added = false;
             if (filterType(type)) {
                 if (!destination.hasType(type)) {
                     types[j++] = type;
+                    added = true;
                 }
 
                 if (type.getName().startsWith("[")) {
@@ -64,6 +67,10 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
                 if (type.getName().equals("java.lang.Class")) {
                     source.getClassValueNode().connect(destination.getClassValueNode());
                 }
+            }
+            if (!added && !copied) {
+                copied = true;
+                types = types.clone();
             }
         }
 

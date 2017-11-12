@@ -120,10 +120,14 @@ public class DependencyNode implements ValueDependencyInfo {
         }
 
         int j = 0;
+        boolean copied = false;
         for (int i = 0; i < newTypes.length; ++i) {
             DependencyType type = newTypes[i];
             if (addType(type) && filter(type)) {
                 newTypes[j++] = type;
+            } else if (!copied) {
+                copied = true;
+                newTypes = newTypes.clone();
             }
         }
         if (j == 0) {
