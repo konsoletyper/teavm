@@ -45,7 +45,7 @@ import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
-import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.BasicBlock;
@@ -168,40 +168,40 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     @Override
-    public void contributeDependencies(DependencyChecker dependencyChecker) {
-        dependencyChecker.linkMethod(new MethodReference(Class.class.getName(), "getClass",
+    public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
+        dependencyAnalyzer.linkMethod(new MethodReference(Class.class.getName(), "getClass",
                 ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)), null).use();
-        dependencyChecker.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
+        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
                 null).use();
-        dependencyChecker.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class, char[].class,
+        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class, char[].class,
                 int.class, void.class), null).use();
 
-        MethodDependency internDep = dependencyChecker.linkMethod(new MethodReference(String.class, "intern",
+        MethodDependency internDep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "intern",
                 String.class), null);
-        internDep.getVariable(0).propagate(dependencyChecker.getType("java.lang.String"));
+        internDep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.String"));
         internDep.use();
 
-        dependencyChecker.linkMethod(new MethodReference(String.class, "length", int.class), null).use();
-        dependencyChecker.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
-        dependencyChecker.linkMethod(new MethodReference(Thread.class, "currentThread", Thread.class), null).use();
-        dependencyChecker.linkMethod(new MethodReference(Thread.class, "getMainThread", Thread.class), null).use();
-        dependencyChecker.linkMethod(
+        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "length", int.class), null).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Thread.class, "currentThread", Thread.class), null).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Thread.class, "getMainThread", Thread.class), null).use();
+        dependencyAnalyzer.linkMethod(
                 new MethodReference(Thread.class, "setCurrentThread", Thread.class, void.class), null).use();
-        MethodDependency exceptionCons = dependencyChecker.linkMethod(new MethodReference(
+        MethodDependency exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                 NoClassDefFoundError.class, "<init>", String.class, void.class), null);
 
-        exceptionCons.getVariable(0).propagate(dependencyChecker.getType(NoClassDefFoundError.class.getName()));
-        exceptionCons.getVariable(1).propagate(dependencyChecker.getType("java.lang.String"));
-        exceptionCons = dependencyChecker.linkMethod(new MethodReference(NoSuchFieldError.class, "<init>",
+        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoClassDefFoundError.class.getName()));
+        exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(NoSuchFieldError.class, "<init>",
                 String.class, void.class), null);
         exceptionCons.use();
-        exceptionCons.getVariable(0).propagate(dependencyChecker.getType(NoSuchFieldError.class.getName()));
-        exceptionCons.getVariable(1).propagate(dependencyChecker.getType("java.lang.String"));
-        exceptionCons = dependencyChecker.linkMethod(new MethodReference(NoSuchMethodError.class, "<init>",
+        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoSuchFieldError.class.getName()));
+        exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(NoSuchMethodError.class, "<init>",
                 String.class, void.class), null);
         exceptionCons.use();
-        exceptionCons.getVariable(0).propagate(dependencyChecker.getType(NoSuchMethodError.class.getName()));
-        exceptionCons.getVariable(1).propagate(dependencyChecker.getType("java.lang.String"));
+        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoSuchMethodError.class.getName()));
+        exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getType("java.lang.String"));
     }
 
     @Override

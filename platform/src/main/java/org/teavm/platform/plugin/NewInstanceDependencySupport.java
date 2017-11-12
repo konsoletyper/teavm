@@ -53,10 +53,10 @@ public class NewInstanceDependencySupport extends AbstractDependencyListener {
         }
     }
 
-    private void attachConstructor(DependencyAgent checker, String type, CallLocation location) {
+    private void attachConstructor(DependencyAgent agent, String type, CallLocation location) {
         MethodReference ref = new MethodReference(type, "<init>", ValueType.VOID);
-        MethodDependency methodDep = checker.linkMethod(ref, location);
-        methodDep.getVariable(0).propagate(checker.getType(type));
+        MethodDependency methodDep = agent.linkMethod(ref, location);
+        methodDep.getVariable(0).propagate(agent.getType(type));
         methodDep.use();
     }
 }

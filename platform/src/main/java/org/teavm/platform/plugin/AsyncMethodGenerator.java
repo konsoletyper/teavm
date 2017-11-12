@@ -94,30 +94,30 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodReached(DependencyAgent checker, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         MethodReference ref = method.getReference();
         MethodReference asyncRef = getAsyncReference(ref);
-        MethodDependency asyncMethod = checker.linkMethod(asyncRef, location);
+        MethodDependency asyncMethod = agent.linkMethod(asyncRef, location);
         int paramCount = ref.parameterCount();
         for (int i = 0; i <= paramCount; ++i) {
             method.getVariable(i).connect(asyncMethod.getVariable(i));
         }
-        asyncMethod.getVariable(paramCount + 1).propagate(checker.getType(AsyncCallbackWrapper.class.getName()));
+        asyncMethod.getVariable(paramCount + 1).propagate(agent.getType(AsyncCallbackWrapper.class.getName()));
 
-        MethodDependency completeMethod = checker.linkMethod(
+        MethodDependency completeMethod = agent.linkMethod(
                 new MethodReference(AsyncCallbackWrapper.class, "complete", Object.class, void.class), null);
         if (method.getResult() != null) {
-            completeMethod.getVariable(1).connect(method.getResult(), type -> checker.getClassSource()
+            completeMethod.getVariable(1).connect(method.getResult(), type -> agent.getClassSource()
                     .isSuperType(ref.getReturnType(), ValueType.object(type.getName())).orElse(false));
         }
         completeMethod.use();
 
-        MethodDependency errorMethod = checker.linkMethod(new MethodReference(AsyncCallbackWrapper.class, "error",
+        MethodDependency errorMethod = agent.linkMethod(new MethodReference(AsyncCallbackWrapper.class, "error",
                 Throwable.class, void.class), null);
         errorMethod.getVariable(1).connect(method.getThrown());
         errorMethod.use();
 
-        checker.linkMethod(new MethodReference(AsyncCallbackWrapper.class, "create",
+        agent.linkMethod(new MethodReference(AsyncCallbackWrapper.class, "create",
                 AsyncCallback.class, AsyncCallbackWrapper.class), null).use();
 
         asyncMethod.use();

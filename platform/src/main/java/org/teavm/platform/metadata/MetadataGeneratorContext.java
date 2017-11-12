@@ -30,7 +30,7 @@ import org.teavm.vm.TeaVM;
  */
 public interface MetadataGeneratorContext extends ServiceRepository {
     /**
-     * Gets the collection of all classes that were achieved by the dependency checker.
+     * Gets the collection of all classes that were reached by the dependency analyzer.
      *
      * @return class source.
      */

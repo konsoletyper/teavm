@@ -113,7 +113,7 @@ public class DependencyTest {
         vm.setProgressListener(new TeaVMProgressListener() {
             @Override
             public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) {
-                return phase == TeaVMPhase.DEPENDENCY_CHECKING
+                return phase == TeaVMPhase.DEPENDENCY_ANALYSIS
                         ? TeaVMProgressFeedback.CONTINUE
                         : TeaVMProgressFeedback.CANCEL;
             }

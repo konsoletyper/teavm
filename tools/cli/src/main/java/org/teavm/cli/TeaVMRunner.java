@@ -552,14 +552,14 @@ public final class TeaVMRunner {
                 }
                 phaseStartTime = System.currentTimeMillis();
                 switch (phase) {
-                    case DEPENDENCY_CHECKING:
-                        System.out.print("Finding methods to decompile...");
+                    case DEPENDENCY_ANALYSIS:
+                        System.out.print("Analyzing classes...");
                         break;
                     case LINKING:
                         System.out.print("Linking methods...");
                         break;
                     case OPTIMIZATION:
-                        System.out.print("Applying devirtualization...");
+                        System.out.print("Optimizing code...");
                         break;
                     case DECOMPILATION:
                         System.out.print("Decompiling...");

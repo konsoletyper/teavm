@@ -57,7 +57,7 @@ import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.parsing.Parser;
 
-public class DependencyChecker implements DependencyInfo {
+public class DependencyAnalyzer implements DependencyInfo {
     private static final int PROPAGATION_STACK_THRESHOLD = 50;
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     static final boolean shouldTag = System.getProperty("org.teavm.tagDependencies", "false").equals("true")
@@ -77,7 +77,7 @@ public class DependencyChecker implements DependencyInfo {
     private Queue<Runnable> deferredTasks = new ArrayDeque<>();
     List<DependencyType> types = new ArrayList<>();
     private Map<String, DependencyType> typeMap = new HashMap<>();
-    private DependencyCheckerInterruptor interruptor;
+    private DependencyAnalyzerInterruptor interruptor;
     private boolean interrupted;
     private Diagnostics diagnostics;
     DefaultCallGraph callGraph = new DefaultCallGraph();
@@ -86,7 +86,7 @@ public class DependencyChecker implements DependencyInfo {
     private boolean completing;
     private Map<String, SuperClassFilter> superClassFilters = new HashMap<>();
 
-    public DependencyChecker(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
+    public DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics) {
         this.diagnostics = diagnostics;
         this.classSource = new DependencyClassSource(classSource, diagnostics);
@@ -118,11 +118,11 @@ public class DependencyChecker implements DependencyInfo {
         return agent;
     }
 
-    public DependencyCheckerInterruptor getInterruptor() {
+    public DependencyAnalyzerInterruptor getInterruptor() {
         return interruptor;
     }
 
-    public void setInterruptor(DependencyCheckerInterruptor interruptor) {
+    public void setInterruptor(DependencyAnalyzerInterruptor interruptor) {
         this.interruptor = interruptor;
     }
 
@@ -212,7 +212,7 @@ public class DependencyChecker implements DependencyInfo {
             dep.used = false;
             lock(dep, false);
             deferredTasks.add(() -> {
-                DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
+                DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyAnalyzer.this);
                 graphBuilder.buildGraph(dep);
                 dep.used = true;
             });
@@ -448,7 +448,7 @@ public class DependencyChecker implements DependencyInfo {
 
     void scheduleMethodAnalysis(MethodDependency dep) {
         deferredTasks.add(() -> {
-            DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyChecker.this);
+            DependencyGraphBuilder graphBuilder = new DependencyGraphBuilder(DependencyAnalyzer.this);
             graphBuilder.buildGraph(dep);
         });
     }

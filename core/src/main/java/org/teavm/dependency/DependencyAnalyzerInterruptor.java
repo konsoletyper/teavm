@@ -15,6 +15,6 @@
  */
 package org.teavm.dependency;
 
-public interface DependencyCheckerInterruptor {
+public interface DependencyAnalyzerInterruptor {
     boolean shouldContinue();
 }

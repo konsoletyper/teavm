@@ -171,7 +171,7 @@ class TeaVMBuild {
 
     private static String phaseName(TeaVMPhase phase) {
         switch (phase) {
-            case DEPENDENCY_CHECKING:
+            case DEPENDENCY_ANALYSIS:
                 return "Discovering classes to compile";
             case LINKING:
                 return "Resolving method invocations";

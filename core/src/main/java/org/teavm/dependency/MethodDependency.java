@@ -21,7 +21,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 
 public class MethodDependency implements MethodDependencyInfo {
-    private DependencyChecker dependencyChecker;
+    private DependencyAnalyzer dependencyAnalyzer;
     DependencyNode[] variableNodes;
     private int parameterCount;
     DependencyNode resultNode;
@@ -32,9 +32,9 @@ public class MethodDependency implements MethodDependencyInfo {
     DependencyPlugin dependencyPlugin;
     boolean dependencyPluginAttached;
 
-    MethodDependency(DependencyChecker dependencyChecker, DependencyNode[] variableNodes, int parameterCount,
+    MethodDependency(DependencyAnalyzer dependencyAnalyzer, DependencyNode[] variableNodes, int parameterCount,
             DependencyNode resultNode, DependencyNode thrown, MethodHolder method, MethodReference reference) {
-        this.dependencyChecker = dependencyChecker;
+        this.dependencyAnalyzer = dependencyAnalyzer;
         this.variableNodes = Arrays.copyOf(variableNodes, variableNodes.length);
         this.parameterCount = parameterCount;
         this.thrown = thrown;
@@ -44,7 +44,7 @@ public class MethodDependency implements MethodDependencyInfo {
     }
 
     public DependencyAgent getDependencyAgent() {
-        return dependencyChecker.getAgent();
+        return dependencyAnalyzer.getAgent();
     }
 
     @Override
@@ -101,11 +101,11 @@ public class MethodDependency implements MethodDependencyInfo {
     }
 
     public MethodDependency propagate(int parameterIndex, Class<?> type) {
-        return propagate(parameterIndex, dependencyChecker.getType(type.getName()));
+        return propagate(parameterIndex, dependencyAnalyzer.getType(type.getName()));
     }
 
     public MethodDependency propagate(int parameterIndex, String type) {
-        return propagate(parameterIndex, dependencyChecker.getType(type));
+        return propagate(parameterIndex, dependencyAnalyzer.getType(type));
     }
 
     public MethodDependency propagate(int parameterIndex, DependencyType type) {
@@ -117,7 +117,7 @@ public class MethodDependency implements MethodDependencyInfo {
         if (!used) {
             used = true;
             if (!isMissing()) {
-                dependencyChecker.scheduleMethodAnalysis(this);
+                dependencyAnalyzer.scheduleMethodAnalysis(this);
             }
         }
     }

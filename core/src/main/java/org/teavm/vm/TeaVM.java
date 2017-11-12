@@ -30,7 +30,7 @@ import java.util.stream.Collectors;
 import org.teavm.cache.NoCache;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
-import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.Linker;
@@ -103,7 +103,7 @@ import org.teavm.vm.spi.TeaVMPlugin;
  */
 public class TeaVM implements TeaVMHost, ServiceRepository {
     private final ClassReaderSource classSource;
-    private final DependencyChecker dependencyChecker;
+    private final DependencyAnalyzer dependencyAnalyzer;
     private final AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
     private final ClassLoader classLoader;
     private final Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
@@ -125,7 +125,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         target = builder.target;
         classSource = builder.classSource;
         classLoader = builder.classLoader;
-        dependencyChecker = new DependencyChecker(this.classSource, classLoader, this, diagnostics);
+        dependencyAnalyzer = new DependencyAnalyzer(this.classSource, classLoader, this, diagnostics);
         progressListener = new TeaVMProgressListener() {
             @Override public TeaVMProgressFeedback progressReached(int progress) {
                 return TeaVMProgressFeedback.CONTINUE;
@@ -136,10 +136,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         };
 
         for (ClassHolderTransformer transformer : target.getTransformers()) {
-            dependencyChecker.addClassTransformer(transformer);
+            dependencyAnalyzer.addClassTransformer(transformer);
         }
         for (DependencyListener listener : target.getDependencyListeners()) {
-            dependencyChecker.addDependencyListener(listener);
+            dependencyAnalyzer.addDependencyListener(listener);
         }
 
         for (TeaVMHostExtension extension : target.getHostExtensions()) {
@@ -151,17 +151,17 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     @Override
     public void add(DependencyListener listener) {
-        dependencyChecker.addDependencyListener(listener);
+        dependencyAnalyzer.addDependencyListener(listener);
     }
 
     @Override
     public void add(ClassHolderTransformer transformer) {
-        dependencyChecker.addClassTransformer(transformer);
+        dependencyAnalyzer.addClassTransformer(transformer);
     }
 
     @Override
     public void add(MethodReference methodRef, BootstrapMethodSubstitutor substitutor) {
-        dependencyChecker.addBootstrapMethodSubstitutor(methodRef, substitutor);
+        dependencyAnalyzer.addBootstrapMethodSubstitutor(methodRef, substitutor);
     }
 
     @Override
@@ -248,8 +248,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                         + "for method " + ref);
             }
         }
-        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, ref, dependencyChecker.linkMethod(ref, null));
-        dependencyChecker.linkClass(ref.getClassName(), null).initClass(null);
+        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, ref, dependencyAnalyzer.linkMethod(ref, null));
+        dependencyAnalyzer.linkClass(ref.getClassName(), null).initClass(null);
         if (name != null) {
             entryPoints.put(name, entryPoint);
         }
@@ -273,8 +273,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     public TeaVMEntryPoint linkMethod(MethodReference ref) {
-        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint("", ref, dependencyChecker.linkMethod(ref, null));
-        dependencyChecker.linkClass(ref.getClassName(), null).initClass(null);
+        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint("", ref, dependencyAnalyzer.linkMethod(ref, null));
+        dependencyAnalyzer.linkClass(ref.getClassName(), null).initClass(null);
         return entryPoint;
     }
 
@@ -283,7 +283,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             throw new IllegalArgumentException("Class with public name `" + name + "' already defined for class "
                     + className);
         }
-        dependencyChecker.linkClass(className, null).initClass(null);
+        dependencyAnalyzer.linkClass(className, null).initClass(null);
         exportedClasses.put(name, className);
     }
 
@@ -300,22 +300,22 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     /**
      * Gets a {@link ClassReaderSource} which is similar to that of {@link #getClassSource()},
      * except that it also contains classes with applied transformations together with
-     * classes, generated via {@link DependencyChecker#submitClass(ClassHolder)}.
+     * classes, generated via {@link DependencyAnalyzer#submitClass(ClassHolder)}.
      */
     public ClassReaderSource getDependencyClassSource() {
-        return dependencyChecker.getClassSource();
+        return dependencyAnalyzer.getClassSource();
     }
 
     public Collection<String> getClasses() {
-        return dependencyChecker.getReachableClasses();
+        return dependencyAnalyzer.getReachableClasses();
     }
 
     public Collection<MethodReference> getMethods() {
-        return dependencyChecker.getReachableMethods();
+        return dependencyAnalyzer.getReachableMethods();
     }
 
     public DependencyInfo getDependencyInfo() {
-        return dependencyChecker;
+        return dependencyAnalyzer;
     }
 
     public ListableClassReaderSource getWrittenClasses() {
@@ -337,14 +337,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         target.setController(targetController);
 
         // Check dependencies
-        reportPhase(TeaVMPhase.DEPENDENCY_CHECKING, 1);
+        reportPhase(TeaVMPhase.DEPENDENCY_ANALYSIS, 1);
         if (wasCancelled()) {
             return;
         }
 
-        dependencyChecker.setInterruptor(() -> progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE);
-        target.contributeDependencies(dependencyChecker);
-        dependencyChecker.processDependencies();
+        dependencyAnalyzer.setInterruptor(() -> progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE);
+        target.contributeDependencies(dependencyAnalyzer);
+        dependencyAnalyzer.processDependencies();
         if (wasCancelled() || !diagnostics.getSevereProblems().isEmpty()) {
             return;
         }
@@ -354,7 +354,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (wasCancelled()) {
             return;
         }
-        ListableClassHolderSource classSet = link(dependencyChecker);
+        ListableClassHolderSource classSet = link(dependencyAnalyzer);
         writtenClasses = classSet;
         if (wasCancelled()) {
             return;
@@ -364,12 +364,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         reportPhase(TeaVMPhase.OPTIMIZATION, 1);
 
         if (!incremental) {
-            devirtualize(classSet, dependencyChecker);
+            devirtualize(classSet, dependencyAnalyzer);
             if (wasCancelled()) {
                 return;
             }
 
-            inline(classSet, dependencyChecker);
+            inline(classSet, dependencyAnalyzer);
             if (wasCancelled()) {
                 return;
             }
@@ -543,7 +543,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         @Override
         public DependencyInfo getDependencyInfo() {
-            return dependencyChecker;
+            return dependencyAnalyzer;
         }
 
         @Override
@@ -629,12 +629,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         @Override
         public ClassReaderSource getUnprocessedClassSource() {
-            return dependencyChecker.getClassSource();
+            return dependencyAnalyzer.getClassSource();
         }
 
         @Override
         public DependencyInfo getDependencyInfo() {
-            return dependencyChecker;
+            return dependencyAnalyzer;
         }
 
         @Override

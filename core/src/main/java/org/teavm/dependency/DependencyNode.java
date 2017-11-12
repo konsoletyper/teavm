@@ -21,7 +21,7 @@ import org.teavm.model.ValueType;
 
 public class DependencyNode implements ValueDependencyInfo {
     private static final int SMALL_TYPES_THRESHOLD = 6;
-    private DependencyChecker dependencyChecker;
+    private DependencyAnalyzer dependencyAnalyzer;
     private List<DependencyConsumer> followers;
     private int[] smallTypes;
     private BitSet types;
@@ -35,12 +35,12 @@ public class DependencyNode implements ValueDependencyInfo {
     private ValueType typeFilter;
     private SuperClassFilter cachedTypeFilter;
 
-    DependencyNode(DependencyChecker dependencyChecker, ValueType typeFilter) {
-        this(dependencyChecker, typeFilter, 0);
+    DependencyNode(DependencyAnalyzer dependencyAnalyzer, ValueType typeFilter) {
+        this(dependencyAnalyzer, typeFilter, 0);
     }
 
-    private DependencyNode(DependencyChecker dependencyChecker, ValueType typeFilter, int degree) {
-        this.dependencyChecker = dependencyChecker;
+    private DependencyNode(DependencyAnalyzer dependencyAnalyzer, ValueType typeFilter, int degree) {
+        this.dependencyAnalyzer = dependencyAnalyzer;
         this.degree = degree;
         this.typeFilter = typeFilter;
     }
@@ -63,7 +63,7 @@ public class DependencyNode implements ValueDependencyInfo {
                 }
             }
             if (smallTypes.length == SMALL_TYPES_THRESHOLD) {
-                types = new BitSet(dependencyChecker.types.size() * 2);
+                types = new BitSet(dependencyAnalyzer.types.size() * 2);
                 for (int existingType : smallTypes) {
                     types.set(existingType);
                 }
@@ -93,7 +93,7 @@ public class DependencyNode implements ValueDependencyInfo {
             return;
         }
         if (addType(type) && filter(type)) {
-            if (DependencyChecker.shouldLog) {
+            if (DependencyAnalyzer.shouldLog) {
                 System.out.println(tag + " -> " + type.getName());
             }
             scheduleSingleType(type);
@@ -103,13 +103,13 @@ public class DependencyNode implements ValueDependencyInfo {
     private void scheduleSingleType(DependencyType type) {
         if (followers != null) {
             for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
-                dependencyChecker.schedulePropagation(consumer, type);
+                dependencyAnalyzer.schedulePropagation(consumer, type);
             }
         }
         if (transitions != null) {
             for (DependencyNodeToNodeTransition consumer : transitions.toArray(
                     new DependencyNodeToNodeTransition[transitions.size()])) {
-                dependencyChecker.schedulePropagation(consumer, type);
+                dependencyAnalyzer.schedulePropagation(consumer, type);
             }
         }
     }
@@ -129,7 +129,7 @@ public class DependencyNode implements ValueDependencyInfo {
         if (j == 0) {
             return;
         }
-        if (DependencyChecker.shouldLog) {
+        if (DependencyAnalyzer.shouldLog) {
             for (int i = 0; i < j; ++i) {
                 System.out.println(tag + " -> " + newTypes[i].getName());
             }
@@ -147,13 +147,13 @@ public class DependencyNode implements ValueDependencyInfo {
         }
         if (followers != null) {
             for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
-                dependencyChecker.schedulePropagation(consumer, newTypes);
+                dependencyAnalyzer.schedulePropagation(consumer, newTypes);
             }
         }
         if (transitions != null) {
             for (DependencyNodeToNodeTransition consumer : transitions.toArray(
                     new DependencyNodeToNodeTransition[transitions.size()])) {
-                dependencyChecker.schedulePropagation(consumer, newTypes);
+                dependencyAnalyzer.schedulePropagation(consumer, newTypes);
             }
         }
     }
@@ -170,7 +170,7 @@ public class DependencyNode implements ValueDependencyInfo {
             } else {
                 superClass = "java.lang.Object";
             }
-            cachedTypeFilter = dependencyChecker.getSuperClassFilter(superClass);
+            cachedTypeFilter = dependencyAnalyzer.getSuperClassFilter(superClass);
         }
 
         return cachedTypeFilter.match(type);
@@ -208,7 +208,7 @@ public class DependencyNode implements ValueDependencyInfo {
         }
 
         transitions.add(transition);
-        if (DependencyChecker.shouldLog) {
+        if (DependencyAnalyzer.shouldLog) {
             System.out.println("Connecting " + tag + " to " + node.tag);
         }
 
@@ -220,17 +220,17 @@ public class DependencyNode implements ValueDependencyInfo {
             DependencyType[] types = new DependencyType[this.types.cardinality()];
             int j = 0;
             for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
-                DependencyType type = dependencyChecker.types.get(index);
+                DependencyType type = dependencyAnalyzer.types.get(index);
                 types[j++] = type;
             }
-            dependencyChecker.schedulePropagation(transition, types);
+            dependencyAnalyzer.schedulePropagation(transition, types);
         } else if (this.smallTypes != null) {
             DependencyType[] types = new DependencyType[smallTypes.length];
             for (int i = 0; i < types.length; ++i) {
-                DependencyType type = dependencyChecker.types.get(smallTypes[i]);
+                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
                 types[i] = type;
             }
-            dependencyChecker.schedulePropagation(transition, types);
+            dependencyAnalyzer.schedulePropagation(transition, types);
         }
     }
 
@@ -239,17 +239,17 @@ public class DependencyNode implements ValueDependencyInfo {
             DependencyType[] types = new DependencyType[this.types.cardinality()];
             int j = 0;
             for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
-                DependencyType type = dependencyChecker.types.get(index);
+                DependencyType type = dependencyAnalyzer.types.get(index);
                 types[j++] = type;
             }
-            dependencyChecker.schedulePropagation(transition, types);
+            dependencyAnalyzer.schedulePropagation(transition, types);
         } else if (this.smallTypes != null) {
             DependencyType[] types = new DependencyType[smallTypes.length];
             for (int i = 0; i < types.length; ++i) {
-                DependencyType type = dependencyChecker.types.get(smallTypes[i]);
+                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
                 types[i] = type;
             }
-            dependencyChecker.schedulePropagation(transition, types);
+            dependencyAnalyzer.schedulePropagation(transition, types);
         }
     }
 
@@ -263,8 +263,8 @@ public class DependencyNode implements ValueDependencyInfo {
             ValueType itemTypeFilter = typeFilter instanceof ValueType.Array
                     ? ((ValueType.Array) typeFilter).getItemType()
                     : null;
-            arrayItemNode = new DependencyNode(dependencyChecker, itemTypeFilter, degree + 1);
-            if (DependencyChecker.shouldTag) {
+            arrayItemNode = new DependencyNode(dependencyAnalyzer, itemTypeFilter, degree + 1);
+            if (DependencyAnalyzer.shouldTag) {
                 arrayItemNode.tag = tag + "[";
             }
         }
@@ -274,9 +274,9 @@ public class DependencyNode implements ValueDependencyInfo {
     @Override
     public DependencyNode getClassValueNode() {
         if (classValueNode == null) {
-            classValueNode = new DependencyNode(dependencyChecker, null, degree);
+            classValueNode = new DependencyNode(dependencyAnalyzer, null, degree);
             classValueNode.classValueNode = classValueNode;
-            if (DependencyChecker.shouldTag) {
+            if (DependencyAnalyzer.shouldTag) {
                 classValueNode.tag = tag + "@";
             }
         }
@@ -302,7 +302,7 @@ public class DependencyNode implements ValueDependencyInfo {
 
     @Override
     public boolean hasType(String type) {
-        return hasType(dependencyChecker.getType(type));
+        return hasType(dependencyAnalyzer.getType(type));
     }
 
     @Override
@@ -311,7 +311,7 @@ public class DependencyNode implements ValueDependencyInfo {
             String[] result = new String[smallTypes.length];
             int j = 0;
             for (int i = 0; i < result.length; ++i) {
-                DependencyType type = dependencyChecker.types.get(smallTypes[i]);
+                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
                 if (filter(type)) {
                     result[j++] = type.getName();
                 }
@@ -327,7 +327,7 @@ public class DependencyNode implements ValueDependencyInfo {
         String[] result = new String[types.cardinality()];
         int j = 0;
         for (int index = types.nextSetBit(0); index >= 0; index = types.nextSetBit(index + 1)) {
-            DependencyType type = dependencyChecker.types.get(index);
+            DependencyType type = dependencyAnalyzer.types.get(index);
             if (filter(type)) {
                 result[j++] = type.getName();
             }

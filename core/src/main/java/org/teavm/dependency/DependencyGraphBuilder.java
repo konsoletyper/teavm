@@ -58,7 +58,7 @@ import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.text.ListingBuilder;
 
 class DependencyGraphBuilder {
-    private DependencyChecker dependencyChecker;
+    private DependencyAnalyzer dependencyAnalyzer;
     private DependencyNode[] nodes;
     private DependencyNode resultNode;
     private Program program;
@@ -66,12 +66,12 @@ class DependencyGraphBuilder {
     private TextLocation currentLocation;
     private ExceptionConsumer currentExceptionConsumer;
 
-    DependencyGraphBuilder(DependencyChecker dependencyChecker) {
-        this.dependencyChecker = dependencyChecker;
+    DependencyGraphBuilder(DependencyAnalyzer dependencyAnalyzer) {
+        this.dependencyAnalyzer = dependencyAnalyzer;
     }
 
     public void buildGraph(MethodDependency dep) {
-        caller = dependencyChecker.callGraph.getNode(dep.getReference());
+        caller = dependencyAnalyzer.callGraph.getNode(dep.getReference());
         MethodHolder method = dep.method;
         if (method.getProgram() == null || method.getProgram().basicBlockCount() == 0) {
             return;
@@ -93,7 +93,7 @@ class DependencyGraphBuilder {
         int[] nodeMapping = dfgBuilder.buildMapping(program, significantParams,
                 !(method.getResultType() instanceof ValueType.Primitive) && method.getResultType() != ValueType.VOID);
 
-        if (DependencyChecker.shouldLog) {
+        if (DependencyAnalyzer.shouldLog) {
             System.out.println("Method reached: " + method.getReference());
             System.out.print(new ListingBuilder().buildListing(program, "    "));
             for (int i = 0; i < nodeMapping.length; ++i) {
@@ -110,9 +110,9 @@ class DependencyGraphBuilder {
         DependencyNode[] nodeClasses = Arrays.copyOf(dep.getVariables(), nodeClassCount);
         MethodReference ref = method.getReference();
         for (int i = dep.getVariableCount(); i < nodeClasses.length; ++i) {
-            nodeClasses[i] = dependencyChecker.createNode();
+            nodeClasses[i] = dependencyAnalyzer.createNode();
             nodeClasses[i].method = ref;
-            if (DependencyChecker.shouldTag) {
+            if (DependencyAnalyzer.shouldTag) {
                 nodeClasses[i].setTag(dep.getMethod().getReference() + ":" + i);
             }
         }
@@ -140,7 +140,7 @@ class DependencyGraphBuilder {
 
             for (TryCatchBlockReader tryCatch : block.readTryCatchBlocks()) {
                 if (tryCatch.getExceptionType() != null) {
-                    dependencyChecker.linkClass(tryCatch.getExceptionType(), new CallLocation(caller.getMethod()));
+                    dependencyAnalyzer.linkClass(tryCatch.getExceptionType(), new CallLocation(caller.getMethod()));
                 }
             }
         }
@@ -148,29 +148,29 @@ class DependencyGraphBuilder {
         if (method.hasModifier(ElementModifier.SYNCHRONIZED)) {
             List<DependencyNode> syncNodes = new ArrayList<>();
 
-            MethodDependency methodDep = dependencyChecker.linkMethod(
+            MethodDependency methodDep = dependencyAnalyzer.linkMethod(
                         new MethodReference(Object.class, "monitorEnter", Object.class, void.class), null);
             syncNodes.add(methodDep.getVariable(1));
             methodDep.use();
 
-            methodDep = dependencyChecker.linkMethod(
+            methodDep = dependencyAnalyzer.linkMethod(
                     new MethodReference(Object.class, "monitorEnterSync", Object.class, void.class), null);
             syncNodes.add(methodDep.getVariable(1));
             methodDep.use();
 
-            methodDep = dependencyChecker.linkMethod(
+            methodDep = dependencyAnalyzer.linkMethod(
                     new MethodReference(Object.class, "monitorExit", Object.class, void.class), null);
             syncNodes.add(methodDep.getVariable(1));
             methodDep.use();
 
-            methodDep = dependencyChecker.linkMethod(
+            methodDep = dependencyAnalyzer.linkMethod(
                     new MethodReference(Object.class, "monitorExitSync", Object.class, void.class), null);
             syncNodes.add(methodDep.getVariable(1));
             methodDep.use();
 
             if (method.hasModifier(ElementModifier.STATIC)) {
                 for (DependencyNode node : syncNodes) {
-                    node.propagate(dependencyChecker.getType("java.lang.Class"));
+                    node.propagate(dependencyAnalyzer.getType("java.lang.Class"));
                 }
             } else {
                 for (DependencyNode node : syncNodes) {
@@ -184,7 +184,7 @@ class DependencyGraphBuilder {
         if (program == null) {
             return;
         }
-        ProgramEmitter pe = ProgramEmitter.create(program, dependencyChecker.getClassSource());
+        ProgramEmitter pe = ProgramEmitter.create(program, dependencyAnalyzer.getClassSource());
         boolean hasIndy = false;
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -197,7 +197,7 @@ class DependencyGraphBuilder {
                 InvokeDynamicInstruction indy = (InvokeDynamicInstruction) insn;
                 MethodReference bootstrapMethod = new MethodReference(indy.getBootstrapMethod().getClassName(),
                         indy.getBootstrapMethod().getName(), indy.getBootstrapMethod().signature());
-                BootstrapMethodSubstitutor substitutor = dependencyChecker.bootstrapMethodSubstitutors
+                BootstrapMethodSubstitutor substitutor = dependencyAnalyzer.bootstrapMethodSubstitutors
                         .get(bootstrapMethod);
                 if (substitutor == null) {
                     NullConstantInstruction nullInsn = new NullConstantInstruction();
@@ -205,7 +205,7 @@ class DependencyGraphBuilder {
                     nullInsn.setLocation(indy.getLocation());
                     insn.replace(nullInsn);
                     CallLocation location = new CallLocation(caller.getMethod(), currentLocation);
-                    dependencyChecker.getDiagnostics().error(location, "Substitutor for bootstrap "
+                    dependencyAnalyzer.getDiagnostics().error(location, "Substitutor for bootstrap "
                             + "method {{m0}} was not found", bootstrapMethod);
                     continue;
                 }
@@ -241,7 +241,7 @@ class DependencyGraphBuilder {
                         indy.getInstance() != null ? pe.var(indy.getInstance(),
                                 ValueType.object(methodDep.getMethod().getOwnerName())) : null,
                         arguments, indy.getBootstrapMethod(), indy.getBootstrapArguments(),
-                        dependencyChecker.getAgent());
+                        dependencyAnalyzer.getAgent());
                 ValueEmitter result = substitutor.substitute(callSite, pe);
                 if (result.getVariable() != null && result.getVariable() != indy.getReceiver()) {
                     AssignInstruction assign = new AssignInstruction();
@@ -265,24 +265,24 @@ class DependencyGraphBuilder {
         for (int i = 0; i < tryCatchBlocks.size(); ++i) {
             TryCatchBlockReader tryCatch = tryCatchBlocks.get(i);
             if (tryCatch.getExceptionType() != null) {
-                exceptions[i] = dependencyChecker.getClassSource().get(tryCatch.getExceptionType());
+                exceptions[i] = dependencyAnalyzer.getClassSource().get(tryCatch.getExceptionType());
             }
             if (tryCatch.getHandler().getExceptionVariable() != null) {
                 vars[i] = methodDep.getVariable(tryCatch.getHandler().getExceptionVariable().getIndex());
             }
         }
-        return new ExceptionConsumer(dependencyChecker, exceptions, vars, methodDep);
+        return new ExceptionConsumer(dependencyAnalyzer, exceptions, vars, methodDep);
     }
 
     static class ExceptionConsumer implements DependencyConsumer {
-        private DependencyChecker checker;
+        private DependencyAnalyzer analyzer;
         private ClassReader[] exceptions;
         private DependencyNode[] vars;
         private MethodDependency method;
 
-        ExceptionConsumer(DependencyChecker checker, ClassReader[] exceptions, DependencyNode[] vars,
+        ExceptionConsumer(DependencyAnalyzer analyzer, ClassReader[] exceptions, DependencyNode[] vars,
                 MethodDependency method) {
-            this.checker = checker;
+            this.analyzer = analyzer;
             this.exceptions = exceptions;
             this.vars = vars;
             this.method = method;
@@ -290,7 +290,7 @@ class DependencyGraphBuilder {
 
         @Override
         public void consume(DependencyType type) {
-            ClassReaderSource classSource = checker.getClassSource();
+            ClassReaderSource classSource = analyzer.getClassSource();
             for (int i = 0; i < exceptions.length; ++i) {
                 if (exceptions[i] == null || classSource.isSuperType(exceptions[i].getName(), type.getName())
                         .orElse(false)) {
@@ -307,7 +307,7 @@ class DependencyGraphBuilder {
     static class VirtualCallConsumer implements DependencyConsumer {
         private final DependencyNode node;
         private final MethodDescriptor methodDesc;
-        private final DependencyChecker checker;
+        private final DependencyAnalyzer analyzer;
         private final DependencyNode[] parameters;
         private final DependencyNode result;
         private final DefaultCallGraphNode caller;
@@ -318,13 +318,13 @@ class DependencyGraphBuilder {
         private SuperClassFilter filter;
 
         VirtualCallConsumer(DependencyNode node, String filterClass,
-                MethodDescriptor methodDesc, DependencyChecker checker, DependencyNode[] parameters,
+                MethodDescriptor methodDesc, DependencyAnalyzer analyzer, DependencyNode[] parameters,
                 DependencyNode result, DefaultCallGraphNode caller, TextLocation location,
                 ExceptionConsumer exceptionConsumer) {
             this.node = node;
-            this.filter = checker.getSuperClassFilter(filterClass);
+            this.filter = analyzer.getSuperClassFilter(filterClass);
             this.methodDesc = methodDesc;
-            this.checker = checker;
+            this.analyzer = analyzer;
             this.parameters = parameters;
             this.result = result;
             this.caller = caller;
@@ -340,26 +340,26 @@ class DependencyGraphBuilder {
             knownTypes.set(type.index);
 
             String className = type.getName();
-            if (DependencyChecker.shouldLog) {
+            if (DependencyAnalyzer.shouldLog) {
                 System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". "
                         + "Target class is " + className);
             }
             if (className.startsWith("[")) {
                 className = "java.lang.Object";
-                type = checker.getType(className);
+                type = analyzer.getType(className);
             }
 
             if (!filter.match(type)) {
                 return;
             }
             MethodReference methodRef = new MethodReference(className, methodDesc);
-            MethodDependency methodDep = checker.linkMethod(methodRef, new CallLocation(caller.getMethod(), location));
+            MethodDependency methodDep = analyzer.linkMethod(methodRef, new CallLocation(caller.getMethod(), location));
             if (!methodDep.isMissing() && knownMethods.add(methodRef)) {
                 methodDep.use();
                 DependencyNode[] targetParams = methodDep.getVariables();
                 if (parameters[0] != null && targetParams[0] != null) {
                     parameters[0].connect(targetParams[0],
-                            checker.getSuperClassFilter(methodDep.getMethod().getOwnerName()));
+                            analyzer.getSuperClassFilter(methodDep.getMethod().getOwnerName()));
                 }
                 for (int i = 1; i < parameters.length; ++i) {
                     if (parameters[i] != null && targetParams[i] != null) {
@@ -384,7 +384,7 @@ class DependencyGraphBuilder {
         public void classConstant(VariableReader receiver, ValueType cst) {
             DependencyNode node = nodes[receiver.getIndex()];
             if (node != null) {
-                node.propagate(dependencyChecker.getType("java.lang.Class"));
+                node.propagate(dependencyAnalyzer.getType("java.lang.Class"));
                 if (!(cst instanceof ValueType.Primitive)) {
                     StringBuilder sb = new StringBuilder();
                     while (cst instanceof ValueType.Array) {
@@ -396,7 +396,7 @@ class DependencyGraphBuilder {
                     } else {
                         sb.append(cst.toString());
                     }
-                    node.getClassValueNode().propagate(dependencyChecker.getType(sb.toString()));
+                    node.getClassValueNode().propagate(dependencyAnalyzer.getType(sb.toString()));
                 }
             }
             while (cst instanceof ValueType.Array) {
@@ -404,7 +404,7 @@ class DependencyGraphBuilder {
             }
             if (cst instanceof ValueType.Object) {
                 final String className = ((ValueType.Object) cst).getClassName();
-                dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
+                dependencyAnalyzer.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
             }
         }
 
@@ -412,9 +412,9 @@ class DependencyGraphBuilder {
         public void stringConstant(VariableReader receiver, String cst) {
             DependencyNode node = nodes[receiver.getIndex()];
             if (node != null) {
-                node.propagate(dependencyChecker.getType("java.lang.String"));
+                node.propagate(dependencyAnalyzer.getType("java.lang.String"));
             }
-            MethodDependency method = dependencyChecker.linkMethod(new MethodReference(String.class,
+            MethodDependency method = dependencyAnalyzer.linkMethod(new MethodReference(String.class,
                     "<init>", char[].class, void.class), new CallLocation(caller.getMethod(), currentLocation));
             method.use();
         }
@@ -432,13 +432,13 @@ class DependencyGraphBuilder {
         public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
-            ClassReaderSource classSource = dependencyChecker.getClassSource();
+            ClassReaderSource classSource = dependencyAnalyzer.getClassSource();
             if (targetType instanceof ValueType.Object) {
                 String targetClsName = ((ValueType.Object) targetType).getClassName();
                 final ClassReader targetClass = classSource.get(targetClsName);
                 if (targetClass != null && !(targetClass.getName().equals("java.lang.Object"))) {
                     if (valueNode != null && receiverNode != null) {
-                        valueNode.connect(receiverNode, dependencyChecker.getSuperClassFilter(targetClass.getName()));
+                        valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(targetClass.getName()));
                     }
                     return;
                 }
@@ -466,11 +466,11 @@ class DependencyGraphBuilder {
         public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
             DependencyNode node = nodes[receiver.getIndex()];
             if (node != null) {
-                node.propagate(dependencyChecker.getType("[" + itemType));
+                node.propagate(dependencyAnalyzer.getType("[" + itemType));
             }
             String className = extractClassName(itemType);
             if (className != null) {
-                dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
+                dependencyAnalyzer.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
             }
         }
 
@@ -501,28 +501,28 @@ class DependencyGraphBuilder {
                 if (node == null) {
                     break;
                 }
-                node.propagate(dependencyChecker.getType(sb.substring(i, sb.length())));
+                node.propagate(dependencyAnalyzer.getType(sb.substring(i, sb.length())));
                 node = node.getArrayItem();
             }
             String className = extractClassName(itemType);
             if (className != null) {
-                dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
+                dependencyAnalyzer.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
             }
         }
 
         @Override
         public void create(VariableReader receiver, String type) {
-            dependencyChecker.linkClass(type, new CallLocation(caller.getMethod(), currentLocation));
+            dependencyAnalyzer.linkClass(type, new CallLocation(caller.getMethod(), currentLocation));
             DependencyNode node = nodes[receiver.getIndex()];
             if (node != null) {
-                node.propagate(dependencyChecker.getType(type));
+                node.propagate(dependencyAnalyzer.getType(type));
             }
         }
 
         @Override
         public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
                 ValueType fieldType) {
-            FieldDependency fieldDep = dependencyChecker.linkField(field,
+            FieldDependency fieldDep = dependencyAnalyzer.linkField(field,
                     new CallLocation(caller.getMethod(), currentLocation));
             if (!(fieldType instanceof ValueType.Primitive)) {
                 DependencyNode receiverNode = nodes[receiver.getIndex()];
@@ -536,7 +536,7 @@ class DependencyGraphBuilder {
         @Override
         public void putField(VariableReader instance, FieldReference field, VariableReader value,
                 ValueType fieldType) {
-            FieldDependency fieldDep = dependencyChecker.linkField(field,
+            FieldDependency fieldDep = dependencyAnalyzer.linkField(field,
                     new CallLocation(caller.getMethod(), currentLocation));
             if (!(fieldType instanceof ValueType.Primitive)) {
                 DependencyNode valueNode = nodes[value.getIndex()];
@@ -555,7 +555,7 @@ class DependencyGraphBuilder {
                 arrayNode.addConsumer(receiverNode::propagate);
                 arrayNode.getArrayItem().connect(receiverNode.getArrayItem());
             }
-            MethodDependency cloneDep = dependencyChecker.linkMethod(
+            MethodDependency cloneDep = dependencyAnalyzer.linkMethod(
                     new MethodReference(Object.class, "clone", Object.class),
                     new CallLocation(caller.getMethod(), currentLocation));
             arrayNode.connect(cloneDep.getVariable(0));
@@ -615,8 +615,8 @@ class DependencyGraphBuilder {
         private void invokeSpecial(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
             CallLocation callLocation = new CallLocation(caller.getMethod(), currentLocation);
-            dependencyChecker.linkClass(method.getClassName(), callLocation).initClass(callLocation);
-            MethodDependency methodDep = dependencyChecker.linkMethod(method, callLocation);
+            dependencyAnalyzer.linkClass(method.getClassName(), callLocation).initClass(callLocation);
+            MethodDependency methodDep = dependencyAnalyzer.linkMethod(method, callLocation);
             methodDep.use();
             if (methodDep.isMissing()) {
                 return;
@@ -650,14 +650,14 @@ class DependencyGraphBuilder {
             }
             actualArgs[0] = nodes[instance.getIndex()];
             DependencyConsumer listener = new VirtualCallConsumer(nodes[instance.getIndex()],
-                    method.getClassName(), method.getDescriptor(), dependencyChecker, actualArgs,
+                    method.getClassName(), method.getDescriptor(), dependencyAnalyzer, actualArgs,
                     receiver != null ? nodes[receiver.getIndex()] : null, caller, currentLocation,
                     currentExceptionConsumer);
             nodes[instance.getIndex()].addConsumer(listener);
 
-            dependencyChecker.getClassSource().overriddenMethods(method).forEach(methodImpl -> {
+            dependencyAnalyzer.getClassSource().overriddenMethods(method).forEach(methodImpl -> {
                 CallLocation callLocation = new CallLocation(caller.getMethod(), currentLocation);
-                dependencyChecker.linkMethod(methodImpl.getReference(), callLocation);
+                dependencyAnalyzer.linkMethod(methodImpl.getReference(), callLocation);
             });
         }
 
@@ -665,7 +665,7 @@ class DependencyGraphBuilder {
         public void isInstance(VariableReader receiver, VariableReader value, final ValueType type) {
             String className = extractClassName(type);
             if (className != null) {
-                dependencyChecker.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
+                dependencyAnalyzer.linkClass(className, new CallLocation(caller.getMethod(), currentLocation));
             }
         }
 
@@ -679,7 +679,7 @@ class DependencyGraphBuilder {
         @Override
         public void initClass(final String className) {
             CallLocation callLocation = new CallLocation(caller.getMethod(), currentLocation);
-            dependencyChecker.linkClass(className, callLocation).initClass(callLocation);
+            dependencyAnalyzer.linkClass(className, callLocation).initClass(callLocation);
         }
 
         @Override
@@ -687,19 +687,19 @@ class DependencyGraphBuilder {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             valueNode.connect(receiverNode);
-            dependencyChecker.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class),
+            dependencyAnalyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class),
                     new CallLocation(caller.getMethod(), currentLocation)).use();
-            currentExceptionConsumer.consume(dependencyChecker.getType("java.lang.NullPointerException"));
+            currentExceptionConsumer.consume(dependencyAnalyzer.getType("java.lang.NullPointerException"));
         }
 
         @Override
         public void monitorEnter(VariableReader objectRef) {
-             MethodDependency methodDep = dependencyChecker.linkMethod(
+             MethodDependency methodDep = dependencyAnalyzer.linkMethod(
                         new MethodReference(Object.class, "monitorEnter", Object.class, void.class), null);
              nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
              methodDep.use();
 
-             methodDep = dependencyChecker.linkMethod(
+             methodDep = dependencyAnalyzer.linkMethod(
                      new MethodReference(Object.class, "monitorEnterSync", Object.class, void.class), null);
              nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
              methodDep.use();
@@ -707,12 +707,12 @@ class DependencyGraphBuilder {
 
         @Override
         public void monitorExit(VariableReader objectRef) {
-            MethodDependency methodDep = dependencyChecker.linkMethod(
+            MethodDependency methodDep = dependencyAnalyzer.linkMethod(
                     new MethodReference(Object.class, "monitorExit", Object.class, void.class), null);
             nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
             methodDep.use();
 
-            methodDep = dependencyChecker.linkMethod(
+            methodDep = dependencyAnalyzer.linkMethod(
                     new MethodReference(Object.class, "monitorExitSync", Object.class, void.class), null);
             nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
             methodDep.use();

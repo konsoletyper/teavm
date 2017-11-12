@@ -16,18 +16,18 @@
 package org.teavm.dependency;
 
 public class DependencyType {
-    private DependencyChecker dependencyChecker;
+    private DependencyAnalyzer dependencyAnalyzer;
     private String name;
     int index;
 
-    DependencyType(DependencyChecker dependencyChecker, String name, int index) {
-        this.dependencyChecker = dependencyChecker;
+    DependencyType(DependencyAnalyzer dependencyAnalyzer, String name, int index) {
+        this.dependencyAnalyzer = dependencyAnalyzer;
         this.name = name;
         this.index = index;
     }
 
-    DependencyChecker getDependencyChecker() {
-        return dependencyChecker;
+    DependencyAnalyzer getDependencyAnalyzer() {
+        return dependencyAnalyzer;
     }
 
     public String getName() {
@@ -35,6 +35,6 @@ public class DependencyType {
     }
 
     public DependencyAgent getDependencyAgent() {
-        return dependencyChecker.getAgent();
+        return dependencyAnalyzer.getAgent();
     }
 }

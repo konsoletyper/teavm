@@ -17,7 +17,7 @@ package org.teavm.vm;
 
 import java.io.IOException;
 import java.util.List;
-import org.teavm.dependency.DependencyChecker;
+import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ListableClassHolderSource;
@@ -37,7 +37,7 @@ public interface TeaVMTarget {
 
     boolean requiresRegisterAllocation();
 
-    void contributeDependencies(DependencyChecker dependencyChecker);
+    void contributeDependencies(DependencyAnalyzer dependencyAnalyzer);
 
     void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource);
 
