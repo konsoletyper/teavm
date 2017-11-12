@@ -17,6 +17,7 @@ package org.teavm.dependency;
 
 import java.util.*;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class DependencyNode implements ValueDependencyInfo {
     private static final int SMALL_TYPES_THRESHOLD = 6;
@@ -31,14 +32,17 @@ public class DependencyNode implements ValueDependencyInfo {
     private int degree;
     boolean locked;
     MethodReference method;
+    private ValueType typeFilter;
+    private SuperClassFilter cachedTypeFilter;
 
-    DependencyNode(DependencyChecker dependencyChecker) {
-        this(dependencyChecker, 0);
+    DependencyNode(DependencyChecker dependencyChecker, ValueType typeFilter) {
+        this(dependencyChecker, typeFilter, 0);
     }
 
-    private DependencyNode(DependencyChecker dependencyChecker, int degree) {
+    private DependencyNode(DependencyChecker dependencyChecker, ValueType typeFilter, int degree) {
         this.dependencyChecker = dependencyChecker;
         this.degree = degree;
+        this.typeFilter = typeFilter;
     }
 
     private boolean addType(DependencyType type) {
@@ -88,7 +92,7 @@ public class DependencyNode implements ValueDependencyInfo {
         if (degree > 2) {
             return;
         }
-        if (addType(type)) {
+        if (addType(type) && filter(type)) {
             if (DependencyChecker.shouldLog) {
                 System.out.println(tag + " -> " + type.getName());
             }
@@ -118,7 +122,7 @@ public class DependencyNode implements ValueDependencyInfo {
         int j = 0;
         for (int i = 0; i < newTypes.length; ++i) {
             DependencyType type = newTypes[i];
-            if (addType(type)) {
+            if (addType(type) && filter(type)) {
                 newTypes[j++] = type;
             }
         }
@@ -154,6 +158,24 @@ public class DependencyNode implements ValueDependencyInfo {
         }
     }
 
+    private boolean filter(DependencyType type) {
+        if (typeFilter == null) {
+            return true;
+        }
+
+        if (cachedTypeFilter == null) {
+            String superClass;
+            if (typeFilter instanceof ValueType.Object) {
+                superClass = ((ValueType.Object) typeFilter).getClassName();
+            } else {
+                superClass = "java.lang.Object";
+            }
+            cachedTypeFilter = dependencyChecker.getSuperClassFilter(superClass);
+        }
+
+        return cachedTypeFilter.match(type);
+    }
+
     public void addConsumer(DependencyConsumer consumer) {
         if (followers == null) {
             followers = new ArrayList<>(1);
@@ -163,7 +185,7 @@ public class DependencyNode implements ValueDependencyInfo {
         }
         followers.add(consumer);
 
-        propagateTypes(consumer, null);
+        propagateTypes(consumer);
     }
 
     public void connect(DependencyNode node, DependencyTypeFilter filter) {
@@ -190,30 +212,42 @@ public class DependencyNode implements ValueDependencyInfo {
             System.out.println("Connecting " + tag + " to " + node.tag);
         }
 
-        propagateTypes(transition, filter);
+        propagateTypes(transition);
     }
 
-    private void propagateTypes(DependencyConsumer transition, DependencyTypeFilter filter) {
+    private void propagateTypes(DependencyConsumer transition) {
         if (this.types != null) {
-            List<DependencyType> types = new ArrayList<>();
+            DependencyType[] types = new DependencyType[this.types.cardinality()];
+            int j = 0;
             for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
                 DependencyType type = dependencyChecker.types.get(index);
-                if (filter == null || filter.match(type)) {
-                    types.add(type);
-                }
+                types[j++] = type;
             }
-            dependencyChecker.schedulePropagation(transition, types.toArray(new DependencyType[types.size()]));
+            dependencyChecker.schedulePropagation(transition, types);
         } else if (this.smallTypes != null) {
             DependencyType[] types = new DependencyType[smallTypes.length];
-            int j = 0;
             for (int i = 0; i < types.length; ++i) {
                 DependencyType type = dependencyChecker.types.get(smallTypes[i]);
-                if (filter == null || filter.match(type)) {
-                    types[j++] = type;
-                }
+                types[i] = type;
             }
-            if (j < types.length) {
-                types = Arrays.copyOf(types, j);
+            dependencyChecker.schedulePropagation(transition, types);
+        }
+    }
+
+    private void propagateTypes(DependencyNodeToNodeTransition transition) {
+        if (this.types != null) {
+            DependencyType[] types = new DependencyType[this.types.cardinality()];
+            int j = 0;
+            for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
+                DependencyType type = dependencyChecker.types.get(index);
+                types[j++] = type;
+            }
+            dependencyChecker.schedulePropagation(transition, types);
+        } else if (this.smallTypes != null) {
+            DependencyType[] types = new DependencyType[smallTypes.length];
+            for (int i = 0; i < types.length; ++i) {
+                DependencyType type = dependencyChecker.types.get(smallTypes[i]);
+                types[i] = type;
             }
             dependencyChecker.schedulePropagation(transition, types);
         }
@@ -226,8 +260,11 @@ public class DependencyNode implements ValueDependencyInfo {
     @Override
     public DependencyNode getArrayItem() {
         if (arrayItemNode == null) {
-            arrayItemNode = new DependencyNode(dependencyChecker, degree + 1);
-            if (DependencyChecker.shouldLog) {
+            ValueType itemTypeFilter = typeFilter instanceof ValueType.Array
+                    ? ((ValueType.Array) typeFilter).getItemType()
+                    : null;
+            arrayItemNode = new DependencyNode(dependencyChecker, itemTypeFilter, degree + 1);
+            if (DependencyChecker.shouldTag) {
                 arrayItemNode.tag = tag + "[";
             }
         }
@@ -237,9 +274,9 @@ public class DependencyNode implements ValueDependencyInfo {
     @Override
     public DependencyNode getClassValueNode() {
         if (classValueNode == null) {
-            classValueNode = new DependencyNode(dependencyChecker, degree);
+            classValueNode = new DependencyNode(dependencyChecker, null, degree);
             classValueNode.classValueNode = classValueNode;
-            if (DependencyChecker.shouldLog) {
+            if (DependencyChecker.shouldTag) {
                 classValueNode.tag = tag + "@";
             }
         }
@@ -272,19 +309,33 @@ public class DependencyNode implements ValueDependencyInfo {
     public String[] getTypes() {
         if (smallTypes != null) {
             String[] result = new String[smallTypes.length];
+            int j = 0;
             for (int i = 0; i < result.length; ++i) {
-                result[i] = dependencyChecker.types.get(smallTypes[i]).getName();
+                DependencyType type = dependencyChecker.types.get(smallTypes[i]);
+                if (filter(type)) {
+                    result[j++] = type.getName();
+                }
+            }
+            if (j < result.length) {
+                result = Arrays.copyOf(result, j);
             }
             return result;
         }
         if (types == null) {
             return new String[0];
         }
-        List<String> result = new ArrayList<>();
+        String[] result = new String[types.cardinality()];
+        int j = 0;
         for (int index = types.nextSetBit(0); index >= 0; index = types.nextSetBit(index + 1)) {
-            result.add(dependencyChecker.types.get(index).getName());
+            DependencyType type = dependencyChecker.types.get(index);
+            if (filter(type)) {
+                result[j++] = type.getName();
+            }
         }
-        return result.toArray(new String[result.size()]);
+        if (j < result.length) {
+            result = Arrays.copyOf(result, j);
+        }
+        return result;
     }
 
     public String getTag() {

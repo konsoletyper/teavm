@@ -112,7 +112,7 @@ class DependencyGraphBuilder {
         for (int i = dep.getVariableCount(); i < nodeClasses.length; ++i) {
             nodeClasses[i] = dependencyChecker.createNode();
             nodeClasses[i].method = ref;
-            if (DependencyChecker.shouldLog) {
+            if (DependencyChecker.shouldTag) {
                 nodeClasses[i].setTag(dep.getMethod().getReference() + ":" + i);
             }
         }
@@ -274,13 +274,13 @@ class DependencyGraphBuilder {
         return new ExceptionConsumer(dependencyChecker, exceptions, vars, methodDep);
     }
 
-    private static class ExceptionConsumer implements DependencyConsumer {
+    static class ExceptionConsumer implements DependencyConsumer {
         private DependencyChecker checker;
         private ClassReader[] exceptions;
         private DependencyNode[] vars;
         private MethodDependency method;
 
-        public ExceptionConsumer(DependencyChecker checker, ClassReader[] exceptions, DependencyNode[] vars,
+        ExceptionConsumer(DependencyChecker checker, ClassReader[] exceptions, DependencyNode[] vars,
                 MethodDependency method) {
             this.checker = checker;
             this.exceptions = exceptions;
@@ -654,6 +654,11 @@ class DependencyGraphBuilder {
                     receiver != null ? nodes[receiver.getIndex()] : null, caller, currentLocation,
                     currentExceptionConsumer);
             nodes[instance.getIndex()].addConsumer(listener);
+
+            dependencyChecker.getClassSource().overriddenMethods(method).forEach(methodImpl -> {
+                CallLocation callLocation = new CallLocation(caller.getMethod(), currentLocation);
+                dependencyChecker.linkMethod(methodImpl.getReference(), callLocation);
+            });
         }
 
         @Override

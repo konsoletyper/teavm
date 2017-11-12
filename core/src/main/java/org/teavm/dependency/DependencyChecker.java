@@ -31,7 +31,6 @@ import java.util.Set;
 import org.objectweb.asm.tree.ClassNode;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.DefaultCallGraph;
-import org.teavm.callgraph.DefaultCallGraphNode;
 import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
 import org.teavm.common.ServiceRepository;
@@ -52,7 +51,6 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ReferenceCache;
-import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 import org.teavm.model.util.ModelUtils;
@@ -62,6 +60,8 @@ import org.teavm.parsing.Parser;
 public class DependencyChecker implements DependencyInfo {
     private static final int PROPAGATION_STACK_THRESHOLD = 50;
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
+    static final boolean shouldTag = System.getProperty("org.teavm.tagDependencies", "false").equals("true")
+            || shouldLog;
     private int classNameSuffix;
     private DependencyClassSource classSource;
     private ClassLoader classLoader;
@@ -141,7 +141,11 @@ public class DependencyChecker implements DependencyInfo {
     }
 
     public DependencyNode createNode() {
-        return new DependencyNode(this);
+        return createNode(null);
+    }
+
+    private DependencyNode createNode(ValueType typeFilter) {
+        return new DependencyNode(this, typeFilter);
     }
 
     @Override
@@ -322,12 +326,7 @@ public class DependencyChecker implements DependencyInfo {
         }
         ClassDependency dep = classCache.map(className);
         boolean added = true;
-        if (callLocation != null && callLocation.getMethod() != null) {
-            DefaultCallGraphNode callGraphNode = callGraph.getNode(callLocation.getMethod());
-            if (!addClassAccess(callGraphNode, className, callLocation.getSourceLocation())) {
-                added = false;
-            }
-        } else {
+        if (callLocation == null || callLocation.getMethod() == null) {
             added = classesAddedByRoot.add(className);
         }
         if (!dep.isMissing() && added) {
@@ -336,24 +335,17 @@ public class DependencyChecker implements DependencyInfo {
                     listener.classReached(agent, className, callLocation);
                 }
             });
-        }
-        return dep;
-    }
 
-    private boolean addClassAccess(DefaultCallGraphNode node, String className, TextLocation loc) {
-        if (!node.addClassAccess(className, loc)) {
-            return false;
-        }
-        ClassReader cls = classSource.get(className);
-        if (cls != null) {
+            ClassReader cls = dep.getClassReader();
             if (cls.getParent() != null) {
-                addClassAccess(node, cls.getParent(), loc);
+                linkClass(cls.getParent(), callLocation);
             }
             for (String iface : cls.getInterfaces()) {
-                addClassAccess(node, iface, loc);
+                linkClass(iface, callLocation);
             }
         }
-        return true;
+
+        return dep;
     }
 
     private ClassDependency createClassDependency(String className) {
@@ -414,26 +406,33 @@ public class DependencyChecker implements DependencyInfo {
         ValueType[] arguments = methodRef.getParameterTypes();
         int paramCount = arguments.length + 1;
         DependencyNode[] parameterNodes = new DependencyNode[arguments.length + 1];
-        for (int i = 0; i < parameterNodes.length; ++i) {
-            parameterNodes[i] = createNode();
-            parameterNodes[i].method = methodRef;
-            if (shouldLog) {
+
+        parameterNodes[0] = createNode(ValueType.object(methodRef.getClassName()));
+        parameterNodes[0].method = methodRef;
+        if (shouldTag) {
+            parameterNodes[0].setTag(methodRef + ":0");
+        }
+        for (int i = 0; i < arguments.length; ++i) {
+            parameterNodes[i + 1] = createNode(arguments[i]);
+            parameterNodes[i + 1].method = methodRef;
+            if (shouldTag) {
                 parameterNodes[i].setTag(methodRef + ":" + i);
             }
         }
+
         DependencyNode resultNode;
         if (methodRef.getDescriptor().getResultType() == ValueType.VOID) {
             resultNode = null;
         } else {
             resultNode = createNode();
             resultNode.method = methodRef;
-            if (shouldLog) {
+            if (shouldTag) {
                 resultNode.setTag(methodRef + ":RESULT");
             }
         }
         DependencyNode thrown = createNode();
         thrown.method = methodRef;
-        if (shouldLog) {
+        if (shouldTag) {
             thrown.setTag(methodRef + ":THROWN");
         }
         MethodDependency dep = new MethodDependency(this, parameterNodes, paramCount, resultNode, thrown,
@@ -504,8 +503,8 @@ public class DependencyChecker implements DependencyInfo {
     }
 
     private FieldDependency createFieldNode(FieldReference fieldRef, FieldReader field) {
-        DependencyNode node = createNode();
-        if (shouldLog) {
+        DependencyNode node = createNode(field != null ? field.getType() : null);
+        if (shouldTag) {
             node.setTag(fieldRef.getClassName() + "#" + fieldRef.getFieldName());
         }
         FieldDependency dep = new FieldDependency(node, field, fieldRef);

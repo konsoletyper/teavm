@@ -21,9 +21,60 @@ import org.teavm.common.Mapper;
 import org.teavm.interop.Remove;
 import org.teavm.interop.Rename;
 import org.teavm.interop.Superclass;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
-import org.teavm.model.util.ModelUtils;
+import org.teavm.model.AnnotationContainer;
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.FieldReference;
+import org.teavm.model.Instruction;
+import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHandle;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.RuntimeConstant;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.ValueType;
+import org.teavm.model.instructions.ArrayLengthInstruction;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.CastIntegerInstruction;
+import org.teavm.model.instructions.CastNumberInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
+import org.teavm.model.instructions.DoubleConstantInstruction;
+import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.instructions.InstructionVisitor;
+import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
+import org.teavm.model.instructions.MonitorExitInstruction;
+import org.teavm.model.instructions.NegateInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.instructions.PutElementInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.SwitchInstruction;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class ClassRefsRenamer implements InstructionVisitor {
     private Mapper<String, String> classNameMapper;
@@ -55,7 +106,7 @@ public class ClassRefsRenamer implements InstructionVisitor {
             renamedCls.addMethod(rename(method));
         }
         for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
-            renamedCls.addField(ModelUtils.copyField(field));
+            renamedCls.addField(rename(field));
         }
         if (cls.getOwnerName() != null) {
             renamedCls.setOwnerName(classNameMapper.map(cls.getOwnerName()));
@@ -87,6 +138,16 @@ public class ClassRefsRenamer implements InstructionVisitor {
         rename(method.getAnnotations(), renamedMethod.getAnnotations());
         rename(renamedMethod.getProgram());
         return renamedMethod;
+    }
+
+    public FieldHolder rename(FieldHolder field) {
+        FieldHolder renamedField = new FieldHolder(field.getName());
+        renamedField.getModifiers().addAll(field.getModifiers());
+        renamedField.setLevel(field.getLevel());
+        renamedField.setType(rename(field.getType()));
+        renamedField.setInitialValue(field.getInitialValue());
+        rename(field.getAnnotations(), renamedField.getAnnotations());
+        return renamedField;
     }
 
     private ValueType rename(ValueType type) {
