@@ -109,7 +109,7 @@ public interface ClassReaderSource {
     default Stream<MethodReader> overriddenMethods(MethodReference method) {
         return getAncestorClasses(method.getClassName())
                 .map(cls -> cls.getMethod(method.getDescriptor()))
-                .filter(candidate -> candidate != null);
+                .filter(Objects::nonNull);
     }
 
     default Optional<Boolean> isSuperType(String superType, String subType) {
