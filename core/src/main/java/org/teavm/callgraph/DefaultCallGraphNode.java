@@ -28,14 +28,12 @@ import org.teavm.model.TextLocation;
 public class DefaultCallGraphNode implements CallGraphNode {
     private DefaultCallGraph graph;
     private MethodReference method;
-    Set<DefaultCallSite> callSites = new HashSet<>();
+    private Set<DefaultCallSite> callSites = new HashSet<>();
     private Set<DefaultCallSite> safeCallSites;
-    List<DefaultCallSite> callerCallSites = new ArrayList<>();
+    private List<DefaultCallSite> callerCallSites = new ArrayList<>();
     private List<DefaultCallSite> safeCallersCallSites;
-    Set<DefaultFieldAccessSite> fieldAccessSites = new HashSet<>();
+    private Set<DefaultFieldAccessSite> fieldAccessSites = new HashSet<>();
     private Set<DefaultFieldAccessSite> safeFieldAccessSites;
-    Set<DefaultClassAccessSite> classAccessSites = new HashSet<>();
-    private Set<DefaultClassAccessSite> safeClassAccessSites;
 
     DefaultCallGraphNode(DefaultCallGraph graph, MethodReference method) {
         this.graph = graph;
@@ -95,24 +93,6 @@ public class DefaultCallGraphNode implements CallGraphNode {
         DefaultFieldAccessSite site = new DefaultFieldAccessSite(location, this, field);
         if (fieldAccessSites.add(site)) {
             graph.addFieldAccess(site);
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    @Override
-    public Collection<DefaultClassAccessSite> getClassAccessSites() {
-        if (safeClassAccessSites == null) {
-            safeClassAccessSites = Collections.unmodifiableSet(classAccessSites);
-        }
-        return safeClassAccessSites;
-    }
-
-    public boolean addClassAccess(String className, TextLocation location) {
-        DefaultClassAccessSite site = new DefaultClassAccessSite(location, this, className);
-        if (classAccessSites.add(site)) {
-            graph.addClassAccess(site);
             return true;
         } else {
             return false;

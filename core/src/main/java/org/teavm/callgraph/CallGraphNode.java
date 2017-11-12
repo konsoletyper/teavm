@@ -52,6 +52,4 @@ public interface CallGraphNode {
     Collection<? extends CallSite> getCallerCallSites();
 
     Collection<? extends FieldAccessSite> getFieldAccessSites();
-
-    Collection<? extends ClassAccessSite> getClassAccessSites();
 }

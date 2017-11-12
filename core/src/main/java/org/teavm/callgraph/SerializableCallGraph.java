@@ -27,14 +27,12 @@ class SerializableCallGraph implements Serializable {
     Node[] nodes;
     CallSite[] callSites;
     FieldAccess[] fieldAccessList;
-    ClassAccess[] classAccessList;
 
     static class Node implements Serializable {
         MethodReference method;
         int[] callSites;
         int[] callerCallSites;
         int[] fieldAccessSites;
-        int[] classAccessSites;
     }
 
     static class CallSite implements Serializable  {
@@ -47,11 +45,5 @@ class SerializableCallGraph implements Serializable {
         TextLocation location;
         int callee;
         FieldReference field;
-    }
-
-    static class ClassAccess implements Serializable  {
-        TextLocation location;
-        int callee;
-        String className;
     }
 }

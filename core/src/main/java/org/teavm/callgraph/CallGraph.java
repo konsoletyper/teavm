@@ -36,6 +36,4 @@ public interface CallGraph {
     CallGraphNode getNode(MethodReference method);
 
     Collection<? extends FieldAccessSite> getFieldAccess(FieldReference reference);
-
-    Collection<? extends ClassAccessSite> getClassAccess(String className);
 }
