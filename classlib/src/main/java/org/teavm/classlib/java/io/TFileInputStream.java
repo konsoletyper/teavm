@@ -67,7 +67,7 @@ public class TFileInputStream extends InputStream {
         int result = newPos - pos;
         pos = newPos;
         if (result == 0) {
-            accessor = null;
+            eof = true;
         }
         return result;
     }
