@@ -15,8 +15,6 @@
  */
 package org.teavm.classlib.fs;
 
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
@@ -48,12 +46,7 @@ public class InMemoryVirtualDirectory extends AbstractInMemoryVirtualFile {
     }
 
     @Override
-    public InputStream read() {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public OutputStream write(boolean append) {
+    public VirtualFileAccessor createAccessor() {
         throw new UnsupportedOperationException();
     }
 

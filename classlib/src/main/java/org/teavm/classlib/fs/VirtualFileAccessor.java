@@ -15,30 +15,14 @@
  */
 package org.teavm.classlib.fs;
 
-public interface VirtualFile {
-    String getName();
+import java.io.IOException;
 
-    boolean isDirectory();
+public interface VirtualFileAccessor {
+    int read(int pos, byte[] buffer, int offset, int limit) throws IOException;
 
-    boolean isFile();
+    void write(int pos, byte[] buffer, int offset, int limit) throws IOException;
 
-    VirtualFile[] listFiles();
+    int size();
 
-    VirtualFile getChildFile(String fileName);
-
-    VirtualFileAccessor createAccessor();
-
-    VirtualFile createFile(String fileName);
-
-    VirtualFile createDirectory(String fileName);
-
-    void delete();
-
-    boolean canRead();
-
-    boolean canWrite();
-
-    long lastModified();
-
-    int length();
+    void resize(int size) throws IOException;
 }

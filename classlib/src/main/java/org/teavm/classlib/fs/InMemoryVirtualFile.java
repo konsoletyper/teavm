@@ -15,10 +15,7 @@
  */
 package org.teavm.classlib.fs;
 
-import java.io.ByteArrayInputStream;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.util.Arrays;
 
 public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
@@ -50,23 +47,37 @@ public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
     }
 
     @Override
-    public InputStream read() {
+    public VirtualFileAccessor createAccessor() {
         if (parent == null) {
             return null;
         }
-        return new ByteArrayInputStream(data, 0, size);
-    }
 
-    @Override
-    public OutputStream write(boolean append) {
-        if (parent == null) {
-            return null;
-        }
-        if (!append) {
-            data = new byte[0];
-            size = 0;
-        }
-        return new OutputStreamImpl(data, size);
+        return new VirtualFileAccessor() {
+            @Override
+            public int read(int pos, byte[] buffer, int offset, int limit) throws IOException {
+                limit = Math.max(0, Math.min(size - pos, limit));
+                System.arraycopy(data, pos, buffer, offset, limit);
+                return limit;
+            }
+
+            @Override
+            public void write(int pos, byte[] buffer, int offset, int limit) throws IOException {
+                expandData(pos + limit);
+                System.arraycopy(buffer, offset, data, pos, limit);
+                size = pos + limit;
+            }
+
+            @Override
+            public int size() {
+                return size;
+            }
+
+            @Override
+            public void resize(int size) throws IOException {
+                expandData(size);
+                InMemoryVirtualFile.this.size = size;
+            }
+        };
     }
 
     @Override
@@ -84,73 +95,10 @@ public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
         return size;
     }
 
-    class OutputStreamImpl extends OutputStream {
-        byte[] data;
-        int pos;
-
-        OutputStreamImpl(byte[] data, int pos) {
-            this.data = data;
-            this.pos = pos;
-        }
-
-        private void ensureIO() throws IOException {
-            if (data == null) {
-                throw new IOException("Stream was closed");
-            }
-        }
-
-        @Override
-        public void write(int b) throws IOException {
-            ensureIO();
-            expandData(pos + 1);
-            data[pos++] = (byte) b;
-            sync();
-        }
-
-        private void expandData(int newSize) {
-            if (newSize > data.length) {
-                int newCapacity = Math.max(newSize, data.length) * 3 / 2;
-                boolean actual = data == InMemoryVirtualFile.this.data;
-                data = Arrays.copyOf(data, newCapacity);
-                if (actual) {
-                    InMemoryVirtualFile.this.data = data;
-                }
-            }
-        }
-
-        private void sync() {
-            if (data == InMemoryVirtualFile.this.data) {
-                size = pos;
-                modify();
-            }
-        }
-
-        @Override
-        public void write(byte[] b, int off, int len) throws IOException {
-            ensureIO();
-            if (len == 0) {
-                return;
-            }
-
-            if (off < 0 || len < 0 || off + len >= b.length) {
-                throw new IndexOutOfBoundsException();
-            }
-
-            expandData(pos + len);
-            while (len-- > 0) {
-                data[pos++] = b[off++];
-            }
-
-            sync();
-        }
-
-        @Override
-        public void close() throws IOException {
-            data = null;
-        }
-
-        @Override
-        public void flush() throws IOException {
+    private void expandData(int newSize) {
+        if (newSize > data.length) {
+            int newCapacity = Math.max(newSize, data.length) * 3 / 2;
+            data = Arrays.copyOf(data, newCapacity);
         }
     }
 }

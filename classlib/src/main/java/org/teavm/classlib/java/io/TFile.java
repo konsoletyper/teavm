@@ -366,6 +366,11 @@ public class TFile implements Serializable, Comparable<TFile> {
         return path.hashCode();
     }
 
+    @Override
+    public String toString() {
+        return path;
+    }
+
     private static String fixSlashes(String origPath) {
         int uncIndex = 0;
         int length = origPath.length();

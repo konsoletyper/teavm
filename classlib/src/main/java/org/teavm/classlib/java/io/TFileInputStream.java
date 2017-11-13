@@ -18,10 +18,14 @@ package org.teavm.classlib.java.io;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Objects;
 import org.teavm.classlib.fs.VirtualFile;
+import org.teavm.classlib.fs.VirtualFileAccessor;
 
 public class TFileInputStream extends InputStream {
-    private InputStream underlyingStream;
+    private VirtualFileAccessor accessor;
+    private int pos;
+    private boolean eof;
 
     public TFileInputStream(TFile file) throws FileNotFoundException {
         VirtualFile virtualFile = file.findVirtualFile();
@@ -29,39 +33,78 @@ public class TFileInputStream extends InputStream {
             throw new FileNotFoundException();
         }
 
-        underlyingStream = virtualFile.read();
-        if (underlyingStream == null) {
+        accessor = virtualFile.createAccessor();
+        if (accessor == null) {
             throw new FileNotFoundException();
         }
     }
 
     @Override
-    public int read(byte[] b) throws IOException {
-        return underlyingStream.read(b);
-    }
-
-    @Override
     public int read(byte[] b, int off, int len) throws IOException {
-        return underlyingStream.read(b, off, len);
+        Objects.requireNonNull(b);
+        if (off < 0 || len < 0 || off + len > b.length) {
+            throw new IndexOutOfBoundsException();
+        }
+        if (eof) {
+            return -1;
+        }
+        ensureOpened();
+        int result = accessor.read(pos, b, off, len);
+        pos += result;
+        if (pos == accessor.size()) {
+            eof = true;
+        }
+        return result;
     }
 
     @Override
     public long skip(long n) throws IOException {
-        return underlyingStream.skip(n);
+        ensureOpened();
+        if (eof) {
+            return 0;
+        }
+        int newPos = Math.max(pos, Math.min(accessor.size(), pos));
+        int result = newPos - pos;
+        pos = newPos;
+        if (result == 0) {
+            accessor = null;
+        }
+        return result;
     }
 
     @Override
     public int available() throws IOException {
-        return underlyingStream.available();
+        ensureOpened();
+        if (eof) {
+            return 0;
+        }
+        return Math.max(0, accessor.size() - pos);
     }
 
     @Override
     public void close() throws IOException {
-        underlyingStream.close();
+        accessor = null;
     }
 
     @Override
     public int read() throws IOException {
-        return underlyingStream.read();
+        ensureOpened();
+        if (eof) {
+            return -1;
+        }
+        byte[] buffer = new byte[1];
+        int read = accessor.read(pos, buffer, 0, 1);
+        if (read == 0) {
+            eof = true;
+        } else {
+            pos++;
+        }
+        return !eof ? buffer[0] : -1;
+    }
+
+    private void ensureOpened() throws IOException {
+        if (accessor == null) {
+            throw new IOException("This stream is already closed");
+        }
     }
 }

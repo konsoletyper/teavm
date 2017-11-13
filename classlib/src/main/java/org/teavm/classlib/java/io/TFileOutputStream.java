@@ -19,10 +19,13 @@ package org.teavm.classlib.java.io;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.Objects;
 import org.teavm.classlib.fs.VirtualFile;
+import org.teavm.classlib.fs.VirtualFileAccessor;
 
 public class TFileOutputStream extends OutputStream {
-    private OutputStream underlyingStream;
+    private VirtualFileAccessor accessor;
+    private int pos;
 
     public TFileOutputStream(TFile file) throws FileNotFoundException {
         this(file, false);
@@ -40,34 +43,47 @@ public class TFileOutputStream extends OutputStream {
             throw new FileNotFoundException();
         }
 
-        underlyingStream = virtualFile.write(append);
-        if (underlyingStream == null) {
+        accessor = virtualFile.createAccessor();
+        if (accessor == null) {
             throw new FileNotFoundException();
+        }
+
+        if (append) {
+            pos = accessor.size();
         }
     }
 
     @Override
-    public void write(byte[] b) throws IOException {
-        underlyingStream.write(b);
-    }
-
-    @Override
     public void write(byte[] b, int off, int len) throws IOException {
-        underlyingStream.write(b, off, len);
+        Objects.requireNonNull(b);
+        if (off < 0 || len < 0 || off + len > b.length) {
+            throw new IndexOutOfBoundsException();
+        }
+        ensureOpened();
+        accessor.write(pos, b, off, len);
+        pos += len;
     }
 
     @Override
     public void flush() throws IOException {
-        underlyingStream.flush();
     }
 
     @Override
     public void close() throws IOException {
-        underlyingStream.close();
+        accessor = null;
     }
 
     @Override
     public void write(int b) throws IOException {
-        underlyingStream.write(b);
+        ensureOpened();
+        byte[] buffer = { (byte) b };
+        accessor.write(pos, buffer, 0, 1);
+        pos++;
+    }
+
+    private void ensureOpened() throws IOException {
+        if (accessor == null) {
+            throw new IOException("This stream is already closed");
+        }
     }
 }
