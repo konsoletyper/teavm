@@ -13,38 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.fs;
 
-public interface VirtualFile {
-    String getName();
+package org.teavm.classlib.java.io;
 
-    boolean isDirectory();
-
-    boolean isFile();
-
-    VirtualFile[] listFiles();
-
-    VirtualFile getChildFile(String fileName);
-
-    VirtualFileAccessor createAccessor();
-
-    VirtualFile createFile(String fileName);
-
-    VirtualFile createDirectory(String fileName);
-
-    void delete();
-
-    void adopt(VirtualFile targetDir, String fileName);
-
-    boolean canRead();
-
-    boolean canWrite();
-
-    long lastModified();
-
-    void setLastModified(long lastModified);
-
-    void setReadOnly(boolean readOnly);
-
-    int length();
+public interface TFileFilter {
+    boolean accept(TFile pathname);
 }

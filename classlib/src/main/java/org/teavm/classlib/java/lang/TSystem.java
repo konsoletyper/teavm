@@ -120,6 +120,9 @@ public final class TSystem extends TObject {
             defaults.put("file.separator", "/");
             defaults.put("path.separator", ":");
             defaults.put("line.separator", lineSeparator());
+            defaults.put("java.io.tmpdir", "/tmp");
+            defaults.put("java.vm.version", "1.8");
+            defaults.put("user.home", "/");
             properties = new Properties(defaults);
         }
     }

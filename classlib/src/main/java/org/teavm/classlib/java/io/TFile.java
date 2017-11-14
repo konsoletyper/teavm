@@ -21,10 +21,12 @@ import java.io.IOException;
 import java.io.Serializable;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.util.Arrays;
 import java.util.Objects;
 import org.teavm.classlib.fs.VirtualFile;
 import org.teavm.classlib.fs.VirtualFileSystem;
 import org.teavm.classlib.fs.VirtualFileSystemProvider;
+import org.teavm.classlib.java.util.TRandom;
 
 public class TFile implements Serializable, Comparable<TFile> {
     private String path;
@@ -33,6 +35,8 @@ public class TFile implements Serializable, Comparable<TFile> {
     public static final String separator = "/";
     public static final char pathSeparatorChar = ':';
     public static final String pathSeparator = ":";
+
+    private static int counter;
 
     public TFile(TFile dir, String name) {
         Objects.requireNonNull(name);
@@ -47,6 +51,42 @@ public class TFile implements Serializable, Comparable<TFile> {
     public TFile(String dir, String name) {
         Objects.requireNonNull(name);
         path = dir == null ? fixSlashes(name) : calculatePath(dir, name);
+    }
+
+    public TFile(URI uri) {
+        // check pre-conditions
+        checkURI(uri);
+        this.path = fixSlashes(uri.getPath());
+    }
+
+    private void checkURI(URI uri) {
+        if (!uri.isAbsolute()) {
+            throw new IllegalArgumentException();
+        } else if (!uri.getRawSchemeSpecificPart().startsWith("/")) {
+            throw new IllegalArgumentException();
+        }
+
+        String temp = uri.getScheme();
+        if (temp == null || !temp.equals("file")) {
+            throw new IllegalArgumentException();
+        }
+
+        temp = uri.getRawPath();
+        if (temp == null || temp.length() == 0) {
+            throw new IllegalArgumentException();
+        }
+
+        if (uri.getRawAuthority() != null) {
+            throw new IllegalArgumentException();
+        }
+
+        if (uri.getRawQuery() != null) {
+            throw new IllegalArgumentException();
+        }
+
+        if (uri.getRawFragment() != null) {
+            throw new IllegalArgumentException();
+        }
     }
 
     public boolean canRead() {
@@ -230,6 +270,23 @@ public class TFile implements Serializable, Comparable<TFile> {
         return names;
     }
 
+    public String[] list(TFilenameFilter filter) {
+        String[] result = list();
+        if (result == null) {
+            return null;
+        }
+        int j = 0;
+        for (String name : result) {
+            if (filter.accept(this, name)) {
+                result[j++] = name;
+            }
+        }
+        if (j < result.length) {
+            result = Arrays.copyOf(result, j);
+        }
+        return result;
+    }
+
     public TFile[] listFiles() {
         VirtualFile virtualFile = findVirtualFile();
         if (virtualFile == null || !virtualFile.isDirectory()) {
@@ -244,6 +301,40 @@ public class TFile implements Serializable, Comparable<TFile> {
         return files;
     }
 
+    public TFile[] listFiles(TFileFilter filter) {
+        TFile[] result = listFiles();
+        if (result == null) {
+            return null;
+        }
+        int j = 0;
+        for (TFile file : result) {
+            if (filter.accept(file)) {
+                result[j++] = file;
+            }
+        }
+        if (j < result.length) {
+            result = Arrays.copyOf(result, j);
+        }
+        return result;
+    }
+
+    public TFile[] listFiles(TFilenameFilter filter) {
+        TFile[] result = listFiles();
+        if (result == null) {
+            return null;
+        }
+        int j = 0;
+        for (TFile file : result) {
+            if (filter.accept(this, file.getName())) {
+                result[j++] = file;
+            }
+        }
+        if (j < result.length) {
+            result = Arrays.copyOf(result, j);
+        }
+        return result;
+    }
+
     public boolean exists() {
         return findVirtualFile() != null;
     }
@@ -253,13 +344,35 @@ public class TFile implements Serializable, Comparable<TFile> {
         return virtualFile != null ? virtualFile.lastModified() : 0;
     }
 
+    public boolean setLastModified(long time) {
+        if (time < 0) {
+            throw new IllegalArgumentException();
+        }
+        VirtualFile file = findVirtualFile();
+        if (file == null || !file.canWrite()) {
+            return false;
+        }
+
+        file.setLastModified(time);
+        return true;
+    }
+
+    public boolean setReadOnly() {
+        VirtualFile file = findVirtualFile();
+        if (file == null || !file.canWrite()) {
+            return false;
+        }
+        file.setReadOnly(true);
+        return true;
+    }
+
     public long length() {
         VirtualFile virtualFile = findVirtualFile();
         return virtualFile != null && virtualFile.isFile() ? virtualFile.length() : 0;
     }
 
     public boolean createNewFile() throws IOException {
-        VirtualFile parentVirtualFile = getParentFile().findVirtualFile();
+        VirtualFile parentVirtualFile = findParentFile();
         if (parentVirtualFile == null) {
             throw new IOException("Can't create file " + getPath() + " since parent directory does not exist");
         }
@@ -275,7 +388,7 @@ public class TFile implements Serializable, Comparable<TFile> {
     }
 
     public boolean mkdir() {
-        VirtualFile virtualFile = getParentFile().findVirtualFile();
+        VirtualFile virtualFile = findParentFile();
         if (virtualFile == null || !virtualFile.isDirectory()) {
             return false;
         }
@@ -315,11 +428,31 @@ public class TFile implements Serializable, Comparable<TFile> {
 
     public boolean delete() {
         VirtualFile virtualFile = findVirtualFile();
-        if (virtualFile == null || (virtualFile.isDirectory() && virtualFile.listFiles().length == 0)) {
+        if (virtualFile == null || virtualFile == fs().getRootFile() || !virtualFile.canWrite()
+                || (virtualFile.isDirectory() && virtualFile.listFiles().length > 0)) {
             return false;
         }
 
         virtualFile.delete();
+        return true;
+    }
+
+    public void deleteOnExit() {
+        // Do nothing
+    }
+
+    public boolean renameTo(TFile dest) {
+        VirtualFile targetDir = dest.findParentFile();
+        if (targetDir == null || !targetDir.isDirectory()) {
+            return false;
+        }
+
+        VirtualFile virtualFile = findVirtualFile();
+        if (virtualFile == null) {
+            return false;
+        }
+
+        targetDir.adopt(virtualFile, dest.getName());
         return true;
     }
 
@@ -351,6 +484,46 @@ public class TFile implements Serializable, Comparable<TFile> {
             name = name.replace(separatorChar, '/');
         }
         return name;
+    }
+
+    public static TFile createTempFile(String prefix, String suffix) throws IOException {
+        return createTempFile(prefix, suffix, null);
+    }
+
+    public static TFile createTempFile(String prefix, String suffix, TFile directory) throws IOException {
+        // Force a prefix null check first
+        if (prefix.length() < 3) {
+            throw new IllegalArgumentException();
+        }
+        String newSuffix = suffix == null ? ".tmp" : suffix;
+        TFile tmpDirFile;
+        if (directory == null) {
+            String tmpDir = System.getProperty("java.io.tmpdir", ".");
+            tmpDirFile = new TFile(tmpDir);
+        } else {
+            tmpDirFile = directory;
+        }
+        TFile result;
+        do {
+            result = genTempFile(prefix, newSuffix, tmpDirFile);
+        } while (!result.createNewFile());
+        return result;
+    }
+
+    private static TFile genTempFile(String prefix, String suffix, TFile directory) {
+        int identify;
+        if (counter == 0) {
+            int newInt = new TRandom().nextInt();
+            counter = ((newInt / 65535) & 0xFFFF) + 0x2710;
+        }
+        identify = counter++;
+
+        StringBuilder newName = new StringBuilder();
+        newName.append(prefix);
+        newName.append(counter);
+        newName.append(identify);
+        newName.append(suffix);
+        return new TFile(directory, newName.toString());
     }
 
     @Override
@@ -445,6 +618,10 @@ public class TFile implements Serializable, Comparable<TFile> {
     }
 
     VirtualFile findParentFile() {
+        String path = getCanonicalPathImpl();
+        if (path.isEmpty() || path.equals("/")) {
+            return null;
+        }
         return new TFile(getCanonicalPathImpl()).getParentFile().findVirtualFile();
     }
 }

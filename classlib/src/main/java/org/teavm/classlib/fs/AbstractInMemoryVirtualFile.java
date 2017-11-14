@@ -19,6 +19,7 @@ public abstract class AbstractInMemoryVirtualFile implements VirtualFile {
     String name;
     InMemoryVirtualDirectory parent;
     long lastModified = System.currentTimeMillis();
+    boolean readOnly;
 
     AbstractInMemoryVirtualFile(String name) {
         this.name = name;
@@ -43,12 +44,22 @@ public abstract class AbstractInMemoryVirtualFile implements VirtualFile {
 
     @Override
     public boolean canWrite() {
-        return true;
+        return !readOnly;
     }
 
     @Override
     public long lastModified() {
         return lastModified;
+    }
+
+    @Override
+    public void setLastModified(long lastModified) {
+        this.lastModified = lastModified;
+    }
+
+    @Override
+    public void setReadOnly(boolean readOnly) {
+        this.readOnly = readOnly;
     }
 
     void modify() {

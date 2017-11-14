@@ -65,6 +65,15 @@ public class InMemoryVirtualDirectory extends AbstractInMemoryVirtualFile {
     }
 
     @Override
+    public void adopt(VirtualFile file, String fileName) {
+        AbstractInMemoryVirtualFile typedFile = (AbstractInMemoryVirtualFile) file;
+        typedFile.parent.children.remove(typedFile.name);
+        typedFile.parent = this;
+        children.put(fileName, typedFile);
+        typedFile.name = fileName;
+    }
+
+    @Override
     public int length() {
         throw new UnsupportedOperationException();
     }

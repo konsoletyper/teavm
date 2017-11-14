@@ -65,6 +65,7 @@ public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
                 expandData(pos + limit);
                 System.arraycopy(buffer, offset, data, pos, limit);
                 size = pos + limit;
+                modify();
             }
 
             @Override
@@ -76,6 +77,7 @@ public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
             public void resize(int size) throws IOException {
                 expandData(size);
                 InMemoryVirtualFile.this.size = size;
+                modify();
             }
         };
     }
@@ -87,6 +89,11 @@ public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
 
     @Override
     public VirtualFile createDirectory(String fileName) {
+        throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public void adopt(VirtualFile file, String fileName) {
         throw new UnsupportedOperationException();
     }
 
