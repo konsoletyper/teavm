@@ -15,6 +15,8 @@
  */
 package org.teavm.jso.dom.xml;
 
+import org.teavm.jso.JSProperty;
+
 public interface Element extends Node {
     String getTagName();
 
@@ -47,4 +49,11 @@ public interface Element extends Node {
     boolean hasAttribute(String name);
 
     boolean hasAttributeNS(String namespaceURI, String localName);
+
+    Element querySelector(String selectors);
+
+    NodeList<Element> querySelectorAll(String selectors);
+
+    @JSProperty
+    DOMTokenList getClassList();
 }

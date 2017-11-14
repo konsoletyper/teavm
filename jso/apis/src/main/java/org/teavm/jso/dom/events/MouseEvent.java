@@ -42,6 +42,24 @@ public interface MouseEvent extends Event {
     int getClientY();
 
     @JSProperty
+    int getPageX();
+
+    @JSProperty
+    int getPageY();
+
+    @JSProperty
+    int getOffsetX();
+
+    @JSProperty
+    int getOffsetY();
+
+    @JSProperty
+    int getX();
+
+    @JSProperty
+    int getY();
+
+    @JSProperty
     boolean getCtrlKey();
 
     @JSProperty
