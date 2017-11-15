@@ -376,7 +376,7 @@ public class TFile implements Serializable, Comparable<TFile> {
         if (parentVirtualFile == null) {
             throw new IOException("Can't create file " + getPath() + " since parent directory does not exist");
         }
-        if (!parentVirtualFile.isDirectory()) {
+        if (!parentVirtualFile.isDirectory() || !parentVirtualFile.canWrite()) {
             throw new IOException("Can't create file " + getPath() + " since parent path denotes regular file");
         }
 
@@ -389,7 +389,7 @@ public class TFile implements Serializable, Comparable<TFile> {
 
     public boolean mkdir() {
         VirtualFile virtualFile = findParentFile();
-        if (virtualFile == null || !virtualFile.isDirectory()) {
+        if (virtualFile == null || !virtualFile.isDirectory() || !virtualFile.canWrite()) {
             return false;
         }
 
@@ -413,6 +413,9 @@ public class TFile implements Serializable, Comparable<TFile> {
             String name = path.substring(i, next);
             VirtualFile child = virtualFile.getChildFile(name);
             if (child == null) {
+                if (!virtualFile.canWrite()) {
+                    return false;
+                }
                 virtualFile = virtualFile.createDirectory(name);
             } else if (child.isFile()) {
                 return false;
@@ -428,8 +431,13 @@ public class TFile implements Serializable, Comparable<TFile> {
 
     public boolean delete() {
         VirtualFile virtualFile = findVirtualFile();
-        if (virtualFile == null || virtualFile == fs().getRootFile() || !virtualFile.canWrite()
+        if (virtualFile == null || virtualFile == fs().getRootFile()
                 || (virtualFile.isDirectory() && virtualFile.listFiles().length > 0)) {
+            return false;
+        }
+
+        VirtualFile parentVirtualFile = findParentFile();
+        if (parentVirtualFile != null && !parentVirtualFile.canWrite()) {
             return false;
         }
 

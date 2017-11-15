@@ -492,8 +492,7 @@ public class FileTest {
         }
     }
 
-    //@Test
-    // TODO: fix and uncomment
+    @Test
     public void createTempFileLjava_lang_StringLjava_lang_String() throws IOException {
         // Error protection against using a suffix without a "."?
         File f1 = null;
@@ -559,8 +558,7 @@ public class FileTest {
         }
     }
 
-    //@Test
-    // TODO: fix and uncomment
+    @Test
     public void createTempFileLjava_lang_StringLjava_lang_StringLjava_io_File() throws IOException {
         File f1 = null;
         File f2 = null;
@@ -1753,8 +1751,7 @@ public class FileTest {
         }
     }
 
-    //@Test
-    // TODO: fix and uncomment
+    @Test
     public void setLastModifiedJ() throws IOException {
         File f1 = null;
         try {
@@ -1805,8 +1802,7 @@ public class FileTest {
         }
     }
 
-    // @Test
-    // TODO: fix and uncomment
+    @Test
     public void setReadOnly() throws IOException, InterruptedException {
         File f1 = null;
         File f2 = null;
@@ -1826,25 +1822,10 @@ public class FileTest {
                 // Expected
             }
             Runtime r = Runtime.getRuntime();
-            Process p;
-            boolean onUnix = File.separatorChar == '/';
-            if (onUnix) {
-                p = r.exec("chmod +w " + f1.getAbsolutePath());
-            } else {
-                p = r.exec("attrib -r \"" + f1.getAbsolutePath() + "\"");
-            }
-            p.waitFor();
-            // Assert is flawed because canWrite does not work.
-            // assertTrue("File f1 Is Set To ReadOnly." , f1.canWrite());
-            FileOutputStream fos = new FileOutputStream(f1);
-            fos.write(fileString.getBytes());
-            fos.close();
-            assertTrue("File Was Not Able To Be Written To.", f1.length() == fileString.length());
-            assertTrue("File f1 Did Not Delete", f1.delete());
 
             // Assert is flawed because canWrite does not work.
             // assertTrue("File f2 Is Set To ReadOnly." , f2.canWrite());
-            fos = new FileOutputStream(f2);
+            FileOutputStream fos = new FileOutputStream(f2);
             // Write to a file.
             fos.write(fileString.getBytes());
             fos.close();

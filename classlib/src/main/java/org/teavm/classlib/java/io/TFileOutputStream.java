@@ -43,6 +43,10 @@ public class TFileOutputStream extends OutputStream {
             throw new FileNotFoundException();
         }
 
+        if (!virtualFile.canWrite()) {
+            throw new FileNotFoundException("File is read-only");
+        }
+
         accessor = virtualFile.createAccessor();
         if (accessor == null) {
             throw new FileNotFoundException();
