@@ -83,6 +83,25 @@ public class VMTest {
     }
 
     @Test
+    public void emptyTryCatchInsideFinally() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            sb.append("before;");
+            try {
+                sb.append("inside;");
+                Integer.parseInt("not a number");
+                sb.append("ignore;");
+            } catch (NumberFormatException e) {
+                // do nothing
+            }
+            sb.append("after;");
+        } finally {
+            sb.append("finally;");
+        }
+        assertEquals("before;inside;after;finally;", sb.toString());
+    }
+
+    @Test
     public void surrogateInStringLiteralsWork() {
         assertEquals(0xDDC2, "a\uDDC2b".charAt(1));
     }

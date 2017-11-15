@@ -493,8 +493,15 @@ public class Decompiler {
         }
 
         // Close old bookmarks
+        List<TryCatchBookmark> removedBookmarks = new ArrayList<>();
         for (int i = tryCatchBookmarks.size() - 1; i >= start; --i) {
             TryCatchBookmark bookmark = tryCatchBookmarks.get(i);
+            bookmark.block.tryCatches.remove(bookmark);
+            removedBookmarks.add(bookmark);
+        }
+
+        Collections.reverse(removedBookmarks);
+        for (TryCatchBookmark bookmark : removedBookmarks) {
             Block block = stack.peek();
             while (block != bookmark.block) {
                 TryCatchStatement tryCatchStmt = new TryCatchStatement();
@@ -509,7 +516,6 @@ public class Decompiler {
                 }
                 block = block.parent;
             }
-
             TryCatchStatement tryCatchStmt = new TryCatchStatement();
             tryCatchStmt.setExceptionType(bookmark.exceptionType);
             tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
@@ -523,18 +529,15 @@ public class Decompiler {
             if (!tryCatchStmt.getProtectedBody().isEmpty()) {
                 blockPart.add(tryCatchStmt);
             }
-
-            bookmark.block.tryCatches.remove(bookmark);
         }
 
         tryCatchBookmarks.subList(start, tryCatchBookmarks.size()).clear();
-
     }
 
     private void createNewBookmarks(List<TryCatchBlock> tryCatchBlocks) {
         // Add new bookmarks
         for (int i = tryCatchBookmarks.size(); i < tryCatchBlocks.size(); ++i) {
-            TryCatchBlock tryCatch = tryCatchBlocks.get(i);
+            TryCatchBlock tryCatch = tryCatchBlocks.get(tryCatchBlocks.size() - 1 - i);
             TryCatchBookmark bookmark = new TryCatchBookmark();
             bookmark.block = stack.peek();
             bookmark.offset = bookmark.block.body.size();
