@@ -181,7 +181,7 @@ public class FileTest {
     }
 
     @After
-    protected void tearDown() {
+    public void tearDown() {
         if (tempDirectory != null) {
             deleteTempFolder(tempDirectory);
             tempDirectory = null;

@@ -511,6 +511,7 @@ public class TFile implements Serializable, Comparable<TFile> {
         } else {
             tmpDirFile = directory;
         }
+        tmpDirFile.mkdirs();
         TFile result;
         do {
             result = genTempFile(prefix, newSuffix, tmpDirFile);

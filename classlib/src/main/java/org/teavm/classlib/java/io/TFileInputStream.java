@@ -39,11 +39,18 @@ public class TFileInputStream extends InputStream {
         }
     }
 
+    public TFileInputStream(String path) throws FileNotFoundException {
+        this(new TFile(path));
+    }
+
     @Override
     public int read(byte[] b, int off, int len) throws IOException {
         Objects.requireNonNull(b);
-        if (off < 0 || len < 0 || off + len > b.length) {
+        if (off < 0 || len < 0 || off > b.length - len) {
             throw new IndexOutOfBoundsException();
+        }
+        if (len == 0) {
+            return 0;
         }
         if (eof) {
             return -1;
@@ -59,11 +66,14 @@ public class TFileInputStream extends InputStream {
 
     @Override
     public long skip(long n) throws IOException {
+        if (n < 0) {
+            throw new IOException("Value must be positive: " + n);
+        }
         ensureOpened();
         if (eof) {
             return 0;
         }
-        int newPos = Math.max(pos, Math.min(accessor.size(), pos));
+        int newPos = Math.max(pos, Math.min(accessor.size(), pos + (int) n));
         int result = newPos - pos;
         pos = newPos;
         if (result == 0) {

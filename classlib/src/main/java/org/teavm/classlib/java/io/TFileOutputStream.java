@@ -31,7 +31,18 @@ public class TFileOutputStream extends OutputStream {
         this(file, false);
     }
 
+    public TFileOutputStream(String path) throws FileNotFoundException {
+        this(new TFile(path));
+    }
+
+    public TFileOutputStream(String path, boolean append) throws FileNotFoundException {
+        this(new TFile(path), append);
+    }
+
     public TFileOutputStream(TFile file, boolean append) throws FileNotFoundException {
+        if (file.getName().isEmpty()) {
+            throw new FileNotFoundException("Invalid file name");
+        }
         VirtualFile virtualFile = file.findVirtualFile();
         if (virtualFile == null) {
             VirtualFile parentVirtualFile = file.findParentFile();
@@ -60,7 +71,7 @@ public class TFileOutputStream extends OutputStream {
     @Override
     public void write(byte[] b, int off, int len) throws IOException {
         Objects.requireNonNull(b);
-        if (off < 0 || len < 0 || off + len > b.length) {
+        if (off < 0 || len < 0 || off > b.length - len) {
             throw new IndexOutOfBoundsException();
         }
         ensureOpened();
