@@ -34,6 +34,7 @@ public class TThread extends TObject implements TRunnable {
     private TThreadInterruptHandler interruptHandler;
 
     private TString name;
+    private boolean alive = true;
     TRunnable target;
 
     public TThread() {
@@ -61,6 +62,7 @@ public class TThread extends TObject implements TRunnable {
                 setCurrentThread(TThread.this);
                 TThread.this.run();
             } finally {
+                alive = false;
                 activeCount--;
                 setCurrentThread(mainThread);
             }
@@ -151,6 +153,10 @@ public class TThread extends TObject implements TRunnable {
 
     public boolean isInterrupted() {
         return interruptedFlag;
+    }
+
+    public boolean isAlive() {
+        return alive;
     }
 
     public static int activeCount() {
