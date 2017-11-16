@@ -62,9 +62,11 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
                     writer.append(", ");
                 }
                 String implName = implementations.get(i);
-                writer.append("[").appendClass(implName).append(", ").appendMethodBody(
-                        new MethodReference(implName, new MethodDescriptor("<init>", ValueType.VOID)))
-                        .append("]");
+                if (context.getClassSource().getClassNames().contains(implName)) {
+                    writer.append("[").appendClass(implName).append(", ").appendMethodBody(
+                            new MethodReference(implName, new MethodDescriptor("<init>", ValueType.VOID)))
+                            .append("]");
+                }
             }
             writer.append("];").softNewLine();
         }
