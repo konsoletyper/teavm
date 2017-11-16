@@ -508,10 +508,10 @@ public class TFile implements Serializable, Comparable<TFile> {
         if (directory == null) {
             String tmpDir = System.getProperty("java.io.tmpdir", ".");
             tmpDirFile = new TFile(tmpDir);
+            tmpDirFile.mkdirs();
         } else {
             tmpDirFile = directory;
         }
-        tmpDirFile.mkdirs();
         TFile result;
         do {
             result = genTempFile(prefix, newSuffix, tmpDirFile);
