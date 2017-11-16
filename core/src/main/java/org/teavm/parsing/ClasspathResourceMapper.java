@@ -62,6 +62,13 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
         this.classLoader = classLoader;
     }
 
+    public ClasspathResourceMapper(Properties properties, Mapper<String, ClassHolder> innerMapper) {
+        this.innerMapper = innerMapper;
+        Map<String, Transformation> transformationMap = new HashMap<>();
+        loadProperties(properties, transformationMap);
+        transformations.addAll(transformationMap.values());
+    }
+
     private void loadProperties(Properties properties, Map<String, Transformation> cache) {
         for (String propertyName : properties.stringPropertyNames()) {
             if (propertyName.startsWith(PACKAGE_PREFIX)) {
