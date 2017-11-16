@@ -15,6 +15,7 @@
  */
 package org.teavm.vm;
 
+import org.teavm.interop.PlatformMarker;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.parsing.ClasspathClassHolderSource;
 
@@ -26,7 +27,7 @@ public class TeaVMBuilder {
     public TeaVMBuilder(TeaVMTarget target) {
         this.target = target;
         classLoader = TeaVMBuilder.class.getClassLoader();
-        classSource = new ClasspathClassHolderSource(classLoader);
+        classSource = !isBootstrap() ? new ClasspathClassHolderSource(classLoader) : name -> null;
     }
 
     public ClassHolderSource getClassSource() {
@@ -49,5 +50,10 @@ public class TeaVMBuilder {
 
     public TeaVM build() {
         return new TeaVM(this);
+    }
+
+    @PlatformMarker
+    private static boolean isBootstrap() {
+        return false;
     }
 }
