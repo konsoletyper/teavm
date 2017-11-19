@@ -33,6 +33,7 @@ import java.net.URISyntaxException;
 import org.junit.After;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.teavm.interop.PlatformMarker;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
@@ -1080,34 +1081,6 @@ public class FileTest {
     }
 
     @Test
-    public void isHidden() throws IOException, InterruptedException {
-        boolean onUnix = File.separatorChar == '/';
-        File f = File.createTempFile("harmony-test-FileTest_isHidden_", ".tmp");
-        // On Unix hidden files are marked with a "." at the beginning
-        // of the file name.
-        if (onUnix) {
-            File f2 = new File(".test.tst" + platformId);
-            FileOutputStream fos2 = new FileOutputStream(f2);
-            fos2.close();
-            assertTrue("File returned hidden on Unix", !f.isHidden());
-            assertTrue("File returned visible on Unix", f2.isHidden());
-            assertTrue("File did not delete.", f2.delete());
-        } else {
-            // For windows, the file is being set hidden by the attrib
-            // command.
-            Runtime r = Runtime.getRuntime();
-            assertTrue("File returned hidden", !f.isHidden());
-            Process p = r.exec("attrib +h \"" + f.getAbsolutePath() + "\"");
-            p.waitFor();
-            assertTrue("File returned visible", f.isHidden());
-            p = r.exec("attrib -h \"" + f.getAbsolutePath() + "\"");
-            p.waitFor();
-            assertTrue("File returned hidden", !f.isHidden());
-        }
-        f.delete();
-    }
-
-    @Test
     public void lastModified() throws IOException {
         File f = new File(System.getProperty("java.io.tmpdir"), platformId + "lModTest.tst");
         f.delete();
@@ -1283,7 +1256,7 @@ public class FileTest {
             // Test to make sure that listFiles can read hidden files.
             boolean onUnix = File.separatorChar == '/';
             boolean onWindows = File.separatorChar == '\\';
-            if (onWindows) {
+            if (!isTeaVM() && onWindows) {
                 files[3] = "4.tst";
                 File f = new File(dir, "4.tst");
                 FileOutputStream fos = new FileOutputStream(f);
@@ -1950,5 +1923,10 @@ public class FileTest {
             }
         }
         assertTrue(exist);
+    }
+
+    @PlatformMarker
+    private static boolean isTeaVM() {
+        return false;
     }
 }

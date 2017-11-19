@@ -31,16 +31,16 @@ public class MissingItemsProcessor {
     private List<Instruction> instructionsToAdd = new ArrayList<>();
     private MethodHolder methodHolder;
     private Program program;
-    private Collection<String> achievableClasses;
+    private Collection<String> reachableClasses;
     private Collection<MethodReference> reachableMethods;
-    private Collection<FieldReference> achievableFields;
+    private Collection<FieldReference> reachableFields;
 
     public MissingItemsProcessor(DependencyInfo dependencyInfo, Diagnostics diagnostics) {
         this.dependencyInfo = dependencyInfo;
         this.diagnostics = diagnostics;
-        achievableClasses = dependencyInfo.getReachableClasses();
+        reachableClasses = dependencyInfo.getReachableClasses();
         reachableMethods = dependencyInfo.getReachableMethods();
-        achievableFields = dependencyInfo.getReachableFields();
+        reachableFields = dependencyInfo.getReachableFields();
     }
 
     public void processClass(ClassHolder cls) {
@@ -126,7 +126,7 @@ public class MissingItemsProcessor {
     }
 
     private boolean checkClass(TextLocation location, String className) {
-        if (!achievableClasses.contains(className) || !dependencyInfo.getClass(className).isMissing()) {
+        if (!reachableClasses.contains(className) || !dependencyInfo.getClass(className).isMissing()) {
             return true;
         }
         diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Class {{c0}} was not found",
@@ -163,11 +163,29 @@ public class MissingItemsProcessor {
         return true;
     }
 
+    private boolean checkVirtualMethod(TextLocation location, MethodReference method) {
+        if (!checkClass(location, method.getClassName())) {
+            return false;
+        }
+        if (!reachableMethods.contains(method)) {
+            return true;
+        }
+
+        if (dependencyInfo.getClassSource().resolve(method) != null) {
+            return true;
+        }
+
+        diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Method {{m0}} was not found",
+                method);
+        emitExceptionThrow(location, NoSuchMethodError.class.getName(), "Method not found: " + method);
+        return true;
+    }
+
     private boolean checkField(TextLocation location, FieldReference field) {
         if (!checkClass(location, field.getClassName())) {
             return false;
         }
-        if (!achievableFields.contains(field) || !dependencyInfo.getField(field).isMissing()) {
+        if (!reachableFields.contains(field) || !dependencyInfo.getField(field).isMissing()) {
             return true;
         }
         diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Field {{f0}} was not found",
@@ -193,7 +211,11 @@ public class MissingItemsProcessor {
 
         @Override
         public void visit(InvokeInstruction insn) {
-            checkMethod(insn.getLocation(), insn.getMethod());
+            if (insn.getType() != InvocationType.VIRTUAL) {
+                checkMethod(insn.getLocation(), insn.getMethod());
+            } else {
+                checkVirtualMethod(insn.getLocation(), insn.getMethod());
+            }
         }
 
         @Override
