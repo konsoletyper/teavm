@@ -87,9 +87,9 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         }
 
         ValueEmitter result = invoke(pe, implMethod, passedArguments);
-        if (result != null) {
+        ValueType expectedResult = instantiatedMethodType[instantiatedMethodType.length - 1];
+        if (result != null && expectedResult != ValueType.VOID) {
             ValueType actualResult = implementorSignature[implementorSignature.length - 1];
-            ValueType expectedResult = instantiatedMethodType[instantiatedMethodType.length - 1];
             tryConvertArgument(result, actualResult, expectedResult).returnValue();
         } else {
             pe.exit();
