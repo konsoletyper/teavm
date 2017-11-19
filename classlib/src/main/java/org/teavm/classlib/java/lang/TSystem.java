@@ -101,7 +101,6 @@ public final class TSystem extends TObject {
         Allocator.moveMemoryBlock(srcAddress, destAddress, length * itemSize);
     }
 
-    @GeneratedBy(SystemNativeGenerator.class)
     @DelegateTo("currentTimeMillisLowLevel")
     public static native long currentTimeMillis();
 
