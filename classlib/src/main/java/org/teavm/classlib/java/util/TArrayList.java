@@ -18,13 +18,9 @@ package org.teavm.classlib.java.util;
 import java.util.Arrays;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
+import org.teavm.classlib.java.util.function.TUnaryOperator;
 import org.teavm.interop.Rename;
 
-/**
- *
- * @author Alexey Andreev
- * @param <E>
- */
 public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSerializable {
     private E[] array;
     private int size;
@@ -182,6 +178,13 @@ public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSeri
     private void checkIndexForAdd(int index) {
         if (index < 0 || index > size) {
             throw new TIndexOutOfBoundsException();
+        }
+    }
+
+    @Override
+    public void replaceAll(TUnaryOperator<E> operator) {
+        for (int i = 0; i < size; ++i) {
+            array[i] = operator.apply(array[i]);
         }
     }
 }

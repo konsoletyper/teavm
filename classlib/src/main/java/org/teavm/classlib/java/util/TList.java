@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.util;
 
+import org.teavm.classlib.java.util.function.TUnaryOperator;
+
 public interface TList<E> extends TCollection<E> {
     boolean addAll(int index, TCollection<? extends E> c);
 
@@ -35,6 +37,13 @@ public interface TList<E> extends TCollection<E> {
     TListIterator<E> listIterator(int index);
 
     TList<E> subList(int fromIndex, int toIndex);
+
+    default void replaceAll(TUnaryOperator<E> operator) {
+        TListIterator<E> iter = listIterator();
+        while (iter.hasNext()) {
+            iter.set(operator.apply(iter.next()));
+        }
+    }
 
     default void sort(TComparator<? super E> c) {
         TCollections.sort(this, c);

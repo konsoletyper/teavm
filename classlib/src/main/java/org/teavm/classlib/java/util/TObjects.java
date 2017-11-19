@@ -52,6 +52,10 @@ public final class TObjects extends TObject {
         return obj;
     }
 
+    public static boolean nonNull(Object obj) {
+        return obj != null;
+    }
+
     public static boolean deepEquals(Object a, Object b) {
         if (a == b) {
             return true;

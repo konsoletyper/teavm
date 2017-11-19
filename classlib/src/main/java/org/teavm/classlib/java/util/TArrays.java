@@ -18,6 +18,10 @@ package org.teavm.classlib.java.util;
 import java.lang.reflect.Array;
 import java.util.Objects;
 import java.util.RandomAccess;
+import java.util.function.IntFunction;
+import java.util.function.IntToDoubleFunction;
+import java.util.function.IntToLongFunction;
+import java.util.function.IntUnaryOperator;
 import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TDouble;
@@ -1599,5 +1603,29 @@ public class TArrays extends TObject {
             throw new ArrayIndexOutOfBoundsException();
         }
         return new TArrayDoubleStreamImpl(array, startInclusive, endExclusive);
+    }
+
+    public static <T> void setAll(T[] array, IntFunction<? extends T> generator) {
+        for (int i = 0; i < array.length; ++i) {
+            array[i] = generator.apply(i);
+        }
+    }
+
+    public static void setAll(int[] array, IntUnaryOperator generator) {
+        for (int i = 0; i < array.length; ++i) {
+            array[i] = generator.applyAsInt(i);
+        }
+    }
+
+    public static void setAll(long[] array, IntToLongFunction generator) {
+        for (int i = 0; i < array.length; ++i) {
+            array[i] = generator.applyAsLong(i);
+        }
+    }
+
+    public static void setAll(double[] array, IntToDoubleFunction generator) {
+        for (int i = 0; i < array.length; ++i) {
+            array[i] = generator.applyAsDouble(i);
+        }
     }
 }
