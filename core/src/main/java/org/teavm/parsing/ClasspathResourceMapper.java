@@ -67,6 +67,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
         Map<String, Transformation> transformationMap = new HashMap<>();
         loadProperties(properties, transformationMap);
         transformations.addAll(transformationMap.values());
+        renamer = new ClassRefsRenamer(new CachedMapper<>(classNameMapper));
     }
 
     private void loadProperties(Properties properties, Map<String, Transformation> cache) {
@@ -165,6 +166,9 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
     }
 
     private Date getOriginalModificationDate(String className) {
+        if (classLoader == null) {
+            return null;
+        }
         URL url = classLoader.getResource(className.replace('.', '/') + ".class");
         if (url == null) {
             return null;

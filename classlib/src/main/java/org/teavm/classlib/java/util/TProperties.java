@@ -331,7 +331,7 @@ public class TProperties extends THashtable<Object, Object> {
         return selected.keys();
     }
 
-    private void selectProperties(THashtable<Object, Object> selected) {
+    private void selectProperties(TMap<Object, Object> selected) {
         if (defaults != null) {
             defaults.selectProperties(selected);
         }
@@ -397,5 +397,25 @@ public class TProperties extends THashtable<Object, Object> {
             }
         }
         writer.write("\n");
+    }
+
+    public TSet<String> stringPropertyNames() {
+        TSet<String> selected = new THashSet<>();
+        selectPropertyNames(selected);
+        return selected;
+    }
+
+    private void selectPropertyNames(TSet<String> selected) {
+        if (defaults != null) {
+            defaults.selectPropertyNames(selected);
+        }
+
+        TEnumeration<Object> e = keys();
+        while (e.hasMoreElements()) {
+            Object key = e.nextElement();
+            if (key instanceof String) {
+                selected.add((String) key);
+            }
+        }
     }
 }
