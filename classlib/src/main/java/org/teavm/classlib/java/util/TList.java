@@ -15,11 +15,6 @@
  */
 package org.teavm.classlib.java.util;
 
-/**
- *
- * @author Alexey Andreev
- * @param <E>
- */
 public interface TList<E> extends TCollection<E> {
     boolean addAll(int index, TCollection<? extends E> c);
 
@@ -40,4 +35,8 @@ public interface TList<E> extends TCollection<E> {
     TListIterator<E> listIterator(int index);
 
     TList<E> subList(int fromIndex, int toIndex);
+
+    default void sort(TComparator<? super E> c) {
+        TCollections.sort(this, c);
+    }
 }

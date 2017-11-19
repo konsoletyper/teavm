@@ -18,6 +18,7 @@ package org.teavm.classlib.java.util;
 import static org.junit.Assert.assertEquals;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -62,5 +63,61 @@ public class ArraysTest {
         Object[] array = { 1, 2, null, null, "foo" };
         array[3] = array;
         assertEquals("[1, 2, null, [...], foo]", Arrays.deepToString(array));
+    }
+
+    @Test
+    public void objectStream() {
+        String[] array = { "foo", "bar", "baz" };
+
+        String result = Arrays.stream(array).collect(Collectors.joining(","));
+        assertEquals("foo,bar,baz", result);
+
+        result = Arrays.stream(array, 1, 3).collect(Collectors.joining(","));
+        assertEquals("bar,baz", result);
+
+        result = Arrays.stream(array, 0, 2).collect(Collectors.joining(","));
+        assertEquals("foo,bar", result);
+    }
+
+    @Test
+    public void intStream() {
+        int[] array = { 23, 42, 55 };
+
+        String result = Arrays.stream(array).mapToObj(Integer::toString).collect(Collectors.joining(","));
+        assertEquals("23,42,55", result);
+
+        result = Arrays.stream(array, 1, 3).mapToObj(Integer::toString).collect(Collectors.joining(","));
+        assertEquals("42,55", result);
+
+        result = Arrays.stream(array, 0, 2).mapToObj(Integer::toString).collect(Collectors.joining(","));
+        assertEquals("23,42", result);
+    }
+
+    @Test
+    public void longStream() {
+        long[] array = { 23, 42, 55 };
+
+        String result = Arrays.stream(array).mapToObj(Long::toString).collect(Collectors.joining(","));
+        assertEquals("23,42,55", result);
+
+        result = Arrays.stream(array, 1, 3).mapToObj(Long::toString).collect(Collectors.joining(","));
+        assertEquals("42,55", result);
+
+        result = Arrays.stream(array, 0, 2).mapToObj(Long::toString).collect(Collectors.joining(","));
+        assertEquals("23,42", result);
+    }
+
+    @Test
+    public void doubleStream() {
+        double[] array = { 23, 42, 55 };
+
+        String result = Arrays.stream(array).mapToObj(Double::toString).collect(Collectors.joining(","));
+        assertEquals("23.0,42.0,55.0", result);
+
+        result = Arrays.stream(array, 1, 3).mapToObj(Double::toString).collect(Collectors.joining(","));
+        assertEquals("42.0,55.0", result);
+
+        result = Arrays.stream(array, 0, 2).mapToObj(Double::toString).collect(Collectors.joining(","));
+        assertEquals("23.0,42.0", result);
     }
 }

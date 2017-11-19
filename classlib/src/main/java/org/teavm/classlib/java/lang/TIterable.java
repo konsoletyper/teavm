@@ -15,13 +15,47 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.function.Consumer;
 import org.teavm.classlib.java.util.TIterator;
+import org.teavm.classlib.java.util.TSpliterator;
 
-/**
- *
- * @author Alexey Andreev
- * @param <T> type this collection returns.
- */
 public interface TIterable<T> {
     TIterator<T> iterator();
+
+    default TSpliterator<T> spliterator() {
+        TIterator<T> iterator = iterator();
+        return new TSpliterator<T>() {
+            @Override
+            public boolean tryAdvance(Consumer<? super T> action) {
+                if (iterator.hasNext()) {
+                    action.accept(iterator.next());
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public void forEachRemaining(Consumer<? super T> action) {
+                while (iterator.hasNext()) {
+                    action.accept(iterator.next());
+                }
+            }
+
+            @Override
+            public TSpliterator<T> trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return -1;
+            }
+
+            @Override
+            public int characteristics() {
+                return 0;
+            }
+        };
+    }
 }

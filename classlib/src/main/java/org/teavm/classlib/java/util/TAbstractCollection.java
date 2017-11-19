@@ -19,11 +19,6 @@ import java.lang.reflect.Array;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TUnsupportedOperationException;
 
-/**
- *
- * @author Alexey Andreev
- * @param <E>
- */
 public abstract class TAbstractCollection<E> extends TObject implements TCollection<E> {
     protected TAbstractCollection() {
     }

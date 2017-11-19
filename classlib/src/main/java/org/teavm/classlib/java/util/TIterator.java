@@ -15,15 +15,18 @@
  */
 package org.teavm.classlib.java.util;
 
-/**
- *
- * @author Alexey Andreev
- * @param <E>
- */
+import java.util.function.Consumer;
+
 public interface TIterator<E> {
     boolean hasNext();
 
     E next();
 
     void remove();
+
+    default void forEachRemaining(Consumer<? super E> action) {
+        while (hasNext()) {
+            action.accept(next());
+        }
+    }
 }

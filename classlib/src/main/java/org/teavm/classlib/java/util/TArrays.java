@@ -29,6 +29,14 @@ import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TStringBuilder;
 import org.teavm.classlib.java.lang.reflect.TArray;
+import org.teavm.classlib.java.util.stream.TDoubleStream;
+import org.teavm.classlib.java.util.stream.TIntStream;
+import org.teavm.classlib.java.util.stream.TLongStream;
+import org.teavm.classlib.java.util.stream.TStream;
+import org.teavm.classlib.java.util.stream.doubleimpl.TArrayDoubleStreamImpl;
+import org.teavm.classlib.java.util.stream.impl.TArrayStreamImpl;
+import org.teavm.classlib.java.util.stream.intimpl.TArrayIntStreamImpl;
+import org.teavm.classlib.java.util.stream.longimpl.TArrayLongStreamImpl;
 
 public class TArrays extends TObject {
     public static char[] copyOf(char[] array, int length) {
@@ -1519,7 +1527,7 @@ public class TArrays extends TObject {
 
     public static TString deepToString(Object[] a) {
         TStringBuilder sb = new TStringBuilder();
-        deepToString(a, sb, new TArrayList<Object[]>());
+        deepToString(a, sb, new TArrayList<>());
         return TString.wrap(sb.toString());
     }
 
@@ -1547,5 +1555,49 @@ public class TArrays extends TObject {
         } else {
             out.append(TObject.wrap(a));
         }
+    }
+
+    public static <T> TStream<T> stream(T[] array) {
+        return new TArrayStreamImpl<>(array, 0, array.length);
+    }
+
+    public static <T> TStream<T> stream(T[] array, int startInclusive, int endExclusive) {
+        if (startInclusive < 0 || endExclusive < startInclusive || endExclusive > array.length) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        return new TArrayStreamImpl<>(array, startInclusive, endExclusive);
+    }
+
+    public static TIntStream stream(int[] array) {
+        return new TArrayIntStreamImpl(array, 0, array.length);
+    }
+
+    public static TIntStream stream(int[] array, int startInclusive, int endExclusive) {
+        if (startInclusive < 0 || endExclusive < startInclusive || endExclusive > array.length) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        return new TArrayIntStreamImpl(array, startInclusive, endExclusive);
+    }
+
+    public static TLongStream stream(long[] array) {
+        return new TArrayLongStreamImpl(array, 0, array.length);
+    }
+
+    public static TLongStream stream(long[] array, int startInclusive, int endExclusive) {
+        if (startInclusive < 0 || endExclusive < startInclusive || endExclusive > array.length) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        return new TArrayLongStreamImpl(array, startInclusive, endExclusive);
+    }
+
+    public static TDoubleStream stream(double[] array) {
+        return new TArrayDoubleStreamImpl(array, 0, array.length);
+    }
+
+    public static TDoubleStream stream(double[] array, int startInclusive, int endExclusive) {
+        if (startInclusive < 0 || endExclusive < startInclusive || endExclusive > array.length) {
+            throw new ArrayIndexOutOfBoundsException();
+        }
+        return new TArrayDoubleStreamImpl(array, startInclusive, endExclusive);
     }
 }

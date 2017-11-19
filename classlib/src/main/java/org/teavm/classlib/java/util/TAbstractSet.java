@@ -15,11 +15,8 @@
  */
 package org.teavm.classlib.java.util;
 
-/**
- *
- * @author Alexey Andreev
- * @param <E>
- */
+import java.util.Arrays;
+
 public abstract class TAbstractSet<E> extends TAbstractCollection<E> implements TSet<E> {
     public TAbstractSet() {
         super();
@@ -44,5 +41,32 @@ public abstract class TAbstractSet<E> extends TAbstractCollection<E> implements 
             }
         }
         return modified;
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof TSet)) {
+            return false;
+        }
+
+        TSet<?> other = (TSet<?>) obj;
+        if (size() != other.size()) {
+            return false;
+        }
+
+        for (TIterator<?> iter = other.iterator(); iter.hasNext();) {
+            if (!contains(iter.next())) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    public int hashCode() {
+        return Arrays.hashCode(toArray());
     }
 }
