@@ -155,6 +155,8 @@ public class RenderingContext {
             }
         } else if (cst instanceof Character) {
             return Integer.toString((Character) cst);
+        } else if (cst instanceof Boolean) {
+            return (Boolean) cst ? "1" : "0";
         } else {
             return cst.toString();
         }
