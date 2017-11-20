@@ -19,14 +19,14 @@ import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.util.TArrays;
 
 class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequence {
-    private static final float[] powersOfTen = { 1E1f, 1E2f, 1E4f, 1E8f, 1E16f, 1E32f };
-    private static final double[] doublePowersOfTen = { 1E1, 1E2, 1E4, 1E8, 1E16, 1E32, 1E64, 1E128, 1E256 };
-    private static final float[] negPowersOfTen = { 1E-1f, 1E-2f, 1E-4f, 1E-8f, 1E-16f, 1E-32f };
-    private static final double[] negDoublePowersOfTen = { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32,
+    private static float[] powersOfTen = { 1E1f, 1E2f, 1E4f, 1E8f, 1E16f, 1E32f };
+    private static double[] doublePowersOfTen = { 1E1, 1E2, 1E4, 1E8, 1E16, 1E32, 1E64, 1E128, 1E256 };
+    private static float[] negPowersOfTen = { 1E-1f, 1E-2f, 1E-4f, 1E-8f, 1E-16f, 1E-32f };
+    private static double[] negDoublePowersOfTen = { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32,
             1E-64, 1E-128, 1E-256 };
-    private static final int[] intPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
+    private static int[] intPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
             1000000000 };
-    private static final long[] longPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
+    private static long[] longPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
             1000000000, 10000000000L, 100000000000L, 1000000000000L, 10000000000000L, 100000000000000L,
             1000000000000000L, 10000000000000000L, 100000000000000000L, 1000000000000000000L };
     private static final long[] longLogPowersOfTen = { 1, 10, 100, 10000, 100000000, 10000000000000000L, };
@@ -264,6 +264,11 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             }
             exp = -exp;
             mantissa = (int) (((value * FLOAT_MAX_POS) / digit) + 0.5f);
+
+            while (mantissa >= 10000000) {
+                mantissa /= 10;
+                exp--;
+            }
         }
 
         // Remove trailing zeros
@@ -418,6 +423,11 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             }
             exp = -exp;
             mantissa = (long) (((value * DOUBLE_MAX_POS) / digit) + 0.5);
+
+            while (mantissa >= 10000000000000000L) {
+                mantissa /= 10;
+                exp--;
+            }
         }
 
         // Remove trailing zeros
