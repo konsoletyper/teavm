@@ -26,6 +26,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import org.teavm.ast.ClassNode;
 import org.teavm.ast.cache.EmptyRegularMethodNodeCache;
 import org.teavm.ast.cache.MethodNodeCache;
@@ -48,10 +49,12 @@ import org.teavm.debugging.information.SourceLocation;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.interop.PlatformMarker;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
@@ -83,6 +86,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private boolean minifying = true;
     private final Map<MethodReference, Generator> methodGenerators = new HashMap<>();
     private final Map<MethodReference, Injector> methodInjectors = new HashMap<>();
+    private final List<Function<ProviderContext, Generator>> generatorProviders = new ArrayList<>();
+    private final List<Function<ProviderContext, Injector>> injectorProviders = new ArrayList<>();
     private final List<RendererListener> rendererListeners = new ArrayList<>();
     private DebugInformationEmitter debugEmitter;
     private MethodNodeCache astCache = new EmptyRegularMethodNodeCache();
@@ -119,6 +124,16 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     @Override
     public void add(MethodReference methodRef, Injector injector) {
         methodInjectors.put(methodRef, injector);
+    }
+
+    @Override
+    public void addGeneratorProvider(Function<ProviderContext, Generator> provider) {
+        generatorProviders.add(provider);
+    }
+
+    @Override
+    public void addInjectorProvider(Function<ProviderContext, Injector> provider) {
+        injectorProviders.add(provider);
     }
 
     /**
@@ -309,7 +324,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         for (String className : classOrder) {
             ClassHolder cls = classes.get(className);
             for (MethodHolder method : cls.getMethods()) {
-                preprocessNativeMethod(method);
+                preprocessNativeMethod(method, decompiler);
                 if (controller.wasCancelled()) {
                     break;
                 }
@@ -319,13 +334,43 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         return classNodes;
     }
 
-    private void preprocessNativeMethod(MethodHolder method) {
+    private void preprocessNativeMethod(MethodHolder method, Decompiler decompiler) {
         if (!method.getModifiers().contains(ElementModifier.NATIVE)
                 || methodGenerators.get(method.getReference()) != null
-                || methodInjectors.get(method.getReference()) != null
-                || method.getAnnotations().get(GeneratedBy.class.getName()) != null
-                || method.getAnnotations().get(InjectedBy.class.getName()) != null) {
+                || methodInjectors.get(method.getReference()) != null) {
             return;
+        }
+
+        boolean found = false;
+        ProviderContext context = new ProviderContextImpl(method.getReference());
+        for (Function<ProviderContext, Generator> provider : generatorProviders) {
+            Generator generator = provider.apply(context);
+            if (generator != null) {
+                methodGenerators.put(method.getReference(), generator);
+                decompiler.addGenerator(method.getReference(), generator);
+                found = true;
+                break;
+            }
+        }
+        for (Function<ProviderContext, Injector> provider : injectorProviders) {
+            Injector injector = provider.apply(context);
+            if (injector != null) {
+                methodInjectors.put(method.getReference(), injector);
+                decompiler.addMethodToSkip(method.getReference());
+                found = true;
+                break;
+            }
+        }
+
+        if (found) {
+            return;
+        }
+
+        if (!isBootstrap()) {
+            if (method.getAnnotations().get(GeneratedBy.class.getName()) != null
+                    || method.getAnnotations().get(InjectedBy.class.getName()) != null) {
+                return;
+            }
         }
         method.getModifiers().remove(ElementModifier.NATIVE);
 
@@ -362,6 +407,29 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         controller.getDiagnostics().error(new CallLocation(method.getReference()),
                 "Native method {{m0}} has no implementation",  method.getReference());
+    }
+
+    class ProviderContextImpl implements ProviderContext {
+        private MethodReference method;
+
+        ProviderContextImpl(MethodReference method) {
+            this.method = method;
+        }
+
+        @Override
+        public MethodReference getMethod() {
+            return method;
+        }
+
+        @Override
+        public ClassReaderSource getClassSource() {
+            return controller.getUnprocessedClassSource();
+        }
+    }
+
+    @PlatformMarker
+    private static boolean isBootstrap() {
+        return false;
     }
 
     private void emitCFG(DebugInformationEmitter emitter, Program program) {

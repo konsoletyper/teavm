@@ -53,6 +53,7 @@ import org.teavm.common.GraphIndexer;
 import org.teavm.common.Loop;
 import org.teavm.common.LoopGraph;
 import org.teavm.common.RangeTree;
+import org.teavm.interop.PlatformMarker;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
@@ -200,7 +201,7 @@ public class Decompiler {
             if (method.getModifiers().contains(ElementModifier.ABSTRACT)) {
                 continue;
             }
-            if (method.getAnnotations().get(InjectedBy.class.getName()) != null
+            if ((!isBootstrap() && method.getAnnotations().get(InjectedBy.class.getName()) != null)
                     || methodsToSkip.contains(method.getReference())) {
                 continue;
             }
@@ -220,7 +221,7 @@ public class Decompiler {
 
     public NativeMethodNode decompileNative(MethodHolder method) {
         Generator generator = generators.get(method.getReference());
-        if (generator == null) {
+        if (generator == null && !isBootstrap()) {
             AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
             if (annotHolder == null) {
                 throw new DecompilationException("Method " + method.getOwnerName() + "." + method.getDescriptor()
@@ -242,6 +243,11 @@ public class Decompiler {
         methodNode.setGenerator(generator);
         methodNode.setAsync(asyncMethods.contains(method.getReference()));
         return methodNode;
+    }
+
+    @PlatformMarker
+    private static boolean isBootstrap() {
+        return false;
     }
 
     public RegularMethodNode decompileRegular(MethodHolder method) {

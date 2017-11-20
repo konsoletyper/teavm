@@ -18,6 +18,7 @@ package org.teavm.vm.spi;
 import java.util.Properties;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DependencyListener;
+import org.teavm.dependency.DependencyPlugin;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.MethodReference;
 import org.teavm.vm.TeaVM;
@@ -35,6 +36,8 @@ public interface TeaVMHost {
     void add(ClassHolderTransformer classTransformer);
 
     void add(MethodReference methodRef, BootstrapMethodSubstitutor substitutor);
+
+    void add(MethodReference methodRef, DependencyPlugin dependencyPlugin);
 
     <T extends TeaVMHostExtension> T getExtension(Class<T> extensionType);
 

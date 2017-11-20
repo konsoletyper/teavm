@@ -16,13 +16,15 @@
 package org.teavm.jso.impl;
 
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
+import org.teavm.vm.TeaVMPluginUtil;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 public class JSOPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
-        if (host.getExtension(TeaVMJavaScriptHost.class) == null) {
+        TeaVMJavaScriptHost jsHost = host.getExtension(TeaVMJavaScriptHost.class);
+        if (jsHost == null) {
             return;
         }
 
@@ -32,6 +34,14 @@ public class JSOPlugin implements TeaVMPlugin {
         JSDependencyListener dependencyListener = new JSDependencyListener(repository);
         JSAliasRenderer aliasRenderer = new JSAliasRenderer();
         host.add(dependencyListener);
-        host.getExtension(TeaVMJavaScriptHost.class).add(aliasRenderer);
+
+
+        jsHost.add(aliasRenderer);
+        jsHost.addGeneratorProvider(new GeneratorAnnotationInstaller<>(new JSBodyGenerator(),
+                DynamicGenerator.class.getName()));
+        jsHost.addInjectorProvider(new GeneratorAnnotationInstaller<>(new JSBodyGenerator(),
+                DynamicInjector.class.getName()));
+
+        TeaVMPluginUtil.handleNatives(host, JS.class);
     }
 }

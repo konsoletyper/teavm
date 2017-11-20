@@ -164,7 +164,7 @@ public class AsyncMethodFinder {
                 return;
             } else {
                 diagnostics.warning(new CallLocation(methodRef), "Error as Warning because "
-                        + " Method {{m0}} has @SuppressSyncErrors annoation. Method {{m0}} "
+                        + " Method {{m0}} has @SuppressSyncErrors annotation. Method {{m0}} "
                         + "is claimed to be synchronous, but it is has invocations of "
                         + "asynchronous methods:" + stack.toString(), methodRef);
             }

@@ -176,7 +176,7 @@ public class Renderer implements RenderingManager {
     private void renderSetCloneMethod() throws IOException {
         writer.append("function $rt_setCloneMethod(target, f)").ws().append("{").softNewLine().indent();
         writer.append("target.").appendMethod("clone", Object.class).ws().append('=').ws().append("f;").
-                softNewLine().indent();
+                softNewLine();
         writer.outdent().append("}").newLine();
     }
 

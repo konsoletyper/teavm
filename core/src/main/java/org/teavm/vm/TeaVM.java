@@ -33,6 +33,7 @@ import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
+import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.Linker;
 import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.Diagnostics;
@@ -165,6 +166,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     @Override
+    public void add(MethodReference methodRef, DependencyPlugin dependencyPlugin) {
+        dependencyAnalyzer.addDependencyPlugin(methodRef, dependencyPlugin);
+    }
+
+    @Override
     public ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -249,7 +255,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             }
         }
         TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, ref, dependencyAnalyzer.linkMethod(ref, null));
-        dependencyAnalyzer.linkClass(ref.getClassName(), null).initClass(null);
+        dependencyAnalyzer.defer(() -> {
+            dependencyAnalyzer.linkClass(ref.getClassName(), null).initClass(null);
+        });
         if (name != null) {
             entryPoints.put(name, entryPoint);
         }
@@ -274,7 +282,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     public TeaVMEntryPoint linkMethod(MethodReference ref) {
         TeaVMEntryPoint entryPoint = new TeaVMEntryPoint("", ref, dependencyAnalyzer.linkMethod(ref, null));
-        dependencyAnalyzer.linkClass(ref.getClassName(), null).initClass(null);
+        dependencyAnalyzer.defer(() -> {
+            dependencyAnalyzer.linkClass(ref.getClassName(), null).initClass(null);
+        });
         return entryPoint;
     }
 
@@ -283,7 +293,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             throw new IllegalArgumentException("Class with public name `" + name + "' already defined for class "
                     + className);
         }
-        dependencyAnalyzer.linkClass(className, null).initClass(null);
+        dependencyAnalyzer.defer(() -> {
+            dependencyAnalyzer.linkClass(className, null).initClass(null);
+        });
         exportedClasses.put(name, className);
     }
 

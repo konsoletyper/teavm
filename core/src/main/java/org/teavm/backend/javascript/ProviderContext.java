@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,21 +15,11 @@
  */
 package org.teavm.backend.javascript;
 
-import java.util.function.Function;
-import org.teavm.backend.javascript.spi.Generator;
-import org.teavm.backend.javascript.spi.Injector;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
-import org.teavm.vm.spi.RendererListener;
-import org.teavm.vm.spi.TeaVMHostExtension;
 
-public interface TeaVMJavaScriptHost extends TeaVMHostExtension {
-    void add(MethodReference methodRef, Generator generator);
+public interface ProviderContext {
+    MethodReference getMethod();
 
-    void add(MethodReference methodRef, Injector injector);
-
-    void addGeneratorProvider(Function<ProviderContext, Generator> provider);
-
-    void addInjectorProvider(Function<ProviderContext, Injector> provider);
-
-    void add(RendererListener listener);
+    ClassReaderSource getClassSource();
 }

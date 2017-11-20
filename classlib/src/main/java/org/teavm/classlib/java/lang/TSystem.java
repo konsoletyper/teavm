@@ -102,6 +102,7 @@ public final class TSystem extends TObject {
     }
 
     @DelegateTo("currentTimeMillisLowLevel")
+    @GeneratedBy(SystemNativeGenerator.class)
     public static native long currentTimeMillis();
 
     private static long currentTimeMillisLowLevel() {

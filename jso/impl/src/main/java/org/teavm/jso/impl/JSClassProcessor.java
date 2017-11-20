@@ -30,8 +30,6 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
 import org.mozilla.javascript.ast.FunctionNode;
-import org.teavm.backend.javascript.spi.GeneratedBy;
-import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.cache.NoCache;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Sync;
@@ -592,9 +590,7 @@ class JSClassProcessor {
             proxyMethod.getModifiers().add(ElementModifier.STATIC);
             boolean inline = repository.inlineMethods.contains(methodRef);
             AnnotationHolder generatorAnnot = new AnnotationHolder(inline
-                    ? InjectedBy.class.getName() : GeneratedBy.class.getName());
-            generatorAnnot.getValues().put("value",
-                    new AnnotationValue(ValueType.parse(JSBodyGenerator.class)));
+                    ? DynamicInjector.class.getName() : DynamicGenerator.class.getName());
             proxyMethod.getAnnotations().add(generatorAnnot);
             cls.addMethod(proxyMethod);
 

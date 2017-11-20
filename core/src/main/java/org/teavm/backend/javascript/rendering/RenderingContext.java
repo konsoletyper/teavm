@@ -30,6 +30,7 @@ import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
+import org.teavm.interop.PlatformMarker;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ListableClassReaderSource;
@@ -243,20 +244,27 @@ public class RenderingContext {
         InjectorHolder holder = injectorMap.get(ref);
         if (holder == null) {
             holder = new InjectorHolder(null);
-            ClassReader cls = classSource.get(ref.getClassName());
-            if (cls != null) {
-                MethodReader method = cls.getMethod(ref.getDescriptor());
-                if (method != null) {
-                    AnnotationReader injectedByAnnot = method.getAnnotations().get(InjectedBy.class.getName());
-                    if (injectedByAnnot != null) {
-                        ValueType type = injectedByAnnot.getValue("value").getJavaClass();
-                        holder = new InjectorHolder(instantiateInjector(((ValueType.Object) type).getClassName()));
+            if (!isBootstrap()) {
+                ClassReader cls = classSource.get(ref.getClassName());
+                if (cls != null) {
+                    MethodReader method = cls.getMethod(ref.getDescriptor());
+                    if (method != null) {
+                        AnnotationReader injectedByAnnot = method.getAnnotations().get(InjectedBy.class.getName());
+                        if (injectedByAnnot != null) {
+                            ValueType type = injectedByAnnot.getValue("value").getJavaClass();
+                            holder = new InjectorHolder(instantiateInjector(((ValueType.Object) type).getClassName()));
+                        }
                     }
                 }
             }
             injectorMap.put(ref, holder);
         }
         return holder.injector;
+    }
+
+    @PlatformMarker
+    private static boolean isBootstrap() {
+        return false;
     }
 
     private Injector instantiateInjector(String type) {

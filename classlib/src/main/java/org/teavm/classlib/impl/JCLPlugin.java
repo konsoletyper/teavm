@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.impl;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ServiceLoader;
@@ -22,12 +23,12 @@ import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.unicode.CLDRReader;
-import org.teavm.classlib.java.lang.SystemNativeGenerator;
 import org.teavm.classlib.java.lang.reflect.AnnotationDependencyListener;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.PlatformClass;
+import org.teavm.vm.TeaVMPluginUtil;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
@@ -86,9 +87,11 @@ public class JCLPlugin implements TeaVMPlugin {
             host.add(new PlatformMarkerSupport());
         }
 
-        TeaVMJavaScriptHost jsHost = host.getExtension(TeaVMJavaScriptHost.class);
-        jsHost.add(new MethodReference("java.lang.System", "currentTimeMillis", ValueType.LONG),
-                new SystemNativeGenerator());
+        TeaVMPluginUtil.handleNatives(host, Class.class);
+        TeaVMPluginUtil.handleNatives(host, ClassLoader.class);
+        TeaVMPluginUtil.handleNatives(host, System.class);
+        TeaVMPluginUtil.handleNatives(host, Array.class);
+        TeaVMPluginUtil.handleNatives(host, Math.class);
     }
 
     @PlatformMarker

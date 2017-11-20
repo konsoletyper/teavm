@@ -60,7 +60,7 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
 
     @Override
     public boolean isPrimitive() {
-        return type instanceof ValueType.Primitive;
+        return type instanceof ValueType.Primitive || type == ValueType.VOID;
     }
 
     @Override

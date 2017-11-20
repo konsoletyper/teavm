@@ -23,6 +23,7 @@ import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
+import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.metaprogramming.CompileTime;
@@ -58,8 +59,6 @@ public final class TeaVMPluginUtil {
 
     private static void handleNativesImpl(Value<TeaVMHost> host, Value<TeaVMJavaScriptHost> jsHost,
             ReflectClass<?> cls) {
-
-
         for (ReflectMethod method : cls.getDeclaredMethods()) {
             if (!Modifier.isNative(method.getModifiers())) {
                 continue;
@@ -89,7 +88,7 @@ public final class TeaVMPluginUtil {
                 ReflectMethod generatorConstructor = generatorClass.getMethod("<init>");
 
                 Value<MethodReference> methodRef = methodToReference(method);
-                //emit(() -> host.get().add(methodRef.get(), (DependencyPlugin) generatorConstructor.construct()));
+                emit(() -> host.get().add(methodRef.get(), (DependencyPlugin) generatorConstructor.construct()));
             }
         }
     }
@@ -102,6 +101,8 @@ public final class TeaVMPluginUtil {
             int index = i;
             emit(() -> signature.get()[index] = paramType.get());
         }
+        Value<ValueType> returnType = classToValueType(method.getReturnType());
+        emit(() -> signature.get()[signatureSize - 1] = returnType.get());
 
         String className = method.getDeclaringClass().getName();
         String name = method.getName();

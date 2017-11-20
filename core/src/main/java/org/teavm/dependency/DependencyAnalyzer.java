@@ -35,6 +35,7 @@ import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.interop.PlatformMarker;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
@@ -83,6 +84,7 @@ public class DependencyAnalyzer implements DependencyInfo {
     DefaultCallGraph callGraph = new DefaultCallGraph();
     private DependencyAgent agent;
     Map<MethodReference, BootstrapMethodSubstitutor> bootstrapMethodSubstitutors = new HashMap<>();
+    Map<MethodReference, DependencyPlugin> dependencyPlugins = new HashMap<>();
     private boolean completing;
     private Map<String, SuperClassFilter> superClassFilters = new HashMap<>();
 
@@ -320,6 +322,10 @@ public class DependencyAnalyzer implements DependencyInfo {
 
     private Set<String> classesAddedByRoot = new HashSet<>();
 
+    public void defer(Runnable task) {
+        deferredTasks.add(task);
+    }
+
     public ClassDependency linkClass(String className, CallLocation callLocation) {
         if (completing && getClass(className) == null) {
             throw new IllegalStateException("Can't link class during completion phase");
@@ -526,6 +532,12 @@ public class DependencyAnalyzer implements DependencyInfo {
             return;
         }
         methodDep.dependencyPluginAttached = true;
+
+        methodDep.dependencyPlugin = dependencyPlugins.get(methodDep.getReference());
+        if (methodDep.dependencyPlugin != null || isBootstrap()) {
+            return;
+        }
+
         AnnotationReader depAnnot = methodDep.getMethod().getAnnotations().get(PluggableDependency.class.getName());
         if (depAnnot == null) {
             return;
@@ -543,6 +555,11 @@ public class DependencyAnalyzer implements DependencyInfo {
         } catch (IllegalAccessException | InstantiationException e) {
             throw new RuntimeException("Can't instantiate dependency plugin " + depClassName, e);
         }
+    }
+
+    @PlatformMarker
+    private static boolean isBootstrap() {
+        return false;
     }
 
     @Override
@@ -658,6 +675,10 @@ public class DependencyAnalyzer implements DependencyInfo {
 
     public void addBootstrapMethodSubstitutor(MethodReference method, BootstrapMethodSubstitutor substitutor) {
         bootstrapMethodSubstitutors.put(method, substitutor);
+    }
+
+    public void addDependencyPlugin(MethodReference method, DependencyPlugin dependencyPlugin) {
+        dependencyPlugins.put(method, dependencyPlugin);
     }
 
     SuperClassFilter getSuperClassFilter(String superClass) {

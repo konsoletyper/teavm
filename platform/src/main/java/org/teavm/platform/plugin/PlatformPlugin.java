@@ -22,10 +22,9 @@ import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.interop.PlatformMarker;
-import org.teavm.metaprogramming.Meta;
-import org.teavm.metaprogramming.Value;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.Platform;
+import org.teavm.platform.PlatformQueue;
 import org.teavm.vm.TeaVMPluginUtil;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
@@ -71,6 +70,7 @@ public class PlatformPlugin implements TeaVMPlugin {
         host.add(new PlatformDependencyListener());
 
         TeaVMPluginUtil.handleNatives(host, Platform.class);
+        TeaVMPluginUtil.handleNatives(host, PlatformQueue.class);
     }
 
     @PlatformMarker
