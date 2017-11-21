@@ -119,15 +119,21 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 default:
                     break;
             }
-            expr.getSecondOperand().acceptVisitor(this);
-            Expr b = resultExpr;
-            if (b instanceof ConstantExpr && expr.getOperation() == BinaryOperation.SUBTRACT) {
-                if (tryMakePositive((ConstantExpr) b)) {
-                    expr.setOperation(BinaryOperation.ADD);
+            Expr b = expr.getSecondOperand();
+            Expr a = expr.getFirstOperand();
+
+            if (a instanceof VariableExpr || a instanceof ConstantExpr) {
+                b.acceptVisitor(this);
+                b = resultExpr;
+                if (b instanceof ConstantExpr && expr.getOperation() == BinaryOperation.SUBTRACT) {
+                    if (tryMakePositive((ConstantExpr) b)) {
+                        expr.setOperation(BinaryOperation.ADD);
+                    }
                 }
+                a.acceptVisitor(this);
+                a = resultExpr;
             }
-            expr.getFirstOperand().acceptVisitor(this);
-            Expr a = resultExpr;
+
             Expr p = a;
             Expr q = b;
             boolean invert = false;
