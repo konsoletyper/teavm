@@ -714,7 +714,7 @@ public class ValueEmitter {
             return value;
         } else {
             if (this.type instanceof ValueType.Primitive) {
-                throw new EmitException("Can't convert " + this.type + " to " + type);
+                return boxPrimitive(type);
             }
             Variable result = pe.getProgram().createVariable();
             CastInstruction insn = new CastInstruction();
@@ -724,6 +724,25 @@ public class ValueEmitter {
             pe.addInstruction(insn);
             return pe.var(result, type);
         }
+    }
+
+    private ValueEmitter boxPrimitive(ValueType type) {
+        if (!(type instanceof ValueType.Object)) {
+            throw new EmitException("Can't convert " + this.type + " to " + type);
+        }
+        String targetClass = ((ValueType.Object) type).getClassName();
+
+        PrimitiveType primitiveType = ((ValueType.Primitive) this.type).getKind();
+        String boxClassName = getPrimitiveClassName(primitiveType);
+        ValueEmitter result = invokeValueOf(boxClassName);
+        if (!pe.getClassSource().isSuperType(targetClass, boxClassName).orElse(false)) {
+            throw new EmitException("Can't convert " + this.type + " to " + targetClass);
+        }
+        return result;
+    }
+
+    private ValueEmitter invokeValueOf(String cls) {
+        return pe.invoke(cls, "valueOf", ValueType.object(cls), this);
     }
 
     public ValueEmitter cast(NumericOperandType to) {
@@ -741,7 +760,7 @@ public class ValueEmitter {
 
         ValueEmitter result = pe.newVar(ValueType.INTEGER);
         CastNumberInstruction insn = new CastNumberInstruction(convertToNumeric(kind), to);
-        insn.setValue(variable);
+        insn.setValue(value.variable);
         insn.setReceiver(result.getVariable());
         pe.addInstruction(insn);
 
