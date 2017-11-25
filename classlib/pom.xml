@@ -138,12 +138,15 @@
                 <argument>java.nio</argument>
                 <argument>java.nio.charset</argument>
                 <argument>java.text</argument>
+                <argument>java.security</argument>
                 <argument>java.util</argument>
                 <argument>java.util.concurrent</argument>
                 <argument>java.util.function</argument>
                 <argument>java.util.logging</argument>
                 <argument>java.util.regex</argument>
                 <argument>java.util.zip</argument>
+                <argument>java.util.jar</argument>
+                <argument>java.util.stream</argument>
                 <argument>-output</argument>
                 <argument>${project.build.directory}/jcl-report</argument>
               </arguments>
