@@ -625,4 +625,10 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
         return getClassLoader().getResourceAsStream(name);
     }
+
+    public TPackage getPackage() {
+        String name = (String) (Object) getName();
+        name = name.substring(0, name.lastIndexOf('.') + 1);
+        return TPackage.getPackage(name);
+    }
 }

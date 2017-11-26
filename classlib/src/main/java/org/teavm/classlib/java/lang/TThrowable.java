@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.java.io.TPrintStream;
+import org.teavm.classlib.java.io.TPrintWriter;
 import org.teavm.classlib.java.util.TArrays;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Remove;
@@ -153,6 +154,20 @@ public class TThrowable extends RuntimeException {
     }
 
     public void printStackTrace(TPrintStream stream) {
+        stream.println(TString.wrap(getClass().getName() + ": " + getMessage()));
+        if (stackTrace != null) {
+            for (TStackTraceElement element : stackTrace) {
+                stream.print(TString.wrap("  at "));
+                stream.println(element);
+            }
+        }
+        if (cause != null && cause != this) {
+            stream.print(TString.wrap("Caused by: "));
+            cause.printStackTrace(stream);
+        }
+    }
+
+    public void printStackTrace(TPrintWriter stream) {
         stream.println(TString.wrap(getClass().getName() + ": " + getMessage()));
         if (stackTrace != null) {
             for (TStackTraceElement element : stackTrace) {
