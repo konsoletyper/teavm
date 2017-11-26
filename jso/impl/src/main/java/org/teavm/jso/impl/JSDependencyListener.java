@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.impl;
 
+import java.util.HashSet;
 import java.util.Set;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
@@ -27,6 +28,8 @@ import org.teavm.model.MethodReference;
 
 class JSDependencyListener extends AbstractDependencyListener {
     private JSBodyRepository repository;
+    private Set<String> reachedClasses = new HashSet<>();
+    private Set<MethodReference> reachedMethods = new HashSet<>();
 
     JSDependencyListener(JSBodyRepository repository) {
         this.repository = repository;
@@ -35,6 +38,9 @@ class JSDependencyListener extends AbstractDependencyListener {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         MethodReference ref = method.getReference();
+        if (!reachedMethods.add(ref)) {
+            return;
+        }
         Set<MethodReference> callbackMethods = repository.callbackMethods.get(ref);
         if (callbackMethods != null) {
             for (MethodReference callbackMethod : callbackMethods) {
@@ -45,6 +51,9 @@ class JSDependencyListener extends AbstractDependencyListener {
 
     @Override
     public void classReached(DependencyAgent agent, String className, CallLocation location) {
+        if (!reachedClasses.add(className)) {
+            return;
+        }
         ClassReader cls = agent.getClassSource().get(className);
         for (MethodReader method : cls.getMethods()) {
             AnnotationReader exposeAnnot = method.getAnnotations().get(JSMethodToExpose.class.getName());

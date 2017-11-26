@@ -40,7 +40,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public class ServiceLoaderSupport extends AbstractDependencyListener implements Generator {
-    private Set<String> achievedClasses = new HashSet<>();
+    private Set<String> reachedClasses = new HashSet<>();
     private Map<String, List<String>> serviceMap = new HashMap<>();
     private DependencyNode allClassesNode;
     private ClassLoader classLoader;
@@ -92,7 +92,7 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
 
     @Override
     public void classReached(DependencyAgent agent, String className, CallLocation location) {
-        if (!achievedClasses.add(className)) {
+        if (!reachedClasses.add(className)) {
             return;
         }
         try {
