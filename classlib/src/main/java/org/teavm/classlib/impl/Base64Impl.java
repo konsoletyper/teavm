@@ -118,9 +118,9 @@ public final class Base64Impl {
         int j;
         for (j = 0; j < triples;) {
             output[i++] = encode((byte) (data[j] >>> 2));
-            output[i++] = encode((byte) ((data[j] << 4) | (data[j + 1] >>> 4)));
+            output[i++] = encode((byte) ((data[j] << 4) | ((data[j + 1] & 0xFF) >>> 4)));
             ++j;
-            output[i++] = encode((byte) ((data[j] << 2) | (data[j + 1] >>> 6)));
+            output[i++] = encode((byte) ((data[j] << 2) | ((data[j + 1] & 0xFF) >>> 6)));
             ++j;
             output[i++] = encode(data[j]);
             ++j;
