@@ -23,17 +23,59 @@ public class Base64Test {
     @Test
     public void decoderWorks() {
         assertEquals("q", decode("cQ=="));
+        assertEquals("q", decode("cQ"));
         assertEquals("qw", decode("cXc="));
+        assertEquals("qw", decode("cXc"));
         assertEquals("qwe", decode("cXdl"));
         assertEquals("qwer", decode("cXdlcg=="));
+        assertEquals("qwer", decode("cXdlcg"));
         assertEquals("qwert", decode("cXdlcnQ="));
         assertEquals("qwerty", decode("cXdlcnR5"));
         assertEquals("qwertyu", decode("cXdlcnR5dQ=="));
+        assertEquals("qwertyu", decode("cXdlcnR5dQ"));
+    }
+
+    @Test
+    public void encoderWorks() {
+        assertEquals("cQ==", encode("q"));
+        assertEquals("cXc=", encode("qw"));
+        assertEquals("cXdl", encode("qwe"));
+        assertEquals("cXdlcg==", encode("qwer"));
+        assertEquals("cXdlcnQ=", encode("qwert"));
+        assertEquals("cXdlcnR5", encode("qwerty"));
+        assertEquals("cXdlcnR5dQ==", encode("qwertyu"));
+    }
+
+    @Test
+    public void encoderNoPadWorks() {
+        assertEquals("cQ", encodeNoPad("q"));
+        assertEquals("cXc", encodeNoPad("qw"));
+        assertEquals("cXdl", encodeNoPad("qwe"));
+        assertEquals("cXdlcg", encodeNoPad("qwer"));
+        assertEquals("cXdlcnQ", encodeNoPad("qwert"));
+        assertEquals("cXdlcnR5", encodeNoPad("qwerty"));
+        assertEquals("cXdlcnR5dQ", encodeNoPad("qwertyu"));
     }
 
     private String decode(String text) {
         try {
-            return new String(Base64.decode(text), "UTF-8");
+            return new String(Base64Impl.decode(text.getBytes("UTF-8")), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            return "";
+        }
+    }
+
+    private String encode(String text) {
+        try {
+            return new String(Base64Impl.encode(text.getBytes("UTF-8"), true), "UTF-8");
+        } catch (UnsupportedEncodingException e) {
+            return "";
+        }
+    }
+
+    private String encodeNoPad(String text) {
+        try {
+            return new String(Base64Impl.encode(text.getBytes("UTF-8"), false), "UTF-8");
         } catch (UnsupportedEncodingException e) {
             return "";
         }

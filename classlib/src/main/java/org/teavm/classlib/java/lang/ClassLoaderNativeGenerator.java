@@ -19,7 +19,6 @@ import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Arrays;
-import java.util.Base64;
 import java.util.HashSet;
 import java.util.Properties;
 import java.util.ServiceLoader;
@@ -31,6 +30,7 @@ import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.classlib.ResourceSupplier;
 import org.teavm.classlib.ResourceSupplierContext;
+import org.teavm.classlib.impl.Base64Impl;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 
@@ -69,10 +69,14 @@ public class ClassLoaderNativeGenerator implements Injector {
                 }
                 first = false;
                 writer.newLine();
-                String data = Base64.getEncoder().encodeToString(IOUtils.toByteArray(new BufferedInputStream(input)));
+                byte[] dataBytes = Base64Impl.encode(IOUtils.toByteArray(new BufferedInputStream(input)), true);
+                char[] dataChars = new char[dataBytes.length];
+                for (int i = 0; i < dataBytes.length; ++i) {
+                    dataChars[i] = (char) dataBytes[i];
+                }
                 writer.append("\"").append(RenderingUtil.escapeString(resource)).append("\"");
                 writer.ws().append(':').ws();
-                writer.append("\"").append(data).append("\"");
+                writer.append("\"").append(new String(dataChars)).append("\"");
             }
         }
 

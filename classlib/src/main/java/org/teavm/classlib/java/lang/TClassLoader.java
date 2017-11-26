@@ -18,7 +18,7 @@ package org.teavm.classlib.java.lang;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import org.teavm.backend.javascript.spi.InjectedBy;
-import org.teavm.classlib.impl.Base64;
+import org.teavm.classlib.impl.Base64Impl;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
@@ -50,7 +50,11 @@ public abstract class TClassLoader extends TObject {
         }
         JSObject data = resources.getResource(name);
         String dataString = resourceToString(data);
-        return dataString == null ? null : new ByteArrayInputStream(Base64.decode(dataString));
+        byte[] bytes = new byte[dataString.length()];
+        for (int i = 0; i < bytes.length; ++i) {
+            bytes[i] = (byte) dataString.charAt(i);
+        }
+        return dataString == null ? null : new ByteArrayInputStream(Base64Impl.decode(bytes));
     }
 
     public static InputStream getSystemResourceAsStream(String name) {
