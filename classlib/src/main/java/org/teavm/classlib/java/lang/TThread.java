@@ -62,6 +62,9 @@ public class TThread extends TObject implements TRunnable {
                 setCurrentThread(TThread.this);
                 TThread.this.run();
             } finally {
+                synchronized (finishedLock) {
+                    finishedLock.notifyAll();
+                }
                 alive = false;
                 activeCount--;
                 setCurrentThread(mainThread);
@@ -84,9 +87,6 @@ public class TThread extends TObject implements TRunnable {
     public void run() {
         if (target != null) {
             target.run();
-        }
-        synchronized (finishedLock) {
-            finishedLock.notifyAll();
         }
     }
 
