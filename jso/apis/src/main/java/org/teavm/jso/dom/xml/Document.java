@@ -54,4 +54,8 @@ public interface Document extends Node {
     NodeList<Element> getElementsByTagNameNS(String namespaceURI, String localName);
 
     Element getElementById(String elementId);
+
+    Element querySelector(String selectors);
+
+    NodeList<? extends Element> querySelectorAll(String selectors);
 }

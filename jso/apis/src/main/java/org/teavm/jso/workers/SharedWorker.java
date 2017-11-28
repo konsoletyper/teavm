@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.browser;
+package org.teavm.jso.workers;
 
 import org.teavm.jso.JSBody;
-import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
-public final class Performance implements JSObject {
-    private Performance() {
-    }
+public abstract class SharedWorker implements AbstractWorker {
+    @JSBody(params = "url", script = "return new SharedWorker(url);")
+    public static native Worker create(String url);
 
-    @JSBody(script = "return (window || self).performance.now();")
-    public static native double now();
-
-    @JSBody(script = "return typeof((window || self).performance) !== 'undefined';")
-    public static native boolean isSupported();
+    @JSProperty
+    public abstract MessagePort getPort();
 }

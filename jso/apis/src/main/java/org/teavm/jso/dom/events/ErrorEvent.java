@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.browser;
+package org.teavm.jso.dom.events;
 
-import org.teavm.jso.JSBody;
-import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
-public final class Performance implements JSObject {
-    private Performance() {
-    }
+public interface ErrorEvent extends Event {
+    @JSProperty
+    String getMessage();
 
-    @JSBody(script = "return (window || self).performance.now();")
-    public static native double now();
+    @JSProperty
+    String getFileName();
 
-    @JSBody(script = "return typeof((window || self).performance) !== 'undefined';")
-    public static native boolean isSupported();
+    @JSProperty("lineno")
+    int getLineNumber();
+
+    @JSProperty("colno")
+    int getColumnNumber();
+
+    @JSProperty
+    String getError();
 }

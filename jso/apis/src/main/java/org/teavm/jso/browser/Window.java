@@ -149,6 +149,8 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
 
     public abstract void stop();
 
+    public abstract void postMessage(JSObject message);
+
     public abstract void postMessage(JSObject message, String targetOrigin);
 
     public abstract void postMessage(JSObject message, String targetOrigin, JSArrayReader<JSObject> transfer);
@@ -157,7 +159,7 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
         postMessage(message, targetOrigin, JSArray.of(transfer));
     }
 
-    @JSBody(script = "return window;")
+    @JSBody(script = "return window || self;")
     public static native Window current();
 
     @JSBody(params = "uri", script = "return encodeURI(uri);")

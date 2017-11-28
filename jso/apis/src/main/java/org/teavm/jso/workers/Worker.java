@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2017 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,22 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.browser;
+package org.teavm.jso.workers;
 
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
+import org.teavm.jso.dom.events.EventListener;
+import org.teavm.jso.dom.events.MessageEvent;
 
-public final class Performance implements JSObject {
-    private Performance() {
-    }
+public abstract class Worker implements AbstractWorker {
+    @JSBody(params = "url", script = "return new Worker(url);")
+    public static native Worker create(String url);
 
-    @JSBody(script = "return (window || self).performance.now();")
-    public static native double now();
+    @JSProperty("onmessage")
+    public abstract void onMessage(EventListener<MessageEvent> listener);
 
-    @JSBody(script = "return typeof((window || self).performance) !== 'undefined';")
-    public static native boolean isSupported();
+    public abstract void postMessage(JSObject message);
+
+    public abstract void terminate();
 }

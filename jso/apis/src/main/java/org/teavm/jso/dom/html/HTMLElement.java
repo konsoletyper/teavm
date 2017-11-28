@@ -159,4 +159,10 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
         clear().appendChild(getOwnerDocument().createTextNode(content));
         return this;
     }
+
+    @Override
+    HTMLElement querySelector(String selectors);
+
+    @Override
+    NodeList<? extends HTMLElement> querySelectorAll(String selectors);
 }

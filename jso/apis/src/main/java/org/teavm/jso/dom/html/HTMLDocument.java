@@ -20,6 +20,7 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.dom.events.EventTarget;
 import org.teavm.jso.dom.xml.Document;
+import org.teavm.jso.dom.xml.NodeList;
 
 public interface HTMLDocument extends Document, EventTarget {
     @JSProperty
@@ -53,4 +54,10 @@ public interface HTMLDocument extends Document, EventTarget {
     static HTMLDocument current() {
         return Window.current().getDocument();
     }
+
+    @Override
+    HTMLElement querySelector(String selectors);
+
+    @Override
+    NodeList<? extends HTMLElement> querySelectorAll(String selectors);
 }
