@@ -85,6 +85,9 @@ final class JS {
     public static native String unwrapString(JSObject value);
 
     public static <T extends JSObject> JSArray<T> wrap(T[] array) {
+        if (array == null) {
+            return null;
+        }
         JSArray<T> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, array[i]);
@@ -97,6 +100,9 @@ final class JS {
     }
 
     public static <T extends JSObject, S> JSArray<T> map(S[] array, Function<S, T> f) {
+        if (array == null) {
+            return null;
+        }
         JSArray<T> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, f.apply(array[i]));
@@ -109,6 +115,9 @@ final class JS {
     }
 
     public static JSArray<JSBoolean> wrap(boolean[] array) {
+        if (array == null) {
+            return null;
+        }
         JSArray<JSBoolean> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSBoolean.valueOf(array[i]));
@@ -121,6 +130,9 @@ final class JS {
     }
 
     public static JSArray<JSNumber> wrap(byte[] array) {
+        if (array == null) {
+            return null;
+        }
         JSArray<JSNumber> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
@@ -133,6 +145,9 @@ final class JS {
     }
 
     public static JSArray<JSNumber> wrap(short[] array) {
+        if (array == null) {
+            return null;
+        }
         JSArray<JSNumber> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
@@ -145,6 +160,9 @@ final class JS {
     }
 
     public static JSArray<JSNumber> wrap(char[] array) {
+        if (array == null) {
+            return null;
+        }
         JSArray<JSNumber> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
@@ -157,6 +175,9 @@ final class JS {
     }
 
     public static JSArray<JSNumber> wrap(int[] array) {
+        if (array == null) {
+            return null;
+        }
         JSArray<JSNumber> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
@@ -169,6 +190,9 @@ final class JS {
     }
 
     public static JSArray<JSString> wrap(String[] array) {
+        if (array == null) {
+            return null;
+        }
         JSArray<JSString> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSString.valueOf(array[i]));
@@ -181,6 +205,9 @@ final class JS {
     }
 
     public static JSArray<JSNumber> wrap(float[] array) {
+        if (array == null) {
+            return null;
+        }
         JSArray<JSNumber> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
@@ -193,6 +220,9 @@ final class JS {
     }
 
     public static JSArray<JSNumber> wrap(double[] array) {
+        if (array == null) {
+            return null;
+        }
         JSArray<JSNumber> result = JSArray.create(array.length);
         for (int i = 0; i < array.length; ++i) {
             result.set(i, JSNumber.valueOf(array[i]));
@@ -205,6 +235,9 @@ final class JS {
     }
 
     public static <T extends JSObject> T[] unwrapArray(Class<T> type, JSArrayReader<T> array) {
+        if (array == null) {
+            return null;
+        }
         @SuppressWarnings("unchecked")
         T[] result = (T[]) Array.newInstance(type, array.getLength());
         for (int i = 0; i < result.length; ++i) {
@@ -218,6 +251,9 @@ final class JS {
     }
 
     public static <S extends JSObject, T> T[] unmapArray(Class<T> type, JSArrayReader<S> array, Function<S, T> f) {
+        if (array == null) {
+            return null;
+        }
         @SuppressWarnings("unchecked")
         T[] result = (T[]) Array.newInstance(type, array.getLength());
         for (int i = 0; i < result.length; ++i) {
@@ -231,6 +267,9 @@ final class JS {
     }
 
     public static boolean[] unwrapBooleanArray(JSArrayReader<JSBoolean> array) {
+        if (array == null) {
+            return null;
+        }
         boolean[] result = new boolean[array.getLength()];
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).booleanValue();
@@ -243,6 +282,9 @@ final class JS {
     }
 
     public static byte[] unwrapByteArray(JSArrayReader<JSNumber> array) {
+        if (array == null) {
+            return null;
+        }
         byte[] result = new byte[array.getLength()];
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).byteValue();
@@ -255,6 +297,9 @@ final class JS {
     }
 
     public static short[] unwrapShortArray(JSArrayReader<JSNumber> array) {
+        if (array == null) {
+            return null;
+        }
         short[] result = new short[array.getLength()];
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).shortValue();
@@ -267,6 +312,9 @@ final class JS {
     }
 
     public static int[] unwrapIntArray(JSArrayReader<JSNumber> array) {
+        if (array == null) {
+            return null;
+        }
         int[] result = new int[array.getLength()];
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).intValue();
@@ -279,6 +327,9 @@ final class JS {
     }
 
     public static char[] unwrapCharArray(JSArrayReader<JSNumber> array) {
+        if (array == null) {
+            return null;
+        }
         char[] result = new char[array.getLength()];
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).charValue();
@@ -291,6 +342,9 @@ final class JS {
     }
 
     public static float[] unwrapFloatArray(JSArrayReader<JSNumber> array) {
+        if (array == null) {
+            return null;
+        }
         float[] result = new float[array.getLength()];
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).floatValue();
@@ -303,6 +357,9 @@ final class JS {
     }
 
     public static double[] unwrapDoubleArray(JSArrayReader<JSNumber> array) {
+        if (array == null) {
+            return null;
+        }
         double[] result = new double[array.getLength()];
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).doubleValue();
@@ -315,6 +372,9 @@ final class JS {
     }
 
     public static String[] unwrapStringArray(JSArrayReader<JSString> array) {
+        if (array == null) {
+            return null;
+        }
         String[] result = new String[array.getLength()];
         for (int i = 0; i < result.length; ++i) {
             result[i] = array.get(i).stringValue();
