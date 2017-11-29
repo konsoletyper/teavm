@@ -21,6 +21,6 @@ public final class Navigator {
     private Navigator() {
     }
 
-    @JSBody(script = "return (window || self).navigator.onLine;")
+    @JSBody(script = "return navigator.onLine;")
     public static native boolean isOnline();
 }

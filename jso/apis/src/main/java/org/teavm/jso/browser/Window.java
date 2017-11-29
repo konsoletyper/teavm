@@ -25,6 +25,8 @@ import org.teavm.jso.dom.html.HTMLElement;
 import org.teavm.jso.dom.html.HTMLIFrameElement;
 
 public abstract class Window implements JSObject, WindowEventTarget, StorageProvider, JSArrayReader<HTMLIFrameElement> {
+    private static Window cachedInstance;
+
     private Window() {
     }
 
@@ -159,8 +161,11 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
         postMessage(message, targetOrigin, JSArray.of(transfer));
     }
 
-    @JSBody(script = "return window || self;")
+    @JSBody(script = "return window;")
     public static native Window current();
+
+    @JSBody(script = "return self;")
+    public static native Window worker();
 
     @JSBody(params = "uri", script = "return encodeURI(uri);")
     public static native String encodeURI(String uri);
