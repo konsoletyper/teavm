@@ -18,6 +18,7 @@ package org.teavm.jso.core;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
 public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
     private JSArray() {
@@ -77,6 +78,9 @@ public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
     public abstract JSArray<T> splice(int start, int count, T a, T b, T c);
 
     public abstract JSArray<T> splice(int start, int count, T a, T b, T c, T d);
+    
+    @JSProperty
+    public abstract void setLength(int len);
 
     @JSBody(script = "return new Array();")
     public static native <T extends JSObject> JSArray<T> create();
