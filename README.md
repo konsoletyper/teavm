@@ -14,6 +14,7 @@ Useful links:
 * [Gallery](http://teavm.org/gallery.html)
 * [Flavour source code repository](https://github.com/konsoletyper/teavm-flavour)
 * [Site source code repository](https://github.com/konsoletyper/teavm-site)
+* [Discussion on Google groups](https://groups.google.com/forum/#!forum/teavm)
 
 
 Building TeaVM
