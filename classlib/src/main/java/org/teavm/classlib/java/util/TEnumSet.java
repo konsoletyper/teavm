@@ -113,6 +113,7 @@ public abstract class TEnumSet<E extends Enum<E>> extends AbstractSet<E> impleme
     @SafeVarargs
     public static <E extends Enum<E>> TEnumSet<E> of(E first, E... rest) {
         TEnumSet<E> result = TEnumSet.noneOf(first.getDeclaringClass());
+        result.fastAdd(first);
         for (E e : rest) {
             result.fastAdd(e);
         }
