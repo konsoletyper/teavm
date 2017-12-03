@@ -16,11 +16,8 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
-import org.teavm.dependency.PluggableDependency;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Async;
-import org.teavm.model.AnnotationHolder;
-import org.teavm.model.AnnotationValue;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
@@ -53,12 +50,6 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
                                 + "both be either static or non-static",
                                 method.getReference(), asyncMethod.getReference());
                     }
-                    AnnotationHolder annot = new AnnotationHolder(GeneratedBy.class.getName());
-                    annot.getValues().put("value", new AnnotationValue(ValueType.parse(AsyncMethodGenerator.class)));
-                    method.getAnnotations().add(annot);
-                    annot = new AnnotationHolder(PluggableDependency.class.getName());
-                    annot.getValues().put("value", new AnnotationValue(ValueType.parse(AsyncMethodGenerator.class)));
-                    method.getAnnotations().add(annot);
                 }
             }
         }

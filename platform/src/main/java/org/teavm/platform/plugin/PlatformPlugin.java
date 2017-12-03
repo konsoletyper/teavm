@@ -21,7 +21,10 @@ import org.teavm.backend.wasm.TeaVMWasmHost;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.interop.Async;
 import org.teavm.interop.PlatformMarker;
+import org.teavm.model.ClassReader;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformQueue;
@@ -37,6 +40,18 @@ public class PlatformPlugin implements TeaVMPlugin {
             host.add(new ResourceTransformer());
             host.add(new ResourceAccessorTransformer(host));
             host.add(new ResourceAccessorDependencyListener());
+            host.getExtension(TeaVMJavaScriptHost.class).addGeneratorProvider(context -> {
+                ClassReader cls = context.getClassSource().get(context.getMethod().getClassName());
+                if (cls == null) {
+                    return null;
+                }
+                MethodReader method = cls.getMethod(context.getMethod().getDescriptor());
+                if (method == null) {
+                    return null;
+                }
+                return method.getAnnotations().get(Async.class.getName()) != null
+                        ? new AsyncMethodGenerator() : null;
+            });
         } else if (!isBootstrap()) {
             host.add(new StringAmplifierTransformer());
         }
@@ -68,6 +83,7 @@ public class PlatformPlugin implements TeaVMPlugin {
         host.add(new EnumDependencySupport());
         host.add(new AnnotationDependencySupport());
         host.add(new PlatformDependencyListener());
+        host.add(new AsyncDependencyListener());
 
         TeaVMPluginUtil.handleNatives(host, Platform.class);
         TeaVMPluginUtil.handleNatives(host, PlatformQueue.class);

@@ -166,7 +166,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
         MethodReference launchRef = new MethodReference(Platform.class, "launchThread",
                 PlatformRunnable.class, void.class);
         String runnable = context.getParameterName(1);
-        writer.append("return window.setTimeout(function()").ws().append("{").indent().softNewLine();
+        writer.append("return setTimeout(function()").ws().append("{").indent().softNewLine();
         if (timeout) {
             writer.appendMethodBody(launchRef);
         } else {
