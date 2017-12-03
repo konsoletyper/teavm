@@ -415,7 +415,7 @@ public class Decompiler {
                     }
                 }
 
-                for (int j = oldBlock.tryCatches.size() - 1; j >= 0; --j) {
+                for (int j = 0; j < oldBlock.tryCatches.size(); ++j) {
                     TryCatchBookmark bookmark = oldBlock.tryCatches.get(j);
                     TryCatchStatement tryCatchStmt = new TryCatchStatement();
                     tryCatchStmt.setExceptionType(bookmark.exceptionType);
@@ -428,7 +428,7 @@ public class Decompiler {
                     if (!tryCatchStmt.getProtectedBody().isEmpty()) {
                         blockPart.add(tryCatchStmt);
                     }
-                    inheritedBookmarks.add(bookmark);
+                    inheritedBookmarks.add(0, bookmark);
                 }
                 oldBlock.tryCatches.clear();
             }

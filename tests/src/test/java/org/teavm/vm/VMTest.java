@@ -102,6 +102,24 @@ public class VMTest {
     }
 
     @Test
+    public void catchFinally() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            if (Integer.parseInt("invalid") > 0) {
+                sb.append("err1;");
+            } else {
+                sb.append("err2;");
+            }
+            sb.append("err3");
+        } catch (NumberFormatException e) {
+            sb.append("catch;");
+        } finally {
+            sb.append("finally;");
+        }
+        assertEquals("catch;finally;", sb.toString());
+    }
+
+    @Test
     public void surrogateInStringLiteralsWork() {
         assertEquals(0xDDC2, "a\uDDC2b".charAt(1));
     }
