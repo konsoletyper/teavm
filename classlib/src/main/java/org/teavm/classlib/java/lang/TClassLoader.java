@@ -50,11 +50,14 @@ public abstract class TClassLoader extends TObject {
         }
         JSObject data = resources.getResource(name);
         String dataString = resourceToString(data);
+        if (dataString == null) {
+            return null;
+        }
         byte[] bytes = new byte[dataString.length()];
         for (int i = 0; i < bytes.length; ++i) {
             bytes[i] = (byte) dataString.charAt(i);
         }
-        return dataString == null ? null : new ByteArrayInputStream(Base64Impl.decode(bytes));
+        return new ByteArrayInputStream(Base64Impl.decode(bytes));
     }
 
     public static InputStream getSystemResourceAsStream(String name) {
