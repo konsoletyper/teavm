@@ -100,7 +100,19 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     int getScrollLeft();
 
     @JSProperty
+    void setScrollLeft(int scrollLeft);
+
+    @JSProperty
     int getScrollTop();
+
+    @JSProperty
+    void setScrollTop(int scrollTop);
+
+    @JSProperty
+    int getScrollWidth();
+
+    @JSProperty
+    int getScrollHeight();
 
     @JSProperty
     @Override
