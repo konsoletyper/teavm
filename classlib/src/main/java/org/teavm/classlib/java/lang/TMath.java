@@ -196,7 +196,7 @@ public final class TMath extends TObject {
     }
 
     public static double hypot(double x, double y) {
-        return x * x + y * y;
+        return sqrt(x * x + y * y);
     }
 
     public static double expm1(double x) {
