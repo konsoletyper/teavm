@@ -43,6 +43,8 @@ public abstract class XMLHttpRequest implements JSObject {
 
     public abstract void send(String data);
 
+    public abstract void send(JSObject data);
+
     public abstract void setRequestHeader(String name, String value);
 
     public abstract String getAllResponseHeaders();

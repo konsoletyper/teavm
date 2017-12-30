@@ -1664,4 +1664,11 @@ public final class TURI implements TComparable<TURI>, TSerializable {
 
         return convertHexToLowerCase(TString.wrap(result.toString()));
     }
+
+    public TURL toURL() throws TMalformedURLException {
+        if (!absolute) {
+            throw new IllegalArgumentException();
+        }
+        return new TURL(toString());
+    }
 }
