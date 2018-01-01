@@ -23,6 +23,7 @@ before_install:
   - nvm install 7
   - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download\w+:)"`
   - NEW_VERSION=${OLD_VERSION%-SNAPSHOT}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
+  - export NEW_VERSION
   - echo "Building version $NEW_VERSION"
   - mvn versions:set -DnewVersion=$NEW_VERSION
 
@@ -56,6 +57,7 @@ after_success: >
      export TEAVM_FTP_PASSWORD
      mvn deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
      ./update-idea-repository.sh
+     ./update-cli.sh
    fi
 after_script:
   - rm -rf $HOME/.m2/repository/org/teavm
