@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,14 +20,20 @@ import org.teavm.classlib.java.net.TURL;
 import org.teavm.classlib.java.net.TURLConnection;
 import org.teavm.classlib.java.net.TURLStreamHandler;
 
-public class TXHRStreamHandler extends TURLStreamHandler {
-    @Override
-    protected TURLConnection openConnection(TURL u) throws IOException {
-        return new TXHRURLConnection(u);
+public class TDummyStreamHandler extends TURLStreamHandler {
+    private int defaultPort;
+
+    public TDummyStreamHandler(int defaultPort) {
+        this.defaultPort = defaultPort;
     }
 
     @Override
-    protected int getDefaultPort() {
-        return 80;
+    protected TURLConnection openConnection(TURL u) throws IOException {
+        throw new IOException("Unsupported protocol: " + u.getProtocol());
+    }
+
+    @Override
+    public int getDefaultPort() {
+        return defaultPort;
     }
 }

@@ -280,6 +280,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public int indexOf(int ch, int fromIndex) {
+        fromIndex = Math.max(0, fromIndex);
         if (ch < TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
             char bmpChar = (char) ch;
             for (int i = fromIndex; i < characters.length; ++i) {
@@ -305,6 +306,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public int lastIndexOf(int ch, int fromIndex) {
+        fromIndex = Math.min(fromIndex, length() - 1);
         if (ch < TCharacter.MIN_SUPPLEMENTARY_CODE_POINT) {
             char bmpChar = (char) ch;
             for (int i = fromIndex; i >= 0; --i) {
@@ -330,6 +332,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public int indexOf(TString str, int fromIndex) {
+        fromIndex = Math.max(0, fromIndex);
         int toIndex = length() - str.length();
         outer:
         for (int i = fromIndex; i <= toIndex; ++i) {

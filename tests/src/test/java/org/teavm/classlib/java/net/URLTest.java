@@ -229,8 +229,7 @@ public class URLTest {
     }
 
     @Test
-    public void test_ConstructorLjava_net_URLLjava_lang_String()
-            throws Exception {
+    public void test_ConstructorLjava_net_URLLjava_lang_String() throws Exception {
         // Test for method java.net.URL(java.net.URL, java.lang.String)
         u = new URL("http://www.yahoo.com");
         URL uf = new URL("file://www.yahoo.com");
@@ -415,44 +414,6 @@ public class URLTest {
         } catch (MalformedURLException e) {
             // valid
         }
-
-        // Regression test for HARMONY-3258
-        // testing jar context url with relative file
-        try {
-            // check that relative path with null context is not canonicalized
-            String spec = "jar:file:/a!/b/../d";
-            URL ctx = null;
-            u = new URL(ctx, spec);
-            assertEquals("1 Wrong file (jar protocol, relative path)", spec, u.toString());
-
-            spec = "../d";
-            ctx = new URL("jar:file:/a!/b");
-            u = new URL(ctx, spec);
-            assertEquals("2 Wrong file (jar protocol, relative path)", "file:/a!/d", u.getFile());
-
-            spec = "../d";
-            ctx = new URL("jar:file:/a!/b/c");
-            u = new URL(ctx, spec);
-            assertEquals("3 Wrong file (jar protocol, relative path)", "file:/a!/d", u.getFile());
-
-            spec = "../d";
-            ctx = new URL("jar:file:/a!/b/c/d");
-            u = new URL(ctx, spec);
-            assertEquals("4 Wrong file (jar protocol, relative path)", "file:/a!/b/d", u.getFile());
-
-            // added the real example
-            spec = "../pdf/PDF.settings";
-            ctx = new URL("jar:file:/C:/Program%20Files/Netbeans-5.5/ide7/"
-                    + "modules/org-netbeans-modules-utilities.jar!/org/netbeans/modules/utilities/Layer.xml");
-            u = new URL(ctx, spec);
-            assertEquals(
-                    "5 Wrong file (jar protocol, relative path)",
-                    "file:/C:/Program%20Files/Netbeans-5.5/ide7/"
-                            + "modules/org-netbeans-modules-utilities.jar!/org/netbeans/modules/pdf/PDF.settings",
-                    u.getFile());
-        } catch (MalformedURLException e) {
-            fail("Testing jar protocol, relative path failed: " + e);
-        }
     }
 
     @Test
@@ -513,8 +474,7 @@ public class URLTest {
     public void test_equalsLjava_lang_Object() throws MalformedURLException {
         u = new URL("http://www.apache.org:8080/dir::23??????????test.html");
         u1 = new URL("http://www.apache.org:8080/dir::23??????????test.html");
-        assertTrue("A) equals returns false for two identical URLs", u
-                .equals(u1));
+        assertTrue("A) equals returns false for two identical URLs", u.equals(u1));
         assertTrue("return true for null comparison", !u1.equals(null));
         u = new URL("ftp://www.apache.org:8080/dir::23??????????test.html");
         assertTrue("Returned true for non-equal URLs", !u.equals(u1));
@@ -523,14 +483,10 @@ public class URLTest {
         u = new URL("file", null, 0, "/test.txt");
         u1 = new URL("file", null, 0, "/test.txt");
         assertEquals(u, u1);
-        
+
         u = new URL("file", "first.invalid", 0, "/test.txt");
         u1 = new URL("file", "second.invalid", 0, "/test.txt");
         assertFalse(u.equals(u1));
-        
-        u = new URL("file", "harmony.apache.org", 0, "/test.txt");
-        u1 = new URL("file", "www.apache.org", 0, "/test.txt");
-        assertEquals(u, u1);
     }
 
     @Test
@@ -757,8 +713,7 @@ public class URLTest {
         protected void setURL(URL u, String protocol, String host, int port,
                 String authority, String userInfo, String file, String query,
                 String ref) {
-            super.setURL(u, protocol, host, port, authority, userInfo,
-                    (String) null, query, ref);
+            super.setURL(u, protocol, host, port, authority, userInfo, null, query, ref);
         }
     }
 
@@ -776,10 +731,6 @@ public class URLTest {
         protected URLConnection openConnection(URL arg0) throws IOException {
             return null;
         }
-
-        public void parse(URL url, String spec, int start, int end) {
-            parseURL(url, spec, start, end);
-        }
     }
 
     static class MyURLStreamHandlerFactory implements URLStreamHandlerFactory {
@@ -790,87 +741,6 @@ public class URLTest {
         public URLStreamHandler createURLStreamHandler(String arg0) {
             handler = new MyURLStreamHandler();
             return handler;
-        }
-
-    }
-
-    @Test
-    public void test_URLStreamHandler_parseURL() throws MalformedURLException {
-        URL url = new URL("http://localhost");
-        MyURLStreamHandler handler = MyURLStreamHandlerFactory.handler;
-        try {
-            handler.parse(url, "//", 0, Integer.MIN_VALUE);
-            fail("Should throw SIOOBE.");
-        } catch (StringIndexOutOfBoundsException e) {
-            // expected;
-        }
-        try {
-            handler.parse(url, "1234//", 4, Integer.MIN_VALUE);
-            fail("Should throw SIOOBE.");
-        } catch (StringIndexOutOfBoundsException e) {
-            // expected;
-        }
-        try {
-            handler.parse(url, "1", -1, 0);
-            fail("Should throw SIOOBE.");
-        } catch (StringIndexOutOfBoundsException e) {
-            // expected;
-        }
-        try {
-            handler.parse(url, "1", 3, 2);
-            fail("Should throw SecurityException.");
-        } catch (SecurityException e) {
-            // expected;
-        }
-
-        try {
-            handler.parse(url, "11", 1, Integer.MIN_VALUE);
-            fail("Should throw SecurityException.");
-        } catch (SecurityException e) {
-            // expected;
-        }
-        
-        // Regression tests for HARMONY-6499
-        try {
-            handler.parse(url, "any", 10, Integer.MIN_VALUE);
-            fail("Should throw StringIndexOutOfBoundsException");
-        } catch (StringIndexOutOfBoundsException e) {
-            // expected;
-        }
-        
-        try {
-            handler.parse(url, "any", 10, Integer.MIN_VALUE + 1);
-            fail("Should throw StringIndexOutOfBoundsException");
-        } catch (StringIndexOutOfBoundsException e) {
-            // expected;
-        }
-        
-        try {
-            handler.parse(url, "any", Integer.MIN_VALUE, Integer.MIN_VALUE);
-            fail("Should throw StringIndexOutOfBoundsException");
-        } catch (StringIndexOutOfBoundsException e) {
-            // expected;
-        }
-        
-        try {
-            handler.parse(url, "any", Integer.MIN_VALUE, 2);
-            fail("Should throw StringIndexOutOfBoundsException");
-        } catch (StringIndexOutOfBoundsException e) {
-            // expected;
-        }
-        
-        try {
-            handler.parse(url, "any", -1, 2);
-            fail("Should throw StringIndexOutOfBoundsException");
-        } catch (StringIndexOutOfBoundsException e) {
-            // expected;
-        }
-        
-        try {
-            handler.parse(url, "any", -1, -1);
-            fail("Should throw SecurityException");
-        } catch (SecurityException e) {
-            // expected;
         }
     }
 }

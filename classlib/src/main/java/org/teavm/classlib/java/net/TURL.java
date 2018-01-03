@@ -23,6 +23,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 import org.teavm.classlib.java.lang.TString;
+import org.teavm.classlib.java.net.impl.TDummyStreamHandler;
 import org.teavm.classlib.java.net.impl.TXHRStreamHandler;
 
 public final class TURL implements Serializable {
@@ -178,8 +179,8 @@ public final class TURL implements Serializable {
 
         // Set the fields from the arguments. Handle the case where the
         // passed in "file" includes both a file and a reference part.
-        int index = -1;
-        index = file.indexOf("#", file.lastIndexOf("/")); //$NON-NLS-1$ //$NON-NLS-2$
+        int index;
+        index = file.indexOf("#", file.lastIndexOf("/"));
         if (index >= 0) {
             this.file = file.substring(0, index);
             ref = file.substring(index + 1);
@@ -296,7 +297,11 @@ public final class TURL implements Serializable {
             case "https":
                 strmHandler = new TXHRStreamHandler();
                 break;
+            case "ftp":
+                strmHandler = new TDummyStreamHandler(21);
+                break;
             default:
+                strmHandler = new TDummyStreamHandler(-1);
                 break;
         }
 
