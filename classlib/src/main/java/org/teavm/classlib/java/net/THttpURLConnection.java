@@ -87,34 +87,12 @@ public abstract class THttpURLConnection extends TURLConnection {
     }
 
     public int getResponseCode() throws IOException {
-        // Call getInputStream() first since getHeaderField() doesn't return
-        // exceptions
         getInputStream();
-        String response = getHeaderField(0);
-        if (response == null) {
-            return -1;
-        }
-        response = response.trim();
-        int mark = response.indexOf(" ") + 1;
-        if (mark == 0) {
-            return -1;
-        }
-        int last = mark + 3;
-        if (last > response.length()) {
-            last = response.length();
-        }
-        responseCode = Integer.parseInt(response.substring(mark, last));
-        if (last + 1 <= response.length()) {
-            responseMessage = response.substring(last + 1);
-        }
         return responseCode;
     }
 
     public String getResponseMessage() throws IOException {
-        if (responseMessage != null) {
-            return responseMessage;
-        }
-        getResponseCode();
+        getInputStream();
         return responseMessage;
     }
 
