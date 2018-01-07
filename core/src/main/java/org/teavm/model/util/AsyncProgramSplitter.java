@@ -19,6 +19,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Queue;
@@ -67,11 +68,12 @@ public class AsyncProgramSplitter {
         initialStep.targetPart = initialPart;
         Queue<Step> queue = new ArrayDeque<>();
         queue.add(initialStep);
+        Set<BasicBlock> visitedBlocks = new HashSet<>();
 
         taskLoop: while (!queue.isEmpty()) {
             Step step = queue.remove();
             BasicBlock targetBlock = step.targetPart.program.basicBlockAt(step.source);
-            if (targetBlock.instructionCount() > 0) {
+            if (!visitedBlocks.add(targetBlock)) {
                 continue;
             }
             BasicBlock sourceBlock = program.basicBlockAt(step.source);
