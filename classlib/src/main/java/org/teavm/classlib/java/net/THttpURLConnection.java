@@ -87,12 +87,12 @@ public abstract class THttpURLConnection extends TURLConnection {
     }
 
     public int getResponseCode() throws IOException {
-        getInputStream();
+        connect();
         return responseCode;
     }
 
     public String getResponseMessage() throws IOException {
-        getInputStream();
+        connect();
         return responseMessage;
     }
 
