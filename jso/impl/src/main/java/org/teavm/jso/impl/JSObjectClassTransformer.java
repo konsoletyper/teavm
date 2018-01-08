@@ -155,6 +155,8 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             basicBlock.add(exit);
 
             classHolder.addMethod(exportedMethod);
+            MethodHolder methodToCall = classHolder.getMethod(method);
+            JSClassProcessor.makeSync(methodToCall != null ? methodToCall : exportedMethod);
 
             String publicAlias = classToExpose.methods.get(method);
             AnnotationHolder annot = new AnnotationHolder(JSMethodToExpose.class.getName());

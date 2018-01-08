@@ -192,10 +192,16 @@ class JSClassProcessor {
         Set<MethodDescriptor> methods = new HashSet<>();
         findInheritedMethods(cls, methods, new HashSet<>());
         for (MethodHolder method : cls.getMethods()) {
-            if (methods.contains(method.getDescriptor()) && method.getAnnotations().get(Sync.class.getName()) == null) {
-                AnnotationHolder annot = new AnnotationHolder(Sync.class.getName());
-                method.getAnnotations().add(annot);
+            if (methods.contains(method.getDescriptor())) {
+                makeSync(method);
             }
+        }
+    }
+
+    static void makeSync(MethodHolder method) {
+        if (method.getAnnotations().get(Sync.class.getName()) == null) {
+            AnnotationHolder annot = new AnnotationHolder(Sync.class.getName());
+            method.getAnnotations().add(annot);
         }
     }
 
