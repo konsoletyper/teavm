@@ -15,6 +15,7 @@
  */
 package org.teavm.idea.debug;
 
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.roots.ProjectRootManager;
 import com.intellij.openapi.vfs.VirtualFile;
@@ -67,13 +68,17 @@ public class TeaVMExecutionStack extends XExecutionStack {
 
     @Nullable
     VirtualFile findVirtualFile(@NotNull String partialPath) {
-        Stream<VirtualFile> roots = Stream.concat(
-                Arrays.stream(rootManager.getContentSourceRoots()),
-                Arrays.stream(rootManager.orderEntries().getAllSourceRoots()));
-        return roots
-                .map(sourceRoot -> sourceRoot.findFileByRelativePath(partialPath))
-                .filter(Objects::nonNull)
-                .findFirst()
-                .orElse(null);
+        VirtualFile[] resultHolder = new VirtualFile[1];
+        ApplicationManager.getApplication().runReadAction(() -> {
+            Stream<VirtualFile> roots = Stream.concat(
+                    Arrays.stream(rootManager.getContentSourceRoots()),
+                    Arrays.stream(rootManager.orderEntries().getAllSourceRoots()));
+            resultHolder[0] = roots
+                    .map(sourceRoot -> sourceRoot.findFileByRelativePath(partialPath))
+                    .filter(Objects::nonNull)
+                    .findFirst()
+                    .orElse(null);
+        });
+        return resultHolder[0];
     }
 }
