@@ -322,6 +322,20 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             }
             breakpointLocationMap.remove(breakpoint.getLocation());
             breakpoints.remove(breakpoint);
+
+            if (breakpoint.chromeId == null) {
+                synchronized (breakpoint.updateMonitor) {
+                    while (breakpoint.updating.get()) {
+                        try {
+                            breakpoint.updateMonitor.wait();
+                        } catch (InterruptedException e) {
+                            Thread.currentThread().interrupt();
+                            return;
+                        }
+                    }
+                }
+            }
+
             if (breakpoint.chromeId != null) {
                 breakpointsByChromeId.remove(breakpoint.chromeId);
                 if (logger.isInfoEnabled()) {
@@ -371,10 +385,15 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                 }
                 breakpoint.chromeId = null;
             }
+            synchronized (breakpoint.updateMonitor) {
+                breakpoint.updating.set(false);
+                breakpoint.updateMonitor.notifyAll();
+            }
             for (JavaScriptDebuggerListener listener : getListeners()) {
                 listener.breakpointChanged(breakpoint);
             }
         });
+        breakpoint.updating.set(true);
         sendMessage(message);
     }
 
