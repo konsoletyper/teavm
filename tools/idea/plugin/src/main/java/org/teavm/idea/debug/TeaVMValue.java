@@ -92,7 +92,7 @@ public class TeaVMValue extends XNamedValue {
     public void computeChildren(@NotNull XCompositeNode node) {
         XValueChildrenList children = new XValueChildrenList();
         for (Variable variable : innerValue.getProperties().values()) {
-            children.add(new TeaVMValue(variable.getName(), true, variable.getValue()));
+            children.add(TeaVMStackFrame.createValueNode(variable.getName(), false, variable.getValue()));
         }
         node.addChildren(children, true);
     }

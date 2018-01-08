@@ -57,4 +57,8 @@ public class Value {
         }
         return jsValue.getInstanceId();
     }
+
+    public JavaScriptValue getOriginalValue() {
+        return jsValue;
+    }
 }

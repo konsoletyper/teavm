@@ -20,11 +20,13 @@ import com.intellij.openapi.vfs.VirtualFileManager;
 import com.intellij.xdebugger.XDebuggerUtil;
 import com.intellij.xdebugger.XSourcePosition;
 import com.intellij.xdebugger.frame.XCompositeNode;
+import com.intellij.xdebugger.frame.XNamedValue;
 import com.intellij.xdebugger.frame.XStackFrame;
 import com.intellij.xdebugger.frame.XValueChildrenList;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.teavm.debugging.CallFrame;
+import org.teavm.debugging.Value;
 import org.teavm.debugging.Variable;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.debugging.javascript.JavaScriptCallFrame;
@@ -74,8 +76,14 @@ class TeaVMStackFrame extends XStackFrame {
     public void computeChildren(@NotNull XCompositeNode node) {
         XValueChildrenList children = new XValueChildrenList();
         for (Variable variable : innerFrame.getVariables().values()) {
-            children.add(new TeaVMValue(variable.getName(), true, variable.getValue()));
+            children.add(createValueNode(variable.getName(), true, variable.getValue()));
         }
         node.addChildren(children, true);
+    }
+
+    static XNamedValue createValueNode(String name, boolean root, Value value) {
+        return !value.getType().startsWith("@")
+                ? new TeaVMValue(name, root, value)
+                : new TeaVMOriginalValue(name, root, value.getOriginalValue());
     }
 }
