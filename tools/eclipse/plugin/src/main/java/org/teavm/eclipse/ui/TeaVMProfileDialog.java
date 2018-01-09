@@ -79,7 +79,6 @@ public class TeaVMProfileDialog extends Dialog {
     private Button targetDirectoryWorkspaceButton;
     private Button targetDirectoryFileSystemButton;
     private Text targetFileNameField;
-    private Button minifyingButton;
     private Combo runtimeField;
     private Button incrementalButton;
     private Text cacheDirectoryField;
@@ -178,7 +177,6 @@ public class TeaVMProfileDialog extends Dialog {
         createTargetDirectoryField(group);
         createTargetFileNameField(group);
         createRuntimeField(group);
-        createMinifyField(group);
     }
 
     private void createIncrementalGroup(Composite parent) {
@@ -438,12 +436,6 @@ public class TeaVMProfileDialog extends Dialog {
         runtimeField.add("don't attach");
     }
 
-    private void createMinifyField(Composite container) {
-        minifyingButton = new Button(container, SWT.CHECK);
-        minifyingButton.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 4, 1));
-        minifyingButton.setText("generate minified (&obfuscated) code");
-    }
-
     private void createIncrementalField(Composite container) {
         incrementalButton = new Button(container, SWT.CHECK);
         incrementalButton.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 4, 1));
@@ -634,7 +626,6 @@ public class TeaVMProfileDialog extends Dialog {
         mainClassField.setText(profile.getMainClass() != null ? profile.getMainClass() : "");
         targetDirectoryField.setText(profile.getTargetDirectory());
         targetFileNameField.setText(profile.getTargetFileName());
-        minifyingButton.setSelection(profile.isMinifying());
         runtimeField.select(runtimeModes.indexOf(profile.getRuntimeMode()));
         incrementalButton.setSelection(profile.isIncremental());
         cacheDirectoryField.setText(profile.getCacheDirectory());
@@ -672,7 +663,6 @@ public class TeaVMProfileDialog extends Dialog {
         profile.setMainClass(!mainClass.isEmpty() ? mainClass : null);
         profile.setTargetDirectory(targetDirectoryField.getText());
         profile.setTargetFileName(targetFileNameField.getText().trim());
-        profile.setMinifying(minifyingButton.getSelection());
         profile.setRuntimeMode(runtimeModes.get(runtimeField.getSelectionIndex()));
         profile.setIncremental(incrementalButton.getSelection());
         profile.setCacheDirectory(cacheDirectoryField.getText());

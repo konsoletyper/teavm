@@ -39,10 +39,6 @@ public interface TeaVMProfile {
 
     void setTargetFileName(String targetFileName);
 
-    boolean isMinifying();
-
-    void setMinifying(boolean minifying);
-
     TeaVMRuntimeMode getRuntimeMode();
 
     void setRuntimeMode(TeaVMRuntimeMode runtimeMode);

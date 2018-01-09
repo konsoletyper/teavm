@@ -88,7 +88,7 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
 
     private void configureProfile(MojoExecution execution, TeaVMProfile profile, IProgressMonitor monitor)
             throws CoreException {
-        monitor.beginTask("Configuring profile " + profile.getName(), 120);
+        monitor.beginTask("Configuring profile " + profile.getName(), 110);
         String buildDir = getProjectBuildDirectory();
 
         String mainClass = maven.getMojoParameterValue(mavenSession, execution, "mainClass", String.class);
@@ -102,10 +102,6 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
 
         String targetFileName = maven.getMojoParameterValue(mavenSession, execution, "targetFileName", String.class);
         profile.setTargetFileName(targetFileName != null ? targetFileName : "classes.js");
-        monitor.worked(10);
-
-        Boolean minifying = maven.getMojoParameterValue(mavenSession, execution, "minifying", Boolean.class);
-        profile.setMinifying(minifying != null ? minifying : true);
         monitor.worked(10);
 
         String runtime = maven.getMojoParameterValue(mavenSession, execution, "runtime", String.class);

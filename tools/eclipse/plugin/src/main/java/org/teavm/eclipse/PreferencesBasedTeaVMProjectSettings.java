@@ -93,7 +93,6 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         profile.setEnabled(true);
         profile.setTargetDirectory(varManager.generateVariableExpression("workspace_loc", "/" + projectName));
         profile.setTargetFileName("classes.js");
-        profile.setMinifying(true);
         profile.setIncremental(false);
         profile.setCacheDirectory(varManager.generateVariableExpression("workspace_loc", "/" + projectName));
         profile.setSourceMapsGenerated(true);
@@ -156,7 +155,6 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         private String mainClass;
         private String targetDirectory;
         private String targetFileName;
-        private boolean minifying;
         private TeaVMRuntimeMode runtimeMode = TeaVMRuntimeMode.SEPARATE;
         private boolean incremental;
         private String cacheDirectory;
@@ -222,16 +220,6 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         @Override
         public void setTargetFileName(String targetFileName) {
             this.targetFileName = targetFileName;
-        }
-
-        @Override
-        public boolean isMinifying() {
-            return minifying;
-        }
-
-        @Override
-        public void setMinifying(boolean minifying) {
-            this.minifying = minifying;
         }
 
         @Override
@@ -344,7 +332,6 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             mainClass = preferences.get(MAIN_CLASS, "");
             targetDirectory = preferences.get(TARGET_DIRECTORY, "");
             targetFileName = preferences.get(TARGET_FILE_NAME, "");
-            minifying = preferences.getBoolean(MINIFYING, true);
             runtimeMode = TeaVMRuntimeMode.valueOf(preferences.get(RUNTIME, TeaVMRuntimeMode.SEPARATE.name()));
             incremental = preferences.getBoolean(INCREMENTAL, false);
             cacheDirectory = preferences.get(CACHE_DIRECTORY, "");
@@ -370,7 +357,6 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             preferences.put(MAIN_CLASS, mainClass);
             preferences.put(TARGET_DIRECTORY, targetDirectory);
             preferences.put(TARGET_FILE_NAME, targetFileName);
-            preferences.putBoolean(MINIFYING, minifying);
             preferences.put(RUNTIME, runtimeMode.name());
             preferences.putBoolean(INCREMENTAL, incremental);
             preferences.put(CACHE_DIRECTORY, cacheDirectory);

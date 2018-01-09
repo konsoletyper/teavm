@@ -151,7 +151,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         String targetDir = profile.getTargetDirectory();
         tool.setTargetDirectory(new File(varManager.performStringSubstitution(targetDir, false)));
         tool.setTargetFileName(profile.getTargetFileName());
-        tool.setMinifying(profile.isMinifying());
+        tool.setMinifying(false);
         tool.setRuntime(mapRuntime(profile.getRuntimeMode()));
         tool.setMainClass(profile.getMainClass());
         tool.getProperties().putAll(profile.getProperties());
