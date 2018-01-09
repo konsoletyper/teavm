@@ -32,6 +32,7 @@ import java.nio.file.WatchKey;
 import java.nio.file.WatchService;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,6 +132,12 @@ public final class TeaVMRunner {
                 .withLongOpt("classpath")
                 .create('p'));
         options.addOption(OptionBuilder
+                .withArgName("class name")
+                .hasArgs()
+                .withDescription("Tell optimizer to not remove class, so that it can be found by Class.forName")
+                .withLongOpt("preserve-class")
+                .create());
+        options.addOption(OptionBuilder
                 .withLongOpt("wasm-version")
                 .withArgName("version")
                 .hasArg()
@@ -167,6 +174,7 @@ public final class TeaVMRunner {
         parseTargetOption();
         parseOutputOptions();
         parseDebugOptions();
+        parsePreserveClassOptions();
         parseOptimizationOption();
         parseIncrementalOptions();
         parseJavaScriptOptions();
@@ -237,6 +245,12 @@ public final class TeaVMRunner {
         }
         if (commandLine.hasOption('S')) {
             tool.setSourceMapsFileGenerated(true);
+        }
+    }
+
+    private void parsePreserveClassOptions() {
+        if (commandLine.hasOption("preserve-class")) {
+            tool.getClassesToPreserve().addAll(Arrays.asList(commandLine.getOptionValues("preserve-class")));
         }
     }
 
