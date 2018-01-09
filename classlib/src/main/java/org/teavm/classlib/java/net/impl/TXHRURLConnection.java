@@ -89,6 +89,9 @@ public class TXHRURLConnection extends THttpURLConnection {
 
             responseCode = xhr.getStatus();
             responseMessage = xhr.getStatusText();
+            if (responseCode == 0) {
+                responseCode = -1;
+            }
 
             Int8Array array = Int8Array.create((ArrayBuffer) xhr.getResponse());
             byte[] bytes = new byte[array.getLength()];
