@@ -144,23 +144,21 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
         profile.setTransformers(transformers != null ? transformers : new String[0]);
         monitor.worked(10);
 
-        profile.setClassAliases(readClassAliases(execution));
+        profile.setClassesToPreserve(readClassesToPreserve(execution));
         monitor.worked(10);
 
         monitor.done();
     }
 
-    private Map<String, String> readClassAliases(MojoExecution execution) {
-        Map<String, String> aliases = new HashMap<>();
-        Xpp3Dom aliasesElem = execution.getConfiguration().getChild("classAliases");
-        if (aliasesElem != null) {
-            for (Xpp3Dom item : aliasesElem.getChildren()) {
-                String className = item.getChild("className").getValue();
-                String alias = item.getChild("alias").getValue();
-                aliases.put(className, alias);
+    private Set<? extends String> readClassesToPreserve(MojoExecution execution) {
+        Set<String> classes = new HashSet<>();
+        Xpp3Dom classesElem = execution.getConfiguration().getChild("classesToPreserve");
+        if (classesElem != null) {
+            for (Xpp3Dom item : classesElem.getChildren()) {
+                classes.add(item.getValue());
             }
         }
-        return aliases;
+        return classes;
     }
 
     private String getProjectBuildDirectory() throws CoreException {

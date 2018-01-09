@@ -38,7 +38,7 @@ import org.teavm.model.MethodReference;
  * Let's see how you achieve it:</p>
  *
  * <pre>{@code
- *vm.exportType("JavaHashMap", "java.util.HashMap");
+ *vm.preserveType("JavaHashMap", "java.util.HashMap");
  *vm.entryPoint("initJavaHashMap", new MethodReference("java.util.HashMap",
  *        "<init>", ValueType.VOID));
  *vm.entryPoint("putValueIntoJavaMap", new MethodReference(

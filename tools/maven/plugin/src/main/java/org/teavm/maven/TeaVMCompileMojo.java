@@ -25,8 +25,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
-import org.teavm.tooling.ClassAlias;
-import org.teavm.tooling.MethodAlias;
 import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
@@ -52,10 +50,7 @@ public class TeaVMCompileMojo extends AbstractTeaVMMojo {
     private String mainClass;
 
     @Parameter
-    private ClassAlias[] classAliases;
-
-    @Parameter
-    private MethodAlias[] methodAliases;
+    private String[] classesToPreserve;
 
     @Parameter
     private boolean stopOnErrors = true;
@@ -94,11 +89,8 @@ public class TeaVMCompileMojo extends AbstractTeaVMMojo {
                 tool.setTargetFileName(targetFileName);
             }
             tool.setOptimizationLevel(optimizationLevel);
-            if (classAliases != null) {
-                tool.getClassAliases().addAll(Arrays.asList(classAliases));
-            }
-            if (methodAliases != null) {
-                tool.getMethodAliases().addAll(Arrays.asList(methodAliases));
+            if (classesToPreserve != null) {
+                tool.getClassesToPreserve().addAll(Arrays.asList(classesToPreserve));
             }
             tool.setCacheDirectory(cacheDirectory);
             tool.setTargetType(targetType);

@@ -15,8 +15,8 @@
  */
 package org.teavm.eclipse;
 
-import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 
 public interface TeaVMProfile {
     String getName();
@@ -75,9 +75,9 @@ public interface TeaVMProfile {
 
     void setTransformers(String[] transformers);
 
-    Map<String, String> getClassAliases();
+    Set<? extends String> getClassesToPreserve();
 
-    void setClassAliases(Map<String, String> classAliases);
+    void setClassesToPreserve(Set<? extends String> classesToPreserve);
 
     String getExternalToolId();
 

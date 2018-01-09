@@ -61,7 +61,6 @@ import org.teavm.vm.BuildTarget;
 import org.teavm.vm.DirectoryBuildTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
-import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMProgressListener;
 import org.teavm.vm.TeaVMTarget;
@@ -81,8 +80,7 @@ public class TeaVMTool implements BaseTeaVMTool {
     private boolean incremental;
     private File cacheDirectory = new File("./teavm-cache");
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
-    private List<ClassAlias> classAliases = new ArrayList<>();
-    private List<MethodAlias> methodAliases = new ArrayList<>();
+    private List<String> classesToPreserve = new ArrayList<>();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private ClassLoader classLoader = TeaVMTool.class.getClassLoader();
     private DiskCachedClassHolderSource cachedClassSource;
@@ -197,12 +195,8 @@ public class TeaVMTool implements BaseTeaVMTool {
         return transformers;
     }
 
-    public List<ClassAlias> getClassAliases() {
-        return classAliases;
-    }
-
-    public List<MethodAlias> getMethodAliases() {
-        return methodAliases;
+    public List<String> getClassesToPreserve() {
+        return classesToPreserve;
     }
 
     public TeaVMToolLog getLog() {
@@ -392,26 +386,8 @@ public class TeaVMTool implements BaseTeaVMTool {
                         .withArrayValue(1, "java.lang.String")
                         .async();
             }
-            for (ClassAlias alias : classAliases) {
-                vm.exportType(alias.getAlias(), alias.getClassName());
-            }
-            for (MethodAlias methodAlias : methodAliases) {
-                MethodReference ref = new MethodReference(methodAlias.getClassName(), methodAlias.getMethodName(),
-                        MethodDescriptor.parseSignature(methodAlias.getDescriptor()));
-                TeaVMEntryPoint entryPoint = vm.entryPoint(methodAlias.getAlias(), ref).async();
-                if (methodAlias.getTypes() != null) {
-                    for (int i = 0; i < methodAlias.getTypes().length; ++i) {
-                        String types = methodAlias.getTypes()[i];
-                        if (types != null) {
-                            for (String type : types.split(" +")) {
-                                type = type.trim();
-                                if (!type.isEmpty()) {
-                                    entryPoint.withValue(i, type);
-                                }
-                            }
-                        }
-                    }
-                }
+            for (String className : classesToPreserve) {
+                vm.preserveType(className);
             }
             targetDirectory.mkdirs();
 

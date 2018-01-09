@@ -17,6 +17,7 @@ package org.teavm.vm;
 
 import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
@@ -41,7 +42,7 @@ public interface TeaVMTargetController {
 
     boolean isFriendlyToDebugger();
 
-    Map<String, TeaVMEntryPoint> getEntryPoints();
+    Map<? extends String, ? extends TeaVMEntryPoint> getEntryPoints();
 
-    Map<String, String> getExportedClasses();
+    Set<? extends String> getPreservedClasses();
 }

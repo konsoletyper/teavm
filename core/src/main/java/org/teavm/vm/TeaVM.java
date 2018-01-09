@@ -22,10 +22,12 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.stream.Collectors;
 import org.teavm.cache.NoCache;
 import org.teavm.common.ServiceRepository;
@@ -109,8 +111,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private final ClassLoader classLoader;
     private final Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
     private final Map<String, TeaVMEntryPoint> readonlyEntryPoints = Collections.unmodifiableMap(entryPoints);
-    private final Map<String, String> exportedClasses = new HashMap<>();
-    private final Map<String, String> readonlyExportedClasses = Collections.unmodifiableMap(exportedClasses);
+    private final Set<String> preservedClasses = new HashSet<>();
+    private final Set<String> readonlyPreservedClasses = Collections.unmodifiableSet(preservedClasses);
     private final Map<Class<?>, Object> services = new HashMap<>();
     private final Properties properties = new Properties();
     private ProgramCache programCache;
@@ -288,15 +290,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return entryPoint;
     }
 
-    public void exportType(String name, String className) {
-        if (exportedClasses.containsKey(name)) {
-            throw new IllegalArgumentException("Class with public name `" + name + "' already defined for class "
-                    + className);
-        }
+    public void preserveType(String className) {
         dependencyAnalyzer.defer(() -> {
             dependencyAnalyzer.linkClass(className, null).initClass(null);
         });
-        exportedClasses.put(name, className);
+        preservedClasses.add(className);
     }
 
     /**
@@ -675,8 +673,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         @Override
-        public Map<String, String> getExportedClasses() {
-            return readonlyExportedClasses;
+        public Set<String> getPreservedClasses() {
+            return readonlyPreservedClasses;
         }
 
         @Override

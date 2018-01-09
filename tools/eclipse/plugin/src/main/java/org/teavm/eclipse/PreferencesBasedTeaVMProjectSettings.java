@@ -16,6 +16,8 @@
 package org.teavm.eclipse;
 
 import java.util.*;
+import java.util.stream.Collectors;
+
 import org.eclipse.core.resources.IProject;
 import org.eclipse.core.resources.ProjectScope;
 import org.eclipse.core.runtime.CoreException;
@@ -163,7 +165,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         private boolean sourceFilesCopied;
         private Properties properties = new Properties();
         private String[] transformers = new String[0];
-        private Map<String, String> classAliases = new HashMap<>();
+        private Set<String> classesToPreserve = new HashSet<>();
         private String externalToolId = "";
 
         @Override
@@ -306,13 +308,14 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         }
 
         @Override
-        public Map<String, String> getClassAliases() {
-            return new HashMap<>(classAliases);
+        public Set<? extends String> getClassesToPreserve() {
+            return classesToPreserve;
         }
 
         @Override
-        public void setClassAliases(Map<String, String> classAliases) {
-            this.classAliases = new HashMap<>(classAliases);
+        public void setClassesToPreserve(Set<? extends String> classesToPreserve) {
+        	this.classesToPreserve.clear();
+        	this.classesToPreserve.addAll(classesToPreserve);
         }
 
         @Override
@@ -357,11 +360,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             Preferences transformersPrefs = preferences.node(TRANSFORMERS);
             transformersPrefs.sync();
             transformers = transformersPrefs.keys();
-            Preferences classesPrefs = preferences.node(CLASSES);
-            classesPrefs.sync();
-            for (String key : classesPrefs.keys()) {
-                classAliases.put(key, classesPrefs.get(key, "_"));
-            }
+            classesToPreserve.addAll(Arrays.asList(preferences.get(CLASSES, "").split(" ")));
             externalToolId = preferences.get(EXTERNAL_TOOL_ID, "");
         }
 
@@ -390,12 +389,7 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
                 transformersPrefs.put(transformer, "");
             }
             transformersPrefs.flush();
-            Preferences classesPrefs = preferences.node(CLASSES);
-            classesPrefs.clear();
-            for (String key : classAliases.keySet()) {
-                classesPrefs.put(key, classAliases.get(key));
-            }
-            classesPrefs.flush();
+            preferences.put(CLASSES, classesToPreserve.stream().collect(Collectors.joining(" ")));
             preferences.put(EXTERNAL_TOOL_ID, externalToolId);
             preferences.flush();
         }

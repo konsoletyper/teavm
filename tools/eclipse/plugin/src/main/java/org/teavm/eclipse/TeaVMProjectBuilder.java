@@ -70,7 +70,6 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
-import org.teavm.tooling.ClassAlias;
 import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
@@ -163,12 +162,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         for (ClassHolderTransformer transformer : instantiateTransformers(profile, classLoader)) {
             tool.getTransformers().add(transformer);
         }
-        for (Map.Entry<String, String> entry : profile.getClassAliases().entrySet()) {
-            ClassAlias classAlias = new ClassAlias();
-            classAlias.setClassName(entry.getKey());
-            classAlias.setAlias(entry.getValue());
-            tool.getClassAliases().add(classAlias);
-        }
+        tool.getClassesToPreserve().addAll(profile.getClassesToPreserve());
         for (SourceFileProvider provider : sourceProviders) {
             tool.addSourceFileProvider(provider);
         }
