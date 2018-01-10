@@ -22,13 +22,17 @@ branches:
 before_install:
   - nvm install 7
   - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
-  - NEW_VERSION=${OLD_VERSION%-SNAPSHOT}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
+  - BASE_VERSION=${OLD_VERSION%-SNAPSHOT}
+  - NEW_VERSION=${BASE_VERSION}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
+  - ECLIPSE_VERSION-${BASE_VERSION}.dev_`printf %d $TRAVIS_BUILD_NUMBER`
   - export NEW_VERSION
+  - export ECLIPSE_VERSION
+  - export BASE_VERSION
   - echo "Building version $NEW_VERSION"
-  - mvn versions:set -DnewVersion=$NEW_VERSION
+  - ./set-version.sh $NEW_VERSION $ECLIPSE_VERSION
 
 install:
-  - mvn install -Dteavm.build.all=false -P with-idea -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+  - mvn install -Dteavm.build.all=false -P with-idea -P with-eclipse -DskipTests=true -Dmaven.javadoc.skip=true -B -V
   - pushd tests/src/test/js
   - npm config set prefix=$HOME/.node_modules
   - npm install
@@ -56,8 +60,7 @@ after_success: >
      export TEAVM_FTP_LOGIN
      export TEAVM_FTP_PASSWORD
      mvn deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
-     ./update-idea-repository.sh
-     ./update-cli.sh
+     ./upload-files.sh
    fi
 after_script:
   - rm -rf $HOME/.m2/repository/org/teavm
