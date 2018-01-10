@@ -24,7 +24,7 @@ before_install:
   - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
   - BASE_VERSION=${OLD_VERSION%-SNAPSHOT}
   - NEW_VERSION=${BASE_VERSION}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
-  - ECLIPSE_VERSION-${BASE_VERSION}.dev_`printf %d $TRAVIS_BUILD_NUMBER`
+  - ECLIPSE_VERSION=${BASE_VERSION}.dev_`printf %d $TRAVIS_BUILD_NUMBER`
   - export NEW_VERSION
   - export ECLIPSE_VERSION
   - export BASE_VERSION
