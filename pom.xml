@@ -88,7 +88,6 @@
     <module>html4j</module>
     <module>platform</module>
     <module>tools/core</module>
-    <module>tools/cli</module>
     <module>tools/maven</module>
     <module>tools/chrome-rdp</module>
     <module>tools/junit</module>
@@ -321,6 +320,13 @@
       <modules>
         <module>samples</module>
         <module>tools/idea</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>with-cli</id>
+      <modules>
+        <module>tools/cli</module>
       </modules>
     </profile>
     

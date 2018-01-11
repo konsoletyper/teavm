@@ -32,5 +32,7 @@ curl --ftp-create-dirs -T .idea-repository.xml \
 cd tools/eclipse/updatesite/target/repository
   find . -type f -exec curl \
     --ftp-create-dirs \
-    -u $TEAVM_FTP_LOGIN:$TEAVM_FTP_PASSWORD  -T {} ftp://$TEAVM_FTP_HOST/httpdocs/eclipse/update-site/$BASE_VERSION-dev \;
+    -u $TEAVM_FTP_LOGIN:$TEAVM_FTP_PASSWORD \
+    -T {} \
+    ftp://$TEAVM_FTP_HOST/httpdocs/eclipse/update-site/$BASE_VERSION-dev/{} \;
 cd ../../../../..
