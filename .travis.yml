@@ -59,7 +59,7 @@ after_success: >
      export TEAVM_FTP_HOST
      export TEAVM_FTP_LOGIN
      export TEAVM_FTP_PASSWORD
-     mvn deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray && \
+     mvn deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
      ./upload-files.sh
    fi
 after_script:

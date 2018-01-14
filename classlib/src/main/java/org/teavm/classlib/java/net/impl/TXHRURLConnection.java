@@ -41,6 +41,7 @@ public class TXHRURLConnection extends THttpURLConnection {
     private String[] responseHeaderKeys;
     private String[] responseHeaderValues;
     private Map<String, List<String>> headerFields = new HashMap<>();
+    private boolean requestPerformed;
 
     public TXHRURLConnection(TURL url) {
         super(url);
@@ -72,10 +73,13 @@ public class TXHRURLConnection extends THttpURLConnection {
             }
         }
         xhr.setResponseType("arraybuffer");
-        try {
+        connected = true;
+    }
+
+    private void performRequestIfNecessary() {
+        if (!requestPerformed) {
+            requestPerformed = true;
             performRequest();
-        } finally {
-            connected = true;
         }
     }
 
@@ -166,6 +170,7 @@ public class TXHRURLConnection extends THttpURLConnection {
 
     @Override
     public String getHeaderFieldKey(int posn) {
+        performRequestIfNecessary();
         if (responseHeaderKeys == null || posn >= responseHeaderKeys.length) {
             return null;
         }
@@ -174,6 +179,7 @@ public class TXHRURLConnection extends THttpURLConnection {
 
     @Override
     public String getHeaderField(int pos) {
+        performRequestIfNecessary();
         if (responseHeaderValues == null || pos >= responseHeaderValues.length) {
             return null;
         }
@@ -182,6 +188,7 @@ public class TXHRURLConnection extends THttpURLConnection {
 
     @Override
     public String getHeaderField(String key) {
+        performRequestIfNecessary();
         return responseHeaders != null ? responseHeaders.get(key.toLowerCase()) : null;
     }
 
@@ -193,6 +200,7 @@ public class TXHRURLConnection extends THttpURLConnection {
     @Override
     public InputStream getInputStream() throws IOException {
         connect();
+        performRequestIfNecessary();
 
         int responseGroup = responseCode / 100;
         if (responseGroup == 4 || responseGroup == 5) {
@@ -201,6 +209,20 @@ public class TXHRURLConnection extends THttpURLConnection {
         }
 
         return inputStream;
+    }
+
+    @Override
+    public int getResponseCode() throws IOException {
+        connect();
+        performRequestIfNecessary();
+        return super.getResponseCode();
+    }
+
+    @Override
+    public String getResponseMessage() throws IOException {
+        connect();
+        performRequestIfNecessary();
+        return super.getResponseMessage();
     }
 
     @Override
