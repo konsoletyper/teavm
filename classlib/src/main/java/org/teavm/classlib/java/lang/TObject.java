@@ -313,6 +313,7 @@ public class TObject {
     public final void waitImpl(long timeout, int nanos, final AsyncCallback<Void> callback) {
         final NotifyListenerImpl listener = new NotifyListenerImpl(this, callback, monitor.count);
         monitor.notifyListeners.add(listener);
+        TThread.currentThread().interruptHandler = listener;
         if (timeout > 0 || nanos > 0) {
             listener.timerId = Platform.schedule(listener, timeout >= Integer.MAX_VALUE ? Integer.MAX_VALUE
                     : (int) timeout);

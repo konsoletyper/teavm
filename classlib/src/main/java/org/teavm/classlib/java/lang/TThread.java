@@ -31,7 +31,7 @@ public class TThread extends TObject implements TRunnable {
     private int yieldCount;
     private final Object finishedLock = new Object();
     private boolean interruptedFlag;
-    private TThreadInterruptHandler interruptHandler;
+    public TThreadInterruptHandler interruptHandler;
 
     private TString name;
     private boolean alive = true;

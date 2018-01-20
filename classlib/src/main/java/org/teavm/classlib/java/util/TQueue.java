@@ -15,11 +15,6 @@
  */
 package org.teavm.classlib.java.util;
 
-/**
- *
- * @author Alexey Andreev
- * @param <E>
- */
 public interface TQueue<E> extends TCollection<E> {
     boolean offer(E e);
 
