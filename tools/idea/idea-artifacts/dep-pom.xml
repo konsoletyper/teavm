@@ -100,7 +100,7 @@
             <configuration>
               <target>
                 <mkdir dir="${basedir}/dependencies/"/>
-                <get src="https://download.plugins.jetbrains.com/1347/34745/scala-intellij-bin-SNAPSHOT.zip?updateId=34745&amp;pluginId=1347"
+                <get src="https://plugins.jetbrains.com/plugin/download?updateId=42362"
                      dest="${basedir}/dependencies/scala.zip"/>
                 <unzip src="${basedir}/dependencies/scala.zip" dest="${basedir}/dependencies"/>
               </target>
