@@ -440,4 +440,17 @@ public class VMTest {
         a[0] = "bar";
         assertEquals("foo", b[0]);
     }
+
+
+    @Test
+    public void stringConstantsInBaseClass() {
+        new DerivedClassWithConstantFields();
+    }
+
+    static class BaseClassWithConstantFields {
+        public final String foo = "bar";
+    }
+
+    static class DerivedClassWithConstantFields extends BaseClassWithConstantFields {
+    }
 }

@@ -441,7 +441,7 @@ function $rt_metadata(data) {
         m.supertypes = data[i + 3];
         if (m.superclass) {
             m.supertypes.push(m.superclass);
-            cls.prototype = new m.superclass();
+            cls.prototype = Object.create(m.superclass.prototype);
         } else {
             cls.prototype = {};
         }
