@@ -263,7 +263,7 @@ function $rt_exception(ex) {
 function $rt_createMultiArray(cls, dimensions) {
     var first = 0;
     for (var i = dimensions.length - 1; i >= 0; i = (i - 1) | 0) {
-        if (dimensions[i] == 0) {
+        if (dimensions[i] === 0) {
             first = i;
             break;
         }
@@ -272,7 +272,7 @@ function $rt_createMultiArray(cls, dimensions) {
         for (i = 0; i < first; i = (i + 1) | 0) {
             cls = $rt_arraycls(cls);
         }
-        if (first == dimensions.length - 1) {
+        if (first === dimensions.length - 1) {
             return $rt_createArray(cls, dimensions[first]);
         }
     }
@@ -285,7 +285,7 @@ function $rt_createMultiArray(cls, dimensions) {
 }
 function $rt_createByteMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
-    if (arrays.length == 0) {
+    if (arrays.length === 0) {
         return $rt_createMultiArray($rt_bytecls(), dimensions);
     }
     var firstDim = dimensions[0] | 0;
@@ -296,7 +296,7 @@ function $rt_createByteMultiArray(dimensions) {
 }
 function $rt_createCharMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
-    if (arrays.length == 0) {
+    if (arrays.length === 0) {
         return $rt_createMultiArray($rt_charcls(), dimensions);
     }
     var firstDim = dimensions[0] | 0;
@@ -307,7 +307,7 @@ function $rt_createCharMultiArray(dimensions) {
 }
 function $rt_createBooleanMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
-    if (arrays.length == 0) {
+    if (arrays.length === 0) {
         return $rt_createMultiArray($rt_booleancls(), dimensions);
     }
     var firstDim = dimensions[0] | 0;
@@ -318,7 +318,7 @@ function $rt_createBooleanMultiArray(dimensions) {
 }
 function $rt_createShortMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
-    if (arrays.length == 0) {
+    if (arrays.length === 0) {
         return $rt_createMultiArray($rt_shortcls(), dimensions);
     }
     var firstDim = dimensions[0] | 0;
@@ -329,7 +329,7 @@ function $rt_createShortMultiArray(dimensions) {
 }
 function $rt_createIntMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
-    if (arrays.length == 0) {
+    if (arrays.length === 0) {
         return $rt_createMultiArray($rt_intcls(), dimensions);
     }
     var firstDim = dimensions[0] | 0;
@@ -340,7 +340,7 @@ function $rt_createIntMultiArray(dimensions) {
 }
 function $rt_createLongMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
-    if (arrays.length == 0) {
+    if (arrays.length === 0) {
         return $rt_createMultiArray($rt_longcls(), dimensions);
     }
     var firstDim = dimensions[0] | 0;
@@ -351,7 +351,7 @@ function $rt_createLongMultiArray(dimensions) {
 }
 function $rt_createFloatMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
-    if (arrays.length == 0) {
+    if (arrays.length === 0) {
         return $rt_createMultiArray($rt_floatcls(), dimensions);
     }
     var firstDim = dimensions[0] | 0;
@@ -362,7 +362,7 @@ function $rt_createFloatMultiArray(dimensions) {
 }
 function $rt_createDoubleMultiArray(dimensions) {
     var arrays = new Array($rt_primitiveArrayCount(dimensions, 0));
-    if (arrays.length == 0) {
+    if (arrays.length === 0) {
         return $rt_createMultiArray($rt_doublecls(), dimensions);
     }
     var firstDim = dimensions[0] | 0;
@@ -375,7 +375,7 @@ function $rt_primitiveArrayCount(dimensions, start) {
     var val = dimensions[start + 1] | 0;
     for (var i = start + 2; i < dimensions.length; i = (i + 1) | 0) {
         val = (val * (dimensions[i] | 0)) | 0;
-        if (val == 0) {
+        if (val === 0) {
             break;
         }
     }
@@ -409,7 +409,7 @@ function $rt_assertNotNaN(value) {
 }
 var $rt_stdoutBuffer = "";
 function $rt_putStdout(ch) {
-    if (ch == 0xA) {
+    if (ch === 0xA) {
         if (console) {
             console.info($rt_stdoutBuffer);
         }
@@ -420,7 +420,7 @@ function $rt_putStdout(ch) {
 }
 var $rt_stderrBuffer = "";
 function $rt_putStderr(ch) {
-    if (ch == 0xA) {
+    if (ch === 0xA) {
         if (console) {
             console.info($rt_stderrBuffer);
         }
@@ -446,7 +446,7 @@ function $rt_metadata(data) {
             cls.prototype = {};
         }
         var flags = data[i + 4];
-        m.enum = (flags & 16) != 0;
+        m.enum = (flags & 16) !== 0;
         m.flags = flags;
         m.primitive = false;
         m.item = null;
@@ -523,17 +523,17 @@ TeaVMThread.prototype.pop = function() {
 };
 TeaVMThread.prototype.l = TeaVMThread.prototype.pop;
 TeaVMThread.prototype.isResuming = function() {
-    return this.status == 2;
+    return this.status === 2;
 };
 TeaVMThread.prototype.isSuspending = function() {
-    return this.status == 1;
+    return this.status === 1;
 };
 TeaVMThread.prototype.suspend = function(callback) {
     this.suspendCallback = callback;
     this.status = 1;
 };
 TeaVMThread.prototype.start = function(callback) {
-    if (this.status != 3) {
+    if (this.status !== 3) {
         throw new Error("Thread already started");
     }
     if ($rt_currentNativeThread !== null) {
@@ -652,7 +652,7 @@ Long.prototype.toString = function() {
         var divRem = Long_divRem(n, radix);
         result.push(String.fromCharCode(48 + divRem[1].lo));
         n = divRem[0];
-    } while (n.lo != 0 || n.hi != 0);
+    } while (n.lo !== 0 || n.hi !== 0);
     result = result.reverse().join('');
     return positive ? result : "-" + result;
 };
@@ -691,7 +691,7 @@ function Long_gt(a, b) {
     }
     var x = a.lo >>> 1;
     var y = b.lo >>> 1;
-    if (x != y) {
+    if (x !== y) {
         return x > y;
     }
     return (a.lo & 1) > (b.lo & 1);
@@ -705,7 +705,7 @@ function Long_ge(a, b) {
     }
     var x = a.lo >>> 1;
     var y = b.lo >>> 1;
-    if (x != y) {
+    if (x !== y) {
         return x >= y;
     }
     return (a.lo & 1) >= (b.lo & 1);
@@ -719,7 +719,7 @@ function Long_lt(a, b) {
     }
     var x = a.lo >>> 1;
     var y = b.lo >>> 1;
-    if (x != y) {
+    if (x !== y) {
         return x < y;
     }
     return (a.lo & 1) < (b.lo & 1);
@@ -733,7 +733,7 @@ function Long_le(a, b) {
     }
     var x = a.lo >>> 1;
     var y = b.lo >>> 1;
-    if (x != y) {
+    if (x !== y) {
         return x <= y;
     }
     return (a.lo & 1) <= (b.lo & 1);
@@ -866,7 +866,7 @@ function Long_rem(a, b) {
     return Long_divRem(a, b)[1];
 }
 function Long_divRem(a, b) {
-    if (b.lo == 0 && b.hi == 0) {
+    if (b.lo === 0 && b.hi === 0) {
         throw new Error("Division by zero");
     }
     var positive = Long_isNegative(a) === Long_isNegative(b);
@@ -900,11 +900,11 @@ function Long_xor(a, b) {
 }
 function Long_shl(a, b) {
     b &= 63;
-    if (b == 0) {
+    if (b === 0) {
         return a;
     } else if (b < 32) {
         return new Long(a.lo << b, (a.lo >>> (32 - b)) | (a.hi << b));
-    } else if (b == 32) {
+    } else if (b === 32) {
         return new Long(0, a.lo);
     } else {
         return new Long(0, a.lo << (b - 32));
@@ -912,11 +912,11 @@ function Long_shl(a, b) {
 }
 function Long_shr(a, b) {
     b &= 63;
-    if (b == 0) {
+    if (b === 0) {
         return a;
     } else if (b < 32) {
         return new Long((a.lo >>> b) | (a.hi << (32 - b)), a.hi >> b);
-    } else if (b == 32) {
+    } else if (b === 32) {
         return new Long(a.hi, a.hi >> 31);
     } else {
         return new Long((a.hi >> (b - 32)), a.hi >> 31);
@@ -924,11 +924,11 @@ function Long_shr(a, b) {
 }
 function Long_shru(a, b) {
     b &= 63;
-    if (b == 0) {
+    if (b === 0) {
         return a;
     } else if (b < 32) {
         return new Long((a.lo >>> b) | (a.hi << (32 - b)), a.hi >>> b);
-    } else if (b == 32) {
+    } else if (b === 32) {
         return new Long(a.hi, 0);
     } else {
         return new Long((a.hi >>> (b - 32)), 0);
@@ -996,37 +996,37 @@ function LongInt_add(a, b) {
 }
 function LongInt_inc(a) {
     a.lo = (a.lo + 1) | 0;
-    if (a.lo == 0) {
+    if (a.lo === 0) {
         a.hi = (a.hi + 1) | 0;
-        if (a.hi == 0) {
+        if (a.hi === 0) {
             a.sup = (a.sup + 1) & 0xFFFF;
         }
     }
 }
 function LongInt_dec(a) {
     a.lo = (a.lo - 1) | 0;
-    if (a.lo == -1) {
+    if (a.lo === -1) {
         a.hi = (a.hi - 1) | 0;
-        if (a.hi == -1) {
+        if (a.hi === -1) {
             a.sup = (a.sup - 1) & 0xFFFF;
         }
     }
 }
 function LongInt_ucompare(a, b) {
     var r = (a.sup - b.sup);
-    if (r != 0) {
+    if (r !== 0) {
         return r;
     }
     r = (a.hi >>> 1) - (b.hi >>> 1);
-    if (r != 0) {
+    if (r !== 0) {
         return r;
     }
     r = (a.hi & 1) - (b.hi & 1);
-    if (r != 0) {
+    if (r !== 0) {
         return r;
     }
     r = (a.lo >>> 1) - (b.lo >>> 1);
-    if (r != 0) {
+    if (r !== 0) {
         return r;
     }
     return (a.lo & 1) - (b.lo & 1);
@@ -1044,14 +1044,14 @@ function LongInt_numOfLeadingZeroBits(a) {
     return 31 - n;
 }
 function LongInt_shl(a, b) {
-    if (b == 0) {
+    if (b === 0) {
         return;
     }
     if (b < 32) {
         a.sup = ((a.hi >>> (32 - b)) | (a.sup << b)) & 0xFFFF;
         a.hi = (a.lo >>> (32 - b)) | (a.hi << b);
         a.lo <<= b;
-    } else if (b == 32) {
+    } else if (b === 32) {
         a.sup = a.hi & 0xFFFF;
         a.hi = a.lo;
         a.lo = 0;
@@ -1059,7 +1059,7 @@ function LongInt_shl(a, b) {
         a.sup = ((a.lo >>> (64 - b)) | (a.hi << (b - 32))) & 0xFFFF;
         a.hi = a.lo << b;
         a.lo = 0;
-    } else if (b == 64) {
+    } else if (b === 64) {
         a.sup = a.lo & 0xFFFF;
         a.hi = 0;
         a.lo = 0;
@@ -1070,10 +1070,10 @@ function LongInt_shl(a, b) {
     }
 }
 function LongInt_shr(a, b) {
-    if (b == 0) {
+    if (b === 0) {
         return;
     }
-    if (b == 32) {
+    if (b === 32) {
         a.lo = a.hi;
         a.hi = a.sup;
         a.sup = 0;
@@ -1081,7 +1081,7 @@ function LongInt_shr(a, b) {
         a.lo = (a.lo >>> b) | (a.hi << (32 - b));
         a.hi = (a.hi >>> b) | (a.sup << (32 - b));
         a.sup >>>= b;
-    } else if (b == 64) {
+    } else if (b === 64) {
         a.lo = a.sup;
         a.hi = 0;
         a.sup = 0;
