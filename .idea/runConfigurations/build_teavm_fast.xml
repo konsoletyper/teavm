@@ -13,6 +13,7 @@
               <option value="install" />
               <option value="-DskipTests" />
               <option value="-Dteavm.build.all=false" />
+              <option value="-Pwith-cli" />
             </list>
           </option>
           <option name="profilesMap">
