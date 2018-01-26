@@ -159,7 +159,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         ReflectionDependencyListener reflection = context.getService(ReflectionDependencyListener.class);
         Set<MethodDescriptor> accessibleMethods = reflection.getAccessibleMethods(className);
 
-        ClassReader cls = context.getClassSource().get(className);
+        ClassReader cls = context.getInitialClassSource().get(className);
         if (cls == null) {
             return;
         }

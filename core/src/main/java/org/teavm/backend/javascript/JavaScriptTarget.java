@@ -250,7 +250,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         if (debugEmitterToUse == null) {
             debugEmitterToUse = new DummyDebugInformationEmitter();
         }
-        RenderingContext renderingContext = new RenderingContext(debugEmitterToUse, classes,
+        RenderingContext renderingContext = new RenderingContext(debugEmitterToUse,
+                controller.getUnprocessedClassSource(), classes,
                 controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming);
         renderingContext.setMinifying(minifying);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,

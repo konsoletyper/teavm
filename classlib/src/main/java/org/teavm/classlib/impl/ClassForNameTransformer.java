@@ -26,15 +26,20 @@ import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
 
 public class ClassForNameTransformer implements ClassHolderTransformer {
     private static final MethodReference getNameMethod = new MethodReference(Class.class, "getName", String.class);
     private static final MethodReference forNameMethod = new MethodReference(Class.class, "forName", String.class,
             boolean.class, ClassLoader.class, Class.class);
+    private static final MethodReference forNameShortMethod = new MethodReference(Class.class, "forName",
+            String.class, Class.class);
     private static final MethodReference initMethod = new MethodReference(Class.class, "initialize", void.class);
 
     @Override
@@ -42,17 +47,18 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
         for (MethodHolder method : cls.getMethods()) {
             Program program = method.getProgram();
             if (program != null) {
-                transformProgram(program);
+                transformProgram(program, innerSource);
             }
         }
     }
 
-    private void transformProgram(Program program) {
+    private void transformProgram(Program program, ClassReaderSource classSource) {
         DisjointSet varSet = new DisjointSet();
         for (int i = 0; i < program.variableCount(); i++) {
             varSet.create();
         }
         int[] nameIndexes = new int[program.variableCount()];
+        String[] constants = new String[program.variableCount()];
         Arrays.fill(nameIndexes, -1);
 
         for (BasicBlock block : program.getBasicBlocks()) {
@@ -64,6 +70,9 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
                             nameIndexes[invoke.getReceiver().getIndex()] = invoke.getInstance().getIndex();
                         }
                     }
+                } else if (instruction instanceof StringConstantInstruction) {
+                    StringConstantInstruction stringConstant = (StringConstantInstruction) instruction;
+                    constants[stringConstant.getReceiver().getIndex()] = stringConstant.getConstant();
                 } else if (instruction instanceof AssignInstruction) {
                     AssignInstruction assign = (AssignInstruction) instruction;
                     varSet.union(assign.getAssignee().getIndex(), assign.getReceiver().getIndex());
@@ -74,6 +83,7 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
         nameIndexes = Arrays.copyOf(nameIndexes, varSet.size());
         int[] nameRepresentatives = new int[nameIndexes.length];
         Arrays.fill(nameRepresentatives, -1);
+        String[] constantsByClasses = new String[varSet.size()];
 
         for (int i = 0; i < program.variableCount(); i++) {
             int varClass = varSet.find(i);
@@ -83,6 +93,8 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
             if (nameIndexes[i] >= 0) {
                 nameIndexes[varClass] = varSet.find(nameIndexes[i]);
             }
+
+            constantsByClasses[varClass] = constants[i];
         }
 
         for (BasicBlock block : program.getBasicBlocks()) {
@@ -92,17 +104,30 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
                 }
                 InvokeInstruction invoke = (InvokeInstruction) instruction;
 
-                if (!invoke.getMethod().equals(forNameMethod)) {
+                if (!invoke.getMethod().equals(forNameMethod) && !invoke.getMethod().equals(forNameShortMethod)) {
                     continue;
                 }
+
+                Variable representative;
 
                 int classNameIndex = invoke.getArguments().get(0).getIndex();
                 int nameIndex = nameIndexes[classNameIndex];
-                if (nameIndex < 0) {
+                String constant = constantsByClasses[invoke.getArguments().get(0).getIndex()];
+                if (nameIndex >= 0) {
+                    representative = program.variableAt(nameRepresentatives[nameIndex]);
+                } else if (constant != null) {
+                    if (classSource.get(constant) == null) {
+                        continue;
+                    }
+                    ClassConstantInstruction classConstant = new ClassConstantInstruction();
+                    classConstant.setConstant(ValueType.object(constant));
+                    classConstant.setReceiver(program.createVariable());
+                    classConstant.setLocation(invoke.getLocation());
+                    invoke.insertPrevious(classConstant);
+                    representative = classConstant.getReceiver();
+                } else {
                     continue;
                 }
-
-                Variable representative = program.variableAt(nameRepresentatives[nameIndex]);
 
                 InvokeInstruction initInvoke = new InvokeInstruction();
                 initInvoke.setLocation(invoke.getLocation());

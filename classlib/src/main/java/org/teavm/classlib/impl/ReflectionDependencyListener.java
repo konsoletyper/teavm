@@ -54,6 +54,9 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             Constructor[].class);
     private MethodReference getMethods = new MethodReference(Class.class, "getDeclaredMethods",
             Method[].class);
+    private MethodReference forName = new MethodReference(Class.class, "forName", String.class, Boolean.class,
+            ClassLoader.class, Class.class);
+    private MethodReference forNameShort = new MethodReference(Class.class, "forName", String.class, Class.class);
     private boolean fieldGetHandled;
     private boolean fieldSetHandled;
     private boolean newInstanceHandled;
@@ -62,9 +65,15 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     private Map<String, Set<MethodDescriptor>> accessibleMethodCache = new LinkedHashMap<>();
     private Set<String> classesWithReflectableFields = new LinkedHashSet<>();
     private Set<String> classesWithReflectableMethods = new LinkedHashSet<>();
+    private DependencyNode allClasses;
 
     public ReflectionDependencyListener(List<ReflectionSupplier> reflectionSuppliers) {
         this.reflectionSuppliers = reflectionSuppliers;
+    }
+
+    @Override
+    public void started(DependencyAgent agent) {
+        allClasses = agent.createNode();
     }
 
     public Set<String> getClassesWithReflectableFields() {
@@ -84,6 +93,11 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
     }
 
     @Override
+    public void classReached(DependencyAgent agent, String className, CallLocation location) {
+        allClasses.propagate(agent.getType(className));
+    }
+
+    @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         if (method.getReference().equals(fieldGet)) {
             handleFieldGet(agent, method, location);
@@ -97,14 +111,29 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
             method.getVariable(0).getClassValueNode().addConsumer(type -> {
                 if (!type.getName().startsWith("[")) {
                     classesWithReflectableFields.add(type.getName());
+
+                    ClassReader cls = agent.getClassSource().get(type.getName());
+                    for (FieldReader field : cls.getFields()) {
+                        linkType(agent, field.getType());
+                    }
                 }
             });
         } else if (method.getReference().equals(getConstructors) || method.getReference().equals(getMethods)) {
             method.getVariable(0).getClassValueNode().addConsumer(type -> {
                 if (!type.getName().startsWith("[")) {
                     classesWithReflectableMethods.add(type.getName());
+
+                    ClassReader cls = agent.getClassSource().get(type.getName());
+                    for (MethodReader reflectableMethod : cls.getMethods()) {
+                        linkType(agent, reflectableMethod.getResultType());
+                        for (ValueType param : reflectableMethod.getParameterTypes()) {
+                            linkType(agent, param);
+                        }
+                    }
                 }
             });
+        } else if (method.getReference().equals(forName) || method.getReference().equals(forNameShort)) {
+            allClasses.connect(method.getResult().getClassValueNode());
         }
     }
 
@@ -213,6 +242,14 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
         });
     }
 
+    private void linkType(DependencyAgent agent, ValueType type) {
+        while (type instanceof ValueType.Array) {
+            type = ((ValueType.Array) type).getItemType();
+        }
+        if (type instanceof ValueType.Object) {
+            agent.linkClass(((ValueType.Object) type).getClassName(), null);
+        }
+    }
 
     private void linkClassIfNecessary(DependencyAgent agent, MemberReader member, CallLocation location) {
         if (member.hasModifier(ElementModifier.STATIC)) {

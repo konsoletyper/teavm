@@ -41,6 +41,7 @@ import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassReaderSource;
@@ -857,6 +858,11 @@ public class Renderer implements RenderingManager {
         @Override
         public ListableClassReaderSource getClassSource() {
             return classSource;
+        }
+
+        @Override
+        public ClassReaderSource getInitialClassSource() {
+            return context.getInitialClassSource();
         }
 
         @Override

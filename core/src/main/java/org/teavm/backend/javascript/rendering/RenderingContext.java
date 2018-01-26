@@ -33,6 +33,7 @@ import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -41,6 +42,7 @@ import org.teavm.model.ValueType;
 
 public class RenderingContext {
     private final DebugInformationEmitter debugEmitter;
+    private ClassReaderSource initialClassSource;
     private ListableClassReaderSource classSource;
     private ClassLoader classLoader;
     private ServiceRepository services;
@@ -53,15 +55,21 @@ public class RenderingContext {
     private final Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
     private boolean minifying;
 
-    public RenderingContext(DebugInformationEmitter debugEmitter, ListableClassReaderSource classSource,
+    public RenderingContext(DebugInformationEmitter debugEmitter,
+            ClassReaderSource initialClassSource, ListableClassReaderSource classSource,
             ClassLoader classLoader, ServiceRepository services, Properties properties,
             NamingStrategy naming) {
         this.debugEmitter = debugEmitter;
+        this.initialClassSource = initialClassSource;
         this.classSource = classSource;
         this.classLoader = classLoader;
         this.services = services;
         this.properties = properties;
         this.naming = naming;
+    }
+
+    public ClassReaderSource getInitialClassSource() {
+        return initialClassSource;
     }
 
     public ListableClassReaderSource getClassSource() {

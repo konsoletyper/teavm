@@ -18,12 +18,15 @@ package org.teavm.backend.javascript.spi;
 import java.util.Properties;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public interface GeneratorContext extends ServiceRepository {
     String getParameterName(int index);
+
+    ClassReaderSource getInitialClassSource();
 
     ListableClassReaderSource getClassSource();
 

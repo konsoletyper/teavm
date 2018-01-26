@@ -41,6 +41,7 @@ public class ClassLookupDependencySupport extends AbstractDependencyListener {
                 if (cls == null) {
                     return;
                 }
+
                 MethodReader initMethod = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
                 if (initMethod != null) {
                     agent.linkMethod(initMethod.getReference(), location).use();
