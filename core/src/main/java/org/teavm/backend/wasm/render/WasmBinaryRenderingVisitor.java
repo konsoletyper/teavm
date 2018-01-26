@@ -248,16 +248,16 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                     case SHL:
                         writer.writeByte(0x74);
                         break;
-                    case SHR_UNSIGNED:
+                    case SHR_SIGNED:
                         writer.writeByte(0x75);
                         break;
-                    case SHR_SIGNED:
+                    case SHR_UNSIGNED:
                         writer.writeByte(0x76);
                         break;
-                    case ROTR:
+                    case ROTL:
                         writer.writeByte(0x77);
                         break;
-                    case ROTL:
+                    case ROTR:
                         writer.writeByte(0x78);
                         break;
                     case EQ:
@@ -327,16 +327,16 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                     case SHL:
                         writer.writeByte(0x86);
                         break;
-                    case SHR_UNSIGNED:
+                    case SHR_SIGNED:
                         writer.writeByte(0x87);
                         break;
-                    case SHR_SIGNED:
+                    case SHR_UNSIGNED:
                         writer.writeByte(0x88);
                         break;
-                    case ROTR:
+                    case ROTL:
                         writer.writeByte(0x89);
                         break;
-                    case ROTL:
+                    case ROTR:
                         writer.writeByte(0x8A);
                         break;
                     case EQ:
@@ -722,7 +722,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 writer.writeByte(0x34);
                 break;
             case UINT32:
-                writer.writeByte(0x25);
+                writer.writeByte(0x35);
                 break;
             case INT64:
                 writer.writeByte(0x29);
