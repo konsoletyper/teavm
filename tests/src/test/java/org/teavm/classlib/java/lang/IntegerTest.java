@@ -150,4 +150,14 @@ public class IntegerTest {
         assertNull(Integer.getInteger("test.baz"));
         assertNull(Integer.getInteger(null));
     }
+
+    @Test
+    public void toHex() {
+        assertEquals("0", Integer.toHexString(0));
+        assertEquals("1", Integer.toHexString(1));
+        assertEquals("a", Integer.toHexString(10));
+        assertEquals("11", Integer.toHexString(17));
+        assertEquals("ff", Integer.toHexString(255));
+        assertEquals("ffffffff", Integer.toHexString(-1));
+    }
 }

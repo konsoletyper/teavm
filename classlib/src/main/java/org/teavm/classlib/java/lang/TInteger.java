@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
+import static org.teavm.classlib.impl.IntegerUtil.toUnsignedLogRadixString;
+
 public class TInteger extends TNumber implements TComparable<TInteger> {
     public static final int SIZE = 32;
     public static final int MIN_VALUE = 0x80000000;
@@ -39,15 +41,15 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     public static String toHexString(int i) {
-        return toString(i, 16);
+        return toUnsignedLogRadixString(i, 4, SIZE);
     }
 
     public static String toOctalString(int i) {
-        return toString(i, 8);
+        return toUnsignedLogRadixString(i, 3, SIZE);
     }
 
     public static String toBinaryString(int i) {
-        return toString(i, 2);
+        return toUnsignedLogRadixString(i, 1, SIZE);
     }
 
     public static String toString(int i) {

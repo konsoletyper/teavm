@@ -172,15 +172,35 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static String toHexString(long i) {
-        return toString(i, 16);
+        return toUnsignedLogRadixString(i, 4);
     }
 
     public static String toOctalString(long i) {
-        return toString(i, 8);
+        return toUnsignedLogRadixString(i, 3);
     }
 
     public static String toBinaryString(long i) {
-        return toString(i, 2);
+        return toUnsignedLogRadixString(i, 1);
+    }
+
+    private static String toUnsignedLogRadixString(long value, int radixLog2) {
+        if (value == 0) {
+            return "0";
+        }
+
+        int radix = 1 << radixLog2;
+        int mask = radix - 1;
+        int sz = (SIZE - numberOfLeadingZeros(value) + radixLog2 - 1) / radixLog2;
+        char[] chars = new char[sz];
+
+        long pos = (sz - 1) * radixLog2;
+        int target = 0;
+        while (pos >= 0) {
+            chars[target++] = TCharacter.forDigit((int) (value >>> pos) & mask, radix);
+            pos -= radixLog2;
+        }
+
+        return new String(chars);
     }
 
     public static String toString(long value) {
