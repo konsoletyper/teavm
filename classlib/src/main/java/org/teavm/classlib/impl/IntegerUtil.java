@@ -21,20 +21,40 @@ public final class IntegerUtil {
     private IntegerUtil() {
     }
 
-    public static String toUnsignedLogRadixString(int value, int radixLog2, int size) {
+    public static String toUnsignedLogRadixString(int value, int radixLog2) {
         if (value == 0) {
             return "0";
         }
 
         int radix = 1 << radixLog2;
         int mask = radix - 1;
-        int sz = (size - Integer.numberOfLeadingZeros(value) + radixLog2 - 1) / radixLog2;
+        int sz = (Integer.SIZE - Integer.numberOfLeadingZeros(value) + radixLog2 - 1) / radixLog2;
         char[] chars = new char[sz];
 
         int pos = (sz - 1) * radixLog2;
         int target = 0;
         while (pos >= 0) {
             chars[target++] = TCharacter.forDigit((value >>> pos) & mask, radix);
+            pos -= radixLog2;
+        }
+
+        return new String(chars);
+    }
+
+    public static String toUnsignedLogRadixString(long value, int radixLog2) {
+        if (value == 0) {
+            return "0";
+        }
+
+        int radix = 1 << radixLog2;
+        int mask = radix - 1;
+        int sz = (Long.SIZE - Long.numberOfLeadingZeros(value) + radixLog2 - 1) / radixLog2;
+        char[] chars = new char[sz];
+
+        long pos = (sz - 1) * radixLog2;
+        int target = 0;
+        while (pos >= 0) {
+            chars[target++] = TCharacter.forDigit((int) (value >>> pos) & mask, radix);
             pos -= radixLog2;
         }
 

@@ -30,6 +30,7 @@ import java.util.FormatFlagsConversionMismatchException;
 import java.util.IllegalFormatConversionException;
 import java.util.Locale;
 import java.util.UnknownFormatConversionException;
+import org.teavm.classlib.impl.IntegerUtil;
 
 public final class TFormatter implements Closeable, Flushable {
     private Locale locale;
@@ -149,6 +150,8 @@ public final class TFormatter implements Closeable, Flushable {
                 | TFormattableFlags.LEADING_SPACE | TFormattableFlags.ZERO_PADDED
                 | TFormattableFlags.PARENTHESIZED_NEGATIVE | TFormattableFlags.SIGNED
                 | TFormattableFlags.GROUPING_SEPARATOR;
+        private static final int MASK_FOR_INT_RADIX_FORMAT = MASK_FOR_GENERAL_FORMAT
+                | TFormattableFlags.ZERO_PADDED | TFormattableFlags.PARENTHESIZED_NEGATIVE;
         private TFormatter formatter;
         Appendable out;
         Locale locale;
@@ -223,6 +226,20 @@ public final class TFormatter implements Closeable, Flushable {
                     formatDecimalInt(specifier, true);
                     break;
 
+                case 'o':
+                    formatRadixInt(specifier, 3, false);
+                    break;
+                case 'O':
+                    formatRadixInt(specifier, 3, true);
+                    break;
+
+                case 'x':
+                    formatRadixInt(specifier, 4, false);
+                    break;
+                case 'X':
+                    formatRadixInt(specifier, 4, true);
+                    break;
+
                 default:
                     throw new UnknownFormatConversionException(String.valueOf(specifier));
             }
@@ -288,18 +305,7 @@ public final class TFormatter implements Closeable, Flushable {
 
         private void formatDecimalInt(char specifier, boolean upperCase) throws IOException {
             verifyFlags(specifier, MASK_FOR_INT_DECIMAL_FORMAT);
-            if ((flags & TFormattableFlags.SIGNED) != 0 && (flags & TFormattableFlags.LEADING_SPACE) != 0) {
-                throw new TIllegalFormatFlagsException("+ ");
-            }
-            if ((flags & TFormattableFlags.ZERO_PADDED) != 0 && (flags & TFormattableFlags.LEFT_JUSTIFY) != 0) {
-                throw new TIllegalFormatFlagsException("0-");
-            }
-            if (precision >= 0) {
-                throw new TIllegalFormatPrecisionException(precision);
-            }
-            if ((flags & TFormattableFlags.LEFT_JUSTIFY) != 0 && width < 0) {
-                throw new TMissingFormatWidthException(format.substring(formatSpecifierStart, index));
-            }
+            verifyIntFlags();
 
             String str;
             Object arg = args[argumentIndex];
@@ -369,6 +375,55 @@ public final class TFormatter implements Closeable, Flushable {
             }
 
             formatGivenString(upperCase, sb.toString());
+        }
+
+        private void formatRadixInt(char specifier, int radixLog2, boolean upperCase) throws IOException {
+            verifyFlags(specifier, MASK_FOR_INT_RADIX_FORMAT);
+            verifyIntFlags();
+
+            String str;
+            Object arg = args[argumentIndex];
+            if (arg instanceof Long) {
+                str = IntegerUtil.toUnsignedLogRadixString((Long) arg, radixLog2);
+            } else if (arg instanceof Integer) {
+                str = IntegerUtil.toUnsignedLogRadixString((Integer) arg, radixLog2);
+            } else if (arg instanceof Short) {
+                str = IntegerUtil.toUnsignedLogRadixString((Short) arg & 0xFFFF, radixLog2);
+            } else if (arg instanceof Byte) {
+                str = IntegerUtil.toUnsignedLogRadixString((Byte) arg & 0xFF, radixLog2);
+            } else {
+                throw new IllegalFormatConversionException(specifier, arg != null ? arg.getClass() : null);
+            }
+
+            StringBuilder sb = new StringBuilder();
+            if ((flags & TFormattableFlags.ALTERNATE) != 0) {
+                String prefix = radixLog2 == 4 ? "0x" : "0";
+                str = prefix + str;
+            }
+
+            if ((flags & TFormattableFlags.ZERO_PADDED) != 0) {
+                for (int i = str.length(); i < width; ++i) {
+                    sb.append(Character.forDigit(0, 10));
+                }
+            }
+            sb.append(str);
+
+            formatGivenString(upperCase, sb.toString());
+        }
+
+        private void verifyIntFlags() {
+            if ((flags & TFormattableFlags.SIGNED) != 0 && (flags & TFormattableFlags.LEADING_SPACE) != 0) {
+                throw new TIllegalFormatFlagsException("+ ");
+            }
+            if ((flags & TFormattableFlags.ZERO_PADDED) != 0 && (flags & TFormattableFlags.LEFT_JUSTIFY) != 0) {
+                throw new TIllegalFormatFlagsException("0-");
+            }
+            if (precision >= 0) {
+                throw new TIllegalFormatPrecisionException(precision);
+            }
+            if ((flags & TFormattableFlags.LEFT_JUSTIFY) != 0 && width < 0) {
+                throw new TMissingFormatWidthException(format.substring(formatSpecifierStart, index));
+            }
         }
 
         private void formatGivenString(boolean upperCase, String str) throws IOException {

@@ -41,15 +41,15 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     public static String toHexString(int i) {
-        return toUnsignedLogRadixString(i, 4, SIZE);
+        return toUnsignedLogRadixString(i, 4);
     }
 
     public static String toOctalString(int i) {
-        return toUnsignedLogRadixString(i, 3, SIZE);
+        return toUnsignedLogRadixString(i, 3);
     }
 
     public static String toBinaryString(int i) {
-        return toUnsignedLogRadixString(i, 1, SIZE);
+        return toUnsignedLogRadixString(i, 1);
     }
 
     public static String toString(int i) {

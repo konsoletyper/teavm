@@ -190,4 +190,64 @@ public class FormatterTest {
             assertEquals(2, e.getPrecision());
         }
     }
+
+    @Test
+    public void formatsOctalInteger() {
+        assertEquals("1 2 3 4", new Formatter().format("%o %o %o %o", (byte) 1, (short) 2, 3, 4L).toString());
+
+        assertEquals("00027", new Formatter().format("%05o", 23).toString());
+        assertEquals("0173", new Formatter().format("%#o", 123).toString());
+
+        try {
+            new Formatter().format("%-01o", 23);
+            fail("Should have thrown exception 1");
+        } catch (IllegalFormatFlagsException e) {
+            assertTrue(e.getFlags().contains("-"));
+            assertTrue(e.getFlags().contains("0"));
+        }
+
+        try {
+            new Formatter().format("%-o", 23);
+            fail("Should have thrown exception 2");
+        } catch (MissingFormatWidthException e) {
+            assertTrue(e.getFormatSpecifier().contains("o"));
+        }
+
+        try {
+            new Formatter().format("%1.2o", 23);
+            fail("Should have thrown exception 3");
+        } catch (IllegalFormatPrecisionException e) {
+            assertEquals(2, e.getPrecision());
+        }
+    }
+
+    @Test
+    public void formatsHexInteger() {
+        assertEquals("1 2 3 4", new Formatter().format("%x %x %x %x", (byte) 1, (short) 2, 3, 4L).toString());
+
+        assertEquals("00017", new Formatter().format("%05x", 23).toString());
+        assertEquals("0x7b", new Formatter().format("%#x", 123).toString());
+
+        try {
+            new Formatter().format("%-01x", 23);
+            fail("Should have thrown exception 1");
+        } catch (IllegalFormatFlagsException e) {
+            assertTrue(e.getFlags().contains("-"));
+            assertTrue(e.getFlags().contains("0"));
+        }
+
+        try {
+            new Formatter().format("%-x", 23);
+            fail("Should have thrown exception 2");
+        } catch (MissingFormatWidthException e) {
+            assertTrue(e.getFormatSpecifier().contains("x"));
+        }
+
+        try {
+            new Formatter().format("%1.2x", 23);
+            fail("Should have thrown exception 3");
+        } catch (IllegalFormatPrecisionException e) {
+            assertEquals(2, e.getPrecision());
+        }
+    }
 }

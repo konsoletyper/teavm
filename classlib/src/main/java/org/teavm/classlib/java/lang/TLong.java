@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.lang;
 
+import static org.teavm.classlib.impl.IntegerUtil.toUnsignedLogRadixString;
+
 public class TLong extends TNumber implements TComparable<TLong> {
     public static final long MIN_VALUE = -0x8000000000000000L;
     public static final long MAX_VALUE = 0x7FFFFFFFFFFFFFFFL;
@@ -181,26 +183,6 @@ public class TLong extends TNumber implements TComparable<TLong> {
 
     public static String toBinaryString(long i) {
         return toUnsignedLogRadixString(i, 1);
-    }
-
-    private static String toUnsignedLogRadixString(long value, int radixLog2) {
-        if (value == 0) {
-            return "0";
-        }
-
-        int radix = 1 << radixLog2;
-        int mask = radix - 1;
-        int sz = (SIZE - numberOfLeadingZeros(value) + radixLog2 - 1) / radixLog2;
-        char[] chars = new char[sz];
-
-        long pos = (sz - 1) * radixLog2;
-        int target = 0;
-        while (pos >= 0) {
-            chars[target++] = TCharacter.forDigit((int) (value >>> pos) & mask, radix);
-            pos -= radixLog2;
-        }
-
-        return new String(chars);
     }
 
     public static String toString(long value) {
