@@ -15,21 +15,21 @@
  */
 package org.teavm.model.analysis;
 
-import com.carrotsearch.hppc.IntObjectMap;
-import com.carrotsearch.hppc.IntObjectOpenHashMap;
 import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
-import java.util.ArrayDeque;
+import com.carrotsearch.hppc.IntStack;
+import com.carrotsearch.hppc.ObjectIntMap;
+import com.carrotsearch.hppc.ObjectIntOpenHashMap;
+import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
+import java.util.Arrays;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Queue;
 import java.util.Set;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
+import org.teavm.common.GraphUtils;
+import org.teavm.common.IntegerArray;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.FieldDependencyInfo;
 import org.teavm.dependency.MethodDependencyInfo;
@@ -70,28 +70,64 @@ public class ClassInference {
     private Graph cloneGraph;
     private Graph arrayGraph;
     private Graph itemGraph;
-    private List<IntObjectMap<ValueType>> casts;
-    private IntObjectMap<IntSet> exceptionMap;
-    private VirtualCallSite[][] virtualCallSites;
-    private List<Task> initialTasks;
-    private List<List<Set<String>>> types;
-    private List<Set<String>> finalTypes;
+    private Graph graph;
+    private ValueCast[] casts;
+    private int[] exceptions;
+    private VirtualCallSite[] virtualCallSites;
+
+    private int[] propagationPath;
+    private int[] nodeMapping;
+
+    private IntOpenHashSet[] types;
+    private ObjectIntMap<String> typeMap = new ObjectIntOpenHashMap<>();
+    private List<String> typeList = new ArrayList<>();
+
+    private boolean changed = true;
+    private boolean[] nodeChanged;
+    private boolean[] formerNodeChanged;
+
+    private static final int MAX_DEGREE = 3;
 
     public ClassInference(DependencyInfo dependencyInfo) {
         this.dependencyInfo = dependencyInfo;
     }
 
     public void infer(Program program, MethodReference methodReference) {
-        MethodDependencyInfo thisMethodDep = dependencyInfo.getMethod(methodReference);
-        buildGraphs(program, thisMethodDep);
+        /*
+          The idea behind this algorithm
+            1. Build preliminary graphs that represent different connection types between variables.
+               See `assignmentGraph`, `cloneGraph`, `arrayGraph`, `itemGraph`.
+            2. Build initial type sets where possible. See `types`.
+            3. Build additional info: casts, virtual invocations, exceptions.
+               See `casts`, `exceptions`, `virtualCallSites`.
+            4. Build graph from set of preliminary paths
+            5. Find strongly connected components, collapse then into one nodes.
+            6. Calculate topological order of the DAG (let it be propagation path).
+               Let resulting order be `propagationPath`.
+            7. Propagate types along calculated path; then propagate types using additional info.
+            8. Repeat 7 until it changes anything (i.e. calculate fixed point).
+        */
 
+        types = new IntOpenHashSet[program.variableCount() << 3];
+        nodeChanged = new boolean[types.length];
+        formerNodeChanged = new boolean[nodeChanged.length];
+        nodeMapping = new int[types.length];
+        for (int i = 0; i < types.length; ++i) {
+            nodeMapping[i] = i;
+        }
+
+        // See 1, 2, 3
+        MethodDependencyInfo thisMethodDep = dependencyInfo.getMethod(methodReference);
+        buildPreliminaryGraphs(program, thisMethodDep);
+
+        // Augment (2) with input types of method
         for (int i = 0; i <= methodReference.parameterCount(); ++i) {
             ValueDependencyInfo paramDep = thisMethodDep.getVariable(i);
             if (paramDep != null) {
                 int degree = 0;
-                while (true) {
+                while (degree <= MAX_DEGREE) {
                     for (String paramType : paramDep.getTypes()) {
-                        initialTasks.add(new Task(i, degree, paramType));
+                        addType(i, degree, paramType);
                     }
                     if (!paramDep.hasArrayType()) {
                         break;
@@ -102,37 +138,46 @@ public class ClassInference {
             }
         }
 
-        types = new ArrayList<>(program.variableCount());
-        for (int i = 0; i < program.variableCount(); ++i) {
-            List<Set<String>> variableTypes = new ArrayList<>();
-            types.add(variableTypes);
-            for (int j = 0; j < 3; ++j) {
-                variableTypes.add(new LinkedHashSet<>());
-            }
-        }
+        // See 4
+        buildPropagationGraph();
 
+        // See 5
+        collapseSCCs();
+
+        // See 6
+        buildPropagationPath();
+
+        // See 7, 8
         propagate(program);
+
+        // Cleanup
         assignmentGraph = null;
+        graph = null;
         cloneGraph = null;
         arrayGraph = null;
         itemGraph = null;
         casts = null;
-        exceptionMap = null;
+        exceptions = null;
         virtualCallSites = null;
-
-        finalTypes = new ArrayList<>(program.variableCount());
-        for (int i = 0; i < program.variableCount(); ++i) {
-            finalTypes.add(types.get(i).get(0));
-        }
-
-        types = null;
+        propagationPath = null;
+        nodeChanged = null;
     }
 
     public String[] classesOf(int variableIndex) {
-        return finalTypes.get(variableIndex).toArray(new String[0]);
+        IntOpenHashSet typeSet = types[nodeMapping[packNodeAndDegree(variableIndex, 0)]];
+        if (typeSet == null) {
+            return new String[0];
+        }
+
+        int[] typeIndexes = typeSet.toArray();
+        String[] types = new String[typeIndexes.length];
+        for (int i = 0; i < typeIndexes.length; ++i) {
+            types[i] = typeList.get(typeIndexes[i]);
+        }
+        return types;
     }
 
-    private void buildGraphs(Program program, MethodDependencyInfo thisMethodDep) {
+    private void buildPreliminaryGraphs(Program program, MethodDependencyInfo thisMethodDep) {
         GraphBuildingVisitor visitor = new GraphBuildingVisitor(program.variableCount(), dependencyInfo);
         visitor.thisMethodDep = thisMethodDep;
         for (BasicBlock block : program.getBasicBlocks()) {
@@ -143,161 +188,367 @@ public class ClassInference {
             for (Instruction insn : block) {
                 insn.acceptVisitor(visitor);
             }
+
+            if (block.getExceptionVariable() != null) {
+                getNodeTypes(packNodeAndDegree(block.getExceptionVariable().getIndex(), 0));
+            }
         }
 
         assignmentGraph = visitor.assignmentGraphBuilder.build();
         cloneGraph = visitor.cloneGraphBuilder.build();
         arrayGraph = visitor.arrayGraphBuilder.build();
         itemGraph = visitor.itemGraphBuilder.build();
-        casts = visitor.casts;
-        exceptionMap = visitor.exceptionMap;
-        initialTasks = visitor.tasks;
+        casts = visitor.casts.toArray(new ValueCast[0]);
+        exceptions = visitor.exceptions.getAll();
+        virtualCallSites = visitor.virtualCallSites.toArray(new VirtualCallSite[0]);
+    }
 
-        virtualCallSites = new VirtualCallSite[program.variableCount()][];
-        for (int i = 0; i < virtualCallSites.length; ++i) {
-            List<VirtualCallSite> buildCallSites = visitor.virtualCallSites.get(i);
-            if (buildCallSites != null) {
-                virtualCallSites[i] = buildCallSites.toArray(new VirtualCallSite[0]);
+    private void buildPropagationGraph() {
+        IntStack stack = new IntStack();
+
+        for (int i = 0; i < types.length; ++i) {
+            if (types[i] != null) {
+                stack.push(i);
+            }
+        }
+
+        boolean[] visited = new boolean[types.length];
+        GraphBuilder graphBuilder = new GraphBuilder(types.length);
+
+        while (!stack.isEmpty()) {
+            int entry = stack.pop();
+
+            if (visited[entry]) {
+                continue;
+            }
+
+            visited[entry] = true;
+
+            int degree = extractDegree(entry);
+            int variable = extractNode(entry);
+
+            // Actually, successor nodes in resulting graph
+            IntSet nextEntries = new IntOpenHashSet();
+
+            // Start: calculating successor nodes in resulting DAG along different paths
+            //
+
+            for (int successor : assignmentGraph.outgoingEdges(variable)) {
+                nextEntries.add(packNodeAndDegree(successor, degree));
+            }
+
+            for (int successor : cloneGraph.outgoingEdges(variable)) {
+                nextEntries.add(packNodeAndDegree(successor, degree));
+            }
+
+            if (degree > 0) {
+                for (int predecessor : assignmentGraph.incomingEdges(variable)) {
+                    nextEntries.add(packNodeAndDegree(predecessor, degree));
+                }
+
+                for (int successor : itemGraph.outgoingEdges(variable)) {
+                    nextEntries.add(packNodeAndDegree(successor, degree - 1));
+                }
+            }
+
+            for (int successor : arrayGraph.outgoingEdges(variable)) {
+                nextEntries.add(packNodeAndDegree(successor, degree + 1));
+            }
+
+            //
+            // End: calculating successor nodes in resulting graph
+
+            for (IntCursor next : nextEntries) {
+                graphBuilder.addEdge(entry, next.value);
+                if (!visited[next.value]) {
+                    stack.push(next.value);
+                }
+            }
+        }
+
+        graph = graphBuilder.build();
+    }
+
+    private void collapseSCCs() {
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph);
+        if (sccs.length == 0) {
+            return;
+        }
+
+        for (int[] scc : sccs) {
+            for (int i = 1; i < scc.length; ++i) {
+                nodeMapping[scc[i]] = scc[0];
+            }
+        }
+
+        boolean[] nodeChangedBackup = nodeChanged.clone();
+        IntOpenHashSet[] typesBackup = types.clone();
+        Arrays.fill(nodeChanged, false);
+        Arrays.fill(types, null);
+
+        GraphBuilder graphBuilder = new GraphBuilder(graph.size());
+        for (int i = 0; i < graph.size(); ++i) {
+            for (int j : graph.outgoingEdges(i)) {
+                int from = nodeMapping[i];
+                int to = nodeMapping[j];
+                if (from != to) {
+                    graphBuilder.addEdge(from, to);
+                }
+            }
+
+            int node = nodeMapping[i];
+            if (typesBackup[i] != null) {
+                getNodeTypes(node).addAll(typesBackup[i]);
+            }
+
+            if (nodeChangedBackup[i]) {
+                nodeChanged[node] = true;
+            }
+        }
+
+        graph = graphBuilder.build();
+    }
+
+    private static final byte FRESH = 0;
+    private static final byte VISITING = 1;
+    private static final byte VISITED = 2;
+
+    private void buildPropagationPath() {
+        byte[] state = new byte[types.length];
+        int[] path = new int[types.length];
+        int pathSize = 0;
+        IntStack stack = new IntStack();
+
+        for (int i = 0; i < graph.size(); ++i) {
+            if (graph.incomingEdgesCount(i) == 0 && types[i] != null) {
+                stack.push(i);
+            }
+        }
+
+        while (!stack.isEmpty()) {
+            int node = stack.pop();
+            if (state[node] == FRESH) {
+                state[node] = VISITING;
+
+                stack.push(node);
+
+                for (int successor : graph.outgoingEdges(node)) {
+                    if (state[successor] == FRESH) {
+                        stack.push(successor);
+                    }
+                }
+
+            } else if (state[node] == VISITING) {
+                path[pathSize++] = node;
+                state[node] = VISITED;
+            }
+        }
+
+        propagationPath = Arrays.copyOf(path, pathSize);
+    }
+
+    private void propagate(Program program) {
+        changed = false;
+
+        while (true) {
+            System.arraycopy(nodeChanged, 0, formerNodeChanged, 0, nodeChanged.length);
+            Arrays.fill(nodeChanged, false);
+
+            propagateAlongDAG();
+            boolean outerChanged = changed;
+
+            do {
+                changed = false;
+                propagateAlongCasts();
+                propagateAlongVirtualCalls(program);
+                propagateAlongExceptions(program);
+                if (changed) {
+                    outerChanged = true;
+                }
+            } while (changed);
+
+            if (!outerChanged) {
+                break;
+            }
+
+            changed = false;
+        }
+    }
+
+    private void propagateAlongDAG() {
+        for (int i = propagationPath.length - 1; i >= 0; --i) {
+            int node = propagationPath[i];
+            boolean predecessorsChanged = false;
+            for (int predecessor : graph.incomingEdges(node)) {
+                if (formerNodeChanged[predecessor] || nodeChanged[predecessor]) {
+                    predecessorsChanged = true;
+                    break;
+                }
+            }
+            if (!predecessorsChanged) {
+                continue;
+            }
+
+            IntOpenHashSet nodeTypes = getNodeTypes(node);
+            for (int predecessor : graph.incomingEdges(node)) {
+                if (formerNodeChanged[predecessor] || nodeChanged[predecessor]) {
+                    if (nodeTypes.addAll(types[predecessor]) > 0) {
+                        nodeChanged[node] = true;
+                        changed = true;
+                    }
+                }
             }
         }
     }
 
-    private void propagate(Program program) {
+    private void propagateAlongCasts() {
         ClassReaderSource classSource = dependencyInfo.getClassSource();
 
-        Queue<Task> queue = new ArrayDeque<>(initialTasks);
-        initialTasks = null;
-
-        while (!queue.isEmpty()) {
-            Task task = queue.remove();
-
-            if (task.degree < 0) {
-                BasicBlock block = program.basicBlockAt(task.variable);
-                for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                    if (tryCatch.getExceptionType() == null
-                            || classSource.isSuperType(tryCatch.getExceptionType(), task.className).orElse(false)) {
-                        Variable exception = tryCatch.getHandler().getExceptionVariable();
-                        if (exception != null) {
-                            queue.add(new Task(exception.getIndex(), 0, task.className));
-                        }
-                        break;
-                    }
-                }
-
+        for (ValueCast cast : casts) {
+            int fromNode = nodeMapping[packNodeAndDegree(cast.fromVariable, 0)];
+            if (!formerNodeChanged[fromNode] && !nodeChanged[fromNode]) {
                 continue;
             }
 
-            List<Set<String>> variableTypes = types.get(task.variable);
-            if (task.degree >= variableTypes.size()) {
-                continue;
-            }
+            int toNode = nodeMapping[packNodeAndDegree(cast.toVariable, 0)];
+            IntOpenHashSet targetTypes = getNodeTypes(toNode);
 
-            Set<String> typeSet = variableTypes.get(task.degree);
-            if (!typeSet.add(task.className)) {
-                continue;
-            }
-
-            for (int successor : assignmentGraph.outgoingEdges(task.variable)) {
-                queue.add(new Task(successor, task.degree, task.className));
-                int itemDegree = task.degree + 1;
-                if (itemDegree < variableTypes.size()) {
-                    for (String type : variableTypes.get(itemDegree)) {
-                        queue.add(new Task(successor, itemDegree, type));
-                    }
+            for (IntCursor cursor : types[fromNode]) {
+                if (targetTypes.contains(cursor.value)) {
+                    continue;
                 }
-                List<Set<String>> successorVariableTypes = types.get(successor);
-                if (itemDegree < successorVariableTypes.size()) {
-                    for (String type : successorVariableTypes.get(itemDegree)) {
-                        queue.add(new Task(task.variable, itemDegree, type));
-                    }
-                }
-            }
+                String className = typeList.get(cursor.value);
 
-            if (task.degree > 0) {
-                for (int predecessor : assignmentGraph.incomingEdges(task.variable)) {
-                    queue.add(new Task(predecessor, task.degree, task.className));
-                }
-
-                for (int successor : itemGraph.outgoingEdges(task.variable)) {
-                    queue.add(new Task(successor, task.degree - 1, task.className));
-                }
-            } else {
-                for (int successor : cloneGraph.outgoingEdges(task.variable)) {
-                    queue.add(new Task(successor, 0, task.className));
-                }
-
-                IntSet blocks = exceptionMap.get(task.variable);
-                if (blocks != null) {
-                    for (int block : blocks.toArray()) {
-                        queue.add(new Task(block, -1, task.className));
-                    }
-                }
-
-                VirtualCallSite[] callSites = virtualCallSites[task.variable];
-                if (callSites != null) {
-                    for (VirtualCallSite callSite : callSites) {
-                        MethodReference rawMethod = new MethodReference(task.className,
-                                callSite.method.getDescriptor());
-                        MethodReader resolvedMethod = classSource.resolveImplementation(rawMethod);
-                        if (resolvedMethod == null) {
-                            continue;
-                        }
-                        MethodReference resolvedMethodRef = resolvedMethod.getReference();
-                        if (callSite.resolvedMethods.add(resolvedMethodRef)) {
-                            MethodDependencyInfo methodDep = dependencyInfo.getMethod(resolvedMethodRef);
-                            if (methodDep != null) {
-                                if (callSite.receiver >= 0) {
-                                    readValue(methodDep.getResult(), program.variableAt(callSite.receiver), queue);
-                                }
-                                for (int i = 0; i < callSite.arguments.length; ++i) {
-                                    writeValue(methodDep.getVariable(i + 1), program.variableAt(callSite.arguments[i]),
-                                            queue);
-                                }
-                                for (String type : methodDep.getThrown().getTypes()) {
-                                    queue.add(new Task(callSite.block, -1, type));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            for (int successor : arrayGraph.outgoingEdges(task.variable)) {
-                queue.add(new Task(successor, task.degree + 1, task.className));
-            }
-
-            IntObjectMap<ValueType> variableCasts = casts.get(task.variable);
-            if (variableCasts != null) {
                 ValueType type;
-                if (task.className.startsWith("[")) {
-                    type = ValueType.parseIfPossible(task.className);
+                if (className.startsWith("[")) {
+                    type = ValueType.parseIfPossible(className);
                     if (type == null) {
                         type = ValueType.arrayOf(ValueType.object("java.lang.Object"));
                     }
                 } else {
-                    type = ValueType.object(task.className);
+                    type = ValueType.object(className);
                 }
-                for (int target : variableCasts.keys().toArray()) {
-                    ValueType targetType = variableCasts.get(target);
-                    if (classSource.isSuperType(targetType, type).orElse(false)) {
-                        queue.add(new Task(target, 0, task.className));
-                    }
+
+                if (classSource.isSuperType(cast.targetType, type).orElse(false)) {
+                    changed = true;
+                    nodeChanged[toNode] = true;
+                    targetTypes.add(cursor.value);
                 }
             }
         }
     }
 
-    static class GraphBuildingVisitor extends AbstractInstructionVisitor {
+    private void propagateAlongVirtualCalls(Program program) {
+        ClassReaderSource classSource = dependencyInfo.getClassSource();
+
+        for (VirtualCallSite callSite : virtualCallSites) {
+            int instanceNode = nodeMapping[packNodeAndDegree(callSite.instance, 0)];
+            if (!formerNodeChanged[instanceNode] && !nodeChanged[instanceNode]) {
+                continue;
+            }
+
+            for (IntCursor type : types[instanceNode]) {
+                if (!callSite.knownClasses.add(type.value)) {
+                    continue;
+                }
+
+                String className = typeList.get(type.value);
+                MethodReference rawMethod = new MethodReference(className, callSite.method.getDescriptor());
+                MethodReader resolvedMethod = classSource.resolveImplementation(rawMethod);
+
+                if (resolvedMethod == null) {
+                    continue;
+                }
+
+                MethodReference resolvedMethodRef = resolvedMethod.getReference();
+                if (!callSite.resolvedMethods.add(resolvedMethodRef)) {
+                    continue;
+                }
+
+                MethodDependencyInfo methodDep = dependencyInfo.getMethod(resolvedMethodRef);
+                if (methodDep == null) {
+                    continue;
+                }
+                if (callSite.receiver >= 0) {
+                    readValue(methodDep.getResult(), program.variableAt(callSite.receiver));
+                }
+                for (int i = 0; i < callSite.arguments.length; ++i) {
+                    writeValue(methodDep.getVariable(i + 1), program.variableAt(callSite.arguments[i]));
+                }
+
+                for (String thrownTypeName : methodDep.getThrown().getTypes()) {
+                    propagateException(thrownTypeName, program.basicBlockAt(callSite.block));
+                }
+            }
+        }
+    }
+
+    private void propagateAlongExceptions(Program program) {
+        for (int i = 0; i < exceptions.length; i += 2) {
+            int variable = nodeMapping[packNodeAndDegree(exceptions[i], 0)];
+            if (!formerNodeChanged[variable] && !nodeChanged[variable]) {
+                continue;
+            }
+
+            BasicBlock block = program.basicBlockAt(exceptions[i + 1]);
+            for (IntCursor type : types[variable]) {
+                String typeName = typeList.get(type.value);
+                propagateException(typeName, block);
+            }
+        }
+    }
+
+    private void propagateException(String thrownTypeName, BasicBlock block) {
+        ClassReaderSource classSource = dependencyInfo.getClassSource();
+
+        for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+            String expectedType = tryCatch.getExceptionType();
+            if (expectedType == null || classSource.isSuperType(expectedType, thrownTypeName).orElse(false)) {
+                if (tryCatch.getHandler().getExceptionVariable() == null) {
+                    break;
+                }
+                int exceptionNode = packNodeAndDegree(tryCatch.getHandler().getExceptionVariable().getIndex(), 0);
+                exceptionNode = nodeMapping[exceptionNode];
+                int thrownType = getTypeByName(thrownTypeName);
+                if (getNodeTypes(exceptionNode).add(thrownType)) {
+                    nodeChanged[exceptionNode] = true;
+                    changed = true;
+                }
+
+                break;
+            }
+        }
+    }
+
+    IntOpenHashSet getNodeTypes(int node) {
+        IntOpenHashSet result = types[node];
+        if (result == null) {
+            result = new IntOpenHashSet();
+            types[node] = result;
+        }
+        return result;
+    }
+
+    int getTypeByName(String typeName) {
+        int type = typeMap.getOrDefault(typeName, -1);
+        if (type < 0) {
+            type = typeList.size();
+            typeMap.put(typeName, type);
+            typeList.add(typeName);
+        }
+        return type;
+    }
+
+    class GraphBuildingVisitor extends AbstractInstructionVisitor {
         DependencyInfo dependencyInfo;
         GraphBuilder assignmentGraphBuilder;
         GraphBuilder cloneGraphBuilder;
         GraphBuilder arrayGraphBuilder;
         GraphBuilder itemGraphBuilder;
         MethodDependencyInfo thisMethodDep;
-        List<IntObjectMap<ValueType>> casts;
-        IntObjectMap<IntSet> exceptionMap = new IntObjectOpenHashMap<>();
-        List<Task> tasks = new ArrayList<>();
-        List<List<VirtualCallSite>> virtualCallSites;
+        List<ValueCast> casts = new ArrayList<>();
+        IntegerArray exceptions = new IntegerArray(2);
+        List<VirtualCallSite> virtualCallSites = new ArrayList<>();
         BasicBlock currentBlock;
 
         GraphBuildingVisitor(int variableCount, DependencyInfo dependencyInfo) {
@@ -306,12 +557,6 @@ public class ClassInference {
             cloneGraphBuilder = new GraphBuilder(variableCount);
             arrayGraphBuilder = new GraphBuilder(variableCount);
             itemGraphBuilder = new GraphBuilder(variableCount);
-            casts = new ArrayList<>(variableCount);
-            for (int i = 0; i < variableCount; ++i) {
-                casts.add(new IntObjectOpenHashMap<>());
-            }
-
-            virtualCallSites = new ArrayList<>(Collections.nCopies(variableCount, null));
         }
 
         public void visit(Phi phi) {
@@ -322,12 +567,12 @@ public class ClassInference {
 
         @Override
         public void visit(ClassConstantInstruction insn) {
-            tasks.add(new Task(insn.getReceiver().getIndex(), 0, "java.lang.Class"));
+            addType(insn.getReceiver().getIndex(), 0, "java.lang.Class");
         }
 
         @Override
         public void visit(StringConstantInstruction insn) {
-            tasks.add(new Task(insn.getReceiver().getIndex(), 0, "java.lang.String"));
+            addType(insn.getReceiver().getIndex(), 0, "java.lang.String");
         }
 
         @Override
@@ -337,27 +582,24 @@ public class ClassInference {
 
         @Override
         public void visit(CastInstruction insn) {
-            casts.get(insn.getValue().getIndex()).put(insn.getReceiver().getIndex(), insn.getTargetType());
+            casts.add(new ValueCast(insn.getValue().getIndex(), insn.getReceiver().getIndex(), insn.getTargetType()));
+            getNodeTypes(packNodeAndDegree(insn.getReceiver().getIndex(), 0));
         }
 
         @Override
         public void visit(RaiseInstruction insn) {
-            IntSet blockIndexes = exceptionMap.get(insn.getException().getIndex());
-            if (blockIndexes == null) {
-                blockIndexes = new IntOpenHashSet();
-                exceptionMap.put(insn.getException().getIndex(), blockIndexes);
-            }
-            blockIndexes.add(currentBlock.getIndex());
+            exceptions.add(insn.getException().getIndex());
+            exceptions.add(currentBlock.getIndex());
         }
 
         @Override
         public void visit(ConstructArrayInstruction insn) {
-            tasks.add(new Task(insn.getReceiver().getIndex(), 0, ValueType.arrayOf(insn.getItemType()).toString()));
+            addType(insn.getReceiver().getIndex(), 0, ValueType.arrayOf(insn.getItemType()).toString());
         }
 
         @Override
         public void visit(ConstructInstruction insn) {
-            tasks.add(new Task(insn.getReceiver().getIndex(), 0, insn.getType()));
+            addType(insn.getReceiver().getIndex(), 0, insn.getType());
         }
 
         @Override
@@ -366,21 +608,21 @@ public class ClassInference {
             for (int i = 0; i < insn.getDimensions().size(); ++i) {
                 type = ValueType.arrayOf(type);
             }
-            tasks.add(new Task(insn.getReceiver().getIndex(), 0, type.toString()));
+            addType(insn.getReceiver().getIndex(), 0, type.toString());
         }
 
         @Override
         public void visit(GetFieldInstruction insn) {
             FieldDependencyInfo fieldDep = dependencyInfo.getField(insn.getField());
             ValueDependencyInfo valueDep = fieldDep.getValue();
-            readValue(valueDep, insn.getReceiver(), tasks);
+            readValue(valueDep, insn.getReceiver());
         }
 
         @Override
         public void visit(PutFieldInstruction insn) {
             FieldDependencyInfo fieldDep = dependencyInfo.getField(insn.getField());
             ValueDependencyInfo valueDep = fieldDep.getValue();
-            writeValue(valueDep, insn.getValue(), tasks);
+            writeValue(valueDep, insn.getValue());
         }
 
         @Override
@@ -408,11 +650,12 @@ public class ClassInference {
             if (insn.getValueToReturn() != null) {
                 ValueDependencyInfo resultDependency = thisMethodDep.getResult();
                 int resultDegree = 0;
-                while (resultDependency.hasArrayType()) {
+                while (resultDependency.hasArrayType() && resultDegree <= MAX_DEGREE) {
                     resultDependency = resultDependency.getArrayItem();
                     for (String paramType : resultDependency.getTypes()) {
-                        tasks.add(new Task(insn.getValueToReturn().getIndex(), ++resultDegree, paramType));
+                        addType(insn.getValueToReturn().getIndex(), resultDegree, paramType);
                     }
+                    ++resultDegree;
                 }
             }
         }
@@ -421,21 +664,26 @@ public class ClassInference {
         public void visit(InvokeInstruction insn) {
             if (insn.getType() == InvocationType.VIRTUAL) {
                 int instance = insn.getInstance().getIndex();
-                List<VirtualCallSite> callSites = virtualCallSites.get(instance);
-                if (callSites == null) {
-                    callSites = new ArrayList<>();
-                    virtualCallSites.set(instance, callSites);
-                }
 
                 VirtualCallSite callSite = new VirtualCallSite();
+                callSite.instance = instance;
                 callSite.method = insn.getMethod();
                 callSite.arguments = new int[insn.getArguments().size()];
                 for (int i = 0; i < insn.getArguments().size(); ++i) {
                     callSite.arguments[i] = insn.getArguments().get(i).getIndex();
+                    for (int j = 0; j <= MAX_DEGREE; ++j) {
+                        getNodeTypes(packNodeAndDegree(callSite.arguments[i], j));
+                    }
                 }
                 callSite.receiver = insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1;
                 callSite.block = currentBlock.getIndex();
-                callSites.add(callSite);
+                virtualCallSites.add(callSite);
+
+                if (insn.getReceiver() != null) {
+                    for (int j = 1; j <= MAX_DEGREE; ++j) {
+                        getNodeTypes(packNodeAndDegree(callSite.receiver, j));
+                    }
+                }
 
                 return;
             }
@@ -443,61 +691,95 @@ public class ClassInference {
             MethodDependencyInfo methodDep = dependencyInfo.getMethod(insn.getMethod());
             if (methodDep != null) {
                 if (insn.getReceiver() != null) {
-                    readValue(methodDep.getResult(), insn.getReceiver(), tasks);
+                    readValue(methodDep.getResult(), insn.getReceiver());
                 }
 
                 for (int i = 0; i < insn.getArguments().size(); ++i) {
-                    writeValue(methodDep.getVariable(i + 1), insn.getArguments().get(i), tasks);
+                    writeValue(methodDep.getVariable(i + 1), insn.getArguments().get(i));
                 }
 
                 for (String type : methodDep.getThrown().getTypes()) {
-                    tasks.add(new Task(currentBlock.getIndex(), -1, type));
+                    propagateException(type, currentBlock);
                 }
             }
-        }
-    }
-
-    private static void readValue(ValueDependencyInfo valueDep, Variable receiver, Collection<Task> tasks) {
-        int depth = 0;
-        boolean hasArrayType;
-        do {
-            for (String type : valueDep.getTypes()) {
-                tasks.add(new Task(receiver.getIndex(), depth, type));
-            }
-            depth++;
-            hasArrayType = valueDep.hasArrayType();
-            valueDep = valueDep.getArrayItem();
-        } while (hasArrayType);
-    }
-
-    private static void writeValue(ValueDependencyInfo valueDep, Variable source, Collection<Task> tasks) {
-        int depth = 0;
-        while (valueDep.hasArrayType()) {
-            depth++;
-            valueDep = valueDep.getArrayItem();
-            for (String type : valueDep.getTypes()) {
-                tasks.add(new Task(source.getIndex(), depth, type));
-            }
-        }
-    }
-
-    static class Task {
-        int variable;
-        int degree;
-        String className;
-
-        Task(int variable, int degree, String className) {
-            this.variable = variable;
-            this.degree = degree;
-            this.className = className;
         }
     }
 
     static class VirtualCallSite {
+        int instance;
+        IntSet knownClasses = new IntOpenHashSet();
         Set<MethodReference> resolvedMethods = new HashSet<>();
         MethodReference method;
         int[] arguments;
         int receiver;
         int block;
+    }
+
+    void readValue(ValueDependencyInfo valueDep, Variable receiver) {
+        int depth = 0;
+        boolean hasArrayType;
+        do {
+            for (String type : valueDep.getTypes()) {
+                addType(receiver.getIndex(), depth, type);
+            }
+            depth++;
+            hasArrayType = valueDep.hasArrayType();
+            valueDep = valueDep.getArrayItem();
+        } while (hasArrayType && depth <= MAX_DEGREE);
+    }
+
+    void writeValue(ValueDependencyInfo valueDep, Variable source) {
+        int depth = 0;
+        while (valueDep.hasArrayType() && depth < MAX_DEGREE) {
+            depth++;
+            valueDep = valueDep.getArrayItem();
+            for (String type : valueDep.getTypes()) {
+                addType(source.getIndex(), depth, type);
+            }
+        }
+    }
+
+    void addType(int variable, int degree, String typeName) {
+        int entry = nodeMapping[packNodeAndDegree(variable, degree)];
+        if (getNodeTypes(entry).add(getTypeByName(typeName))) {
+            nodeChanged[entry] = true;
+            changed = true;
+        }
+    }
+
+    static int extractNode(int nodeAndDegree) {
+        return nodeAndDegree >>> 3;
+    }
+
+    static int extractDegree(int nodeAndDegree) {
+        return nodeAndDegree & 7;
+    }
+
+    static int packNodeAndDegree(int node, int degree) {
+        return (node << 3) | degree;
+    }
+
+    static long packTwoIntegers(int a, int b) {
+        return ((long) a << 32) | b;
+    }
+
+    static int unpackFirst(long pair) {
+        return (int) (pair >>> 32);
+    }
+
+    static int unpackSecond(long pair) {
+        return (int) pair;
+    }
+
+    static final class ValueCast {
+        final int fromVariable;
+        final int toVariable;
+        final ValueType targetType;
+
+        ValueCast(int fromVariable, int toVariable, ValueType targetType) {
+            this.fromVariable = fromVariable;
+            this.toVariable = toVariable;
+            this.targetType = targetType;
+        }
     }
 }

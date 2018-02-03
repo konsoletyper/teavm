@@ -70,7 +70,7 @@ class IrreducibleGraphConverter {
             if (irreducible) {
                 DJGraphNodeFilter filter = new DJGraphNodeFilter(djGraph, level);
                 Graph graph = GraphUtils.subgraph(djGraph.getGraph(), filter);
-                int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, djGraph.level(level));
+                int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph);
                 for (int[] scc : sccs) {
                     if (scc.length > 1) {
                         handleStronglyConnectedComponent(djGraph, scc, nodeMap);

@@ -137,7 +137,7 @@ class NullnessInformationBuilder {
 
         sccIndexes = new int[program.variableCount()];
         if (assignmentGraph.size() > 0) {
-            int[][] sccs = GraphUtils.findStronglyConnectedComponents(assignmentGraph, new int[]{0});
+            int[][] sccs = GraphUtils.findStronglyConnectedComponents(assignmentGraph);
             for (int i = 0; i < sccs.length; ++i) {
                 for (int sccNode : sccs[i]) {
                     sccIndexes[sccNode] = i + 1;
