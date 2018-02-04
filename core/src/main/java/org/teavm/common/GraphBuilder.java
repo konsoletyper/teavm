@@ -99,11 +99,11 @@ public class GraphBuilder {
         return builtGraph;
     }
 
-    private static class GraphImpl implements Graph {
+    private static final class GraphImpl implements Graph {
         private final int[][] incomingEdgeList;
         private final int[][] outgoingEdgeList;
 
-        public GraphImpl(int[][] incomingEdgeList, int[][] outgoingEdgeList) {
+        GraphImpl(int[][] incomingEdgeList, int[][] outgoingEdgeList) {
             this.incomingEdgeList = incomingEdgeList;
             this.outgoingEdgeList = outgoingEdgeList;
         }
@@ -147,6 +147,28 @@ public class GraphBuilder {
         @Override
         public int outgoingEdgesCount(int node) {
             return outgoingEdgeList[node].length;
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            sb.append("digraph {\n");
+
+            for (int i = 0; i < size(); ++i) {
+                if (outgoingEdgesCount(i) > 0) {
+                    sb.append("  ").append(i).append(" -> { ");
+                    int[] outgoingEdges = outgoingEdges(i);
+                    sb.append(outgoingEdges[0]);
+                    for (int j = 1; j < outgoingEdges.length; ++j) {
+                        sb.append(", ").append(outgoingEdges[j]);
+                    }
+                    sb.append(" }\n");
+                }
+            }
+
+            sb.append("}");
+
+            return sb.toString();
         }
     }
 }
