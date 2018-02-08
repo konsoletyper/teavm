@@ -63,7 +63,7 @@ public final class GC {
 
     public static RuntimeObject alloc(int size) {
         FreeChunk current = currentChunk;
-        Address next = currentChunk.toAddress().add(size);
+        Address next = current.toAddress().add(size);
         if (!next.add(Structure.sizeOf(FreeChunk.class)).isLessThan(currentChunkLimit)) {
             getAvailableChunk(size);
             current = currentChunk;
@@ -125,7 +125,7 @@ public final class GC {
 
         Address staticRoots = Mutator.getStaticGCRoots();
         int staticCount = staticRoots.getInt();
-        staticRoots = staticRoots.add(8);
+        staticRoots = staticRoots.add(Address.sizeOf());
         while (staticCount-- > 0) {
             RuntimeObject object = staticRoots.getAddress().getAddress().toStructure();
             if (object != null) {
@@ -187,13 +187,13 @@ public final class GC {
             } else {
                 if ((cls.itemType.flags & RuntimeClass.PRIMITIVE) == 0) {
                     RuntimeArray array = (RuntimeArray) object;
-                    Address base = Address.align(array.toAddress().add(RuntimeArray.class, 1), 4);
+                    Address base = Address.align(array.toAddress().add(RuntimeArray.class, 1), Address.sizeOf());
                     for (int i = 0; i < array.size; ++i) {
                         RuntimeObject reference = base.getAddress().toStructure();
                         if (reference != null && !isMarked(reference)) {
                             MarkQueue.enqueue(reference);
                         }
-                        base = base.add(4);
+                        base = base.add(Address.sizeOf());
                     }
                 }
             }
@@ -248,6 +248,7 @@ public final class GC {
                 }
             } else {
                 if (lastFreeSpace != null) {
+                    lastFreeSpace.classReference = 0;
                     lastFreeSpace.size = (int) (object.toAddress().toLong() - lastFreeSpace.toAddress().toLong());
                     freeChunkPtr.value = lastFreeSpace;
                     freeChunkPtr = Structure.add(FreeChunkHolder.class, freeChunkPtr, 1);
@@ -266,6 +267,7 @@ public final class GC {
 
         if (lastFreeSpace != null) {
             int freeSize = (int) (object.toAddress().toLong() - lastFreeSpace.toAddress().toLong());
+            lastFreeSpace.classReference = 0;
             lastFreeSpace.size = freeSize;
             freeChunkPtr.value = lastFreeSpace;
             freeChunkPtr = Structure.add(FreeChunkHolder.class, freeChunkPtr, 1);
@@ -348,7 +350,7 @@ public final class GC {
                 Address address = Address.fromInt(Structure.sizeOf(RuntimeArray.class));
                 address = Address.align(address, itemSize);
                 address = address.add(itemSize * array.size);
-                address = Address.align(address, 4);
+                address = Address.align(address, Address.sizeOf());
                 return address.toInt();
             }
         }

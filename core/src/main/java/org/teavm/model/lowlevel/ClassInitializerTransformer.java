@@ -99,7 +99,7 @@ public class ClassInitializerTransformer {
         checkInitialized.setReceiver(initializedVariable);
         block.add(checkInitialized);
 
-        BranchingInstruction branching = new BranchingInstruction(BranchingCondition.EQUAL);
+        BranchingInstruction branching = new BranchingInstruction(BranchingCondition.NOT_EQUAL);
         branching.setOperand(initializedVariable);
         branching.setConsequent(continueBlock);
         branching.setAlternative(initBlock);

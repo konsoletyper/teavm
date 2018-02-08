@@ -36,14 +36,15 @@ public class ManagedMethodRepository {
     }
 
     private boolean computeIsManaged(MethodReference methodReference) {
-        ClassReader cls = classSource.get(methodReference.getClassName());
-        if (cls == null) {
+        MethodReader method = classSource.resolve(methodReference);
+        if (method == null) {
             return true;
         }
+
+        ClassReader cls = classSource.get(method.getOwnerName());
         if (cls.getAnnotations().get(Unmanaged.class.getName()) != null) {
             return false;
         }
-        MethodReader method = cls.getMethod(methodReference.getDescriptor());
         return method == null || method.getAnnotations().get(Unmanaged.class.getName()) == null;
     }
 }

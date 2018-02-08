@@ -66,6 +66,11 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
+    public static void throwClassCastException() {
+        throw new ClassCastException();
+    }
+
+    @Unmanaged
     public static int callStackSize() {
         Address stackFrame = ShadowStack.getStackTop();
         int size = 0;
@@ -77,8 +82,8 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
-    public static void fillStackTrace(StackTraceElement[] target, int skip) {
-        Address stackFrame = ShadowStack.getNextStackFrame(ShadowStack.getNextStackFrame(ShadowStack.getStackTop()));
+    public static void fillStackTrace(StackTraceElement[] target) {
+        Address stackFrame = ShadowStack.getNextStackFrame(ShadowStack.getStackTop());
         int index = 0;
         while (stackFrame != null && index < target.length) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
@@ -87,12 +92,7 @@ public final class ExceptionHandling {
             StackTraceElement element = createElement(location != null ? location.className : "",
                     location != null ? location.methodName : "", location != null ? location.fileName : null,
                     location != null ? location.lineNumber : -1);
-            if (skip > 0) {
-                skip--;
-            } else {
-                target[index++] = element;
-            }
-
+            target[index++] = element;
             stackFrame = ShadowStack.getNextStackFrame(stackFrame);
         }
     }

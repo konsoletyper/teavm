@@ -425,7 +425,7 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(UnwrapArrayInstruction insn) {
-        UnwrapArrayExpr unwrapExpr = new UnwrapArrayExpr(insn.getElementType());
+        UnwrapArrayExpr unwrapExpr = new UnwrapArrayExpr(map(insn.getElementType()));
         unwrapExpr.setArray(Expr.var(insn.getArray().getIndex()));
         assign(unwrapExpr, insn.getReceiver());
     }
@@ -460,7 +460,7 @@ class StatementGenerator implements InstructionVisitor {
             case SHORT:
                 return ArrayType.SHORT;
             case CHAR:
-                return ArrayType.SHORT;
+                return ArrayType.CHAR;
             case INT:
                 return ArrayType.INT;
             case LONG:

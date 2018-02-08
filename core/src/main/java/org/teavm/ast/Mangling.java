@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,15 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.wasm.generate;
+package org.teavm.ast;
 
 import java.util.Arrays;
 import java.util.stream.Collectors;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public final class WasmMangling {
-    private WasmMangling() {
+public final class Mangling {
+    private Mangling() {
     }
 
     public static String mangleIsSupertype(ValueType type) {
@@ -29,19 +31,53 @@ public final class WasmMangling {
     }
 
     public static String mangleMethod(MethodReference method) {
-        String className = method.getClassName().length() + mangleString(method.getClassName());
+        String className = mangleClassBase(method.getClassName());
         StringBuilder sb = new StringBuilder("method$" + className + "_");
-        String name = mangleString(method.getName());
-        sb.append(mangleType(method.getReturnType()));
-        sb.append(name.length() + "_" + name);
-        sb.append(Arrays.stream(method.getParameterTypes())
-                .map(WasmMangling::mangleType)
-                .collect(Collectors.joining()));
+        mangleSignature(method.getDescriptor(), sb);
         return sb.toString();
+    }
+
+    public static String mangleVTableEntry(MethodDescriptor method) {
+        StringBuilder sb = new StringBuilder("m_");
+        mangleSignature(method, sb);
+        return sb.toString();
+    }
+
+    private static void mangleSignature(MethodDescriptor method, StringBuilder sb) {
+        sb.append(mangleType(method.getResultType()));
+        sb.append(mangleString(method.getName()));
+        sb.append(Arrays.stream(method.getParameterTypes())
+                .map(Mangling::mangleType)
+                .collect(Collectors.joining()));
+    }
+
+    public static String mangleField(FieldReference field) {
+        String className = mangleClassBase(field.getClassName());
+        return "field$" + className + "_" + field.getFieldName().length() + mangleString(field.getFieldName());
+    }
+
+    public static String mangleClass(String className) {
+        return "class$" + mangleClassBase(className);
+    }
+
+    public static String mangleClassObject(ValueType type) {
+        return "tobject$" + mangleType(type);
+    }
+
+    public static String mangleVtable(String className) {
+        return "vt$" + mangleClassBase(className);
+    }
+
+    private static String mangleClassBase(String className) {
+        return className.length() + mangleString(className);
     }
 
     public static String mangleInitializer(String className) {
         return "clinit$" + mangleString(className);
+    }
+
+    public static String mangleInstanceOf(ValueType type) {
+        return "instanceof$" + mangleType(type);
     }
 
     private static String mangleString(String string) {

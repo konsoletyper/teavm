@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 import java.util.Enumeration;
 import java.util.Properties;
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.io.TConsole;
 import org.teavm.classlib.java.io.TInputStream;
 import org.teavm.classlib.java.io.TPrintStream;
@@ -106,11 +107,18 @@ public final class TSystem extends TObject {
     public static native long currentTimeMillis();
 
     private static long currentTimeMillisLowLevel() {
-        return (long) currentTimeMillisImpl();
+        if (PlatformDetector.isWebAssembly()) {
+            return (long) currentTimeMillisWasm();
+        } else {
+            return (long) currentTimeMillisC();
+        }
     }
 
     @Import(name = "currentTimeMillis", module = "runtime")
-    private static native double currentTimeMillisImpl();
+    private static native double currentTimeMillisWasm();
+
+    @Import(name = "currentTimeMillis")
+    private static native long currentTimeMillisC();
 
     private static void initPropertiesIfNeeded() {
         if (properties == null) {

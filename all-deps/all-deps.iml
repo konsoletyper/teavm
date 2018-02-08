@@ -21,8 +21,6 @@
     <orderEntry type="module" module-name="teavm-samples-scala" exported="" />
     <orderEntry type="module" module-name="teavm-samples-storage" exported="" />
     <orderEntry type="module" module-name="teavm-samples-video" exported="" />
-    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-runtime:1.0.3" level="project" />
-    <orderEntry type="library" name="Maven: org.jetbrains.kotlin:kotlin-stdlib:1.0.3" level="project" />
   </component>
   <component name="teavm">
     <option name="mainClass" value="" />

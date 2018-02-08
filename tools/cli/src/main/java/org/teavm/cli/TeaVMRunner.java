@@ -74,7 +74,7 @@ public final class TeaVMRunner {
         options.addOption(OptionBuilder
                 .withArgName("target")
                 .hasArg()
-                .withDescription("target type (javascript/js, webassembly/wasm)")
+                .withDescription("target type (javascript/js, webassembly/wasm, C)")
                 .create('t'));
         options.addOption(OptionBuilder
                 .withArgName("directory")
@@ -141,7 +141,13 @@ public final class TeaVMRunner {
                 .withLongOpt("wasm-version")
                 .withArgName("version")
                 .hasArg()
-                .withDescription("WebAssembly binary version (11, 12, 13)")
+                .withDescription("WebAssembly binary version (currently, only 1 is supported)")
+                .create());
+        options.addOption(OptionBuilder
+                .withLongOpt("min-heap")
+                .withArgName("size")
+                .hasArg()
+                .withDescription("Minimum heap size in bytes (for C and WebAssembly)")
                 .create());
     }
 
@@ -179,6 +185,7 @@ public final class TeaVMRunner {
         parseIncrementalOptions();
         parseJavaScriptOptions();
         parseWasmOptions();
+        parseHeap();
 
         interactive = commandLine.hasOption('w');
 
@@ -201,6 +208,9 @@ public final class TeaVMRunner {
                 case "webassembly":
                 case "wasm":
                     tool.setTargetType(TeaVMTargetType.WEBASSEMBLY);
+                    break;
+                case "c":
+                    tool.setTargetType(TeaVMTargetType.C);
                     break;
             }
         }
@@ -315,6 +325,20 @@ public final class TeaVMRunner {
                 System.err.print("Wrong version value");
                 printUsage();
             }
+        }
+    }
+
+    private void parseHeap() {
+        if (commandLine.hasOption("min-heap")) {
+            int size;
+            try {
+                size = Integer.parseInt(commandLine.getOptionValue("min-heap"));
+            } catch (NumberFormatException e) {
+                System.err.print("Wrong heap size");
+                printUsage();
+                return;
+            }
+            tool.setMinHeapSize(size);
         }
     }
 

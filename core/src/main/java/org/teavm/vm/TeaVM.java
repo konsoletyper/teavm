@@ -236,6 +236,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return diagnostics;
     }
 
+    @Override
+    public String[] getPlatformTags() {
+        return target.getPlatformTags();
+    }
+
     /**
      * <p>Adds an entry point. TeaVM guarantees, that all methods that are required by the entry point
      * will be available at run-time in browser. Also you need to specify for each parameter of entry point

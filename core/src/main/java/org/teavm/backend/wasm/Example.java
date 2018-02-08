@@ -192,6 +192,7 @@ public final class Example {
             throwsException();
         } catch (IllegalStateException e) {
             System.out.println("Caught 1: " + e.getMessage());
+            e.printStackTrace();
         }
 
         int x = 0;

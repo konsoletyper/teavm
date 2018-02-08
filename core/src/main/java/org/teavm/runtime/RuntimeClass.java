@@ -18,7 +18,7 @@ package org.teavm.runtime;
 import org.teavm.interop.Address;
 import org.teavm.interop.Unmanaged;
 
-public class RuntimeClass extends RuntimeJavaObject {
+public class RuntimeClass extends RuntimeObject {
     public static final int INITIALIZED = 1;
     public static final int PRIMITIVE = 2;
     public static final int ENUM = 4;
@@ -27,7 +27,7 @@ public class RuntimeClass extends RuntimeJavaObject {
     public int flags;
     public int tag;
     public int canary;
-    public RuntimeJavaObject name;
+    public RuntimeObject name;
     public RuntimeClass itemType;
     public RuntimeClass arrayType;
     public IsSupertypeFunction isSupertypeOf;

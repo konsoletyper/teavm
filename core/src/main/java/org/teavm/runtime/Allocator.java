@@ -33,10 +33,10 @@ public final class Allocator {
     }
 
     public static Address allocateArray(RuntimeClass tag, int size) {
-        int itemSize = (tag.itemType.flags & RuntimeClass.PRIMITIVE) != 0 ? tag.itemType.size : 4;
+        int itemSize = (tag.itemType.flags & RuntimeClass.PRIMITIVE) != 0 ? tag.itemType.size : Address.sizeOf();
         int sizeInBytes = Address.align(Address.fromInt(Structure.sizeOf(RuntimeArray.class)), itemSize).toInt();
         sizeInBytes += itemSize * size;
-        sizeInBytes = Address.align(Address.fromInt(sizeInBytes), 4).toInt();
+        sizeInBytes = Address.align(Address.fromInt(sizeInBytes), Address.sizeOf()).toInt();
         Address result = GC.alloc(sizeInBytes).toAddress();
         fillZero(result, sizeInBytes);
 
@@ -47,6 +47,7 @@ public final class Allocator {
         return result;
     }
 
+    @Unmanaged
     public static RuntimeArray allocateMultiArray(RuntimeClass tag, Address dimensions, int dimensionCount) {
         int size = dimensions.getInt();
         RuntimeArray array = allocateArray(tag, dimensions.getInt()).toStructure();

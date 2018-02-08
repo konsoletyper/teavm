@@ -58,4 +58,6 @@ public interface TeaVMHost {
      * visible to VM.
      */
     Properties getProperties();
+
+    String[] getPlatformTags();
 }

@@ -15,8 +15,12 @@
  */
 package org.teavm.runtime;
 
+import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
+import org.teavm.interop.Unmanaged;
 
+@Unmanaged
+@StaticInit
 public class CallSiteLocation extends Structure {
     public String fileName;
     public String className;

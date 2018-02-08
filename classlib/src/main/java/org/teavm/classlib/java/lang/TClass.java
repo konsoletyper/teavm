@@ -48,7 +48,7 @@ import org.teavm.platform.PlatformSequence;
 import org.teavm.platform.metadata.ClassResource;
 import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 import org.teavm.runtime.RuntimeClass;
-import org.teavm.runtime.RuntimeJavaObject;
+import org.teavm.runtime.RuntimeObject;
 
 public class TClass<T> extends TObject implements TAnnotatedElement {
     TString name;
@@ -98,7 +98,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return name;
     }
 
-    private RuntimeJavaObject getNameLowLevel() {
+    private RuntimeObject getNameLowLevel() {
         RuntimeClass runtimeClass = Address.ofObject(this).toStructure();
         return runtimeClass.name;
     }

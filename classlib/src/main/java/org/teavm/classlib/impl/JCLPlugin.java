@@ -84,7 +84,7 @@ public class JCLPlugin implements TeaVMPlugin {
             host.registerService(ReflectionDependencyListener.class, reflection);
             host.add(reflection);
 
-            host.add(new PlatformMarkerSupport());
+            host.add(new PlatformMarkerSupport(host.getPlatformTags()));
         }
 
         TeaVMPluginUtil.handleNatives(host, Class.class);

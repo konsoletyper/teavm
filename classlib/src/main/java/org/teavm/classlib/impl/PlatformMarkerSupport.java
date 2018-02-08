@@ -17,6 +17,8 @@ package org.teavm.classlib.impl;
 
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.PlatformMarker;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
@@ -41,6 +43,12 @@ import org.teavm.model.optimization.GlobalValueNumbering;
 import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 
 public class PlatformMarkerSupport implements ClassHolderTransformer {
+    private String[] tags;
+
+    public PlatformMarkerSupport(String[] tags) {
+        this.tags = tags;
+    }
+
     @Override
     public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
         for (MethodHolder method : cls.getMethods()) {
@@ -123,6 +131,20 @@ public class PlatformMarkerSupport implements ClassHolderTransformer {
     }
 
     private boolean isMarker(MemberReader member) {
-        return member.getAnnotations().get(PlatformMarker.class.getName()) != null;
+        AnnotationReader annot = member.getAnnotations().get(PlatformMarker.class.getName());
+        if (annot == null) {
+            return false;
+        }
+        AnnotationValue value = annot.getValue("value");
+        if (value == null) {
+            return true;
+        }
+        String tagToMatch = value.getString();
+        for (String tag : tags) {
+            if (tag.equals(tagToMatch)) {
+                return true;
+            }
+        }
+        return false;
     }
 }

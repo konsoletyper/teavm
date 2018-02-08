@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import org.apache.commons.io.IOUtils;
+import org.teavm.backend.c.CTarget;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.backend.wasm.WasmTarget;
@@ -97,7 +98,9 @@ public class TeaVMTool implements BaseTeaVMTool {
     private JavaScriptTarget javaScriptTarget;
     private WasmTarget webAssemblyTarget;
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
+    private CTarget cTarget;
     private Set<File> generatedFiles = new HashSet<>();
+    private int minHeapSize = 32 * (1 << 20);
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -224,6 +227,10 @@ public class TeaVMTool implements BaseTeaVMTool {
         this.optimizationLevel = optimizationLevel;
     }
 
+    public void setMinHeapSize(int minHeapSize) {
+        this.minHeapSize = minHeapSize;
+    }
+
     public ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -308,6 +315,8 @@ public class TeaVMTool implements BaseTeaVMTool {
                 return prepareJavaScriptTarget();
             case WEBASSEMBLY:
                 return prepareWebAssemblyTarget();
+            case C:
+                return prepareCTarget();
         }
         throw new IllegalStateException("Unknown target type: " + targetType);
     }
@@ -333,7 +342,14 @@ public class TeaVMTool implements BaseTeaVMTool {
         webAssemblyTarget.setCEmitted(debugInformationGenerated);
         webAssemblyTarget.setWastEmitted(debugInformationGenerated);
         webAssemblyTarget.setVersion(wasmVersion);
+        webAssemblyTarget.setMinHeapSize(minHeapSize);
         return webAssemblyTarget;
+    }
+
+    private CTarget prepareCTarget() {
+        cTarget = new CTarget();
+        cTarget.setMinHeapSize(minHeapSize);
+        return cTarget;
     }
 
     public void generate() throws TeaVMToolException {
@@ -449,6 +465,8 @@ public class TeaVMTool implements BaseTeaVMTool {
                     return "classes.js";
                 case WEBASSEMBLY:
                     return "classes.wasm";
+                case C:
+                    return "classes.c";
                 default:
                     return "classes";
             }

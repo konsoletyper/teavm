@@ -74,14 +74,12 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
-import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.util.VariableType;
 
 public class AstIO {
     private static final ElementModifier[] nodeModifiers = ElementModifier.values();
     private static final BinaryOperation[] binaryOperations = BinaryOperation.values();
     private static final UnaryOperation[] unaryOperations = UnaryOperation.values();
-    private static final ArrayElementType[] arrayElementTypes = ArrayElementType.values();
     private final SymbolTable symbolTable;
     private final SymbolTable fileTable;
     private final Map<String, IdentifiedStatement> statementMap = new HashMap<>();
@@ -876,7 +874,7 @@ public class AstIO {
                 return expr;
             }
             case 12: {
-                UnwrapArrayExpr expr = new UnwrapArrayExpr(arrayElementTypes[input.readByte()]);
+                UnwrapArrayExpr expr = new UnwrapArrayExpr(ArrayType.values()[input.readByte()]);
                 expr.setArray(readExpr(input));
                 return expr;
             }

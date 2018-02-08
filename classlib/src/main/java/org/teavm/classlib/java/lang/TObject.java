@@ -31,7 +31,6 @@ import org.teavm.platform.async.AsyncCallback;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
-import org.teavm.runtime.RuntimeJavaObject;
 import org.teavm.runtime.RuntimeObject;
 
 @Superclass("")
@@ -210,17 +209,14 @@ public class TObject {
     }
 
     @SuppressWarnings("unused")
-    private static int identityLowLevel(RuntimeJavaObject object) {
-        if ((object.classReference & RuntimeObject.MONITOR_EXISTS) != 0) {
-            object = (RuntimeJavaObject) object.monitor;
-        }
-        int result = object.monitor.toAddress().toInt();
+    private static int identityLowLevel(RuntimeObject object) {
+        int result = object.hashCode;
         if (result == 0) {
-            result = RuntimeJavaObject.nextId++;
+            result = RuntimeObject.nextId++;
             if (result == 0) {
-                result = RuntimeJavaObject.nextId++;
+                result = RuntimeObject.nextId++;
             }
-            object.monitor = Address.fromInt(result).toStructure();
+            object.hashCode = result;
         }
         return result;
     }
@@ -238,11 +234,11 @@ public class TObject {
     }
 
     @SuppressWarnings("unused")
-    private static RuntimeJavaObject cloneLowLevel(RuntimeJavaObject self) {
+    private static RuntimeObject cloneLowLevel(RuntimeObject self) {
         RuntimeClass cls = RuntimeClass.getClass(self);
-        int skip = Structure.sizeOf(RuntimeJavaObject.class);
+        int skip = Structure.sizeOf(RuntimeObject.class);
         int size;
-        RuntimeJavaObject copy;
+        RuntimeObject copy;
         if (cls.itemType == null) {
             copy = Allocator.allocate(cls).toStructure();
             size = cls.size;

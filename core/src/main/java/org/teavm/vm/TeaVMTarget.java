@@ -42,4 +42,6 @@ public interface TeaVMTarget {
     void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource);
 
     void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException;
+
+    String[] getPlatformTags();
 }
