@@ -49,16 +49,12 @@ public class GraphTest {
         builder.addEdge(12, 13);
         Graph graph = builder.build();
 
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 0 });
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph);
         sortSccs(sccs);
 
-        assertThat(sccs.length, is(6));
-        assertThat(sccs[0], is(new int[] { 0 }));
-        assertThat(sccs[1], is(new int[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
-        assertThat(sccs[2], is(new int[] { 9 }));
-        assertThat(sccs[3], is(new int[] { 10 }));
-        assertThat(sccs[4], is(new int[] { 11, 12 }));
-        assertThat(sccs[5], is(new int[] { 13 }));
+        assertThat(sccs.length, is(2));
+        assertThat(sccs[0], is(new int[] { 1, 2, 3, 4, 5, 6, 7, 8 }));
+        assertThat(sccs[1], is(new int[] { 11, 12 }));
     }
 
     @Test
@@ -77,7 +73,7 @@ public class GraphTest {
         Graph graph = builder.build();
 
         graph = GraphUtils.subgraph(graph, node -> node != 0);
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3 });
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph);
         sortSccs(sccs);
 
         assertThat(sccs.length, is(1));
@@ -95,13 +91,11 @@ public class GraphTest {
         Graph graph = builder.build();
 
         graph = GraphUtils.subgraph(graph, filter);
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 0 });
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph);
         sortSccs(sccs);
 
-        assertThat(sccs.length, is(3));
-        assertThat(sccs[0], is(new int[] { 0 }));
-        assertThat(sccs[1], is(new int[] { 1, 3 }));
-        assertThat(sccs[2], is(new int[] { 2 }));
+        assertThat(sccs.length, is(1));
+        assertThat(sccs[0], is(new int[] { 1, 3 }));
     }
 
     @Test
@@ -127,7 +121,7 @@ public class GraphTest {
         Graph graph = builder.build();
 
         graph = GraphUtils.subgraph(graph, node -> node != 0);
-        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph, new int[] { 1, 2, 3, 4 });
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph);
         sortSccs(sccs);
 
         assertThat(sccs.length, is(2));
