@@ -110,7 +110,7 @@ public final class TeaVMRunner {
         options.addOption(OptionBuilder
                 .withDescription("Generate source maps")
                 .withLongOpt("sourcemaps")
-                .create('S'));
+                .create('G'));
         options.addOption(OptionBuilder
                 .withDescription("Incremental build")
                 .withLongOpt("incremental")
@@ -243,7 +243,7 @@ public final class TeaVMRunner {
         if (commandLine.hasOption('g')) {
             tool.setDebugInformationGenerated(true);
         }
-        if (commandLine.hasOption('S')) {
+        if (commandLine.hasOption('G')) {
             tool.setSourceMapsFileGenerated(true);
         }
     }
