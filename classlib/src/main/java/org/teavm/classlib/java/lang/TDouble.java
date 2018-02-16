@@ -83,27 +83,30 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
             ++index;
         }
         char c = string.charAt(index);
-        if (c < '0' || c > '9') {
-            throw new TNumberFormatException();
-        }
+
         long mantissa = 0;
         int exp = 0;
-        while (string.charAt(index) == '0') {
-            if (++index == string.length()) {
-                return 0;
-            }
-        }
-        while (index < string.length()) {
-            c = string.charAt(index);
+        if (c != '.') {
             if (c < '0' || c > '9') {
-                break;
+                throw new TNumberFormatException();
             }
-            if (mantissa < 1E17) {
-                mantissa = mantissa * 10 + (c - '0');
-            } else {
-                ++exp;
+            while (string.charAt(index) == '0') {
+                if (++index == string.length()) {
+                    return 0;
+                }
             }
-            ++index;
+            while (index < string.length()) {
+                c = string.charAt(index);
+                if (c < '0' || c > '9') {
+                    break;
+                }
+                if (mantissa < 1E17) {
+                    mantissa = mantissa * 10 + (c - '0');
+                } else {
+                    ++exp;
+                }
+                ++index;
+            }
         }
         if (index < string.length() && string.charAt(index) == '.') {
             ++index;

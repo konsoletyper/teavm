@@ -117,28 +117,33 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
             ++index;
         }
         char c = string.charAt(index);
-        if (c < '0' || c > '9') {
-            throw new TNumberFormatException();
-        }
+
         int mantissa = 0;
         int exp = 0;
-        while (string.charAt(index) == '0') {
-            if (++index == string.length()) {
-                return 0;
-            }
-        }
-        while (index < string.length()) {
-            c = string.charAt(index);
+        if (c != '.') {
             if (c < '0' || c > '9') {
-                break;
+                throw new TNumberFormatException();
             }
-            if (mantissa < 1E8) {
-                mantissa = mantissa * 10 + (c - '0');
-            } else {
-                ++exp;
+
+            while (string.charAt(index) == '0') {
+                if (++index == string.length()) {
+                    return 0;
+                }
             }
-            ++index;
+            while (index < string.length()) {
+                c = string.charAt(index);
+                if (c < '0' || c > '9') {
+                    break;
+                }
+                if (mantissa < 1E8) {
+                    mantissa = mantissa * 10 + (c - '0');
+                } else {
+                    ++exp;
+                }
+                ++index;
+            }
         }
+
         if (index < string.length() && string.charAt(index) == '.') {
             ++index;
             boolean hasOneDigit = false;
