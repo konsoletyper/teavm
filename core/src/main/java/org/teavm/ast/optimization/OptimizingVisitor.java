@@ -122,16 +122,35 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             Expr b = expr.getSecondOperand();
             Expr a = expr.getFirstOperand();
 
-            if (a instanceof VariableExpr || a instanceof ConstantExpr) {
-                b.acceptVisitor(this);
-                b = resultExpr;
-                if (b instanceof ConstantExpr && expr.getOperation() == BinaryOperation.SUBTRACT) {
-                    if (tryMakePositive((ConstantExpr) b)) {
-                        expr.setOperation(BinaryOperation.ADD);
-                    }
+            int barrierPosition = 0;
+            if (isSideEffectFree(a)) {
+                barrierPosition++;
+                if (isSideEffectFree(b)) {
+                    barrierPosition++;
                 }
-                a.acceptVisitor(this);
-                a = resultExpr;
+            }
+
+            Statement barrier = addBarrier();
+
+            if (barrierPosition == 2) {
+                removeBarrier(barrier);
+            }
+            b.acceptVisitor(this);
+            b = resultExpr;
+            if (b instanceof ConstantExpr && expr.getOperation() == BinaryOperation.SUBTRACT) {
+                if (tryMakePositive((ConstantExpr) b)) {
+                    expr.setOperation(BinaryOperation.ADD);
+                }
+            }
+
+            if (barrierPosition == 1) {
+                removeBarrier(barrier);
+            }
+            a.acceptVisitor(this);
+            a = resultExpr;
+
+            if (barrierPosition == 0) {
+                removeBarrier(barrier);
             }
 
             Expr p = a;
@@ -223,10 +242,14 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         try {
             expr.getCondition().acceptVisitor(this);
             Expr cond = resultExpr;
+
+            Statement barrier = addBarrier();
             expr.getConsequent().acceptVisitor(this);
             Expr consequent = resultExpr;
             expr.getAlternative().acceptVisitor(this);
             Expr alternative = resultExpr;
+            removeBarrier(barrier);
+
             expr.setCondition(cond);
             expr.setConsequent(consequent);
             expr.setAlternative(alternative);
@@ -288,10 +311,37 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(SubscriptExpr expr) {
         pushLocation(expr.getLocation());
         try {
+            Expr index = expr.getIndex();
+            Expr array = expr.getArray();
+
+            int barrierPosition = 0;
+            if (isSideEffectFree(array)) {
+                ++barrierPosition;
+                if (isSideEffectFree(index)) {
+                    ++barrierPosition;
+                }
+            }
+
+            Statement barrier = addBarrier();
+
+            if (barrierPosition == 2) {
+                removeBarrier(barrier);
+            }
+
             expr.getIndex().acceptVisitor(this);
-            Expr index = resultExpr;
+            index = resultExpr;
+
+            if (barrierPosition == 1) {
+                removeBarrier(barrier);
+            }
+
             expr.getArray().acceptVisitor(this);
-            Expr array = resultExpr;
+            array = resultExpr;
+
+            if (barrierPosition == 0) {
+                removeBarrier(barrier);
+            }
+
             expr.setArray(array);
             expr.setIndex(index);
             resultExpr = expr;
@@ -318,13 +368,32 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         pushLocation(expr.getLocation());
         try {
             Expr[] args = new Expr[expr.getArguments().size()];
-            for (int i = expr.getArguments().size() - 1; i >= 0; --i) {
+            int barrierPos;
+
+            for (barrierPos = 0; barrierPos < args.length; ++barrierPos) {
+                if (!isSideEffectFree(args[barrierPos])) {
+                    break;
+                }
+            }
+
+            Statement barrier = addBarrier();
+
+            if (barrierPos == args.length) {
+                removeBarrier(barrier);
+            }
+
+            for (int i = args.length - 1; i >= 0; --i) {
                 expr.getArguments().get(i).acceptVisitor(this);
                 args[i] = resultExpr;
+                if (i == barrierPos) {
+                    removeBarrier(barrier);
+                }
             }
+
             for (int i = 0; i < args.length; ++i) {
                 expr.getArguments().set(i, args[i]);
             }
+
             resultExpr = expr;
         } finally {
             popLocation();
@@ -900,5 +969,51 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         } finally {
             popLocation();
         }
+    }
+
+    private Statement addBarrier() {
+        SequentialStatement barrier = new SequentialStatement();
+        resultSequence.add(barrier);
+        return barrier;
+    }
+
+    private void removeBarrier(Statement barrier) {
+        Statement removedBarrier = resultSequence.remove(resultSequence.size() - 1);
+        if (removedBarrier != barrier) {
+            throw new AssertionError();
+        }
+    }
+
+    private boolean isSideEffectFree(Expr expr) {
+        if (expr == null) {
+            return true;
+        }
+
+        if (expr instanceof VariableExpr || expr instanceof ConstantExpr) {
+            return true;
+        }
+
+        if (expr instanceof BinaryExpr) {
+            BinaryExpr binary = (BinaryExpr) expr;
+            return isSideEffectFree(binary.getFirstOperand()) && isSideEffectFree(binary.getSecondOperand());
+        }
+
+        if (expr instanceof UnaryExpr) {
+            return isSideEffectFree(((UnaryExpr) expr).getOperand());
+        }
+
+        if (expr instanceof InstanceOfExpr) {
+            return isSideEffectFree(((InstanceOfExpr) expr).getExpr());
+        }
+
+        if (expr instanceof PrimitiveCastExpr) {
+            return isSideEffectFree(((PrimitiveCastExpr) expr).getValue());
+        }
+
+        if (expr instanceof NewExpr) {
+            return true;
+        }
+
+        return false;
     }
 }
