@@ -243,7 +243,7 @@ public final class TeaVMRunner {
         if (commandLine.hasOption('g')) {
             tool.setDebugInformationGenerated(true);
         }
-        if (commandLine.hasOption('S')) {
+        if (commandLine.hasOption('G')) {
             tool.setSourceMapsFileGenerated(true);
         }
     }
