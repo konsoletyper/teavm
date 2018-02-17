@@ -367,7 +367,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(InvocationExpr expr) {
         pushLocation(expr.getLocation());
         try {
-            Expr[] args = new Expr[expr.getArguments().size()];
+            Expr[] args = expr.getArguments().toArray(new Expr[0]);
             int barrierPos;
 
             for (barrierPos = 0; barrierPos < args.length; ++barrierPos) {
@@ -383,7 +383,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             }
 
             for (int i = args.length - 1; i >= 0; --i) {
-                expr.getArguments().get(i).acceptVisitor(this);
+                args[i].acceptVisitor(this);
                 args[i] = resultExpr;
                 if (i == barrierPos) {
                     removeBarrier(barrier);
