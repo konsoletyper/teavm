@@ -15,16 +15,25 @@
  */
 package org.teavm.classlib.java.io;
 
+import org.teavm.classlib.java.lang.TBoolean;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TStringBuilder;
 import org.teavm.classlib.java.nio.TByteBuffer;
 import org.teavm.classlib.java.nio.TCharBuffer;
-import org.teavm.classlib.java.nio.charset.*;
+import org.teavm.classlib.java.nio.charset.TCharset;
+import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
+import org.teavm.classlib.java.nio.charset.TCodingErrorAction;
+import org.teavm.classlib.java.nio.charset.TIllegalCharsetNameException;
+import org.teavm.classlib.java.nio.charset.TUnsupportedCharsetException;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 public class TPrintStream extends TFilterOutputStream {
+
+    private final static TString BOOLEAN_TRUE = TString.wrap("true");
+    private final static TString BOOLEAN_FALSE = TString.wrap("false");
+
     private boolean autoFlush;
     private boolean errorState;
     private TStringBuilder sb = new TStringBuilder();
@@ -153,6 +162,10 @@ public class TPrintStream extends TFilterOutputStream {
         }
     }
 
+    public void print(boolean b) {
+        print(TString.wrap(TBoolean.toString(b)));
+    }
+
     public void print(char c) {
         buffer[0] = c;
         print(buffer, 0, 1);
@@ -181,6 +194,10 @@ public class TPrintStream extends TFilterOutputStream {
     public void print(TObject s) {
         sb.append(s);
         printSB();
+    }
+
+    public void println(boolean b) {
+        println(TString.wrap(TBoolean.toString(b)));
     }
 
     public void println(int i) {
