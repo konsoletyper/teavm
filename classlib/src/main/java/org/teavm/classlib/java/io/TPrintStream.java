@@ -30,10 +30,6 @@ import org.teavm.classlib.java.nio.charset.TUnsupportedCharsetException;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 public class TPrintStream extends TFilterOutputStream {
-
-    private final static TString BOOLEAN_TRUE = TString.wrap("true");
-    private final static TString BOOLEAN_FALSE = TString.wrap("false");
-
     private boolean autoFlush;
     private boolean errorState;
     private TStringBuilder sb = new TStringBuilder();
