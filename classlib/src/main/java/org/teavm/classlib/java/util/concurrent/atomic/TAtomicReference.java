@@ -21,10 +21,10 @@ import org.teavm.classlib.java.util.TObjects;
 /**
  * @author martin below
  */
-public final class TAtomicReference<T> implements Serializable {
+public class TAtomicReference<T> implements Serializable {
     private T value;
 
-    public final boolean compareAndSet(final T expect, final T update) {
+    public final boolean compareAndSet(T expect, final T update) {
         if (!TObjects.equals(value, expect)) {
             return false;
         }
