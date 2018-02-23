@@ -53,6 +53,7 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
     private void writeFunction(GeneratorContext context, SourceWriter writer) throws IOException {
         String thisName = context.getParameterName(1);
         String methodName = context.getParameterName(2);
+        writer.append("if").ws().append("(!").append(thisName).append(")").ws().append("{return;}").ws();
         writer.append("var name").ws().append('=').ws().append("'jso$functor$'").ws().append('+').ws()
                 .append(methodName).append(';').softNewLine();
         writer.append("if").ws().append("(!").append(thisName).append("[name])").ws().append('{')
