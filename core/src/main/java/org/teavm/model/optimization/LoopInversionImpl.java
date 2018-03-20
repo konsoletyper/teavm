@@ -15,9 +15,9 @@
  */
 package org.teavm.model.optimization;
 
+import com.carrotsearch.hppc.IntHashSet;
+import com.carrotsearch.hppc.IntIntHashMap;
 import com.carrotsearch.hppc.IntIntMap;
-import com.carrotsearch.hppc.IntIntOpenHashMap;
-import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -170,12 +170,12 @@ class LoopInversionImpl {
     private class LoopWithExits {
         final int head;
         final LoopWithExits parent;
-        final IntSet nodes = new IntOpenHashSet();
-        final IntSet nodesAndCopies = new IntOpenHashSet();
-        final IntSet exits = new IntOpenHashSet();
+        final IntSet nodes = new IntHashSet();
+        final IntSet nodesAndCopies = new IntHashSet();
+        final IntSet exits = new IntHashSet();
         int bodyStart;
         int headCopy;
-        final IntIntMap copiedNodes = new IntIntOpenHashMap();
+        final IntIntMap copiedNodes = new IntIntHashMap();
         boolean shouldSkip;
 
         LoopWithExits(int head, LoopWithExits parent) {
@@ -260,7 +260,7 @@ class LoopInversionImpl {
         }
 
         private boolean findCondition() {
-            IntSet tailNodes = new IntOpenHashSet(program.basicBlockCount());
+            IntSet tailNodes = new IntHashSet(program.basicBlockCount());
             for (int tailCandidate : cfg.incomingEdges(head)) {
                 if (nodes.contains(tailCandidate)) {
                     tailNodes.add(tailCandidate);
@@ -298,7 +298,7 @@ class LoopInversionImpl {
         }
 
         private IntSet nodesToCopy() {
-            IntSet result = new IntOpenHashSet();
+            IntSet result = new IntHashSet();
             for (int node : nodes.toArray()) {
                 if (node == head || (node != bodyStart && !dom.dominates(bodyStart, node))) {
                     result.add(node);

@@ -15,8 +15,8 @@
  */
 package org.teavm.backend.wasm.generate;
 
+import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
-import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
@@ -515,7 +515,7 @@ public class WasmClassGenerator {
         int alignment;
         int start;
         boolean isInferface;
-        ObjectIntMap<String> fieldLayout = new ObjectIntOpenHashMap<>();
+        ObjectIntMap<String> fieldLayout = new ObjectIntHashMap<>();
         DataValue data;
         ClassReader cls;
         boolean function;

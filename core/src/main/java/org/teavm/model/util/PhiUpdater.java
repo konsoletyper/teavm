@@ -17,9 +17,9 @@ package org.teavm.model.util;
 
 import com.carrotsearch.hppc.IntArrayDeque;
 import com.carrotsearch.hppc.IntDeque;
+import com.carrotsearch.hppc.IntHashSet;
+import com.carrotsearch.hppc.IntObjectHashMap;
 import com.carrotsearch.hppc.IntObjectMap;
-import com.carrotsearch.hppc.IntObjectOpenHashMap;
-import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -91,7 +91,7 @@ public class PhiUpdater {
     private Phi[][] phiMap;
     private int[][] phiIndexMap;
     private List<List<Phi>> synthesizedPhisByBlock = new ArrayList<>();
-    private IntObjectMap<Phi> phisByReceiver = new IntObjectOpenHashMap<>();
+    private IntObjectMap<Phi> phisByReceiver = new IntObjectHashMap<>();
     private BitSet usedPhis = new BitSet();
     private Variable[] originalExceptionVariables;
     private boolean[] usedDefinitions;
@@ -248,7 +248,7 @@ public class PhiUpdater {
                 stack.push(next);
             }
 
-            IntSet exceptionHandlingSuccessors = new IntOpenHashSet();
+            IntSet exceptionHandlingSuccessors = new IntHashSet();
             for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
                 exceptionHandlingSuccessors.add(tryCatch.getHandler().getIndex());
             }
@@ -281,7 +281,7 @@ public class PhiUpdater {
             }
         }
 
-        IntSet visited = new IntOpenHashSet();
+        IntSet visited = new IntHashSet();
         while (!worklist.isEmpty()) {
             int varIndex = worklist.removeFirst();
             if (!visited.add(varIndex)) {

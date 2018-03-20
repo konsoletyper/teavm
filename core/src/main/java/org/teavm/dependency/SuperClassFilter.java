@@ -15,14 +15,14 @@
  */
 package org.teavm.dependency;
 
+import com.carrotsearch.hppc.IntIntHashMap;
 import com.carrotsearch.hppc.IntIntMap;
-import com.carrotsearch.hppc.IntIntOpenHashMap;
 import org.teavm.model.ClassReaderSource;
 
 class SuperClassFilter implements DependencyTypeFilter {
     private ClassReaderSource classSource;
     private String superType;
-    private IntIntMap cache = new IntIntOpenHashMap();
+    private IntIntMap cache = new IntIntHashMap();
 
     SuperClassFilter(ClassReaderSource classSource, String superType) {
         this.classSource = classSource;

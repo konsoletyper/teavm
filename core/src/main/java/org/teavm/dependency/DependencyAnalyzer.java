@@ -15,7 +15,7 @@
  */
 package org.teavm.dependency;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayDeque;
@@ -266,7 +266,7 @@ public class DependencyAnalyzer implements DependencyInfo {
         } else {
             if (consumer.pendingTypes == null) {
                 pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntOpenHashSet();
+                consumer.pendingTypes = new IntHashSet();
             }
             consumer.pendingTypes.add(type.index);
         }
@@ -288,7 +288,7 @@ public class DependencyAnalyzer implements DependencyInfo {
         } else {
             if (consumer.pendingTypes == null) {
                 pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntOpenHashSet();
+                consumer.pendingTypes = new IntHashSet();
             }
             for (DependencyType type : types) {
                 consumer.pendingTypes.add(type.index);

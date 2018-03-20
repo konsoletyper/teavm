@@ -15,7 +15,7 @@
  */
 package org.teavm.common;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.Arrays;
@@ -38,10 +38,10 @@ class IrreducibleGraphConverter {
     void convertToReducible(Graph cfg, int[] weight, GraphSplittingBackend backend) {
         this.backend = backend;
 
-        nodeCopies = new IntOpenHashSet[cfg.size()];
+        nodeCopies = new IntHashSet[cfg.size()];
         nodeOriginals = new IntegerArray(cfg.size());
         for (int i = 0; i < cfg.size(); ++i) {
-            nodeCopies[i] = new IntOpenHashSet();
+            nodeCopies[i] = new IntHashSet();
             nodeOriginals.add(i);
         }
 
@@ -132,7 +132,7 @@ class IrreducibleGraphConverter {
         }
 
         // Find header of this domain
-        IntSet domainNodes = new IntOpenHashSet(scc.length);
+        IntSet domainNodes = new IntHashSet(scc.length);
         for (int i = 0; i < scc.length; ++i) {
             int node = scc[i];
             if (domains[i] == domain) {
@@ -258,7 +258,7 @@ class IrreducibleGraphConverter {
     }
 
     private int[] withoutCopies(int[] nodesWithCopies) {
-        IntSet visited = new IntOpenHashSet();
+        IntSet visited = new IntHashSet();
         int[] nodes = new int[nodesWithCopies.length];
         int sz = 0;
         for (int node : nodesWithCopies) {
@@ -276,7 +276,7 @@ class IrreducibleGraphConverter {
             int copy = copies[i];
             IntSet knownCopies = nodeCopies[original];
             if (knownCopies == null) {
-                knownCopies = new IntOpenHashSet();
+                knownCopies = new IntHashSet();
                 nodeCopies[original] = knownCopies;
             }
 

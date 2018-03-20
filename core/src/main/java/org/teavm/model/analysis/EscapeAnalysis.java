@@ -17,7 +17,7 @@ package org.teavm.model.analysis;
 
 import com.carrotsearch.hppc.IntArrayDeque;
 import com.carrotsearch.hppc.IntDeque;
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -147,7 +147,7 @@ public class EscapeAnalysis {
             }
 
             // If incoming variables of phi functions live after phi, mark them as escaping
-            IntSet sharedIncomingVars = new IntOpenHashSet();
+            IntSet sharedIncomingVars = new IntHashSet();
             for (Phi phi : block.getPhis()) {
                 if (escapes(phi.getReceiver().getIndex())) {
                     queue.addLast(definitionClasses[phi.getReceiver().getIndex()]);
@@ -163,7 +163,7 @@ public class EscapeAnalysis {
         }
         Graph graph = graphBuilder.build();
 
-        IntSet visited = new IntOpenHashSet();
+        IntSet visited = new IntHashSet();
         while (!queue.isEmpty()) {
             int var = queue.removeFirst();
             if (visited.add(var)) {

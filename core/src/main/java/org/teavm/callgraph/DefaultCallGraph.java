@@ -15,8 +15,8 @@
  */
 package org.teavm.callgraph;
 
+import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
-import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
@@ -65,12 +65,12 @@ public class DefaultCallGraph implements CallGraph, Serializable {
 
     static class SerializableCallGraphBuilder {
         List<SerializableCallGraph.Node> nodes = new ArrayList<>();
-        ObjectIntMap<DefaultCallGraphNode> nodeToIndex = new ObjectIntOpenHashMap<>();
+        ObjectIntMap<DefaultCallGraphNode> nodeToIndex = new ObjectIntHashMap<>();
         List<SerializableCallGraph.CallSite> callSites = new ArrayList<>();
         List<DefaultCallSite> originalCallSites = new ArrayList<>();
-        ObjectIntMap<DefaultCallSite> callSiteToIndex = new ObjectIntOpenHashMap<>();
+        ObjectIntMap<DefaultCallSite> callSiteToIndex = new ObjectIntHashMap<>();
         List<SerializableCallGraph.FieldAccess> fieldAccessList = new ArrayList<>();
-        ObjectIntMap<DefaultFieldAccessSite> fieldAccessToIndex = new ObjectIntOpenHashMap<>();
+        ObjectIntMap<DefaultFieldAccessSite> fieldAccessToIndex = new ObjectIntHashMap<>();
         List<DefaultCallGraphNode> nodesToProcess = new ArrayList<>();
         List<DefaultCallSite> callSitesToProcess = new ArrayList<>();
         List<DefaultFieldAccessSite> fieldAccessToProcess = new ArrayList<>();

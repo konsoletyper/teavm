@@ -17,8 +17,8 @@ package org.teavm.model.analysis.test;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import com.carrotsearch.hppc.ObjectByteHashMap;
 import com.carrotsearch.hppc.ObjectByteMap;
-import com.carrotsearch.hppc.ObjectByteOpenHashMap;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -123,7 +123,7 @@ public class NullnessAnalysisTest {
         ClassLoader classLoader = NullnessAnalysisTest.class.getClassLoader();
         try (InputStream input = classLoader.getResourceAsStream(name);
                 BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"))) {
-            ObjectByteMap<String> result = new ObjectByteOpenHashMap<>();
+            ObjectByteMap<String> result = new ObjectByteHashMap<>();
 
             while (true) {
                 String line = reader.readLine();

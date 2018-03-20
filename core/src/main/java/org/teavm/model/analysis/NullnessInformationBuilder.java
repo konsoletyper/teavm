@@ -17,14 +17,13 @@ package org.teavm.model.analysis;
 
 import com.carrotsearch.hppc.IntArrayDeque;
 import com.carrotsearch.hppc.IntDeque;
+import com.carrotsearch.hppc.IntHashSet;
+import com.carrotsearch.hppc.IntIntHashMap;
 import com.carrotsearch.hppc.IntIntMap;
-import com.carrotsearch.hppc.IntIntOpenHashMap;
-import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.BitSet;
 import java.util.List;
-import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.common.GraphUtils;
@@ -189,14 +188,8 @@ class NullnessInformationBuilder {
     class NullExtensionVisitor extends AbstractInstructionVisitor implements DominatorWalkerCallback<State> {
         State currentState;
         BasicBlock currentBlock;
-        IntIntMap nullSuccessors = new IntIntOpenHashMap();
-        IntIntMap notNullSuccessors = new IntIntOpenHashMap();
-        private DominatorTree dom;
-
-        @Override
-        public void setDomTree(DominatorTree domTree) {
-            dom = domTree;
-        }
+        IntIntMap nullSuccessors = new IntIntHashMap();
+        IntIntMap notNullSuccessors = new IntIntHashMap();
 
         @Override
         public State visit(BasicBlock block) {
@@ -426,7 +419,7 @@ class NullnessInformationBuilder {
     }
 
     static class State {
-        IntSet newlyNonNull = new IntOpenHashSet();
-        IntSet newlyNull = new IntOpenHashSet();
+        IntSet newlyNonNull = new IntHashSet();
+        IntSet newlyNull = new IntHashSet();
     }
 }

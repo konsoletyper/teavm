@@ -19,7 +19,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.Arrays;
 import java.util.Comparator;
@@ -210,7 +210,7 @@ public class GraphTest {
         Graph graph = backend.getGraph();
         for (int node = 0; node < graph.size(); ++node) {
             int nodeProto = backend.prototype(node);
-            IntSet succProto = new IntOpenHashSet();
+            IntSet succProto = new IntHashSet();
             for (int succ : graph.outgoingEdges(node)) {
                 succProto.add(backend.prototype(succ));
             }

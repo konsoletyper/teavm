@@ -15,7 +15,7 @@
  */
 package org.teavm.common;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
@@ -157,7 +157,7 @@ public class GraphIndexer {
                     List<WeightedNode> succList = new ArrayList<>(successors.length);
                     IntegerArray orderedSuccessors = new IntegerArray(successors.length);
                     if (terminalNodes.size() > 0) {
-                        IntSet loopNodes = IntOpenHashSet.from(findNaturalLoop(node, terminalNodes.getAll()));
+                        IntSet loopNodes = IntHashSet.from(findNaturalLoop(node, terminalNodes.getAll()));
                         for (int succ : successors) {
                             if (loopNodes.contains(succ)) {
                                 succList.add(new WeightedNode(succ, priorities[succ], weights[succ]));
@@ -168,7 +168,7 @@ public class GraphIndexer {
                             orderedSuccessors.add(wnode.index);
                         }
 
-                        IntSet outerSuccessors = new IntOpenHashSet(successors.length);
+                        IntSet outerSuccessors = new IntHashSet(successors.length);
                         succList.clear();
                         for (IntCursor loopNode : loopNodes) {
                             for (int succ : graph.outgoingEdges(loopNode.value)) {
@@ -205,7 +205,7 @@ public class GraphIndexer {
     }
 
     private int[] findNaturalLoop(int head, int[] terminals) {
-        IntSet loop = new IntOpenHashSet();
+        IntSet loop = new IntHashSet();
         loop.add(head);
         IntegerStack stack = new IntegerStack(1);
         for (int pred : terminals) {

@@ -16,8 +16,8 @@
 package org.teavm.model.lowlevel;
 
 import com.carrotsearch.hppc.IntArrayList;
+import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
-import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
@@ -305,7 +305,7 @@ public class GCShadowStackContributor {
     }
 
     private List<Instruction> sortInstructions(Collection<Instruction> instructions, BasicBlock block) {
-        ObjectIntMap<Instruction> indexes = new ObjectIntOpenHashMap<>();
+        ObjectIntMap<Instruction> indexes = new ObjectIntHashMap<>();
         int index = 0;
         for (Instruction instruction : block) {
             indexes.put(instruction, index++);
@@ -349,7 +349,7 @@ public class GCShadowStackContributor {
     }
 
     private ObjectIntMap<Instruction> getInstructionIndexes(BasicBlock block) {
-        ObjectIntMap<Instruction> indexes = new ObjectIntOpenHashMap<>();
+        ObjectIntMap<Instruction> indexes = new ObjectIntHashMap<>();
         for (Instruction instruction : block) {
             indexes.put(instruction, indexes.size());
         }

@@ -15,7 +15,7 @@
  */
 package org.teavm.dependency;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.io.ByteArrayOutputStream;
 import java.util.ArrayList;
@@ -275,7 +275,7 @@ public class DependencyTest {
             int value = aliases[insn.getValue().getIndex()];
             IntSet items = arrayContent[array];
             if (items == null) {
-                items = new IntOpenHashSet();
+                items = new IntHashSet();
                 arrayContent[array] = items;
             }
             items.add(value);

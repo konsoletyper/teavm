@@ -15,7 +15,7 @@
  */
 package org.teavm.common;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
@@ -199,7 +199,7 @@ public class DJGraph {
 
     public int collapse(int[] nodes) {
         // Replace nodes with their classes and find common dominator among them
-        IntSet set = new IntOpenHashSet();
+        IntSet set = new IntHashSet();
         int top = nodes[0];
         for (int node : nodes) {
             node = mergeRoot[node];
