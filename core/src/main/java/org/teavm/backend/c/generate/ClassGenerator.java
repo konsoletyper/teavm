@@ -25,12 +25,16 @@ import java.util.Set;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.analyze.Characteristics;
+import org.teavm.backend.c.generators.Generator;
+import org.teavm.backend.c.generators.GeneratorContext;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Structure;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReader;
@@ -70,7 +74,8 @@ public class ClassGenerator {
                 continue;
             }
             if (method.hasModifier(ElementModifier.NATIVE)
-                    && method.getAnnotations().get(DelegateTo.class.getName()) == null) {
+                    && method.getAnnotations().get(DelegateTo.class.getName()) == null
+                    && context.getGenerator(method.getReference()) == null) {
                 continue;
             }
 
@@ -388,6 +393,11 @@ public class ClassGenerator {
             tag = 0;
             sizeExpr = "sizeof(" + CodeWriter.strictTypeAsString(type) + ")";
             flags |= RuntimeClass.PRIMITIVE;
+            if (type instanceof ValueType.Primitive) {
+                flags |= getPrimitiveFlag((ValueType.Primitive) type) << RuntimeClass.PRIMITIVE_SHIFT;
+            } else {
+                flags |= RuntimeClass.VOID_PRIMITIVE << RuntimeClass.PRIMITIVE_SHIFT;
+            }
             itemTypeExpr = "NULL";
         }
 
@@ -414,6 +424,29 @@ public class ClassGenerator {
         writer.print(".").print(classFieldName("parent")).println(" = " + parent + ",");
         writer.print(".").print(classFieldName("enumValues")).println(" = NULL,");
         writer.print(".").print(classFieldName("layout")).println(" = " + layout);
+    }
+
+    private int getPrimitiveFlag(ValueType.Primitive type) {
+        switch (type.getKind()) {
+            case BOOLEAN:
+                return RuntimeClass.BOOLEAN_PRIMITIVE;
+            case BYTE:
+                return RuntimeClass.BYTE_PRIMITIVE;
+            case SHORT:
+                return RuntimeClass.SHORT_PRIMITIVE;
+            case CHARACTER:
+                return RuntimeClass.CHAR_PRIMITIVE;
+            case INTEGER:
+                return RuntimeClass.INT_PRIMITIVE;
+            case LONG:
+                return RuntimeClass.LONG_PRIMITIVE;
+            case FLOAT:
+                return RuntimeClass.FLOAT_PRIMITIVE;
+            case DOUBLE:
+                return RuntimeClass.DOUBLE_PRIMITIVE;
+            default:
+                throw new AssertionError();
+        }
     }
 
     private String classFieldName(String field) {
@@ -456,7 +489,9 @@ public class ClassGenerator {
     public void generateClass(ClassHolder cls) {
         for (MethodHolder method : cls.getMethods()) {
             if (method.hasModifier(ElementModifier.NATIVE)) {
-                tryDelegateToMethod(cls, method);
+                if (!tryDelegateToMethod(cls, method)) {
+                    tryUsingGenerator(method);
+                }
                 continue;
             }
 
@@ -491,19 +526,21 @@ public class ClassGenerator {
                 && cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null;
     }
 
-    private void tryDelegateToMethod(ClassHolder cls, MethodHolder method) {
+    private boolean tryDelegateToMethod(ClassHolder cls, MethodHolder method) {
         AnnotationHolder delegateToAnnot = method.getAnnotations().get(DelegateTo.class.getName());
         if (delegateToAnnot == null) {
-            return;
+            return false;
         }
 
         String methodName = delegateToAnnot.getValue("value").getString();
         for (MethodHolder candidate : cls.getMethods()) {
             if (candidate.getName().equals(methodName)) {
                 delegateToMethod(method, candidate);
-                break;
+                return true;
             }
         }
+
+        return false;
     }
 
     private void delegateToMethod(MethodHolder callingMethod, MethodHolder delegateMethod) {
@@ -533,6 +570,42 @@ public class ClassGenerator {
         }
 
         writer.println(");");
+
+        writer.outdent().println("}");
+    }
+
+    private void tryUsingGenerator(MethodHolder method) {
+        MethodReference methodRef = method.getReference();
+        Generator generator = context.getGenerator(methodRef);
+        if (generator == null) {
+            return;
+        }
+
+        boolean isStatic = method.hasModifier(ElementModifier.STATIC);
+        codeGenerator.generateMethodSignature(methodRef, isStatic, true);
+        writer.println(" {").indent();
+
+        generator.generate(new GeneratorContext() {
+            @Override
+            public NameProvider names() {
+                return context.getNames();
+            }
+
+            @Override
+            public Diagnostics getDiagnotics() {
+                return context.getDiagnostics();
+            }
+
+            @Override
+            public ClassReaderSource getClassSource() {
+                return context.getClassSource();
+            }
+
+            @Override
+            public String getParameterName(int index) {
+                return index == 0 ? "_this_" : "local_" + index;
+            }
+        }, writer, methodRef);
 
         writer.outdent().println("}");
     }

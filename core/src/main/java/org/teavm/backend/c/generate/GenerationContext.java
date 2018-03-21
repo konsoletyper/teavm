@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.backend.c.analyze.Characteristics;
+import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
@@ -34,11 +35,12 @@ public class GenerationContext {
     private Diagnostics diagnostics;
     private ClassReaderSource classSource;
     private List<Intrinsic> intrinsics;
+    private List<Generator> generators;
     private Map<MethodReference, Intrinsic> intrinsicCache = new HashMap<>();
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
             StringPool stringPool, NameProvider names, Diagnostics diagnostics, ClassReaderSource classSource,
-            List<Intrinsic> intrinsics) {
+            List<Intrinsic> intrinsics, List<Generator> generators) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
         this.stringPool = stringPool;
@@ -46,6 +48,7 @@ public class GenerationContext {
         this.diagnostics = diagnostics;
         this.classSource = classSource;
         this.intrinsics = new ArrayList<>(intrinsics);
+        this.generators = new ArrayList<>(generators);
     }
 
     public VirtualTableProvider getVirtualTableProvider() {
@@ -75,5 +78,14 @@ public class GenerationContext {
     public Intrinsic getIntrinsic(MethodReference method) {
         return intrinsicCache.computeIfAbsent(method,
                 m -> intrinsics.stream().filter(i -> i.canHandle(m)).findFirst().orElse(null));
+    }
+
+    public Generator getGenerator(MethodReference method) {
+        for (Generator generator : generators) {
+            if (generator.canHandle(method)) {
+                return generator;
+            }
+        }
+        return null;
     }
 }

@@ -42,6 +42,8 @@ import org.teavm.backend.c.generate.GenerationContext;
 import org.teavm.backend.c.generate.NameProvider;
 import org.teavm.backend.c.generate.StringPool;
 import org.teavm.backend.c.generate.StringPoolGenerator;
+import org.teavm.backend.c.generators.ArrayGenerator;
+import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.intrinsic.AddressIntrinsic;
 import org.teavm.backend.c.intrinsic.AllocatorIntrinsic;
 import org.teavm.backend.c.intrinsic.ExceptionHandlingIntrinsic;
@@ -206,8 +208,11 @@ public class CTarget implements TeaVMTarget {
         intrinsics.add(new ExceptionHandlingIntrinsic());
         intrinsics.add(new FunctionIntrinsic(characteristics));
 
+        List<Generator> generators = new ArrayList<>();
+        generators.add(new ArrayGenerator());
+
         GenerationContext context = new GenerationContext(vtableProvider, characteristics, stringPool, nameProvider,
-                controller.getDiagnostics(), classes, intrinsics);
+                controller.getDiagnostics(), classes, intrinsics, generators);
 
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(
                 buildTarget.createResource(outputName), "UTF-8"))) {
