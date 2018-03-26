@@ -78,12 +78,17 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private NameProvider names;
     private CodeWriter writer;
     private int temporaryReceiverLevel;
+    private int maxTemporaryReceiverLevel;
     private MethodReference callingMethod;
 
     public CodeGenerationVisitor(GenerationContext context, CodeWriter writer) {
         this.context = context;
         this.writer = writer;
         this.names = context.getNames();
+    }
+
+    public int getTemporaryReceivers() {
+        return maxTemporaryReceiverLevel;
     }
 
     public void setCallingMethod(MethodReference callingMethod) {
@@ -334,6 +339,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         switch (expr.getType()) {
             case CONSTRUCTOR: {
                 String receiver = "recv_" + temporaryReceiverLevel++;
+                maxTemporaryReceiverLevel = Math.max(maxTemporaryReceiverLevel, temporaryReceiverLevel);
                 writer.print("(" + receiver + " = ");
                 allocObject(expr.getMethod().getClassName());
                 writer.print(", ");
@@ -371,6 +377,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             }
             case DYNAMIC: {
                 String receiver = "recv_" + temporaryReceiverLevel++;
+                maxTemporaryReceiverLevel = Math.max(maxTemporaryReceiverLevel, temporaryReceiverLevel);
                 writer.print("((").print(receiver).print(" = ");
                 expr.getArguments().get(0).acceptVisitor(this);
 

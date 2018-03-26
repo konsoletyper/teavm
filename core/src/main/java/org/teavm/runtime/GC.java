@@ -80,7 +80,7 @@ public final class GC {
         }
         currentChunk.classReference = 0;
         freeMemory -= size;
-        return current;
+        return current.toAddress().toStructure();
     }
 
     private static void getAvailableChunk(int size) {
@@ -204,7 +204,7 @@ public final class GC {
         FreeChunkHolder freeChunkPtr = gcStorageAddress().toStructure();
         freeChunks = 0;
 
-        RuntimeObject object = heapAddress().toStructure();
+        FreeChunk object = heapAddress().toStructure();
         FreeChunk lastFreeSpace = null;
         long heapSize = availableBytes();
         long reclaimedSpace = 0;
@@ -229,7 +229,7 @@ public final class GC {
 
             if (free) {
                 if (lastFreeSpace == null) {
-                    lastFreeSpace = (FreeChunk) object;
+                    lastFreeSpace = object;
                 }
 
                 if (!object.toAddress().isLessThan(currentRegionEnd)) {
@@ -335,18 +335,18 @@ public final class GC {
         return Structure.add(FreeChunkHolder.class, currentChunkPointer, index);
     }
 
-    private static int objectSize(RuntimeObject object) {
+    private static int objectSize(FreeChunk object) {
         if (object.classReference == 0) {
-            return ((FreeChunk) object).size;
+            return object.size;
         } else {
-            RuntimeClass cls = RuntimeClass.getClass(object);
+            RuntimeClass cls = RuntimeClass.getClass(object.toAddress().toStructure());
             if (cls.itemType == null) {
                 return cls.size;
             } else {
                 int itemSize = (cls.itemType.flags & RuntimeClass.PRIMITIVE) == 0
                         ? Address.sizeOf()
                         : cls.itemType.size;
-                RuntimeArray array = (RuntimeArray) object;
+                RuntimeArray array = object.toAddress().toStructure();
                 Address address = Address.fromInt(Structure.sizeOf(RuntimeArray.class));
                 address = Address.align(address, itemSize);
                 address = address.add(itemSize * array.size);

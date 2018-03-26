@@ -18,6 +18,7 @@ package org.teavm.backend.c.generate;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.interop.Export;
@@ -50,6 +51,8 @@ public class NameProvider {
     private Map<String, String> classClassNames = new HashMap<>();
     private Map<ValueType, String> classInstanceNames = new HashMap<>();
     private Map<ValueType, String> supertypeNames = new HashMap<>();
+
+    private Set<ValueType> types = new LinkedHashSet<>();
 
     public NameProvider(ClassReaderSource classSource) {
         this.classSource = classSource;
@@ -126,10 +129,12 @@ public class NameProvider {
     }
 
     public String forClassClass(String className) {
+        types.add(ValueType.object(className));
         return classClassNames.computeIfAbsent(className, k -> pickUnoccupied(suggestForClass(k) + "_VT"));
     }
 
     public String forClassInstance(ValueType type) {
+        types.add(type);
         return classInstanceNames.computeIfAbsent(type, k -> pickUnoccupied(suggestForType(k) + "_Cls"));
     }
 
@@ -225,5 +230,9 @@ public class NameProvider {
         }
 
         return result;
+    }
+
+    public Set<? extends ValueType> getTypes() {
+        return types;
     }
 }

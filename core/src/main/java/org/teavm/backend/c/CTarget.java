@@ -33,15 +33,12 @@ import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.analyze.CDependencyListener;
 import org.teavm.backend.c.analyze.Characteristics;
-import org.teavm.backend.c.analyze.StringPoolFiller;
-import org.teavm.backend.c.analyze.TypeCollector;
-import org.teavm.backend.c.generate.CallSiteGenerator;
+import org.teavm.backend.c.generate.BufferedCodeWriter;
 import org.teavm.backend.c.generate.ClassGenerator;
 import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generate.GenerationContext;
 import org.teavm.backend.c.generate.NameProvider;
 import org.teavm.backend.c.generate.StringPool;
-import org.teavm.backend.c.generate.StringPoolGenerator;
 import org.teavm.backend.c.generators.ArrayGenerator;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.intrinsic.AddressIntrinsic;
@@ -214,26 +211,20 @@ public class CTarget implements TeaVMTarget {
         GenerationContext context = new GenerationContext(vtableProvider, characteristics, stringPool, nameProvider,
                 controller.getDiagnostics(), classes, intrinsics, generators);
 
+        BufferedCodeWriter codeWriter = new BufferedCodeWriter();
+        copyResource(codeWriter, "runtime.c");
+
+        ClassGenerator classGenerator = new ClassGenerator(context, controller.getUnprocessedClassSource(),
+                tagRegistry, decompiler, codeWriter);
+
+        generateClasses(classes, classGenerator);
+        generateSpecialFunctions(context, codeWriter);
+        copyResource(codeWriter, "runtime-epilogue.c");
+        generateMain(context, codeWriter, classes, classGenerator.getTypes());
+
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(
                 buildTarget.createResource(outputName), "UTF-8"))) {
-            CodeWriter codeWriter = new CodeWriter(writer);
-            ClassGenerator classGenerator = new ClassGenerator(context, tagRegistry, decompiler, codeWriter);
-
-            copyResource(codeWriter, "runtime.c");
-            TypeCollector typeCollector = new TypeCollector();
-            typeCollector.collect(classes);
-            typeCollector.collectFromCallSites(shadowStackTransformer.getCallSites());
-            StringPoolFiller stringPoolFiller = new StringPoolFiller(stringPool);
-            stringPoolFiller.fillFrom(classes);
-            stringPoolFiller.fillCallSites(shadowStackTransformer.getCallSites());
-            for (ValueType type : typeCollector.getTypes()) {
-                stringPool.getStringIndex(ClassGenerator.nameOfType(type));
-            }
-
-            generateClasses(classes, classGenerator, context, codeWriter, typeCollector);
-            generateSpecialFunctions(context, codeWriter);
-            copyResource(codeWriter, "runtime-epilogue.c");
-            generateMain(context, codeWriter, classes, typeCollector);
+            codeWriter.writeTo(writer);
         }
     }
 
@@ -253,47 +244,15 @@ public class CTarget implements TeaVMTarget {
         }
     }
 
-    private void generateClasses(ListableClassHolderSource classes, ClassGenerator classGenerator,
-            GenerationContext context, CodeWriter writer, TypeCollector typeCollector) {
+    private void generateClasses(ListableClassHolderSource classes, ClassGenerator classGenerator) {
         List<String> classNames = sortClassNames(classes);
 
         for (String className : classNames) {
             ClassHolder cls = classes.get(className);
-            classGenerator.generateForwardDeclarations(cls);
-        }
-
-        for (String className : classNames) {
-            ClassHolder cls = classes.get(className);
-            classGenerator.generateStructures(cls);
-        }
-
-        for (String className : classNames) {
-            classGenerator.generateVirtualTableStructures(classes.get(className));
-        }
-
-        new StringPoolGenerator(writer, context.getNames()).generate(context.getStringPool().getStrings());
-
-        classGenerator.generateLayoutArray(classNames);
-
-        for (ValueType type : typeCollector.getTypes()) {
-            classGenerator.generateVirtualTableForwardDeclaration(type);
-        }
-        for (ValueType type : typeCollector.getTypes()) {
-            classGenerator.generateVirtualTable(type, typeCollector.getTypes());
-        }
-
-        for (ValueType type : typeCollector.getTypes()) {
-            classGenerator.generateIsSupertypeFunction(type);
-        }
-
-        classGenerator.generateStaticGCRoots(classNames);
-
-        new CallSiteGenerator(context, writer).generate(shadowStackTransformer.getCallSites());
-
-        for (String className : classes.getClassNames()) {
-            ClassHolder cls = classes.get(className);
             classGenerator.generateClass(cls);
         }
+
+        classGenerator.generateRemainingData(classNames, shadowStackTransformer);
     }
 
     private List<String> sortClassNames(ListableClassReaderSource classes) {
@@ -372,7 +331,7 @@ public class CTarget implements TeaVMTarget {
     }
 
     private void generateMain(GenerationContext context, CodeWriter writer, ListableClassHolderSource classes,
-            TypeCollector types) {
+            Set<? extends ValueType> types) {
         writer.println("int main(int argc, char** argv) {").indent();
 
         writer.println("initHeap(" + minHeapSize + ");");
@@ -405,11 +364,11 @@ public class CTarget implements TeaVMTarget {
     }
 
     private void generateVirtualTableHeaders(GenerationContext context, CodeWriter writer,
-            TypeCollector typeCollector) {
+            Set<? extends ValueType> types) {
         String classClassName = context.getNames().forClassInstance(ValueType.object("java.lang.Class"));
         writer.println("int32_t classHeader = PACK_CLASS(&" + classClassName + ") | " + RuntimeObject.GC_MARKED + ";");
 
-        for (ValueType type : typeCollector.getTypes()) {
+        for (ValueType type : types) {
             if (!ClassGenerator.needsVirtualTable(context.getCharacteristics(), type)) {
                 continue;
             }

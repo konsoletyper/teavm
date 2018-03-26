@@ -17,7 +17,6 @@ package org.teavm.backend.c.generate;
 
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
-import org.teavm.backend.c.analyze.TemporaryVariableEstimator;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -25,6 +24,7 @@ import org.teavm.model.MethodReference;
 public class CodeGenerator {
     private GenerationContext context;
     private CodeWriter writer;
+    private CodeWriter localsWriter;
     private NameProvider names;
 
     public CodeGenerator(GenerationContext context, CodeWriter writer) {
@@ -34,30 +34,34 @@ public class CodeGenerator {
     }
 
     public void generateMethod(RegularMethodNode methodNode) {
-        generateMethodSignature(methodNode.getReference(),
+        generateMethodSignature(writer, methodNode.getReference(),
                 methodNode.getModifiers().contains(ElementModifier.STATIC), true);
 
         writer.print(" {").indent().println();
 
-        generateLocals(methodNode);
+        localsWriter = writer.fragment();
 
         CodeGenerationVisitor visitor = new CodeGenerationVisitor(context, writer);
         visitor.setCallingMethod(methodNode.getReference());
         methodNode.getBody().acceptVisitor(visitor);
 
+        generateLocals(methodNode, visitor.getTemporaryReceivers());
+
         writer.outdent().println("}");
     }
 
-    public void generateMethodSignature(MethodReference methodRef, boolean isStatic, boolean withNames) {
+    public void generateMethodSignature(CodeWriter writer, MethodReference methodRef, boolean isStatic,
+            boolean withNames) {
         writer.print("static ");
         writer.printType(methodRef.getReturnType()).print(" ").print(names.forMethod(methodRef)).print("(");
 
-        generateMethodParameters(methodRef.getDescriptor(), isStatic, withNames);
+        generateMethodParameters(writer, methodRef.getDescriptor(), isStatic, withNames);
 
         writer.print(")");
     }
 
-    public void generateMethodParameters(MethodDescriptor methodRef, boolean isStatic, boolean withNames) {
+    public void generateMethodParameters(CodeWriter writer, MethodDescriptor methodRef, boolean isStatic,
+            boolean withNames) {
         if (methodRef.parameterCount() == 0 && isStatic) {
             return;
         }
@@ -84,17 +88,15 @@ public class CodeGenerator {
         }
     }
 
-    private void generateLocals(RegularMethodNode methodNode) {
+    private void generateLocals(RegularMethodNode methodNode, int receiverCount) {
         int start = methodNode.getReference().parameterCount() + 1;
         for (int i = start; i < methodNode.getVariables().size(); ++i) {
             VariableNode variableNode = methodNode.getVariables().get(i);
-            writer.printType(variableNode.getType()).print(" local_").print(String.valueOf(i)).println(";");
+            localsWriter.printType(variableNode.getType()).print(" local_").print(String.valueOf(i)).println(";");
         }
 
-        TemporaryVariableEstimator temporaryEstimator = new TemporaryVariableEstimator();
-        methodNode.getBody().acceptVisitor(temporaryEstimator);
-        for (int i = 0; i < temporaryEstimator.getMaxReceiverIndex(); ++i) {
-            writer.print("void* recv_").print(String.valueOf(i)).println(";");
+        for (int i = 0; i < receiverCount; ++i) {
+            localsWriter.print("void* recv_").print(String.valueOf(i)).println(";");
         }
     }
 }

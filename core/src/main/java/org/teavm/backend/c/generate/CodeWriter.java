@@ -15,54 +15,35 @@
  */
 package org.teavm.backend.c.generate;
 
-import java.io.PrintWriter;
 import org.teavm.model.ValueType;
 import org.teavm.model.util.VariableType;
 
-public class CodeWriter {
-    private PrintWriter writer;
-    private int indentLevel;
-    private boolean isLineStart;
-
-    public CodeWriter(PrintWriter writer) {
-        this.writer = writer;
-    }
+public abstract class CodeWriter {
+    public abstract CodeWriter fragment();
 
     public CodeWriter println() {
         return println("");
     }
 
     public CodeWriter println(String string) {
-        addIndentIfNecessary();
-        writer.print(string);
-        writer.print("\n");
-        isLineStart = true;
+        append(string);
+        newLine();
         return this;
     }
 
     public CodeWriter print(String string) {
-        addIndentIfNecessary();
-        writer.print(string);
+        append(string);
         return this;
     }
 
     public CodeWriter indent() {
-        indentLevel++;
+        indentBy(1);
         return this;
     }
 
     public CodeWriter outdent() {
-        indentLevel--;
+        indentBy(-1);
         return this;
-    }
-
-    private void addIndentIfNecessary() {
-        if (isLineStart) {
-            for (int i = 0; i < indentLevel; ++i) {
-                writer.print("    ");
-            }
-            isLineStart = false;
-        }
     }
 
     public CodeWriter printType(ValueType type) {
@@ -148,4 +129,12 @@ public class CodeWriter {
 
         return this;
     }
+
+    protected abstract void newLine();
+
+    protected abstract void append(String text);
+
+    protected abstract void indentBy(int amount);
+
+    public abstract void flush();
 }
