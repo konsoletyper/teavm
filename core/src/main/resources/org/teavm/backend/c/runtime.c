@@ -3,10 +3,19 @@
 #include <stddef.h>
 #include <stdio.h>
 #include <uchar.h>
-#include <unistd.h>
 #include <time.h>
 #include <math.h>
+
+#ifdef __GNUC__
+#include <stdalign.h>
+#include <unistd.h>
 #include <sys/mman.h>
+#endif
+
+#ifdef _MSC_VER
+#define alignas(x)
+#include <Windows.h>
+#endif
 
 struct JavaObject;
 struct JavaArray;
@@ -78,7 +87,8 @@ static int32_t gc_regionSize = INT32_C(32768);
 static int32_t gc_regionMaxCount = INT32_C(0);
 static int64_t gc_availableBytes = INT64_C(0);
 
-static void initHeap(long heapSize) {
+#ifdef __GNUC__
+static void initHeap(int64_t heapSize) {
     long workSize = heapSize / 16;
     long regionsSize = (long) (heapSize / gc_regionSize);
 
@@ -117,3 +127,67 @@ static int64_t currentTimeMillis() {
 
     return time.tv_sec * 1000 + (int64_t) round(time.tv_nsec / 1000000);
 }
+#endif
+
+#ifdef _MSC_VER
+static void initHeap(int64_t heapSize) {
+    long workSize = heapSize / 16;
+    long regionsSize = (long) (heapSize / gc_regionSize);
+
+    SYSTEM_INFO systemInfo;
+    GetSystemInfo(&systemInfo);
+    long pageSize = systemInfo.dwPageSize;
+    int heapPages = (int) ((heapSize + pageSize + 1) / pageSize * pageSize);
+    int workPages = (int) ((workSize + pageSize + 1) / pageSize * pageSize);
+    int regionsPages = (int) ((regionsSize * 2 + pageSize + 1) / pageSize * pageSize);
+
+    gc_heapAddress = VirtualAlloc(
+            NULL,
+            heapPages,
+            MEM_RESERVE | MEM_COMMIT,
+            PAGE_READWRITE
+    );
+    gc_gcStorageAddress = VirtualAlloc(
+            NULL,
+            workPages,
+            MEM_RESERVE | MEM_COMMIT,
+            PAGE_READWRITE
+    );
+    gc_regionsAddress = VirtualAlloc(
+            NULL,
+            regionsPages,
+            MEM_RESERVE | MEM_COMMIT,
+            PAGE_READWRITE
+    );
+
+    gc_gcStorageSize = (int) workSize;
+    gc_regionMaxCount = regionsSize;
+    gc_availableBytes = heapSize;
+}
+
+static SYSTEMTIME unixEpochStart = {
+    .wYear = 1970,
+    .wMonth = 1,
+    .wDayOfWeek = 3,
+    .wDay = 1,
+    .wHour = 0,
+    .wMinute = 0,
+    .wSecond = 0,
+    .wMilliseconds = 0
+};
+
+static int64_t currentTimeMillis() {
+    SYSTEMTIME time;
+    FILETIME fileTime;
+    GetSystemTime(&time);
+    SystemTimeToFileTime(&time, &fileTime);
+
+    FILETIME fileTimeStart;
+    SystemTimeToFileTime(&unixEpochStart, &fileTimeStart);
+
+    uint64_t current = fileTime.dwLowDateTime | ((uint64_t) fileTime.dwHighDateTime << 32);
+    uint64_t start = fileTimeStart.dwLowDateTime | ((uint64_t) fileTimeStart.dwHighDateTime << 32);
+
+    return (int64_t) ((current - start) / 10000);
+}
+#endif

@@ -30,7 +30,7 @@ public final class ExceptionHandling {
 
     private static Throwable thrownException;
 
-    @Export(name = "sys$catchException")
+    @Export(name = "sys_catchException")
     @Unmanaged
     public static Throwable catchException() {
         Throwable exception = thrownException;

@@ -276,7 +276,7 @@ public class ClassGenerator {
         String name = context.getNames().forClassInstance(type);
 
         vtableForwardWriter.print("static ").print(structName).print(" ").print(name).println(";");
-        vtableWriter.print("static ").print(structName).print(" ").print(name).println(" = {").indent();
+        vtableWriter.print("static alignas(8) ").print(structName).print(" ").print(name).println(" = {").indent();
 
         if (className != null) {
             vtableWriter.println(".parent = {").indent();
@@ -372,7 +372,6 @@ public class ClassGenerator {
             arrayTypeExpr = "NULL";
         }
 
-        vtableWriter.println(".parent = {},");
         vtableWriter.print(".").print(classFieldName("size")).print(" = ").print(sizeExpr).println(",");
         vtableWriter.print(".").print(classFieldName("flags")).println(" = " + flags + ",");
         vtableWriter.print(".").print(classFieldName("tag")).print(" = ").print(String.valueOf(tag)).println(",");

@@ -35,9 +35,9 @@ public class StringPoolGenerator {
     private void generateStringArrays(List<? extends String> strings) {
         for (int i = 0; i < strings.size(); ++i) {
             String s = strings.get(i);
-            writer.print("static struct { JavaArray hdr; char16_t data[" + s.length() + 1 + "]; } str_array_" + i)
+            writer.print("static struct { JavaArray hdr; char16_t data[" + (s.length() + 1) + "]; } str_array_" + i)
                     .println(" = {").indent();
-            writer.println(".hdr = { .parent = {}, .size = " + s.length() + "},");
+            writer.println(".hdr = { .size = " + s.length() + "},");
             writer.print(".data = ");
             generateStringLiteral(s);
             writer.println();
@@ -53,7 +53,6 @@ public class StringPoolGenerator {
         writer.println("static JavaString stringPool[" + strings.size() + "] = {").indent();
         for (int i = 0; i < strings.size(); ++i) {
             writer.println("{").indent();
-            writer.println(".parent = {},");
             writer.println("." + charactersName + " = (JavaArray*) &str_array_" + i + ",");
             writer.println("." + hashCodeName + " = INT32_C(" + strings.get(i).hashCode() + ")");
             writer.outdent().print("}");

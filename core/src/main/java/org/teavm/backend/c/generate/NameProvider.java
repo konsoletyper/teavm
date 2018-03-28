@@ -116,7 +116,7 @@ public class NameProvider {
         return memberFieldNames.computeIfAbsent(field, k -> {
             Set<String> occupied = occupiedClassNames.computeIfAbsent(k.getClassName(),
                     c -> new HashSet<>(Arrays.asList("parent")));
-            return pickUnoccupied(field.getFieldName(), occupied);
+            return pickUnoccupied(sanitize(field.getFieldName()), occupied);
         });
     }
 
@@ -154,7 +154,7 @@ public class NameProvider {
         StringBuilder sb = new StringBuilder();
         suggestForClass(field.getClassName(), sb);
         sb.append('_');
-        sb.append(field.getFieldName());
+        sb.append(sanitize(field.getFieldName()));
         return sb.toString();
     }
 

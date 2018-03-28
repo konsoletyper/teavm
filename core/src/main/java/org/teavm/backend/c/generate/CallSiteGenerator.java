@@ -46,18 +46,20 @@ public class CallSiteGenerator {
     }
 
     public void generate(List<CallSiteDescriptor> callSites) {
-        writer.print("static ").print(callSiteLocationName).println(" callSiteLocations[];");
-        writer.print("static ").print(exceptionHandlerName).println(" exceptionHandlers[];");
-
+        CodeWriter writerForLocations = writer.fragment();
         generateCallSites(callSites);
+
+        CodeWriter oldWriter = writer;
+        writer = writerForLocations;
         generateLocations();
         generateHandlers();
+        writer = oldWriter;
     }
 
     private void generateCallSites(List<CallSiteDescriptor> callSites) {
         String callSiteName = context.getNames().forClass(CALL_SITE);
 
-        writer.print("static ").print(callSiteName).print(" callSites[] = {").indent();
+        writer.print("static ").print(callSiteName).print(" callSites[" + callSites.size() + "] = {").indent();
         String handlerCountName = fieldName(CALL_SITE, "handlerCount");
         String firstHandlerName = fieldName(CALL_SITE, "firstHandler");
         String locationName = fieldName(CALL_SITE, "location");
@@ -97,7 +99,8 @@ public class CallSiteGenerator {
     }
 
     private void generateLocations() {
-        writer.print("static ").print(callSiteLocationName).print(" callSiteLocations[] = {").indent();
+        writer.print("static ").print(callSiteLocationName).print(" callSiteLocations[" + locations.size() + "] = {")
+                .indent();
 
         String fileNameName = fieldName(CALL_SITE_LOCATION, "fileName");
         String classNameName = fieldName(CALL_SITE_LOCATION, "className");
@@ -128,7 +131,8 @@ public class CallSiteGenerator {
     }
 
     private void generateHandlers() {
-        writer.print("static ").print(exceptionHandlerName).print(" exceptionHandlers[] = {").indent();
+        writer.print("static ").print(exceptionHandlerName).print(" exceptionHandlers[" + exceptionHandlers.size()
+                + "] = {").indent();
 
         String idName = fieldName(EXCEPTION_HANDLER, "id");
         String exceptionClassName = fieldName(EXCEPTION_HANDLER, "exceptionClass");
