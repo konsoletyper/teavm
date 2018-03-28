@@ -116,58 +116,6 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.codehaus.mojo</groupId>
-        <artifactId>exec-maven-plugin</artifactId>
-        <version>1.2.1</version>
-        <executions>
-          <execution>
-            <id>generate-classlib-doc</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <phase>process-test-classes</phase>
-            <configuration>
-              <mainClass>org.teavm.classlib.impl.report.JCLComparisonBuilder</mainClass>
-              <arguments>
-                <argument>java.lang</argument>
-                <argument>java.lang.annotation</argument>
-                <argument>java.lang.reflect</argument>
-                <argument>java.io</argument>
-                <argument>java.math</argument>
-                <argument>java.net</argument>
-                <argument>java.nio</argument>
-                <argument>java.nio.charset</argument>
-                <argument>java.text</argument>
-                <argument>java.security</argument>
-                <argument>java.util</argument>
-                <argument>java.util.concurrent</argument>
-                <argument>java.util.function</argument>
-                <argument>java.util.logging</argument>
-                <argument>java.util.regex</argument>
-                <argument>java.util.zip</argument>
-                <argument>java.util.jar</argument>
-                <argument>java.util.stream</argument>
-                <argument>-output</argument>
-                <argument>${project.build.directory}/jcl-report</argument>
-              </arguments>
-            </configuration>
-          </execution>
-          <execution>
-            <id>generate-tz-cache</id>
-            <goals>
-              <goal>java</goal>
-            </goals>
-            <phase>process-classes</phase>
-            <configuration>
-              <mainClass>org.teavm.classlib.impl.tz.TimeZoneCache</mainClass>
-              <arguments>
-                <argument>${project.build.directory}/classes/org/teavm/classlib/impl/tz/cache</argument>
-              </arguments>
-            </configuration>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
       </plugin>

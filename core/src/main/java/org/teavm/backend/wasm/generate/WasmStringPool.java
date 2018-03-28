@@ -45,27 +45,34 @@ public class WasmStringPool {
     }
 
     public int getStringPointer(String value) {
-        return stringMap.computeIfAbsent(value, str -> {
-            DataArray charactersType = new DataArray(DataPrimitives.SHORT, str.length());
-            DataStructure wrapperType = new DataStructure((byte) 0, arrayHeaderType, charactersType);
-            DataValue wrapper = wrapperType.createValue();
-            DataValue header = wrapper.getValue(0);
-            DataValue characters = wrapper.getValue(1);
+        Integer pointer = stringMap.get(value);
+        if (pointer == null) {
+            pointer = generateStringPointer(value);
+            stringMap.put(value, pointer);
+        }
+        return pointer;
+    }
 
-            int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(ValueType.CHARACTER));
-            header.setInt(0, (classPointer >>> 3) | RuntimeObject.GC_MARKED);
-            header.setInt(2, str.length());
-            for (int i = 0; i < str.length(); ++i) {
-                characters.setShort(i, (short) str.charAt(i));
-            }
+    private int generateStringPointer(String value) {
+        DataArray charactersType = new DataArray(DataPrimitives.SHORT, value.length());
+        DataStructure wrapperType = new DataStructure((byte) 0, arrayHeaderType, charactersType);
+        DataValue wrapper = wrapperType.createValue();
+        DataValue header = wrapper.getValue(0);
+        DataValue characters = wrapper.getValue(1);
 
-            DataValue stringObject = stringType.createValue();
-            int stringPointer = binaryWriter.append(stringObject);
-            classPointer = classGenerator.getClassPointer(ValueType.object(String.class.getName()));
-            stringObject.setInt(0, (classPointer >>> 3) | RuntimeObject.GC_MARKED);
-            stringObject.setAddress(2, binaryWriter.append(wrapper));
+        int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(ValueType.CHARACTER));
+        header.setInt(0, (classPointer >>> 3) | RuntimeObject.GC_MARKED);
+        header.setInt(2, value.length());
+        for (int i = 0; i < value.length(); ++i) {
+            characters.setShort(i, (short) value.charAt(i));
+        }
 
-            return stringPointer;
-        });
+        DataValue stringObject = stringType.createValue();
+        int stringPointer = binaryWriter.append(stringObject);
+        classPointer = classGenerator.getClassPointer(ValueType.object(String.class.getName()));
+        stringObject.setInt(0, (classPointer >>> 3) | RuntimeObject.GC_MARKED);
+        stringObject.setAddress(2, binaryWriter.append(wrapper));
+
+        return stringPointer;
     }
 }

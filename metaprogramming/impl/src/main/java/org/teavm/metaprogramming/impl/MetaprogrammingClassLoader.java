@@ -52,7 +52,12 @@ public class MetaprogrammingClassLoader extends ClassLoader {
     }
 
     public boolean isCompileTimeClass(String name) {
-        return compileTimeClasses.computeIfAbsent(name, n -> checkIfCompileTime(n));
+        Boolean result = compileTimeClasses.get(name);
+        if (result == null) {
+            result = checkIfCompileTime(name);
+            compileTimeClasses.put(name, result);
+        }
+        return result;
     }
 
     private boolean checkIfCompileTime(String name) {

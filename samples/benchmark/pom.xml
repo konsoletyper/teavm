@@ -29,7 +29,8 @@
   <description>Compares performance of the JavaScript code produced by TeaVM and GWT</description>
   
   <properties>
-      <bck2brwsr.version>0.17</bck2brwsr.version>
+    <bck2brwsr.version>0.22</bck2brwsr.version>
+    <gwt.version>2.8.2</gwt.version>
   </properties>
 
   <dependencies>
@@ -72,7 +73,7 @@
     <dependency>
       <groupId>com.google.gwt</groupId>
       <artifactId>gwt-user</artifactId>
-      <version>2.8.0</version>
+      <version>${gwt.version}</version>
       <scope>provided</scope>
     </dependency>
     <dependency>
@@ -172,7 +173,7 @@
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>gwt-maven-plugin</artifactId>
-        <version>2.8.0</version>
+        <version>${gwt.version}</version>
         <executions>
           <execution>
             <goals>
@@ -187,32 +188,6 @@
           </execution>
         </executions>
       </plugin>
-        <plugin>
-            <groupId>org.apidesign.bck2brwsr</groupId>
-            <artifactId>bck2brwsr-maven-plugin</artifactId>
-            <version>${bck2brwsr.version}</version>
-            <executions>
-                <execution>
-                    <phase>prepare-package</phase>
-                    <goals>
-                        <goal>aot</goal>
-                    </goals>
-                </execution>
-            </executions>
-            <configuration>
-                <obfuscation>NONE</obfuscation>
-                <classPathPrefix>lib</classPathPrefix>
-                <mainJavaScript>${project.build.directory}/generated/js/b2b-benchmark.js</mainJavaScript>
-                <vm>${project.build.directory}/generated/js/bck2brwsr.js</vm>
-                <exports>
-                    <export>org.teavm.samples.benchmark.htmljava.BenchmarkStarter</export>
-                    <export>org/jbox2d/collision/shapes/</export>
-                    <export>org/jbox2d/common/</export>
-                    <export>org/jbox2d/dynamics/</export>
-                    <export>org/jbox2d/dynamics/joints/</export>
-                </exports>
-            </configuration>
-        </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>

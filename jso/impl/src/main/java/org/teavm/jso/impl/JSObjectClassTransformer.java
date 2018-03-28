@@ -170,7 +170,12 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     }
 
     private ExposedClass getExposedClass(String name) {
-        return exposedClasses.computeIfAbsent(name, this::createExposedClass);
+        ExposedClass cls = exposedClasses.get(name);
+        if (cls == null) {
+            cls = createExposedClass(name);
+            exposedClasses.put(name, cls);
+        }
+        return cls;
     }
 
     private ExposedClass createExposedClass(String name) {
