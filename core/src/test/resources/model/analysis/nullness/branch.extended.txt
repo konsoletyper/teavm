@@ -4,18 +4,16 @@ $start
     @v := invokeStatic `Foo.get()LFoo;`
     if @v === null then goto $ifNull else goto $ifNotNull
 $ifNull
-    @v_1 := null
     invokeVirtual `Foo.bar()V` @v_1
-    @v_2 := nullCheck @v_1
+    @v_3 := nullCheck @v_1
     goto $join
 $ifNotNull
-    @v_3 := nullCheck @v
-    invokeVirtual `Foo.baz()V` @v_3
+    invokeVirtual `Foo.baz()V` @v_2
+    @v_4 := nullCheck @v_2
     goto $join
 $join
     return
 
 // NULLABLE v
 // NULLABLE v_1
-// NOT_NULL v_2
 // NOT_NULL v_3

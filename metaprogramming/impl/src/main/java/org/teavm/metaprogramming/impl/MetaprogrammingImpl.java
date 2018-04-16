@@ -55,7 +55,7 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
-import org.teavm.model.util.InstructionTransitionExtractor;
+import org.teavm.model.util.TransitionExtractor;
 
 public final class MetaprogrammingImpl {
     static Map<String, Integer> proxySuffixGenerators = new HashMap<>();
@@ -340,7 +340,7 @@ public final class MetaprogrammingImpl {
     }
 
     public static void close() {
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
         BasicBlock block = generator.currentBlock();
         Instruction lastInstruction = block.getLastInstruction();
         if (lastInstruction != null) {

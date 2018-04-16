@@ -59,7 +59,7 @@ import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.ShadowStack;
 
 public class ExceptionHandlingShadowStackContributor {
-    private ManagedMethodRepository managedMethodRepository;
+    private Characteristics characteristics;
     private List<CallSiteDescriptor> callSites;
     private BasicBlock defaultExceptionHandler;
     private MethodReference method;
@@ -67,10 +67,11 @@ public class ExceptionHandlingShadowStackContributor {
     private DominatorTree dom;
     private BasicBlock[] variableDefinitionPlaces;
     private boolean hasExceptionHandlers;
+    private int parameterCount;
 
-    public ExceptionHandlingShadowStackContributor(ManagedMethodRepository managedMethodRepository,
+    public ExceptionHandlingShadowStackContributor(Characteristics characteristics,
             List<CallSiteDescriptor> callSites, MethodReference method, Program program) {
-        this.managedMethodRepository = managedMethodRepository;
+        this.characteristics = characteristics;
         this.callSites = callSites;
         this.method = method;
         this.program = program;
@@ -78,6 +79,7 @@ public class ExceptionHandlingShadowStackContributor {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         dom = GraphUtils.buildDominatorTree(cfg);
         variableDefinitionPlaces = ProgramUtils.getVariableDefinitionPlaces(program);
+        parameterCount = method.parameterCount() + 1;
     }
 
     public boolean contribute() {
@@ -145,7 +147,8 @@ public class ExceptionHandlingShadowStackContributor {
 
                 for (Variable sourceVar : sourceVariables) {
                     BasicBlock sourceVarDefinedAt = variableDefinitionPlaces[sourceVar.getIndex()];
-                    if (dom.dominates(sourceVarDefinedAt.getIndex(), block.getIndex())) {
+                    if (sourceVar.getIndex() < parameterCount
+                            || dom.dominates(sourceVarDefinedAt.getIndex(), block.getIndex())) {
                         currentJointSources[phi.getReceiver().getIndex()] = sourceVar.getIndex();
                         break;
                     }
@@ -164,7 +167,14 @@ public class ExceptionHandlingShadowStackContributor {
             if (isCallInstruction(insn)) {
                 BasicBlock next;
                 boolean last = false;
-                if (insn instanceof RaiseInstruction) {
+                if (isSpecialCallInstruction(insn)) {
+                    next = null;
+                    while (insn.getNext() != null) {
+                        Instruction nextInsn = insn.getNext();
+                        nextInsn.delete();
+                    }
+                    last = true;
+                } else if (insn instanceof RaiseInstruction) {
                     InvokeInstruction raise = new InvokeInstruction();
                     raise.setMethod(new MethodReference(ExceptionHandling.class, "throwException", Throwable.class,
                             void.class));
@@ -229,9 +239,22 @@ public class ExceptionHandlingShadowStackContributor {
                 || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction) {
             return true;
         } else if (insn instanceof InvokeInstruction) {
-            return managedMethodRepository.isManaged(((InvokeInstruction) insn).getMethod());
+            MethodReference method = ((InvokeInstruction) insn).getMethod();
+            if (characteristics.isManaged(method)) {
+                return true;
+            }
+            return method.getClassName().equals(ExceptionHandling.class.getName())
+                    && method.getName().startsWith("throw");
         }
         return false;
+    }
+
+    private boolean isSpecialCallInstruction(Instruction insn) {
+        if (!(insn instanceof InvokeInstruction)) {
+            return false;
+        }
+        MethodReference method = ((InvokeInstruction) insn).getMethod();
+        return method.getClassName().equals(ExceptionHandling.class.getName()) && method.getName().startsWith("throw");
     }
 
     private List<Instruction> setLocation(List<Instruction> instructions, TextLocation location) {
@@ -318,7 +341,12 @@ public class ExceptionHandlingShadowStackContributor {
             switchInsn.setDefaultTarget(getDefaultExceptionHandler());
         }
 
-        if (switchInsn.getEntries().size() == 1) {
+        if (switchInsn.getEntries().isEmpty()) {
+            instructions.clear();
+            JumpInstruction jump = new JumpInstruction();
+            jump.setTarget(switchInsn.getDefaultTarget());
+            instructions.add(jump);
+        } else if (switchInsn.getEntries().size() == 1) {
             SwitchTableEntry entry = switchInsn.getEntries().get(0);
 
             IntegerConstantInstruction singleTestConstant = new IntegerConstantInstruction();

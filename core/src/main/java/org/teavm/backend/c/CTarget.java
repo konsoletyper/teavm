@@ -28,11 +28,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.analyze.CDependencyListener;
-import org.teavm.backend.c.analyze.Characteristics;
 import org.teavm.backend.c.generate.BufferedCodeWriter;
 import org.teavm.backend.c.generate.ClassGenerator;
 import org.teavm.backend.c.generate.CodeWriter;
@@ -79,8 +79,11 @@ import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
+import org.teavm.model.lowlevel.NullCheckInsertion;
+import org.teavm.model.lowlevel.NullCheckTransformation;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
 import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
 import org.teavm.model.transformation.ClassPatch;
@@ -101,6 +104,8 @@ public class CTarget implements TeaVMTarget {
     private ClassInitializerEliminator classInitializerEliminator;
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
+    private NullCheckInsertion nullCheckInsertion;
+    private NullCheckTransformation nullCheckTransformation;
     private int minHeapSize = 32 * 1024 * 1024;
 
     public void setMinHeapSize(int minHeapSize) {
@@ -123,10 +128,13 @@ public class CTarget implements TeaVMTarget {
     @Override
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
+        Characteristics characteristics = new Characteristics(controller.getUnprocessedClassSource());
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
-        shadowStackTransformer = new ShadowStackTransformer(controller.getUnprocessedClassSource());
+        shadowStackTransformer = new ShadowStackTransformer(characteristics);
         clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource());
+        nullCheckInsertion = new NullCheckInsertion(characteristics);
+        nullCheckTransformation = new NullCheckTransformation();
     }
 
     @Override
@@ -154,6 +162,8 @@ public class CTarget implements TeaVMTarget {
                 Throwable.class, void.class), null).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwClassCastException",
                 void.class), null).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwNullPointerException",
+                void.class), null).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "catchException",
                 Throwable.class), null).use();
@@ -172,10 +182,16 @@ public class CTarget implements TeaVMTarget {
     }
 
     @Override
+    public void beforeOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
+        nullCheckInsertion.transformProgram(program, method.getReference());
+    }
+
+    @Override
     public void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
         clinitInsertionTransformer.apply(method, program);
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
+        nullCheckTransformation.apply(program, method.getResultType());
         shadowStackTransformer.apply(program, method);
     }
 
@@ -289,7 +305,7 @@ public class CTarget implements TeaVMTarget {
     }
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
-        Set<MethodReference> virtualMethods = new HashSet<>();
+        Set<MethodReference> virtualMethods = new LinkedHashSet<>();
 
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);

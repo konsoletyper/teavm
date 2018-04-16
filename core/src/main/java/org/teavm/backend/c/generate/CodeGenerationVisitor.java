@@ -225,9 +225,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 writer.print(")");
                 break;
             case NULL_CHECK:
-                writer.print("(");
                 expr.getOperand().acceptVisitor(this);
-                writer.print(" == NULL)");
                 break;
             case INT_TO_BYTE:
                 writer.print("TO_BYTE(");

@@ -23,6 +23,7 @@ import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
 public class TypeInferer {
+    private static VariableType[] typesByOrdinal = VariableType.values();
     VariableType[] types;
     GraphBuilder builder;
     GraphBuilder arrayElemBuilder;
@@ -54,47 +55,35 @@ public class TypeInferer {
             }
         }
 
-        IntegerStack stack = new IntegerStack(sz);
+        IntegerStack stack = new IntegerStack(sz * 2);
         Graph graph = builder.build();
         Graph arrayElemGraph = arrayElemBuilder.build();
-        for (int i = 0; i < sz; ++i) {
-            if ((i >= graph.size() || graph.incomingEdgesCount(i) == 0)
-                    && (i >= arrayElemGraph.size() || arrayElemGraph.incomingEdgesCount(i) == 0)) {
+        for (int i = 0; i < graph.size(); ++i) {
+            if (types[i] != null && graph.outgoingEdgesCount(i) > 0) {
+                stack.push(types[i].ordinal());
                 stack.push(i);
+                types[i] = null;
             }
         }
 
-        boolean[] visited = new boolean[sz];
         while (!stack.isEmpty()) {
             int node = stack.pop();
-            if (visited[node]) {
+            VariableType type = typesByOrdinal[stack.pop()];
+            if (types[node] != null) {
                 continue;
             }
-            visited[node] = true;
-            if (types[node] == null) {
-                for (int pred : graph.incomingEdges(node)) {
-                    if (types[pred] != null) {
-                        types[node] = types[pred];
-                        break;
-                    }
+            types[node] = type;
+
+            for (int successor : graph.outgoingEdges(node)) {
+                if (types[successor] == null) {
+                    stack.push(type.ordinal());
+                    stack.push(successor);
                 }
             }
-            if (types[node] == null) {
-                for (int pred : arrayElemGraph.incomingEdges(node)) {
-                    if (types[pred] != null) {
-                        types[node] = convertFromArray(types[pred]);
-                        break;
-                    }
-                }
-            }
-            for (int succ : graph.outgoingEdges(node)) {
-                if (!visited[succ]) {
-                    stack.push(succ);
-                }
-            }
-            for (int succ : arrayElemGraph.outgoingEdges(node)) {
-                if (!visited[succ]) {
-                    stack.push(succ);
+            for (int successor : arrayElemGraph.outgoingEdges(node)) {
+                if (types[successor] == null) {
+                    stack.push(convertFromArray(type).ordinal());
+                    stack.push(successor);
                 }
             }
         }

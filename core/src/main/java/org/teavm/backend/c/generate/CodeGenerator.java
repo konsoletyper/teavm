@@ -92,6 +92,9 @@ public class CodeGenerator {
         int start = methodNode.getReference().parameterCount() + 1;
         for (int i = start; i < methodNode.getVariables().size(); ++i) {
             VariableNode variableNode = methodNode.getVariables().get(i);
+            if (variableNode.getType() == null) {
+                continue;
+            }
             localsWriter.printType(variableNode.getType()).print(" local_").print(String.valueOf(i)).println(";");
         }
 

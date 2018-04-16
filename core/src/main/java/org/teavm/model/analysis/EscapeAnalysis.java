@@ -64,8 +64,8 @@ import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.DefinitionExtractor;
-import org.teavm.model.util.InstructionTransitionExtractor;
 import org.teavm.model.util.LivenessAnalyzer;
+import org.teavm.model.util.TransitionExtractor;
 import org.teavm.model.util.UsageExtractor;
 
 public class EscapeAnalysis {
@@ -134,6 +134,16 @@ public class EscapeAnalysis {
                     if (usedVars.get(assign.getAssignee().getIndex())) {
                         queue.addLast(definitionClasses[assign.getAssignee().getIndex()]);
                     }
+                } else if (insn instanceof NullCheckInstruction) {
+                    NullCheckInstruction nullCheck = (NullCheckInstruction) insn;
+                    if (usedVars.get(nullCheck.getValue().getIndex())) {
+                        queue.addLast(definitionClasses[nullCheck.getValue().getIndex()]);
+                    }
+                } else if (insn instanceof UnwrapArrayInstruction) {
+                    UnwrapArrayInstruction unwrapArray = (UnwrapArrayInstruction) insn;
+                    if (usedVars.get(unwrapArray.getArray().getIndex())) {
+                        queue.addLast(definitionClasses[unwrapArray.getArray().getIndex()]);
+                    }
                 }
 
                 insn.acceptVisitor(useExtractor);
@@ -180,7 +190,7 @@ public class EscapeAnalysis {
 
     private BitSet getUsedVarsInBlock(LivenessAnalyzer liveness, BasicBlock block) {
         BitSet usedVars = new BitSet();
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
         block.getLastInstruction().acceptVisitor(transitionExtractor);
         for (BasicBlock successor : transitionExtractor.getTargets()) {
             usedVars.or(liveness.liveIn(successor.getIndex()));
@@ -205,20 +215,35 @@ public class EscapeAnalysis {
 
         GraphBuilder graphBuilder = new GraphBuilder(program.variableCount());
         for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction insn : block) {
+                if (insn instanceof AssignInstruction) {
+                    AssignInstruction assign = (AssignInstruction) insn;
+                    graphBuilder.addEdge(assign.getReceiver().getIndex(), assign.getAssignee().getIndex());
+                } else if (insn instanceof NullCheckInstruction) {
+                    NullCheckInstruction nullCheck = (NullCheckInstruction) insn;
+                    graphBuilder.addEdge(nullCheck.getReceiver().getIndex(), nullCheck.getValue().getIndex());
+                } else if (insn instanceof UnwrapArrayInstruction) {
+                    UnwrapArrayInstruction unwrapArray = (UnwrapArrayInstruction) insn;
+                    graphBuilder.addEdge(unwrapArray.getReceiver().getIndex(), unwrapArray.getArray().getIndex());
+                }
+            }
             for (Phi phi : block.getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
                     graphBuilder.addEdge(phi.getReceiver().getIndex(), incoming.getValue().getIndex());
-                    Set<FieldReference> receiverFields = fields.get(phi.getReceiver().getIndex());
-                    if (receiverFields != null) {
-                        for (FieldReference field : receiverFields) {
-                            queue.add(new Task(phi.getReceiver().getIndex(), field));
-                        }
-                        receiverFields.clear();
-                    }
                 }
             }
         }
         Graph graph = graphBuilder.build();
+
+        for (int i = 0; i < program.variableCount(); ++i) {
+            Set<FieldReference> receiverFields = fields.get(i);
+            if (receiverFields != null) {
+                for (FieldReference field : receiverFields) {
+                    queue.add(new Task(i, field));
+                }
+                receiverFields.clear();
+            }
+        }
 
         while (!queue.isEmpty()) {
             Task task = queue.remove();
@@ -263,13 +288,13 @@ public class EscapeAnalysis {
         return packedFields;
     }
 
-    private static class InstructionEscapeVisitor extends AbstractInstructionVisitor {
+    static class InstructionEscapeVisitor extends AbstractInstructionVisitor {
         DisjointSet definitionClasses;
         boolean[] escapingVars;
         List<Set<FieldReference>> fields;
         Map<FieldReference, ValueType> fieldTypes = new HashMap<>();
 
-        public InstructionEscapeVisitor(int variableCount) {
+        InstructionEscapeVisitor(int variableCount) {
             fields = new ArrayList<>(Collections.nCopies(variableCount, null));
             definitionClasses = new DisjointSet();
             for (int i = 0; i < variableCount; ++i) {

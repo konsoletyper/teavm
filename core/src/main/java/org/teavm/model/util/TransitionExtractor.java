@@ -20,7 +20,7 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.instructions.*;
 
-public class InstructionTransitionExtractor implements InstructionVisitor {
+public class TransitionExtractor implements InstructionVisitor {
     private BasicBlock[] targets;
 
     public BasicBlock[] getTargets() {

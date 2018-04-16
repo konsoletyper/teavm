@@ -15,13 +15,87 @@
  */
 package org.teavm.parsing;
 
-import java.util.*;
-import org.objectweb.asm.*;
-import org.objectweb.asm.tree.*;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
-import org.teavm.model.util.InstructionTransitionExtractor;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LineNumberNode;
+import org.objectweb.asm.tree.LocalVariableNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.FieldReference;
+import org.teavm.model.Instruction;
+import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHandle;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
+import org.teavm.model.RuntimeConstant;
+import org.teavm.model.TextLocation;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.ArrayElementType;
+import org.teavm.model.instructions.ArrayLengthInstruction;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryBranchingCondition;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BranchingCondition;
+import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.CastIntegerDirection;
+import org.teavm.model.instructions.CastIntegerInstruction;
+import org.teavm.model.instructions.CastNumberInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
+import org.teavm.model.instructions.DoubleConstantInstruction;
+import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.IntegerSubtype;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
+import org.teavm.model.instructions.MonitorExitInstruction;
+import org.teavm.model.instructions.NegateInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.PutElementInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.SwitchInstruction;
+import org.teavm.model.instructions.SwitchTableEntry;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.TransitionExtractor;
 
 public class ProgramParser {
     private ReferenceCache referenceCache;
@@ -42,7 +116,6 @@ public class ProgramParser {
     private List<BasicBlock> basicBlocks = new ArrayList<>();
     private int minLocal;
     private Program program;
-    private String currentClassName;
     private Map<Integer, List<LocalVariableNode>> localVariableMap = new HashMap<>();
     private Map<Instruction, Map<Integer, String>> variableDebugNames = new HashMap<>();
 
@@ -86,9 +159,8 @@ public class ProgramParser {
         this.fileName = fileName;
     }
 
-    public Program parse(MethodNode method, String className) {
+    public Program parse(MethodNode method) {
         program = new Program();
-        this.currentClassName = className;
         InsnList instructions = method.instructions;
         if (instructions.size() == 0) {
             return program;
@@ -315,7 +387,7 @@ public class ProgramParser {
         if (lastInsn == null) {
             return false;
         }
-        InstructionTransitionExtractor extractor = new InstructionTransitionExtractor();
+        TransitionExtractor extractor = new TransitionExtractor();
         lastInsn.acceptVisitor(extractor);
         return extractor.getTargets() != null;
     }

@@ -18,6 +18,7 @@ package org.teavm.model.classes;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.model.ClassReader;
@@ -45,7 +46,7 @@ public class VirtualTableProvider {
                 cls = virtualMethod.getClassName();
             }
             classNames.add(cls);
-            virtualMethodMap.computeIfAbsent(cls, c -> new HashSet<>()).add(virtualMethod.getDescriptor());
+            virtualMethodMap.computeIfAbsent(cls, c -> new LinkedHashSet<>()).add(virtualMethod.getDescriptor());
         }
 
         for (String className : classNames) {

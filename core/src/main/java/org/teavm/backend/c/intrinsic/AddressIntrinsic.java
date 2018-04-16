@@ -168,7 +168,9 @@ public class AddressIntrinsic implements Intrinsic {
                     String className = StructureIntrinsic.getClassLiteral(context, invocation,
                             invocation.getArguments().get(1));
                     context.emit(invocation.getArguments().get(2));
-                    context.writer().print(" * sizeof(").print(context.names().forClass(className)).print(")");
+                    context.writer().print(" * sizeof(")
+                            .print(className != null ? context.names().forClass(className) : "**")
+                            .print(")");
                     context.writer().print(")");
                 }
                 break;

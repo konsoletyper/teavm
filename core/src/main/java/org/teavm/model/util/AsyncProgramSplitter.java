@@ -162,7 +162,7 @@ public class AsyncProgramSplitter {
                     queue.add(next);
                 }
             }
-            InstructionTransitionExtractor successorExtractor = new InstructionTransitionExtractor();
+            TransitionExtractor successorExtractor = new TransitionExtractor();
             sourceBlock.getLastInstruction().acceptVisitor(successorExtractor);
             for (BasicBlock successor : successorExtractor.getTargets()) {
                 BasicBlock targetSuccessor = targetBlock.getProgram().basicBlockAt(successor.getIndex());

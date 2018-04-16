@@ -20,7 +20,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -106,7 +106,7 @@ public class TagRegistry {
 
     private void markImplementor(ClassReaderSource classSource, String className, String ifaceName,
             Map<String, Set<String>> implementedBy) {
-        if (!implementedBy.computeIfAbsent(ifaceName, key -> new HashSet<>()).add(className)) {
+        if (!implementedBy.computeIfAbsent(ifaceName, key -> new LinkedHashSet<>()).add(className)) {
             return;
         }
 
@@ -120,11 +120,11 @@ public class TagRegistry {
         }
     }
 
-    private int assignRange(int start, Map<String, List<String>> hierarhy, String className,
+    private int assignRange(int start, Map<String, List<String>> hierarchy, String className,
             Map<String, Range> ranges) {
         int end = start + 1;
-        for (String childClass : hierarhy.getOrDefault(className, Collections.emptyList())) {
-            end = assignRange(end, hierarhy, childClass, ranges);
+        for (String childClass : hierarchy.getOrDefault(className, Collections.emptyList())) {
+            end = assignRange(end, hierarchy, childClass, ranges);
         }
         ++end;
         ranges.put(className, new Range(start, end));

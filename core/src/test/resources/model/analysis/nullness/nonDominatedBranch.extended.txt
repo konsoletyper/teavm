@@ -4,12 +4,14 @@ $start
     @a := invokeStatic `Foo.f()LBar;`
     if @a === null then goto $joint else goto $ifNonNull
 $ifNonNull
-    @a_1 := nullCheck @a
     @b := invokeStatic `Foo.g()LBar;`
     if @b !== null then goto $joint else goto $ifNull
 $ifNull
-    @b_1 := null
-    return @a_1
+    return @a_2
 $joint
-    @c := phi @a from $start, @b from $ifNonNull
+    @c := phi @a_1 from $start, @b_1 from $ifNonNull
     return @c
+
+// NULLABLE c
+// NULLABLE a_1
+// NOT_NULL a_2

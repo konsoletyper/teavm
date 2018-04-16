@@ -18,7 +18,6 @@ package org.teavm.model.lowlevel;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.model.BasicBlock;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReader;
@@ -34,13 +33,13 @@ import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.runtime.ShadowStack;
 
 public class ShadowStackTransformer {
-    private ManagedMethodRepository managedMethodRepository;
+    private Characteristics managedMethodRepository;
     private GCShadowStackContributor gcContributor;
     private List<CallSiteDescriptor> callSites = new ArrayList<>();
 
-    public ShadowStackTransformer(ClassReaderSource classSource) {
-        managedMethodRepository = new ManagedMethodRepository(classSource);
+    public ShadowStackTransformer(Characteristics managedMethodRepository) {
         gcContributor = new GCShadowStackContributor(managedMethodRepository);
+        this.managedMethodRepository = managedMethodRepository;
     }
 
     public List<CallSiteDescriptor> getCallSites() {

@@ -18,7 +18,7 @@ package org.teavm.callgraph;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import org.teavm.model.FieldReference;
@@ -28,11 +28,11 @@ import org.teavm.model.TextLocation;
 public class DefaultCallGraphNode implements CallGraphNode {
     private DefaultCallGraph graph;
     private MethodReference method;
-    private Set<DefaultCallSite> callSites = new HashSet<>();
+    private Set<DefaultCallSite> callSites = new LinkedHashSet<>();
     private Set<DefaultCallSite> safeCallSites;
     private List<DefaultCallSite> callerCallSites = new ArrayList<>();
     private List<DefaultCallSite> safeCallersCallSites;
-    private Set<DefaultFieldAccessSite> fieldAccessSites = new HashSet<>();
+    private Set<DefaultFieldAccessSite> fieldAccessSites = new LinkedHashSet<>();
     private Set<DefaultFieldAccessSite> safeFieldAccessSites;
 
     DefaultCallGraphNode(DefaultCallGraph graph, MethodReference method) {

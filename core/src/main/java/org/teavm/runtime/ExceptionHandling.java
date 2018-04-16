@@ -71,6 +71,11 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
+    public static void throwNullPointerException() {
+        throw new NullPointerException();
+    }
+
+    @Unmanaged
     public static int callStackSize() {
         Address stackFrame = ShadowStack.getStackTop();
         int size = 0;

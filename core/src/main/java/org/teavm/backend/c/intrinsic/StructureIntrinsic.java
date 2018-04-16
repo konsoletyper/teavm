@@ -18,11 +18,11 @@ package org.teavm.backend.c.intrinsic;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.c.analyze.Characteristics;
 import org.teavm.interop.Structure;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.lowlevel.Characteristics;
 
 public class StructureIntrinsic implements Intrinsic {
     private Characteristics characteristics;
@@ -92,6 +92,6 @@ public class StructureIntrinsic implements Intrinsic {
         context.getDiagnotics().error(
                 new CallLocation(context.getCallingMethod(), invocation.getLocation()),
                 "This method should take class literal");
-        return null;
+        return "";
     }
 }

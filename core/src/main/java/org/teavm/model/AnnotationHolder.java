@@ -15,7 +15,7 @@
  */
 package org.teavm.model;
 
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -24,7 +24,7 @@ import java.util.Map;
  */
 public class AnnotationHolder implements AnnotationReader {
     private String type;
-    private Map<String, AnnotationValue> values = new HashMap<>();
+    private Map<String, AnnotationValue> values = new LinkedHashMap<>();
 
     public AnnotationHolder(String type) {
         this.type = type;

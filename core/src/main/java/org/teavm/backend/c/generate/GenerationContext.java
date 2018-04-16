@@ -19,13 +19,13 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import org.teavm.backend.c.analyze.Characteristics;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.classes.VirtualTableProvider;
+import org.teavm.model.lowlevel.Characteristics;
 
 public class GenerationContext {
     private VirtualTableProvider virtualTableProvider;

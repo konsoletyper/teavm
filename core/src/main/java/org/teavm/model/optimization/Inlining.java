@@ -46,9 +46,9 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.util.BasicBlockMapper;
-import org.teavm.model.util.InstructionTransitionExtractor;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.TransitionExtractor;
 
 public class Inlining {
     private static final int DEFAULT_THRESHOLD = 17;
@@ -191,7 +191,7 @@ public class Inlining {
             }
         }
 
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
         Instruction splitLastInsn = splitBlock.getLastInstruction();
         if (splitLastInsn != null) {
             splitLastInsn.acceptVisitor(transitionExtractor);

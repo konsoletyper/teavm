@@ -13,21 +13,25 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.c.analyze;
+package org.teavm.model.lowlevel;
 
 import com.carrotsearch.hppc.ObjectByteHashMap;
 import com.carrotsearch.hppc.ObjectByteMap;
 import org.teavm.interop.Function;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
+import org.teavm.interop.Unmanaged;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 
 public class Characteristics {
     private ClassReaderSource classSource;
     private ObjectByteMap<String> isStructure = new ObjectByteHashMap<>();
     private ObjectByteMap<String> isStaticInit = new ObjectByteHashMap<>();
     private ObjectByteMap<String> isFunction = new ObjectByteHashMap<>();
+    private ObjectByteMap<MethodReference> isManaged = new ObjectByteHashMap<>();
 
     public Characteristics(ClassReaderSource classSource) {
         this.classSource = classSource;
@@ -77,5 +81,27 @@ public class Characteristics {
             isFunction.put(className, result);
         }
         return result != 0;
+    }
+
+    public boolean isManaged(MethodReference methodReference) {
+        byte result = isManaged.getOrDefault(methodReference, (byte) -1);
+        if (result < 0) {
+            result = computeIsManaged(methodReference) ? (byte) 1 : 0;
+            isManaged.put(methodReference, result);
+        }
+        return result != 0;
+    }
+
+    private boolean computeIsManaged(MethodReference methodReference) {
+        MethodReader method = classSource.resolve(methodReference);
+        if (method == null) {
+            return true;
+        }
+
+        ClassReader cls = classSource.get(method.getOwnerName());
+        if (cls.getAnnotations().get(Unmanaged.class.getName()) != null) {
+            return false;
+        }
+        return method == null || method.getAnnotations().get(Unmanaged.class.getName()) == null;
     }
 }

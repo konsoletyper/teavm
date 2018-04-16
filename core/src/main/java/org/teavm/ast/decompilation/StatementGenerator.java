@@ -18,7 +18,7 @@ package org.teavm.ast.decompilation;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.ast.ArrayType;
@@ -325,7 +325,7 @@ class StatementGenerator implements InstructionVisitor {
         SwitchStatement stmt = new SwitchStatement();
         stmt.setId("sblock" + (lastSwitchId++));
         stmt.setValue(Expr.var(insn.getCondition().getIndex()));
-        Map<Integer, List<Integer>> switchMap = new HashMap<>();
+        Map<Integer, List<Integer>> switchMap = new LinkedHashMap<>();
         for (int i = 0; i < insn.getEntries().size(); ++i) {
             SwitchTableEntry entry = insn.getEntries().get(i);
             List<Integer> conditions = switchMap.computeIfAbsent(entry.getTarget().getIndex(), k -> new ArrayList<>());

@@ -110,6 +110,7 @@ import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
@@ -142,9 +143,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     @Override
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
+        Characteristics managedMethodRepository = new Characteristics(
+                controller.getUnprocessedClassSource());
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
-        shadowStackTransformer = new ShadowStackTransformer(controller.getUnprocessedClassSource());
+        shadowStackTransformer = new ShadowStackTransformer(managedMethodRepository);
         clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource());
     }
 
@@ -271,6 +274,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 dependencyAnalyzer.linkField(field.getReference(), null);
             }
         }
+    }
+
+    @Override
+    public void beforeOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
     }
 
     @Override

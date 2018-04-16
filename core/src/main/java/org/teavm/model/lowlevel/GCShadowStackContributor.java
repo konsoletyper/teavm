@@ -25,7 +25,8 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -60,10 +61,10 @@ import org.teavm.model.util.VariableType;
 import org.teavm.runtime.ShadowStack;
 
 public class GCShadowStackContributor {
-    private ManagedMethodRepository managedMethodRepository;
+    private Characteristics characteristics;
 
-    public GCShadowStackContributor(ManagedMethodRepository managedMethodRepository) {
-        this.managedMethodRepository = managedMethodRepository;
+    public GCShadowStackContributor(Characteristics characteristics) {
+        this.characteristics = characteristics;
     }
 
     public int contribute(Program program, MethodReader method) {
@@ -156,7 +157,7 @@ public class GCShadowStackContributor {
                         || insn instanceof ConstructMultiArrayInstruction
                         || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction) {
                     if (insn instanceof InvokeInstruction
-                            && !managedMethodRepository.isManaged(((InvokeInstruction) insn).getMethod())) {
+                            && !characteristics.isManaged(((InvokeInstruction) insn).getMethod())) {
                         continue;
                     }
 
@@ -220,7 +221,7 @@ public class GCShadowStackContributor {
                 for (Incoming incoming : phi.getIncomings()) {
                     Set<Phi> phis = destinationPhis.get(incoming.getValue().getIndex());
                     if (phis == null) {
-                        phis = new HashSet<>();
+                        phis = new LinkedHashSet<>();
                         destinationPhis.set(incoming.getValue().getIndex(), phis);
                     }
                     phis.add(phi);
@@ -256,7 +257,7 @@ public class GCShadowStackContributor {
 
         List<Map<Instruction, int[]>> slotsToUpdate = new ArrayList<>();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            slotsToUpdate.add(new HashMap<>());
+            slotsToUpdate.add(new LinkedHashMap<>());
         }
 
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);

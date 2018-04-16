@@ -231,6 +231,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     @Override
+    public void beforeOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
+    }
+
+    @Override
     public void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
         clinitInsertionTransformer.apply(method, program);
     }

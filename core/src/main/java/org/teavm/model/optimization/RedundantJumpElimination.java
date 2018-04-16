@@ -25,18 +25,22 @@ import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.JumpInstruction;
-import org.teavm.model.util.InstructionTransitionExtractor;
 import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.TransitionExtractor;
 
 public class RedundantJumpElimination implements MethodOptimization {
     @Override
     public boolean optimize(MethodOptimizationContext context, Program program) {
+        return optimize(program);
+    }
+
+    public static boolean optimize(Program program) {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         int[] incomingCount = new int[cfg.size()];
         Arrays.setAll(incomingCount, cfg::incomingEdgesCount);
 
         boolean changed = false;
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
         for (int i = 1; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             if (block == null) {

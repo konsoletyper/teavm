@@ -17,27 +17,33 @@ package org.teavm.model.optimization;
 
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
+import org.teavm.model.analysis.NullnessInformation;
 import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.JumpInstruction;
-import org.teavm.model.instructions.NullConstantInstruction;
-import org.teavm.model.util.InstructionTransitionExtractor;
+import org.teavm.model.util.TransitionExtractor;
 
 public class ConstantConditionElimination implements MethodOptimization {
     private int[] constants;
     private boolean[] constantDefined;
-    private boolean[] nullConstants;
+    private NullnessInformation nullness;
 
     @Override
     public boolean optimize(MethodOptimizationContext context, Program program) {
+        return optimize(context.getMethod().getDescriptor(), program);
+    }
+
+    public boolean optimize(MethodDescriptor descriptor, Program program) {
         constants = new int[program.variableCount()];
         constantDefined = new boolean[program.variableCount()];
-        nullConstants = new boolean[program.variableCount()];
+        nullness = NullnessInformation.build(program, descriptor);
+
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
@@ -46,16 +52,12 @@ public class ConstantConditionElimination implements MethodOptimization {
                     int receiver = constInsn.getReceiver().getIndex();
                     constants[receiver] = constInsn.getConstant();
                     constantDefined[receiver] = true;
-                } else if (insn instanceof NullConstantInstruction) {
-                    NullConstantInstruction constInsn = (NullConstantInstruction) insn;
-                    int receiver = constInsn.getReceiver().getIndex();
-                    nullConstants[receiver] = true;
                 }
             }
         }
 
         boolean changed = false;
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             Instruction insn = block.getLastInstruction();
@@ -84,6 +86,11 @@ public class ConstantConditionElimination implements MethodOptimization {
             }
         }
 
+        nullness.dispose();
+        nullness = null;
+        constantDefined = null;
+        constants = null;
+
         if (changed) {
             new UnreachableBasicBlockEliminator().optimize(program);
         }
@@ -96,13 +103,17 @@ public class ConstantConditionElimination implements MethodOptimization {
             BranchingInstruction branching = (BranchingInstruction) instruction;
             switch (branching.getCondition()) {
                 case NULL:
-                    if (nullConstants[branching.getOperand().getIndex()]) {
+                    if (nullness.isNull(branching.getOperand())) {
                         return branching.getConsequent();
+                    } else if (nullness.isNotNull(branching.getOperand())) {
+                        return branching.getAlternative();
                     }
                     break;
                 case NOT_NULL:
-                    if (nullConstants[branching.getOperand().getIndex()]) {
+                    if (nullness.isNull(branching.getOperand())) {
                         return branching.getAlternative();
+                    } else if (nullness.isNotNull(branching.getOperand())) {
+                        return branching.getConsequent();
                     }
                     break;
                 default: {

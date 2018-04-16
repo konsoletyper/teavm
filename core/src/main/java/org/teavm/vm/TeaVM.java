@@ -63,6 +63,7 @@ import org.teavm.model.optimization.LoopInvariantMotion;
 import org.teavm.model.optimization.MethodOptimization;
 import org.teavm.model.optimization.MethodOptimizationContext;
 import org.teavm.model.optimization.RedundantJumpElimination;
+import org.teavm.model.optimization.RedundantNullCheckElimination;
 import org.teavm.model.optimization.ScalarReplacement;
 import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 import org.teavm.model.optimization.UnusedVariableElimination;
@@ -512,6 +513,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         MethodOptimizationContextImpl context = new MethodOptimizationContextImpl(method, classSource);
         if (optimizedProgram == null) {
             optimizedProgram = ProgramUtils.copy(method.getProgram());
+            target.beforeOptimizations(optimizedProgram, method, classSource);
+
             if (optimizedProgram.basicBlockCount() > 0) {
                 boolean changed;
                 do {
@@ -578,6 +581,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
         optimizations.add(new GlobalValueNumbering(optimizationLevel == TeaVMOptimizationLevel.SIMPLE));
         if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
+            optimizations.add(new RedundantNullCheckElimination());
             optimizations.add(new ConstantConditionElimination());
             optimizations.add(new RedundantJumpElimination());
             optimizations.add(new UnusedVariableElimination());

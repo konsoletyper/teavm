@@ -18,11 +18,10 @@ package org.teavm.model.analysis;
 import com.carrotsearch.hppc.IntArrayDeque;
 import com.carrotsearch.hppc.IntDeque;
 import com.carrotsearch.hppc.IntHashSet;
-import com.carrotsearch.hppc.IntIntHashMap;
-import com.carrotsearch.hppc.IntIntMap;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.BitSet;
+import java.util.Collections;
 import java.util.List;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
@@ -33,6 +32,7 @@ import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
+import org.teavm.model.Sigma;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
@@ -60,15 +60,13 @@ import org.teavm.model.util.PhiUpdater;
 class NullnessInformationBuilder {
     private Program program;
     private MethodDescriptor methodDescriptor;
-    BitSet notNullVariables = new BitSet();
-    BitSet nullVariables = new BitSet();
     BitSet synthesizedVariables = new BitSet();
     PhiUpdater phiUpdater;
-    private List<NullConstantInstruction> nullInstructions = new ArrayList<>();
     private List<NullCheckInstruction> notNullInstructions = new ArrayList<>();
     private Graph assignmentGraph;
     private int[] notNullPredecessorsLeft;
-    private int[] sccIndexes;
+    Nullness[] statuses;
+    private int[][] variablePairs;
 
     NullnessInformationBuilder(Program program, MethodDescriptor methodDescriptor) {
         this.program = program;
@@ -77,20 +75,65 @@ class NullnessInformationBuilder {
 
     void build() {
         extendProgram();
+        buildVariablePairs();
         buildAssignmentGraph();
         propagateNullness();
     }
 
+    private void buildVariablePairs() {
+        List<IntSet> pairsBuilder = new ArrayList<>(
+                Collections.nCopies(program.variableCount(), null));
+
+        for (BasicBlock block : program.getBasicBlocks()) {
+            Instruction lastInstruction = block.getLastInstruction();
+            if (lastInstruction instanceof BinaryBranchingInstruction) {
+                BinaryBranchingInstruction branching = (BinaryBranchingInstruction) lastInstruction;
+                addVariablePair(pairsBuilder, branching.getFirstOperand(), branching.getSecondOperand());
+                addVariablePair(pairsBuilder, branching.getSecondOperand(), branching.getFirstOperand());
+            }
+        }
+
+        variablePairs = new int[pairsBuilder.size()][];
+        for (int i = 0; i < variablePairs.length; ++i) {
+            IntSet itemBuilder = pairsBuilder.get(i);
+            variablePairs[i] = itemBuilder != null ? itemBuilder.toArray() : null;
+        }
+    }
+
+    private void addVariablePair(List<IntSet> target, Variable first, Variable second) {
+        IntSet pairs = target.get(first.getIndex());
+        if (pairs == null) {
+            pairs = new IntHashSet();
+            target.set(first.getIndex(), pairs);
+        }
+        pairs.add(second.getIndex());
+    }
+
     private void extendProgram() {
-        notNullVariables.set(0);
         insertAdditionalVariables();
 
-        Variable[] parameters = new Variable[methodDescriptor.parameterCount() + 1];
-        for (int i = 0; i < parameters.length; ++i) {
-            parameters[i] = program.variableAt(i);
-        }
         phiUpdater = new PhiUpdater();
-        phiUpdater.updatePhis(program, parameters);
+        phiUpdater.setSigmaPredicate(instruction -> {
+            if (instruction instanceof BinaryBranchingInstruction) {
+                switch (((BinaryBranchingInstruction) instruction).getCondition()) {
+                    case REFERENCE_EQUAL:
+                    case REFERENCE_NOT_EQUAL:
+                        return true;
+                    default:
+                        break;
+                }
+            } else if (instruction instanceof BranchingInstruction) {
+                switch (((BranchingInstruction) instruction).getCondition()) {
+                    case NULL:
+                    case NOT_NULL:
+                        return true;
+                    default:
+                        break;
+                }
+            }
+            return false;
+        });
+        phiUpdater.updatePhis(program, methodDescriptor.parameterCount() + 1);
 
         collectAdditionalVariables();
     }
@@ -102,16 +145,10 @@ class NullnessInformationBuilder {
     }
 
     private void collectAdditionalVariables() {
-        for (NullConstantInstruction nullInstruction : nullInstructions) {
-            nullVariables.set(nullInstruction.getReceiver().getIndex());
-            synthesizedVariables.set(nullInstruction.getReceiver().getIndex());
-        }
         for (NullCheckInstruction notNullInstruction : notNullInstructions) {
-            notNullVariables.set(notNullInstruction.getReceiver().getIndex());
             synthesizedVariables.set(notNullInstruction.getReceiver().getIndex());
         }
 
-        nullInstructions.clear();
         notNullInstructions.clear();
     }
 
@@ -132,55 +169,110 @@ class NullnessInformationBuilder {
                 }
             }
         }
-        assignmentGraph = builder.build();
-
-        sccIndexes = new int[program.variableCount()];
-        if (assignmentGraph.size() > 0) {
-            int[][] sccs = GraphUtils.findStronglyConnectedComponents(assignmentGraph);
-            for (int i = 0; i < sccs.length; ++i) {
-                for (int sccNode : sccs[i]) {
-                    sccIndexes[sccNode] = i + 1;
-                }
-            }
-        }
+        assignmentGraph = GraphUtils.removeLoops(builder.build());
 
         notNullPredecessorsLeft = new int[assignmentGraph.size()];
         for (int i = 0; i < assignmentGraph.size(); ++i) {
             notNullPredecessorsLeft[i] = assignmentGraph.incomingEdgesCount(i);
-            if (sccIndexes[i] > 0) {
-                for (int predecessor : assignmentGraph.outgoingEdges(i)) {
-                    if (sccIndexes[predecessor] == sccIndexes[i]) {
-                        notNullPredecessorsLeft[i]--;
-                    }
-                }
-            }
         }
     }
 
-    private void propagateNullness() {
-        if (assignmentGraph.size() == 0) {
-            return;
+    private void initNullness(IntDeque queue) {
+        NullnessInitVisitor visitor = new NullnessInitVisitor(queue);
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction instruction : block) {
+                instruction.acceptVisitor(visitor);
+            }
+
+            Instruction last = block.getLastInstruction();
+            if (!(last instanceof BranchingInstruction)) {
+                continue;
+            }
+            BranchingInstruction branching = (BranchingInstruction) last;
+            Sigma[] sigmas = phiUpdater.getSigmasAt(block.getIndex());
+            if (sigmas == null) {
+                continue;
+            }
+
+            Sigma sigma = null;
+            for (int i = 0; i < sigmas.length; ++i) {
+                if (sigmas[i].getValue() == branching.getOperand()) {
+                    sigma = sigmas[i];
+                    break;
+                }
+            }
+            if (sigma == null) {
+                continue;
+            }
+
+            Variable trueVar;
+            Variable falseVar;
+            if (sigma.getOutgoings().get(0).getTarget() == branching.getConsequent()) {
+                trueVar = sigma.getOutgoings().get(0).getValue();
+                falseVar = sigma.getOutgoings().get(1).getValue();
+            } else {
+                trueVar = sigma.getOutgoings().get(1).getValue();
+                falseVar = sigma.getOutgoings().get(0).getValue();
+            }
+
+            switch (branching.getCondition()) {
+                case NULL:
+                    queue.addLast(trueVar.getIndex());
+                    queue.addLast(0);
+                    queue.addLast(falseVar.getIndex());
+                    queue.addLast(1);
+                    break;
+                case NOT_NULL:
+                    queue.addLast(trueVar.getIndex());
+                    queue.addLast(1);
+                    queue.addLast(falseVar.getIndex());
+                    queue.addLast(0);
+                    break;
+                default:
+                    break;
+            }
         }
 
+        queue.addLast(0);
+        queue.addLast(1);
+    }
+
+    private void propagateNullness() {
+        statuses = new Nullness[program.variableCount()];
+
         IntDeque deque = new IntArrayDeque();
-        for (int i = notNullVariables.nextSetBit(0); i >= 0; i = notNullVariables.nextSetBit(i + 1)) {
-            deque.addLast(i);
-        }
-        boolean[] visited = new boolean[program.variableCount()];
+        initNullness(deque);
 
         while (!deque.isEmpty()) {
             int node = deque.removeFirst();
-            if (visited[node]) {
+            if (statuses[node] != null) {
+                deque.removeFirst();
                 continue;
             }
-            visited[node] = true;
-            notNullVariables.set(node);
-            for (int successor : assignmentGraph.outgoingEdges(node)) {
-                if (sccIndexes[successor] == 0 || sccIndexes[successor] != sccIndexes[node]) {
-                    if (--notNullPredecessorsLeft[successor] == 0) {
-                        deque.addLast(successor);
+            Nullness status = deque.removeFirst() == 1 ? Nullness.NOT_NULL : Nullness.NULL;
+            statuses[node] = status;
+
+            int[] pairs = variablePairs[node];
+            if (pairs != null) {
+                int pairStatus = status == Nullness.NULL ? 1 : 0;
+                for (int pair : pairs) {
+                    deque.addLast(pair);
+                    deque.addLast(pairStatus);
+                }
+            }
+
+            successors: for (int successor : assignmentGraph.outgoingEdges(node)) {
+                if (--notNullPredecessorsLeft[successor] != 0) {
+                    continue;
+                }
+
+                for (int sibling : assignmentGraph.incomingEdges(successor)) {
+                    if (statuses[sibling] != statuses[node]) {
+                        continue successors;
                     }
                 }
+                deque.addLast(successor);
+                deque.addLast(statuses[node] == Nullness.NULL ? 0 : 1);
             }
         }
     }
@@ -188,8 +280,11 @@ class NullnessInformationBuilder {
     class NullExtensionVisitor extends AbstractInstructionVisitor implements DominatorWalkerCallback<State> {
         State currentState;
         BasicBlock currentBlock;
-        IntIntMap nullSuccessors = new IntIntHashMap();
-        IntIntMap notNullSuccessors = new IntIntHashMap();
+        BitSet notNullVariables = new BitSet();
+
+        NullExtensionVisitor() {
+            notNullVariables.set(0);
+        }
 
         @Override
         public State visit(BasicBlock block) {
@@ -200,15 +295,6 @@ class NullnessInformationBuilder {
             }
 
             currentBlock = block;
-            if (nullSuccessors.containsKey(block.getIndex())) {
-                int varIndex = nullSuccessors.remove(block.getIndex());
-                insertNullInstruction(program.variableAt(varIndex));
-            }
-            if (notNullSuccessors.containsKey(block.getIndex())) {
-                int varIndex = notNullSuccessors.remove(block.getIndex());
-                insertNotNullInstruction(null, program.variableAt(varIndex));
-            }
-
             for (Instruction insn : block) {
                 insn.acceptVisitor(this);
             }
@@ -220,9 +306,6 @@ class NullnessInformationBuilder {
         public void endVisit(BasicBlock block, State state) {
             for (int rollbackToNull : state.newlyNonNull.toArray()) {
                 notNullVariables.clear(rollbackToNull);
-            }
-            for (int rollbackToNotNull : state.newlyNull.toArray()) {
-                nullVariables.clear(rollbackToNotNull);
             }
         }
 
@@ -274,104 +357,32 @@ class NullnessInformationBuilder {
 
         @Override
         public void visit(StringConstantInstruction insn) {
-            notNullVariables.set(insn.getReceiver().getIndex());
+            markAsNotNull(insn.getReceiver());
         }
 
         @Override
         public void visit(ClassConstantInstruction insn) {
-            notNullVariables.set(insn.getReceiver().getIndex());
-        }
-
-        @Override
-        public void visit(NullConstantInstruction insn) {
-            nullVariables.set(insn.getReceiver().getIndex());
-        }
-
-        @Override
-        public void visit(AssignInstruction insn) {
-            notNullVariables.set(insn.getReceiver().getIndex(), notNullVariables.get(insn.getAssignee().getIndex()));
-            nullVariables.set(insn.getReceiver().getIndex(), nullVariables.get(insn.getAssignee().getIndex()));
+            markAsNotNull(insn.getReceiver());
         }
 
         @Override
         public void visit(ConstructArrayInstruction insn) {
-            notNullVariables.set(insn.getReceiver().getIndex());
+            markAsNotNull(insn.getReceiver());
         }
 
         @Override
         public void visit(ConstructInstruction insn) {
-            notNullVariables.set(insn.getReceiver().getIndex());
+            markAsNotNull(insn.getReceiver());
         }
 
         @Override
         public void visit(ConstructMultiArrayInstruction insn) {
-            notNullVariables.set(insn.getReceiver().getIndex());
+            markAsNotNull(insn.getReceiver());
         }
 
         @Override
         public void visit(NullCheckInstruction insn) {
-            notNullVariables.set(insn.getReceiver().getIndex());
-        }
-
-        @Override
-        public void visit(BranchingInstruction insn) {
-            switch (insn.getCondition()) {
-                case NOT_NULL:
-                    setNotNullSuccessor(insn.getConsequent(), insn.getOperand());
-                    setNullSuccessor(insn.getAlternative(), insn.getOperand());
-                    break;
-                case NULL:
-                    setNullSuccessor(insn.getConsequent(), insn.getOperand());
-                    setNotNullSuccessor(insn.getAlternative(), insn.getOperand());
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        @Override
-        public void visit(BinaryBranchingInstruction insn) {
-            Variable first = insn.getFirstOperand();
-            Variable second = insn.getSecondOperand();
-            if (nullVariables.get(first.getIndex())) {
-                first = second;
-            } else if (!nullVariables.get(second.getIndex())) {
-                return;
-            }
-
-            switch (insn.getCondition()) {
-                case REFERENCE_EQUAL:
-                    setNotNullSuccessor(insn.getConsequent(), first);
-                    setNullSuccessor(insn.getAlternative(), first);
-                    break;
-                case REFERENCE_NOT_EQUAL:
-                    setNullSuccessor(insn.getConsequent(), first);
-                    setNotNullSuccessor(insn.getAlternative(), first);
-                    break;
-                default:
-                    break;
-            }
-        }
-
-        private void setNullSuccessor(BasicBlock successor, Variable value) {
-            if (shouldSetSuccessor(successor, value)) {
-                nullSuccessors.put(successor.getIndex(), value.getIndex());
-            }
-        }
-
-        private void setNotNullSuccessor(BasicBlock successor, Variable value) {
-            if (shouldSetSuccessor(successor, value)) {
-                notNullSuccessors.put(successor.getIndex(), value.getIndex());
-            }
-        }
-
-        private boolean shouldSetSuccessor(BasicBlock successor, Variable value) {
-            for (Phi phi : successor.getPhis()) {
-                if (phi.getIncomings().stream().anyMatch(incoming -> incoming.getValue() == value)) {
-                    return false;
-                }
-            }
-            return true;
+            markAsNotNull(insn.getReceiver());
         }
 
         private void insertNotNullInstruction(Instruction currentInstruction, Variable var) {
@@ -387,39 +398,71 @@ class NullnessInformationBuilder {
             } else {
                 currentBlock.addFirst(insn);
             }
-            markAsNonNull(var);
-        }
-
-        private void insertNullInstruction(Variable var) {
-            if (nullVariables.get(var.getIndex())) {
-                return;
-            }
-            NullConstantInstruction insn = new NullConstantInstruction();
-            insn.setReceiver(var);
-            nullInstructions.add(insn);
-            currentBlock.addFirst(insn);
-            markAsNull(var);
-        }
-
-        private void markAsNonNull(Variable var) {
-            if (notNullVariables.get(var.getIndex())) {
-                return;
-            }
-            notNullVariables.set(var.getIndex());
+            markAsNotNull(var);
             currentState.newlyNonNull.add(var.getIndex());
         }
 
-        private void markAsNull(Variable var) {
-            if (nullVariables.get(var.getIndex())) {
-                return;
-            }
-            nullVariables.set(var.getIndex());
-            currentState.newlyNull.add(var.getIndex());
+        private void markAsNotNull(Variable var) {
+            notNullVariables.set(var.getIndex());
         }
     }
 
     static class State {
         IntSet newlyNonNull = new IntHashSet();
-        IntSet newlyNull = new IntHashSet();
+    }
+
+    class NullnessInitVisitor extends AbstractInstructionVisitor {
+        private IntDeque queue;
+
+        NullnessInitVisitor(IntDeque queue) {
+            this.queue = queue;
+        }
+
+        @Override
+        public void visit(NullCheckInstruction insn) {
+            queue.addLast(insn.getReceiver().getIndex());
+            queue.addLast(1);
+        }
+
+        @Override
+        public void visit(NullConstantInstruction insn) {
+            queue.addLast(insn.getReceiver().getIndex());
+            queue.addLast(0);
+        }
+
+        @Override
+        public void visit(StringConstantInstruction insn) {
+            queue.addLast(insn.getReceiver().getIndex());
+            queue.addLast(1);
+        }
+
+        @Override
+        public void visit(ClassConstantInstruction insn) {
+            queue.addLast(insn.getReceiver().getIndex());
+            queue.addLast(1);
+        }
+
+        @Override
+        public void visit(ConstructArrayInstruction insn) {
+            queue.addLast(insn.getReceiver().getIndex());
+            queue.addLast(1);
+        }
+
+        @Override
+        public void visit(ConstructInstruction insn) {
+            queue.addLast(insn.getReceiver().getIndex());
+            queue.addLast(1);
+        }
+
+        @Override
+        public void visit(ConstructMultiArrayInstruction insn) {
+            queue.addLast(insn.getReceiver().getIndex());
+            queue.addLast(1);
+        }
+    }
+
+    enum Nullness {
+        NULL,
+        NOT_NULL
     }
 }

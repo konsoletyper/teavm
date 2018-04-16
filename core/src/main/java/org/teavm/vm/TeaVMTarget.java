@@ -39,6 +39,8 @@ public interface TeaVMTarget {
 
     void contributeDependencies(DependencyAnalyzer dependencyAnalyzer);
 
+    void beforeOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource);
+
     void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource);
 
     void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException;

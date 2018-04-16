@@ -680,7 +680,7 @@ public class ClassInference {
                 virtualCallSites.add(callSite);
 
                 if (insn.getReceiver() != null) {
-                    for (int j = 1; j <= MAX_DEGREE; ++j) {
+                    for (int j = 0; j <= MAX_DEGREE; ++j) {
                         getNodeTypes(packNodeAndDegree(callSite.receiver, j));
                     }
                 }

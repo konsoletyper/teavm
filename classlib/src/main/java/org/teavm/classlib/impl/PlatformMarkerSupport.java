@@ -40,7 +40,7 @@ import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.optimization.ConstantConditionElimination;
 import org.teavm.model.optimization.GlobalValueNumbering;
-import org.teavm.model.optimization.UnreachableBasicBlockElimination;
+import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 
 public class PlatformMarkerSupport implements ClassHolderTransformer {
     private String[] tags;
@@ -124,8 +124,8 @@ public class PlatformMarkerSupport implements ClassHolderTransformer {
             boolean changed;
             do {
                 changed = new GlobalValueNumbering(true).optimize(program)
-                        | new ConstantConditionElimination().optimize(null, program)
-                        | new UnreachableBasicBlockElimination().optimize(null, program);
+                        | new ConstantConditionElimination().optimize(containingMethod.getDescriptor(), program);
+                new UnreachableBasicBlockEliminator().optimize(program);
             } while (changed);
         }
     }

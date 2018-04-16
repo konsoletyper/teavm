@@ -15,8 +15,15 @@
  */
 package org.teavm.model;
 
-import java.util.*;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Objects;
 import org.teavm.model.instructions.InstructionReader;
+import org.teavm.model.util.TransitionExtractor;
 
 public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
     private Program program;
@@ -358,5 +365,33 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
 
     public void setLabel(String label) {
         this.label = label;
+    }
+
+    public void detachSuccessors() {
+        Instruction lastInstruction = getLastInstruction();
+        if (lastInstruction == null) {
+            return;
+        }
+
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
+        lastInstruction.acceptVisitor(transitionExtractor);
+        if (transitionExtractor.getTargets() == null) {
+            return;
+        }
+
+        for (BasicBlock successor : transitionExtractor.getTargets()) {
+            List<Phi> phis = successor.getPhis();
+            for (int i = 0; i < phis.size(); i++) {
+                Phi phi = phis.get(i);
+                for (int j = 0; j < phi.getIncomings().size(); ++j) {
+                    if (phi.getIncomings().get(j).getSource() == this) {
+                        phi.getIncomings().remove(j--);
+                    }
+                }
+                if (phi.getIncomings().isEmpty()) {
+                    phis.remove(i--);
+                }
+            }
+        }
     }
 }

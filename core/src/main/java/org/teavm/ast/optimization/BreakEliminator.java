@@ -15,8 +15,8 @@
  */
 package org.teavm.ast.optimization;
 
-import java.util.HashMap;
-import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -41,8 +41,8 @@ import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.WhileStatement;
 
 class BreakEliminator implements StatementVisitor {
-    private Map<BlockStatement, List<Statement>> blockSuccessors = new HashMap<>();
-    private Set<IdentifiedStatement> outerStatements = new HashSet<>();
+    private Map<BlockStatement, List<Statement>> blockSuccessors = new LinkedHashMap<>();
+    private Set<IdentifiedStatement> outerStatements = new LinkedHashSet<>();
     private List<Statement> currentSequence;
     private int currentIndex;
     private AllBlocksCountVisitor usageCounter;
@@ -153,8 +153,8 @@ class BreakEliminator implements StatementVisitor {
     public void visit(TryCatchStatement statement) {
         Map<BlockStatement, List<Statement>> oldBlockSuccessors = blockSuccessors;
         Set<IdentifiedStatement> oldOuterStatements = outerStatements;
-        outerStatements = new HashSet<>();
-        blockSuccessors = new HashMap<>();
+        outerStatements = new LinkedHashSet<>();
+        blockSuccessors = new LinkedHashMap<>();
         processSequence(statement.getProtectedBody());
         outerStatements = oldOuterStatements;
         blockSuccessors = oldBlockSuccessors;

@@ -46,7 +46,7 @@ import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
-import org.teavm.model.util.InstructionTransitionExtractor;
+import org.teavm.model.util.TransitionExtractor;
 
 public final class ProgramEmitter {
     private Program program;
@@ -467,7 +467,7 @@ public final class ProgramEmitter {
         if (insn == null) {
             return false;
         }
-        InstructionTransitionExtractor extractor = new InstructionTransitionExtractor();
+        TransitionExtractor extractor = new TransitionExtractor();
         insn.acceptVisitor(extractor);
         return extractor.getTargets() != null;
     }

@@ -16,8 +16,8 @@
 package org.teavm.backend.c.intrinsic;
 
 import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.c.analyze.Characteristics;
 import org.teavm.model.MethodReference;
+import org.teavm.model.lowlevel.Characteristics;
 
 public class FunctionIntrinsic implements Intrinsic {
     private Characteristics characteristics;

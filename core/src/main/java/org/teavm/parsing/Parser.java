@@ -63,7 +63,7 @@ public class Parser {
         this.referenceCache = referenceCache;
     }
 
-    public MethodHolder parseMethod(MethodNode node, String className, String fileName) {
+    public MethodHolder parseMethod(MethodNode node, String fileName) {
         MethodNode nodeWithoutJsr = new MethodNode(Opcodes.ASM5, node.access, node.name, node.desc, node.signature,
                 node.exceptions.toArray(new String[0]));
         JSRInlinerAdapter adapter = new JSRInlinerAdapter(nodeWithoutJsr, node.access, node.name, node.desc,
@@ -76,7 +76,7 @@ public class Parser {
 
         ProgramParser programParser = new ProgramParser(referenceCache);
         programParser.setFileName(fileName);
-        Program program = programParser.parse(node, className);
+        Program program = programParser.parse(node);
         new UnreachableBasicBlockEliminator().optimize(program);
         PhiUpdater phiUpdater = new PhiUpdater();
         Variable[] argumentMapping = applySignature(program, method.getParameterTypes());
@@ -245,7 +245,7 @@ public class Parser {
         }
         String fullFileName = node.name.substring(0, node.name.lastIndexOf('/') + 1) + node.sourceFile;
         for (MethodNode methodNode : node.methods) {
-            cls.addMethod(parseMethod(methodNode, node.name, fullFileName));
+            cls.addMethod(parseMethod(methodNode, fullFileName));
         }
         if (node.outerClass != null) {
             cls.setOwnerName(node.outerClass.replace('/', '.'));

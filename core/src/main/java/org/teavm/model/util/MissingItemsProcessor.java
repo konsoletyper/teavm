@@ -80,7 +80,7 @@ public class MissingItemsProcessor {
     }
 
     private void truncateBlock(Instruction instruction) {
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
         BasicBlock block = instruction.getBasicBlock();
         if (block.getLastInstruction() != null) {
             block.getLastInstruction().acceptVisitor(transitionExtractor);

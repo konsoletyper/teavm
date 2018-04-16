@@ -686,7 +686,9 @@ class DependencyGraphBuilder {
         public void nullCheck(VariableReader receiver, VariableReader value) {
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
-            valueNode.connect(receiverNode);
+            if (valueNode != null) {
+                valueNode.connect(receiverNode);
+            }
             dependencyAnalyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class),
                     new CallLocation(caller.getMethod(), currentLocation)).use();
             currentExceptionConsumer.consume(dependencyAnalyzer.getType("java.lang.NullPointerException"));

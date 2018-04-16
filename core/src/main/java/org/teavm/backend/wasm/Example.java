@@ -214,6 +214,16 @@ public final class Example {
         } catch (IllegalStateException e) {
             System.out.println("Caught 3: " + e.getMessage());
         }
+
+        Object[] objects = { "a", null };
+        for (Object o : objects) {
+            try {
+                System.out.println(o.toString());
+            } catch (RuntimeException e) {
+                System.out.println("Caught NPE");
+                e.printStackTrace();
+            }
+        }
     }
 
     private static void testArrayReflection() {

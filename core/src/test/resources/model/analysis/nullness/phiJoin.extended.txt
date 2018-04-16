@@ -4,11 +4,9 @@ $start
     @cond := invokeStatic `Cond.get()Ljava/lang/Object;`
     if @cond === null then goto $ifNull else goto $ifNotNull
 $ifNull
-    @cond_1 := null
     @a := 'qwe'
     goto $join
 $ifNotNull
-    @cond_2 := nullCheck @cond
     @b := invokeStatic `org.test.Foo.bar()Ljava/lang/String;`
     @b_1 := nullCheck @b
     goto $join

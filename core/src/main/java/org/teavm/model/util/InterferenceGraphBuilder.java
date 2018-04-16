@@ -27,7 +27,7 @@ class InterferenceGraphBuilder {
         }
         UsageExtractor useExtractor = new UsageExtractor();
         DefinitionExtractor defExtractor = new DefinitionExtractor();
-        InstructionTransitionExtractor succExtractor = new InstructionTransitionExtractor();
+        TransitionExtractor succExtractor = new TransitionExtractor();
         List<List<Incoming>> outgoings = ProgramUtils.getPhiOutputs(program);
         BitSet live = new BitSet();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
