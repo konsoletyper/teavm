@@ -202,6 +202,9 @@ public class ExceptionHandlingShadowStackContributor {
 
                 String fileName = insn.getLocation() != null ? insn.getLocation().getFileName() : null;
                 int lineNumber = insn.getLocation() != null ? insn.getLocation().getLine() : -1;
+                if (fileName != null) {
+                    fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
+                }
                 CallSiteLocation location = new CallSiteLocation(fileName, method.getClassName(), method.getName(),
                         lineNumber);
                 CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size(), location);

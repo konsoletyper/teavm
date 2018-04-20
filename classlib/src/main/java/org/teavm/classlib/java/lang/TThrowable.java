@@ -157,7 +157,7 @@ public class TThrowable extends RuntimeException {
         stream.println(TString.wrap(getClass().getName() + ": " + getMessage()));
         if (stackTrace != null) {
             for (TStackTraceElement element : stackTrace) {
-                stream.print(TString.wrap("  at "));
+                stream.print(TString.wrap("    at "));
                 stream.println(element);
             }
         }

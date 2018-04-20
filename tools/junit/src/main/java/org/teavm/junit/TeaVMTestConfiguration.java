@@ -15,18 +15,20 @@
  */
 package org.teavm.junit;
 
+import org.teavm.backend.c.CTarget;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMOptimizationLevel;
+import org.teavm.vm.TeaVMTarget;
 
-interface TeaVMTestConfiguration {
+interface TeaVMTestConfiguration<T extends TeaVMTarget> {
     String getSuffix();
 
     void apply(TeaVM vm);
 
-    void apply(JavaScriptTarget target);
+    void apply(T target);
 
-    TeaVMTestConfiguration DEFAULT = new TeaVMTestConfiguration() {
+    TeaVMTestConfiguration<JavaScriptTarget> JS_DEFAULT = new TeaVMTestConfiguration<JavaScriptTarget>() {
         @Override
         public String getSuffix() {
             return "";
@@ -43,7 +45,7 @@ interface TeaVMTestConfiguration {
         }
     };
 
-    TeaVMTestConfiguration OPTIMIZED = new TeaVMTestConfiguration() {
+    TeaVMTestConfiguration<JavaScriptTarget> JS_OPTIMIZED = new TeaVMTestConfiguration<JavaScriptTarget>() {
         @Override
         public String getSuffix() {
             return "optimized";
@@ -60,7 +62,7 @@ interface TeaVMTestConfiguration {
         }
     };
 
-    TeaVMTestConfiguration MINIFIED = new TeaVMTestConfiguration() {
+    TeaVMTestConfiguration<JavaScriptTarget> JS_MINIFIED = new TeaVMTestConfiguration<JavaScriptTarget>() {
         @Override
         public String getSuffix() {
             return "min";
@@ -74,6 +76,39 @@ interface TeaVMTestConfiguration {
         @Override
         public void apply(JavaScriptTarget target) {
             target.setMinifying(true);
+        }
+    };
+
+    TeaVMTestConfiguration<CTarget> C_DEFAULT = new TeaVMTestConfiguration<CTarget>() {
+        @Override
+        public String getSuffix() {
+            return "";
+        }
+
+        @Override
+        public void apply(TeaVM vm) {
+            vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
+        }
+
+        @Override
+        public void apply(CTarget target) {
+        }
+    };
+
+
+    TeaVMTestConfiguration<CTarget> C_OPTIMIZED = new TeaVMTestConfiguration<CTarget>() {
+        @Override
+        public String getSuffix() {
+            return "";
+        }
+
+        @Override
+        public void apply(TeaVM vm) {
+            vm.setOptimizationLevel(TeaVMOptimizationLevel.FULL);
+        }
+
+        @Override
+        public void apply(CTarget target) {
         }
     };
 }

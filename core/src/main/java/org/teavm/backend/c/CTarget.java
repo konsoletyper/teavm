@@ -65,6 +65,7 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReader;
+import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
@@ -170,6 +171,7 @@ public class CTarget implements TeaVMTarget {
 
         dependencyAnalyzer.linkClass("java.lang.String", null);
         dependencyAnalyzer.linkClass("java.lang.Class", null);
+        dependencyAnalyzer.linkField(new FieldReference("java.lang.String", "hashCode"), null);
 
         ClassDependency runtimeClassDep = dependencyAnalyzer.linkClass(RuntimeClass.class.getName(), null);
         ClassDependency runtimeObjectDep = dependencyAnalyzer.linkClass(RuntimeObject.class.getName(), null);
