@@ -24,26 +24,40 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
     private static final String PLATFORM_CLASS_METADATA = "org.teavm.platform.PlatformClassMetadata";
     private static final FieldReference ARRAY_TYPE_FIELD = new FieldReference(
             RuntimeClass.class.getName(), "arrayType");
+    private static final FieldReference SUPERCLASS_FIELD = new FieldReference(
+            RuntimeClass.class.getName(), "parent");
 
     @Override
     public boolean canHandle(MethodReference method) {
         if (!method.getClassName().equals(PLATFORM_CLASS_METADATA)) {
             return false;
         }
-        return method.getName().equals("getArrayItem");
+        switch (method.getName()) {
+            case "getArrayItem":
+            case "getSuperclass":
+                return true;
+        }
+        return false;
     }
 
     @Override
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
         switch (invocation.getMethod().getName()) {
             case "getArrayItem":
-                context.writer().print("FIELD(");
-                context.emit(invocation.getArguments().get(0));
-                context.writer().print(",");
-                context.writer().print(context.names().forClass(ARRAY_TYPE_FIELD.getClassName())).print(", ");
-                context.writer().print(context.names().forMemberField(ARRAY_TYPE_FIELD));
-                context.writer().print(")");
+                printFieldAccess(context, invocation, ARRAY_TYPE_FIELD);
+                break;
+            case "getSuperclass":
+                printFieldAccess(context, invocation, SUPERCLASS_FIELD);
                 break;
         }
+    }
+
+    private void printFieldAccess(IntrinsicContext context, InvocationExpr invocation, FieldReference field) {
+        context.writer().print("FIELD(");
+        context.emit(invocation.getArguments().get(0));
+        context.writer().print(",");
+        context.writer().print(context.names().forClass(field.getClassName())).print(", ");
+        context.writer().print(context.names().forMemberField(field));
+        context.writer().print(")");
     }
 }

@@ -22,6 +22,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.generators.Generator;
@@ -36,6 +37,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
+import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
@@ -276,11 +278,20 @@ public class ClassGenerator {
         String name = context.getNames().forClassInstance(type);
 
         vtableForwardWriter.print("static ").print(structName).print(" ").print(name).println(";");
+
+        ClassReader cls = className != null ? context.getClassSource().get(className) : null;
+        String enumConstants;
+        if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
+            enumConstants = writeEnumConstants(cls, name);
+        } else {
+            enumConstants = "NULL";
+        }
+
         vtableWriter.print("static alignas(8) ").print(structName).print(" ").print(name).println(" = {").indent();
 
         if (className != null) {
             vtableWriter.println(".parent = {").indent();
-            generateRuntimeClassInitializer(type);
+            generateRuntimeClassInitializer(type, enumConstants);
             vtableWriter.outdent().println("},");
 
             VirtualTable virtualTable = context.getVirtualTableProvider().lookup(className);
@@ -301,19 +312,34 @@ public class ClassGenerator {
                 }
             }
         } else {
-            generateRuntimeClassInitializer(type);
+            generateRuntimeClassInitializer(type, enumConstants);
         }
 
         vtableWriter.outdent().println("};");
     }
 
-    private void generateRuntimeClassInitializer(ValueType type) {
+    private String writeEnumConstants(ClassReader cls, String baseName) {
+        List<FieldReader> fields = cls.getFields().stream()
+                .filter(f -> f.hasModifier(ElementModifier.ENUM))
+                .collect(Collectors.toList());
+        String name = baseName + "_enumConstants";
+        vtableWriter.print("static void* " + name + "[" + (fields.size() + 1) + "] = { ");
+        vtableWriter.print("(void*) (intptr_t) " + fields.size());
+        for (FieldReader field : fields) {
+            vtableWriter.print(", ").print("&" + context.getNames().forStaticField(field.getReference()));
+        }
+        vtableWriter.println(" };");
+        return name;
+    }
+
+    private void generateRuntimeClassInitializer(ValueType type, String enumConstants) {
         String sizeExpr;
         int tag;
         String parent;
         String itemTypeExpr;
         int flags = 0;
         String layout = "NULL";
+        String initFunction = "NULL";
 
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
@@ -323,13 +349,17 @@ public class ClassGenerator {
                 className = RuntimeObject.class.getName();
             }
 
-            if (needsData(cls)) {
+            if (cls != null && needsData(cls)) {
                 String structName = context.getNames().forClass(className);
                 sizeExpr = "(int32_t) (intptr_t) ALIGN(sizeof(" + structName + "), sizeof(void*))";
             } else {
                 sizeExpr = "0";
             }
-            tag = tagRegistry.getRanges(className).get(0).lower;
+            if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
+                flags |= RuntimeClass.ENUM;
+            }
+            List<TagRegistry.Range> ranges = tagRegistry.getRanges(className);
+            tag = ranges != null && !ranges.isEmpty() ? ranges.get(0).lower : 0;
 
             parent = cls != null && cls.getParent() != null && types.contains(ValueType.object(cls.getParent()))
                     ? "&" + context.getNames().forClassInstance(ValueType.object(cls.getParent()))
@@ -337,6 +367,10 @@ public class ClassGenerator {
             itemTypeExpr = "NULL";
             int layoutOffset = classLayoutOffsets.getOrDefault(className, -1);
             layout = layoutOffset >= 0 ? "classLayouts + " + layoutOffset : "NULL";
+
+            if (cls != null && needsInitializer(cls)) {
+                initFunction = context.getNames().forClassInitializer(className);
+            }
         } else if (type instanceof ValueType.Array) {
             parent = "&" + context.getNames().forClassInstance(ValueType.object("java.lang.Object"));
             tag = tagRegistry.getRanges("java.lang.Object").get(0).lower;
@@ -382,7 +416,9 @@ public class ClassGenerator {
         vtableWriter.print(".").print(classFieldName("isSupertypeOf")).println(" = &" + superTypeFunction + ",");
         vtableWriter.print(".").print(classFieldName("parent")).println(" = " + parent + ",");
         vtableWriter.print(".").print(classFieldName("enumValues")).println(" = NULL,");
-        vtableWriter.print(".").print(classFieldName("layout")).println(" = " + layout);
+        vtableWriter.print(".").print(classFieldName("layout")).println(" = " + layout + ",");
+        vtableWriter.print(".").print(classFieldName("enumValues")).println(" = " + enumConstants + ",");
+        vtableWriter.print(".").print(classFieldName("init")).println(" = " + initFunction);
     }
 
     private void generateVirtualTableStructure(ClassReader cls) {
@@ -392,13 +428,15 @@ public class ClassGenerator {
         vtableStructuresWriter.println("JavaClass parent;");
 
         VirtualTable virtualTable = context.getVirtualTableProvider().lookup(cls.getName());
-        for (VirtualTableEntry entry : virtualTable.getEntries().values()) {
-            String methodName = context.getNames().forVirtualMethod(
-                    new MethodReference(cls.getName(), entry.getMethod()));
-            vtableStructuresWriter.printType(entry.getMethod().getResultType())
-                    .print(" (*").print(methodName).print(")(");
-            codeGenerator.generateMethodParameters(vtableStructuresWriter, entry.getMethod(), false, false);
-            vtableStructuresWriter.println(");");
+        if (virtualTable != null) {
+            for (VirtualTableEntry entry : virtualTable.getEntries().values()) {
+                String methodName = context.getNames().forVirtualMethod(
+                        new MethodReference(cls.getName(), entry.getMethod()));
+                vtableStructuresWriter.printType(entry.getMethod().getResultType())
+                        .print(" (*").print(methodName).print(")(");
+                codeGenerator.generateMethodParameters(vtableStructuresWriter, entry.getMethod(), false, false);
+                vtableStructuresWriter.println(");");
+            }
         }
 
         vtableStructuresWriter.outdent().print("} ").print(name).println(";");
@@ -517,7 +555,7 @@ public class ClassGenerator {
         }
     }
 
-    private boolean needsInitializer(ClassHolder cls) {
+    private boolean needsInitializer(ClassReader cls) {
         return !context.getCharacteristics().isStaticInit(cls.getName())
                 && !context.getCharacteristics().isStructure(cls.getName())
                 && cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null;

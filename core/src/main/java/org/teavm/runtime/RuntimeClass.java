@@ -43,6 +43,7 @@ public class RuntimeClass extends RuntimeObject {
     public RuntimeClass itemType;
     public RuntimeClass arrayType;
     public IsSupertypeFunction isSupertypeOf;
+    public InitFunction init;
     public RuntimeClass parent;
     public Address enumValues;
     public Address layout;

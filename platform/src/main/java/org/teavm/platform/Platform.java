@@ -112,7 +112,15 @@ public final class Platform {
 
     @PluggableDependency(PlatformGenerator.class)
     @InjectedBy(PlatformGenerator.class)
+    @DelegateTo("initClassLowLevel")
     public static native void initClass(PlatformClass cls);
+
+    @Unmanaged
+    private static void initClassLowLevel(RuntimeClass cls) {
+        if (cls.init != null) {
+            cls.init.run();
+        }
+    }
 
     @InjectedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)

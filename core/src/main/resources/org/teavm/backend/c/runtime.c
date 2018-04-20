@@ -2,7 +2,9 @@
 #include <stdint.h>
 #include <stddef.h>
 #include <stdio.h>
+#include <stdlib.h>
 #include <uchar.h>
+#include <wchar.h>
 #include <time.h>
 #include <math.h>
 
@@ -86,6 +88,18 @@ static void* gc_regionsAddress = NULL;
 static int32_t gc_regionSize = INT32_C(32768);
 static int32_t gc_regionMaxCount = INT32_C(0);
 static int64_t gc_availableBytes = INT64_C(0);
+
+static double TeaVM_rand() {
+    return rand() / ((double) RAND_MAX + 1);
+}
+
+static inline float TeaVM_getNaN() {
+    return NAN;
+}
+
+static void TeaVM_beforeInit() {
+    srand(time(NULL));
+}
 
 #ifdef __GNUC__
 static void initHeap(int64_t heapSize) {

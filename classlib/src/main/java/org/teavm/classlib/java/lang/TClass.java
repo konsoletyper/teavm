@@ -512,7 +512,11 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
     @SuppressWarnings("unchecked")
     public T[] getEnumConstants() {
-        return isEnum() ? (T[]) Platform.getEnumConstants(platformClass).clone() : null;
+        if (!isEnum()) {
+            return null;
+        }
+        Platform.initClass(platformClass);
+        return (T[]) Platform.getEnumConstants(platformClass).clone();
     }
 
     @SuppressWarnings("unchecked")

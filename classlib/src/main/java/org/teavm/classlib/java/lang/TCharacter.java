@@ -242,7 +242,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return toLowerCaseSystem(codePoint);
     }
 
-    @Import(module = "runtime", name = "tolower")
+    @Import(module = "runtime", name = "towlower")
     private static native int toLowerCaseSystem(int codePoint);
 
     public static char toUpperCase(char ch) {
@@ -258,7 +258,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return toUpperCaseSystem(codePoint);
     }
 
-    @Import(module = "runtime", name = "toupper")
+    @Import(module = "runtime", name = "towupper")
     private static native int toUpperCaseSystem(int codePoint);
 
     public static int digit(char ch, int radix) {

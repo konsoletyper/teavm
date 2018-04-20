@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,36 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform;
+package org.teavm.runtime;
 
+import org.teavm.interop.Function;
 import org.teavm.interop.Unmanaged;
-import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
 
-public interface PlatformClassMetadata extends JSObject {
-    @JSProperty("item")
+public abstract class InitFunction extends Function {
     @Unmanaged
-    PlatformClass getArrayItem();
-
-    @JSProperty
-    PlatformSequence<PlatformClass> getSupertypes();
-
-    @JSProperty
-    @Unmanaged
-    PlatformClass getSuperclass();
-
-    @JSProperty
-    String getName();
-
-    @JSProperty
-    boolean isPrimitive();
-
-    @JSProperty
-    boolean isEnum();
-
-    @JSProperty
-    int getFlags();
-
-    @JSProperty
-    int getAccessLevel();
+    public abstract void run();
 }

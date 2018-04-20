@@ -352,6 +352,7 @@ public class CTarget implements TeaVMTarget {
             Set<? extends ValueType> types) {
         writer.println("int main(int argc, char** argv) {").indent();
 
+        writer.println("TeaVM_beforeInit();");
         writer.println("initHeap(" + minHeapSize + ");");
         generateVirtualTableHeaders(context, writer, types);
         generateStringPoolHeaders(context, writer);
@@ -417,6 +418,6 @@ public class CTarget implements TeaVMTarget {
 
     @Override
     public String[] getPlatformTags() {
-        return new String[] { PlatformMarkers.C, PlatformMarkers.WEBASSEMBLY };
+        return new String[] { PlatformMarkers.C, PlatformMarkers.LOW_LEVEL };
     }
 }

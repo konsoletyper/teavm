@@ -42,8 +42,6 @@ public class PlatformIntrinsic implements Intrinsic {
             case "asJavaClass":
                 context.emit(invocation.getArguments().get(0));
                 break;
-            case "getName":
-
         }
     }
 }

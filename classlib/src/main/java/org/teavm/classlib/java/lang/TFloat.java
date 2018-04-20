@@ -90,7 +90,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     }
 
     @JSBody(params = "v", script = "return isNaN(v);")
-    @Import(module = "runtime", name = "isNaN")
+    @Import(module = "runtime", name = "isnan")
     public static native boolean isNaN(float v);
 
     public static boolean isInfinite(float v) {
@@ -98,11 +98,11 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     }
 
     @JSBody(params = "v", script = "return isFinite(v);")
-    @Import(module = "runtime", name = "isFinite")
+    @Import(module = "runtime", name = "isfinite")
     private static native boolean isFinite(float v);
 
     @JSBody(script = "return NaN;")
-    @Import(module = "runtime", name = "getNaN")
+    @Import(module = "runtime", name = "TeaVM_getNaN")
     private static native float getNaN();
 
     public static float parseFloat(TString string) throws TNumberFormatException {
