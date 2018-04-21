@@ -17,18 +17,28 @@ package org.teavm.junit;
 
 import java.io.BufferedReader;
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 
-public class CRunner {
+class CRunStrategy implements TestRunStrategy {
     private String compilerCommand;
 
-    public CRunner(String compilerCommand) {
+    CRunStrategy(String compilerCommand) {
         this.compilerCommand = compilerCommand;
     }
 
-    public void run(TestRun run) {
+    @Override
+    public void beforeThread() {
+    }
+
+    @Override
+    public void afterThread() {
+    }
+
+    @Override
+    public void runTest(TestRun run) throws IOException {
         try {
             File inputFile = new File(run.getBaseDirectory(), run.getFileName());
             String exeName = run.getFileName();
@@ -59,9 +69,8 @@ public class CRunner {
             } else {
                 run.getCallback().error(new RuntimeException("Test failed:\n" + mergeLines(runtimeOutput)));
             }
-        } catch (Exception e) {
-            run.getCallback().error(e);
-            return;
+        } catch (InterruptedException e) {
+            run.getCallback().complete();
         }
     }
 
@@ -79,7 +88,8 @@ public class CRunner {
         }
     }
 
-    private boolean runCompiler(File inputFile, File outputFile, List<String> output) throws Exception {
+    private boolean runCompiler(File inputFile, File outputFile, List<String> output)
+            throws IOException, InterruptedException {
         String[] parts = compilerCommand.split(" +");
         for (int i = 0; i < parts.length; ++i) {
             switch (parts[i]) {
@@ -94,18 +104,18 @@ public class CRunner {
         return runProcess(new ProcessBuilder(parts).start(), output);
     }
 
-    private boolean runProcess(Process process, List<String> output) throws Exception {
+    private boolean runProcess(Process process, List<String> output) throws IOException, InterruptedException {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(process.getInputStream()));
         BufferedReader stderr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
 
-        while (process.isAlive()) {
+        while (true) {
             String line = stderr.readLine();
             if (line == null) {
                 break;
             }
             output.add(line);
         }
-        while (process.isAlive()) {
+        while (true) {
             String line = stdin.readLine();
             if (line == null) {
                 break;

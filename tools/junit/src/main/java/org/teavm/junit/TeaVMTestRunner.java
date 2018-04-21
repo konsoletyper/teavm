@@ -76,6 +76,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static final String JS_RUNNER = "teavm.junit.js.runner";
     private static final String THREAD_COUNT = "teavm.junit.js.threads";
     private static final String SELENIUM_URL = "teavm.junit.js.selenium.url";
+    private static final String JS_ENABLED = "teavm.junit.js";
     private static final String C_ENABLED = "teavm.junit.c";
     private static final String C_COMPILER = "teavm.junit.c-compiler";
     private static final String MINIFIED = "teavm.junit.minified";
@@ -90,21 +91,30 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private File outputDir;
     private TestAdapter testAdapter = new JUnitTestAdapter();
     private Map<Method, Description> descriptions = new HashMap<>();
-    private TestRunStrategy jsRunStrategy;
-    private static volatile TestRunner runner;
+    private static Map<RunKind, RunnerKindInfo> runners = new HashMap<>();
     private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
-    private static volatile ScheduledFuture<?> cleanupFuture;
     private CountDownLatch latch;
     private List<Method> filteredChildren;
-    private CRunner cRunner;
+
+    static class RunnerKindInfo {
+        volatile TestRunner runner;
+        volatile TestRunStrategy strategy;
+        volatile ScheduledFuture<?> cleanupFuture;
+    }
 
     static {
+        for (RunKind kind : RunKind.values()) {
+            runners.put(kind, new RunnerKindInfo());
+            runners.put(kind, new RunnerKindInfo());
+        }
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             synchronized (TeaVMTestRunner.class) {
-                if (runner != null) {
-                    cleanupFuture = null;
-                    runner.stop();
-                    runner.waitForCompletion();
+                for (RunnerKindInfo info : runners.values()) {
+                    if (info.runner != null) {
+                        info.cleanupFuture = null;
+                        info.runner.stop();
+                        info.runner.waitForCompletion();
+                    }
                 }
             }
         }));
@@ -122,6 +132,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
         String runStrategyName = System.getProperty(JS_RUNNER);
         if (runStrategyName != null) {
+            TestRunStrategy jsRunStrategy;
             switch (runStrategyName) {
                 case "selenium":
                     try {
@@ -140,11 +151,12 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 default:
                     throw new InitializationError("Unknown run strategy: " + runStrategyName);
             }
+            runners.get(RunKind.JAVASCRIPT).strategy = jsRunStrategy;
         }
 
         String cCommand = System.getProperty(C_COMPILER);
         if (cCommand != null) {
-            cRunner = new CRunner(cCommand);
+            runners.get(RunKind.C).strategy = new CRunStrategy(cCommand);
         }
     }
 
@@ -337,10 +349,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             return null;
         }
 
-        if (jsRunStrategy == null) {
-            return null;
-        }
-
         TestRunCallback callback = new TestRunCallback() {
             @Override
             public void complete() {
@@ -360,58 +368,39 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private void submitRun(TestRun run) {
         synchronized (TeaVMTestRunner.class) {
-            switch (run.getKind()) {
-                case JAVASCRIPT:
-                    submitJavaScriptRun(run);
-                    break;
-                case C:
-                    submitCRun(run);
-                    break;
-                default:
-                    run.getCallback().complete();
-                    break;
+            RunnerKindInfo info = runners.get(run.getKind());
+
+            if (info.strategy == null) {
+                run.getCallback().complete();
+                return;
             }
-        }
-    }
 
-    private void submitJavaScriptRun(TestRun run) {
-        if (jsRunStrategy == null) {
-            run.getCallback().complete();
-            return;
-        }
-
-        if (runner == null) {
-            runner = new TestRunner(jsRunStrategy);
-            try {
-                runner.setNumThreads(Integer.parseInt(System.getProperty(THREAD_COUNT, "1")));
-            } catch (NumberFormatException e) {
-                runner.setNumThreads(1);
+            if (info.runner == null) {
+                info.runner = new TestRunner(info.strategy);
+                try {
+                    info.runner.setNumThreads(Integer.parseInt(System.getProperty(THREAD_COUNT, "1")));
+                } catch (NumberFormatException e) {
+                    info.runner.setNumThreads(1);
+                }
+                info.runner.init();
             }
-            runner.init();
-        }
-        runner.run(run);
+            info.runner.run(run);
 
-        if (cleanupFuture != null) {
-            cleanupFuture.cancel(false);
-            cleanupFuture = null;
+            if (info.cleanupFuture != null) {
+                info.cleanupFuture.cancel(false);
+                info.cleanupFuture = null;
+            }
+            RunKind kind = run.getKind();
+            info.cleanupFuture = executor.schedule(() -> cleanupRunner(kind), stopTimeout, TimeUnit.MILLISECONDS);
         }
-        cleanupFuture = executor.schedule(TeaVMTestRunner::cleanupRunner, stopTimeout, TimeUnit.MILLISECONDS);
     }
 
-    private void submitCRun(TestRun run) {
-        if (cRunner == null) {
-            run.getCallback().complete();
-            return;
-        }
-
-        cRunner.run(run);
-    }
-
-    private static void cleanupRunner() {
+    private static void cleanupRunner(RunKind kind) {
         synchronized (TeaVMTestRunner.class) {
-            cleanupFuture = null;
-            runner.stop();
-            runner = null;
+            RunnerKindInfo info = runners.get(kind);
+            info.cleanupFuture = null;
+            info.runner.stop();
+            info.runner = null;
         }
     }
 
@@ -496,12 +485,14 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private List<TeaVMTestConfiguration<JavaScriptTarget>> getJavaScriptConfigurations() {
         List<TeaVMTestConfiguration<JavaScriptTarget>> configurations = new ArrayList<>();
-        configurations.add(TeaVMTestConfiguration.JS_DEFAULT);
-        if (Boolean.getBoolean(MINIFIED)) {
-            configurations.add(TeaVMTestConfiguration.JS_MINIFIED);
-        }
-        if (Boolean.getBoolean(OPTIMIZED)) {
-            configurations.add(TeaVMTestConfiguration.JS_OPTIMIZED);
+        if (Boolean.parseBoolean(System.getProperty(JS_ENABLED, "true"))) {
+            configurations.add(TeaVMTestConfiguration.JS_DEFAULT);
+            if (Boolean.getBoolean(MINIFIED)) {
+                configurations.add(TeaVMTestConfiguration.JS_MINIFIED);
+            }
+            if (Boolean.getBoolean(OPTIMIZED)) {
+                configurations.add(TeaVMTestConfiguration.JS_OPTIMIZED);
+            }
         }
         return configurations;
     }

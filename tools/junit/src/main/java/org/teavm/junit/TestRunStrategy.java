@@ -22,5 +22,5 @@ interface TestRunStrategy {
 
     void afterThread();
 
-    String runTest(TestRun run) throws IOException;
+    void runTest(TestRun run) throws IOException;
 }

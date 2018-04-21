@@ -5,6 +5,7 @@
 #include <stdlib.h>
 #include <uchar.h>
 #include <wchar.h>
+#include <wctype.h>
 #include <time.h>
 #include <math.h>
 

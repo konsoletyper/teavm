@@ -52,7 +52,7 @@ class SeleniumRunStrategy implements TestRunStrategy {
     }
 
     @Override
-    public String runTest(TestRun run) throws IOException {
+    public void runTest(TestRun run) throws IOException {
         commandsSent.set(commandsSent.get() + 1);
         if (commandsSent.get().equals(100)) {
             commandsSent.set(0);
@@ -63,8 +63,9 @@ class SeleniumRunStrategy implements TestRunStrategy {
 
         webDriver.get().manage().timeouts().setScriptTimeout(2, TimeUnit.SECONDS);
         JavascriptExecutor js = (JavascriptExecutor) webDriver.get();
+        String result;
         try {
-            return (String) js.executeAsyncScript(
+            result = (String) js.executeAsyncScript(
                     readResource("teavm-selenium.js"),
                     readFile(new File(run.getBaseDirectory(), "runtime.js")),
                     readFile(new File(run.getBaseDirectory(), run.getFileName())),
@@ -78,8 +79,10 @@ class SeleniumRunStrategy implements TestRunStrategy {
                     run.getCallback().error(new AssertionError(error));
                 }
             }
-            return null;
+            return;
         }
+
+        JavaScriptResultParser.parseResult(result, run.getCallback());
     }
 
     private String readFile(File file) throws IOException {

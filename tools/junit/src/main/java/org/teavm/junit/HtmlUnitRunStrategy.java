@@ -46,7 +46,7 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
     }
 
     @Override
-    public String runTest(TestRun run) throws IOException {
+    public void runTest(TestRun run) throws IOException {
         if (++runs == 50) {
             runs = 0;
             cleanUp();
@@ -66,7 +66,7 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
                 .getJavaScriptResult();
         Object[] args = new Object[] { new NativeJavaObject(function, asyncResult, AsyncResult.class) };
         page.get().executeJavaScriptFunctionIfPossible(function, function, args, page.get());
-        return (String) asyncResult.getResult();
+        JavaScriptResultParser.parseResult((String) asyncResult.getResult(), run.getCallback());
     }
 
     private void cleanUp() {
