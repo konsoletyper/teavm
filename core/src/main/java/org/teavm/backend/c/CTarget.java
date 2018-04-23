@@ -83,6 +83,7 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
+import org.teavm.model.lowlevel.ExportDependencyListener;
 import org.teavm.model.lowlevel.NullCheckInsertion;
 import org.teavm.model.lowlevel.NullCheckTransformation;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
@@ -107,6 +108,7 @@ public class CTarget implements TeaVMTarget {
     private ShadowStackTransformer shadowStackTransformer;
     private NullCheckInsertion nullCheckInsertion;
     private NullCheckTransformation nullCheckTransformation;
+    private ExportDependencyListener exportDependencyListener = new ExportDependencyListener();
     private int minHeapSize = 32 * 1024 * 1024;
 
     public void setMinHeapSize(int minHeapSize) {
@@ -123,7 +125,7 @@ public class CTarget implements TeaVMTarget {
 
     @Override
     public List<DependencyListener> getDependencyListeners() {
-        return Collections.singletonList(new CDependencyListener());
+        return Arrays.asList(new CDependencyListener(), exportDependencyListener);
     }
 
     @Override
@@ -204,7 +206,7 @@ public class CTarget implements TeaVMTarget {
         StringPool stringPool = new StringPool();
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
-                new HashSet<>(), false);
+                new HashSet<>(), false, true);
         Characteristics characteristics = new Characteristics(controller.getUnprocessedClassSource());
 
         NameProvider nameProvider = new NameProvider(controller.getUnprocessedClassSource());
@@ -221,7 +223,7 @@ public class CTarget implements TeaVMTarget {
         intrinsics.add(new GCIntrinsic());
         intrinsics.add(new MutatorIntrinsic());
         intrinsics.add(new ExceptionHandlingIntrinsic());
-        intrinsics.add(new FunctionIntrinsic(characteristics));
+        intrinsics.add(new FunctionIntrinsic(characteristics, exportDependencyListener.getResolvedMethods()));
 
         List<Generator> generators = new ArrayList<>();
         generators.add(new ArrayGenerator());

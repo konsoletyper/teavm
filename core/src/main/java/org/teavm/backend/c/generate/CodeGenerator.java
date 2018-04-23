@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.c.generate;
 
+import java.util.Set;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
 import org.teavm.model.ElementModifier;
@@ -26,11 +27,13 @@ public class CodeGenerator {
     private CodeWriter writer;
     private CodeWriter localsWriter;
     private NameProvider names;
+    private Set<? super String> includes;
 
-    public CodeGenerator(GenerationContext context, CodeWriter writer) {
+    public CodeGenerator(GenerationContext context, CodeWriter writer, Set<? super String> includes) {
         this.context = context;
         this.writer = writer;
         this.names = context.getNames();
+        this.includes = includes;
     }
 
     public void generateMethod(RegularMethodNode methodNode) {
@@ -41,7 +44,7 @@ public class CodeGenerator {
 
         localsWriter = writer.fragment();
 
-        CodeGenerationVisitor visitor = new CodeGenerationVisitor(context, writer);
+        CodeGenerationVisitor visitor = new CodeGenerationVisitor(context, writer, includes);
         visitor.setCallingMethod(methodNode.getReference());
         methodNode.getBody().acceptVisitor(visitor);
 

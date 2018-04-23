@@ -301,7 +301,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 controller.getUnprocessedClassSource(), vtableProvider, tagRegistry, binaryWriter);
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
-                new HashSet<>(), false);
+                new HashSet<>(), false, true);
         WasmStringPool stringPool = classGenerator.getStringPool();
         WasmGenerationContext context = new WasmGenerationContext(classes, module, controller.getDiagnostics(),
                 vtableProvider, tagRegistry, stringPool);

@@ -68,6 +68,20 @@ public final class Address {
 
     public static native Address ofObject(Object obj);
 
+    public static native Address ofData(byte[] data);
+
+    public static native Address ofData(char[] data);
+
+    public static native Address ofData(short[] data);
+
+    public static native Address ofData(int[] data);
+
+    public static native Address ofData(long[] data);
+
+    public static native Address ofData(float[] data);
+
+    public static native Address ofData(double[] data);
+
     public static native Address align(Address address, int alignment);
 
     public static native int sizeOf();

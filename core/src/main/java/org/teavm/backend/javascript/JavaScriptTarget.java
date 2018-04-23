@@ -313,7 +313,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         asyncFamilyMethods.addAll(asyncFinder.getAsyncFamilyMethods());
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), asyncMethods, asyncFamilyMethods,
-                controller.isFriendlyToDebugger());
+                controller.isFriendlyToDebugger(), false);
         decompiler.setRegularMethodCache(controller.isIncremental() ? astCache : null);
 
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {

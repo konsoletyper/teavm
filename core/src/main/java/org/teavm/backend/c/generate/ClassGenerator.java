@@ -62,6 +62,8 @@ public class ClassGenerator {
     private List<FieldReference[]> layouts = new ArrayList<>();
     private int currentLayoutIndex;
     private Set<ValueType> types = new LinkedHashSet<>();
+    private Set<String> includes = new LinkedHashSet<>();
+    private CodeWriter includesWriter;
     private CodeWriter forwardDeclarationsWriter;
     private CodeWriter structuresWriter;
     private CodeWriter vtableStructuresWriter;
@@ -81,6 +83,7 @@ public class ClassGenerator {
         this.tagRegistry = tagRegistry;
         this.decompiler = decompiler;
 
+        includesWriter = writer.fragment();
         forwardDeclarationsWriter = writer.fragment();
         structuresWriter = writer.fragment();
         vtableStructuresWriter = writer.fragment();
@@ -93,7 +96,7 @@ public class ClassGenerator {
         callSiteWriter = writer.fragment();
         codeWriter = writer.fragment();
 
-        codeGenerator = new CodeGenerator(context, codeWriter);
+        codeGenerator = new CodeGenerator(context, codeWriter, includes);
     }
 
     public void generateClass(ClassHolder cls) {
@@ -113,6 +116,10 @@ public class ClassGenerator {
         generateLayoutArray();
 
         new StringPoolGenerator(stringPoolWriter, context.getNames()).generate(context.getStringPool().getStrings());
+
+        for (String include : includes) {
+            includesWriter.println("#include " + include);
+        }
     }
 
     public Set<ValueType> getTypes() {

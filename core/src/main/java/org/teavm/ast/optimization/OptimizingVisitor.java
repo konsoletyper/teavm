@@ -69,17 +69,19 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     private final boolean[] preservedVars;
     private final int[] writeFrequencies;
     private final int[] readFrequencies;
+    private final Object[] constants;
     private List<Statement> resultSequence;
     private boolean friendlyToDebugger;
     private TextLocation currentLocation;
     private Deque<TextLocation> locationStack = new LinkedList<>();
     private Deque<TextLocation> notNullLocationStack = new ArrayDeque<>();
 
-    OptimizingVisitor(boolean[] preservedVars, int[] writeFrequencies, int[] readFrequencies,
+    OptimizingVisitor(boolean[] preservedVars, int[] writeFrequencies, int[] readFrequencies, Object[] constants,
             boolean friendlyToDebugger) {
         this.preservedVars = preservedVars;
         this.writeFrequencies = writeFrequencies;
         this.readFrequencies = readFrequencies;
+        this.constants = constants;
         this.friendlyToDebugger = friendlyToDebugger;
     }
 
@@ -273,6 +275,15 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             if (writeFrequencies[index] != 1) {
                 return;
             }
+
+            if (constants[index] != null) {
+                ConstantExpr constantExpr = new ConstantExpr();
+                constantExpr.setValue(constants[index]);
+                constantExpr.setLocation(expr.getLocation());
+                resultExpr = constantExpr;
+                return;
+            }
+
             if (readFrequencies[index] != 1 || preservedVars[index]) {
                 return;
             }
@@ -542,6 +553,12 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 if (!(statement.getLeftValue() instanceof VariableExpr)) {
                     statement.getLeftValue().acceptVisitor(this);
                     left = resultExpr;
+                } else {
+                    int varIndex = ((VariableExpr) statement.getLeftValue()).getIndex();
+                    if (writeFrequencies[varIndex] == 1 && constants[varIndex] != null) {
+                        resultStmt = new SequentialStatement();
+                        return;
+                    }
                 }
                 statement.setLeftValue(left);
                 statement.setRightValue(right);

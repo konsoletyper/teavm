@@ -15,11 +15,9 @@
  */
 package org.teavm.backend.c.intrinsic;
 
-import org.teavm.ast.ConstantExpr;
-import org.teavm.ast.Expr;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.c.util.ConstantUtil;
 import org.teavm.interop.Structure;
-import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.lowlevel.Characteristics;
@@ -62,14 +60,14 @@ public class StructureIntrinsic implements Intrinsic {
                 context.emit(invocation.getArguments().get(0));
                 break;
             case "sizeOf": {
-                String className = getClassLiteral(context, invocation, invocation.getArguments().get(0));
+                String className = ConstantUtil.getClassLiteral(context, invocation, invocation.getArguments().get(0));
                 if (className != null) {
                     context.writer().print("sizeof(").print(context.names().forClass(className)).print(")");
                 }
                 break;
             }
             case "add": {
-                String className = getClassLiteral(context, invocation, invocation.getArguments().get(0));
+                String className = ConstantUtil.getClassLiteral(context, invocation, invocation.getArguments().get(0));
                 if (className != null) {
                     context.writer().print("STRUCTURE_ADD(").print(context.names().forClass(className)).print(", ");
                     context.emit(invocation.getArguments().get(1));
@@ -80,18 +78,5 @@ public class StructureIntrinsic implements Intrinsic {
                 break;
             }
         }
-    }
-
-    static String getClassLiteral(IntrinsicContext context, InvocationExpr invocation, Expr expr) {
-        if (expr instanceof ConstantExpr) {
-            Object cst = ((ConstantExpr) expr).getValue();
-            if (cst instanceof ValueType.Object) {
-                return ((ValueType.Object) cst).getClassName();
-            }
-        }
-        context.getDiagnotics().error(
-                new CallLocation(context.getCallingMethod(), invocation.getLocation()),
-                "This method should take class literal");
-        return "";
     }
 }

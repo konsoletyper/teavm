@@ -20,6 +20,8 @@ import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
 import org.teavm.common.IntegerStack;
 import org.teavm.model.*;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
@@ -27,6 +29,7 @@ import org.teavm.model.util.UsageExtractor;
 class ReadWriteStatsBuilder {
     public int[] reads;
     public int[] writes;
+    public Object[] constants;
 
     private ReadWriteStatsBuilder() {
     }
@@ -34,6 +37,7 @@ class ReadWriteStatsBuilder {
     public ReadWriteStatsBuilder(int variableCount) {
         reads = new int[variableCount];
         writes = new int[variableCount];
+        constants = new Object[variableCount];
     }
 
     public ReadWriteStatsBuilder copy() {
@@ -67,6 +71,14 @@ class ReadWriteStatsBuilder {
                 }
                 for (Variable var : useExtractor.getUsedVariables()) {
                     reads[var.getIndex()]++;
+                }
+
+                if (insn instanceof StringConstantInstruction) {
+                    StringConstantInstruction stringConstant = (StringConstantInstruction) insn;
+                    constants[stringConstant.getReceiver().getIndex()] = stringConstant.getConstant();
+                } else if (insn instanceof ClassConstantInstruction) {
+                    ClassConstantInstruction classConstant = (ClassConstantInstruction) insn;
+                    constants[classConstant.getReceiver().getIndex()] = classConstant.getConstant();
                 }
             }
 

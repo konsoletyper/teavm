@@ -15,25 +15,41 @@
  */
 package org.teavm.backend.c.intrinsic;
 
+import java.util.Map;
+import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.interop.Function;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 import org.teavm.model.lowlevel.Characteristics;
+import org.teavm.model.lowlevel.ExportedMethodKey;
 
 public class FunctionIntrinsic implements Intrinsic {
     private Characteristics characteristics;
+    private Map<? extends ExportedMethodKey, ? extends MethodReference> resolvedMethods;
 
-    public FunctionIntrinsic(Characteristics characteristics) {
+    public FunctionIntrinsic(Characteristics characteristics,
+            Map<? extends ExportedMethodKey, ? extends MethodReference> resolvedMethods) {
         this.characteristics = characteristics;
+        this.resolvedMethods = resolvedMethods;
     }
 
     @Override
     public boolean canHandle(MethodReference method) {
+        if (method.getClassName().equals(Function.class.getName()) && method.getName().equals("get")) {
+            return true;
+        }
         return characteristics.isFunction(method.getClassName());
     }
 
     @Override
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
         MethodReference method = invocation.getMethod();
+        if (method.getClassName().equals(Function.class.getName())) {
+            generateGetFunction(context, invocation);
+            return;
+        }
+
         context.writer().print("(((").printType(method.getReturnType()).print(" (*)(");
         if (method.parameterCount() > 0) {
             context.writer().printType(method.parameterType(0));
@@ -53,5 +69,33 @@ public class FunctionIntrinsic implements Intrinsic {
             }
         }
         context.writer().print("))");
+    }
+
+    private void generateGetFunction(IntrinsicContext context, InvocationExpr invocation) {
+        if (!(invocation.getArguments().get(0) instanceof ConstantExpr)
+                || !(invocation.getArguments().get(1) instanceof ConstantExpr)
+                || !(invocation.getArguments().get(2) instanceof ConstantExpr)) {
+            return;
+        }
+
+        Object functionClassValue = ((ConstantExpr) invocation.getArguments().get(0)).getValue();
+        Object classValue = ((ConstantExpr) invocation.getArguments().get(1)).getValue();
+        Object methodValue = ((ConstantExpr) invocation.getArguments().get(2)).getValue();
+        if (!(functionClassValue instanceof ValueType.Object)
+                || !(classValue instanceof ValueType.Object)
+                || !(methodValue instanceof String)) {
+            return;
+        }
+
+        String functionClassName = ((ValueType.Object) functionClassValue).getClassName();
+        String className = ((ValueType.Object) classValue).getClassName();
+        String methodName = (String) methodValue;
+        ExportedMethodKey key = new ExportedMethodKey(functionClassName, className, methodName);
+        MethodReference method = resolvedMethods.get(key);
+        if (method == null) {
+            return;
+        }
+
+        context.writer().print("&").print(context.names().forMethod(method));
     }
 }

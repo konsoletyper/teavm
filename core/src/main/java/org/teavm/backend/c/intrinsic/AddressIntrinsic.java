@@ -16,8 +16,10 @@
 package org.teavm.backend.c.intrinsic;
 
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.c.util.ConstantUtil;
 import org.teavm.interop.Address;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class AddressIntrinsic implements Intrinsic {
     @Override
@@ -56,6 +58,8 @@ public class AddressIntrinsic implements Intrinsic {
             case "isLessThan":
             case "align":
             case "sizeOf":
+
+            case "ofData":
                 return true;
             default:
                 return false;
@@ -165,7 +169,7 @@ public class AddressIntrinsic implements Intrinsic {
                     context.writer().print("ADDRESS_ADD(");
                     context.emit(invocation.getArguments().get(0));
                     context.writer().print(", ");
-                    String className = StructureIntrinsic.getClassLiteral(context, invocation,
+                    String className = ConstantUtil.getClassLiteral(context, invocation,
                             invocation.getArguments().get(1));
                     context.emit(invocation.getArguments().get(2));
                     context.writer().print(" * sizeof(")
@@ -191,6 +195,14 @@ public class AddressIntrinsic implements Intrinsic {
             case "sizeOf":
                 context.writer().print("sizeof(void*)");
                 break;
+            case "ofData": {
+                ValueType.Array type = (ValueType.Array) invocation.getMethod().parameterType(0);
+                context.writer().print("((char*) ");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(" + sizeof(JavaArray) + (intptr_t) ALIGN(NULL, "
+                        + sizeOf(type.getItemType()) + "))");
+                break;
+            }
         }
     }
 
@@ -206,5 +218,23 @@ public class AddressIntrinsic implements Intrinsic {
         context.writer().print(" = ");
         context.emit(invocation.getArguments().get(1));
         context.writer().print(")");
+    }
+
+    private int sizeOf(ValueType type) {
+        switch (((ValueType.Primitive) type).getKind()) {
+            case BYTE:
+                return 1;
+            case SHORT:
+                return 2;
+            case INTEGER:
+            case FLOAT:
+                return 4;
+            case LONG:
+            case DOUBLE:
+                return 8;
+            default:
+                break;
+        }
+        return 0;
     }
 }

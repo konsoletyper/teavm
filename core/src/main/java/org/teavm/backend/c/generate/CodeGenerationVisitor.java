@@ -16,6 +16,7 @@
 package org.teavm.backend.c.generate;
 
 import java.util.List;
+import java.util.Set;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
@@ -57,6 +58,11 @@ import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
+import org.teavm.interop.c.Include;
+import org.teavm.model.AnnotationContainerReader;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -80,11 +86,13 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private int temporaryReceiverLevel;
     private int maxTemporaryReceiverLevel;
     private MethodReference callingMethod;
+    private Set<? super String> includes;
 
-    public CodeGenerationVisitor(GenerationContext context, CodeWriter writer) {
+    public CodeGenerationVisitor(GenerationContext context, CodeWriter writer, Set<? super String> includes) {
         this.context = context;
         this.writer = writer;
         this.names = context.getNames();
+        this.includes = includes;
     }
 
     public int getTemporaryReceivers() {
@@ -371,6 +379,15 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(InvocationExpr expr) {
+        ClassReader cls = context.getClassSource().get(expr.getMethod().getClassName());
+        if (cls != null) {
+            processInclude(cls.getAnnotations());
+            MethodReader method = cls.getMethod(expr.getMethod().getDescriptor());
+            if (method != null) {
+                processInclude(method.getAnnotations());
+            }
+        }
+
         Intrinsic intrinsic = context.getIntrinsic(expr.getMethod());
         if (intrinsic != null) {
             intrinsic.apply(intrinsicContext, expr);
@@ -437,6 +454,23 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 break;
             }
         }
+    }
+
+    private void processInclude(AnnotationContainerReader container) {
+        AnnotationReader annot = container.get(Include.class.getName());
+        if (annot == null) {
+            return;
+        }
+        String includeString = annot.getValue("value").getString();
+
+        AnnotationValue systemValue = annot.getValue("isSystem");
+        if (systemValue == null || systemValue.getBoolean()) {
+            includeString = "<" + includeString + ">";
+        } else {
+            includeString = "\"" + includeString + "\"";
+        }
+
+        includes.add(includeString);
     }
 
     @Override
