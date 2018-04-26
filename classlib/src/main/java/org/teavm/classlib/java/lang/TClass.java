@@ -41,6 +41,7 @@ import org.teavm.classlib.java.lang.reflect.TModifier;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.Unmanaged;
 import org.teavm.jso.core.JSArray;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
@@ -82,12 +83,24 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return platformClass;
     }
 
+    @DelegateTo("isInstanceLowLevel")
     public boolean isInstance(TObject obj) {
         return Platform.isInstance(Platform.getPlatformObject(obj), platformClass);
     }
 
+    @Unmanaged
+    private boolean isInstanceLowLevel(RuntimeObject obj) {
+        return obj != null && isAssignableFromLowLevel(RuntimeClass.getClass(obj));
+    }
+
+    @DelegateTo("isAssignableFromLowLevel")
     public boolean isAssignableFrom(TClass<?> obj) {
         return Platform.isAssignable(obj.getPlatformClass(), platformClass);
+    }
+
+    @Unmanaged
+    private boolean isAssignableFromLowLevel(RuntimeClass other) {
+        return Address.ofObject(this).<RuntimeClass>toStructure().isSupertypeOf.apply(other);
     }
 
     @DelegateTo("getNameLowLevel")
@@ -98,6 +111,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return name;
     }
 
+    @Unmanaged
     private RuntimeObject getNameLowLevel() {
         RuntimeClass runtimeClass = Address.ofObject(this).toStructure();
         return runtimeClass.name;

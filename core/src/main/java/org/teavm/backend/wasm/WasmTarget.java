@@ -749,4 +749,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     public String[] getPlatformTags() {
         return new String[] { PlatformMarkers.WEBASSEMBLY, PlatformMarkers.LOW_LEVEL };
     }
+
+    @Override
+    public boolean isAsyncSupported() {
+        return false;
+    }
 }

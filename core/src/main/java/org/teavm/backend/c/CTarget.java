@@ -422,4 +422,9 @@ public class CTarget implements TeaVMTarget {
     public String[] getPlatformTags() {
         return new String[] { PlatformMarkers.C, PlatformMarkers.LOW_LEVEL };
     }
+
+    @Override
+    public boolean isAsyncSupported() {
+        return false;
+    }
 }

@@ -22,6 +22,7 @@ import org.teavm.ast.RegularMethodNode;
 import org.teavm.common.Graph;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
+import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;
 import org.teavm.model.util.AsyncProgramSplitter;
@@ -40,6 +41,8 @@ public class Optimizer {
     public void optimize(RegularMethodNode method, Program program, boolean friendlyToDebugger) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
         stats.analyze(program);
+        applyParametersToWriteStats(stats, method.getReference());
+
         boolean[] preservedVars = new boolean[stats.writes.length];
         BreakEliminator breakEliminator = new BreakEliminator();
         breakEliminator.eliminate(method.getBody());
@@ -72,6 +75,7 @@ public class Optimizer {
             boolean[] preservedVars = new boolean[method.getVariables().size()];
             ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
             stats.analyze(splitter.getProgram(i));
+            applyParametersToWriteStats(stats, method.getReference());
 
             AsyncMethodPart part = method.getBody().get(i);
             BreakEliminator breakEliminator = new BreakEliminator();
@@ -98,6 +102,12 @@ public class Optimizer {
 
         for (int i = 0; i < method.getVariables().size(); ++i) {
             method.getVariables().get(i).setIndex(i);
+        }
+    }
+
+    private void applyParametersToWriteStats(ReadWriteStatsBuilder stats, MethodReference method) {
+        for (int i = 0; i <= method.parameterCount(); ++i) {
+            stats.writes[i]++;
         }
     }
 

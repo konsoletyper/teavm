@@ -234,8 +234,14 @@ public final class Platform {
         return cls.itemType;
     }
 
+    @DelegateTo("getNameLowLevel")
     public static String getName(PlatformClass cls) {
         return cls.getMetadata().getName();
+    }
+
+    @Unmanaged
+    private static RuntimeObject getNameLowLevel(RuntimeClass cls) {
+        return cls.name;
     }
 
     @JSBody(script = "return $rt_global;")

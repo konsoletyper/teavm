@@ -71,6 +71,12 @@ public class StringPoolGenerator {
         for (int j = 0; j < string.length(); ++j) {
             char c = string.charAt(j);
             switch (c) {
+                case '\\':
+                    writer.print("\\\\");
+                    break;
+                case '"':
+                    writer.print("\\\"");
+                    break;
                 case '\r':
                     writer.print("\\r");
                     break;
@@ -81,7 +87,9 @@ public class StringPoolGenerator {
                     writer.print("\\t");
                     break;
                 default:
-                    if (c < 32 || c > 127) {
+                    if (c < 32) {
+                        writer.print("\\x" + Character.forDigit(c >> 4, 16) + Character.forDigit(c & 0xF, 16));
+                    } else if (c > 127) {
                         writer.print("\\u"
                                 + Character.forDigit(c >> 12, 16)
                                 + Character.forDigit((c >> 8) & 15, 16)

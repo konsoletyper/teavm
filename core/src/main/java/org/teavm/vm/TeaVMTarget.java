@@ -46,4 +46,6 @@ public interface TeaVMTarget {
     void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException;
 
     String[] getPlatformTags();
+
+    boolean isAsyncSupported();
 }

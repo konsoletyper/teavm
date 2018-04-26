@@ -47,6 +47,7 @@ public class RuntimeClass extends RuntimeObject {
     public RuntimeClass parent;
     public Address enumValues;
     public Address layout;
+    public RuntimeObject simpleName;
 
     @Unmanaged
     public static int computeCanary(int size, int tag) {

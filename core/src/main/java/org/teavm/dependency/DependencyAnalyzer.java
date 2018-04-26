@@ -87,6 +87,7 @@ public class DependencyAnalyzer implements DependencyInfo {
     Map<MethodReference, DependencyPlugin> dependencyPlugins = new HashMap<>();
     private boolean completing;
     private Map<String, SuperClassFilter> superClassFilters = new HashMap<>();
+    boolean asyncSupported;
 
     public DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics) {
@@ -114,6 +115,10 @@ public class DependencyAnalyzer implements DependencyInfo {
         classCache = new CachedMapper<>(this::createClassDependency);
 
         agent = new DependencyAgent(this);
+    }
+
+    public void setAsyncSupported(boolean asyncSupported) {
+        this.asyncSupported = asyncSupported;
     }
 
     public DependencyAgent getAgent() {

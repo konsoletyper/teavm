@@ -458,4 +458,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     public String[] getPlatformTags() {
         return new String[] { PlatformMarkers.JAVASCRIPT };
     }
+
+    @Override
+    public boolean isAsyncSupported() {
+        return true;
+    }
 }

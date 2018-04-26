@@ -148,20 +148,25 @@ class DependencyGraphBuilder {
         if (method.hasModifier(ElementModifier.SYNCHRONIZED)) {
             List<DependencyNode> syncNodes = new ArrayList<>();
 
-            MethodDependency methodDep = dependencyAnalyzer.linkMethod(
+            MethodDependency methodDep;
+            if (dependencyAnalyzer.asyncSupported) {
+                methodDep = dependencyAnalyzer.linkMethod(
                         new MethodReference(Object.class, "monitorEnter", Object.class, void.class), null);
-            syncNodes.add(methodDep.getVariable(1));
-            methodDep.use();
+                syncNodes.add(methodDep.getVariable(1));
+                methodDep.use();
+            }
 
             methodDep = dependencyAnalyzer.linkMethod(
                     new MethodReference(Object.class, "monitorEnterSync", Object.class, void.class), null);
             syncNodes.add(methodDep.getVariable(1));
             methodDep.use();
 
-            methodDep = dependencyAnalyzer.linkMethod(
-                    new MethodReference(Object.class, "monitorExit", Object.class, void.class), null);
-            syncNodes.add(methodDep.getVariable(1));
-            methodDep.use();
+            if (dependencyAnalyzer.asyncSupported) {
+                methodDep = dependencyAnalyzer.linkMethod(
+                        new MethodReference(Object.class, "monitorExit", Object.class, void.class), null);
+                syncNodes.add(methodDep.getVariable(1));
+                methodDep.use();
+            }
 
             methodDep = dependencyAnalyzer.linkMethod(
                     new MethodReference(Object.class, "monitorExitSync", Object.class, void.class), null);
@@ -696,25 +701,29 @@ class DependencyGraphBuilder {
 
         @Override
         public void monitorEnter(VariableReader objectRef) {
-             MethodDependency methodDep = dependencyAnalyzer.linkMethod(
+            if (dependencyAnalyzer.asyncSupported) {
+                MethodDependency methodDep = dependencyAnalyzer.linkMethod(
                         new MethodReference(Object.class, "monitorEnter", Object.class, void.class), null);
-             nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
-             methodDep.use();
+                nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
+                methodDep.use();
+            }
 
-             methodDep = dependencyAnalyzer.linkMethod(
+            MethodDependency methodDep = dependencyAnalyzer.linkMethod(
                      new MethodReference(Object.class, "monitorEnterSync", Object.class, void.class), null);
-             nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
-             methodDep.use();
+            nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
+            methodDep.use();
         }
 
         @Override
         public void monitorExit(VariableReader objectRef) {
-            MethodDependency methodDep = dependencyAnalyzer.linkMethod(
-                    new MethodReference(Object.class, "monitorExit", Object.class, void.class), null);
-            nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
-            methodDep.use();
+            if (dependencyAnalyzer.asyncSupported) {
+                MethodDependency methodDep = dependencyAnalyzer.linkMethod(
+                        new MethodReference(Object.class, "monitorExit", Object.class, void.class), null);
+                nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
+                methodDep.use();
+            }
 
-            methodDep = dependencyAnalyzer.linkMethod(
+            MethodDependency methodDep = dependencyAnalyzer.linkMethod(
                     new MethodReference(Object.class, "monitorExitSync", Object.class, void.class), null);
             nodes[objectRef.getIndex()].connect(methodDep.getVariable(1));
             methodDep.use();
