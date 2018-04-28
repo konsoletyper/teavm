@@ -16,16 +16,18 @@
 package org.teavm.platform.plugin;
 
 import java.lang.reflect.Method;
-import java.util.HashMap;
 import java.util.Map;
 
 class BuildTimeResourceProxyFactory {
-    private Map<Method, BuildTimeResourceMethod> methods = new HashMap<>();
+    private Map<Method, BuildTimeResourceMethod> methods;
     private Object[] initialData;
+    ResourceTypeDescriptor typeDescriptor;
 
-    public BuildTimeResourceProxyFactory(Map<Method, BuildTimeResourceMethod> methods, Object[] initialData) {
+    public BuildTimeResourceProxyFactory(Map<Method, BuildTimeResourceMethod> methods, Object[] initialData,
+            ResourceTypeDescriptor typeDescriptor) {
         this.methods = methods;
         this.initialData = initialData;
+        this.typeDescriptor = typeDescriptor;
     }
 
     BuildTimeResourceProxy create() {

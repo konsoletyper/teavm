@@ -15,6 +15,7 @@
  */
 package org.teavm.platform.metadata;
 
+import java.util.Collection;
 import java.util.Map;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.PlatformClass;
@@ -23,7 +24,7 @@ import org.teavm.platform.PlatformClass;
  * <p>Behaviour of this class is similar to {@link MetadataGenerator}. The difference is that method, marked with
  * {@link ClassScopedMetadataProvider} must take one argument of type {@link PlatformClass}. It will
  * return different resource for each given class, corresponding to map entries, produced by
- * {@link #generateMetadata(MetadataGeneratorContext, MethodReference)}.
+ * {@link #generateMetadata(MetadataGeneratorContext, Collection, MethodReference)}.
  *
  * @see ClassScopedMetadataProvider
  * @see MetadataGenerator
@@ -31,5 +32,6 @@ import org.teavm.platform.PlatformClass;
  * @author Alexey Andreev
  */
 public interface ClassScopedMetadataGenerator {
-    Map<String, Resource> generateMetadata(MetadataGeneratorContext context, MethodReference method);
+    Map<String, Resource> generateMetadata(MetadataGeneratorContext context, Collection<? extends String> classNames,
+            MethodReference method);
 }

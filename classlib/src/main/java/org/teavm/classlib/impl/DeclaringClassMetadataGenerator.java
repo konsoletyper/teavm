@@ -15,17 +15,21 @@
  */
 package org.teavm.classlib.impl;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReference;
-import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.ClassScopedMetadataGenerator;
+import org.teavm.platform.metadata.MetadataGeneratorContext;
+import org.teavm.platform.metadata.Resource;
 
 public class DeclaringClassMetadataGenerator implements ClassScopedMetadataGenerator {
     @Override
-    public Map<String, Resource> generateMetadata(MetadataGeneratorContext context, MethodReference method) {
+    public Map<String, Resource> generateMetadata(MetadataGeneratorContext context,
+            Collection<? extends String> classNames, MethodReference method) {
         Map<String, Resource> result = new HashMap<>();
-        for (String clsName : context.getClassSource().getClassNames()) {
+        for (String clsName : classNames) {
             ClassReader cls = context.getClassSource().get(clsName);
             if (cls.getOwnerName() != null) {
                 result.put(clsName, context.createClassResource(cls.getOwnerName()));

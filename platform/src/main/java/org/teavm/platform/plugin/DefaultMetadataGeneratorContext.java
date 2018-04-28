@@ -18,18 +18,23 @@ package org.teavm.platform.plugin;
 import java.lang.reflect.Proxy;
 import java.util.Properties;
 import org.teavm.common.ServiceRepository;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReference;
-import org.teavm.model.ListableClassReaderSource;
-import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.ClassResource;
+import org.teavm.platform.metadata.MetadataGeneratorContext;
+import org.teavm.platform.metadata.Resource;
+import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.StaticFieldResource;
 
 class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
-    private ListableClassReaderSource classSource;
+    private ClassReaderSource classSource;
     private ClassLoader classLoader;
     private Properties properties;
     private BuildTimeResourceProxyBuilder proxyBuilder = new BuildTimeResourceProxyBuilder();
     private ServiceRepository services;
 
-    DefaultMetadataGeneratorContext(ListableClassReaderSource classSource, ClassLoader classLoader,
+    DefaultMetadataGeneratorContext(ClassReaderSource classSource, ClassLoader classLoader,
             Properties properties, ServiceRepository services) {
         this.classSource = classSource;
         this.classLoader = classLoader;
@@ -38,7 +43,7 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     }
 
     @Override
-    public ListableClassReaderSource getClassSource() {
+    public ClassReaderSource getClassSource() {
         return classSource;
     }
 
@@ -57,6 +62,11 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
         return resourceType.cast(Proxy.newProxyInstance(classLoader,
                 new Class<?>[] { resourceType, ResourceWriter.class, ResourceTypeDescriptorProvider.class },
                 proxyBuilder.buildProxy(resourceType)));
+    }
+
+    @Override
+    public ResourceTypeDescriptor getTypeDescriptor(Class<? extends Resource> type) {
+        return proxyBuilder.getProxyFactory(type).typeDescriptor;
     }
 
     @Override

@@ -16,6 +16,9 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.c.TeaVMCHost;
+import org.teavm.backend.c.intrinsic.Intrinsic;
+import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.backend.wasm.TeaVMWasmHost;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
@@ -72,6 +75,25 @@ public class PlatformPlugin implements TeaVMPlugin {
                     @Override
                     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
                         return manager.generate(invocation.getArguments().get(0));
+                    }
+                });
+            }
+
+            TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
+            if (cHost != null) {
+                cHost.addIntrinsic(ctx -> new MetadataCIntrinsic(ctx.getClassSource(), ctx.getClassLoader(),
+                        ctx.getServices(), ctx.getProperties(), ctx.getStructureCodeWriter(),
+                        ctx.getStaticFieldsInitWriter()));
+                cHost.addIntrinsic(ctx -> new ResourceReadCIntrinsic(ctx.getClassSource()));
+                cHost.addIntrinsic(ctx -> new Intrinsic() {
+                    @Override
+                    public boolean canHandle(MethodReference method) {
+                        return method.getClassName().equals(StringAmplifier.class.getName());
+                    }
+
+                    @Override
+                    public void apply(IntrinsicContext context, InvocationExpr invocation) {
+                        context.emit(invocation.getArguments().get(0));
                     }
                 });
             }

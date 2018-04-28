@@ -693,5 +693,10 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         public MethodReference getCallingMethod() {
             return callingMethod;
         }
+
+        @Override
+        public StringPool getStringPool() {
+            return context.getStringPool();
+        }
     };
 }

@@ -34,7 +34,11 @@ class BuildTimeResourceProxyBuilder {
     }
 
     public BuildTimeResourceProxy buildProxy(Class<?> iface) {
-        return factories.computeIfAbsent(iface, k -> createFactory(iface)).create();
+        return getProxyFactory(iface).create();
+    }
+
+    public BuildTimeResourceProxyFactory getProxyFactory(Class<?> iface) {
+        return factories.computeIfAbsent(iface, k -> createFactory(iface));
     }
 
     private BuildTimeResourceProxyFactory createFactory(Class<?> iface) {
@@ -103,7 +107,7 @@ class BuildTimeResourceProxyBuilder {
                 }
             }
 
-            return new BuildTimeResourceProxyFactory(methods, initialData);
+            return new BuildTimeResourceProxyFactory(methods, initialData, descriptor);
         }
 
         private int getPropertyIndex(String propertyName) {

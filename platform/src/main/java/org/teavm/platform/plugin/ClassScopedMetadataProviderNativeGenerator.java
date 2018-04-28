@@ -81,7 +81,8 @@ public class ClassScopedMetadataProviderNativeGenerator implements Generator {
         DefaultMetadataGeneratorContext metadataContext = new DefaultMetadataGeneratorContext(context.getClassSource(),
                 context.getClassLoader(), context.getProperties(), context);
 
-        Map<String, Resource> resourceMap = generator.generateMetadata(metadataContext, methodRef);
+        Map<String, Resource> resourceMap = generator.generateMetadata(metadataContext,
+                context.getClassSource().getClassNames(), methodRef);
         writer.append("var p").ws().append("=").ws().append("\"" + RenderingUtil.escapeString("$$res_"
                 + writer.getNaming().getFullNameFor(methodRef)) + "\"").append(";").softNewLine();
         for (Map.Entry<String, Resource> entry : resourceMap.entrySet()) {

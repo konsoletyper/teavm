@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,16 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.plugin;
+package org.teavm.backend.c.intrinsic;
 
-import org.teavm.dependency.PluggableDependency;
-import org.teavm.interop.Unmanaged;
-
-final class StringAmplifier {
-    private StringAmplifier() {
-    }
-
-    @PluggableDependency(StringAmplifierDependencyPlugin.class)
-    @Unmanaged
-    static native String amplify(String string);
+public interface IntrinsicFactory {
+    Intrinsic createIntrinsic(IntrinsicFactoryContext context);
 }

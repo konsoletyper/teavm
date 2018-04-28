@@ -17,9 +17,10 @@ package org.teavm.platform.metadata;
 
 import java.util.Properties;
 import org.teavm.common.ServiceRepository;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReference;
-import org.teavm.model.ListableClassReaderSource;
 import org.teavm.platform.Platform;
+import org.teavm.platform.plugin.ResourceTypeDescriptor;
 import org.teavm.vm.TeaVM;
 
 /**
@@ -34,7 +35,7 @@ public interface MetadataGeneratorContext extends ServiceRepository {
      *
      * @return class source.
      */
-    ListableClassReaderSource getClassSource();
+    ClassReaderSource getClassSource();
 
     /**
      * Gets the class loader that is used by the compiler.
@@ -89,4 +90,6 @@ public interface MetadataGeneratorContext extends ServiceRepository {
      * @return a new resource.
      */
     <T extends Resource> ResourceMap<T> createResourceMap();
+
+    ResourceTypeDescriptor getTypeDescriptor(Class<? extends Resource> type);
 }

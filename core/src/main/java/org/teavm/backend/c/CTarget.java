@@ -47,6 +47,7 @@ import org.teavm.backend.c.intrinsic.ExceptionHandlingIntrinsic;
 import org.teavm.backend.c.intrinsic.FunctionIntrinsic;
 import org.teavm.backend.c.intrinsic.GCIntrinsic;
 import org.teavm.backend.c.intrinsic.Intrinsic;
+import org.teavm.backend.c.intrinsic.IntrinsicFactory;
 import org.teavm.backend.c.intrinsic.MutatorIntrinsic;
 import org.teavm.backend.c.intrinsic.PlatformClassIntrinsic;
 import org.teavm.backend.c.intrinsic.PlatformClassMetadataIntrinsic;
@@ -100,7 +101,7 @@ import org.teavm.vm.TeaVMTarget;
 import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
-public class CTarget implements TeaVMTarget {
+public class CTarget implements TeaVMTarget, TeaVMCHost {
     private TeaVMTargetController controller;
     private ClassInitializerInsertionTransformer clinitInsertionTransformer;
     private ClassInitializerEliminator classInitializerEliminator;
@@ -110,6 +111,7 @@ public class CTarget implements TeaVMTarget {
     private NullCheckTransformation nullCheckTransformation;
     private ExportDependencyListener exportDependencyListener = new ExportDependencyListener();
     private int minHeapSize = 32 * 1024 * 1024;
+    private List<IntrinsicFactory> intrinsicFactories = new ArrayList<>();
 
     public void setMinHeapSize(int minHeapSize) {
         this.minHeapSize = minHeapSize;
@@ -142,7 +144,12 @@ public class CTarget implements TeaVMTarget {
 
     @Override
     public List<TeaVMHostExtension> getHostExtensions() {
-        return Collections.emptyList();
+        return Collections.singletonList(this);
+    }
+
+    @Override
+    public void addIntrinsic(IntrinsicFactory intrinsicFactory) {
+        intrinsicFactories.add(intrinsicFactory);
     }
 
     @Override
@@ -236,6 +243,13 @@ public class CTarget implements TeaVMTarget {
 
         ClassGenerator classGenerator = new ClassGenerator(context, controller.getUnprocessedClassSource(),
                 tagRegistry, decompiler, codeWriter);
+        IntrinsicFactoryContextImpl intrinsicFactoryContext = new IntrinsicFactoryContextImpl(
+                classGenerator.getStructuresWriter(), classGenerator.getPreCodeWriter(),
+                controller.getUnprocessedClassSource(), controller.getClassLoader(), controller.getServices(),
+                controller.getProperties());
+        for (IntrinsicFactory intrinsicFactory : intrinsicFactories) {
+            context.addIntrinsic(intrinsicFactory.createIntrinsic(intrinsicFactoryContext));
+        }
 
         generateClasses(classes, classGenerator);
         generateSpecialFunctions(context, codeWriter);

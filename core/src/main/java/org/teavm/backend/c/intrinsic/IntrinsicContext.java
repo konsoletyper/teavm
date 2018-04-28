@@ -18,6 +18,7 @@ package org.teavm.backend.c.intrinsic;
 import org.teavm.ast.Expr;
 import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generate.NameProvider;
+import org.teavm.backend.c.generate.StringPool;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.MethodReference;
 
@@ -31,4 +32,6 @@ public interface IntrinsicContext {
     Diagnostics getDiagnotics();
 
     MethodReference getCallingMethod();
+
+    StringPool getStringPool();
 }

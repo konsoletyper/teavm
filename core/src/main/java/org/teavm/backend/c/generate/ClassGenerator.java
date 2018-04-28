@@ -74,6 +74,7 @@ public class ClassGenerator {
     private CodeWriter isSupertypeWriter;
     private CodeWriter staticGcRootsWriter;
     private CodeWriter callSiteWriter;
+    private CodeWriter preCodeWriter;
     private CodeWriter codeWriter;
     private CodeWriter staticFieldInitWriter;
 
@@ -95,6 +96,7 @@ public class ClassGenerator {
         isSupertypeWriter = writer.fragment();
         staticGcRootsWriter = writer.fragment();
         callSiteWriter = writer.fragment();
+        preCodeWriter = writer.fragment();
         codeWriter = writer.fragment();
 
         writer.println("static void initStaticFields() {").indent();
@@ -102,6 +104,14 @@ public class ClassGenerator {
         writer.outdent().println("}");
 
         codeGenerator = new CodeGenerator(context, codeWriter, includes);
+    }
+
+    public CodeWriter getPreCodeWriter() {
+        return preCodeWriter;
+    }
+
+    public CodeWriter getStructuresWriter() {
+        return structuresWriter;
     }
 
     public void generateClass(ClassHolder cls) {

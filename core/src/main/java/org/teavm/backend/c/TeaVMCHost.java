@@ -15,5 +15,9 @@
  */
 package org.teavm.backend.c;
 
-public class TeaVMCHost {
+import org.teavm.backend.c.intrinsic.IntrinsicFactory;
+import org.teavm.vm.spi.TeaVMHostExtension;
+
+public interface TeaVMCHost extends TeaVMHostExtension {
+    void addIntrinsic(IntrinsicFactory intrinsicFactory);
 }

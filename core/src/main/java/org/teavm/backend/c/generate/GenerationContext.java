@@ -51,6 +51,10 @@ public class GenerationContext {
         this.generators = new ArrayList<>(generators);
     }
 
+    public void addIntrinsic(Intrinsic intrinsic) {
+        intrinsics.add(intrinsic);
+    }
+
     public VirtualTableProvider getVirtualTableProvider() {
         return virtualTableProvider;
     }
