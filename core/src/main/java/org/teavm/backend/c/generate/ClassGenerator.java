@@ -75,6 +75,7 @@ public class ClassGenerator {
     private CodeWriter staticGcRootsWriter;
     private CodeWriter callSiteWriter;
     private CodeWriter codeWriter;
+    private CodeWriter staticFieldInitWriter;
 
     public ClassGenerator(GenerationContext context, ClassReaderSource unprocessedClassSource,
             TagRegistry tagRegistry, Decompiler decompiler, CodeWriter writer) {
@@ -95,6 +96,10 @@ public class ClassGenerator {
         staticGcRootsWriter = writer.fragment();
         callSiteWriter = writer.fragment();
         codeWriter = writer.fragment();
+
+        writer.println("static void initStaticFields() {").indent();
+        staticFieldInitWriter = writer.fragment();
+        writer.outdent().println("}");
 
         codeGenerator = new CodeGenerator(context, codeWriter, includes);
     }
@@ -236,6 +241,14 @@ public class ClassGenerator {
                 if (isReferenceType(field.getType())) {
                     staticFields[staticIndex++] = field.getReference();
                 }
+
+                Object initialValue = field.getInitialValue();
+                if (initialValue == null) {
+                    initialValue = getDefaultValue(field.getType());
+                }
+                staticFieldInitWriter.print(fieldName + " = ");
+                CodeGeneratorUtil.writeValue(staticFieldInitWriter, context, initialValue);
+                staticFieldInitWriter.println(";");
             } else {
                 String fieldName = context.getNames().forMemberField(field.getReference());
                 structWriter.printStrictType(field.getType()).print(" ").print(fieldName).println(";");
@@ -255,6 +268,31 @@ public class ClassGenerator {
         }
 
         structWriter.outdent().print("} ").print(name).println(";");
+    }
+
+    private static Object getDefaultValue(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            ValueType.Primitive primitive = (ValueType.Primitive) type;
+            switch (primitive.getKind()) {
+                case BOOLEAN:
+                    return false;
+                case BYTE:
+                    return (byte) 0;
+                case SHORT:
+                    return (short) 0;
+                case INTEGER:
+                    return 0;
+                case CHARACTER:
+                    return '\0';
+                case LONG:
+                    return 0L;
+                case FLOAT:
+                    return 0F;
+                case DOUBLE:
+                    return 0.0;
+            }
+        }
+        return null;
     }
 
     private void generateForwardClassStructure(ClassHolder cls) {
@@ -418,6 +456,7 @@ public class ClassGenerator {
         vtableWriter.print(".").print(classFieldName("tag")).print(" = ").print(String.valueOf(tag)).println(",");
         vtableWriter.print(".").print(classFieldName("canary")).println(" = 0,");
         vtableWriter.print(".").print(classFieldName("name")).println(" = stringPool + " + nameRef + ",");
+        vtableWriter.print(".").print(classFieldName("simpleName")).println(" = NULL,");
         vtableWriter.print(".").print(classFieldName("arrayType")).println(" = " + arrayTypeExpr + ",");
         vtableWriter.print(".").print(classFieldName("itemType")).println(" = " + itemTypeExpr + ",");
         vtableWriter.print(".").print(classFieldName("isSupertypeOf")).println(" = &" + superTypeFunction + ",");

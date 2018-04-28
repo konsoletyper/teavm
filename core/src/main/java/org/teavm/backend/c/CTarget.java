@@ -358,7 +358,9 @@ public class CTarget implements TeaVMTarget {
         writer.println("initHeap(" + minHeapSize + ");");
         generateVirtualTableHeaders(context, writer, types);
         generateStringPoolHeaders(context, writer);
+        writer.println("initStaticFields();");
         generateStaticInitializerCalls(context, writer, classes);
+        writer.println(context.getNames().forClassInitializer("java.lang.String") + "();");
         generateCallToMainMethod(context, writer);
 
         writer.outdent().println("}");

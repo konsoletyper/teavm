@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.Async;
 import org.teavm.interop.DelegateTo;
@@ -223,6 +224,7 @@ public class TObject {
 
     @Override
     @DelegateTo("cloneLowLevel")
+    @PluggableDependency(ObjectDependencyPlugin.class)
     protected Object clone() throws TCloneNotSupportedException {
         if (!(this instanceof TCloneable) && Platform.getPlatformObject(this)
                 .getPlatformClass().getMetadata().getArrayItem() == null) {

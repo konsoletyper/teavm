@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,17 +20,12 @@ import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 
-public class ClassDependencyListener implements DependencyPlugin {
+public class ObjectDependencyPlugin implements DependencyPlugin {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getMethod().getName()) {
-            case "initialize":
-                method.getVariable(0).getClassValueNode().addConsumer(type -> agent
-                        .linkClass(type.getName(), location)
-                        .initClass(location));
-                break;
-            case "getSimpleNameCacheLowLevel":
-                method.getResult().propagate(agent.getType("java.lang.String"));
+            case "clone":
+                method.getVariable(0).connect(method.getResult());
                 break;
         }
     }

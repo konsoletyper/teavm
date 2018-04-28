@@ -222,26 +222,13 @@ public final class Platform {
         return (cls.flags & RuntimeClass.ENUM) != 0;
     }
 
-    @DelegateTo("getArrayItemLowLevel")
     @Unmanaged
     public static PlatformClass getArrayItem(PlatformClass cls) {
         return cls.getMetadata().getArrayItem();
     }
 
-    @SuppressWarnings("unused")
-    @Unmanaged
-    private static RuntimeClass getArrayItemLowLevel(RuntimeClass cls) {
-        return cls.itemType;
-    }
-
-    @DelegateTo("getNameLowLevel")
     public static String getName(PlatformClass cls) {
         return cls.getMetadata().getName();
-    }
-
-    @Unmanaged
-    private static RuntimeObject getNameLowLevel(RuntimeClass cls) {
-        return cls.name;
     }
 
     @JSBody(script = "return $rt_global;")

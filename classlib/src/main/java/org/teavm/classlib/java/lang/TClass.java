@@ -27,6 +27,7 @@ import java.util.Objects;
 import java.util.Set;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
 import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.impl.reflection.JSClass;
@@ -103,24 +104,24 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return Address.ofObject(this).<RuntimeClass>toStructure().isSupertypeOf.apply(other);
     }
 
-    @DelegateTo("getNameLowLevel")
-    public TString getName() {
-        if (name == null) {
-            name = TString.wrap(Platform.getName(platformClass));
-        }
-        return name;
-    }
-
     @Unmanaged
-    private RuntimeObject getNameLowLevel() {
-        RuntimeClass runtimeClass = Address.ofObject(this).toStructure();
-        return runtimeClass.name;
+    public TString getName() {
+        if (PlatformDetector.isLowLevel()) {
+            return TString.wrap(Platform.getName(platformClass));
+        } else {
+            if (name == null) {
+                name = TString.wrap(Platform.getName(platformClass));
+            }
+            return name;
+        }
     }
 
     public TString getSimpleName() {
+        TString simpleName = getSimpleNameCache();
         if (simpleName == null) {
             if (isArray()) {
                 simpleName = getComponentType().getSimpleName().concat(TString.wrap("[]"));
+                setSimpleNameCache(simpleName);
                 return simpleName;
             }
             String name = Platform.getName(platformClass);
@@ -137,8 +138,29 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
                 }
             }
             simpleName = TString.wrap(name);
+            setSimpleNameCache(simpleName);
         }
         return simpleName;
+    }
+
+    @DelegateTo("getSimpleNameCacheLowLevel")
+    private TString getSimpleNameCache() {
+        return simpleName;
+    }
+
+    @Unmanaged
+    @PluggableDependency(ClassDependencyListener.class)
+    private RuntimeObject getSimpleNameCacheLowLevel() {
+        return Address.ofObject(this).<RuntimeClass>toStructure().simpleName;
+    }
+
+    private void setSimpleNameCache(TString value) {
+        simpleName = value;
+    }
+
+    @Unmanaged
+    private void setSimpleNameCacheLowLevel(RuntimeObject object) {
+        Address.ofObject(this).<RuntimeClass>toStructure().simpleName = object;
     }
 
     public boolean isPrimitive() {

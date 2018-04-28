@@ -22,10 +22,12 @@ import org.teavm.runtime.RuntimeClass;
 
 public class PlatformClassMetadataIntrinsic implements Intrinsic {
     private static final String PLATFORM_CLASS_METADATA = "org.teavm.platform.PlatformClassMetadata";
-    private static final FieldReference ARRAY_TYPE_FIELD = new FieldReference(
-            RuntimeClass.class.getName(), "arrayType");
+    private static final FieldReference ITEM_TYPE_FIELD = new FieldReference(
+            RuntimeClass.class.getName(), "itemType");
     private static final FieldReference SUPERCLASS_FIELD = new FieldReference(
             RuntimeClass.class.getName(), "parent");
+    private static final FieldReference NAME_FIELD = new FieldReference(
+            RuntimeClass.class.getName(), "name");
 
     @Override
     public boolean canHandle(MethodReference method) {
@@ -35,6 +37,7 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
         switch (method.getName()) {
             case "getArrayItem":
             case "getSuperclass":
+            case "getName":
                 return true;
         }
         return false;
@@ -44,10 +47,13 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
         switch (invocation.getMethod().getName()) {
             case "getArrayItem":
-                printFieldAccess(context, invocation, ARRAY_TYPE_FIELD);
+                printFieldAccess(context, invocation, ITEM_TYPE_FIELD);
                 break;
             case "getSuperclass":
                 printFieldAccess(context, invocation, SUPERCLASS_FIELD);
+                break;
+            case "getName":
+                printFieldAccess(context, invocation, NAME_FIELD);
                 break;
         }
     }

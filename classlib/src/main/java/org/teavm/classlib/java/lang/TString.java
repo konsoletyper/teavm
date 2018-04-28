@@ -29,6 +29,7 @@ import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TLocale;
 import org.teavm.classlib.java.util.TMap;
 import org.teavm.classlib.java.util.regex.TPattern;
+import org.teavm.interop.Unmanaged;
 
 public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
     public static final TComparator<TString> CASE_INSENSITIVE_ORDER = (o1, o2) -> o1.compareToIgnoreCase(o2);
@@ -578,6 +579,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return hashCode;
     }
 
+    @Unmanaged
     public static TString wrap(String str) {
         return (TString) (Object) str;
     }
