@@ -90,7 +90,8 @@ public class TypeInferer {
     }
 
     public VariableType typeOf(int variableIndex) {
-        return types[variableIndex];
+        VariableType result = types[variableIndex];
+        return result != null ? result : VariableType.OBJECT;
     }
 
     VariableType convert(ValueType type) {
@@ -180,11 +181,6 @@ public class TypeInferer {
 
         @Override
         public void stringConstant(VariableReader receiver, String cst) {
-            types[receiver.getIndex()] = VariableType.OBJECT;
-        }
-
-        @Override
-        public void nullConstant(VariableReader receiver) {
             types[receiver.getIndex()] = VariableType.OBJECT;
         }
 

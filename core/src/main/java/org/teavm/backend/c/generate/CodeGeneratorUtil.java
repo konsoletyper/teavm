@@ -30,22 +30,30 @@ public final class CodeGeneratorUtil {
         } else if (value instanceof Integer) {
             int i = (Integer) value;
             long v = i;
-            if (i < 0) {
-                writer.print("-");
-                v = -i;
+            if (i == Integer.MIN_VALUE) {
+                writer.print("(int32_t) INT32_C(0x80000000)");
+            } else {
+                if (i < 0) {
+                    writer.print("-");
+                    v = -v;
+                }
+                writer.print("INT32_C(");
+                writeLongConstant(writer, v);
+                writer.print(")");
             }
-            writer.print("INT32_C(");
-            writeLongConstant(writer, v);
-            writer.print(")");
         } else if (value instanceof Long) {
             long v = (Long) value;
-            if (v < 0) {
-                writer.print("-");
-                v = -v;
+            if (v == Long.MIN_VALUE) {
+                writer.print("(int64_t) INT64_C(0x8000000000000000)");
+            } else {
+                if (v < 0) {
+                    writer.print("-");
+                    v = -v;
+                }
+                writer.print("INT64_C(");
+                writeLongConstant(writer, v);
+                writer.print(")");
             }
-            writer.print("INT64_C(");
-            writeLongConstant(writer, v);
-            writer.print(")");
         } else if (value instanceof Float) {
             float f = (Float) value;
             if (Float.isInfinite(f)) {
