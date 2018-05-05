@@ -447,6 +447,7 @@ public class Renderer implements RenderingManager {
 
     private void renderEraseClinit(ClassNode cls) throws IOException {
         writer.appendClass(cls.getName()).append("_$callClinit").ws().append("=").ws()
+                .appendClass(cls.getName()).append(".$clinit").ws().append("=").ws()
                 .append("function(){};").newLine();
     }
 
