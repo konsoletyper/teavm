@@ -15,15 +15,14 @@
  */
 "use strict";
 var $rt_global = this;
-var $rt_lastObjectId = 1;
+var $rt_seed = 2463534242;
 function $rt_nextId() {
-    var current = $rt_lastObjectId;
-    var next = (current + 1) | 0;
-    if (next === 0) {
-        next = (next + 1) | 0;
-    }
-    $rt_lastObjectId = next;
-    return current;
+    var x = $rt_seed;
+    x ^= x << 13;
+    x ^= x >> 17;
+    x ^= x << 5;
+    $rt_seed = x;
+    return x;
 }
 function $rt_compare(a, b) {
     return a > b ? 1 : a < b ? -1 : 0;
