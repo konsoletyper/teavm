@@ -15,7 +15,7 @@
  */
 "use strict";
 var $rt_global = this;
-var $rt_seed = Math.floor(Math.random() * (0x7fffffff + 0x80000000 + 1)) - 0x80000000;
+var $rt_seed = 2463534242;
 function $rt_nextId() {
     var x = $rt_seed;
     x ^= x << 13;
