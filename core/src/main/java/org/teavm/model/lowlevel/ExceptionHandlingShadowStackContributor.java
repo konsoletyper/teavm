@@ -395,7 +395,7 @@ public class ExceptionHandlingShadowStackContributor {
                     if (outgoingVariablesToRemove.contains(incoming.getValue().getIndex())) {
                         phi.getIncomings().remove(i--);
                         break;
-                    } else if (incoming.getValue().getIndex() == value) {
+                    } else if (incoming.getValue().getIndex() == value && incoming.getSource() != newBlock) {
                         if (variablesDefinedHere.contains(value)) {
                             incoming.setSource(newBlock);
                         } else {

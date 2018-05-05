@@ -144,7 +144,7 @@ public class BasicBlockSplitter {
 
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         for (BasicBlock block : sourceParts) {
-            if (block != null) {
+            if (block != source) {
                 for (Map.Entry<Phi, Variable> lastDefinedEntry : lastDefinedValues.entrySet()) {
                     Incoming incomingCopy = new Incoming();
                     incomingCopy.setSource(block);
