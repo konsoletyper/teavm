@@ -66,6 +66,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.classes.VirtualTable;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.RuntimeClass;
@@ -138,6 +139,28 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
                 writer.print("))");
                 return;
+            }
+
+            case MODULO: {
+                switch (expr.getType()) {
+                    case FLOAT:
+                        writer.print("fmodf(");
+                        expr.getFirstOperand().acceptVisitor(this);
+                        writer.print(", ");
+                        expr.getSecondOperand().acceptVisitor(this);
+                        writer.print(")");
+                        return;
+                    case DOUBLE:
+                        writer.print("fmod(");
+                        expr.getFirstOperand().acceptVisitor(this);
+                        writer.print(", ");
+                        expr.getSecondOperand().acceptVisitor(this);
+                        writer.print(")");
+                        return;
+                    default:
+                        break;
+                }
+                break;
             }
 
             default:
@@ -372,25 +395,44 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 break;
             }
             case DYNAMIC: {
-                String receiver = "recv_" + temporaryReceiverLevel++;
-                maxTemporaryReceiverLevel = Math.max(maxTemporaryReceiverLevel, temporaryReceiverLevel);
-                writer.print("((").print(receiver).print(" = ");
-                expr.getArguments().get(0).acceptVisitor(this);
+                VirtualTable vtable = context.getVirtualTableProvider().lookup(expr.getMethod().getClassName());
+                if (vtable == null || !vtable.getEntries().containsKey(expr.getMethod().getDescriptor())) {
+                    writer.print("(");
+                    for (Expr arg : expr.getArguments()) {
+                        arg.acceptVisitor(this);
+                        writer.print(", ");
+                    }
+                    printDefaultValue(expr.getMethod().getReturnType());
+                    writer.print(")");
+                } else {
+                    String receiver = "recv_" + temporaryReceiverLevel++;
+                    maxTemporaryReceiverLevel = Math.max(maxTemporaryReceiverLevel, temporaryReceiverLevel);
+                    writer.print("((").print(receiver).print(" = ");
+                    expr.getArguments().get(0).acceptVisitor(this);
 
-                writer.print("), METHOD(")
-                        .print(receiver).print(", ")
-                        .print(names.forClassClass(expr.getMethod().getClassName())).print(", ")
-                        .print(names.forVirtualMethod(expr.getMethod()))
-                        .print(")(").print(receiver);
-                for (int i = 1; i < expr.getArguments().size(); ++i) {
-                    writer.print(", ");
-                    expr.getArguments().get(i).acceptVisitor(this);
+                    writer.print("), METHOD(")
+                            .print(receiver).print(", ")
+                            .print(names.forClassClass(expr.getMethod().getClassName())).print(", ")
+                            .print(names.forVirtualMethod(expr.getMethod()))
+                            .print(")(").print(receiver);
+                    for (int i = 1; i < expr.getArguments().size(); ++i) {
+                        writer.print(", ");
+                        expr.getArguments().get(i).acceptVisitor(this);
+                    }
+                    writer.print("))");
+
+                    temporaryReceiverLevel--;
                 }
-                writer.print("))");
-
-                temporaryReceiverLevel--;
                 break;
             }
+        }
+    }
+
+    private void printDefaultValue(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            writer.print("0");
+        } else {
+            writer.print("NULL");
         }
     }
 

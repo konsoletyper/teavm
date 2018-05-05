@@ -772,7 +772,7 @@ public class ClassGenerator {
         for (int i = 1; i < ranges.size(); ++i) {
             lower = ranges.get(i - 1).upper;
             upper = ranges.get(i).lower;
-            isSupertypeWriter.println("if (tag >= " + lower + " || tag < " + upper + ") return INT32_C(0);");
+            isSupertypeWriter.println("if (tag >= " + lower + " && tag < " + upper + ") return INT32_C(0);");
         }
 
         isSupertypeWriter.println("return INT32_C(1);");
