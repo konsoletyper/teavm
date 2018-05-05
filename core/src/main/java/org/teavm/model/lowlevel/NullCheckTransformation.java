@@ -16,10 +16,8 @@
 package org.teavm.model.lowlevel;
 
 import org.teavm.model.BasicBlock;
-import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
-import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
@@ -36,46 +34,29 @@ import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
-import org.teavm.model.optimization.RedundantJumpElimination;
-import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.BasicBlockSplitter;
 import org.teavm.runtime.ExceptionHandling;
 
 public class NullCheckTransformation {
     public void apply(Program program, ValueType returnType) {
-        int[] mappings = new int[program.basicBlockCount()];
-        for (int i = 0; i < mappings.length; ++i) {
-            mappings[i] = i;
-        }
+        BasicBlockSplitter splitter = new BasicBlockSplitter(program);
 
         BasicBlock returnBlock = null;
-
         int count = program.basicBlockCount();
         for (int i = 0; i < count; ++i) {
             BasicBlock next = program.basicBlockAt(i);
-            BasicBlock block = null;
-            int newIndex = i;
+            BasicBlock block;
             while (next != null) {
                 block = next;
-                newIndex = block.getIndex();
                 next = null;
                 for (Instruction instruction : block) {
                     if (!(instruction instanceof NullCheckInstruction)) {
                         continue;
                     }
                     NullCheckInstruction nullCheck = (NullCheckInstruction) instruction;
-
-                    BasicBlock continueBlock = program.createBasicBlock();
-
-                    continueBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
-                    while (nullCheck.getNext() != null) {
-                        Instruction nextInstruction = nullCheck.getNext();
-                        nextInstruction.delete();
-                        continueBlock.add(nextInstruction);
-                    }
-
+                    BasicBlock continueBlock = splitter.split(block, nullCheck);
                     BasicBlock throwBlock = program.createBasicBlock();
 
-                    throwBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
                     InvokeInstruction throwNPE = new InvokeInstruction();
                     throwNPE.setType(InvocationType.SPECIAL);
                     throwNPE.setMethod(new MethodReference(ExceptionHandling.class, "throwNullPointerException",
@@ -109,8 +90,6 @@ public class NullCheckTransformation {
                     break;
                 }
             }
-
-            mappings[i] = newIndex;
         }
 
         if (returnBlock != null) {
@@ -123,18 +102,7 @@ public class NullCheckTransformation {
             returnBlock.add(fakeExit);
         }
 
-        for (BasicBlock block : program.getBasicBlocks()) {
-            for (Phi phi : block.getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    int source = incoming.getSource().getIndex();
-                    if (source < mappings.length && mappings[source] != source) {
-                        incoming.setSource(program.basicBlockAt(mappings[source]));
-                    }
-                }
-            }
-        }
-
-        RedundantJumpElimination.optimize(program);
+        splitter.fixProgram();
     }
 
     private void createFakeReturnValue(BasicBlock block, Variable variable, ValueType type) {

@@ -150,6 +150,8 @@ public class RegisterAllocator {
         Program program = phi.getBasicBlock().getProgram();
         AssignInstruction copyInstruction = new AssignInstruction();
         Variable firstCopy = program.createVariable();
+        firstCopy.setLabel(phi.getReceiver().getLabel());
+        firstCopy.setDebugName(phi.getReceiver().getDebugName());
         copyInstruction.setReceiver(firstCopy);
         copyInstruction.setAssignee(incoming.getValue());
         BasicBlock source = blockMap.get(incoming.getSource());

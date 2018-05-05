@@ -767,12 +767,12 @@ public class ClassGenerator {
 
         int lower = ranges.get(0).lower;
         int upper = ranges.get(ranges.size() - 1).upper;
-        isSupertypeWriter.println("if (tag < " + lower + " || tag > " + upper + ") return INT32_C(0);");
+        isSupertypeWriter.println("if (tag < " + lower + " || tag >= " + upper + ") return INT32_C(0);");
 
         for (int i = 1; i < ranges.size(); ++i) {
             lower = ranges.get(i - 1).upper;
             upper = ranges.get(i).lower;
-            isSupertypeWriter.println("if (tag < " + lower + " || tag > " + upper + ") return INT32_C(0);");
+            isSupertypeWriter.println("if (tag >= " + lower + " || tag < " + upper + ") return INT32_C(0);");
         }
 
         isSupertypeWriter.println("return INT32_C(1);");

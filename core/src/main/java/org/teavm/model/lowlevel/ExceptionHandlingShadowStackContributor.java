@@ -15,6 +15,8 @@
  */
 package org.teavm.model.lowlevel;
 
+import com.carrotsearch.hppc.IntHashSet;
+import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -134,6 +136,9 @@ public class ExceptionHandlingShadowStackContributor {
         int[] currentJointSources = new int[program.variableCount()];
         int[] jointReceiverMap = new int[program.variableCount()];
         Arrays.fill(currentJointSources, -1);
+        Arrays.fill(jointReceiverMap, -1);
+        IntSet outgoingVariablesToRemove = new IntHashSet();
+        IntSet variablesDefinedHere = new IntHashSet();
 
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
             for (Phi phi : tryCatch.getHandler().getPhis()) {
@@ -162,6 +167,7 @@ public class ExceptionHandlingShadowStackContributor {
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         List<BasicBlock> blocksToClearHandlers = new ArrayList<>();
         blocksToClearHandlers.add(block);
+        BasicBlock initialBlock = block;
 
         for (Instruction insn : block) {
             if (isCallInstruction(insn)) {
@@ -210,7 +216,8 @@ public class ExceptionHandlingShadowStackContributor {
                 CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size(), location);
                 callSites.add(callSite);
                 List<Instruction> pre = setLocation(getInstructionsBeforeCallSite(callSite), insn.getLocation());
-                List<Instruction> post = getInstructionsAfterCallSite(block, next, callSite, currentJointSources);
+                List<Instruction> post = getInstructionsAfterCallSite(initialBlock, block, next, callSite,
+                        currentJointSources, outgoingVariablesToRemove, variablesDefinedHere);
                 post = setLocation(post, insn.getLocation());
                 block.getLastInstruction().insertPreviousAll(pre);
                 block.addAll(post);
@@ -220,15 +227,27 @@ public class ExceptionHandlingShadowStackContributor {
                     break;
                 }
                 block = next;
+                outgoingVariablesToRemove.clear();
+                variablesDefinedHere.clear();
             }
 
             insn.acceptVisitor(defExtractor);
             for (Variable definedVar : defExtractor.getDefinedVariables()) {
                 int jointReceiver = jointReceiverMap[definedVar.getIndex()];
-                currentJointSources[jointReceiver] = definedVar.getIndex();
+                if (jointReceiver >= 0) {
+                    int formerVar = currentJointSources[jointReceiver];
+                    if (formerVar >= 0) {
+                        if (variableDefinitionPlaces[formerVar] == initialBlock) {
+                            outgoingVariablesToRemove.add(formerVar);
+                        }
+                    }
+                    currentJointSources[jointReceiver] = definedVar.getIndex();
+                    variablesDefinedHere.add(definedVar.getIndex());
+                }
             }
         }
 
+        fixOutgoingPhis(initialBlock, block, currentJointSources, outgoingVariablesToRemove, variablesDefinedHere);
         for (BasicBlock blockToClear : blocksToClearHandlers) {
             blockToClear.getTryCatchBlocks().clear();
         }
@@ -287,8 +306,9 @@ public class ExceptionHandlingShadowStackContributor {
         return instructions;
     }
 
-    private List<Instruction> getInstructionsAfterCallSite(BasicBlock block, BasicBlock next,
-            CallSiteDescriptor callSite, int[] currentJointSources) {
+    private List<Instruction> getInstructionsAfterCallSite(BasicBlock initialBlock, BasicBlock block, BasicBlock next,
+            CallSiteDescriptor callSite, int[] currentJointSources, IntSet outgoingVariablesToRemove,
+            IntSet variablesDefinedHere) {
         Program program = block.getProgram();
         List<Instruction> instructions = new ArrayList<>();
 
@@ -325,20 +345,8 @@ public class ExceptionHandlingShadowStackContributor {
                 catchEntry.setCondition(handler.getId());
                 switchInsn.getEntries().add(catchEntry);
             }
-
-            for (Phi phi : tryCatch.getHandler().getPhis()) {
-                int value = currentJointSources[phi.getReceiver().getIndex()];
-                if (value < 0) {
-                    continue;
-                }
-                for (Incoming incoming : phi.getIncomings()) {
-                    if (incoming.getValue().getIndex() == value) {
-                        incoming.setSource(block);
-                        break;
-                    }
-                }
-            }
         }
+        fixOutgoingPhis(initialBlock, block, currentJointSources, outgoingVariablesToRemove, variablesDefinedHere);
 
         if (!defaultExists) {
             switchInsn.setDefaultTarget(getDefaultExceptionHandler());
@@ -368,6 +376,41 @@ public class ExceptionHandlingShadowStackContributor {
         }
 
         return instructions;
+    }
+
+    private void fixOutgoingPhis(BasicBlock block, BasicBlock newBlock, int[] currentJointSources,
+            IntSet outgoingVariablesToRemove, IntSet variablesDefinedHere) {
+        for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+            for (Phi phi : tryCatch.getHandler().getPhis()) {
+                int value = currentJointSources[phi.getReceiver().getIndex()];
+                if (value < 0) {
+                    continue;
+                }
+                List<Incoming> additionalIncomings = new ArrayList<>();
+                for (int i = 0; i < phi.getIncomings().size(); i++) {
+                    Incoming incoming = phi.getIncomings().get(i);
+                    if (incoming.getSource() != block) {
+                        continue;
+                    }
+                    if (outgoingVariablesToRemove.contains(incoming.getValue().getIndex())) {
+                        phi.getIncomings().remove(i--);
+                        break;
+                    } else if (incoming.getValue().getIndex() == value) {
+                        if (variablesDefinedHere.contains(value)) {
+                            incoming.setSource(newBlock);
+                        } else {
+                            Incoming incomingCopy = new Incoming();
+                            incomingCopy.setSource(newBlock);
+                            incomingCopy.setValue(incoming.getValue());
+                            additionalIncomings.add(incomingCopy);
+                        }
+                        break;
+                    }
+                }
+
+                phi.getIncomings().addAll(additionalIncomings);
+            }
+        }
     }
 
     private BasicBlock getDefaultExceptionHandler() {

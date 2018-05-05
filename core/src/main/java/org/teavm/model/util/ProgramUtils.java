@@ -228,4 +228,22 @@ public final class ProgramUtils {
 
         return Arrays.asList(newNPE, initNPE, raise);
     }
+
+    public static List<Variable> getVariablesDefinedInBlock(BasicBlock block, DefinitionExtractor defExtractor) {
+        List<Variable> varsDefinedInBlock = new ArrayList<>();
+        for (Phi phi : block.getPhis()) {
+            varsDefinedInBlock.add(phi.getReceiver());
+        }
+        if (block.getExceptionVariable() != null) {
+            varsDefinedInBlock.add(block.getExceptionVariable());
+        }
+        for (Instruction instruction : block) {
+            instruction.acceptVisitor(defExtractor);
+            Variable[] varsDefinedByInstruction = defExtractor.getDefinedVariables();
+            if (varsDefinedByInstruction != null) {
+                varsDefinedInBlock.addAll(Arrays.asList(varsDefinedByInstruction));
+            }
+        }
+        return varsDefinedInBlock;
+    }
 }
