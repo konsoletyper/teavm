@@ -69,6 +69,8 @@ public class NameProvider {
 
         memberFieldNames.put(new FieldReference(RuntimeObject.class.getName(), "classReference"), "header");
         memberFieldNames.put(new FieldReference(RuntimeArray.class.getName(), "size"), "size");
+        memberFieldNames.put(new FieldReference(String.class.getName(), "characters"), "characters");
+        memberFieldNames.put(new FieldReference(String.class.getName(), "hashCode"), "hashCode");
 
         occupiedClassNames.put(RuntimeObject.class.getName(), new HashSet<>(Arrays.asList("header")));
         occupiedClassNames.put(RuntimeArray.class.getName(), new HashSet<>(Arrays.asList("length")));

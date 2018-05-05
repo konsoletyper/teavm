@@ -80,6 +80,22 @@ static inline void* checkcast(void*, int32_t (*)(JavaClass*));
 #define ADDRESS_ADD(address, offset) ((char *) (address) + (offset))
 #define STRUCTURE_ADD(structure, address, offset) (((structure*) (address)) + offset)
 
+#define TEAVM_STRING(length, hash, s) { \
+    .characters = (JavaArray*) & (struct { JavaArray hdr; char16_t data[length]; }) { \
+        .hdr = { .size = length }, \
+        .data = s \
+    }, \
+    .hashCode = INT32_C(hash) \
+}
+
+#define TEAVM_STRING_FROM_CODES(length, hash, ...) { \
+    .characters = (JavaArray*) & (struct { JavaArray hdr; char16_t data[length]; }) { \
+        .hdr = { .size = length }, \
+        .data = { __VA_ARGS__ } \
+    }, \
+    .hashCode = INT32_C(hash) \
+}
+
 static void** stackTop;
 
 static void* gc_gcStorageAddress = NULL;

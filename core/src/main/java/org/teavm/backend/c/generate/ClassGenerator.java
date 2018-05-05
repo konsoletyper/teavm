@@ -130,7 +130,7 @@ public class ClassGenerator {
         generateStaticGCRoots();
         generateLayoutArray();
 
-        new StringPoolGenerator(stringPoolWriter, context.getNames()).generate(context.getStringPool().getStrings());
+        new StringPoolGenerator(stringPoolWriter).generate(context.getStringPool().getStrings());
 
         for (String include : includes) {
             includesWriter.println("#include " + include);

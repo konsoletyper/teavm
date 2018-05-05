@@ -16,56 +16,46 @@
 package org.teavm.backend.c.generate;
 
 import java.util.List;
-import org.teavm.model.FieldReference;
 
 public class StringPoolGenerator {
     private CodeWriter writer;
-    private NameProvider names;
 
-    public StringPoolGenerator(CodeWriter writer, NameProvider names) {
+    public StringPoolGenerator(CodeWriter writer) {
         this.writer = writer;
-        this.names = names;
     }
 
     public void generate(List<? extends String> strings) {
-        generateStringArrays(strings);
-        generateStringObjects(strings);
-    }
-
-    private void generateStringArrays(List<? extends String> strings) {
-        for (int i = 0; i < strings.size(); ++i) {
-            String s = strings.get(i);
-            writer.print("static struct { JavaArray hdr; char16_t data[" + (s.length() + 1) + "]; } str_array_" + i)
-                    .println(" = {").indent();
-            writer.println(".hdr = { .size = " + s.length() + "},");
-            writer.print(".data = ");
-            generateStringLiteral(s);
-            writer.println();
-
-            writer.outdent().println("};");
-        }
-    }
-
-    private void generateStringObjects(List<? extends String> strings) {
-        String charactersName = names.forMemberField(new FieldReference(String.class.getName(), "characters"));
-        String hashCodeName = names.forMemberField(new FieldReference(String.class.getName(), "hashCode"));
-
         writer.println("static JavaString stringPool[" + strings.size() + "] = {").indent();
         for (int i = 0; i < strings.size(); ++i) {
-            writer.println("{").indent();
-            writer.println("." + charactersName + " = (JavaArray*) &str_array_" + i + ",");
-            writer.println("." + hashCodeName + " = INT32_C(" + strings.get(i).hashCode() + ")");
-            writer.outdent().print("}");
-
-            if (i < strings.size() - 1) {
-                writer.print(",");
+            String s = strings.get(i);
+            boolean codes = hasBadCharacters(s);
+            String macroName = codes ? "TEAVM_STRING_FROM_CODES" : "TEAVM_STRING";
+            writer.print(macroName + "(" + s.length() + ", " + s.hashCode() + ",");
+            if (codes) {
+                generateNumericStringLiteral(s);
+            } else {
+                generateSimpleStringLiteral(s);
             }
+            writer.print(")");
+
+            writer.print(i < strings.size() - 1 ? "," : " ");
+            writer.print(" // string #" + i);
             writer.println();
         }
         writer.outdent().println("};");
     }
 
-    private void generateStringLiteral(String string) {
+    private boolean hasBadCharacters(String string) {
+        for (int i = 0; i < string.length(); ++i) {
+            char c = string.charAt(i);
+            if (c == 0 || Character.isSurrogate(c)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void generateSimpleStringLiteral(String string) {
         writer.print("u\"");
 
         for (int j = 0; j < string.length(); ++j) {
@@ -88,7 +78,7 @@ public class StringPoolGenerator {
                     break;
                 default:
                     if (c < 32) {
-                        writer.print("\\x" + Character.forDigit(c >> 4, 16) + Character.forDigit(c & 0xF, 16));
+                        writer.print("\\0" + Character.forDigit(c >> 3, 8) + Character.forDigit(c & 0x7, 8));
                     } else if (c > 127) {
                         writer.print("\\u"
                                 + Character.forDigit(c >> 12, 16)
@@ -103,5 +93,15 @@ public class StringPoolGenerator {
         }
 
         writer.print("\"");
+    }
+
+    private void generateNumericStringLiteral(String string) {
+        for (int i = 0; i < string.length(); ++i) {
+            if (i > 0) {
+                writer.print(", ");
+            }
+            int c = string.charAt(i);
+            writer.print(Integer.toString(c));
+        }
     }
 }
