@@ -114,6 +114,46 @@ static inline float TeaVM_getNaN() {
     return NAN;
 }
 
+typedef struct {
+    int32_t size;
+    void* data[0];
+} TeaVM_ResourceArray;
+
+typedef struct {
+    JavaString* key;
+    void* value;
+} TeaVM_ResourceMapEntry;
+
+typedef struct {
+    int32_t size;
+    TeaVM_ResourceMapEntry entries[0];
+} TeaVM_ResourceMap;
+
+static int32_t teavm_hashCode(JavaString*);
+static int32_t teavm_equals(JavaString*, JavaString*);
+static JavaArray* teavm_allocateStringArray(int32_t size);
+
+static TeaVM_ResourceMapEntry* teavm_lookupResource(TeaVM_ResourceMap *map, JavaString* string) {
+    uint32_t hashCode = teavm_hashCode(string);
+    for (int32_t i = 0; i < map->size; ++i) {
+        uint32_t index = (hashCode + i) % map->size;
+        if (map->entries[index].key == NULL) {
+            return NULL;
+        }
+        if (teavm_equals(map->entries[index].key, string)) {
+            return &map->entries[index];
+        }
+    }
+    return NULL;
+}
+
+static inline void* teavm_lookupResourceValue(TeaVM_ResourceMap *map, JavaString* string) {
+    TeaVM_ResourceMapEntry *entry = teavm_lookupResource(map, string);
+    return entry != NULL ? entry->value : NULL;
+}
+
+static JavaArray* teavm_resourceMapKeys(TeaVM_ResourceMap *);
+
 static void TeaVM_beforeInit() {
     srand(time(NULL));
 }
@@ -157,6 +197,13 @@ static int64_t currentTimeMillis() {
     clock_gettime(CLOCK_REALTIME, &time);
 
     return time.tv_sec * 1000 + (int64_t) round(time.tv_nsec / 1000000);
+}
+
+static int32_t teavm_timeZoneOffset() {
+    time_t t = time(NULL);
+    time_t local = mktime(localtime(&t));
+    time_t utc = mktime(gmtime(&t));
+    return difftime(utc, local) / 60;
 }
 #endif
 

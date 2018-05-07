@@ -353,6 +353,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateSpecialFunctions(GenerationContext context, CodeWriter writer) {
         generateThrowCCE(context, writer);
+        generateAllocateStringArray(context, writer);
     }
 
     private void generateThrowCCE(GenerationContext context, CodeWriter writer) {
@@ -361,6 +362,16 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 "throwClassCastException", void.class));
         writer.println(methodName + "();");
         writer.println("return NULL;");
+        writer.outdent().println("}");
+    }
+
+    private void generateAllocateStringArray(GenerationContext context, CodeWriter writer) {
+        writer.println("static JavaArray* teavm_allocateStringArray(int32_t size) {").indent();
+        String allocateArrayName = context.getNames().forMethod(new MethodReference(Allocator.class,
+                        "allocateArray", RuntimeClass.class, int.class, Address.class));
+        String stringClassName = context.getNames().forClassInstance(ValueType.arrayOf(
+                ValueType.object(String.class.getName())));
+        writer.println("return (JavaArray*) " + allocateArrayName + "(&" + stringClassName + ", size);");
         writer.outdent().println("}");
     }
 

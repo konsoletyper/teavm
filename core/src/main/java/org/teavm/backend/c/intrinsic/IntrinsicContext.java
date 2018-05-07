@@ -34,4 +34,6 @@ public interface IntrinsicContext {
     MethodReference getCallingMethod();
 
     StringPool getStringPool();
+
+
 }

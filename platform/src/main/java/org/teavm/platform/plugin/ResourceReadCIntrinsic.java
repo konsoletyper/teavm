@@ -21,6 +21,8 @@ import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.Resource;
+import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.ResourceMap;
 
 public class ResourceReadCIntrinsic implements Intrinsic {
     private ClassReaderSource classSource;
@@ -36,6 +38,14 @@ public class ResourceReadCIntrinsic implements Intrinsic {
 
     @Override
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
+        if (invocation.getMethod().getClassName().equals(ResourceMap.class.getName())) {
+            applyForResourceMap(context, invocation);
+            return;
+        } else if (invocation.getMethod().getClassName().equals(ResourceArray.class.getName())) {
+            applyForResourceArray(context, invocation);
+            return;
+        }
+
         String name = invocation.getMethod().getName();
         if (name.startsWith("get")) {
             name = name.substring(3);
@@ -51,5 +61,46 @@ public class ResourceReadCIntrinsic implements Intrinsic {
         context.emit(invocation.getArguments().get(0));
         context.writer().print(", ").print(context.names().forClass(invocation.getMethod().getClassName()));
         context.writer().print(", ").print(name).print(")");
+    }
+
+    private void applyForResourceMap(IntrinsicContext context, InvocationExpr invocation) {
+        switch (invocation.getMethod().getName()) {
+            case "keys":
+                context.writer().print("teavm_resourceMapKeys((TeaVM_ResourceMap*) ");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(")");
+                break;
+            case "has":
+                context.writer().print("(teavm_lookupResource((TeaVM_ResourceMap*) ");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(", (JavaString*) ");
+                context.emit(invocation.getArguments().get(1));
+                context.writer().print(") != NULL)");
+                break;
+            case "get":
+                context.writer().print("teavm_lookupResourceValue((TeaVM_ResourceMap*) ");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(", (JavaString*) ");
+                context.emit(invocation.getArguments().get(1));
+                context.writer().print(")");
+                break;
+        }
+    }
+
+    private void applyForResourceArray(IntrinsicContext context, InvocationExpr invocation) {
+        switch (invocation.getMethod().getName()) {
+            case "size":
+                context.writer().print("((TeaVM_ResourceArray*) ");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(")->size");
+                break;
+            case "get":
+                context.writer().print("((TeaVM_ResourceArray*) ");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(")->data[");
+                context.emit(invocation.getArguments().get(1));
+                context.writer().print("]");
+                break;
+        }
     }
 }
