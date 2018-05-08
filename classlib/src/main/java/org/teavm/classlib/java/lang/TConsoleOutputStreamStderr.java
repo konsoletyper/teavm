@@ -32,6 +32,6 @@ class TConsoleOutputStreamStderr extends TOutputStream {
         writeImpl(b);
     }
 
-    @Import(name = "putwchar", module = "runtime")
+    @Import(name = "putwchar", module = "teavm")
     static native void writeImpl(int b);
 }

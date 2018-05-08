@@ -16,17 +16,20 @@
 
 "use strict";
 import * as fs from "./promise-fs.js";
-import * as nodePath from "path";
 import * as http from "http";
 import {server as WebSocketServer} from "websocket";
 
 const TEST_FILE_NAME = "test.js";
 const RUNTIME_FILE_NAME = "runtime.js";
+const WASM_RUNTIME_FILE_NAME = "test.wasm-runtime.js";
 const TEST_FILES = [
-    { file: TEST_FILE_NAME, name: "simple" },
-    { file: "test-min.js", name: "minified" },
-    { file: "test-optimized.js", name: "optimized" }
+    { file: TEST_FILE_NAME, name: "simple", type: "js" },
+    { file: "test-min.js", name: "minified", type: "js" },
+    { file: "test-optimized.js", name: "optimized", type: "js" },
+    { file: "test.wasm", name: "wasm", type: "wasm" },
+    { file: "test-optimized.wasm", name: "wasm-optimized", type: "wasm" }
 ];
+const SERVER_PREFIX = "http://localhost:9090/";
 let totalTests = 0;
 
 class TestSuite {
@@ -37,20 +40,30 @@ class TestSuite {
     }
 }
 class TestCase {
-    constructor(name, files) {
+    constructor(type, name, files) {
+        this.type = type;
         this.name = name;
         this.files = files;
     }
 }
 
+let rootDir = process.argv[2];
+if (rootDir.endsWith("/")) {
+    rootDir = rootDir.substring(0, rootDir.length - 1);
+}
+
 async function runAll() {
     const rootSuite = new TestSuite("root");
     console.log("Searching tests");
-    await walkDir(process.argv[2], "root", rootSuite);
+    await walkDir("", "root", rootSuite);
 
     console.log("Running tests");
 
     const server = http.createServer((request, response) => {
+        if (request.url.endsWith(".js") || request.url.endsWith(".wasm")) {
+            serveFile(rootDir + "/" + request.url, response);
+            return;
+        }
         response.writeHead(404);
         response.end();
     });
@@ -94,14 +107,37 @@ async function runAll() {
     }
 }
 
+async function serveFile(path, response) {
+    const stat = await fs.stat(path);
+    const contentType = path.endsWith(".wasm") ? "application/octet-stream" : "text/javascript";
+    if (stat.isFile()) {
+        const content = await fs.readFile(path);
+        response.writeHead(200, { 'Content-Type': contentType, 'Access-Control-Allow-Origin': "*" });
+        response.end(content, 'utf-8');
+    } else {
+        response.writeHead(404);
+        response.end();
+    }
+}
+
 async function walkDir(path, name, suite) {
-    const files = await fs.readdir(path);
-    if (files.includes(TEST_FILE_NAME) && files.includes(RUNTIME_FILE_NAME)) {
-        for (const { file: fileName, name: profileName } of TEST_FILES) {
+    const files = await fs.readdir(rootDir + "/" + path);
+    if (files.includes(WASM_RUNTIME_FILE_NAME) || files.includes(RUNTIME_FILE_NAME)) {
+        for (const { file: fileName, name: profileName, type: type } of TEST_FILES) {
             if (files.includes(fileName)) {
-                suite.testCases.push(new TestCase(
-                    name + " " + profileName,
-                    [path + "/" + RUNTIME_FILE_NAME, path + "/" + fileName]));
+                switch (type) {
+                    case "js":
+                        suite.testCases.push(new TestCase(
+                            "js", name + " " + profileName,
+                            [SERVER_PREFIX + path + "/" + RUNTIME_FILE_NAME, SERVER_PREFIX + path + "/" + fileName]));
+                        break;
+                    case "wasm":
+                        suite.testCases.push(new TestCase(
+                            "wasm", name + " " + profileName,
+                            [SERVER_PREFIX + path + "/" + WASM_RUNTIME_FILE_NAME,
+                                SERVER_PREFIX + path + "/" + fileName]));
+                        break;
+                }
                 totalTests++;
             }
         }
@@ -110,7 +146,7 @@ async function walkDir(path, name, suite) {
         suite.testSuites.push(childSuite);
         await Promise.all(files.map(async file => {
             const filePath = path + "/" + file;
-            const stat = await fs.stat(filePath);
+            const stat = await fs.stat(rootDir + "/" + filePath);
             if (stat.isDirectory()) {
                 await walkDir(filePath, file, childSuite);
             }
@@ -148,8 +184,9 @@ class TestRunner {
             let request = { id: this.requestIdGen++ };
             request.tests = suite.testCases.map(testCase => {
                 return {
+                    type: testCase.type,
                     name: testCase.name,
-                    files: testCase.files.map(fileName => nodePath.resolve(process.cwd(), fileName))
+                    files: testCase.files
                 };
             });
             this.testsRun += suite.testCases.length;

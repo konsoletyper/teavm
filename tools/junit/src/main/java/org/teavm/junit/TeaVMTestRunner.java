@@ -52,6 +52,7 @@ import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
 import org.teavm.diagnostics.Problem;
@@ -78,7 +79,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static final String SELENIUM_URL = "teavm.junit.js.selenium.url";
     private static final String JS_ENABLED = "teavm.junit.js";
     private static final String C_ENABLED = "teavm.junit.c";
-    private static final String C_COMPILER = "teavm.junit.c-compiler";
+    private static final String WASM_ENABLED = "teavm.junit.wasm";
+    private static final String C_COMPILER = "teavm.junit.c.compiler";
     private static final String MINIFIED = "teavm.junit.minified";
     private static final String OPTIMIZED = "teavm.junit.optimized";
 
@@ -275,6 +277,15 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                         runs.add(run);
                     }
                 }
+
+                for (TeaVMTestConfiguration<WasmTarget> configuration : getWasmConfigurations()) {
+                    TestRun run = compile(child, notifier, RunKind.WASM,
+                            m -> compileToWasm(m, configuration, outputPath), onSuccess.get(0));
+                    if (run != null) {
+                        runs.add(run);
+                    }
+                }
+
             } catch (Throwable e) {
                 notifier.fireTestFailure(new Failure(description, e));
                 notifier.fireTestFinished(description);
@@ -414,7 +425,9 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private void copyJsFilesTo(File path) throws IOException {
         resourceToFile("org/teavm/backend/javascript/runtime.js", new File(path, "runtime.js"));
+        resourceToFile("org/teavm/backend/wasm/wasm-runtime.js", new File(path, "test.wasm-runtime.js"));
         resourceToFile("teavm-run-test.html", new File(path, "run-test.html"));
+        resourceToFile("teavm-run-test-wasm.html", new File(path, "run-test-wasm.html"));
     }
 
     private CompileResult compileToJs(Method method, TeaVMTestConfiguration<JavaScriptTarget> configuration,
@@ -432,6 +445,13 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         return compileTest(method, configuration, CTarget::new, vm -> {
             vm.entryPoint("main", new MethodReference(TestEntryPoint.class, "main", String[].class, void.class));
         }, path, ".c");
+    }
+
+    private CompileResult compileToWasm(Method method, TeaVMTestConfiguration<WasmTarget> configuration,
+            File path) {
+        return compileTest(method, configuration, WasmTarget::new, vm -> {
+            vm.entryPoint("main", new MethodReference(TestEntryPoint.class, "main", String[].class, void.class));
+        }, path, ".wasm");
     }
 
     private <T extends TeaVMTarget> CompileResult compileTest(Method method, TeaVMTestConfiguration<T> configuration,
@@ -492,6 +512,17 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             }
             if (Boolean.getBoolean(OPTIMIZED)) {
                 configurations.add(TeaVMTestConfiguration.JS_OPTIMIZED);
+            }
+        }
+        return configurations;
+    }
+
+    private List<TeaVMTestConfiguration<WasmTarget>> getWasmConfigurations() {
+        List<TeaVMTestConfiguration<WasmTarget>> configurations = new ArrayList<>();
+        if (Boolean.getBoolean(WASM_ENABLED)) {
+            configurations.add(TeaVMTestConfiguration.WASM_DEFAULT);
+            if (Boolean.getBoolean(OPTIMIZED)) {
+                configurations.add(TeaVMTestConfiguration.WASM_OPTIMIZED);
             }
         }
         return configurations;

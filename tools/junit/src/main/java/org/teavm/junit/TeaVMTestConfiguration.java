@@ -17,6 +17,7 @@ package org.teavm.junit;
 
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMTarget;
@@ -79,6 +80,40 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
         }
     };
 
+    TeaVMTestConfiguration<WasmTarget> WASM_DEFAULT = new TeaVMTestConfiguration<WasmTarget>() {
+        @Override
+        public String getSuffix() {
+            return "";
+        }
+
+        @Override
+        public void apply(TeaVM vm) {
+            vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
+        }
+
+        @Override
+        public void apply(WasmTarget target) {
+            target.setMinHeapSize(32 * 1024 * 1024);
+            target.setWastEmitted(true);
+        }
+    };
+
+    TeaVMTestConfiguration<WasmTarget> WASM_OPTIMIZED = new TeaVMTestConfiguration<WasmTarget>() {
+        @Override
+        public String getSuffix() {
+            return "optimized";
+        }
+
+        @Override
+        public void apply(TeaVM vm) {
+            vm.setOptimizationLevel(TeaVMOptimizationLevel.FULL);
+        }
+
+        @Override
+        public void apply(WasmTarget target) {
+        }
+    };
+
     TeaVMTestConfiguration<CTarget> C_DEFAULT = new TeaVMTestConfiguration<CTarget>() {
         @Override
         public String getSuffix() {
@@ -95,11 +130,10 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
         }
     };
 
-
     TeaVMTestConfiguration<CTarget> C_OPTIMIZED = new TeaVMTestConfiguration<CTarget>() {
         @Override
         public String getSuffix() {
-            return "";
+            return "optimized";
         }
 
         @Override

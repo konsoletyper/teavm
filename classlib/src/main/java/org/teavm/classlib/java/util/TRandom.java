@@ -114,6 +114,6 @@ public class TRandom extends TObject implements TSerializable {
     }
 
     @JSBody(script = "return Math.random();")
-    @Import(module = "math", name = "random")
+    @Import(module = "teavmMath", name = "random")
     private static native double random();
 }

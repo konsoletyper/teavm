@@ -222,15 +222,15 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     }
 
     @JSBody(params = "v", script = "return isNaN(v);")
-    @Import(module = "runtime", name = "isnan")
+    @Import(module = "teavm", name = "isnan")
     public static native boolean isNaN(double v);
 
     @JSBody(script = "return NaN;")
-    @Import(module = "runtime", name = "TeaVM_getNaN")
+    @Import(module = "teavm", name = "TeaVM_getNaN")
     private static native double getNaN();
 
     @JSBody(params = "v", script = "return !isFinite(v);")
-    @Import(module = "runtime", name = "isinf")
+    @Import(module = "teavm", name = "isinf")
     public static native boolean isInfinite(double v);
 
     public static long doubleToRawLongBits(double value) {

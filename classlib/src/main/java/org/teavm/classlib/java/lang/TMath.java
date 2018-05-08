@@ -26,27 +26,27 @@ public final class TMath extends TObject {
     }
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "sin")
+    @Import(module = "teavmMath", name = "sin")
     public static native double sin(double a);
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "cos")
+    @Import(module = "teavmMath", name = "cos")
     public static native double cos(double a);
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "tan")
+    @Import(module = "teavmMath", name = "tan")
     public static native double tan(double a);
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "asin")
+    @Import(module = "teavmMath", name = "asin")
     public static native double asin(double a);
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "acos")
+    @Import(module = "teavmMath", name = "acos")
     public static native double acos(double a);
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "atan")
+    @Import(module = "teavmMath", name = "atan")
     public static native double atan(double a);
 
     public static double toRadians(double angdeg) {
@@ -58,11 +58,11 @@ public final class TMath extends TObject {
     }
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "exp")
+    @Import(module = "teavmMath", name = "exp")
     public static native double exp(double a);
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "log")
+    @Import(module = "teavmMath", name = "log")
     public static native double log(double a);
 
     public static double log10(double a) {
@@ -70,7 +70,7 @@ public final class TMath extends TObject {
     }
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "sqrt")
+    @Import(module = "teavmMath", name = "sqrt")
     public static native double sqrt(double a);
 
     public static double cbrt(double a) {
@@ -83,15 +83,15 @@ public final class TMath extends TObject {
     }
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "ceil")
+    @Import(module = "teavmMath", name = "ceil")
     public static native double ceil(double a);
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "floor")
+    @Import(module = "teavmMath", name = "floor")
     public static native double floor(double a);
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "pow")
+    @Import(module = "teavmMath", name = "pow")
     public static native double pow(double x, double y);
 
     public static double rint(double a) {
@@ -99,7 +99,7 @@ public final class TMath extends TObject {
     }
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "atan2")
+    @Import(module = "teavmMath", name = "atan2")
     public static native double atan2(double y, double x);
 
     public static int round(float a) {
@@ -111,7 +111,7 @@ public final class TMath extends TObject {
     }
 
     @GeneratedBy(MathNativeGenerator.class)
-    @Import(module = "math", name = "random")
+    @Import(module = "teavmMath", name = "random")
     public static native double random();
 
     public static int min(int a, int b) {

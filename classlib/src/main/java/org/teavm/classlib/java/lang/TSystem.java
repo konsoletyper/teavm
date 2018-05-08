@@ -114,7 +114,7 @@ public final class TSystem extends TObject {
         }
     }
 
-    @Import(name = "currentTimeMillis", module = "runtime")
+    @Import(name = "currentTimeMillis", module = "teavm")
     private static native double currentTimeMillisWasm();
 
     @Import(name = "currentTimeMillis")

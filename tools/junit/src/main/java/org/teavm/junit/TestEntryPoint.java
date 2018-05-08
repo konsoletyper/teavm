@@ -39,6 +39,7 @@ final class TestEntryPoint {
             System.out.println("SUCCESS");
         } catch (Throwable e) {
             e.printStackTrace(System.out);
+            System.out.println("FAILURE");
         }
     }
 }
