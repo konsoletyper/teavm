@@ -18,7 +18,6 @@ package org.teavm.backend.wasm.intrinsics;
 import java.util.stream.Collectors;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.ast.Mangling;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.model.WasmType;
@@ -154,7 +153,7 @@ public class AddressIntrinsic implements WasmIntrinsic {
             case "align": {
                 MethodReference delegate = new MethodReference(WasmRuntime.class.getName(),
                         invocation.getMethod().getDescriptor());
-                WasmCall call = new WasmCall(Mangling.mangleMethod(delegate));
+                WasmCall call = new WasmCall(manager.getNames().forMethod(delegate));
                 call.getArguments().addAll(invocation.getArguments().stream()
                         .map(arg -> manager.generate(arg))
                         .collect(Collectors.toList()));

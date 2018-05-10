@@ -95,6 +95,8 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
         public void apply(WasmTarget target) {
             target.setMinHeapSize(32 * 1024 * 1024);
             target.setWastEmitted(true);
+            target.setCEmitted(true);
+            target.setDebugging(true);
         }
     };
 

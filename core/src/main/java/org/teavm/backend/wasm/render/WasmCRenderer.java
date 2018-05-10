@@ -15,6 +15,9 @@
  */
 package org.teavm.backend.wasm.render;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -65,10 +68,7 @@ public class WasmCRenderer {
     }
 
     public void render(WasmModule module) {
-        line("#include <inttypes.h>");
-        line("#include <string.h>");
-        line("#include <stdlib.h>");
-        line("#include <assert.h>");
+        renderPrologue();
         line("");
 
         renderFunctionDeclarations(module);
@@ -98,6 +98,22 @@ public class WasmCRenderer {
 
         outdent();
         line("}");
+    }
+
+    private void renderPrologue() {
+        ClassLoader classLoader = WasmCRenderer.class.getClassLoader();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                classLoader.getResourceAsStream("org/teavm/backend/wasm/wasm-runtime.c")))) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                line(line);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private void renderHeap(WasmModule module) {
@@ -143,7 +159,9 @@ public class WasmCRenderer {
 
     private void renderFunctionDeclarations(WasmModule module) {
         for (WasmFunction function : module.getFunctions().values()) {
-            line(functionDeclaration(function) + ";");
+            if (function.getImportName() == null) {
+                line(functionDeclaration(function) + ";");
+            }
         }
     }
 

@@ -42,7 +42,6 @@ import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.InvocationType;
-import org.teavm.ast.Mangling;
 import org.teavm.ast.MonitorEnterStatement;
 import org.teavm.ast.MonitorExitStatement;
 import org.teavm.ast.NewArrayExpr;
@@ -185,7 +184,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                     default:
                         Class<?> type = convertType(expr.getType());
                         MethodReference method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
-                        WasmCall call = new WasmCall(Mangling.mangleMethod(method), false);
+                        WasmCall call = new WasmCall(context.names.forMethod(method), false);
 
                         accept(expr.getFirstOperand());
                         call.getArguments().add(result);
@@ -239,7 +238,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             case COMPARE: {
                 Class<?> type = convertType(expr.getType());
                 MethodReference method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
-                WasmCall call = new WasmCall(Mangling.mangleMethod(method), false);
+                WasmCall call = new WasmCall(context.names.forMethod(method), false);
 
                 accept(expr.getFirstOperand());
                 call.getArguments().add(result);
@@ -912,7 +911,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         if (expr.getType() == InvocationType.STATIC || expr.getType() == InvocationType.SPECIAL) {
-            String methodName = Mangling.mangleMethod(expr.getMethod());
+            String methodName = context.names.forMethod(expr.getMethod());
 
             WasmCall call = new WasmCall(methodName);
             if (context.getImportedMethod(expr.getMethod()) != null) {
@@ -931,7 +930,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             block.getBody().add(new WasmSetLocal(tmp, allocateObject(expr.getMethod().getClassName(),
                     expr.getLocation())));
 
-            String methodName = Mangling.mangleMethod(expr.getMethod());
+            String methodName = context.names.forMethod(expr.getMethod());
             WasmCall call = new WasmCall(methodName);
             call.getArguments().add(new WasmGetLocal(tmp));
             for (Expr argument : expr.getArguments()) {
@@ -1201,7 +1200,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private WasmExpression allocateObject(String className, TextLocation location) {
         int tag = classGenerator.getClassPointer(ValueType.object(className));
-        String allocName = Mangling.mangleMethod(new MethodReference(Allocator.class, "allocate",
+        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class));
         WasmCall call = new WasmCall(allocName);
         call.getArguments().add(new WasmInt32Constant(tag));
@@ -1214,7 +1213,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         ValueType type = expr.getType();
 
         int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
-        String allocName = Mangling.mangleMethod(new MethodReference(Allocator.class, "allocateArray",
+        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocateArray",
                 RuntimeClass.class, int.class, Address.class));
         WasmCall call = new WasmCall(allocName);
         call.getArguments().add(new WasmInt32Constant(classPointer));
@@ -1244,7 +1243,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
-        String allocName = Mangling.mangleMethod(new MethodReference(Allocator.class, "allocateMultiArray",
+        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocateMultiArray",
                 RuntimeClass.class, Address.class, int.class, RuntimeArray.class));
         WasmCall call = new WasmCall(allocName);
         call.getArguments().add(new WasmInt32Constant(classPointer));
@@ -1345,7 +1344,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(InitClassStatement statement) {
         if (classGenerator.hasClinit(statement.getClassName())) {
-            result = new WasmCall(Mangling.mangleInitializer(statement.getClassName()));
+            result = new WasmCall(context.names.forClassInitializer(statement.getClassName()));
             result.setLocation(statement.getLocation());
         } else {
             result = null;
@@ -1378,10 +1377,12 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(MonitorEnterStatement statement) {
+        result = emptyStatement(statement.getLocation());
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
+        result = emptyStatement(statement.getLocation());
     }
 
     private WasmExpression negate(WasmExpression expr) {
@@ -1546,6 +1547,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         public Diagnostics getDiagnostics() {
             return context.getDiagnostics();
         }
+
+        @Override
+        public NameProvider getNames() {
+            return context.names;
+        }
     };
 
     private WasmLocal getTemporary(WasmType type) {
@@ -1567,5 +1573,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         WasmExpression classIndex = new WasmLoadInt32(4, instance, WasmInt32Subtype.INT32);
         return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classIndex,
                 new WasmInt32Constant(3));
+    }
+
+    private WasmExpression emptyStatement(TextLocation location) {
+        WasmDrop drop = new WasmDrop(new WasmInt32Constant(0));
+        drop.setLocation(location);
+        return drop;
     }
 }

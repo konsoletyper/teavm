@@ -43,18 +43,21 @@ public class WasmGenerationContext {
     private VirtualTableProvider vtableProvider;
     private TagRegistry tagRegistry;
     private WasmStringPool stringPool;
+    public final NameProvider names;
     private Map<MethodReference, ImportedMethod> importedMethods = new HashMap<>();
     private List<WasmIntrinsic> intrinsics = new ArrayList<>();
     private Map<MethodReference, WasmIntrinsicHolder> intrinsicCache = new HashMap<>();
 
     public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, Diagnostics diagnostics,
-            VirtualTableProvider vtableProvider, TagRegistry tagRegistry, WasmStringPool stringPool) {
+            VirtualTableProvider vtableProvider, TagRegistry tagRegistry, WasmStringPool stringPool,
+            NameProvider names) {
         this.classSource = classSource;
         this.module = module;
         this.diagnostics = diagnostics;
         this.vtableProvider = vtableProvider;
         this.tagRegistry = tagRegistry;
         this.stringPool = stringPool;
+        this.names = names;
     }
 
     public void addIntrinsic(WasmIntrinsic intrinsic) {

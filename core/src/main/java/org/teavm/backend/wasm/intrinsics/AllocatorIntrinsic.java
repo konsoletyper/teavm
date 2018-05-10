@@ -17,7 +17,6 @@ package org.teavm.backend.wasm.intrinsics;
 
 import java.util.stream.Collectors;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.ast.Mangling;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.model.expression.WasmCall;
@@ -63,7 +62,7 @@ public class AllocatorIntrinsic implements WasmIntrinsic {
             case "moveMemoryBlock": {
                 MethodReference delegateMethod = new MethodReference(WasmRuntime.class.getName(),
                         invocation.getMethod().getDescriptor());
-                WasmCall call = new WasmCall(Mangling.mangleMethod(delegateMethod));
+                WasmCall call = new WasmCall(manager.getNames().forMethod(delegateMethod));
                 call.getArguments().addAll(invocation.getArguments().stream()
                         .map(manager::generate)
                         .collect(Collectors.toList()));

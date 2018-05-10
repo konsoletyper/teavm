@@ -24,7 +24,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.teavm.ast.Mangling;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.binary.DataArray;
 import org.teavm.backend.wasm.binary.DataPrimitives;
@@ -52,6 +51,7 @@ import org.teavm.runtime.RuntimeObject;
 
 public class WasmClassGenerator {
     private ClassReaderSource classSource;
+    public final NameProvider names;
     private Map<ValueType, ClassBinaryData> binaryDataMap = new LinkedHashMap<>();
     private BinaryWriter binaryWriter;
     private Map<MethodReference, Integer> functions = new HashMap<>();
@@ -96,12 +96,13 @@ public class WasmClassGenerator {
     private static final int CLASS_SIMPLE_NAME = 13;
 
     public WasmClassGenerator(ClassReaderSource classSource, VirtualTableProvider vtableProvider,
-            TagRegistry tagRegistry, BinaryWriter binaryWriter) {
+            TagRegistry tagRegistry, BinaryWriter binaryWriter, NameProvider names) {
         this.classSource = classSource;
         this.vtableProvider = vtableProvider;
         this.tagRegistry = tagRegistry;
         this.binaryWriter = binaryWriter;
         this.stringPool = new WasmStringPool(this, binaryWriter);
+        this.names = names;
     }
 
     public WasmStringPool getStringPool() {
@@ -173,7 +174,7 @@ public class WasmClassGenerator {
             binaryData.data.setAddress(CLASS_ITEM_TYPE, itemBinaryData.start);
             binaryData.data.setInt(CLASS_IS_INSTANCE, functionTable.size());
             binaryData.data.setInt(CLASS_CANARY, RuntimeClass.computeCanary(4, 0));
-            functionTable.add(Mangling.mangleIsSupertype(type));
+            functionTable.add(names.forSupertypeFunction(type));
             binaryData.data.setAddress(CLASS_SIMPLE_NAME, 0);
             binaryData.data.setInt(CLASS_INIT, -1);
             binaryData.start = binaryWriter.append(vtableSize > 0 ? wrapper : binaryData.data);
@@ -189,7 +190,7 @@ public class WasmClassGenerator {
         value.setInt(CLASS_IS_INSTANCE, functionTable.size());
         value.setAddress(CLASS_SIMPLE_NAME, 0);
         value.setInt(CLASS_INIT, -1);
-        functionTable.add(Mangling.mangleIsSupertype(type));
+        functionTable.add(names.forSupertypeFunction(type));
         return value;
     }
 
@@ -226,7 +227,7 @@ public class WasmClassGenerator {
         header.setInt(CLASS_CANARY, RuntimeClass.computeCanary(occupiedSize, tag));
         header.setAddress(CLASS_NAME, stringPool.getStringPointer(name));
         header.setInt(CLASS_IS_INSTANCE, functionTable.size());
-        functionTable.add(Mangling.mangleIsSupertype(ValueType.object(name)));
+        functionTable.add(names.forSupertypeFunction(ValueType.object(name)));
         header.setAddress(CLASS_PARENT, parentPtr);
 
         if (vtable != null) {
@@ -259,7 +260,7 @@ public class WasmClassGenerator {
         if (cls != null && binaryData.start >= 0
                 && cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null) {
             header.setInt(CLASS_INIT, functionTable.size());
-            functionTable.add(Mangling.mangleInitializer(name));
+            functionTable.add(names.forClassInitializer(name));
         } else {
             header.setInt(CLASS_INIT, -1);
         }
@@ -340,7 +341,7 @@ public class WasmClassGenerator {
             } else {
                 methodIndex = functions.computeIfAbsent(vtableEntry.getImplementor(), implementor -> {
                     int result = functionTable.size();
-                    functionTable.add(Mangling.mangleMethod(implementor));
+                    functionTable.add(names.forMethod(implementor));
                     return result;
                 });
             }

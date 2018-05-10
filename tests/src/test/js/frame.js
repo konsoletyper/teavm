@@ -104,14 +104,14 @@ function launchWasmTest(path, callback) {
                 case "SUCCESS":
                     callback({status: "OK"});
                     break;
-                case "FAILED":
+                case "FAILURE":
                     callback({
                         status: "failed",
                         errorMessage: output.join("\n")
                     });
                     break;
                 default:
-                    output.push(TeaVM_outputBuffer);
+                    output.push(outputBuffer);
                     outputBuffer = "";
             }
         } else {
