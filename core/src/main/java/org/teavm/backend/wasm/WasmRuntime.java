@@ -233,8 +233,8 @@ public final class WasmRuntime {
                 source = source.add(1);
             }
         } else {
-            source.add(count);
-            target.add(count);
+            source = source.add(count);
+            target = target.add(count);
             while (count-- > 0) {
                 target = target.add(-1);
                 source = source.add(-1);
