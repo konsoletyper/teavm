@@ -813,7 +813,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void translateSwitchToWasmSwitch(SwitchStatement statement, WasmExpression condition,
             WasmBlock initialWrapper, WasmBlock defaultTarget, WasmBlock[] targets, int min, int max) {
-        if (min > 0) {
+        if (min != 0) {
             condition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB, condition,
                     new WasmInt32Constant(min));
         }

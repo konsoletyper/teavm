@@ -33,7 +33,7 @@ import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.CallLocation;
-import org.teavm.model.ListableClassReaderSource;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
@@ -41,13 +41,13 @@ import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.Resource;
 
 public class MetadataIntrinsic implements WasmIntrinsic {
-    private ListableClassReaderSource classSource;
+    private ClassReaderSource classSource;
     private ClassLoader classLoader;
     private ServiceRepository services;
     private Properties properties;
     private Map<ResourceTypeDescriptor, DataStructure> resourceTypeCache = new HashMap<>();
 
-    public MetadataIntrinsic(ListableClassReaderSource classSource, ClassLoader classLoader,
+    public MetadataIntrinsic(ClassReaderSource classSource, ClassLoader classLoader,
             ServiceRepository services, Properties properties) {
         this.classSource = classSource;
         this.classLoader = classLoader;

@@ -94,6 +94,7 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
@@ -325,7 +326,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         context.addIntrinsic(new PlatformClassMetadataIntrinsic());
         context.addIntrinsic(new ClassIntrinsic());
 
-        IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext(classes);
+        IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext();
         for (WasmIntrinsicFactory additionalIntrinsicFactory : additionalIntrinsics) {
             context.addIntrinsic(additionalIntrinsicFactory.create(intrinsicFactoryContext));
         }
@@ -416,15 +417,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     }
 
     private class IntrinsicFactoryContext implements WasmIntrinsicFactoryContext {
-        private ListableClassReaderSource classSource;
-
-        IntrinsicFactoryContext(ListableClassReaderSource classSource) {
-            this.classSource = classSource;
-        }
-
         @Override
-        public ListableClassReaderSource getClassSource() {
-            return classSource;
+        public ClassReaderSource getClassSource() {
+            return controller.getUnprocessedClassSource();
         }
 
         @Override

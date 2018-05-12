@@ -308,12 +308,24 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmFloat32Constant expression) {
-        value = CExpression.relocatable(Float.toHexString(expression.getValue()) + "F");
+        if (Float.isInfinite(expression.getValue())) {
+            value = CExpression.relocatable(expression.getValue() < 0 ? "-INFINITY" : "INFINITY");
+        } else if (Float.isNaN(expression.getValue())) {
+            value = CExpression.relocatable("NAN");
+        } else {
+            value = CExpression.relocatable(Float.toHexString(expression.getValue()) + "F");
+        }
     }
 
     @Override
     public void visit(WasmFloat64Constant expression) {
-        value = CExpression.relocatable(Double.toHexString(expression.getValue()));
+        if (Double.isInfinite(expression.getValue())) {
+            value = CExpression.relocatable(expression.getValue() < 0 ? "-INFINITY" : "INFINITY");
+        } else if (Double.isNaN(expression.getValue())) {
+            value = CExpression.relocatable("NAN");
+        } else {
+            value = CExpression.relocatable(Double.toHexString(expression.getValue()));
+        }
     }
 
     @Override

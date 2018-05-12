@@ -34,7 +34,6 @@ public class PlatformIntrinsic implements WasmIntrinsic {
         switch (methodDescriptor.getName()) {
             case "getPlatformObject":
             case "asJavaClass":
-            case "getName":
             case "createQueue":
                 return true;
             default:
@@ -48,7 +47,6 @@ public class PlatformIntrinsic implements WasmIntrinsic {
             case "getPlatformObject":
             case "asJavaClass":
                 return manager.generate(invocation.getArguments().get(0));
-            case "getName":
             case "createQueue":
                 return new WasmInt32Constant(0);
             default:

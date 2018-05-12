@@ -40,7 +40,11 @@ public class TRandom extends TObject implements TSerializable {
     }
 
     protected int next(int bits) {
-        return (int) (nextDouble() * (1L << TMath.min(32, bits)));
+        if (bits == 32) {
+            return (int) (nextDouble() * ((1L << 32) - 1) + Integer.MIN_VALUE);
+        } else {
+            return (int) (nextDouble() * (1L << TMath.min(32, bits)));
+        }
     }
 
     public void nextBytes(byte[] bytes) {

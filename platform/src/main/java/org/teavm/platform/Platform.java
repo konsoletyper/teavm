@@ -227,6 +227,7 @@ public final class Platform {
         return cls.getMetadata().getArrayItem();
     }
 
+    @Unmanaged
     public static String getName(PlatformClass cls) {
         return cls.getMetadata().getName();
     }

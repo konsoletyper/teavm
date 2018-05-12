@@ -78,7 +78,9 @@ public class VirtualTableProvider {
         Set<MethodDescriptor> newDescriptors = virtualMethodMap.get(className);
         if (newDescriptors != null) {
             for (MethodDescriptor method : newDescriptors) {
-                table.entries.put(method, new VirtualTableEntry(table, method, null, table.entries.size()));
+                if (!table.entries.containsKey(method)) {
+                    table.entries.put(method, new VirtualTableEntry(table, method, null, table.entries.size()));
+                }
             }
         }
 

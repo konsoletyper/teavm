@@ -129,6 +129,7 @@ public final class WasmRuntime {
     public static void moveMemoryBlock(Address source, Address target, int count) {
         if (count < 8) {
             slowMemoryMove(source, target, count);
+            return;
         }
         int diff = source.toInt() - target.toInt();
         if (diff == 0) {

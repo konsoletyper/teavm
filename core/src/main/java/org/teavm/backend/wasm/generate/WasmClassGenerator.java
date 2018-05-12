@@ -175,8 +175,10 @@ public class WasmClassGenerator {
             binaryData.data.setInt(CLASS_IS_INSTANCE, functionTable.size());
             binaryData.data.setInt(CLASS_CANARY, RuntimeClass.computeCanary(4, 0));
             functionTable.add(names.forSupertypeFunction(type));
+            binaryData.data.setAddress(CLASS_NAME, stringPool.getStringPointer(type.toString()));
             binaryData.data.setAddress(CLASS_SIMPLE_NAME, 0);
             binaryData.data.setInt(CLASS_INIT, -1);
+            binaryData.data.setAddress(CLASS_PARENT, getClassPointer(ValueType.object("java.lang.Object")));
             binaryData.start = binaryWriter.append(vtableSize > 0 ? wrapper : binaryData.data);
 
             itemBinaryData.data.setAddress(CLASS_ARRAY_TYPE, binaryData.start);
@@ -428,7 +430,11 @@ public class WasmClassGenerator {
             int desiredAlignment = getTypeSize(field.getType());
             if (field.hasModifier(ElementModifier.STATIC)) {
                 DataType type = asDataType(field.getType());
-                data.fieldLayout.put(field.getName(), binaryWriter.append(type.createValue()));
+                DataValue value = type.createValue();
+                if (field.getInitialValue() != null) {
+                    setInitialValue(field.getType(), value, field.getInitialValue());
+                }
+                data.fieldLayout.put(field.getName(), binaryWriter.append(value));
             } else {
                 int offset = align(data.size, desiredAlignment);
                 data.fieldLayout.put(field.getName(), offset);
@@ -437,6 +443,41 @@ public class WasmClassGenerator {
             if (data.alignment == 0) {
                 data.alignment = desiredAlignment;
             }
+        }
+    }
+
+    private void setInitialValue(ValueType type, DataValue data, Object value) {
+        if (value instanceof Number) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BYTE:
+                    data.setByte(0, ((Number) value).byteValue());
+                    break;
+                case SHORT:
+                    data.setShort(0, ((Number) value).shortValue());
+                    break;
+                case CHARACTER:
+                    data.setShort(0, ((Number) value).shortValue());
+                    break;
+                case INTEGER:
+                    data.setInt(0, ((Number) value).intValue());
+                    break;
+                case LONG:
+                    data.setLong(0, ((Number) value).longValue());
+                    break;
+                case FLOAT:
+                    data.setFloat(0, ((Number) value).floatValue());
+                    break;
+                case DOUBLE:
+                    data.setDouble(0, ((Number) value).doubleValue());
+                    break;
+                case BOOLEAN:
+                    data.setByte(0, ((Number) value).byteValue());
+                    break;
+            }
+        } else if (value instanceof Boolean) {
+            data.setByte(0, (Boolean) value ? (byte) 1 : 0);
+        } else if (value instanceof String) {
+            data.setAddress(0, stringPool.getStringPointer((String) value));
         }
     }
 
