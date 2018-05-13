@@ -113,7 +113,6 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
-import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableEntry;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
@@ -690,7 +689,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 break;
         }
 
-        int base = classGenerator.getClassSize(RuntimeArray.class.getName());
+        int base = BinaryWriter.align(classGenerator.getClassSize(RuntimeArray.class.getName()), 1 << size);
         array = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, array, new WasmInt32Constant(base));
         if (size != 0) {
             index = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, index,
@@ -1270,58 +1269,24 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     public void visit(InstanceOfExpr expr) {
         accept(expr.getExpr());
 
-        if (expr.getType() instanceof ValueType.Object) {
-            ValueType.Object cls = (ValueType.Object) expr.getType();
-            List<TagRegistry.Range> ranges = context.getTagRegistry().getRanges(cls.getClassName());
-            ranges.sort(Comparator.comparingInt(range -> range.lower));
+        WasmBlock block = new WasmBlock(false);
+        block.setType(WasmType.INT32);
+        block.setLocation(expr.getLocation());
 
-            WasmBlock block = new WasmBlock(false);
-            block.setType(WasmType.INT32);
-            block.setLocation(expr.getLocation());
+        WasmLocal objectVar = getTemporary(WasmType.INT32);
+        block.getBody().add(new WasmSetLocal(objectVar, result));
 
-            WasmLocal tagVar = getTemporary(WasmType.INT32);
-            int tagOffset = classGenerator.getFieldOffset(tagField);
-            WasmExpression tagPtr = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    getReferenceToClass(result), new WasmInt32Constant(tagOffset));
-            block.getBody().add(new WasmSetLocal(tagVar, new WasmLoadInt32(4, tagPtr, WasmInt32Subtype.INT32)));
+        WasmBranch ifNull = new WasmBranch(new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ,
+                new WasmGetLocal(objectVar), new WasmInt32Constant(0)), block);
+        ifNull.setResult(new WasmInt32Constant(0));
+        block.getBody().add(ifNull);
 
-            WasmExpression lowerThanMinCond = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
-                    new WasmGetLocal(tagVar), new WasmInt32Constant(ranges.get(0).lower));
-            WasmBranch lowerThanMin = new WasmBranch(lowerThanMinCond, block);
-            lowerThanMin.setResult(new WasmInt32Constant(0));
-            block.getBody().add(new WasmDrop(lowerThanMin));
-
-            WasmExpression upperThanMaxCond = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED,
-                    new WasmGetLocal(tagVar), new WasmInt32Constant(ranges.get(ranges.size() - 1).upper));
-            WasmBranch upperThanMax = new WasmBranch(upperThanMaxCond, block);
-            upperThanMax.setResult(new WasmInt32Constant(0));
-            block.getBody().add(new WasmDrop(upperThanMax));
-
-            for (int i = 1; i < ranges.size(); ++i) {
-                WasmExpression upperThanExcluded = new WasmIntBinary(WasmIntType.INT32,
-                        WasmIntBinaryOperation.GT_SIGNED, new WasmGetLocal(tagVar),
-                        new WasmInt32Constant(ranges.get(i - 1).upper));
-                WasmConditional conditional = new WasmConditional(upperThanExcluded);
-                WasmExpression lowerThanExcluded = new WasmIntBinary(WasmIntType.INT32,
-                        WasmIntBinaryOperation.LT_SIGNED, new WasmGetLocal(tagVar),
-                        new WasmInt32Constant(ranges.get(i).lower));
-
-                WasmBranch branch = new WasmBranch(lowerThanExcluded, block);
-                branch.setResult(new WasmInt32Constant(0));
-                conditional.getThenBlock().getBody().add(new WasmDrop(branch));
-
-                block.getBody().add(conditional);
-            }
-
-            block.getBody().add(new WasmInt32Constant(1));
-            releaseTemporary(tagVar);
-
-            result = block;
-        } else if (expr.getType() instanceof ValueType.Array) {
-            throw new UnsupportedOperationException();
-        } else {
-            throw new AssertionError();
-        }
+        WasmCall supertypeCall = new WasmCall(context.names.forSupertypeFunction(expr.getType()));
+        int tagOffset = classGenerator.getFieldOffset(tagField);
+        WasmExpression classRef = new WasmLoadInt32(4, result, WasmInt32Subtype.INT32, tagOffset);
+        classRef = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classRef, new WasmInt32Constant(3));
+        supertypeCall.getArguments().add(classRef);
+        block.getBody().add(supertypeCall);
     }
 
     @Override

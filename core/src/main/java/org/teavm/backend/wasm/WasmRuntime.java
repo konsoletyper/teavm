@@ -203,24 +203,21 @@ public final class WasmRuntime {
             }
 
             while (alignedSourceEnd.toInt() > alignedSourceStart.toInt()) {
-                alignedTargetEnd.putInt(alignedSourceEnd.getInt());
                 alignedSourceEnd = alignedSourceEnd.add(-4);
                 alignedTargetEnd = alignedTargetEnd.add(-4);
+                alignedTargetEnd.putInt(alignedSourceEnd.getInt());
             }
 
             switch (source.toInt() - alignedSourceStart.toInt()) {
-                case 0:
-                    alignedTargetStart.putInt(alignedSourceStart.getInt());
-                    break;
                 case 1:
-                    alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
-                    alignedTargetStart.add(1).putByte(alignedSourceStart.add(1).getByte());
+                    alignedTargetStart.add(-2).putShort(alignedSourceStart.add(-2).getShort());
+                    alignedTargetStart.add(-3).putByte(alignedSourceStart.add(-3).getByte());
                     break;
                 case 2:
-                    alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
+                    alignedTargetStart.add(-2).putShort(alignedSourceStart.add(-2).getShort());
                     break;
                 case 3:
-                    alignedTargetStart.add(3).putByte(alignedSourceStart.add(3).getByte());
+                    alignedTargetStart.add(-1).putByte(alignedSourceStart.add(-1).getByte());
                     break;
             }
         }

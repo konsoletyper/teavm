@@ -50,6 +50,7 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
 public class WasmClassGenerator {
+    private ClassReaderSource processedClassSource;
     private ClassReaderSource classSource;
     public final NameProvider names;
     private Map<ValueType, ClassBinaryData> binaryDataMap = new LinkedHashMap<>();
@@ -95,8 +96,10 @@ public class WasmClassGenerator {
     private static final int CLASS_LAYOUT = 12;
     private static final int CLASS_SIMPLE_NAME = 13;
 
-    public WasmClassGenerator(ClassReaderSource classSource, VirtualTableProvider vtableProvider,
-            TagRegistry tagRegistry, BinaryWriter binaryWriter, NameProvider names) {
+    public WasmClassGenerator(ClassReaderSource processedClassSource, ClassReaderSource classSource,
+            VirtualTableProvider vtableProvider, TagRegistry tagRegistry, BinaryWriter binaryWriter,
+            NameProvider names) {
+        this.processedClassSource = processedClassSource;
         this.classSource = classSource;
         this.vtableProvider = vtableProvider;
         this.tagRegistry = tagRegistry;
@@ -175,7 +178,7 @@ public class WasmClassGenerator {
             binaryData.data.setInt(CLASS_IS_INSTANCE, functionTable.size());
             binaryData.data.setInt(CLASS_CANARY, RuntimeClass.computeCanary(4, 0));
             functionTable.add(names.forSupertypeFunction(type));
-            binaryData.data.setAddress(CLASS_NAME, stringPool.getStringPointer(type.toString()));
+            binaryData.data.setAddress(CLASS_NAME, stringPool.getStringPointer(type.toString().replace('/', '.')));
             binaryData.data.setAddress(CLASS_SIMPLE_NAME, 0);
             binaryData.data.setInt(CLASS_INIT, -1);
             binaryData.data.setAddress(CLASS_PARENT, getClassPointer(ValueType.object("java.lang.Object")));
@@ -193,6 +196,43 @@ public class WasmClassGenerator {
         value.setAddress(CLASS_SIMPLE_NAME, 0);
         value.setInt(CLASS_INIT, -1);
         functionTable.add(names.forSupertypeFunction(type));
+
+        String name;
+        if (type == ValueType.VOID) {
+            name = "void";
+        } else {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                    name = "boolean";
+                    break;
+                case BYTE:
+                    name = "byte";
+                    break;
+                case SHORT:
+                    name = "short";
+                    break;
+                case CHARACTER:
+                    name = "char";
+                    break;
+                case INTEGER:
+                    name = "int";
+                    break;
+                case LONG:
+                    name = "long";
+                    break;
+                case FLOAT:
+                    name = "float";
+                    break;
+                case DOUBLE:
+                    name = "double";
+                    break;
+                default:
+                    name = "";
+            }
+        }
+
+        value.setAddress(CLASS_NAME, stringPool.getStringPointer(name));
+
         return value;
     }
 
@@ -253,7 +293,7 @@ public class WasmClassGenerator {
             staticGcRoots.add(binaryData.fieldLayout.get(field.getFieldName()));
         }
 
-        ClassReader cls = classSource.get(name);
+        ClassReader cls = processedClassSource.get(name);
         if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
             header.setAddress(CLASS_ENUM_VALUES, generateEnumValues(cls, binaryData));
             flags |= RuntimeClass.ENUM;

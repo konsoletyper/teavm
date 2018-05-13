@@ -27,6 +27,7 @@ import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.generators.GeneratorContext;
+import org.teavm.backend.lowlevel.generate.ClassGeneratorUtil;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
@@ -442,11 +443,7 @@ public class ClassGenerator {
             tag = 0;
             sizeExpr = "sizeof(" + CodeWriter.strictTypeAsString(type) + ")";
             flags |= RuntimeClass.PRIMITIVE;
-            if (type instanceof ValueType.Primitive) {
-                flags |= getPrimitiveFlag((ValueType.Primitive) type) << RuntimeClass.PRIMITIVE_SHIFT;
-            } else {
-                flags |= RuntimeClass.VOID_PRIMITIVE << RuntimeClass.PRIMITIVE_SHIFT;
-            }
+            flags = ClassGeneratorUtil.applyPrimitiveFlags(flags, type);
             itemTypeExpr = "NULL";
         }
 
@@ -549,29 +546,6 @@ public class ClassGenerator {
             }
         }
         layoutWriter.println().outdent().println("};");
-    }
-
-    private int getPrimitiveFlag(ValueType.Primitive type) {
-        switch (type.getKind()) {
-            case BOOLEAN:
-                return RuntimeClass.BOOLEAN_PRIMITIVE;
-            case BYTE:
-                return RuntimeClass.BYTE_PRIMITIVE;
-            case SHORT:
-                return RuntimeClass.SHORT_PRIMITIVE;
-            case CHARACTER:
-                return RuntimeClass.CHAR_PRIMITIVE;
-            case INTEGER:
-                return RuntimeClass.INT_PRIMITIVE;
-            case LONG:
-                return RuntimeClass.LONG_PRIMITIVE;
-            case FLOAT:
-                return RuntimeClass.FLOAT_PRIMITIVE;
-            case DOUBLE:
-                return RuntimeClass.DOUBLE_PRIMITIVE;
-            default:
-                throw new AssertionError();
-        }
     }
 
     private String classFieldName(String field) {

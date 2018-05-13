@@ -35,6 +35,9 @@ import org.teavm.backend.wasm.generate.WasmDependencyListener;
 import org.teavm.backend.wasm.generate.WasmGenerationContext;
 import org.teavm.backend.wasm.generate.WasmGenerator;
 import org.teavm.backend.wasm.generate.WasmStringPool;
+import org.teavm.backend.wasm.generators.ArrayGenerator;
+import org.teavm.backend.wasm.generators.WasmMethodGenerator;
+import org.teavm.backend.wasm.generators.WasmMethodGeneratorContext;
 import org.teavm.backend.wasm.intrinsics.AddressIntrinsic;
 import org.teavm.backend.wasm.intrinsics.AllocatorIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ClassIntrinsic;
@@ -83,6 +86,7 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
@@ -305,8 +309,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         TagRegistry tagRegistry = new TagRegistry(classes);
         BinaryWriter binaryWriter = new BinaryWriter(256);
         NameProvider names = new NameProvider(controller.getUnprocessedClassSource());
-        WasmClassGenerator classGenerator = new WasmClassGenerator(
-                controller.getUnprocessedClassSource(), vtableProvider, tagRegistry, binaryWriter, names);
+        WasmClassGenerator classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),
+                vtableProvider, tagRegistry, binaryWriter, names);
 
         Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
                 new HashSet<>(), false, true);
@@ -325,6 +329,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         context.addIntrinsic(new PlatformObjectIntrinsic(classGenerator));
         context.addIntrinsic(new PlatformClassMetadataIntrinsic());
         context.addIntrinsic(new ClassIntrinsic());
+        context.addGenerator(new ArrayGenerator());
 
         IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext();
         for (WasmIntrinsicFactory additionalIntrinsicFactory : additionalIntrinsics) {
@@ -345,7 +350,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         int pageSize = 1 << 16;
         int pages = (minHeapSize + pageSize - 1) / pageSize;
         module.setMemorySize(pages);
-        generateMethods(classes, context, generator, module);
+        generateMethods(classes, context, generator, classGenerator, binaryWriter, module);
         exceptionHandlingIntrinsic.postProcess(shadowStackTransformer.getCallSites());
         generateIsSupertypeFunctions(tagRegistry, module, classGenerator);
         classGenerator.postProcess();
@@ -465,7 +470,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     }
 
     private void generateMethods(ListableClassHolderSource classes, WasmGenerationContext context,
-            WasmGenerator generator, WasmModule module) {
+            WasmGenerator generator, WasmClassGenerator classGenerator, BinaryWriter binaryWriter, WasmModule module) {
         List<MethodHolder> methods = new ArrayList<>();
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
@@ -477,6 +482,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 methods.add(method);
             }
         }
+
+        MethodGeneratorContextImpl methodGeneratorContext = new MethodGeneratorContextImpl(binaryWriter,
+                context.getStringPool(), context.getDiagnostics(), context.names, classGenerator, classes);
 
         for (MethodHolder method : methods) {
             ClassHolder cls = classes.get(method.getOwnerName());
@@ -501,12 +509,18 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             }
 
             if (implementor.hasModifier(ElementModifier.NATIVE)) {
-                if (context.getImportedMethod(method.getReference()) == null) {
-                    CallLocation location = new CallLocation(method.getReference());
-                    controller.getDiagnostics().error(location, "Method {{m0}} is native but "
-                            + "has no {{c1}} annotation on it", method.getReference(), Import.class.getName());
+                WasmMethodGenerator methodGenerator = context.getGenerator(method.getReference());
+                if (methodGenerator != null) {
+                    WasmFunction function = context.getFunction(context.names.forMethod(method.getReference()));
+                    methodGenerator.apply(method.getReference(), function, methodGeneratorContext);
+                } else {
+                    if (context.getImportedMethod(method.getReference()) == null) {
+                        CallLocation location = new CallLocation(method.getReference());
+                        controller.getDiagnostics().error(location, "Method {{m0}} is native but "
+                                + "has no {{c1}} annotation on it", method.getReference(), Import.class.getName());
+                    }
+                    generator.generateNative(method.getReference());
                 }
-                generator.generateNative(method.getReference());
                 continue;
             }
             if (implementor.getProgram() == null || implementor.getProgram().basicBlockCount() == 0) {
@@ -756,5 +770,55 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     @Override
     public boolean isAsyncSupported() {
         return false;
+    }
+
+    static class MethodGeneratorContextImpl implements WasmMethodGeneratorContext {
+        private BinaryWriter binaryWriter;
+        private WasmStringPool stringPool;
+        private Diagnostics diagnostics;
+        private NameProvider names;
+        private WasmClassGenerator classGenerator;
+        private ClassReaderSource classSource;
+
+        MethodGeneratorContextImpl(BinaryWriter binaryWriter, WasmStringPool stringPool,
+                Diagnostics diagnostics, NameProvider names, WasmClassGenerator classGenerator,
+                ClassReaderSource classSource) {
+            this.binaryWriter = binaryWriter;
+            this.stringPool = stringPool;
+            this.diagnostics = diagnostics;
+            this.names = names;
+            this.classGenerator = classGenerator;
+            this.classSource = classSource;
+        }
+
+        @Override
+        public BinaryWriter getBinaryWriter() {
+            return binaryWriter;
+        }
+
+        @Override
+        public WasmStringPool getStringPool() {
+            return stringPool;
+        }
+
+        @Override
+        public Diagnostics getDiagnostics() {
+            return diagnostics;
+        }
+
+        @Override
+        public NameProvider getNames() {
+            return names;
+        }
+
+        @Override
+        public WasmClassGenerator getClassGenerator() {
+            return classGenerator;
+        }
+
+        @Override
+        public ClassReaderSource getClassSource() {
+            return classSource;
+        }
     }
 }

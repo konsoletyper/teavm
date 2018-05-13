@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.teavm.backend.wasm.generators.WasmMethodGenerator;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmModule;
@@ -46,7 +47,9 @@ public class WasmGenerationContext {
     public final NameProvider names;
     private Map<MethodReference, ImportedMethod> importedMethods = new HashMap<>();
     private List<WasmIntrinsic> intrinsics = new ArrayList<>();
-    private Map<MethodReference, WasmIntrinsicHolder> intrinsicCache = new HashMap<>();
+    private List<WasmMethodGenerator> generators = new ArrayList<>();
+    private Map<MethodReference, IntrinsicHolder> intrinsicCache = new HashMap<>();
+    private Map<MethodReference, GeneratorHolder> generatorCache = new HashMap<>();
 
     public WasmGenerationContext(ClassReaderSource classSource, WasmModule module, Diagnostics diagnostics,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, WasmStringPool stringPool,
@@ -64,17 +67,36 @@ public class WasmGenerationContext {
         intrinsics.add(intrinsic);
     }
 
+    public void addGenerator(WasmMethodGenerator generator) {
+        generators.add(generator);
+    }
+
     public WasmIntrinsic getIntrinsic(MethodReference method) {
-        return intrinsicCache.computeIfAbsent(method, key -> new WasmIntrinsicHolder(intrinsics.stream()
+        return intrinsicCache.computeIfAbsent(method, key -> new IntrinsicHolder(intrinsics.stream()
                 .filter(intrinsic -> intrinsic.isApplicable(key))
                 .findFirst().orElse(null)))
                 .value;
     }
 
-    private static class WasmIntrinsicHolder {
+    public WasmMethodGenerator getGenerator(MethodReference method) {
+        return generatorCache.computeIfAbsent(method, key -> new GeneratorHolder(generators.stream()
+                .filter(generator -> generator.isApplicable(key))
+                .findFirst().orElse(null)))
+                .value;
+    }
+
+    static class IntrinsicHolder {
         WasmIntrinsic value;
 
-        public WasmIntrinsicHolder(WasmIntrinsic value) {
+        IntrinsicHolder(WasmIntrinsic value) {
+            this.value = value;
+        }
+    }
+
+    static class GeneratorHolder {
+        WasmMethodGenerator value;
+
+        GeneratorHolder(WasmMethodGenerator value) {
             this.value = value;
         }
     }
