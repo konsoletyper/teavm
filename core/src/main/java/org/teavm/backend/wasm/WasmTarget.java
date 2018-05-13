@@ -15,10 +15,13 @@
  */
 package org.teavm.backend.wasm;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -419,6 +422,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         if (cEmitted) {
             emitC(module, buildTarget, getBaseName(outputName) + ".wasm.c");
         }
+
+        emitRuntime(buildTarget, getBaseName(outputName) + ".wasm-runtime.js");
     }
 
     private class IntrinsicFactoryContext implements WasmIntrinsicFactoryContext {
@@ -466,6 +471,22 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         try (OutputStream output = buildTarget.createResource(outputName);
                 Writer writer = new OutputStreamWriter(output, "UTF-8")) {
             writer.write(renderer.toString());
+        }
+    }
+
+    private void emitRuntime(BuildTarget buildTarget, String outputName) throws IOException {
+        ClassLoader loader = controller.getClassLoader();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                loader.getResourceAsStream("org/teavm/backend/wasm/wasm-runtime.js"), StandardCharsets.UTF_8));
+                Writer writer = new OutputStreamWriter(buildTarget.createResource(outputName),
+                        StandardCharsets.UTF_8)) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                writer.append(line).append('\n');
+            }
         }
     }
 
