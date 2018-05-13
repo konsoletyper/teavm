@@ -28,7 +28,7 @@ public final class Allocator {
     public static Address allocate(RuntimeClass tag) {
         RuntimeObject object = GC.alloc(tag.size);
         fillZero(object.toAddress(), tag.size);
-        object.classReference = tag.toAddress().toInt() >> 3;
+        object.classReference = tag.pack();
         return object.toAddress();
     }
 
@@ -41,7 +41,7 @@ public final class Allocator {
         fillZero(result, sizeInBytes);
 
         RuntimeArray array = result.toStructure();
-        array.classReference = tag.toAddress().toInt() >> 3;
+        array.classReference = tag.pack();
         array.size = size;
 
         return result;

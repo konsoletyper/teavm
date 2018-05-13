@@ -29,8 +29,8 @@ typedef struct JavaArray JavaArray;
 typedef struct JavaClass JavaClass;
 typedef struct JavaString JavaString;
 
-#define PACK_CLASS(cls) ((int32_t) (((uintptr_t) (cls)) >> 3))
-#define UNPACK_CLASS(cls) ((JavaClass *) (uintptr_t) (uint32_t) (uintptr_t) (((int64_t*) NULL) + cls))
+#define PACK_CLASS(cls) ((int32_t) ((uintptr_t) ((char*) (cls) - (char*) &TeaVM_beforeClasses) >> 3))
+#define UNPACK_CLASS(cls) ((JavaClass*) ((char*) &TeaVM_beforeClasses + ((cls) << 3)))
 #define CLASS_OF(obj) (UNPACK_CLASS(((JavaObject*) (obj))->header))
 #define AS(ptr, type) ((type*) (ptr))
 
@@ -65,10 +65,10 @@ static inline int32_t instanceof(void*, int32_t (*)(JavaClass*));
 static inline void* checkcast(void*, int32_t (*)(JavaClass*));
 
 #define ALLOC_STACK(size) \
-  void* __shadowStack__[(size) + 3]; \
-  __shadowStack__[0] = stackTop; \
-  __shadowStack__[2] = (void*) size; \
-  stackTop = __shadowStack__
+    void* __shadowStack__[(size) + 3]; \
+    __shadowStack__[0] = stackTop; \
+    __shadowStack__[2] = (void*) size; \
+    stackTop = __shadowStack__
 
 #define RELEASE_STACK stackTop = __shadowStack__[0]
 #define GC_ROOT(index, ptr) __shadowStack__[3 + (index)] = ptr
@@ -105,6 +105,8 @@ static void* gc_regionsAddress = NULL;
 static int32_t gc_regionSize = INT32_C(32768);
 static int32_t gc_regionMaxCount = INT32_C(0);
 static int64_t gc_availableBytes = INT64_C(0);
+
+static char TeaVM_beforeClasses[128] = "TEAVM";
 
 static double TeaVM_rand() {
     return rand() / ((double) RAND_MAX + 1);

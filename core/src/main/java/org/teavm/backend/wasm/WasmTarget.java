@@ -52,6 +52,7 @@ import org.teavm.backend.wasm.intrinsics.PlatformClassIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformClassMetadataIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformObjectIntrinsic;
+import org.teavm.backend.wasm.intrinsics.RuntimeClassIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ShadowStackIntrinsic;
 import org.teavm.backend.wasm.intrinsics.StructureIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicFactory;
@@ -332,6 +333,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         context.addIntrinsic(new PlatformObjectIntrinsic(classGenerator));
         context.addIntrinsic(new PlatformClassMetadataIntrinsic());
         context.addIntrinsic(new ClassIntrinsic());
+        context.addIntrinsic(new RuntimeClassIntrinsic());
         context.addGenerator(new ArrayGenerator());
 
         IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext();

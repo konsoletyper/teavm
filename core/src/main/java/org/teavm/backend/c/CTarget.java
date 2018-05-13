@@ -53,6 +53,7 @@ import org.teavm.backend.c.intrinsic.PlatformClassIntrinsic;
 import org.teavm.backend.c.intrinsic.PlatformClassMetadataIntrinsic;
 import org.teavm.backend.c.intrinsic.PlatformIntrinsic;
 import org.teavm.backend.c.intrinsic.PlatformObjectIntrinsic;
+import org.teavm.backend.c.intrinsic.RuntimeClassIntrinsic;
 import org.teavm.backend.c.intrinsic.ShadowStackIntrinsic;
 import org.teavm.backend.c.intrinsic.StructureIntrinsic;
 import org.teavm.dependency.ClassDependency;
@@ -231,6 +232,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         intrinsics.add(new MutatorIntrinsic());
         intrinsics.add(new ExceptionHandlingIntrinsic());
         intrinsics.add(new FunctionIntrinsic(characteristics, exportDependencyListener.getResolvedMethods()));
+        intrinsics.add(new RuntimeClassIntrinsic());
 
         List<Generator> generators = new ArrayList<>();
         generators.add(new ArrayGenerator());

@@ -61,6 +61,12 @@ public class RuntimeClass extends RuntimeObject {
 
     @Unmanaged
     public static RuntimeClass getClass(RuntimeObject object) {
-        return Address.fromInt(object.classReference << 3).toStructure();
+        return unpack(object.classReference);
     }
+
+    @Unmanaged
+    public static native RuntimeClass unpack(int n);
+
+    @Unmanaged
+    public final native int pack();
 }
