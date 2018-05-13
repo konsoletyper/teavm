@@ -92,14 +92,7 @@ class CRunStrategy implements TestRunStrategy {
             throws IOException, InterruptedException {
         String[] parts = compilerCommand.split(" +");
         for (int i = 0; i < parts.length; ++i) {
-            switch (parts[i]) {
-                case "@IN":
-                    parts[i] = inputFile.getPath();
-                    break;
-                case "@OUT":
-                    parts[i] = outputFile.getPath();
-                    break;
-            }
+            parts[i] = parts[i].replace("@IN", inputFile.getPath()).replace("@OUT", outputFile.getPath());
         }
         return runProcess(new ProcessBuilder(parts).start(), output);
     }

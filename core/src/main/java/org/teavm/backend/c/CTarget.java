@@ -35,6 +35,7 @@ import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.analyze.CDependencyListener;
 import org.teavm.backend.c.generate.BufferedCodeWriter;
 import org.teavm.backend.c.generate.ClassGenerator;
+import org.teavm.backend.c.generate.CodeGeneratorUtil;
 import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generate.GenerationContext;
 import org.teavm.backend.c.generate.NameProvider;
@@ -416,7 +417,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private void generateVirtualTableHeaders(GenerationContext context, CodeWriter writer,
             Set<? extends ValueType> types) {
         String classClassName = context.getNames().forClassInstance(ValueType.object("java.lang.Class"));
-        writer.println("int32_t classHeader = PACK_CLASS(&" + classClassName + ") | " + RuntimeObject.GC_MARKED + ";");
+        writer.print("int32_t classHeader = PACK_CLASS(&" + classClassName + ") | ");
+        CodeGeneratorUtil.writeValue(writer, context, RuntimeObject.GC_MARKED);
+        writer.println(";");
 
         for (ValueType type : types) {
             if (!ClassGenerator.needsVirtualTable(context.getCharacteristics(), type)) {
@@ -430,8 +433,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateStringPoolHeaders(GenerationContext context, CodeWriter writer) {
         String stringClassName = context.getNames().forClassInstance(ValueType.object("java.lang.String"));
-        writer.println("int32_t stringHeader = PACK_CLASS(&" + stringClassName + ") | "
-                + RuntimeObject.GC_MARKED + ";");
+        writer.print("int32_t stringHeader = PACK_CLASS(&" + stringClassName + ") | ");
+        CodeGeneratorUtil.writeValue(writer, context, RuntimeObject.GC_MARKED);
+        writer.println(";");
 
         int size = context.getStringPool().getStrings().size();
         writer.println("for (int i = 0; i < " + size + "; ++i) {").indent();

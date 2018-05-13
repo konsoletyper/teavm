@@ -81,7 +81,7 @@ static inline void* checkcast(void*, int32_t (*)(JavaClass*));
 #define STRUCTURE_ADD(structure, address, offset) (((structure*) (address)) + offset)
 
 #define TEAVM_STRING(length, hash, s) { \
-    .characters = (JavaArray*) & (struct { JavaArray hdr; char16_t data[length]; }) { \
+    .characters = (JavaArray*) & (struct { JavaArray hdr; char16_t data[(length) + 1]; }) { \
         .hdr = { .size = length }, \
         .data = s \
     }, \
@@ -89,7 +89,7 @@ static inline void* checkcast(void*, int32_t (*)(JavaClass*));
 }
 
 #define TEAVM_STRING_FROM_CODES(length, hash, ...) { \
-    .characters = (JavaArray*) & (struct { JavaArray hdr; char16_t data[length]; }) { \
+    .characters = (JavaArray*) & (struct { JavaArray hdr; char16_t data[(length) + 1]; }) { \
         .hdr = { .size = length }, \
         .data = { __VA_ARGS__ } \
     }, \
