@@ -200,13 +200,6 @@ static int64_t currentTimeMillis() {
 
     return time.tv_sec * 1000 + (int64_t) round(time.tv_nsec / 1000000);
 }
-
-static int32_t teavm_timeZoneOffset() {
-    time_t t = time(NULL);
-    time_t local = mktime(localtime(&t));
-    time_t utc = mktime(gmtime(&t));
-    return difftime(utc, local) / 60;
-}
 #endif
 
 #ifdef _MSC_VER
@@ -271,3 +264,10 @@ static int64_t currentTimeMillis() {
     return (int64_t) ((current - start) / 10000);
 }
 #endif
+
+static int32_t teavm_timeZoneOffset() {
+    time_t t = time(NULL);
+    time_t local = mktime(localtime(&t));
+    time_t utc = mktime(gmtime(&t));
+    return difftime(utc, local) / 60;
+}

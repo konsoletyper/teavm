@@ -654,11 +654,14 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         if (statements.isEmpty()) {
             return;
         }
+
+        boolean shouldOptimizeBreaks = !hitsRedundantBreakThreshold(statements, exit);
+
         for (int i = 0; i < statements.size(); ++i) {
             Statement stmt = statements.get(i);
             if (stmt instanceof ConditionalStatement) {
                 ConditionalStatement cond = (ConditionalStatement) stmt;
-                check_conditional: {
+                check_conditional: if (shouldOptimizeBreaks) {
                     last = cond.getConsequent().isEmpty() ? null
                             : cond.getConsequent().get(cond.getConsequent().size() - 1);
                     if (last instanceof BreakStatement) {
@@ -724,6 +727,37 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
     }
 
+    private boolean hitsRedundantBreakThreshold(List<Statement> statements, IdentifiedStatement exit) {
+        int count = 0;
+        for (int i = 0; i < statements.size(); ++i) {
+            Statement stmt = statements.get(i);
+            if (!(stmt instanceof ConditionalStatement)) {
+                continue;
+            }
+
+            ConditionalStatement conditional = (ConditionalStatement) stmt;
+            if (!conditional.getConsequent().isEmpty() && !conditional.getAlternative().isEmpty()) {
+                continue;
+            }
+            List<Statement> innerStatements = !conditional.getConsequent().isEmpty()
+                    ? conditional.getConsequent() : conditional.getAlternative();
+            if (innerStatements.isEmpty()) {
+                continue;
+            }
+
+            Statement last = innerStatements.get(innerStatements.size() - 1);
+            if (!(last instanceof BreakStatement)) {
+                continue;
+            }
+
+            BreakStatement breakStmt = (BreakStatement) last;
+            if (exit != null && exit == breakStmt.getTarget() && ++count == 8) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private void normalizeConditional(ConditionalStatement stmt) {
         if (stmt.getConsequent().isEmpty()) {

@@ -88,7 +88,7 @@ public class RangeTree {
         for (Range range : ranges) {
             rangeList.add(range);
         }
-        Collections.sort(rangeList, (o1, o2) -> {
+        rangeList.sort((o1, o2) -> {
             if (o1.right != o2.right) {
                 return o2.right - o1.right;
             }

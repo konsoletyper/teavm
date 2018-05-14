@@ -56,43 +56,55 @@ public class StringPoolGenerator {
     }
 
     private void generateSimpleStringLiteral(String string) {
-        writer.print("u\"");
-
-        for (int j = 0; j < string.length(); ++j) {
-            char c = string.charAt(j);
-            switch (c) {
-                case '\\':
-                    writer.print("\\\\");
-                    break;
-                case '"':
-                    writer.print("\\\"");
-                    break;
-                case '\r':
-                    writer.print("\\r");
-                    break;
-                case '\n':
-                    writer.print("\\n");
-                    break;
-                case '\t':
-                    writer.print("\\t");
-                    break;
-                default:
-                    if (c < 32) {
-                        writer.print("\\0" + Character.forDigit(c >> 3, 8) + Character.forDigit(c & 0x7, 8));
-                    } else if (c > 127) {
-                        writer.print("\\u"
-                                + Character.forDigit(c >> 12, 16)
-                                + Character.forDigit((c >> 8) & 15, 16)
-                                + Character.forDigit((c >> 4) & 15, 16)
-                                + Character.forDigit(c & 15, 16));
-                    } else {
-                        writer.print(String.valueOf(c));
-                    }
-                    break;
-            }
+        if (string.isEmpty()) {
+            writer.print("u\"\"");
+            return;
         }
 
-        writer.print("\"");
+        int chunkSize = 256;
+        for (int i = 0; i < string.length(); i += chunkSize) {
+            if (i > 0) {
+                writer.println();
+            }
+            int last = Math.min(i + chunkSize, string.length());
+            writer.print("u\"");
+
+            for (int j = i; j < last; ++j) {
+                char c = string.charAt(j);
+                switch (c) {
+                    case '\\':
+                        writer.print("\\\\");
+                        break;
+                    case '"':
+                        writer.print("\\\"");
+                        break;
+                    case '\r':
+                        writer.print("\\r");
+                        break;
+                    case '\n':
+                        writer.print("\\n");
+                        break;
+                    case '\t':
+                        writer.print("\\t");
+                        break;
+                    default:
+                        if (c < 32) {
+                            writer.print("\\0" + Character.forDigit(c >> 3, 8) + Character.forDigit(c & 0x7, 8));
+                        } else if (c > 127) {
+                            writer.print("\\u"
+                                    + Character.forDigit(c >> 12, 16)
+                                    + Character.forDigit((c >> 8) & 15, 16)
+                                    + Character.forDigit((c >> 4) & 15, 16)
+                                    + Character.forDigit(c & 15, 16));
+                        } else {
+                            writer.print(String.valueOf(c));
+                        }
+                        break;
+                }
+            }
+
+            writer.print("\"");
+        }
     }
 
     private void generateNumericStringLiteral(String string) {
