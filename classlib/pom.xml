@@ -76,7 +76,7 @@
     </dependency>
     <dependency>
       <groupId>org.ow2.asm</groupId>
-      <artifactId>asm-debug-all</artifactId>
+      <artifactId>asm-util</artifactId>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>

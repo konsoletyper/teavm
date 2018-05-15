@@ -201,18 +201,6 @@
         <artifactId>maven-source-plugin</artifactId>
       </plugin>
       <plugin>
-        <groupId>org.netbeans.html</groupId>
-        <artifactId>html4j-maven-plugin</artifactId>
-        <version>1.1</version>
-        <executions>
-          <execution>
-            <goals>
-              <goal>process-js-annotations</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>

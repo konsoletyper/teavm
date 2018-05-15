@@ -13,7 +13,8 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.teavm</groupId>
@@ -70,6 +71,7 @@
     <selenium.version>2.47.2</selenium.version>
     <jackson.version>2.6.2</jackson.version>
     <idea.version>2016.3.4</idea.version>
+    <asm.version>6.1.1</asm.version>
 
     <teavm.test.incremental>false</teavm.test.incremental>
     <teavm.test.threads>1</teavm.test.threads>
@@ -131,8 +133,13 @@
       </dependency>
       <dependency>
         <groupId>org.ow2.asm</groupId>
-        <artifactId>asm-debug-all</artifactId>
-        <version>5.2</version>
+        <artifactId>asm-commons</artifactId>
+        <version>${asm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-util</artifactId>
+        <version>${asm.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
