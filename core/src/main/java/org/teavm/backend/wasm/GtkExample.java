@@ -15,8 +15,6 @@
  */
 package org.teavm.backend.wasm;
 
-import java.util.HashSet;
-import java.util.Set;
 import org.teavm.interop.Address;
 import org.teavm.interop.Function;
 import org.teavm.interop.Import;
@@ -24,34 +22,20 @@ import org.teavm.interop.Structure;
 import org.teavm.interop.c.Include;
 
 public final class GtkExample {
-    private static Set<Object> pinnedObjects = new HashSet<>();
-
     private GtkExample() {
     }
 
     public static void main(String[] args) {
-        Gtk.init(0, null);
+        Gtk.init(null, null);
         Gtk.Window window = Gtk.windowNew(Gtk.WINDOW_TOPLEVEL);
-
-        CString deleteEventString = new CString("delete-event");
-        CString destroyString = new CString("destroy");
-        GLib.signalConnect(window, deleteEventString.data,
+        GLib.signalConnect(window, "delete-event",
                 Function.get(GLib.Callback.class, GtkExample.class, "windowDeleted"), null);
-        GLib.signalConnect(window, destroyString.data,
+        GLib.signalConnect(window, "destroy",
                 Function.get(GLib.Callback.class, GtkExample.class, "destroy"), null);
-        deleteEventString.dispose();
-        destroyString.dispose();
-
         Gtk.setBorderWidth(window, 10);
 
-        CString helloWorld = new CString("Hello, world");
-        Gtk.Button button = Gtk.buttonNewWithLabel(helloWorld.data);
-        helloWorld.dispose();
-
-        CString clickedString = new CString("clicked");
-        GLib.signalConnect(button, clickedString.data,
-                Function.get(GLib.Callback.class, GtkExample.class, "hello"), null);
-
+        Gtk.Button button = Gtk.buttonNewWithLabel("Hello, world");
+        GLib.signalConnect(button, "clicked", Function.get(GLib.Callback.class, GtkExample.class, "hello"), null);
         Gtk.add(window, button);
         Gtk.show(button);
 
@@ -87,7 +71,7 @@ public final class GtkExample {
         }
 
         @Import(name = "gtk_init")
-        static native void init(int argc, Address argv);
+        static native void init(Address argc, Address argv);
 
         @Import(name = "gtk_window_new")
         static native Window windowNew(int type);
@@ -105,7 +89,7 @@ public final class GtkExample {
         static native void setBorderWidth(Container container, int width);
 
         @Import(name = "gtk_button_new_with_label")
-        static native Button buttonNewWithLabel(Address label);
+        static native Button buttonNewWithLabel(String label);
 
         @Import(name = "gtk_container_add")
         static native void add(Container container, Widget widget);
@@ -119,28 +103,10 @@ public final class GtkExample {
         }
 
         @Import(name = "g_signal_connect")
-        static native long signalConnect(GObject instance, Address signalName, Callback callback, Address data);
+        static native long signalConnect(GObject instance, String signalName, Callback callback, Address data);
 
         static abstract class Callback extends Function {
             abstract void call();
-        }
-    }
-
-    static class CString {
-        final Address data;
-        private final byte[] array;
-
-        CString(String str) {
-            array = new byte[str.length() + 1];
-            for (int i = 0; i < str.length(); ++i) {
-                array[i] = (byte) str.charAt(i);
-            }
-            pinnedObjects.add(array);
-            data = Address.ofData(array);
-        }
-
-        void dispose() {
-            pinnedObjects.remove(array);
         }
     }
 }

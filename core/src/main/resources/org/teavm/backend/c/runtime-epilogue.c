@@ -51,3 +51,62 @@ static JavaArray* teavm_resourceMapKeys(TeaVM_ResourceMap *map) {
 
     return array;
 }
+
+static inline int teavm_isHighSurrogate(char16_t c) {
+    return (c & 0xFC00) == 0xD800;
+}
+
+static inline int teavm_isLowSurrogate(char16_t c) {
+    return (c & 0xFC00) == 0xDC00;
+}
+
+static inline int teavm_isSurrogatePair(char16_t* chars, int32_t index, int32_t limit) {
+    return index < limit - 1 && teavm_isHighSurrogate(chars[index]) && teavm_isLowSurrogate(chars[index + 1]);
+}
+
+static inline int teavm_getCodePoint(char16_t* chars, int32_t *index, int32_t limit) {
+    wchar_t codePoint;
+    if (teavm_isSurrogatePair(chars, *index, limit)) {
+        codePoint = (wchar_t) (((((chars[*index] & 0x03FF) << 10) | chars[*index + 1] & 0x03FF)) + 0x010000);
+        (*index)++;
+    } else {
+        codePoint = (wchar_t) chars[*index];
+    }
+    return codePoint;
+}
+
+static size_t teavm_mbSize(char16_t* javaChars, int32_t javaCharsCount) {
+    size_t sz = 0;
+    char buffer[6];
+    for (int32_t i = 0; i < javaCharsCount; ++i) {
+        sz += wctomb(buffer, teavm_getCodePoint(javaChars, &i, javaCharsCount));
+    }
+    return sz;
+}
+
+static char* teavm_stringToC(void* obj) {
+    if (obj == NULL) {
+        return NULL;
+    }
+
+    JavaString* javaString = (JavaString*) obj;
+    JavaArray* charArray = javaString->characters;
+    char16_t* javaChars = ARRAY_DATA(charArray, char16_t);
+
+    size_t sz = teavm_mbSize(javaChars, charArray->size);
+    char* result = malloc(sz + 1);
+
+    int32_t j = 0;
+    char* dst = result;
+    for (int32_t i = 0; i < charArray->size; ++i) {
+        dst += wctomb(dst, teavm_getCodePoint(javaChars, &i, charArray->size));
+    }
+    *dst = '\0';
+    return result;
+}
+
+static inline void teavm_free(void* s) {
+    if (s != NULL) {
+        free(s);
+    }
+}

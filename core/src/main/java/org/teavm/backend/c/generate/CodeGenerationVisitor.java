@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.c.generate;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Set;
 import org.teavm.ast.ArrayType;
@@ -63,6 +64,7 @@ import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -84,8 +86,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private GenerationContext context;
     private NameProvider names;
     private CodeWriter writer;
-    private int temporaryReceiverLevel;
-    private int maxTemporaryReceiverLevel;
+    private int[] temporaryVariableLevel = new int[5];
+    private int[] maxTemporaryVariableLevel = new int[5];
     private MethodReference callingMethod;
     private Set<? super String> includes;
 
@@ -96,8 +98,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         this.includes = includes;
     }
 
-    public int getTemporaryReceivers() {
-        return maxTemporaryReceiverLevel;
+    public int[] getTemporaries() {
+        return maxTemporaryVariableLevel;
     }
 
     public void setCallingMethod(MethodReference callingMethod) {
@@ -357,8 +359,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
         switch (expr.getType()) {
             case CONSTRUCTOR: {
-                String receiver = "recv_" + temporaryReceiverLevel++;
-                maxTemporaryReceiverLevel = Math.max(maxTemporaryReceiverLevel, temporaryReceiverLevel);
+                String receiver = allocTemporaryVariable(CVariableType.PTR);
                 writer.print("(" + receiver + " = ");
                 allocObject(expr.getMethod().getClassName());
                 writer.print(", ");
@@ -373,24 +374,28 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 }
                 writer.print("), " + receiver + ")");
 
-                --temporaryReceiverLevel;
+                freeTemporaryVariable(CVariableType.PTR);
 
                 break;
             }
             case SPECIAL:
             case STATIC: {
                 MethodReader method = context.getClassSource().resolve(expr.getMethod());
-                writer.print(names.forMethod(method.getReference()));
+                if (isWrappedNativeCall(method)) {
+                    generateWrappedNativeCall(method, expr);
+                } else {
+                    writer.print(names.forMethod(method.getReference()));
 
-                writer.print("(");
-                if (!expr.getArguments().isEmpty()) {
-                    expr.getArguments().get(0).acceptVisitor(this);
-                    for (int i = 1; i < expr.getArguments().size(); ++i) {
-                        writer.print(", ");
-                        expr.getArguments().get(i).acceptVisitor(this);
+                    writer.print("(");
+                    if (!expr.getArguments().isEmpty()) {
+                        expr.getArguments().get(0).acceptVisitor(this);
+                        for (int i = 1; i < expr.getArguments().size(); ++i) {
+                            writer.print(", ");
+                            expr.getArguments().get(i).acceptVisitor(this);
+                        }
                     }
+                    writer.print(")");
                 }
-                writer.print(")");
 
                 break;
             }
@@ -405,8 +410,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                     printDefaultValue(expr.getMethod().getReturnType());
                     writer.print(")");
                 } else {
-                    String receiver = "recv_" + temporaryReceiverLevel++;
-                    maxTemporaryReceiverLevel = Math.max(maxTemporaryReceiverLevel, temporaryReceiverLevel);
+                    String receiver = allocTemporaryVariable(CVariableType.PTR);
                     writer.print("((").print(receiver).print(" = ");
                     expr.getArguments().get(0).acceptVisitor(this);
 
@@ -421,11 +425,90 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                     }
                     writer.print("))");
 
-                    temporaryReceiverLevel--;
+                    freeTemporaryVariable(CVariableType.PTR);
                 }
                 break;
             }
         }
+    }
+
+    private void generateWrappedNativeCall(MethodReader method, InvocationExpr expr) {
+        List<String> temporaries = new ArrayList<>();
+        List<String> stringTemporaries = new ArrayList<>();
+        String resultTmp = null;
+        if (method.getResultType() != ValueType.VOID) {
+            resultTmp = allocTemporaryVariable(typeToCType(method.getResultType()));
+        }
+
+        for (int i = 0; i < expr.getArguments().size(); ++i) {
+            temporaries.add(allocTemporaryVariable(CVariableType.PTR));
+        }
+
+        writer.print("(");
+        for (int i = 0; i < expr.getArguments().size(); ++i) {
+            String tmp = temporaries.get(i);
+            writer.print(tmp + " = ");
+            ValueType type = method.hasModifier(ElementModifier.STATIC)
+                    ? method.parameterType(i)
+                    : i == 0 ? ValueType.object(method.getOwnerName()) : method.parameterType(i - 1);
+            if (type.isObject(String.class)) {
+                writer.print("teavm_stringToC(");
+                expr.getArguments().get(i).acceptVisitor(this);
+                writer.print(")");
+                stringTemporaries.add(tmp);
+            } else {
+                expr.getArguments().get(i).acceptVisitor(this);
+            }
+
+            writer.print(", ");
+        }
+
+        if (resultTmp != null) {
+            writer.print(resultTmp + " = ");
+        }
+        writer.print(names.forMethod(method.getReference())).print("(");
+        for (int i = 0; i < temporaries.size(); ++i) {
+            if (i > 0) {
+                writer.print(", ");
+            }
+            writer.print(temporaries.get(i));
+            freeTemporaryVariable(CVariableType.PTR);
+        }
+        writer.print(")");
+
+        for (String tmp : stringTemporaries) {
+            writer.print(", teavm_free(" + tmp + ")");
+        }
+
+        if (resultTmp != null) {
+            writer.print(", " + resultTmp);
+            freeTemporaryVariable(typeToCType(method.getResultType()));
+        }
+
+        writer.print(")");
+    }
+
+    private boolean isWrappedNativeCall(MethodReader method) {
+        if (!method.hasModifier(ElementModifier.NATIVE)) {
+            return false;
+        }
+        for (ValueType type : method.getParameterTypes()) {
+            if (type.isObject(String.class)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private String allocTemporaryVariable(CVariableType type) {
+        int index = type.ordinal();
+        int result = temporaryVariableLevel[index]++;
+        maxTemporaryVariableLevel[index] = Math.max(maxTemporaryVariableLevel[index], temporaryVariableLevel[index]);
+        return "tmp_" + type.name().toLowerCase() + "_" + result;
+    }
+
+    private void freeTemporaryVariable(CVariableType type) {
+        temporaryVariableLevel[type.ordinal()]--;
     }
 
     private void printDefaultValue(ValueType type) {
@@ -741,4 +824,24 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             return context.getStringPool();
         }
     };
+
+    private static CVariableType typeToCType(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case CHARACTER:
+                case BYTE:
+                case SHORT:
+                case INTEGER:
+                    return CVariableType.INT;
+                case LONG:
+                    return CVariableType.LONG;
+                case FLOAT:
+                    return CVariableType.FLOAT;
+                case DOUBLE:
+                    return CVariableType.DOUBLE;
+            }
+        }
+        return CVariableType.PTR;
+    }
 }

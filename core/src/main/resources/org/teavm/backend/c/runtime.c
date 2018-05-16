@@ -271,3 +271,6 @@ static int32_t teavm_timeZoneOffset() {
     time_t utc = mktime(gmtime(&t));
     return difftime(utc, local) / 60;
 }
+
+static char* teavm_stringToC(void*);
+static inline void teavm_free(void*);

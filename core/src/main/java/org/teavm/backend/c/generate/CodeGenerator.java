@@ -48,7 +48,7 @@ public class CodeGenerator {
         visitor.setCallingMethod(methodNode.getReference());
         methodNode.getBody().acceptVisitor(visitor);
 
-        generateLocals(methodNode, visitor.getTemporaryReceivers());
+        generateLocals(methodNode, visitor.getTemporaries());
 
         writer.outdent().println("}");
     }
@@ -91,7 +91,7 @@ public class CodeGenerator {
         }
     }
 
-    private void generateLocals(RegularMethodNode methodNode, int receiverCount) {
+    private void generateLocals(RegularMethodNode methodNode, int[] temporaryCount) {
         int start = methodNode.getReference().parameterCount() + 1;
         for (int i = start; i < methodNode.getVariables().size(); ++i) {
             VariableNode variableNode = methodNode.getVariables().get(i);
@@ -101,8 +101,10 @@ public class CodeGenerator {
             localsWriter.printType(variableNode.getType()).print(" local_").print(String.valueOf(i)).println(";");
         }
 
-        for (int i = 0; i < receiverCount; ++i) {
-            localsWriter.print("void* recv_").print(String.valueOf(i)).println(";");
+        for (CVariableType type : CVariableType.values()) {
+            for (int i = 0; i < temporaryCount[type.ordinal()]; ++i) {
+                localsWriter.print(type.text + " tmp_" + type.name().toLowerCase() + "_" + i).println(";");
+            }
         }
     }
 }
