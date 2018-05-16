@@ -71,6 +71,7 @@ import org.teavm.model.ValueType;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.ExceptionHandling;
+import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 
 public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
@@ -79,7 +80,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private static final MethodReference ALLOC_ARRAY_METHOD = new MethodReference(Allocator.class,
             "allocateArray", RuntimeClass.class, int.class, Address.class);
     private static final MethodReference ALLOC_MULTI_ARRAY_METHOD = new MethodReference(Allocator.class,
-            "allocateMultiArray", RuntimeClass.class, Address.class, int.class, Address.class);
+            "allocateMultiArray", RuntimeClass.class, Address.class, int.class, RuntimeArray.class);
     private static final MethodReference THROW_EXCEPTION_METHOD = new MethodReference(ExceptionHandling.class,
             "throwException", Throwable.class, void.class);
 
