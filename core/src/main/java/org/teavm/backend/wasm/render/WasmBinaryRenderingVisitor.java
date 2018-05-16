@@ -569,10 +569,6 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
     @Override
     public void visit(WasmConversion expression) {
         expression.getOperand().acceptVisitor(this);
-        render0xD(expression);
-    }
-
-    private void render0xD(WasmConversion expression) {
         switch (expression.getSourceType()) {
             case INT32:
                 switch (expression.getTargetType()) {
@@ -582,7 +578,11 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                         writer.writeByte(expression.isSigned() ? 0xAC : 0xAD);
                         break;
                     case FLOAT32:
-                        writer.writeByte(expression.isSigned() ? 0xB2 : 0xB3);
+                        if (expression.isReinterpret()) {
+                            writer.writeByte(0xBE);
+                        } else {
+                            writer.writeByte(expression.isSigned() ? 0xB2 : 0xB3);
+                        }
                         break;
                     case FLOAT64:
                         writer.writeByte(expression.isSigned() ? 0xB7 : 0xB8);
@@ -600,14 +600,22 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                         writer.writeByte(expression.isSigned() ? 0xB4 : 0xB5);
                         break;
                     case FLOAT64:
-                        writer.writeByte(expression.isSigned() ? 0xB9 : 0xBA);
+                        if (expression.isReinterpret()) {
+                            writer.writeByte(0xBF);
+                        } else {
+                            writer.writeByte(expression.isSigned() ? 0xB9 : 0xBA);
+                        }
                         break;
                 }
                 break;
             case FLOAT32:
                 switch (expression.getTargetType()) {
                     case INT32:
-                        writer.writeByte(expression.isSigned() ? 0xA8 : 0xA9);
+                        if (expression.isReinterpret()) {
+                            writer.writeByte(0xBC);
+                        } else {
+                            writer.writeByte(expression.isSigned() ? 0xA8 : 0xA9);
+                        }
                         break;
                     case INT64:
                         writer.writeByte(expression.isSigned() ? 0xAE : 0xAF);
@@ -625,7 +633,11 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                         writer.writeByte(expression.isSigned() ? 0xAA : 0xAB);
                         break;
                     case INT64:
-                        writer.writeByte(expression.isSigned() ? 0xB0 : 0xB1);
+                        if (expression.isReinterpret()) {
+                            writer.writeByte(0xBD);
+                        } else {
+                            writer.writeByte(expression.isSigned() ? 0xB0 : 0xB1);
+                        }
                         break;
                     case FLOAT32:
                         writer.writeByte(0xB6);

@@ -323,7 +323,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                         break;
                     case FLOAT32:
                     case FLOAT64:
-                        name = expression.isSigned() ? "convert_s" : "convert_u";
+                        if (expression.isReinterpret()) {
+                            name = "reinterpret";
+                        } else {
+                            name = expression.isSigned() ? "convert_s" : "convert_u";
+                        }
                         break;
                 }
                 break;
@@ -336,7 +340,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                         break;
                     case FLOAT32:
                     case FLOAT64:
-                        name = expression.isSigned() ? "convert_s" : "convert_u";
+                        if (expression.isReinterpret()) {
+                            name = "reinterpret";
+                        } else {
+                            name = expression.isSigned() ? "convert_s" : "convert_u";
+                        }
                         break;
                 }
                 break;
@@ -344,7 +352,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                 switch (expression.getTargetType()) {
                     case INT32:
                     case INT64:
-                        name = expression.isSigned() ? "trunc_s" : "trunc_u";
+                        if (expression.isReinterpret()) {
+                            name = "reinterpret";
+                        } else {
+                            name = expression.isSigned() ? "trunc_s" : "trunc_u";
+                        }
                         break;
                     case FLOAT32:
                         break;
@@ -357,7 +369,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                 switch (expression.getTargetType()) {
                     case INT32:
                     case INT64:
-                        name = expression.isSigned() ? "trunc_s" : "trunc_u";
+                        if (expression.isReinterpret()) {
+                            name = "reinterpret";
+                        } else {
+                            name = expression.isSigned() ? "trunc_s" : "trunc_u";
+                        }
                         break;
                     case FLOAT32:
                         name = "demote";

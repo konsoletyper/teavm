@@ -1517,6 +1517,16 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         public NameProvider getNames() {
             return context.names;
         }
+
+        @Override
+        public WasmLocal getTemporary(WasmType type) {
+            return WasmGenerationVisitor.this.getTemporary(type);
+        }
+
+        @Override
+        public void releaseTemporary(WasmLocal local) {
+            WasmGenerationVisitor.this.releaseTemporary(local);
+        }
     };
 
     private WasmLocal getTemporary(WasmType type) {

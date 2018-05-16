@@ -23,6 +23,7 @@ public class WasmConversion extends WasmExpression {
     private WasmType targetType;
     private boolean signed;
     private WasmExpression operand;
+    private boolean reinterpret;
 
     public WasmConversion(WasmType sourceType, WasmType targetType, boolean signed, WasmExpression operand) {
         Objects.requireNonNull(sourceType);
@@ -58,6 +59,14 @@ public class WasmConversion extends WasmExpression {
 
     public void setSigned(boolean signed) {
         this.signed = signed;
+    }
+
+    public boolean isReinterpret() {
+        return reinterpret;
+    }
+
+    public void setReinterpret(boolean reinterpret) {
+        this.reinterpret = reinterpret;
     }
 
     public WasmExpression getOperand() {
