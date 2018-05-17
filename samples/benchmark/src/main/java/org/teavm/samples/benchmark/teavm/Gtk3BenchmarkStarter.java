@@ -24,6 +24,8 @@ import org.jbox2d.dynamics.Body;
 import org.jbox2d.dynamics.Fixture;
 import org.teavm.interop.Address;
 import org.teavm.interop.Function;
+import org.teavm.interop.Import;
+import org.teavm.interop.c.Include;
 import org.teavm.samples.benchmark.shared.Scene;
 import org.teavm.samples.benchmark.teavm.gtk.Cairo;
 import org.teavm.samples.benchmark.teavm.gtk.GLib;
@@ -114,17 +116,21 @@ public final class Gtk3BenchmarkStarter {
     }
 
     private static int tick() {
-        long start = System.currentTimeMillis();
+        long start = currentTimeNano();
         scene.calculate();
-        long end = System.currentTimeMillis();
+        long end = currentTimeNano();
         int second = (int) ((System.currentTimeMillis() - startMillisecond) / 1000);
 
         if (second > currentSecond) {
-            System.out.println("Second " + second + ": " + timeSpentCalculating + " ms");
+            System.out.println("Second " + second + ": " + (timeSpentCalculating / 1_000_000.0) + " ms");
             timeSpentCalculating = 0;
             currentSecond = second;
         }
-        timeSpentCalculating += end - start;
+        long delta = end - start;
+        if (delta < 0) {
+            delta += 1_000_000_000;
+        }
+        timeSpentCalculating += delta;
 
         Gtk.queueDraw(canvas);
         GLib.delay(scene.timeUntilNextStep(),
@@ -132,4 +138,8 @@ public final class Gtk3BenchmarkStarter {
 
         return 0;
     }
+
+    @Import(name = "currentTimeNano")
+    @Include(value = "support.c", isSystem = false)
+    private static native long currentTimeNano();
 }
