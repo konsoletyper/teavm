@@ -642,21 +642,27 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         if (type != null && expression.getSourceType() != expression.getTargetType()) {
             switch (expression.getTargetType()) {
                 case INT32:
-                    if (expression.isSigned()) {
+                    if (expression.getSourceType() == WasmType.FLOAT32 && expression.isReinterpret()) {
+                        result.setText("reinterpret_float32(" + operand.getText() + ")");
+                    } else if (expression.isSigned()) {
                         result.setText("(int32_t) " + operand.getText());
                     } else {
                         result.setText("(uint32_t) " + operand.getText());
                     }
                     break;
                 case INT64:
-                    if (expression.isSigned()) {
+                    if (expression.getSourceType() == WasmType.FLOAT64 && expression.isReinterpret()) {
+                        result.setText("reinterpret_float64(" + operand.getText() + ")");
+                    } else if (expression.isSigned()) {
                         result.setText("(int64_t) " + operand.getText());
                     } else {
                         result.setText("(uint64_t) " + operand.getText());
                     }
                     break;
                 case FLOAT32:
-                    if (expression.getSourceType() == WasmType.FLOAT64) {
+                    if (expression.getSourceType() == WasmType.INT32 && expression.isReinterpret()) {
+                        result.setText("reinterpret_int32(" + operand.getText() + ")");
+                    } else if (expression.getSourceType() == WasmType.FLOAT64) {
                         result.setText("(float) " + operand.getText());
                     } else if (expression.isSigned()) {
                         result.setText("(float) (int64_t) " + operand.getText());
@@ -665,7 +671,9 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
                     }
                     break;
                 case FLOAT64:
-                    if (expression.getSourceType() == WasmType.FLOAT32) {
+                    if (expression.getSourceType() == WasmType.INT64 && expression.isReinterpret()) {
+                        result.setText("reinterpret_int64(" + operand.getText() + ")");
+                    } else if (expression.getSourceType() == WasmType.FLOAT32) {
                         result.setText("(double) " + operand.getText());
                     } else if (expression.isSigned()) {
                         result.setText("(double) (int64_t) " + operand.getText());
