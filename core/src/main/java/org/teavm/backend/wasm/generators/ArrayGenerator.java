@@ -45,19 +45,8 @@ import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 
 public class ArrayGenerator implements WasmMethodGenerator {
-    private static FieldReference tagField = new FieldReference(RuntimeClass.class.getName(), "tag");
     private static FieldReference componentField = new FieldReference(RuntimeClass.class.getName(), "itemType");
     private static FieldReference flagsField =  new FieldReference(RuntimeClass.class.getName(), "flags");
-    private static final int[] primitives = {
-            RuntimeClass.BYTE_PRIMITIVE,
-            RuntimeClass.SHORT_PRIMITIVE,
-            RuntimeClass.CHAR_PRIMITIVE,
-            RuntimeClass.INT_PRIMITIVE,
-            RuntimeClass.LONG_PRIMITIVE,
-            RuntimeClass.FLOAT_PRIMITIVE,
-            RuntimeClass.DOUBLE_PRIMITIVE,
-            RuntimeClass.BOOLEAN_PRIMITIVE
-    };
     private static final String[] primitiveWrappers = { "Byte", "Short", "Character", "Integer", "Long",
             "Float", "Double", "Boolean" };
     private static final ValueType.Primitive[] primitiveTypes = { ValueType.BYTE, ValueType.SHORT, ValueType.CHARACTER,
@@ -87,9 +76,7 @@ public class ArrayGenerator implements WasmMethodGenerator {
         function.add(indexVar);
         function.add(flagsVar);
 
-        int tagOffset = context.getClassGenerator().getFieldOffset(tagField);
-        WasmExpression arrayClass = new WasmLoadInt32(4, new WasmGetLocal(arrayVar),
-                WasmInt32Subtype.INT32, tagOffset);
+        WasmExpression arrayClass = new WasmLoadInt32(4, new WasmGetLocal(arrayVar), WasmInt32Subtype.INT32);
         arrayClass = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, arrayClass,
                 new WasmInt32Constant(3));
 
