@@ -46,7 +46,7 @@ public class TSetFromMap<E> extends TAbstractSet<E> {
 
     @Override
     public boolean add(E e) {
-        return map.put(e, TBoolean.TRUE) != null;
+        return map.put(e, TBoolean.TRUE) == null;
     }
 
     @Override
