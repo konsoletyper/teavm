@@ -57,14 +57,15 @@ public class WasmRenderer {
         visitor.open().append("module");
         renderTypes(module);
 
+        int functionIndex = 0;
         for (WasmFunction function : module.getFunctions().values()) {
             if (function.getImportName() != null) {
-                lf().render(function);
+                lf().append(";; function #" + functionIndex++).lf().render(function);
             }
         }
         for (WasmFunction function : module.getFunctions().values()) {
             if (function.getImportName() == null) {
-                lf().render(function);
+                lf().append(";; function #" + functionIndex++).lf().render(function);
             }
         }
 
