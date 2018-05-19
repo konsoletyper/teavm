@@ -658,7 +658,7 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
                 ? functionIndexes.get(expression.getFunctionName())
                 : importedIndexes.get(expression.getFunctionName());
         if (functionIndex == null) {
-            writer.writeByte(0x0A);
+            writer.writeByte(0x00);
             return;
         }
 

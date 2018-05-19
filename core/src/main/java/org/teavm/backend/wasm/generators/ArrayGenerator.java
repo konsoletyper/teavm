@@ -32,6 +32,7 @@ import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
+import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
@@ -147,7 +148,7 @@ public class ArrayGenerator implements WasmMethodGenerator {
                     call.getArguments().add(new WasmLoadFloat32(2, offset, baseAddr));
                     break;
                 case DOUBLE:
-                    call.getArguments().add(new WasmLoadFloat32(3, offset, baseAddr));
+                    call.getArguments().add(new WasmLoadFloat64(3, offset, baseAddr));
                     break;
             }
 

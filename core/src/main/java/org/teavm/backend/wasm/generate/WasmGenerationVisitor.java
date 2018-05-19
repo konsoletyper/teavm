@@ -120,7 +120,6 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.ShadowStack;
 
 class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
-    private static FieldReference tagField = new FieldReference(RuntimeClass.class.getName(), "tag");
     private static final int SWITCH_TABLE_THRESHOLD = 256;
     private WasmGenerationContext context;
     private WasmClassGenerator classGenerator;
@@ -1267,6 +1266,8 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(InstanceOfExpr expr) {
+        classGenerator.getClassPointer(expr.getType());
+
         accept(expr.getExpr());
 
         WasmBlock block = new WasmBlock(false);
@@ -1279,14 +1280,15 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         WasmBranch ifNull = new WasmBranch(new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ,
                 new WasmGetLocal(objectVar), new WasmInt32Constant(0)), block);
         ifNull.setResult(new WasmInt32Constant(0));
-        block.getBody().add(ifNull);
+        block.getBody().add(new WasmDrop(ifNull));
 
         WasmCall supertypeCall = new WasmCall(context.names.forSupertypeFunction(expr.getType()));
-        int tagOffset = classGenerator.getFieldOffset(tagField);
-        WasmExpression classRef = new WasmLoadInt32(4, result, WasmInt32Subtype.INT32, tagOffset);
+        WasmExpression classRef = new WasmLoadInt32(4, result, WasmInt32Subtype.INT32);
         classRef = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classRef, new WasmInt32Constant(3));
         supertypeCall.getArguments().add(classRef);
         block.getBody().add(supertypeCall);
+
+        result = block;
     }
 
     @Override
