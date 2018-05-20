@@ -166,13 +166,13 @@ public class MetadataCIntrinsic implements Intrinsic {
 
         for (String propertyName : structure.getPropertyTypes().keySet()) {
             Class<?> propertyType = structure.getPropertyTypes().get(propertyName);
-            structuresWriter.println(typeToString(context, propertyType) + " " + propertyName + ";");
+            structuresWriter.println(typeToString(propertyType) + " " + propertyName + ";");
         }
 
         structuresWriter.outdent().println("} " + structureName + ";");
     }
 
-    private String typeToString(IntrinsicContext context, Class<?> cls) {
+    private String typeToString(Class<?> cls) {
         if (cls == boolean.class || cls == byte.class) {
             return "int8_t";
         } else if (cls == short.class || cls == char.class) {

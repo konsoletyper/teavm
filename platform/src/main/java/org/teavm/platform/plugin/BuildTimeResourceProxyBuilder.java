@@ -53,13 +53,17 @@ class BuildTimeResourceProxyBuilder {
 
         public ProxyFactoryCreation(ResourceTypeDescriptor descriptor) {
             this.descriptor = descriptor;
+            int index = 0;
+            for (String propertyName : descriptor.getPropertyTypes().keySet()) {
+                propertyIndexes.put(propertyName, index++);
+            }
         }
 
         BuildTimeResourceProxyFactory create() {
             for (Map.Entry<Method, ResourceMethodDescriptor> entry : descriptor.getMethods().entrySet()) {
                 Method method = entry.getKey();
                 ResourceMethodDescriptor methodDescriptor = entry.getValue();
-                int index = getPropertyIndex(methodDescriptor.getPropertyName());
+                int index = propertyIndexes.get(methodDescriptor.getPropertyName());
                 switch (methodDescriptor.getType()) {
                     case GETTER:
                         methods.put(method, new BuildTimeResourceGetter(index));
@@ -108,10 +112,6 @@ class BuildTimeResourceProxyBuilder {
             }
 
             return new BuildTimeResourceProxyFactory(methods, initialData, descriptor);
-        }
-
-        private int getPropertyIndex(String propertyName) {
-            return propertyIndexes.computeIfAbsent(propertyName, k -> propertyIndexes.size());
         }
     }
 }

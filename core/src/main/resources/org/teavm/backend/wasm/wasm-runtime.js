@@ -34,6 +34,9 @@ TeaVM.wasm = function() {
     function currentTimeMillis() {
         return new Date().getTime();
     }
+    function getNativeOffset(instant) {
+        return new Date(instant).getTimezoneOffset();
+    }
 
     function importDefaults(obj) {
         obj.teavm = {
@@ -44,7 +47,8 @@ TeaVM.wasm = function() {
             isfinite: isFinite,
             putwchar: putwchar,
             towlower: towlower,
-            towupper: towupper
+            towupper: towupper,
+            getNativeOffset: getNativeOffset
         };
 
         obj.teavmMath = Math;

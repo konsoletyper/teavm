@@ -19,6 +19,7 @@ import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
+import org.teavm.runtime.RuntimeObject;
 
 @StaticInit
 @Unmanaged
@@ -281,5 +282,98 @@ public final class WasmRuntime {
 
     public static void setExceptionHandlerId(Address stackFrame, int id) {
         getExceptionHandlerPtr(stackFrame).putInt(id);
+    }
+
+    private static int hashCode(RuntimeString string) {
+        int hashCode = 0;
+        int length = string.characters.length;
+        Address chars = Address.ofData(string.characters);
+        for (int i = 0; i < length; ++i) {
+            hashCode = 31 * hashCode + chars.getChar();
+            chars = chars.add(2);
+        }
+        return hashCode;
+    }
+
+    private static boolean equals(RuntimeString first, RuntimeString second) {
+        if (first.characters.length != second.characters.length) {
+            return false;
+        }
+
+        Address firstChars = Address.ofData(first.characters);
+        Address secondChars = Address.ofData(second.characters);
+        int length = first.characters.length;
+        for (int i = 0; i < length; ++i) {
+            if (firstChars.getChar() != secondChars.getChar()) {
+                return false;
+            }
+            firstChars = firstChars.add(2);
+            secondChars = secondChars.add(2);
+        }
+        return true;
+    }
+
+    public static String[] resourceMapKeys(Address map) {
+        String[] result = new String[resourceMapSize(map)];
+        fillResourceMapKeys(map, result);
+        return result;
+    }
+
+    private static int resourceMapSize(Address map) {
+        int result = 0;
+        int sz = map.getInt();
+        Address data = contentStart(map);
+        for (int i = 0; i < sz; ++i) {
+            if (data.getAddress() != null) {
+                result++;
+            }
+            data = data.add(Address.sizeOf() * 2);
+        }
+
+        return result;
+    }
+
+    private static void fillResourceMapKeys(Address map, String[] target) {
+        int sz = map.getInt();
+        Address data = contentStart(map);
+        Address targetData = Address.ofData(target);
+        for (int i = 0; i < sz; ++i) {
+            Address entry = data.getAddress();
+            if (entry != null) {
+                targetData.putAddress(entry);
+                targetData = targetData.add(Address.sizeOf());
+            }
+            data = data.add(Address.sizeOf());
+        }
+    }
+
+    private static Address contentStart(Address resource) {
+        return resource.add(Address.sizeOf());
+    }
+
+    public static Address lookupResource(Address map, String string) {
+        RuntimeString runtimeString = Address.ofObject(string).toStructure();
+        int hashCode = hashCode(runtimeString);
+        int sz = map.getInt();
+        Address content = contentStart(map);
+        for (int i = 0; i < sz; ++i) {
+            int index = (hashCode + i) % sz;
+            if (index < 0) {
+                index += sz;
+            }
+            Address entry = content.add(index * Address.sizeOf() * 2);
+            Address key = entry.getAddress();
+            if (key == null) {
+                return null;
+            }
+            if (equals(key.toStructure(), runtimeString)) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    static class RuntimeString extends RuntimeObject {
+        char[] characters;
     }
 }

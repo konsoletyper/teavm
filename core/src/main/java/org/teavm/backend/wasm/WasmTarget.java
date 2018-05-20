@@ -266,6 +266,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 int.class, void.class), null).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "getCallSiteId", Address.class,
                 int.class), null).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "resourceMapKeys", Address.class,
+                String[].class), null).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "lookupResource", Address.class,
+                String.class, Address.class), null).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class), null).use();
@@ -466,7 +470,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         renderer.setLineNumbersEmitted(debugging);
         renderer.render(module);
         try (OutputStream output = buildTarget.createResource(outputName);
-                Writer writer = new OutputStreamWriter(output, "UTF-8")) {
+                Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
             writer.write(renderer.toString());
         }
     }
@@ -477,7 +481,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         renderer.setMemoryAccessChecked(Boolean.parseBoolean(System.getProperty("wasm.c.assertMemory", "false")));
         renderer.render(module);
         try (OutputStream output = buildTarget.createResource(outputName);
-                Writer writer = new OutputStreamWriter(output, "UTF-8")) {
+                Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
             writer.write(renderer.toString());
         }
     }

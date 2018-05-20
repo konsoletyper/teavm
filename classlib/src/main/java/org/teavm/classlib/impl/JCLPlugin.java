@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.ServiceLoader;
 import org.teavm.backend.c.TeaVMCHost;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
+import org.teavm.backend.wasm.TeaVMWasmHost;
 import org.teavm.classlib.ReflectionSupplier;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.tz.DateTimeZoneProviderIntrinsic;
@@ -91,6 +92,11 @@ public class JCLPlugin implements TeaVMPlugin {
             TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
             if (cHost != null) {
                 cHost.addIntrinsic(context -> new DateTimeZoneProviderIntrinsic(context.getProperties()));
+            }
+
+            TeaVMWasmHost wasmHost = host.getExtension(TeaVMWasmHost.class);
+            if (wasmHost != null) {
+                wasmHost.add(context -> new DateTimeZoneProviderIntrinsic(context.getProperties()));
             }
         }
 

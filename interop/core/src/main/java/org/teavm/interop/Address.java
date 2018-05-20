@@ -82,6 +82,8 @@ public final class Address {
 
     public static native Address ofData(double[] data);
 
+    public static native Address ofData(Object[] data);
+
     public static native Address align(Address address, int alignment);
 
     public static native int sizeOf();
