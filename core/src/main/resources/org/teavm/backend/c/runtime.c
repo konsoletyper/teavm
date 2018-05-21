@@ -13,6 +13,7 @@
 #include <stdalign.h>
 #include <unistd.h>
 #include <sys/mman.h>
+#include <signal.h>
 #endif
 
 #ifdef _MSC_VER
@@ -29,6 +30,8 @@ typedef struct JavaArray JavaArray;
 typedef struct JavaClass JavaClass;
 typedef struct JavaString JavaString;
 
+static void* gc_heapAddress = NULL;
+
 #define PACK_CLASS(cls) ((int32_t) ((uintptr_t) ((char*) (cls) - TeaVM_beforeClasses) >> 3))
 #define UNPACK_CLASS(cls) ((JavaClass*) (TeaVM_beforeClasses + ((cls) << 3)))
 #define CLASS_OF(obj) (UNPACK_CLASS(((JavaObject*) (obj))->header))
@@ -41,6 +44,11 @@ typedef struct JavaString JavaString;
 #define TO_BYTE(i) ((((i) << 24) >> 24))
 #define TO_SHORT(i) ((((i) << 16) >> 16))
 #define TO_CHAR(i) ((char16_t) (i))
+
+#define PACK_MONITOR(ref) (((int32_t) ((uintptr_t) (ref) - (uintptr_t) gc_heapAddress) / sizeof(int)) | 0x80000000)
+#define UNPACK_MONITOR(ref) ((ref & 0x80000000) != 0 \
+  ? (void*) (((uintptr_t) ((ref & 0x7FFFFFFF) * sizeof(int)) + (uintptr_t) gc_heapAddress)) \
+  : NULL)
 
 static inline int32_t compare_i32(int32_t a, int32_t b) {
     return a > b ? INT32_C(1) : a < b ? INT32_C(-1) : INT32_C(0);
@@ -100,7 +108,6 @@ static void** stackTop;
 
 static void* gc_gcStorageAddress = NULL;
 static int32_t gc_gcStorageSize = INT32_C(0);
-static void* gc_heapAddress = NULL;
 static void* gc_regionsAddress = NULL;
 static int32_t gc_regionSize = INT32_C(32768);
 static int32_t gc_regionMaxCount = INT32_C(0);
@@ -156,8 +163,31 @@ static inline void* teavm_lookupResourceValue(TeaVM_ResourceMap *map, JavaString
 
 static JavaArray* teavm_resourceMapKeys(TeaVM_ResourceMap *);
 
+
+#ifdef __GNUC__
+static timer_t teavm_queueTimer;
+#endif
+
 static void TeaVM_beforeInit() {
     srand(time(NULL));
+
+    #ifdef __GNUC__
+    struct sigaction sigact;
+    sigact.sa_flags = 0;
+    sigact.sa_handler = NULL;
+    sigaction(SIGRTMIN, &sigact, NULL);
+
+    sigset_t signals;
+    sigemptyset(&signals );
+    sigaddset(&signals, SIGRTMIN);
+    sigprocmask(SIG_BLOCK, &signals, NULL);
+
+    struct sigevent sev;
+    sev.sigev_notify = SIGEV_SIGNAL;
+    sev.sigev_signo = SIGRTMIN;
+    timer_create(CLOCK_REALTIME, &sev, &teavm_queueTimer);
+
+    #endif
 }
 
 #ifdef __GNUC__
@@ -295,3 +325,26 @@ static inline float teavm_reinterpretIntToFloat(int32_t v) {
     conv.intValue = v;
     return conv.floatValue;
 }
+
+#ifdef __GNUC__
+
+static void teavm_waitFor(int64_t timeout) {
+    struct itimerspec its = {0};
+    its.it_value.tv_sec = timeout / 1000;
+    its.it_value.tv_nsec = (timeout % 1000) * 1000000L;
+    timer_settime(teavm_queueTimer, 0, &its, NULL);
+
+    sigset_t signals;
+    sigemptyset(&signals);
+    sigaddset(&signals, SIGRTMIN);
+    siginfo_t actualSignal;
+    sigwaitinfo(&signals, &actualSignal);
+}
+
+static void teavm_interrupt() {
+    struct itimerspec its = {0};
+    timer_settime(teavm_queueTimer, 0, &its, NULL);
+    raise(SIGRTMIN);
+}
+
+#endif

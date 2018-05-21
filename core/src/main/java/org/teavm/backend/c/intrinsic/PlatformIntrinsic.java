@@ -30,7 +30,6 @@ public class PlatformIntrinsic implements Intrinsic {
         switch (method.getName()) {
             case "getPlatformObject":
             case "asJavaClass":
-            case "createQueue":
                 return true;
         }
         return false;
@@ -42,9 +41,6 @@ public class PlatformIntrinsic implements Intrinsic {
             case "getPlatformObject":
             case "asJavaClass":
                 context.emit(invocation.getArguments().get(0));
-                break;
-            case "createQueue":
-                context.writer().print("NULL");
                 break;
         }
     }

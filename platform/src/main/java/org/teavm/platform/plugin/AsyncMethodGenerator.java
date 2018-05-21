@@ -24,13 +24,13 @@ import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.interop.AsyncCallback;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
-import org.teavm.platform.async.AsyncCallback;
 
 public class AsyncMethodGenerator implements Generator, DependencyPlugin, VirtualMethodContributor {
     private static final MethodDescriptor completeMethod = new MethodDescriptor("complete", Object.class, void.class);

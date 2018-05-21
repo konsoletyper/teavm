@@ -40,6 +40,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ProgramReader;
 import org.teavm.model.VariableReader;
 import org.teavm.model.instructions.AbstractInstructionReader;
+import org.teavm.runtime.Fiber;
 
 public class AsyncMethodFinder {
     private Set<MethodReference> asyncMethods = new HashSet<>();
@@ -142,6 +143,10 @@ public class AsyncMethodFinder {
     }
 
     private void add(MethodReference methodRef, CallStack stack) {
+        if (methodRef.getClassName().equals(Fiber.class.getName())) {
+            return;
+        }
+
         if (!asyncMethods.add(methodRef)) {
             return;
         }

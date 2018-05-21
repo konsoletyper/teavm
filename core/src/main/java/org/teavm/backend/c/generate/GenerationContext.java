@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.dependency.DependencyInfo;
@@ -39,10 +40,12 @@ public class GenerationContext {
     private List<Intrinsic> intrinsics;
     private List<Generator> generators;
     private Map<MethodReference, Intrinsic> intrinsicCache = new HashMap<>();
+    private Predicate<MethodReference> asyncMethods;
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
             DependencyInfo dependencies, StringPool stringPool, NameProvider names, Diagnostics diagnostics,
-            ClassReaderSource classSource, List<Intrinsic> intrinsics, List<Generator> generators) {
+            ClassReaderSource classSource, List<Intrinsic> intrinsics, List<Generator> generators,
+            Predicate<MethodReference> asyncMethods) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
         this.dependencies = dependencies;
@@ -52,6 +55,7 @@ public class GenerationContext {
         this.classSource = classSource;
         this.intrinsics = new ArrayList<>(intrinsics);
         this.generators = new ArrayList<>(generators);
+        this.asyncMethods = asyncMethods;
     }
 
     public void addIntrinsic(Intrinsic intrinsic) {
@@ -98,5 +102,9 @@ public class GenerationContext {
             }
         }
         return null;
+    }
+
+    public boolean isAsync(MethodReference method) {
+        return asyncMethods.test(method);
     }
 }

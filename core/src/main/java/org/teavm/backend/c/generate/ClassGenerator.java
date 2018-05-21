@@ -194,7 +194,6 @@ public class ClassGenerator {
         codeGenerator.generateMethodSignature(forwardDeclarationsWriter, method.getReference(),
                 method.hasModifier(ElementModifier.STATIC), false);
         forwardDeclarationsWriter.println(";");
-
     }
 
     private void generateInitializer(ClassHolder cls) {

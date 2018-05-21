@@ -24,6 +24,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -376,6 +377,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (wasCancelled()) {
             return;
         }
+
+        target.analyzeBeforeOptimizations(new ListableClassReaderSourceAdapter(
+                dependencyAnalyzer.getClassSource(),
+                new LinkedHashSet<>(dependencyAnalyzer.getReachableClasses())));
 
         boolean isLazy = optimizationLevel == TeaVMOptimizationLevel.SIMPLE;
         ListableClassHolderSource classSet;
@@ -867,6 +872,26 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         @Override
         public Set<String> getClassNames() {
             return classNames;
+        }
+    }
+
+    static class ListableClassReaderSourceAdapter implements ListableClassReaderSource {
+        private ClassReaderSource classSource;
+        private Set<String> classes;
+
+        ListableClassReaderSourceAdapter(ClassReaderSource classSource, Set<String> classes) {
+            this.classSource = classSource;
+            this.classes = Collections.unmodifiableSet(classes);
+        }
+
+        @Override
+        public Set<String> getClassNames() {
+            return classes;
+        }
+
+        @Override
+        public ClassReader get(String name) {
+            return classes.contains(name) ? classSource.get(name) : null;
         }
     }
 }

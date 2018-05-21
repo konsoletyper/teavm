@@ -67,7 +67,7 @@ public class BasicBlockSplitter {
     public BasicBlock split(BasicBlock block, Instruction afterInstruction) {
         initIfNecessary();
 
-        if (afterInstruction.getBasicBlock() != block) {
+        if (afterInstruction != null && afterInstruction.getBasicBlock() != block) {
             throw new IllegalArgumentException();
         }
 
@@ -88,10 +88,18 @@ public class BasicBlockSplitter {
         isLastInSequence.add((byte) 1);
 
         splitBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
-        while (afterInstruction.getNext() != null) {
-            Instruction nextInstruction = afterInstruction.getNext();
-            nextInstruction.delete();
-            splitBlock.add(nextInstruction);
+        if (afterInstruction != null) {
+            while (afterInstruction.getNext() != null) {
+                Instruction nextInstruction = afterInstruction.getNext();
+                nextInstruction.delete();
+                splitBlock.add(nextInstruction);
+            }
+        } else {
+            while (block.getFirstInstruction() != null) {
+                Instruction instruction = block.getFirstInstruction();
+                instruction.delete();
+                splitBlock.add(instruction);
+            }
         }
 
         return splitBlock;

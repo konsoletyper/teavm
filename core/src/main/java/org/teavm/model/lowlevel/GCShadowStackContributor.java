@@ -50,6 +50,8 @@ import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
+import org.teavm.model.instructions.MonitorExitInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.GraphColorer;
@@ -155,7 +157,8 @@ public class GCShadowStackContributor {
                 if (insn instanceof InvokeInstruction || insn instanceof InitClassInstruction
                         || insn instanceof ConstructInstruction || insn instanceof ConstructArrayInstruction
                         || insn instanceof ConstructMultiArrayInstruction
-                        || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction) {
+                        || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction
+                        || insn instanceof MonitorEnterInstruction || insn instanceof MonitorExitInstruction) {
                     if (insn instanceof InvokeInstruction
                             && !characteristics.isManaged(((InvokeInstruction) insn).getMethod())) {
                         continue;

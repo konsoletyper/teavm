@@ -51,6 +51,8 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
+import org.teavm.model.instructions.MonitorExitInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
@@ -258,7 +260,8 @@ public class ExceptionHandlingShadowStackContributor {
     private boolean isCallInstruction(Instruction insn) {
         if (insn instanceof InitClassInstruction || insn instanceof ConstructInstruction
                 || insn instanceof ConstructArrayInstruction || insn instanceof ConstructMultiArrayInstruction
-                || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction) {
+                || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction
+                || insn instanceof MonitorEnterInstruction || insn instanceof MonitorExitInstruction) {
             return true;
         } else if (insn instanceof InvokeInstruction) {
             MethodReference method = ((InvokeInstruction) insn).getMethod();

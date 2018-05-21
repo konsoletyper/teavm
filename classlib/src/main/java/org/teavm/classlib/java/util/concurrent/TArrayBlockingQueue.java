@@ -20,6 +20,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TInterruptedException;
 import org.teavm.classlib.java.lang.TThread;
 import org.teavm.classlib.java.lang.TThreadInterruptHandler;
@@ -27,11 +28,12 @@ import org.teavm.classlib.java.util.TAbstractQueue;
 import org.teavm.classlib.java.util.TCollection;
 import org.teavm.classlib.java.util.TIterator;
 import org.teavm.interop.Async;
+import org.teavm.interop.AsyncCallback;
 import org.teavm.interop.Sync;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformQueue;
 import org.teavm.platform.PlatformRunnable;
-import org.teavm.platform.async.AsyncCallback;
+import org.teavm.runtime.EventQueue;
 
 public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlockingQueue<E> {
     private Object[] array;
@@ -418,7 +420,11 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         if (waitHandlers != null) {
             while (!waitHandlers.isEmpty()) {
                 WaitHandler handler = waitHandlers.remove();
-                Platform.postpone(() -> handler.changed());
+                if (PlatformDetector.isLowLevel()) {
+                    EventQueue.offer(handler::changed);
+                } else {
+                    Platform.postpone(handler::changed);
+                }
             }
             waitHandlers = null;
         }
@@ -436,7 +442,9 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         waitHandlers.add(handler);
         if (timeLimit > 0) {
             int timeout = Math.max(0, (int) (timeLimit - System.currentTimeMillis()));
-            handler.timerId = Platform.schedule(handler, timeout);
+            handler.timerId = PlatformDetector.isLowLevel()
+                    ? EventQueue.offer(handler, timeLimit)
+                    : Platform.schedule(handler, timeout);
         } else {
             handler.timerId = -1;
         }
@@ -444,7 +452,7 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         TThread.currentThread().interruptHandler = handler;
     }
 
-    class WaitHandler implements PlatformRunnable, TThreadInterruptHandler {
+    class WaitHandler implements PlatformRunnable, TThreadInterruptHandler, EventQueue.Event {
         AsyncCallback<Boolean> callback;
         boolean complete;
         int timerId;
@@ -475,7 +483,11 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
             }
             complete = true;
             if (timerId >= 0) {
-                Platform.killSchedule(timerId);
+                if (PlatformDetector.isLowLevel()) {
+                    EventQueue.kill(timerId);
+                } else {
+                    Platform.killSchedule(timerId);
+                }
                 timerId = -1;
             }
             TThread.currentThread().interruptHandler = null;

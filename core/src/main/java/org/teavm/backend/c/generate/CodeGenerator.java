@@ -16,6 +16,7 @@
 package org.teavm.backend.c.generate;
 
 import java.util.Set;
+import org.teavm.ast.MethodNode;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
 import org.teavm.model.ElementModifier;
@@ -43,14 +44,19 @@ public class CodeGenerator {
         writer.print(" {").indent().println();
 
         localsWriter = writer.fragment();
-
-        CodeGenerationVisitor visitor = new CodeGenerationVisitor(context, writer, includes);
-        visitor.setCallingMethod(methodNode.getReference());
-        methodNode.getBody().acceptVisitor(visitor);
-
+        CodeGenerationVisitor visitor = generateMethodBody(methodNode);
         generateLocals(methodNode, visitor.getTemporaries());
 
         writer.outdent().println("}");
+    }
+
+
+    private CodeGenerationVisitor generateMethodBody(RegularMethodNode methodNode) {
+        CodeGenerationVisitor visitor = new CodeGenerationVisitor(context, writer, includes);
+        visitor.setAsync(context.isAsync(methodNode.getReference()));
+        visitor.setCallingMethod(methodNode.getReference());
+        methodNode.getBody().acceptVisitor(visitor);
+        return visitor;
     }
 
     public void generateMethodSignature(CodeWriter writer, MethodReference methodRef, boolean isStatic,
@@ -91,7 +97,7 @@ public class CodeGenerator {
         }
     }
 
-    private void generateLocals(RegularMethodNode methodNode, int[] temporaryCount) {
+    private void generateLocals(MethodNode methodNode, int[] temporaryCount) {
         int start = methodNode.getReference().parameterCount() + 1;
         for (int i = start; i < methodNode.getVariables().size(); ++i) {
             VariableNode variableNode = methodNode.getVariables().get(i);

@@ -56,6 +56,7 @@ public class PlatformPlugin implements TeaVMPlugin {
                 return method.getAnnotations().get(Async.class.getName()) != null
                         ? new AsyncMethodGenerator() : null;
             });
+            host.add(new AsyncDependencyListener());
             jsHost.addVirtualMethods(new AsyncMethodGenerator());
         } else if (!isBootstrap()) {
             host.add(new StringAmplifierTransformer());
@@ -101,12 +102,15 @@ public class PlatformPlugin implements TeaVMPlugin {
             }
         }
 
-        host.add(new AsyncMethodProcessor());
+        host.add(new AsyncMethodProcessor(host.getExtension(TeaVMJavaScriptHost.class) == null));
         host.add(new NewInstanceDependencySupport());
         host.add(new ClassLookupDependencySupport());
         host.add(new EnumDependencySupport());
         host.add(new PlatformDependencyListener());
-        host.add(new AsyncDependencyListener());
+
+        if (host.getExtension(TeaVMJavaScriptHost.class) == null) {
+            host.add(new AsyncLowLevelDependencyListener());
+        }
 
         TeaVMPluginUtil.handleNatives(host, Platform.class);
         TeaVMPluginUtil.handleNatives(host, PlatformQueue.class);
