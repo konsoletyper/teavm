@@ -118,6 +118,12 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     int getOffsetHeight();
 
     @JSProperty
+    int getOffsetTop();
+
+    @JSProperty
+    int getOffsetLeft();
+
+    @JSProperty
     @Override
     HTMLDocument getOwnerDocument();
 
