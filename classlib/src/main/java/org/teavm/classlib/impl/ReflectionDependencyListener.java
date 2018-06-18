@@ -113,8 +113,10 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     classesWithReflectableFields.add(type.getName());
 
                     ClassReader cls = agent.getClassSource().get(type.getName());
-                    for (FieldReader field : cls.getFields()) {
-                        linkType(agent, field.getType());
+                    if (cls != null) {
+                        for (FieldReader field : cls.getFields()) {
+                            linkType(agent, field.getType());
+                        }
                     }
                 }
             });
@@ -124,10 +126,12 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     classesWithReflectableMethods.add(type.getName());
 
                     ClassReader cls = agent.getClassSource().get(type.getName());
-                    for (MethodReader reflectableMethod : cls.getMethods()) {
-                        linkType(agent, reflectableMethod.getResultType());
-                        for (ValueType param : reflectableMethod.getParameterTypes()) {
-                            linkType(agent, param);
+                    if (cls != null) {
+                        for (MethodReader reflectableMethod : cls.getMethods()) {
+                            linkType(agent, reflectableMethod.getResultType());
+                            for (ValueType param : reflectableMethod.getParameterTypes()) {
+                                linkType(agent, param);
+                            }
                         }
                     }
                 }
