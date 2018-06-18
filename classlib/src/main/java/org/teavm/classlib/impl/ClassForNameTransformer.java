@@ -116,7 +116,7 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
                 if (nameIndex >= 0) {
                     representative = program.variableAt(nameRepresentatives[nameIndex]);
                 } else if (constant != null) {
-                    if (classSource.get(constant) == null) {
+                    if (classSource.get(constant) == null || !filterClassName(constant)) {
                         continue;
                     }
                     ClassConstantInstruction classConstant = new ClassConstantInstruction();
@@ -147,5 +147,19 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
                 }
             }
         }
+    }
+
+    private boolean filterClassName(String className) {
+        switch (className) {
+            // It's a hack for Kotlin. Kotlin full reflection library is too heavyweight for TeaVM.
+            // This optimization enables full reflection when there's Kotlin/JVM reflection library
+            // in the classpath, since Kotlin uses Class.forName() to check whether there's
+            // full reflection library presents. If program does not use full reflection,
+            // but build configuration includes kotlin-reflect artifact as a dependency,
+            // it gets into classpath, which allows this optimization to be applied.
+            case "kotlin.reflect.jvm.internal.ReflectionFactoryImpl":
+                return false;
+        }
+        return true;
     }
 }
