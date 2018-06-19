@@ -16,6 +16,7 @@
 package org.teavm.jso.typedarrays;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSIndexer;
 
 public abstract class Int32Array extends ArrayBufferView {
@@ -25,12 +26,22 @@ public abstract class Int32Array extends ArrayBufferView {
     @JSIndexer
     public abstract void set(int index, int value);
 
+    public abstract void set(@JSByRef int[] data, int offset);
+
+    public abstract void set(@JSByRef int[] data);
+
     @JSBody(params = "length", script = "return new Int32Array(length);")
     public static native Int32Array create(int length);
 
     @JSBody(params = "buffer", script = "return new Int32Array(buffer);")
     public static native Int32Array create(ArrayBuffer buffer);
 
+    @JSBody(params = "buffer", script = "return new Int32Array(buffer);")
+    public static native Int32Array create(ArrayBufferView buffer);
+
     @JSBody(params = { "buffer", "offset", "length" }, script = "return new Int32Array(buffer, offset, length);")
     public static native Int32Array create(ArrayBuffer buffer, int offset, int length);
+
+    @JSBody(params = { "buffer", "offset" }, script = "return new Int32Array(buffer, offset);")
+    public static native Int32Array create(ArrayBuffer buffer, int offset);
 }

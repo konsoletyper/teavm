@@ -43,7 +43,7 @@ public interface HTMLDocument extends Document, EventTarget {
     HTMLBodyElement getBody();
 
     @JSProperty
-    HTMLElement getHead();
+    HTMLHeadElement getHead();
 
     @JSProperty
     int getScrollLeft();
@@ -60,4 +60,17 @@ public interface HTMLDocument extends Document, EventTarget {
 
     @Override
     NodeList<? extends HTMLElement> querySelectorAll(String selectors);
+
+    @JSProperty
+    HTMLElement getActiveElement();
+
+    @JSProperty
+    boolean isDesignMode();
+
+    @JSProperty
+    void setDesignMode(boolean value);
+
+    void execCommand(String commandName, boolean showDefaultUI, String valueArgument);
+
+    void execCommand(String commandName);
 }

@@ -19,11 +19,6 @@ import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
-/**
- *
- * @author Alexey Andreev
- * @param <T>
- */
 public interface JSArrayReader<T extends JSObject> extends JSObject {
     @JSProperty
     int getLength();

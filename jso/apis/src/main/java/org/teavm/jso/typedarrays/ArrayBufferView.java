@@ -15,8 +15,10 @@
  */
 package org.teavm.jso.typedarrays;
 
+import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
+import org.teavm.jso.core.JSArrayReader;
 
 public abstract class ArrayBufferView implements JSObject {
     protected ArrayBufferView() {
@@ -29,5 +31,36 @@ public abstract class ArrayBufferView implements JSObject {
     public abstract int getByteLength();
 
     @JSProperty
+    public abstract int getByteOffset();
+
+    @JSProperty
     public abstract ArrayBuffer getBuffer();
+
+    public abstract void set(ArrayBufferView other, int offset);
+
+    public abstract void set(ArrayBufferView other);
+
+    public abstract void set(JSArrayReader<?> other, int offset);
+
+    public abstract void set(JSArrayReader<?> other);
+
+    public abstract void set(@JSByRef byte[] other, int offset);
+
+    public abstract void set(@JSByRef byte[] other);
+
+    public abstract void set(@JSByRef short[] other, int offset);
+
+    public abstract void set(@JSByRef short[] other);
+
+    public abstract void set(@JSByRef int[] other, int offset);
+
+    public abstract void set(@JSByRef int[] other);
+
+    public abstract void set(@JSByRef float[] other, int offset);
+
+    public abstract void set(@JSByRef float[] other);
+
+    public abstract void set(@JSByRef double[] other, int offset);
+
+    public abstract void set(@JSByRef double[] other);
 }
