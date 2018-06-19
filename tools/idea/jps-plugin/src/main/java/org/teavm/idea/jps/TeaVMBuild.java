@@ -99,7 +99,7 @@ class TeaVMBuild {
 
         classPathEntries.clear();
         buildStrategy.init();
-        buildClassPath(module, new HashSet<>());
+        buildClassPath(module);
         directoryClassPathEntries = classPathEntries.stream().filter(name -> new File(name).isDirectory())
                 .collect(toList());
 
@@ -471,10 +471,7 @@ class TeaVMBuild {
         return null;
     }
 
-    private void buildClassPath(JpsModule module, Set<JpsModule> visited) {
-        if (!visited.add(module)) {
-            return;
-        }
+    private void buildClassPath(JpsModule module) {
         File output = JpsJavaExtensionService.getInstance().getOutputDirectory(module, false);
         if (output != null) {
             classPathEntries.add(output.getPath());
@@ -487,7 +484,11 @@ class TeaVMBuild {
         for (JpsDependencyElement dependency : module.getDependenciesList().getDependencies()) {
             if (dependency instanceof JpsModuleDependency) {
                 JpsModuleDependency moduleDependency = (JpsModuleDependency) dependency;
-                buildClassPath(moduleDependency.getModule(), visited);
+                File dependencyOutput = JpsJavaExtensionService.getInstance().getOutputDirectory(
+                        moduleDependency.getModule(), false);
+                if (dependencyOutput != null) {
+                    classPathEntries.add(dependencyOutput.getPath());
+                }
             } else if (dependency instanceof JpsLibraryDependency) {
                 JpsLibrary library = ((JpsLibraryDependency) dependency).getLibrary();
                 if (library == null) {
