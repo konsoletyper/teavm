@@ -174,7 +174,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
                 return arg;
             }
             arg = tryConvertArgument(arg, from, ValueType.primitive(toType));
-            return arg.getProgramEmitter().invoke(primitiveClass, "valueOf", ValueType.primitive(toType), arg);
+            return arg.getProgramEmitter().invoke(primitiveClass, "valueOf", to, arg);
         } else if (from instanceof ValueType.Object && to instanceof ValueType.Primitive) {
             String primitiveClass = ((ValueType.Object) from).getClassName();
             PrimitiveType fromType = getWrappedPrimitive(primitiveClass);
