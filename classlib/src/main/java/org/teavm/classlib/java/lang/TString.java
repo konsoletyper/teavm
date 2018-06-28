@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.Iterator;
 import java.util.Locale;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.io.TUnsupportedEncodingException;
@@ -665,5 +666,49 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     public static String format(Locale l, String format, Object... args) {
         return new TFormatter(l).format(format, args).toString();
+    }
+
+    public static String join(CharSequence delimiter, CharSequence... elements) {
+        if (elements.length == 0) {
+            return "";
+        }
+        int resultLength = 0;
+        for (CharSequence element : elements) {
+            resultLength += element.length();
+        }
+        resultLength += elements.length * delimiter.length();
+
+        char[] chars = new char[resultLength];
+        int index = 0;
+        CharSequence firstElement = elements[0];
+        for (int i = 0; i < firstElement.length(); ++i) {
+            chars[index++] = firstElement.charAt(i);
+        }
+        for (int i = 1; i < elements.length; ++i) {
+            for (int j = 0; j < delimiter.length(); ++j) {
+                chars[index++] = delimiter.charAt(j);
+            }
+            CharSequence element = elements[i];
+            for (int j = 0; j < element.length(); ++j) {
+                chars[index++] = element.charAt(j);
+            }
+        }
+
+        return new String(chars);
+    }
+
+    public static String join(CharSequence delimiter, Iterable<? extends CharSequence> elements) {
+        Iterator<? extends CharSequence> iter = elements.iterator();
+        if (!iter.hasNext()) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(iter.next());
+        while (iter.hasNext()) {
+            sb.append(delimiter);
+            sb.append(iter.next());
+        }
+        return sb.toString();
     }
 }

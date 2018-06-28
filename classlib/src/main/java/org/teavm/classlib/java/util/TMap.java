@@ -74,6 +74,15 @@ public interface TMap<K, V> {
         }
     }
 
+    default V putIfAbsent(K key, V value) {
+        V v = get(key);
+        if (v == null) {
+            v = put(key, value);
+        }
+
+        return v;
+    }
+
     default V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {
         V v = get(key);
         if (v == null) {
