@@ -34,6 +34,10 @@ public class TLogger {
         this.name = name;
     }
 
+    public static TLogger getGlobal() {
+        return getLogger(GLOBAL_LOGGER_NAME);
+    }
+
     public static TLogger getLogger(TString name) {
         TLogger logger = loggerCache.get(name);
         if (logger == null) {
@@ -61,7 +65,7 @@ public class TLogger {
         } else if (record.getLevel().intValue() >= TLevel.WARNING.intValue()) {
             warn(message);
         } else {
-            info(message);
+            infoImpl(message);
         }
     }
 
@@ -138,6 +142,10 @@ public class TLogger {
         log(TLevel.WARNING, msg);
     }
 
+    public void info(TString msg) {
+        log(TLevel.INFO, msg);
+    }
+
     public void config(TString msg) {
         log(TLevel.CONFIG, msg);
     }
@@ -174,7 +182,7 @@ public class TLogger {
             + "if (console) {"
                 + "console.info(message);"
             + "}")
-    public static native void info(TString message);
+    private static native void infoImpl(TString message);
 
     @JSBody(params = "message", script = ""
             + "if (console) {"
