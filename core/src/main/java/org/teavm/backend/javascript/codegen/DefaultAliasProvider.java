@@ -49,6 +49,17 @@ public class DefaultAliasProvider implements AliasProvider {
                 }
             }
 
+            for (int i = 1; i < alias.length(); ++i) {
+                char c = alias.charAt(i);
+                if (!Character.isJavaIdentifierPart(c)) {
+                    alias.setCharAt(i, '_');
+                }
+            }
+
+            if (!Character.isJavaIdentifierStart(alias.charAt(0))) {
+                alias.setCharAt(0, '_');
+            }
+
             return makeUnique(knownAliases, alias.toString());
         });
     }

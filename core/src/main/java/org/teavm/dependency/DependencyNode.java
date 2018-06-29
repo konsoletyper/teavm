@@ -268,6 +268,7 @@ public class DependencyNode implements ValueDependencyInfo {
                     ? ((ValueType.Array) typeFilter).getItemType()
                     : null;
             arrayItemNode = new DependencyNode(dependencyAnalyzer, itemTypeFilter, degree + 1);
+            arrayItemNode.method = method;
             if (DependencyAnalyzer.shouldTag) {
                 arrayItemNode.tag = tag + "[";
             }

@@ -20,10 +20,12 @@ import java.util.Collections;
 import java.util.List;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
+import org.teavm.model.MethodReference;
 import org.teavm.model.RuntimeConstant;
 import org.teavm.model.emit.ValueEmitter;
 
 public class DynamicCallSite {
+    private MethodReference caller;
     private MethodDescriptor calledMethod;
     private ValueEmitter instance;
     private List<ValueEmitter> arguments;
@@ -31,14 +33,20 @@ public class DynamicCallSite {
     private List<RuntimeConstant> bootstrapArguments;
     private DependencyAgent agent;
 
-    DynamicCallSite(MethodDescriptor calledMethod, ValueEmitter instance, List<ValueEmitter> arguments,
-            MethodHandle bootstrapMethod, List<RuntimeConstant> bootstrapArguments, DependencyAgent agent) {
+    DynamicCallSite(MethodReference caller, MethodDescriptor calledMethod, ValueEmitter instance,
+            List<ValueEmitter> arguments, MethodHandle bootstrapMethod, List<RuntimeConstant> bootstrapArguments,
+            DependencyAgent agent) {
+        this.caller = caller;
         this.calledMethod = calledMethod;
         this.instance = instance;
         this.arguments = Collections.unmodifiableList(new ArrayList<>(arguments));
         this.bootstrapMethod = bootstrapMethod;
         this.bootstrapArguments = Collections.unmodifiableList(new ArrayList<>(bootstrapArguments));
         this.agent = agent;
+    }
+
+    public MethodReference getCaller() {
+        return caller;
     }
 
     public MethodDescriptor getCalledMethod() {

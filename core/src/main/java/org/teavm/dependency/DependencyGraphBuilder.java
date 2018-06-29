@@ -242,7 +242,8 @@ class DependencyGraphBuilder {
                 for (int k = 0; k < indy.getArguments().size(); ++k) {
                     arguments.add(pe.var(indy.getArguments().get(k), indy.getMethod().parameterType(k)));
                 }
-                DynamicCallSite callSite = new DynamicCallSite(indy.getMethod(),
+                DynamicCallSite callSite = new DynamicCallSite(
+                        methodDep.getReference(), indy.getMethod(),
                         indy.getInstance() != null ? pe.var(indy.getInstance(),
                                 ValueType.object(methodDep.getMethod().getOwnerName())) : null,
                         arguments, indy.getBootstrapMethod(), indy.getBootstrapArguments(),
@@ -579,6 +580,9 @@ class DependencyGraphBuilder {
         @Override
         public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
                 ArrayElementType type) {
+            if (isPrimitive(type)) {
+                return;
+            }
             DependencyNode arrayNode = nodes[array.getIndex()];
             DependencyNode receiverNode = nodes[receiver.getIndex()];
             if (arrayNode != null && receiverNode != null && receiverNode != arrayNode.getArrayItem()) {
@@ -589,11 +593,18 @@ class DependencyGraphBuilder {
         @Override
         public void putElement(VariableReader array, VariableReader index, VariableReader value,
                 ArrayElementType type) {
+            if (isPrimitive(type)) {
+                return;
+            }
             DependencyNode valueNode = nodes[value.getIndex()];
             DependencyNode arrayNode = nodes[array.getIndex()];
             if (valueNode != null && arrayNode != null && valueNode != arrayNode.getArrayItem()) {
                 valueNode.connect(arrayNode.getArrayItem());
             }
+        }
+
+        private boolean isPrimitive(ArrayElementType type) {
+            return type != ArrayElementType.OBJECT;
         }
 
         @Override

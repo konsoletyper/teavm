@@ -435,7 +435,7 @@ public class DependencyAnalyzer implements DependencyInfo {
         if (methodRef.getDescriptor().getResultType() == ValueType.VOID) {
             resultNode = null;
         } else {
-            resultNode = createNode();
+            resultNode = createNode(methodRef.getDescriptor().getResultType());
             resultNode.method = methodRef;
             if (shouldTag) {
                 resultNode.setTag(methodRef + ":RESULT");
