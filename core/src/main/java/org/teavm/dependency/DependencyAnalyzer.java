@@ -21,6 +21,7 @@ import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -63,6 +64,7 @@ public class DependencyAnalyzer implements DependencyInfo {
     static final boolean shouldLog = System.getProperty("org.teavm.logDependencies", "false").equals("true");
     static final boolean shouldTag = System.getProperty("org.teavm.tagDependencies", "false").equals("true")
             || shouldLog;
+    static final boolean dependencyReport = System.getProperty("org.teavm.dependencyReport", "false").equals("true");
     private int classNameSuffix;
     private DependencyClassSource classSource;
     private ClassLoader classLoader;
@@ -635,6 +637,47 @@ public class DependencyAnalyzer implements DependencyInfo {
             for (DependencyListener listener : listeners) {
                 listener.completing(agent);
             }
+        }
+
+        if (dependencyReport) {
+            reportDependencies();
+        }
+    }
+
+    private void reportDependencies() {
+        List<ReportEntry> report = new ArrayList<>();
+        for (MethodReference reachableMethod : getReachableMethods()) {
+            MethodDependency dependency = getMethod(reachableMethod);
+            if (dependency == null) {
+                continue;
+            }
+
+            for (int i = 0; i <= reachableMethod.parameterCount(); ++i) {
+                DependencyNode param = dependency.getVariable(i);
+                if (param == null) {
+                    continue;
+                }
+                report.add(new ReportEntry(reachableMethod + " param " + i, param.getTypes().length));
+            }
+
+            if (dependency.getResult() != null) {
+                report.add(new ReportEntry(reachableMethod + " result", dependency.getResult().getTypes().length));
+            }
+        }
+
+        report.sort(Comparator.comparingInt(n -> -n.count));
+        for (ReportEntry entry : report) {
+            System.out.println(entry.title + ": " + entry.count);
+        }
+    }
+
+    static class ReportEntry {
+        String title;
+        int count;
+
+        ReportEntry(String title, int count) {
+            this.title = title;
+            this.count = count;
         }
     }
 
