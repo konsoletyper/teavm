@@ -33,7 +33,7 @@ public class DependencyNode implements ValueDependencyInfo {
     boolean locked;
     MethodReference method;
     private ValueType typeFilter;
-    private SuperClassFilter cachedTypeFilter;
+    private DependencyTypeFilter cachedTypeFilter;
 
     DependencyNode(DependencyAnalyzer dependencyAnalyzer, ValueType typeFilter) {
         this(dependencyAnalyzer, typeFilter, 0);

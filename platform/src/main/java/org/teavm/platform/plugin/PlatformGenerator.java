@@ -51,6 +51,9 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "getCurrentThread":
                 method.getResult().propagate(agent.getType("java.lang.Thread"));
                 break;
+            case "getEnumConstants":
+                method.getResult().propagate(agent.getType("[Ljava/lang/Enum;"));
+                break;
         }
     }
 

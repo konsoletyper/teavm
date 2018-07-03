@@ -47,6 +47,7 @@ public final class TArray extends TObject {
         return array.size;
     }
 
+    @PluggableDependency(ArrayNativeGenerator.class)
     public static TObject newInstance(TClass<?> componentType, int length) throws TNegativeArraySizeException {
         if (componentType == null) {
             throw new TNullPointerException();
@@ -61,7 +62,6 @@ public final class TArray extends TObject {
     }
 
     @GeneratedBy(ArrayNativeGenerator.class)
-    @PluggableDependency(ArrayNativeGenerator.class)
     @DelegateTo("newInstanceLowLevel")
     private static native TObject newInstanceImpl(PlatformClass componentType, int length);
 

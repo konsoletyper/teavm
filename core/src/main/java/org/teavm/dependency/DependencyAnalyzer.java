@@ -88,7 +88,7 @@ public class DependencyAnalyzer implements DependencyInfo {
     Map<MethodReference, BootstrapMethodSubstitutor> bootstrapMethodSubstitutors = new HashMap<>();
     Map<MethodReference, DependencyPlugin> dependencyPlugins = new HashMap<>();
     private boolean completing;
-    private Map<String, SuperClassFilter> superClassFilters = new HashMap<>();
+    private Map<String, DependencyTypeFilter> superClassFilters = new HashMap<>();
     boolean asyncSupported;
 
     public DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
@@ -591,7 +591,9 @@ public class DependencyAnalyzer implements DependencyInfo {
                 if (tasks.isEmpty()) {
                     break;
                 }
-                tasks.remove().run();
+                while (!tasks.isEmpty()) {
+                    tasks.remove().run();
+                }
                 if (++index == 100) {
                     if (interruptor != null && !interruptor.shouldContinue()) {
                         interrupted = true;
@@ -729,7 +731,24 @@ public class DependencyAnalyzer implements DependencyInfo {
         dependencyPlugins.put(method, dependencyPlugin);
     }
 
-    SuperClassFilter getSuperClassFilter(String superClass) {
-        return superClassFilters.computeIfAbsent(superClass, s -> new SuperClassFilter(classSource, s));
+    DependencyTypeFilter getSuperClassFilter(String superClass) {
+        DependencyTypeFilter result = superClassFilters.get(superClass);
+        if (result == null) {
+            if (superClass.startsWith("[")) {
+                char second = superClass.charAt(1);
+                if (second == '[') {
+                    result = new SuperArrayFilter(this, getSuperClassFilter(superClass.substring(1)));
+                } else if (second == 'L') {
+                    ValueType.Object itemType = (ValueType.Object) ValueType.parse(superClass.substring(1));
+                    result = new SuperArrayFilter(this, getSuperClassFilter(itemType.getClassName()));
+                } else {
+                    result = new ExactTypeFilter(superClass);
+                }
+            } else {
+                result = new SuperClassFilter(classSource, superClass);
+            }
+            superClassFilters.put(superClass, result);
+        }
+        return result;
     }
 }

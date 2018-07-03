@@ -321,7 +321,7 @@ class DependencyGraphBuilder {
         private final Set<MethodReference> knownMethods = new HashSet<>();
         private final BitSet knownTypes = new BitSet();
         private ExceptionConsumer exceptionConsumer;
-        private SuperClassFilter filter;
+        private DependencyTypeFilter filter;
 
         VirtualCallConsumer(DependencyNode node, String filterClass,
                 MethodDescriptor methodDesc, DependencyAnalyzer analyzer, DependencyNode[] parameters,
@@ -441,13 +441,27 @@ class DependencyGraphBuilder {
             ClassReaderSource classSource = dependencyAnalyzer.getClassSource();
             if (targetType instanceof ValueType.Object) {
                 String targetClsName = ((ValueType.Object) targetType).getClassName();
-                final ClassReader targetClass = classSource.get(targetClsName);
+                ClassReader targetClass = classSource.get(targetClsName);
                 if (targetClass != null && !(targetClass.getName().equals("java.lang.Object"))) {
                     if (valueNode != null && receiverNode != null) {
                         valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(targetClass.getName()));
                     }
                     return;
                 }
+            } else if (targetType instanceof ValueType.Array) {
+                ValueType itemType = targetType;
+                while (itemType instanceof ValueType.Array) {
+                    itemType = ((ValueType.Array) itemType).getItemType();
+                }
+                if (itemType instanceof ValueType.Object) {
+                    ClassReader targetClass = classSource.get(((ValueType.Object) itemType).getClassName());
+                    if (targetClass == null) {
+                        valueNode.connect(receiverNode);
+                        return;
+                    }
+                }
+                valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(targetType.toString()));
+                return;
             }
             if (valueNode != null && receiverNode != null) {
                 valueNode.connect(receiverNode);

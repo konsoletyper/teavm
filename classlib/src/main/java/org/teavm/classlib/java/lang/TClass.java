@@ -179,6 +179,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return (platformClass.getMetadata().getFlags() & Flags.INTERFACE) != 0;
     }
 
+    @PluggableDependency(ClassGenerator.class)
     public TClass<?> getComponentType() {
         return getClass(Platform.getArrayItem(platformClass));
     }

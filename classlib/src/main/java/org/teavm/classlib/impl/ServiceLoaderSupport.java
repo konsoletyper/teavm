@@ -20,6 +20,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
@@ -109,7 +110,7 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
     }
 
     private void parseServiceFile(DependencyAgent agent, String service, InputStream input) throws IOException {
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
         while (true) {
             String line = reader.readLine();
             if (line == null) {
@@ -119,12 +120,7 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
             if (line.startsWith("#") || line.isEmpty()) {
                 continue;
             }
-            List<String> implementors = serviceMap.get(service);
-            if (implementors == null) {
-                implementors = new ArrayList<>();
-                serviceMap.put(service, implementors);
-            }
-            implementors.add(line);
+            serviceMap.computeIfAbsent(service, k -> new ArrayList<>()).add(line);
             allClassesNode.propagate(agent.getType(line));
         }
     }
@@ -133,7 +129,7 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
     public void methodReached(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
-            method.getResult().propagate(agent.getType("[java.lang.Object"));
+            method.getResult().propagate(agent.getType("[Ljava/lang/Object;"));
             allClassesNode.connect(method.getResult().getArrayItem());
             method.getResult().getArrayItem().addConsumer(type -> initConstructor(agent, type.getName(), location));
         }

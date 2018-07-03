@@ -42,11 +42,16 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
             case "getLength":
                 achieveGetLength(agent, method);
                 break;
-            case "newInstanceImpl":
-                method.getResult().propagate(agent.getType("[java.lang.Object"));
+            case "newInstance":
+                method.getVariable(1).getClassValueNode().addConsumer(t -> {
+                    String arrayTypeName = t.getName().startsWith("[")
+                            ? t.getName()
+                            : ValueType.object(t.getName()).toString();
+                    method.getResult().propagate(agent.getType("[" + arrayTypeName));
+                });
                 break;
             case "getImpl":
-                achieveGet(agent, method);
+                reachGet(agent, method);
                 break;
         }
     }
@@ -121,7 +126,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         writer.outdent().append("}").softNewLine();
     }
 
-    private void achieveGet(final DependencyAgent agent, final MethodDependency method) {
+    private void reachGet(DependencyAgent agent, MethodDependency method) {
         method.getVariable(1).getArrayItem().connect(method.getResult());
         method.getVariable(1).addConsumer(type -> {
             if (type.getName().startsWith("[")) {
