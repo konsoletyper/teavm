@@ -20,12 +20,12 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public class DependencyNode implements ValueDependencyInfo {
-    private static final int SMALL_TYPES_THRESHOLD = 6;
+    private static final int SMALL_TYPES_THRESHOLD = 3;
     private DependencyAnalyzer dependencyAnalyzer;
     private List<DependencyConsumer> followers;
     private int[] smallTypes;
     private BitSet types;
-    private List<DependencyNodeToNodeTransition> transitions;
+    private LinkedHashMap<DependencyNode, DependencyNodeToNodeTransition> transitions;
     private volatile String tag;
     private DependencyNode arrayItemNode;
     private DependencyNode classValueNode;
@@ -102,13 +102,13 @@ public class DependencyNode implements ValueDependencyInfo {
 
     private void scheduleSingleType(DependencyType type) {
         if (followers != null) {
-            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
+            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[0])) {
                 dependencyAnalyzer.schedulePropagation(consumer, type);
             }
         }
         if (transitions != null) {
-            for (DependencyNodeToNodeTransition consumer : transitions.toArray(
-                    new DependencyNodeToNodeTransition[transitions.size()])) {
+            for (DependencyNodeToNodeTransition consumer : transitions.values().toArray(
+                    new DependencyNodeToNodeTransition[0])) {
                 dependencyAnalyzer.schedulePropagation(consumer, type);
             }
         }
@@ -150,13 +150,13 @@ public class DependencyNode implements ValueDependencyInfo {
             newTypes = Arrays.copyOf(newTypes, j);
         }
         if (followers != null) {
-            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
+            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[0])) {
                 dependencyAnalyzer.schedulePropagation(consumer, newTypes);
             }
         }
         if (transitions != null) {
-            for (DependencyNodeToNodeTransition consumer : transitions.toArray(
-                    new DependencyNodeToNodeTransition[transitions.size()])) {
+            for (DependencyNodeToNodeTransition consumer : transitions.values().toArray(
+                    new DependencyNodeToNodeTransition[0])) {
                 dependencyAnalyzer.schedulePropagation(consumer, newTypes);
             }
         }
@@ -199,19 +199,15 @@ public class DependencyNode implements ValueDependencyInfo {
         if (node == null) {
             throw new IllegalArgumentException("Node must not be null");
         }
-        if (transitions != null) {
-            for (DependencyNodeToNodeTransition transition : transitions) {
-                if (transition.destination == node) {
-                    return;
-                }
-            }
-        }
-        DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node, filter);
         if (transitions == null) {
-            transitions = new ArrayList<>(1);
+            transitions = new LinkedHashMap<>();
+        }
+        if (transitions.containsKey(node)) {
+            return;
         }
 
-        transitions.add(transition);
+        DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node, filter);
+        transitions.put(node, transition);
         if (DependencyAnalyzer.shouldLog) {
             System.out.println("Connecting " + tag + " to " + node.tag);
         }

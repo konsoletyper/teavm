@@ -34,27 +34,37 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
 
     @Override
     public void consume(DependencyType type) {
-        if (!filterType(type)) {
-            return;
-        }
         if (type.getName().startsWith("[")) {
+            if (!filterType(type)) {
+                return;
+            }
             source.getArrayItem().connect(destination.getArrayItem());
             destination.getArrayItem().connect(source.getArrayItem());
-        }
-        if (type.getName().equals("java.lang.Class")) {
+            if (!destination.hasType(type)) {
+                destination.propagate(type);
+            }
+        } else if (type.getName().equals("java.lang.Class")) {
+            if (!filterType(type)) {
+                return;
+            }
             source.getClassValueNode().connect(destination.getClassValueNode());
-        }
-        if (!destination.hasType(type)) {
-            destination.propagate(type);
+            if (!destination.hasType(type)) {
+                destination.propagate(type);
+            }
+        } else {
+            if (!destination.hasType(type) && filterType(type)) {
+                destination.propagate(type);
+            }
         }
     }
 
     void consume(DependencyType[] types) {
         int j = 0;
         boolean copied = false;
-        for (DependencyType type : types) {
-            boolean added = false;
-            if (filterType(type)) {
+
+        if (filter == null) {
+            for (DependencyType type : types) {
+                boolean added = false;
                 if (!destination.hasType(type)) {
                     types[j++] = type;
                     added = true;
@@ -67,10 +77,32 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
                 if (type.getName().equals("java.lang.Class")) {
                     source.getClassValueNode().connect(destination.getClassValueNode());
                 }
+                if (!added && !copied) {
+                    copied = true;
+                    types = types.clone();
+                }
             }
-            if (!added && !copied) {
-                copied = true;
-                types = types.clone();
+        } else {
+            for (DependencyType type : types) {
+                boolean added = false;
+                if (filterType(type)) {
+                    if (!destination.hasType(type)) {
+                        types[j++] = type;
+                        added = true;
+                    }
+
+                    if (type.getName().startsWith("[")) {
+                        source.getArrayItem().connect(destination.getArrayItem());
+                        destination.getArrayItem().connect(source.getArrayItem());
+                    }
+                    if (type.getName().equals("java.lang.Class")) {
+                        source.getClassValueNode().connect(destination.getClassValueNode());
+                    }
+                }
+                if (!added && !copied) {
+                    copied = true;
+                    types = types.clone();
+                }
             }
         }
 
