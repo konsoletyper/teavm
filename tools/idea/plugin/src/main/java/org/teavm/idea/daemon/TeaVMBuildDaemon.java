@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.rmi.AlreadyBoundException;
 import java.rmi.RemoteException;
@@ -282,19 +283,22 @@ public class TeaVMBuildDaemon extends UnicastRemoteObject implements TeaVMRemote
         };
     }
 
-    public static TeaVMDaemonInfo start(boolean incremental) throws IOException {
+    public static TeaVMDaemonInfo start(boolean incremental, int daemonMemory) throws IOException {
         String javaHome = System.getProperty("java.home");
         String javaCommand = javaHome + "/bin/java";
-        String classPath = detectClassPath().stream().collect(Collectors.joining(File.pathSeparator));
+        String classPath = String.join(File.pathSeparator, detectClassPath());
         ProcessBuilder builder = new ProcessBuilder(javaCommand, "-cp", classPath,
                 "-D" + INCREMENTAL_PROPERTY + "=" + incremental,
+                "-Xmx" + daemonMemory + "m",
                 TeaVMBuildDaemon.class.getName());
         Process process = builder.start();
 
         Log log = LogFactory.getLog(TeaVMBuildDaemon.class);
 
-        BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(process.getInputStream(), "UTF-8"));
-        BufferedReader stderrReader = new BufferedReader(new InputStreamReader(process.getErrorStream(), "UTF-8"));
+        BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(process.getInputStream(),
+                StandardCharsets.UTF_8));
+        BufferedReader stderrReader = new BufferedReader(new InputStreamReader(process.getErrorStream(),
+                StandardCharsets.UTF_8));
         String line = stdoutReader.readLine();
         if (line == null || !line.startsWith(DAEMON_MESSAGE_PREFIX)) {
             StringBuilder sb = new StringBuilder();

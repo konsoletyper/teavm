@@ -15,12 +15,14 @@
  */
 package org.teavm.idea.ui;
 
-import com.intellij.openapi.options.ConfigurationException;
 import com.intellij.openapi.options.SearchableConfigurable;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
+import java.text.DecimalFormat;
 import javax.swing.JCheckBox;
 import javax.swing.JComponent;
+import javax.swing.JFormattedTextField;
+import javax.swing.JLabel;
 import javax.swing.JPanel;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -30,6 +32,7 @@ import org.teavm.idea.TeaVMDaemonComponent;
 public class TeaVMSettingsEditorTab implements SearchableConfigurable {
     private JPanel contentPane;
     private JCheckBox daemonCheckBox;
+    private JFormattedTextField daemonMemoryField;
     private JCheckBox incrementalCheckBox;
     private TeaVMDaemonComponent daemonComponent;
 
@@ -38,6 +41,8 @@ public class TeaVMSettingsEditorTab implements SearchableConfigurable {
 
         contentPane = new JPanel();
         daemonCheckBox = new JCheckBox("use build daemon (can increase performance in most cases)");
+        JLabel daemonMemoryLabel = new JLabel("Daemon memory size (in megabytes): ");
+        daemonMemoryField = new JFormattedTextField(new DecimalFormat("#"));
         incrementalCheckBox = new JCheckBox("incremental build (only available with daemon)");
         contentPane.setLayout(new GridBagLayout());
 
@@ -45,13 +50,19 @@ public class TeaVMSettingsEditorTab implements SearchableConfigurable {
 
         GridBagConstraints labelConstraints = new GridBagConstraints();
         labelConstraints.gridwidth = GridBagConstraints.REMAINDER;
-        labelConstraints.anchor = GridBagConstraints.BASELINE_LEADING;
+        labelConstraints.anchor = GridBagConstraints.WEST;
         labelConstraints.weightx = 1;
         labelConstraints.weighty = 1;
         labelConstraints.insets.left = 5;
         labelConstraints.insets.right = 5;
 
+        GridBagConstraints fieldLabelConstraints = (GridBagConstraints) labelConstraints.clone();
+        fieldLabelConstraints.gridwidth = GridBagConstraints.RELATIVE;
+        fieldLabelConstraints.weightx = 0;
+
         contentPane.add(daemonCheckBox, labelConstraints);
+        contentPane.add(daemonMemoryLabel, fieldLabelConstraints);
+        contentPane.add(daemonMemoryField, labelConstraints);
         contentPane.add(incrementalCheckBox, labelConstraints);
 
         GridBagConstraints constraints = new GridBagConstraints();
@@ -88,17 +99,21 @@ public class TeaVMSettingsEditorTab implements SearchableConfigurable {
     @Override
     public boolean isModified() {
         return daemonCheckBox.isSelected() != daemonComponent.isDaemonRunning()
-                || incrementalCheckBox.isSelected() != daemonComponent.isIncremental();
+                || incrementalCheckBox.isSelected() != daemonComponent.isIncremental()
+                || ((Number) daemonMemoryField.getValue()).intValue() != daemonComponent.getDaemonMemory();
     }
 
     @Override
-    public void apply() throws ConfigurationException {
+    public void apply() {
         boolean shouldRestartDaemon = true;
 
-        if (incrementalCheckBox.isSelected() && !daemonComponent.isIncremental()) {
+        int newDaemonMemory = ((Number) daemonMemoryField.getValue()).intValue();
+        if (incrementalCheckBox.isSelected() != daemonComponent.isIncremental()
+                || newDaemonMemory != daemonComponent.getDaemonMemory()) {
             shouldRestartDaemon = true;
         }
         daemonComponent.setIncremental(incrementalCheckBox.isSelected());
+        daemonComponent.setDaemonMemory(newDaemonMemory);
 
         if (daemonCheckBox.isSelected()) {
             if (!daemonComponent.isDaemonRunning()) {
@@ -122,5 +137,6 @@ public class TeaVMSettingsEditorTab implements SearchableConfigurable {
     public void reset() {
         daemonCheckBox.setSelected(daemonComponent.isDaemonRunning());
         incrementalCheckBox.setSelected(daemonComponent.isIncremental());
+        daemonMemoryField.setValue(daemonComponent.getDaemonMemory());
     }
 }

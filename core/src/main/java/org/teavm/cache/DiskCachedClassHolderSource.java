@@ -303,7 +303,7 @@ public class DiskCachedClassHolderSource implements ClassHolderSource {
                 output.writeInt(symbolTable.lookup(value.getEnumValue().getFieldName()));
                 break;
             case AnnotationValue.FLOAT:
-                output.writeDouble(value.getFloat());
+                output.writeFloat(value.getFloat());
                 break;
             case AnnotationValue.INT:
                 output.writeInt(value.getInt());

@@ -26,6 +26,7 @@ import org.teavm.idea.jps.model.TeaVMJpsWorkspaceConfiguration;
 public class TeaVMDaemonComponent implements ApplicationComponent {
     private TeaVMDaemonInfo daemonInfo;
     private boolean incremental;
+    private int daemonMemory;
 
     @Override
     public void initComponent() {
@@ -34,6 +35,7 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
         if (configurationStorage != null) {
             TeaVMJpsWorkspaceConfiguration configuration = configurationStorage.getState();
             incremental = configuration.isIncremental();
+            daemonMemory = configuration.getDaemonMemory();
             if (configuration.isDaemonEnabled()) {
                 startDaemon();
             }
@@ -62,11 +64,11 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
     public void startDaemon() {
         if (daemonInfo == null) {
             try {
-                daemonInfo = TeaVMBuildDaemon.start(incremental);
+                daemonInfo = TeaVMBuildDaemon.start(incremental, daemonMemory);
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            updateConfiguration(true);
+            updateConfiguration(true, daemonMemory);
         }
     }
 
@@ -74,7 +76,7 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
         if (daemonInfo != null) {
             daemonInfo.getProcess().destroy();
             daemonInfo = null;
-            updateConfiguration(false);
+            updateConfiguration(false, daemonMemory);
         }
     }
 
@@ -86,17 +88,27 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
         this.incremental = incremental;
     }
 
+    public int getDaemonMemory() {
+        return daemonMemory;
+    }
+
+    public void setDaemonMemory(int daemonMemory) {
+        this.daemonMemory = daemonMemory;
+    }
+
     public void applyChanges() {
         TeaVMWorkspaceConfigurationStorage configurationStorage = getConfigurationStorage();
         TeaVMJpsWorkspaceConfiguration configuration = configurationStorage.getState();
         configuration.setIncremental(incremental);
+        configuration.setDaemonMemory(daemonMemory);
         configurationStorage.loadState(configuration);
     }
 
-    private void updateConfiguration(boolean daemonEnabled) {
+    private void updateConfiguration(boolean daemonEnabled, int daemonMemory) {
         TeaVMWorkspaceConfigurationStorage configurationStorage = getConfigurationStorage();
         TeaVMJpsWorkspaceConfiguration configuration = configurationStorage.getState();
         configuration.setDaemonEnabled(daemonEnabled);
+        configuration.setDaemonMemory(daemonMemory);
         configurationStorage.loadState(configuration);
     }
 

@@ -20,6 +20,7 @@ import org.jetbrains.jps.model.ex.JpsElementBase;
 
 public class TeaVMJpsWorkspaceConfiguration extends JpsElementBase<TeaVMJpsWorkspaceConfiguration> {
     private boolean daemonEnabled;
+    private int daemonMemory = 1024;
     private boolean incremental;
 
     public boolean isDaemonEnabled() {
@@ -38,6 +39,14 @@ public class TeaVMJpsWorkspaceConfiguration extends JpsElementBase<TeaVMJpsWorks
         this.incremental = incremental;
     }
 
+    public int getDaemonMemory() {
+        return daemonMemory;
+    }
+
+    public void setDaemonMemory(int daemonMemory) {
+        this.daemonMemory = daemonMemory;
+    }
+
     @NotNull
     @Override
     public TeaVMJpsWorkspaceConfiguration createCopy() {
@@ -50,5 +59,6 @@ public class TeaVMJpsWorkspaceConfiguration extends JpsElementBase<TeaVMJpsWorks
     public void applyChanges(@NotNull TeaVMJpsWorkspaceConfiguration configuration) {
         daemonEnabled = configuration.daemonEnabled;
         incremental = configuration.incremental;
+        daemonMemory = configuration.daemonMemory;
     }
 }
