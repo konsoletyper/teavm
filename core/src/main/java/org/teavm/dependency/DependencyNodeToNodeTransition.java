@@ -34,16 +34,7 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
 
     @Override
     public void consume(DependencyType type) {
-        if (type.getName().startsWith("[")) {
-            if (!filterType(type)) {
-                return;
-            }
-            source.getArrayItem().connect(destination.getArrayItem());
-            destination.getArrayItem().connect(source.getArrayItem());
-            if (!destination.hasType(type)) {
-                destination.propagate(type);
-            }
-        } else if (type.getName().equals("java.lang.Class")) {
+        if (type.getName().equals("java.lang.Class")) {
             if (!filterType(type)) {
                 return;
             }
@@ -70,10 +61,6 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
                     added = true;
                 }
 
-                if (type.getName().startsWith("[")) {
-                    source.getArrayItem().connect(destination.getArrayItem());
-                    destination.getArrayItem().connect(source.getArrayItem());
-                }
                 if (type.getName().equals("java.lang.Class")) {
                     source.getClassValueNode().connect(destination.getClassValueNode());
                 }
@@ -91,10 +78,6 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
                         added = true;
                     }
 
-                    if (type.getName().startsWith("[")) {
-                        source.getArrayItem().connect(destination.getArrayItem());
-                        destination.getArrayItem().connect(source.getArrayItem());
-                    }
                     if (type.getName().equals("java.lang.Class")) {
                         source.getClassValueNode().connect(destination.getClassValueNode());
                     }
@@ -121,7 +104,7 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
         }
     }
 
-    private boolean filterType(DependencyType type) {
+    boolean filterType(DependencyType type) {
         if (filter == null) {
             return true;
         }

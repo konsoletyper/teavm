@@ -429,7 +429,7 @@ public class DependencyAnalyzer implements DependencyInfo {
             parameterNodes[i + 1] = createNode(arguments[i]);
             parameterNodes[i + 1].method = methodRef;
             if (shouldTag) {
-                parameterNodes[i].setTag(methodRef + ":" + i);
+                parameterNodes[i + 1].setTag(methodRef + ":" + (i + 1));
             }
         }
 

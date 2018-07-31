@@ -21,6 +21,7 @@ import org.teavm.model.ValueType;
 
 public class DependencyNode implements ValueDependencyInfo {
     private static final int SMALL_TYPES_THRESHOLD = 3;
+    private static final int DEGREE_THRESHOLD = 2;
     private DependencyAnalyzer dependencyAnalyzer;
     private List<DependencyConsumer> followers;
     private int[] smallTypes;
@@ -89,7 +90,7 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     public void propagate(DependencyType type) {
-        if (degree > 2) {
+        if (degree > DEGREE_THRESHOLD) {
             return;
         }
         if (addType(type) && filter(type)) {
@@ -102,20 +103,20 @@ public class DependencyNode implements ValueDependencyInfo {
 
     private void scheduleSingleType(DependencyType type) {
         if (followers != null) {
-            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[0])) {
+            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
                 dependencyAnalyzer.schedulePropagation(consumer, type);
             }
         }
         if (transitions != null) {
             for (DependencyNodeToNodeTransition consumer : transitions.values().toArray(
-                    new DependencyNodeToNodeTransition[0])) {
+                    new DependencyNodeToNodeTransition[transitions.size()])) {
                 dependencyAnalyzer.schedulePropagation(consumer, type);
             }
         }
     }
 
     public void propagate(DependencyType[] newTypes) {
-        if (degree > 2) {
+        if (degree > DEGREE_THRESHOLD) {
             return;
         }
 
@@ -213,6 +214,19 @@ public class DependencyNode implements ValueDependencyInfo {
         }
 
         propagateTypes(transition);
+
+        if (degree <= DEGREE_THRESHOLD && node.degree <= DEGREE_THRESHOLD) {
+            if (arrayItemNode != null && node.arrayItemNode == null) {
+                node.arrayItemNode = arrayItemNode;
+            } else if (node.arrayItemNode != null && arrayItemNode == null) {
+                arrayItemNode = node.arrayItemNode;
+            } else if (node.arrayItemNode == null && arrayItemNode == null) {
+                node.arrayItemNode = getArrayItem();
+            } else {
+                arrayItemNode.connect(node.arrayItemNode);
+                node.arrayItemNode.connect(arrayItemNode);
+            }
+        }
     }
 
     private void propagateTypes(DependencyConsumer transition) {
