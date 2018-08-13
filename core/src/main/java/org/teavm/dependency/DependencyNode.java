@@ -15,7 +15,17 @@
  */
 package org.teavm.dependency;
 
-import java.util.*;
+import com.carrotsearch.hppc.ObjectArrayList;
+import com.carrotsearch.hppc.ObjectObjectHashMap;
+import com.carrotsearch.hppc.cursors.ObjectCursor;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Deque;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -23,18 +33,23 @@ public class DependencyNode implements ValueDependencyInfo {
     private static final int SMALL_TYPES_THRESHOLD = 3;
     private static final int DEGREE_THRESHOLD = 2;
     private DependencyAnalyzer dependencyAnalyzer;
-    private List<DependencyConsumer> followers;
-    private int[] smallTypes;
-    private BitSet types;
-    private LinkedHashMap<DependencyNode, DependencyNodeToNodeTransition> transitions;
-    private volatile String tag;
+    List<DependencyConsumer> followers;
+    TypeSet typeSet;
+    ObjectObjectHashMap<DependencyNode, DependencyNodeToNodeTransition> transitions;
+    ObjectArrayList<DependencyNodeToNodeTransition> transitionList;
+    String tag;
     private DependencyNode arrayItemNode;
     private DependencyNode classValueNode;
+    DependencyNode classNodeParent;
+    boolean classNodeComplete;
     private int degree;
     boolean locked;
     MethodReference method;
     private ValueType typeFilter;
     private DependencyTypeFilter cachedTypeFilter;
+
+    boolean visitedFlag;
+    int splitCount;
 
     DependencyNode(DependencyAnalyzer dependencyAnalyzer, ValueType typeFilter) {
         this(dependencyAnalyzer, typeFilter, 0);
@@ -46,71 +61,44 @@ public class DependencyNode implements ValueDependencyInfo {
         this.typeFilter = typeFilter;
     }
 
-    private boolean addType(DependencyType type) {
-        if (types == null) {
-            if (smallTypes == null) {
-                if (locked) {
-                    throw new IllegalStateException("Error propagating type " + type.getName()
-                            + " to node in " + method);
-                }
-                smallTypes = new int[] { type.index };
-                return true;
-            }
-        }
-        if (smallTypes != null) {
-            for (int i = 0; i < smallTypes.length; ++i) {
-                if (smallTypes[i] == type.index) {
-                    return false;
-                }
-            }
-            if (smallTypes.length == SMALL_TYPES_THRESHOLD) {
-                types = new BitSet(dependencyAnalyzer.types.size() * 2);
-                for (int existingType : smallTypes) {
-                    types.set(existingType);
-                }
-                smallTypes = null;
-            } else {
-                if (locked) {
-                    throw new IllegalStateException("Error propagating type " + type.getName() + " to node in method "
-                            + method);
-                }
-                smallTypes = Arrays.copyOf(smallTypes, smallTypes.length + 1);
-                smallTypes[smallTypes.length - 1] = type.index;
-                return true;
-            }
-        }
-        if (!types.get(type.index)) {
-            if (locked) {
-                throw new IllegalStateException("Error propagating type " + type.getName() + " to node " + tag);
-            }
-            types.set(type.index);
-            return true;
-        }
-        return false;
-    }
-
     public void propagate(DependencyType type) {
         if (degree > DEGREE_THRESHOLD) {
             return;
         }
-        if (addType(type) && filter(type)) {
-            if (DependencyAnalyzer.shouldLog) {
-                System.out.println(tag + " -> " + type.getName());
-            }
-            scheduleSingleType(type);
+        if (!hasType(type)) {
+            moveToSeparateDomain();
+            typeSet.addType(type);
+            scheduleSingleType(type, null);
         }
     }
 
-    private void scheduleSingleType(DependencyType type) {
-        if (followers != null) {
-            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[followers.size()])) {
-                dependencyAnalyzer.schedulePropagation(consumer, type);
+    private void scheduleSingleType(DependencyType type, Runnable action) {
+        if (DependencyAnalyzer.shouldLog) {
+            for (DependencyNode node : typeSet.domain) {
+                if (node.filter(type)) {
+                    System.out.println(node.tag + " -> " + type.getName());
+                }
             }
         }
-        if (transitions != null) {
-            for (DependencyNodeToNodeTransition consumer : transitions.values().toArray(
-                    new DependencyNodeToNodeTransition[transitions.size()])) {
-                dependencyAnalyzer.schedulePropagation(consumer, type);
+
+        ObjectArrayList<DependencyNodeToNodeTransition> transitions = new ObjectArrayList<>(typeSet.getTransitions());
+        List<ConsumerWithNode> consumerEntries = typeSet.getConsumers();
+
+        if (action != null) {
+            action.run();
+        }
+
+        for (ObjectCursor<DependencyNodeToNodeTransition> cursor : transitions) {
+            DependencyNodeToNodeTransition transition = cursor.value;
+            if (transition.source.filter(type) && transition.filterType(type)) {
+                dependencyAnalyzer.schedulePropagation(transition, type);
+            }
+        }
+        for (ConsumerWithNode entry : consumerEntries) {
+            if (entry.node.filter(type)) {
+                for (DependencyConsumer consumer : entry.consumers) {
+                    dependencyAnalyzer.schedulePropagation(consumer, type);
+                }
             }
         }
     }
@@ -124,7 +112,7 @@ public class DependencyNode implements ValueDependencyInfo {
         boolean copied = false;
         for (int i = 0; i < newTypes.length; ++i) {
             DependencyType type = newTypes[i];
-            if (addType(type) && filter(type)) {
+            if (!hasType(type)) {
                 newTypes[j++] = type;
             } else if (!copied) {
                 copied = true;
@@ -134,32 +122,103 @@ public class DependencyNode implements ValueDependencyInfo {
         if (j == 0) {
             return;
         }
+
+        if (j == 1) {
+            propagate(newTypes[0]);
+            return;
+        }
+
+        if (j < newTypes.length) {
+            newTypes = Arrays.copyOf(newTypes, j);
+        }
+
+        moveToSeparateDomain();
+        for (DependencyType newType : newTypes) {
+            typeSet.addType(newType);
+        }
+        scheduleMultipleTypes(newTypes, null);
+    }
+
+    void scheduleMultipleTypes(DependencyType[] newTypes, Runnable action) {
         if (DependencyAnalyzer.shouldLog) {
-            for (int i = 0; i < j; ++i) {
-                System.out.println(tag + " -> " + newTypes[i].getName());
+            for (DependencyNode node : typeSet.domain) {
+                for (DependencyType type : newTypes) {
+                    if (node.filter(type)) {
+                        System.out.println(node.tag + " -> " + type.getName());
+                    }
+                }
             }
         }
 
-        if (followers == null && transitions == null) {
-            return;
+        ObjectArrayList<DependencyNodeToNodeTransition> transitions = new ObjectArrayList<>(typeSet.getTransitions());
+        List<ConsumerWithNode> consumerEntries = typeSet.getConsumers();
+
+        if (action != null) {
+            action.run();
         }
-        if (j < newTypes.length) {
-            if (j == 1) {
-                scheduleSingleType(newTypes[0]);
-                return;
+
+        for (ObjectCursor<DependencyNodeToNodeTransition> cursor : transitions) {
+            DependencyNodeToNodeTransition transition = cursor.value;
+            DependencyType[] typesToPropagate = newTypes;
+            if (transition.source.typeFilter != null || transition.filter != null) {
+                int j = 0;
+                for (int i = 0; i < typesToPropagate.length; ++i) {
+                    DependencyType type = typesToPropagate[i];
+                    if (transition.source.filter(type) && transition.filterType(type)) {
+                        typesToPropagate[j++] = type;
+                    } else if (typesToPropagate == newTypes) {
+                        typesToPropagate = typesToPropagate.clone();
+                    }
+                }
+                if (j < typesToPropagate.length) {
+                    if (j == 0) {
+                        continue;
+                    }
+                    if (j == 1) {
+                        dependencyAnalyzer.schedulePropagation(transition, typesToPropagate[0]);
+                        continue;
+                    }
+                    typesToPropagate = Arrays.copyOf(typesToPropagate, j);
+                }
             }
-            newTypes = Arrays.copyOf(newTypes, j);
+            dependencyAnalyzer.schedulePropagation(transition, typesToPropagate);
         }
-        if (followers != null) {
-            for (DependencyConsumer consumer : followers.toArray(new DependencyConsumer[0])) {
-                dependencyAnalyzer.schedulePropagation(consumer, newTypes);
+
+        for (ConsumerWithNode entry : consumerEntries) {
+            DependencyType[] filteredTypes = newTypes;
+            DependencyNode node = entry.node;
+            if (node.typeFilter != null) {
+                int j = 0;
+                for (int i = 0; i < filteredTypes.length; ++i) {
+                    DependencyType type = filteredTypes[i];
+                    if (node.filter(type)) {
+                        filteredTypes[j++] = type;
+                    } else {
+                        if (filteredTypes == newTypes) {
+                            filteredTypes = filteredTypes.clone();
+                        }
+                    }
+                }
+                if (j == 0) {
+                    continue;
+                }
+                if (j < filteredTypes.length) {
+                    filteredTypes = Arrays.copyOf(filteredTypes, j);
+                }
+            }
+            for (DependencyConsumer consumer : entry.consumers) {
+                dependencyAnalyzer.schedulePropagation(consumer, filteredTypes);
             }
         }
-        if (transitions != null) {
-            for (DependencyNodeToNodeTransition consumer : transitions.values().toArray(
-                    new DependencyNodeToNodeTransition[0])) {
-                dependencyAnalyzer.schedulePropagation(consumer, newTypes);
-            }
+    }
+
+    static class DeferredConsumerTypes {
+        final DependencyConsumer consumer;
+        final DependencyType[] types;
+
+        DeferredConsumerTypes(DependencyConsumer consumer, DependencyType[] types) {
+            this.consumer = consumer;
+            this.types = types;
         }
     }
 
@@ -189,6 +248,9 @@ public class DependencyNode implements ValueDependencyInfo {
             return;
         }
         followers.add(consumer);
+        if (typeSet != null) {
+            typeSet.consumers = null;
+        }
 
         propagateTypes(consumer);
     }
@@ -201,7 +263,8 @@ public class DependencyNode implements ValueDependencyInfo {
             throw new IllegalArgumentException("Node must not be null");
         }
         if (transitions == null) {
-            transitions = new LinkedHashMap<>();
+            transitions = new ObjectObjectHashMap<>();
+            transitionList = new ObjectArrayList<>();
         }
         if (transitions.containsKey(node)) {
             return;
@@ -209,11 +272,26 @@ public class DependencyNode implements ValueDependencyInfo {
 
         DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node, filter);
         transitions.put(node, transition);
+        transitionList.add(transition);
         if (DependencyAnalyzer.shouldLog) {
             System.out.println("Connecting " + tag + " to " + node.tag);
         }
 
-        propagateTypes(transition);
+        if (typeSet != null) {
+            if (typeSet == node.typeSet) {
+                typeSet.loopNodes = null;
+                return;
+            }
+            if (typeSet.transitions != null) {
+                typeSet.transitions.add(transition);
+            }
+
+            if (transition.shouldMergeDomains()) {
+                transition.mergeDomains(getTypesInternal());
+            } else {
+                node.propagate(getTypesInternal());
+            }
+        }
 
         if (degree <= DEGREE_THRESHOLD && node.degree <= DEGREE_THRESHOLD) {
             if (arrayItemNode != null && node.arrayItemNode == null) {
@@ -227,43 +305,46 @@ public class DependencyNode implements ValueDependencyInfo {
                 node.arrayItemNode.connect(arrayItemNode);
             }
         }
+
+        if (classValueNode != null && classValueNode != this) {
+            classValueNode.connect(node.getClassValueNode());
+        }
+    }
+
+    void connectClassValueNodesForDomain() {
+        if (typeSet == null) {
+            return;
+        }
+        for (DependencyNode node : typeSet.domain) {
+            node.connectClassValueNodes();
+        }
+    }
+
+    private void connectClassValueNodes() {
+        if (classNodeComplete) {
+            return;
+        }
+        classNodeComplete = true;
+
+        if (classNodeParent == null || classNodeParent.transitions == null) {
+            return;
+        }
+
+        for (DependencyNodeToNodeTransition transition : classNodeParent.transitionList
+                .toArray(DependencyNodeToNodeTransition.class)) {
+            connect(transition.destination.getClassValueNode());
+        }
     }
 
     private void propagateTypes(DependencyConsumer transition) {
-        if (this.types != null) {
-            DependencyType[] types = new DependencyType[this.types.cardinality()];
-            int j = 0;
-            for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
-                DependencyType type = dependencyAnalyzer.types.get(index);
-                types[j++] = type;
-            }
-            dependencyAnalyzer.schedulePropagation(transition, types);
-        } else if (this.smallTypes != null) {
-            DependencyType[] types = new DependencyType[smallTypes.length];
-            for (int i = 0; i < types.length; ++i) {
-                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
-                types[i] = type;
-            }
-            dependencyAnalyzer.schedulePropagation(transition, types);
+        if (typeSet != null) {
+            dependencyAnalyzer.schedulePropagation(transition, getTypesInternal());
         }
     }
 
     private void propagateTypes(DependencyNodeToNodeTransition transition) {
-        if (this.types != null) {
-            DependencyType[] types = new DependencyType[this.types.cardinality()];
-            int j = 0;
-            for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
-                DependencyType type = dependencyAnalyzer.types.get(index);
-                types[j++] = type;
-            }
-            dependencyAnalyzer.schedulePropagation(transition, types);
-        } else if (this.smallTypes != null) {
-            DependencyType[] types = new DependencyType[smallTypes.length];
-            for (int i = 0; i < types.length; ++i) {
-                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
-                types[i] = type;
-            }
-            dependencyAnalyzer.schedulePropagation(transition, types);
+        if (typeSet != null) {
+            dependencyAnalyzer.schedulePropagation(transition, getTypesInternal());
         }
     }
 
@@ -291,6 +372,7 @@ public class DependencyNode implements ValueDependencyInfo {
         if (classValueNode == null) {
             classValueNode = new DependencyNode(dependencyAnalyzer, null, degree);
             classValueNode.classValueNode = classValueNode;
+            classValueNode.classNodeParent = this;
             if (DependencyAnalyzer.shouldTag) {
                 classValueNode.tag = tag + "@";
             }
@@ -300,19 +382,11 @@ public class DependencyNode implements ValueDependencyInfo {
 
     @Override
     public boolean hasArrayType() {
-        return arrayItemNode != null && (arrayItemNode.types != null || arrayItemNode.smallTypes != null);
+        return arrayItemNode != null && arrayItemNode.typeSet != null && arrayItemNode.typeSet.hasAnyType();
     }
 
     public boolean hasType(DependencyType type) {
-        if (smallTypes != null) {
-            for (int i = 0; i < smallTypes.length; ++i) {
-                if (smallTypes[i] == type.index) {
-                    return true;
-                }
-            }
-            return false;
-        }
-        return types != null && types.get(type.index);
+        return typeSet != null && typeSet.hasType(type);
     }
 
     @Override
@@ -322,35 +396,36 @@ public class DependencyNode implements ValueDependencyInfo {
 
     @Override
     public String[] getTypes() {
-        if (smallTypes != null) {
-            String[] result = new String[smallTypes.length];
-            int j = 0;
-            for (int i = 0; i < result.length; ++i) {
-                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
-                if (filter(type)) {
-                    result[j++] = type.getName();
-                }
-            }
-            if (j < result.length) {
-                result = Arrays.copyOf(result, j);
-            }
-            return result;
-        }
-        if (types == null) {
+        if (typeSet == null) {
             return new String[0];
         }
-        String[] result = new String[types.cardinality()];
-        int j = 0;
-        for (int index = types.nextSetBit(0); index >= 0; index = types.nextSetBit(index + 1)) {
-            DependencyType type = dependencyAnalyzer.types.get(index);
+        DependencyType[] types = typeSet.getTypes();
+        String[] result = new String[types.length];
+        int i = 0;
+        for (DependencyType type : types) {
             if (filter(type)) {
-                result[j++] = type.getName();
+                result[i++] = type.getName();
             }
         }
-        if (j < result.length) {
-            result = Arrays.copyOf(result, j);
+        return i == result.length ? result : Arrays.copyOf(result, i);
+    }
+
+    DependencyType[] getTypesInternal() {
+        if (typeSet == null) {
+            return new DependencyType[0];
         }
-        return result;
+        DependencyType[] types = typeSet.getTypes();
+        if (typeFilter == null) {
+            return types;
+        }
+        DependencyType[] result = new DependencyType[types.length];
+        int i = 0;
+        for (DependencyType type : types) {
+            if (filter(type)) {
+                result[i++] = type;
+            }
+        }
+        return i == result.length ? result : Arrays.copyOf(result, i);
     }
 
     public String getTag() {
@@ -359,5 +434,63 @@ public class DependencyNode implements ValueDependencyInfo {
 
     public void setTag(String tag) {
         this.tag = tag;
+    }
+
+    void moveToSeparateDomain() {
+        if (typeSet == null) {
+            Collection<DependencyNode> domain = findDomain();
+            typeSet = new TypeSet(dependencyAnalyzer, this);
+            typeSet.domain.addAll(domain);
+            for (DependencyNode node : domain) {
+                node.typeSet = typeSet;
+            }
+            connectClassValueNodesForDomain();
+            return;
+        }
+
+        if (typeSet.origin == this || typeSet.reachesOrigin(this)) {
+            return;
+        }
+
+        Collection<DependencyNode> domain = findDomain();
+        if (domain.contains(typeSet.origin)) {
+            return;
+        }
+
+        typeSet.domain.removeAll(domain);
+        typeSet.invalidate();
+
+        typeSet = typeSet.copy(this);
+        typeSet.domain.addAll(domain);
+
+        for (DependencyNode node : domain) {
+            node.typeSet = typeSet;
+            node.splitCount++;
+        }
+    }
+
+    Collection<DependencyNode> findDomain() {
+        Set<DependencyNode> visited = new LinkedHashSet<>();
+        Deque<DependencyNode> stack = new ArrayDeque<>();
+        stack.push(this);
+
+        while (!stack.isEmpty()) {
+            DependencyNode node = stack.pop();
+            if (!visited.add(node)) {
+                continue;
+            }
+
+            if (node.transitions != null) {
+                for (ObjectCursor<DependencyNodeToNodeTransition> cursor : node.transitionList) {
+                    DependencyNodeToNodeTransition transition = cursor.value;
+                    if (transition.filter == null && transition.destination.typeSet == typeSet
+                            && !visited.contains(transition.destination)) {
+                        stack.push(transition.destination);
+                    }
+                }
+            }
+        }
+
+        return visited;
     }
 }

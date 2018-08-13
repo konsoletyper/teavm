@@ -18,11 +18,12 @@ package org.teavm.dependency;
 import com.carrotsearch.hppc.IntSet;
 import java.util.Arrays;
 import java.util.BitSet;
+import java.util.Collection;
 
-class DependencyNodeToNodeTransition implements DependencyConsumer {
-    private DependencyNode source;
+class DependencyNodeToNodeTransition  {
+    DependencyNode source;
     DependencyNode destination;
-    private DependencyTypeFilter filter;
+    DependencyTypeFilter filter;
     private BitSet knownFilteredOffTypes;
     IntSet pendingTypes;
 
@@ -32,21 +33,68 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
         this.filter = filter;
     }
 
-    @Override
-    public void consume(DependencyType type) {
-        if (type.getName().equals("java.lang.Class")) {
-            if (!filterType(type)) {
-                return;
-            }
-            source.getClassValueNode().connect(destination.getClassValueNode());
-            if (!destination.hasType(type)) {
-                destination.propagate(type);
-            }
+    void consume(DependencyType type) {
+        if (!destination.hasType(type) && filterType(type)) {
+            propagate(type);
+        }
+    }
+
+    private void propagate(DependencyType type) {
+        if (destination.typeSet == source.typeSet) {
+            return;
+        }
+
+        if (shouldMergeDomains()) {
+            mergeDomains(new DependencyType[] { type });
         } else {
-            if (!destination.hasType(type) && filterType(type)) {
-                destination.propagate(type);
+            destination.propagate(type);
+        }
+    }
+
+    private void propagate(DependencyType[] types) {
+        if (destination.typeSet == source.typeSet) {
+            return;
+        }
+
+        if (shouldMergeDomains()) {
+            mergeDomains(types);
+        } else {
+            destination.propagate(types);
+        }
+    }
+
+    void mergeDomains(DependencyType[] types) {
+        destination.moveToSeparateDomain();
+        destination.scheduleMultipleTypes(types, () -> {
+            Collection<DependencyNode> domainToMerge = destination.typeSet.domain;
+            for (DependencyNode node : domainToMerge) {
+                node.typeSet = source.typeSet;
+                node.splitCount++;
+                source.typeSet.domain.add(node);
+            }
+            source.typeSet.invalidate();
+        });
+    }
+
+    boolean shouldMergeDomains() {
+        if (filter != null || destination.splitCount > 2) {
+            return false;
+        }
+        if (destination.typeSet == null) {
+            return true;
+        }
+        if (destination.typeSet == source.typeSet || destination.typeSet.origin == destination
+                || destination.typeSet.typeCount() >= source.typeSet.typeCount()) {
+            return false;
+        }
+
+        for (DependencyType type : destination.getTypesInternal()) {
+            if (!source.hasType(type)) {
+                return false;
             }
         }
+
+        return true;
     }
 
     void consume(DependencyType[] types) {
@@ -61,9 +109,6 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
                     added = true;
                 }
 
-                if (type.getName().equals("java.lang.Class")) {
-                    source.getClassValueNode().connect(destination.getClassValueNode());
-                }
                 if (!added && !copied) {
                     copied = true;
                     types = types.clone();
@@ -76,10 +121,6 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
                     if (!destination.hasType(type)) {
                         types[j++] = type;
                         added = true;
-                    }
-
-                    if (type.getName().equals("java.lang.Class")) {
-                        source.getClassValueNode().connect(destination.getClassValueNode());
                     }
                 }
                 if (!added && !copied) {
@@ -94,17 +135,21 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
         }
 
         if (j == 1) {
-            destination.propagate(types[0]);
+            propagate(types[0]);
         } else {
             if (j < types.length) {
                 types = Arrays.copyOf(types, j);
             }
 
-            destination.propagate(types);
+            propagate(types);
         }
     }
 
     boolean filterType(DependencyType type) {
+        if (pendingTypes != null && pendingTypes.contains(type.index)) {
+            return false;
+        }
+
         if (filter == null) {
             return true;
         }
@@ -121,5 +166,9 @@ class DependencyNodeToNodeTransition implements DependencyConsumer {
         }
 
         return true;
+    }
+
+    boolean pointsToDomainOrigin() {
+        return destination.typeSet == null || destination.typeSet.origin == destination;
     }
 }

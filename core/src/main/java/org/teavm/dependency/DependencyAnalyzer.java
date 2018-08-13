@@ -266,14 +266,15 @@ public class DependencyAnalyzer implements DependencyInfo {
     }
 
     void schedulePropagation(DependencyNodeToNodeTransition consumer, DependencyType type) {
-        if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD) {
+        if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD
+                && consumer.pointsToDomainOrigin()) {
             ++propagationDepth;
             consumer.consume(type);
             --propagationDepth;
         } else {
             if (consumer.pendingTypes == null) {
                 pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntHashSet();
+                consumer.pendingTypes = new IntHashSet(50);
             }
             consumer.pendingTypes.add(type.index);
         }
@@ -288,14 +289,15 @@ public class DependencyAnalyzer implements DependencyInfo {
             return;
         }
 
-        if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD) {
+        if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD
+                && consumer.pointsToDomainOrigin()) {
             ++propagationDepth;
             consumer.consume(types);
             --propagationDepth;
         } else {
             if (consumer.pendingTypes == null) {
                 pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntHashSet();
+                consumer.pendingTypes = new IntHashSet(50);
             }
             for (DependencyType type : types) {
                 consumer.pendingTypes.add(type.index);
