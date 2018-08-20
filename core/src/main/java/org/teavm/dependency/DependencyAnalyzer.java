@@ -675,6 +675,15 @@ public class DependencyAnalyzer implements DependencyInfo {
         }
     }
 
+    public void cleanup() {
+        for (MethodReference reachableMethod : getReachableMethods()) {
+            MethodDependency dependency = getMethod(reachableMethod);
+            for (int i = dependency.getParameterCount() + 1; i < dependency.getVariableCount(); ++i) {
+                dependency.variableNodes[i] = null;
+            }
+        }
+    }
+
     static class ReportEntry {
         String title;
         int count;
