@@ -25,6 +25,7 @@ import java.util.Collection;
 import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Set;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -286,29 +287,43 @@ public class DependencyNode implements ValueDependencyInfo {
                 typeSet.transitions.add(transition);
             }
 
-            if (transition.shouldMergeDomains()) {
-                transition.mergeDomains(getTypesInternal());
-            } else {
-                node.propagate(getTypesInternal());
-            }
+            node.propagate(getTypesInternal());
         }
 
-        if (degree <= DEGREE_THRESHOLD && node.degree <= DEGREE_THRESHOLD) {
-            if (arrayItemNode != null && node.arrayItemNode == null) {
-                node.arrayItemNode = arrayItemNode;
-            } else if (node.arrayItemNode != null && arrayItemNode == null) {
-                arrayItemNode = node.arrayItemNode;
-            } else if (node.arrayItemNode == null && arrayItemNode == null) {
-                node.arrayItemNode = getArrayItem();
-            } else {
-                arrayItemNode.connect(node.arrayItemNode);
-                node.arrayItemNode.connect(arrayItemNode);
-            }
-        }
+        connectArrayItemNodes(node);
 
         if (classValueNode != null && classValueNode != this) {
             classValueNode.connect(node.getClassValueNode());
         }
+    }
+
+    private void connectArrayItemNodes(DependencyNode node) {
+        if (!isArray(typeFilter) || !isArray(node.typeFilter)) {
+            return;
+        }
+        if (Objects.equals(typeFilter, node.typeFilter)) {
+            if (arrayItemNode != null && node.arrayItemNode == null) {
+                node.arrayItemNode = arrayItemNode;
+                return;
+            }
+            if (node.arrayItemNode != null && arrayItemNode == null) {
+                arrayItemNode = node.arrayItemNode;
+                return;
+            }
+            if (node.arrayItemNode == null && arrayItemNode == null) {
+                node.arrayItemNode = getArrayItem();
+                return;
+            }
+        }
+        getArrayItem().connect(node.getArrayItem());
+        node.getArrayItem().connect(getArrayItem());
+    }
+
+    private static boolean isArray(ValueType type) {
+        if (type == null || type.isObject("java.lang.Object")) {
+            return true;
+        }
+        return type instanceof ValueType.Array;
     }
 
     void connectClassValueNodesForDomain() {
@@ -358,6 +373,9 @@ public class DependencyNode implements ValueDependencyInfo {
             ValueType itemTypeFilter = typeFilter instanceof ValueType.Array
                     ? ((ValueType.Array) typeFilter).getItemType()
                     : null;
+            if (itemTypeFilter != null && itemTypeFilter.isObject("java.lang.Object")) {
+                itemTypeFilter = null;
+            }
             arrayItemNode = new DependencyNode(dependencyAnalyzer, itemTypeFilter, degree + 1);
             arrayItemNode.method = method;
             if (DependencyAnalyzer.shouldTag) {
