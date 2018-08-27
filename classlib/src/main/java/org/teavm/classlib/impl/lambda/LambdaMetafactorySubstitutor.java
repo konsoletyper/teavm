@@ -29,12 +29,14 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.MethodHandle;
+import org.teavm.model.MethodHandleType;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.PrimitiveType;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
+import org.teavm.model.instructions.InvocationType;
 
 public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor {
     private static final int FLAG_SERIALIZABLE = 1;
@@ -150,13 +152,17 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
                 return null;
             case INVOKE_VIRTUAL:
             case INVOKE_INTERFACE:
-            case INVOKE_SPECIAL:
+            case INVOKE_SPECIAL: {
                 for (int i = 1; i < arguments.length; ++i) {
                     arguments[i] = arguments[i].cast(handle.getArgumentType(i - 1));
                 }
                 arguments[0] = arguments[0].cast(ValueType.object(handle.getClassName()));
-                return arguments[0].invokeVirtual(handle.getName(), handle.getValueType(),
+                InvocationType type = handle.getKind() == MethodHandleType.INVOKE_SPECIAL
+                        ? InvocationType.SPECIAL
+                        : InvocationType.VIRTUAL;
+                return arguments[0].invoke(type, handle.getName(), handle.getValueType(),
                         Arrays.copyOfRange(arguments, 1, arguments.length));
+            }
             case INVOKE_STATIC:
                 for (int i = 0; i < arguments.length; ++i) {
                     arguments[i] = arguments[i].cast(handle.getArgumentType(i));
@@ -319,7 +325,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
             arguments[i] = arguments[i].cast(type);
         }
 
-        ValueEmitter result = thisVar.invokeVirtual(name, types[types.length - 1], arguments);
+        ValueEmitter result = thisVar.invokeSpecial(name, types[types.length - 1], arguments);
         if (result != null) {
             if (!types[types.length - 1].equals(bridgeTypes[bridgeTypes.length - 1])) {
                 result = result.cast(bridgeTypes[bridgeTypes.length - 1]);
