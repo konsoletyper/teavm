@@ -460,7 +460,9 @@ class DependencyGraphBuilder {
                         return;
                     }
                 }
-                valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(targetType.toString()));
+                if (valueNode != null && receiverNode != null) {
+                    valueNode.connect(receiverNode, dependencyAnalyzer.getSuperClassFilter(targetType.toString()));
+                }
                 return;
             }
             if (valueNode != null && receiverNode != null) {

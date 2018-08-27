@@ -33,7 +33,7 @@ import org.teavm.model.ValueType;
 public class DependencyNode implements ValueDependencyInfo {
     private static final int SMALL_TYPES_THRESHOLD = 3;
     private static final int DEGREE_THRESHOLD = 2;
-    private DependencyAnalyzer dependencyAnalyzer;
+    DependencyAnalyzer dependencyAnalyzer;
     List<DependencyConsumer> followers;
     TypeSet typeSet;
     ObjectObjectHashMap<DependencyNode, DependencyNodeToNodeTransition> transitions;
@@ -46,11 +46,10 @@ public class DependencyNode implements ValueDependencyInfo {
     private int degree;
     boolean locked;
     MethodReference method;
-    private ValueType typeFilter;
+    ValueType typeFilter;
     private DependencyTypeFilter cachedTypeFilter;
 
     boolean visitedFlag;
-    int splitCount;
 
     DependencyNode(DependencyAnalyzer dependencyAnalyzer, ValueType typeFilter) {
         this(dependencyAnalyzer, typeFilter, 0);
@@ -287,7 +286,7 @@ public class DependencyNode implements ValueDependencyInfo {
                 typeSet.transitions.add(transition);
             }
 
-            node.propagate(getTypesInternal());
+            node.propagate(filter != null ? getTypesInternal(filter) : getTypesInternal());
         }
 
         connectArrayItemNodes(node);
@@ -446,6 +445,21 @@ public class DependencyNode implements ValueDependencyInfo {
         return i == result.length ? result : Arrays.copyOf(result, i);
     }
 
+    DependencyType[] getTypesInternal(DependencyTypeFilter filter) {
+        if (typeSet == null) {
+            return new DependencyType[0];
+        }
+        DependencyType[] types = typeSet.getTypes();
+        DependencyType[] result = new DependencyType[types.length];
+        int i = 0;
+        for (DependencyType type : types) {
+            if (filter(type) && filter.match(type)) {
+                result[i++] = type;
+            }
+        }
+        return i == result.length ? result : Arrays.copyOf(result, i);
+    }
+
     public String getTag() {
         return tag;
     }
@@ -483,7 +497,6 @@ public class DependencyNode implements ValueDependencyInfo {
 
         for (DependencyNode node : domain) {
             node.typeSet = typeSet;
-            node.splitCount++;
         }
     }
 
@@ -502,7 +515,7 @@ public class DependencyNode implements ValueDependencyInfo {
                 for (ObjectCursor<DependencyNodeToNodeTransition> cursor : node.transitionList) {
                     DependencyNodeToNodeTransition transition = cursor.value;
                     if (transition.filter == null && transition.destination.typeSet == typeSet
-                            && !visited.contains(transition.destination)) {
+                            && !visited.contains(transition.destination) && transition.isDestSubsetOfSrc()) {
                         stack.push(transition.destination);
                     }
                 }

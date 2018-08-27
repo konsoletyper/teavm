@@ -19,6 +19,8 @@ import com.carrotsearch.hppc.IntSet;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ValueType;
 
 class DependencyNodeToNodeTransition  {
     DependencyNode source;
@@ -26,6 +28,7 @@ class DependencyNodeToNodeTransition  {
     DependencyTypeFilter filter;
     private BitSet knownFilteredOffTypes;
     IntSet pendingTypes;
+    byte destSubsetOfSrc;
 
     DependencyNodeToNodeTransition(DependencyNode source, DependencyNode destination, DependencyTypeFilter filter) {
         this.source = source;
@@ -69,7 +72,6 @@ class DependencyNodeToNodeTransition  {
             Collection<DependencyNode> domainToMerge = destination.typeSet.domain;
             for (DependencyNode node : domainToMerge) {
                 node.typeSet = source.typeSet;
-                node.splitCount++;
                 source.typeSet.domain.add(node);
             }
             source.typeSet.invalidate();
@@ -77,7 +79,7 @@ class DependencyNodeToNodeTransition  {
     }
 
     boolean shouldMergeDomains() {
-        if (filter != null || destination.splitCount > 2) {
+        if (filter != null) {
             return false;
         }
         if (destination.typeSet == null) {
@@ -170,5 +172,26 @@ class DependencyNodeToNodeTransition  {
 
     boolean pointsToDomainOrigin() {
         return destination.typeSet == null || destination.typeSet.origin == destination;
+    }
+
+    boolean isDestSubsetOfSrc() {
+        if (destSubsetOfSrc == 0) {
+            destSubsetOfSrc = calculateDestSubsetOfSrc() ? (byte) 2 : 1;
+        }
+        return destSubsetOfSrc == 2;
+    }
+
+    private boolean calculateDestSubsetOfSrc() {
+        if (source.typeFilter == null) {
+            return true;
+        }
+        if (destination.typeFilter == null) {
+            return false;
+        }
+
+        ValueType sourceType = source.typeFilter;
+        ValueType destType = destination.typeFilter;
+        ClassReaderSource classSource = source.dependencyAnalyzer.getClassSource();
+        return classSource.isSuperType(sourceType, destType).orElse(false);
     }
 }
