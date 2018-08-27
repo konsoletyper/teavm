@@ -64,6 +64,7 @@ import org.teavm.ast.WhileStatement;
 import org.teavm.model.TextLocation;
 
 class OptimizingVisitor implements StatementVisitor, ExprVisitor {
+    private static final int MAX_DEPTH = 20;
     private Expr resultExpr;
     Statement resultStmt;
     private final boolean[] preservedVars;
@@ -286,6 +287,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 return;
             }
 
+            if (locationStack.size() > MAX_DEPTH) {
+                return;
+            }
             if (readFrequencies[index] != 1 || preservedVars[index]) {
                 return;
             }
