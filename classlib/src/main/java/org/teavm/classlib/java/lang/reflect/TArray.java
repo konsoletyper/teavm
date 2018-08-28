@@ -79,7 +79,19 @@ public final class TArray extends TObject {
         return getImpl(array, index);
     }
 
+    public static void set(TObject array, int index, TObject value) throws TIllegalArgumentException,
+            TArrayIndexOutOfBoundsException {
+        if (index < 0 || index >= getLength(array)) {
+            throw new TArrayIndexOutOfBoundsException();
+        }
+        setImpl(array, index, value);
+    }
+
     @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayNativeGenerator.class)
     private static native TObject getImpl(TObject array, int index);
+
+    @GeneratedBy(ArrayNativeGenerator.class)
+    @PluggableDependency(ArrayNativeGenerator.class)
+    private static native void setImpl(TObject array, int index, TObject value);
 }
