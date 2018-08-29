@@ -16,8 +16,6 @@
 package org.teavm.dependency;
 
 import com.carrotsearch.hppc.ObjectArrayList;
-import com.carrotsearch.hppc.ObjectHashSet;
-import com.carrotsearch.hppc.ObjectStack;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -28,7 +26,7 @@ import java.util.Set;
 
 class TypeSet {
     private static final int SMALL_TYPES_THRESHOLD = 3;
-    private static final DependencyType[] EMPTY_TYPES = new DependencyType[0];
+    static final DependencyType[] EMPTY_TYPES = new DependencyType[0];
     private DependencyAnalyzer dependencyAnalyzer;
     DependencyNode origin;
     private int[] smallTypes;
@@ -36,7 +34,6 @@ class TypeSet {
     private int typesCount;
 
     Set<DependencyNode> domain = new LinkedHashSet<>();
-    ObjectHashSet<DependencyNode> loopNodes;
     ObjectArrayList<DependencyNodeToNodeTransition> transitions;
     ArrayList<ConsumerWithNode> consumers;
 
@@ -93,6 +90,41 @@ class TypeSet {
         }
     }
 
+    DependencyType[] getTypesForNode(DependencyNode sourceNode, DependencyNode targetNode,
+            DependencyTypeFilter filter) {
+        int j = 0;
+        DependencyType[] types;
+        if (this.types != null) {
+            types = new DependencyType[this.types.cardinality()];
+            for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
+                DependencyType type = dependencyAnalyzer.types.get(index);
+                if (sourceNode.filter(type) && !targetNode.hasType(type) && targetNode.filter(type)
+                        && (filter == null || filter.match(type))) {
+                    types[j++] = type;
+                }
+            }
+        } else if (this.smallTypes != null) {
+            types = new DependencyType[smallTypes.length];
+            for (int i = 0; i < types.length; ++i) {
+                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
+                if (sourceNode.filter(type) && !targetNode.hasType(type) && targetNode.filter(type)
+                        && (filter == null || filter.match(type))) {
+                    types[j++] = type;
+                }
+            }
+        } else {
+            return EMPTY_TYPES;
+        }
+
+        if (j == 0) {
+            return EMPTY_TYPES;
+        }
+        if (j < types.length) {
+            types = Arrays.copyOf(types, j);
+        }
+        return types;
+    }
+
     boolean hasType(DependencyType type) {
         if (smallTypes != null) {
             for (int i = 0; i < smallTypes.length; ++i) {
@@ -120,7 +152,6 @@ class TypeSet {
     void invalidate() {
         transitions = null;
         consumers = null;
-        loopNodes = null;
     }
 
     ObjectArrayList<DependencyNodeToNodeTransition> getTransitions() {
@@ -153,51 +184,14 @@ class TypeSet {
         return consumers;
     }
 
-    boolean reachesOrigin(DependencyNode node) {
-        if (loopNodes == null) {
-            findLoopNodes();
-        }
-        return loopNodes.contains(node);
-    }
-
-    private void findLoopNodes() {
-        if (domain.size() == 1) {
-            return;
-        }
-
-        for (DependencyNode node : domain) {
-            node.visitedFlag = false;
-        }
-
-        loopNodes = new ObjectHashSet<>(domain.size());
-        loopNodes.add(origin);
-
-        ObjectStack<DependencyNode> stack = new ObjectStack<>(domain.size());
-        stack.push(origin);
-
-        while (!stack.isEmpty()) {
-            DependencyNode next = stack.pop();
-            if (next.visitedFlag) {
-                continue;
-            }
-            next.visitedFlag = true;
-
-            if (next.transitions != null) {
-                for (ObjectCursor<DependencyNodeToNodeTransition> cursor : next.transitionList) {
-                    DependencyNodeToNodeTransition transition = cursor.value;
-                    if (transition.destination.typeSet == this) {
-                        if (!transition.destination.visitedFlag) {
-                            stack.push(transition.destination);
-                        } else if (loopNodes.contains(transition.destination)) {
-                            loopNodes.add(next);
-                        }
-                    }
-                }
-            }
-        }
-    }
-
     int typeCount() {
         return smallTypes != null ? smallTypes.length : types != null ? typesCount : 0;
+    }
+
+    void cleanup() {
+        origin = null;
+        domain = null;
+        transitions = null;
+        consumers = null;
     }
 }

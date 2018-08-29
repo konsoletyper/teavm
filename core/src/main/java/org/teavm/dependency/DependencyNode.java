@@ -49,15 +49,11 @@ public class DependencyNode implements ValueDependencyInfo {
     ValueType typeFilter;
     private DependencyTypeFilter cachedTypeFilter;
 
-    boolean visitedFlag;
+    int splitCount;
+    public int propagateCount;
 
     DependencyNode(DependencyAnalyzer dependencyAnalyzer, ValueType typeFilter) {
-        this(dependencyAnalyzer, typeFilter, 0);
-    }
-
-    private DependencyNode(DependencyAnalyzer dependencyAnalyzer, ValueType typeFilter, int degree) {
         this.dependencyAnalyzer = dependencyAnalyzer;
-        this.degree = degree;
         this.typeFilter = typeFilter;
     }
 
@@ -65,7 +61,8 @@ public class DependencyNode implements ValueDependencyInfo {
         if (degree > DEGREE_THRESHOLD) {
             return;
         }
-        if (!hasType(type)) {
+        if (!hasType(type) && filter(type)) {
+            propagateCount++;
             moveToSeparateDomain();
             typeSet.addType(type);
             scheduleSingleType(type, null);
@@ -108,11 +105,19 @@ public class DependencyNode implements ValueDependencyInfo {
             return;
         }
 
+        if (newTypes.length == 0) {
+            return;
+        }
+        if (newTypes.length == 1) {
+            propagate(newTypes[0]);
+            return;
+        }
+
         int j = 0;
         boolean copied = false;
         for (int i = 0; i < newTypes.length; ++i) {
             DependencyType type = newTypes[i];
-            if (!hasType(type)) {
+            if (!hasType(type) && filter(type)) {
                 newTypes[j++] = type;
             } else if (!copied) {
                 copied = true;
@@ -128,6 +133,7 @@ public class DependencyNode implements ValueDependencyInfo {
             return;
         }
 
+        propagateCount++;
         if (j < newTypes.length) {
             newTypes = Arrays.copyOf(newTypes, j);
         }
@@ -222,7 +228,7 @@ public class DependencyNode implements ValueDependencyInfo {
         }
     }
 
-    private boolean filter(DependencyType type) {
+    boolean filter(DependencyType type) {
         if (typeFilter == null) {
             return true;
         }
@@ -279,14 +285,22 @@ public class DependencyNode implements ValueDependencyInfo {
 
         if (typeSet != null) {
             if (typeSet == node.typeSet) {
-                typeSet.loopNodes = null;
                 return;
             }
             if (typeSet.transitions != null) {
                 typeSet.transitions.add(transition);
             }
 
-            node.propagate(filter != null ? getTypesInternal(filter) : getTypesInternal());
+            DependencyType[] types = node.typeSet == null && filter == null && node.typeFilter == null
+                    ? getTypesInternal()
+                    : getTypesInternal(filter, this, node);
+            if (types.length > 0) {
+                if (node.typeSet == null) {
+                    node.propagate(types);
+                } else {
+                    dependencyAnalyzer.schedulePropagation(transition, types);
+                }
+            }
         }
 
         connectArrayItemNodes(node);
@@ -372,10 +386,8 @@ public class DependencyNode implements ValueDependencyInfo {
             ValueType itemTypeFilter = typeFilter instanceof ValueType.Array
                     ? ((ValueType.Array) typeFilter).getItemType()
                     : null;
-            if (itemTypeFilter != null && itemTypeFilter.isObject("java.lang.Object")) {
-                itemTypeFilter = null;
-            }
-            arrayItemNode = new DependencyNode(dependencyAnalyzer, itemTypeFilter, degree + 1);
+            arrayItemNode = dependencyAnalyzer.createNode(itemTypeFilter);
+            arrayItemNode.degree = degree + 1;
             arrayItemNode.method = method;
             if (DependencyAnalyzer.shouldTag) {
                 arrayItemNode.tag = tag + "[";
@@ -387,7 +399,8 @@ public class DependencyNode implements ValueDependencyInfo {
     @Override
     public DependencyNode getClassValueNode() {
         if (classValueNode == null) {
-            classValueNode = new DependencyNode(dependencyAnalyzer, null, degree);
+            classValueNode = dependencyAnalyzer.createNode();
+            classValueNode.degree = degree;
             classValueNode.classValueNode = classValueNode;
             classValueNode.classNodeParent = this;
             if (DependencyAnalyzer.shouldTag) {
@@ -445,19 +458,12 @@ public class DependencyNode implements ValueDependencyInfo {
         return i == result.length ? result : Arrays.copyOf(result, i);
     }
 
-    DependencyType[] getTypesInternal(DependencyTypeFilter filter) {
+    DependencyType[] getTypesInternal(DependencyTypeFilter filter, DependencyNode sourceNode,
+            DependencyNode targetNode) {
         if (typeSet == null) {
-            return new DependencyType[0];
+            return TypeSet.EMPTY_TYPES;
         }
-        DependencyType[] types = typeSet.getTypes();
-        DependencyType[] result = new DependencyType[types.length];
-        int i = 0;
-        for (DependencyType type : types) {
-            if (filter(type) && filter.match(type)) {
-                result[i++] = type;
-            }
-        }
-        return i == result.length ? result : Arrays.copyOf(result, i);
+        return typeSet.getTypesForNode(sourceNode, targetNode, filter);
     }
 
     public String getTag() {
@@ -480,7 +486,7 @@ public class DependencyNode implements ValueDependencyInfo {
             return;
         }
 
-        if (typeSet.origin == this || typeSet.reachesOrigin(this)) {
+        if (typeSet.origin == this) {
             return;
         }
 
@@ -497,18 +503,22 @@ public class DependencyNode implements ValueDependencyInfo {
 
         for (DependencyNode node : domain) {
             node.typeSet = typeSet;
+            node.splitCount++;
         }
     }
 
     Collection<DependencyNode> findDomain() {
-        Set<DependencyNode> visited = new LinkedHashSet<>();
-        Deque<DependencyNode> stack = new ArrayDeque<>();
+        Set<DependencyNode> visited = new LinkedHashSet<>(50);
+        Deque<DependencyNode> stack = new ArrayDeque<>(50);
         stack.push(this);
 
         while (!stack.isEmpty()) {
             DependencyNode node = stack.pop();
             if (!visited.add(node)) {
                 continue;
+            }
+            if (visited.size() > 100) {
+                break;
             }
 
             if (node.transitions != null) {

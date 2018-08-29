@@ -15,7 +15,7 @@
  */
 package org.teavm.dependency;
 
-import com.carrotsearch.hppc.IntSet;
+import com.carrotsearch.hppc.IntHashSet;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
@@ -27,7 +27,7 @@ class DependencyNodeToNodeTransition  {
     DependencyNode destination;
     DependencyTypeFilter filter;
     private BitSet knownFilteredOffTypes;
-    IntSet pendingTypes;
+    IntHashSet pendingTypes;
     byte destSubsetOfSrc;
 
     DependencyNodeToNodeTransition(DependencyNode source, DependencyNode destination, DependencyTypeFilter filter) {
@@ -37,7 +37,7 @@ class DependencyNodeToNodeTransition  {
     }
 
     void consume(DependencyType type) {
-        if (!destination.hasType(type) && filterType(type)) {
+        if (!destination.hasType(type) && filterType(type) && destination.filter(type)) {
             propagate(type);
         }
     }
@@ -85,8 +85,17 @@ class DependencyNodeToNodeTransition  {
         if (destination.typeSet == null) {
             return true;
         }
-        if (destination.typeSet == source.typeSet || destination.typeSet.origin == destination
-                || destination.typeSet.typeCount() >= source.typeSet.typeCount()) {
+        if (destination.typeSet == source.typeSet || destination.typeSet.origin == source
+                || destination.typeSet.typeCount() > source.typeSet.typeCount()) {
+            return false;
+        }
+
+        if (destination.splitCount > 4) {
+            return false;
+        }
+
+        if (destination.typeSet.typeCount() == source.typeSet.typeCount()
+                && destination.typeSet.origin != destination) {
             return false;
         }
 
@@ -106,7 +115,7 @@ class DependencyNodeToNodeTransition  {
         if (filter == null) {
             for (DependencyType type : types) {
                 boolean added = false;
-                if (!destination.hasType(type)) {
+                if (!destination.hasType(type) && destination.filter(type)) {
                     types[j++] = type;
                     added = true;
                 }
@@ -119,11 +128,9 @@ class DependencyNodeToNodeTransition  {
         } else {
             for (DependencyType type : types) {
                 boolean added = false;
-                if (filterType(type)) {
-                    if (!destination.hasType(type)) {
-                        types[j++] = type;
-                        added = true;
-                    }
+                if (filterType(type) && !destination.hasType(type) && destination.filter(type)) {
+                    types[j++] = type;
+                    added = true;
                 }
                 if (!added && !copied) {
                     copied = true;

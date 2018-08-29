@@ -89,6 +89,7 @@ public class DependencyAnalyzer implements DependencyInfo {
     Map<MethodReference, DependencyPlugin> dependencyPlugins = new HashMap<>();
     private boolean completing;
     private Map<String, DependencyTypeFilter> superClassFilters = new HashMap<>();
+    private List<DependencyNode> allNodes = new ArrayList<>();
     boolean asyncSupported;
 
     public DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
@@ -153,8 +154,13 @@ public class DependencyAnalyzer implements DependencyInfo {
         return createNode(null);
     }
 
-    private DependencyNode createNode(ValueType typeFilter) {
-        return new DependencyNode(this, typeFilter);
+    DependencyNode createNode(ValueType typeFilter) {
+        if (typeFilter != null && typeFilter.isObject("java.lang.Object")) {
+            typeFilter = null;
+        }
+        DependencyNode node = new DependencyNode(this, typeFilter);
+        allNodes.add(node);
+        return node;
     }
 
     @Override
@@ -266,8 +272,12 @@ public class DependencyAnalyzer implements DependencyInfo {
     }
 
     void schedulePropagation(DependencyNodeToNodeTransition consumer, DependencyType type) {
+        if (!consumer.destination.filter(type)) {
+            return;
+        }
+
         if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD
-                && consumer.pointsToDomainOrigin()) {
+                && consumer.pointsToDomainOrigin() && consumer.destination.propagateCount < 20) {
             ++propagationDepth;
             consumer.consume(type);
             --propagationDepth;
@@ -290,15 +300,16 @@ public class DependencyAnalyzer implements DependencyInfo {
         }
 
         if (consumer.pendingTypes == null && propagationDepth < PROPAGATION_STACK_THRESHOLD
-                && consumer.pointsToDomainOrigin()) {
+                && consumer.pointsToDomainOrigin() && consumer.destination.propagateCount < 20) {
             ++propagationDepth;
             consumer.consume(types);
             --propagationDepth;
         } else {
             if (consumer.pendingTypes == null) {
                 pendingTransitions.add(consumer);
-                consumer.pendingTypes = new IntHashSet(50);
+                consumer.pendingTypes = new IntHashSet(Math.max(50, types.length));
             }
+            consumer.pendingTypes.ensureCapacity(types.length + consumer.pendingTypes.size());
             for (DependencyType type : types) {
                 consumer.pendingTypes.add(type.index);
             }
@@ -650,38 +661,44 @@ public class DependencyAnalyzer implements DependencyInfo {
 
     private void reportDependencies() {
         List<ReportEntry> report = new ArrayList<>();
-        for (MethodReference reachableMethod : getReachableMethods()) {
-            MethodDependency dependency = getMethod(reachableMethod);
-            if (dependency == null) {
-                continue;
+        int domainCount = 0;
+        for (DependencyNode node : allNodes) {
+            String tag = node.tag + "";
+            if (node.typeSet != null && node.typeSet.origin == node) {
+                ++domainCount;
+                tag += "{*}";
             }
-
-            for (int i = 0; i <= reachableMethod.parameterCount(); ++i) {
-                DependencyNode param = dependency.getVariable(i);
-                if (param == null) {
-                    continue;
-                }
-                report.add(new ReportEntry(reachableMethod + " param " + i, param.getTypes().length));
-            }
-
-            if (dependency.getResult() != null) {
-                report.add(new ReportEntry(reachableMethod + " result", dependency.getResult().getTypes().length));
-            }
+            report.add(new ReportEntry(tag, node.getTypes().length));
         }
 
         report.sort(Comparator.comparingInt(n -> -n.count));
         for (ReportEntry entry : report) {
             System.out.println(entry.title + ": " + entry.count);
         }
+
+        System.out.println("Total nodes: " + allNodes.size());
+        System.out.println("Total domains: " + domainCount);
     }
 
     public void cleanup() {
+        for (DependencyNode node : allNodes) {
+            node.followers = null;
+            node.transitions = null;
+            node.transitionList = null;
+            node.method = null;
+            if (node.typeSet != null) {
+                node.typeSet.cleanup();
+            }
+        }
+
         for (MethodReference reachableMethod : getReachableMethods()) {
             MethodDependency dependency = getMethod(reachableMethod);
             for (int i = dependency.getParameterCount() + 1; i < dependency.getVariableCount(); ++i) {
                 dependency.variableNodes[i] = null;
             }
         }
+
+        allNodes.clear();
     }
 
     static class ReportEntry {
