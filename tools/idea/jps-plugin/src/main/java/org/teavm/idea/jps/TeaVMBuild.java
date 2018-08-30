@@ -489,6 +489,9 @@ class TeaVMBuild {
                 if (dependencyOutput != null) {
                     classPathEntries.add(dependencyOutput.getPath());
                 }
+                for (JpsModuleSourceRoot sourceRoot : moduleDependency.getModule().getSourceRoots()) {
+                    buildStrategy.addSourcesDirectory(sourceRoot.getFile().getAbsolutePath());
+                }
             } else if (dependency instanceof JpsLibraryDependency) {
                 JpsLibrary library = ((JpsLibraryDependency) dependency).getLibrary();
                 if (library == null) {
