@@ -68,7 +68,7 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
-            updateConfiguration(true, daemonMemory);
+            updateConfiguration(true);
         }
     }
 
@@ -76,7 +76,7 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
         if (daemonInfo != null) {
             daemonInfo.getProcess().destroy();
             daemonInfo = null;
-            updateConfiguration(false, daemonMemory);
+            updateConfiguration(false);
         }
     }
 
@@ -104,11 +104,10 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
         configurationStorage.loadState(configuration);
     }
 
-    private void updateConfiguration(boolean daemonEnabled, int daemonMemory) {
+    private void updateConfiguration(boolean daemonEnabled) {
         TeaVMWorkspaceConfigurationStorage configurationStorage = getConfigurationStorage();
         TeaVMJpsWorkspaceConfiguration configuration = configurationStorage.getState();
         configuration.setDaemonEnabled(daemonEnabled);
-        configuration.setDaemonMemory(daemonMemory);
         configurationStorage.loadState(configuration);
     }
 
