@@ -24,7 +24,8 @@ public final class RenderingUtil {
     public static final Set<String> KEYWORDS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("break", "case",
             "catch", "class", "const", "continue", "debugger", "default", "delete", "do", "else", "export",
             "extends", "finally", "for", "function", "if", "import", "in", "instanceof", "new", "return",
-            "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield")));
+            "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield",
+            "NaN")));
     public static final String VARIABLE_START_CHARS = "abcdefghijklmnopqrstuvwxyz";
     public static final String VARIABLE_PART_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
 
