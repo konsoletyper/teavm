@@ -96,6 +96,11 @@ class TeaVMBuild {
         storage = context.getProjectDescriptor().dataManager.getStorage(target, storageProvider);
 
         TeaVMJpsConfiguration config = target.getConfiguration();
+        if (config.isSkipped()) {
+            context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.INFO,
+                    "TeaVM skipped due to facet configuration"));
+            return false;
+        }
 
         classPathEntries.clear();
         buildStrategy.init();

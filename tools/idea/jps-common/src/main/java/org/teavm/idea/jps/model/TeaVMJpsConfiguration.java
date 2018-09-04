@@ -39,11 +39,20 @@ public class TeaVMJpsConfiguration extends JpsElementBase<TeaVMJpsConfiguration>
     @Transient
     private TeaVMTargetType targetType;
 
+    private boolean skipped;
     private String mainClass;
     private String targetDirectory;
     private boolean sourceMapsFileGenerated = true;
     private boolean sourceFilesCopied = true;
     private List<TeaVMProperty> properties = new ArrayList<>();
+
+    public boolean isSkipped() {
+        return skipped;
+    }
+
+    public void setSkipped(boolean skipped) {
+        this.skipped = skipped;
+    }
 
     public TeaVMTargetType getTargetType() {
         return targetType;
