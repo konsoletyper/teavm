@@ -233,6 +233,10 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     @Import(module = "teavm", name = "isinf")
     public static native boolean isInfinite(double v);
 
+    @JSBody(params = "v", script = "return isFinite(v);")
+    @Import(module = "teavm", name = "isfinite")
+    public static native boolean isFinite(double v);
+
     public static long doubleToRawLongBits(double value) {
         return doubleToLongBits(value);
     }

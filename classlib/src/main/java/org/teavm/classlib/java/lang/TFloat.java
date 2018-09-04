@@ -97,6 +97,10 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     @Import(module = "teavm", name = "isinf")
     public static native boolean isInfinite(float v);
 
+    @JSBody(params = "v", script = "return isFinite(v);")
+    @Import(module = "teavm", name = "isfinite")
+    public static native boolean isFinite(float v);
+
     @JSBody(script = "return NaN;")
     @Import(module = "teavm", name = "TeaVM_getNaN")
     private static native float getNaN();
