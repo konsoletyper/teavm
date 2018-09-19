@@ -415,7 +415,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     public boolean contains(TCharSequence s) {
         int sz = length() - s.length();
         outer:
-        for (int i = 0; i < sz; ++i) {
+        for (int i = 0; i <= sz; ++i) {
             for (int j = 0; j < s.length(); ++j) {
                 if (charAt(i + j) != s.charAt(j)) {
                     continue outer;
