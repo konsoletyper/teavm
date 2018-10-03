@@ -33,4 +33,6 @@ public interface NamingStrategy {
     String getFullNameFor(FieldReference method) throws NamingException;
 
     String getNameForFunction(String name) throws NamingException;
+
+    String getNameForClassInit(String className) throws NamingException;
 }

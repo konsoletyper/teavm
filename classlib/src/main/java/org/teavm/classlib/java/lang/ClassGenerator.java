@@ -291,7 +291,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
 
     private void initClass(SourceWriter writer, MemberReader member) throws IOException {
         if (member.hasModifier(ElementModifier.STATIC)) {
-            writer.appendClass(member.getOwnerName()).append("_$callClinit();").softNewLine();
+            writer.append(writer.getNaming().getNameForClassInit(member.getOwnerName())).append("();").softNewLine();
         }
     }
 

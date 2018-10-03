@@ -147,7 +147,7 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
 
     @Override
     public void visit(InitClassStatement statement) {
-        consumer.consume(statement.getClassName());
+        consumer.consumeClassInit(statement.getClassName());
     }
 
     @Override

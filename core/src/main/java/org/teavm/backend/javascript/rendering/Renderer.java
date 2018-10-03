@@ -430,7 +430,7 @@ public class Renderer implements RenderingManager {
                     .append("false;").softNewLine();
         }
 
-        writer.append("function ").appendClass(cls.getName()).append("_$callClinit()").ws()
+        writer.append("function ").append(naming.getNameForClassInit(cls.getName())).append("()").ws()
                 .append("{").softNewLine().indent();
 
         if (isAsync) {
@@ -479,7 +479,7 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderEraseClinit(ClassNode cls) throws IOException {
-        writer.appendClass(cls.getName()).append("_$callClinit").ws().append("=").ws()
+        writer.append(naming.getNameForClassInit(cls.getName())).ws().append("=").ws()
                 .appendClass(cls.getName()).append(".$clinit").ws().append("=").ws()
                 .append("function(){};").newLine();
     }
@@ -518,7 +518,7 @@ public class Renderer implements RenderingManager {
                 MethodReader clinit = classSource.get(cls.getName()).getMethod(
                         new MethodDescriptor("<clinit>", ValueType.VOID));
                 if (clinit != null) {
-                    writer.appendClass(cls.getName()).append("_$callClinit");
+                    writer.append(naming.getNameForClassInit(cls.getName()));
                 } else {
                     writer.append('0');
                 }

@@ -84,7 +84,7 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void generateCurrentTimeMillis(SourceWriter writer) throws IOException {
-        writer.append(writer.getNaming().getNameFor("java.lang.System")).append("_$callClinit();").softNewLine();
+        writer.append(writer.getNaming().getNameForClassInit("java.lang.System")).append("();").softNewLine();
         writer.append("return Long_fromNumber(new Date().getTime());").softNewLine();
     }
 

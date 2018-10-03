@@ -28,6 +28,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private final Map<String, String> fieldAliases = new HashMap<>();
     private final Map<String, String> staticFieldAliases = new HashMap<>();
     private final Map<String, String> functionAliases = new HashMap<>();
+    private final Map<String, String> classInitAliases = new HashMap<>();
 
     public DefaultNamingStrategy(AliasProvider aliasProvider, ClassReaderSource classSource) {
         this.aliasProvider = aliasProvider;
@@ -99,7 +100,12 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     @Override
     public String getNameForFunction(String name) throws NamingException {
-        return functionAliases.computeIfAbsent(name, key -> aliasProvider.getFunctionAlias(name));
+        return functionAliases.computeIfAbsent(name, key -> aliasProvider.getFunctionAlias(key));
+    }
+
+    @Override
+    public String getNameForClassInit(String className) throws NamingException {
+        return classInitAliases.computeIfAbsent(className, key -> aliasProvider.getClassInitAlias(key));
     }
 
     private MethodReference getRealMethod(MethodReference methodRef) {

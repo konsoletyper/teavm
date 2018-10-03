@@ -24,7 +24,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
     private Map<String, Entry> entries = new HashMap<>();
 
     @Override
-    public void consume(final MethodReference method) {
+    public void consume(MethodReference method) {
         String key = "R:" + method;
         Entry entry = entries.get(key);
         if (entry == null) {
@@ -37,7 +37,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
 
 
     @Override
-    public void consumeInit(final MethodReference method) {
+    public void consumeInit(MethodReference method) {
         String key = "I:" + method;
         Entry entry = entries.get(key);
         if (entry == null) {
@@ -49,7 +49,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
     }
 
     @Override
-    public void consume(final MethodDescriptor method) {
+    public void consume(MethodDescriptor method) {
         String key = "r:" + method;
         Entry entry = entries.get(key);
         if (entry == null) {
@@ -61,7 +61,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
     }
 
     @Override
-    public void consume(final String className) {
+    public void consume(String className) {
         String key = "c:" + className;
         Entry entry = entries.get(key);
         if (entry == null) {
@@ -73,7 +73,19 @@ public class NamingOrderer implements NameFrequencyConsumer {
     }
 
     @Override
-    public void consume(final FieldReference field) {
+    public void consumeClassInit(String className) {
+        String key = "C:" + className;
+        Entry entry = entries.get(key);
+        if (entry == null) {
+            entry = new Entry();
+            entry.operation = naming -> naming.getNameForClassInit(className);
+            entries.put(key, entry);
+        }
+        entry.frequency++;
+    }
+
+    @Override
+    public void consume(FieldReference field) {
         String key = "f:" + field;
         Entry entry = entries.get(key);
         if (entry == null) {
@@ -85,7 +97,7 @@ public class NamingOrderer implements NameFrequencyConsumer {
     }
 
     @Override
-    public void consumeFunction(final String name) {
+    public void consumeFunction(String name) {
         String key = "n:" + name;
         Entry entry = entries.get(key);
         if (entry == null) {

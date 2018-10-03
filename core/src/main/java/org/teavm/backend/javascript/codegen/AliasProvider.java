@@ -31,4 +31,6 @@ public interface AliasProvider {
     String getClassAlias(String className);
 
     String getFunctionAlias(String name);
+
+    String getClassInitAlias(String className);
 }

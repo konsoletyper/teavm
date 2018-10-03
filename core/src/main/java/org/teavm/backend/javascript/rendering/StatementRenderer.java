@@ -437,7 +437,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
-            writer.appendClass(statement.getClassName()).append("_$callClinit();").softNewLine();
+            writer.append(naming.getNameForClassInit(statement.getClassName())).append("();").softNewLine();
             if (statement.isAsync()) {
                 emitSuspendChecker();
             }

@@ -67,11 +67,24 @@ public class MinifyingAliasProvider implements AliasProvider {
 
     @Override
     public String getClassAlias(String className) {
-        return RenderingUtil.indexToId(lastSuffix++, startLetters);
+        String result;
+        do {
+            result =  RenderingUtil.indexToId(lastSuffix++, startLetters);
+        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
+        return result;
     }
 
     @Override
     public String getFunctionAlias(String className) {
         return RenderingUtil.indexToId(lastSuffix++, startLetters);
+    }
+
+    @Override
+    public String getClassInitAlias(String className) {
+        String result;
+        do {
+            result =  RenderingUtil.indexToId(lastSuffix++, startLetters);
+        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
+        return result;
     }
 }
