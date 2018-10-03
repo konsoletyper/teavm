@@ -15,12 +15,18 @@
  */
 package org.teavm.backend.javascript;
 
+import com.carrotsearch.hppc.ObjectIntHashMap;
+import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -83,6 +89,9 @@ import org.teavm.vm.spi.RendererListener;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
 public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
+    private static final NumberFormat STATS_NUM_FORMAT = new DecimalFormat("#,##0");
+    private static final NumberFormat STATS_PERCENT_FORMAT = new DecimalFormat("0.000 %");
+
     private TeaVMTargetController controller;
     private boolean minifying = true;
     private final Map<MethodReference, Generator> methodGenerators = new HashMap<>();
@@ -285,6 +294,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             for (RendererListener listener : rendererListeners) {
                 listener.begin(renderer, target);
             }
+            int start = sourceWriter.getOffset();
             sourceWriter.append("\"use strict\";").newLine();
             renderer.renderRuntime();
             renderer.render(clsNodes);
@@ -300,9 +310,44 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             for (RendererListener listener : rendererListeners) {
                 listener.complete();
             }
+            int totalSize = sourceWriter.getOffset() - start;
+            printStats(renderer, totalSize);
         } catch (IOException e) {
             throw new RenderingException("IO Error occured", e);
         }
+    }
+
+    private void printStats(Renderer renderer, int totalSize) {
+        if (!Boolean.parseBoolean(System.getProperty("teavm.js.stats", "false"))) {
+            return;
+        }
+
+        System.out.println("Total output size: " + STATS_NUM_FORMAT.format(totalSize));
+        System.out.println("Metadata size: " + getSizeWithPercentage(renderer.getMetadataSize(), totalSize));
+        System.out.println("String pool size: " + getSizeWithPercentage(renderer.getStringPoolSize(), totalSize));
+
+        ObjectIntMap<String> packageSizeMap = new ObjectIntHashMap<>();
+        for (String className : renderer.getClassesInStats()) {
+            String packageName = className.substring(0, className.lastIndexOf('.') + 1);
+            int classSize = renderer.getClassSize(className);
+            packageSizeMap.put(packageName, packageSizeMap.getOrDefault(packageName, 0) + classSize);
+        }
+
+        String[] packageNames = packageSizeMap.keys().toArray(String.class);
+        Arrays.sort(packageNames, Comparator.comparing(p -> -packageSizeMap.getOrDefault(p, 0)));
+        for (String packageName : packageNames) {
+            System.out.println("Package '" + packageName + "' size: "
+                    + getSizeWithPercentage(packageSizeMap.get(packageName), totalSize));
+        }
+    }
+
+    private String getSizeWithPercentage(int size, int totalSize) {
+        return STATS_NUM_FORMAT.format(size) + " (" + STATS_PERCENT_FORMAT.format((double) size / totalSize) + ")";
+    }
+
+    static class PackageNode {
+        String name;
+        Map<String, PackageNode> children = new HashMap<>();
     }
 
     private List<ClassNode> modelToAst(ListableClassHolderSource classes) {

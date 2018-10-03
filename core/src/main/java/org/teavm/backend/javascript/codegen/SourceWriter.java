@@ -30,6 +30,7 @@ public class SourceWriter implements Appendable, LocationProvider {
     private final int lineWidth;
     private int column;
     private int line;
+    private int offset;
 
     SourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth) {
         this.naming = naming;
@@ -62,6 +63,7 @@ public class SourceWriter implements Appendable, LocationProvider {
             newLine();
         } else {
             column++;
+            offset++;
         }
         return this;
     }
@@ -92,6 +94,7 @@ public class SourceWriter implements Appendable, LocationProvider {
         }
         appendIndent();
         column += end - start;
+        offset += end - start;
         innerWriter.append(csq, start, end);
     }
 
@@ -149,6 +152,7 @@ public class SourceWriter implements Appendable, LocationProvider {
             for (int i = 0; i < indentSize; ++i) {
                 innerWriter.append("    ");
                 column += 4;
+                offset += 4;
             }
             lineStart = false;
         }
@@ -158,6 +162,7 @@ public class SourceWriter implements Appendable, LocationProvider {
         innerWriter.append('\n');
         column = 0;
         ++line;
+        ++offset;
         lineStart = true;
         return this;
     }
@@ -169,6 +174,7 @@ public class SourceWriter implements Appendable, LocationProvider {
             if (!minified) {
                 innerWriter.append(' ');
                 column++;
+                offset++;
             }
         }
         return this;
@@ -185,6 +191,7 @@ public class SourceWriter implements Appendable, LocationProvider {
         if (!minified) {
             innerWriter.append('\n');
             column = 0;
+            ++offset;
             ++line;
             lineStart = true;
         }
@@ -213,5 +220,10 @@ public class SourceWriter implements Appendable, LocationProvider {
     @Override
     public int getLine() {
         return line;
+    }
+
+    @Override
+    public int getOffset() {
+        return offset;
     }
 }

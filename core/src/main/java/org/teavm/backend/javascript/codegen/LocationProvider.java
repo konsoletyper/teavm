@@ -19,4 +19,6 @@ public interface LocationProvider {
     int getLine();
 
     int getColumn();
+
+    int getOffset();
 }

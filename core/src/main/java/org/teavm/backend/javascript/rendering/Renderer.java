@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.javascript.rendering;
 
+import com.carrotsearch.hppc.ObjectIntHashMap;
+import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -66,6 +68,10 @@ public class Renderer implements RenderingManager {
     private RenderingContext context;
     private List<PostponedFieldInitializer> postponedFieldInitializers = new ArrayList<>();
 
+    private ObjectIntMap<String> sizeByClass = new ObjectIntHashMap<>();
+    private int stringPoolSize;
+    private int metadataSize;
+
     public Renderer(SourceWriter writer, Set<MethodReference> asyncMethods, Set<MethodReference> asyncFamilyMethods,
             Diagnostics diagnostics, RenderingContext context) {
         this.naming = context.getNaming();
@@ -77,6 +83,22 @@ public class Renderer implements RenderingManager {
         this.asyncFamilyMethods = new HashSet<>(asyncFamilyMethods);
         this.diagnostics = diagnostics;
         this.context = context;
+    }
+
+    public int getStringPoolSize() {
+        return stringPoolSize;
+    }
+
+    public int getMetadataSize() {
+        return metadataSize;
+    }
+
+    public String[] getClassesInStats() {
+        return sizeByClass.keys().toArray(String.class);
+    }
+
+    public int getClassSize(String className) {
+        return sizeByClass.getOrDefault(className, 0);
     }
 
     @Override
@@ -133,6 +155,7 @@ public class Renderer implements RenderingManager {
             return;
         }
         try {
+            int start = writer.getOffset();
             writer.append("$rt_stringPool([");
             for (int i = 0; i < context.getStringPool().size(); ++i) {
                 if (i > 0) {
@@ -141,6 +164,7 @@ public class Renderer implements RenderingManager {
                 writer.append('"').append(RenderingUtil.escapeString(context.getStringPool().get(i))).append('"');
             }
             writer.append("]);").newLine();
+            stringPoolSize = writer.getOffset() - start;
         } catch (IOException e) {
             throw new RenderingException("IO error", e);
         }
@@ -149,12 +173,19 @@ public class Renderer implements RenderingManager {
     public void renderStringConstants() throws RenderingException {
         try {
             for (PostponedFieldInitializer initializer : postponedFieldInitializers) {
+                int start = writer.getOffset();
                 writer.appendStaticField(initializer.field).ws().append("=").ws()
                         .append(context.constantToString(initializer.value)).append(";").softNewLine();
+                int sz = writer.getOffset() - start;
+                appendClassSize(initializer.field.getClassName(), sz);
             }
         } catch (IOException e) {
             throw new RenderingException("IO error", e);
         }
+    }
+
+    private void appendClassSize(String className, int sz) {
+        sizeByClass.put(className, sizeByClass.getOrDefault(className, 0) + sz);
     }
 
     public void renderRuntime() throws RenderingException {
@@ -291,8 +322,10 @@ public class Renderer implements RenderingManager {
             }
         }
         for (ClassNode cls : classes) {
+            int start = writer.getOffset();
             renderDeclaration(cls);
             renderMethodBodies(cls);
+            appendClassSize(cls.getName(), writer.getOffset() - start);
         }
         renderClassMetadata(classes);
     }
@@ -452,6 +485,7 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderClassMetadata(List<ClassNode> classes) {
+        int start = writer.getOffset();
         try {
             writer.append("$rt_metadata([");
             boolean first = true;
@@ -506,6 +540,8 @@ public class Renderer implements RenderingManager {
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
         }
+
+        metadataSize = writer.getOffset() - start;
     }
 
     private void collectMethodsToCopyFromInterfaces(ClassReader cls, List<MethodReference> targetList) {
