@@ -433,7 +433,8 @@ function $rt_metadata(data) {
         var cls = data[i];
         cls.$meta = {};
         var m = cls.$meta;
-        m.name = data[i + 1];
+        var className = data[i + 1];
+        m.name = className !== 0 ? className : null;
         m.binaryName = "L" + m.name + ";";
         var superclass = data[i + 2];
         m.superclass = superclass !== 0 ? superclass : null;

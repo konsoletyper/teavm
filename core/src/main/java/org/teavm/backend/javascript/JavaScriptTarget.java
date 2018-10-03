@@ -266,7 +266,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         }
         RenderingContext renderingContext = new RenderingContext(debugEmitterToUse,
                 controller.getUnprocessedClassSource(), classes,
-                controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming);
+                controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming,
+                controller.getDependencyInfo());
         renderingContext.setMinifying(minifying);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
                 controller.getDiagnostics(), renderingContext);

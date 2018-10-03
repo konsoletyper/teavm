@@ -80,8 +80,9 @@ public class TMethod extends TAccessibleObject implements TMember {
         if (sb.length() > 0) {
             sb.append(' ');
         }
-        sb.append(returnType.getName()).append(' ').append(declaringClass.getName()).append('.')
+        sb.append(getReturnType().getName()).append(' ').append(declaringClass.getName()).append('.')
                 .append(name).append('(');
+        TClass<?>[] parameterTypes = getParameterTypes();
         if (parameterTypes.length > 0) {
             sb.append(parameterTypes[0].getName());
             for (int i = 1; i < parameterTypes.length; ++i) {

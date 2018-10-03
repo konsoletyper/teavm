@@ -19,6 +19,7 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
@@ -41,6 +42,7 @@ import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
+import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -485,6 +487,19 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderClassMetadata(List<ClassNode> classes) {
+        Set<String> classesRequiringName = new HashSet<>();
+        MethodDependencyInfo getNameMethod = context.getDependencyInfo().getMethod(
+                new MethodReference(Class.class, "getName", String.class));
+        if (getNameMethod != null) {
+            classesRequiringName.addAll(Arrays.asList(getNameMethod.getVariable(0).getClassValueNode().getTypes()));
+        }
+        MethodDependencyInfo getSimpleNameMethod = context.getDependencyInfo().getMethod(
+                new MethodReference(Class.class, "getSimpleName", String.class));
+        if (getSimpleNameMethod != null) {
+            classesRequiringName.addAll(Arrays.asList(
+                    getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes()));
+        }
+
         int start = writer.getOffset();
         try {
             writer.append("$rt_metadata([");
@@ -495,7 +510,14 @@ public class Renderer implements RenderingManager {
                 }
                 first = false;
                 writer.appendClass(cls.getName()).append(",").ws();
-                writer.append("\"").append(RenderingUtil.escapeString(cls.getName())).append("\",").ws();
+
+                if (classesRequiringName.contains(cls.getName())) {
+                    writer.append("\"").append(RenderingUtil.escapeString(cls.getName())).append("\"");
+                } else {
+                    writer.append("0");
+                }
+                writer.append(",").ws();
+
                 if (cls.getParentName() != null) {
                     writer.appendClass(cls.getParentName());
                 } else {

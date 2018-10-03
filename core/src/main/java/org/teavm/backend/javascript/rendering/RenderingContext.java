@@ -30,6 +30,7 @@ import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
@@ -48,6 +49,7 @@ public class RenderingContext {
     private ServiceRepository services;
     private Properties properties;
     private NamingStrategy naming;
+    private DependencyInfo dependencyInfo;
     private final Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private final Map<String, Integer> stringPoolMap = new HashMap<>();
     private final List<String> stringPool = new ArrayList<>();
@@ -58,7 +60,7 @@ public class RenderingContext {
     public RenderingContext(DebugInformationEmitter debugEmitter,
             ClassReaderSource initialClassSource, ListableClassReaderSource classSource,
             ClassLoader classLoader, ServiceRepository services, Properties properties,
-            NamingStrategy naming) {
+            NamingStrategy naming, DependencyInfo dependencyInfo) {
         this.debugEmitter = debugEmitter;
         this.initialClassSource = initialClassSource;
         this.classSource = classSource;
@@ -66,6 +68,7 @@ public class RenderingContext {
         this.services = services;
         this.properties = properties;
         this.naming = naming;
+        this.dependencyInfo = dependencyInfo;
     }
 
     public ClassReaderSource getInitialClassSource() {
@@ -90,6 +93,10 @@ public class RenderingContext {
 
     public NamingStrategy getNaming() {
         return naming;
+    }
+
+    public DependencyInfo getDependencyInfo() {
+        return dependencyInfo;
     }
 
     public void setMinifying(boolean minifying) {
