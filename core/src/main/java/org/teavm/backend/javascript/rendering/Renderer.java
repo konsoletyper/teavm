@@ -20,8 +20,10 @@ import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -487,22 +489,17 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderClassMetadata(List<ClassNode> classes) {
-        Set<String> classesRequiringName = new HashSet<>();
-        MethodDependencyInfo getNameMethod = context.getDependencyInfo().getMethod(
-                new MethodReference(Class.class, "getName", String.class));
-        if (getNameMethod != null) {
-            classesRequiringName.addAll(Arrays.asList(getNameMethod.getVariable(0).getClassValueNode().getTypes()));
+        if (classes.isEmpty()) {
+            return;
         }
-        MethodDependencyInfo getSimpleNameMethod = context.getDependencyInfo().getMethod(
-                new MethodReference(Class.class, "getSimpleName", String.class));
-        if (getSimpleNameMethod != null) {
-            classesRequiringName.addAll(Arrays.asList(
-                    getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes()));
-        }
+
+        Set<String> classesRequiringName = findClassesRequiringName();
 
         int start = writer.getOffset();
         try {
             writer.append("$rt_metadata([");
+            ObjectIntMap<String> packageIndexes = generatePackageMetadata(classes, classesRequiringName);
+
             boolean first = true;
             for (ClassNode cls : classes) {
                 if (!first) {
@@ -512,7 +509,12 @@ public class Renderer implements RenderingManager {
                 writer.appendClass(cls.getName()).append(",").ws();
 
                 if (classesRequiringName.contains(cls.getName())) {
-                    writer.append("\"").append(RenderingUtil.escapeString(cls.getName())).append("\"");
+                    String className = cls.getName();
+                    int dotIndex = className.lastIndexOf('.') + 1;
+                    String packageName = className.substring(0, dotIndex);
+                    className = className.substring(dotIndex);
+                    writer.append("\"").append(RenderingUtil.escapeString(className)).append("\"").append(",").ws();
+                    writer.append(String.valueOf(packageIndexes.getOrDefault(packageName, -1)));
                 } else {
                     writer.append("0");
                 }
@@ -564,6 +566,85 @@ public class Renderer implements RenderingManager {
         }
 
         metadataSize = writer.getOffset() - start;
+    }
+
+    private ObjectIntMap<String> generatePackageMetadata(List<ClassNode> classes, Set<String> classesRequiringName)
+            throws IOException {
+        PackageNode root = new PackageNode(null);
+
+        for (ClassNode classNode : classes) {
+            String className = classNode.getName();
+            if (!classesRequiringName.contains(className)) {
+                continue;
+            }
+
+            int dotIndex = className.lastIndexOf('.');
+            if (dotIndex < 0) {
+                continue;
+            }
+
+            addPackageName(root, className.substring(0, dotIndex));
+        }
+
+        ObjectIntMap<String> indexes = new ObjectIntHashMap<>();
+        writer.append(String.valueOf(root.count())).append(",").ws();
+        writePackageStructure(root, -1, "", indexes);
+        writer.softNewLine();
+        return indexes;
+    }
+
+    private int writePackageStructure(PackageNode node, int startIndex, String prefix, ObjectIntMap<String> indexes)
+            throws IOException {
+        int index = startIndex;
+        for (PackageNode child : node.children.values()) {
+            writer.append(String.valueOf(startIndex)).append(",").ws()
+                    .append("\"").append(RenderingUtil.escapeString(child.name)).append("\",").ws();
+            String fullName = prefix + child.name + ".";
+            ++index;
+            indexes.put(fullName, index);
+            index = writePackageStructure(child, index, fullName, indexes);
+        }
+        return index;
+    }
+
+    static class PackageNode {
+        String name;
+        Map<String, PackageNode> children = new HashMap<>();
+
+        PackageNode(String name) {
+            this.name = name;
+        }
+
+        int count() {
+            int result = 0;
+            for (PackageNode child : children.values()) {
+                result += 1 + child.count();
+            }
+            return result;
+        }
+    }
+
+    private void addPackageName(PackageNode node, String name) {
+        String[] parts = name.split("\\.");
+        for (String part : parts) {
+            node = node.children.computeIfAbsent(part, PackageNode::new);
+        }
+    }
+
+    private Set<String> findClassesRequiringName() {
+        Set<String> classesRequiringName = new HashSet<>();
+        MethodDependencyInfo getNameMethod = context.getDependencyInfo().getMethod(
+                new MethodReference(Class.class, "getName", String.class));
+        if (getNameMethod != null) {
+            classesRequiringName.addAll(Arrays.asList(getNameMethod.getVariable(0).getClassValueNode().getTypes()));
+        }
+        MethodDependencyInfo getSimpleNameMethod = context.getDependencyInfo().getMethod(
+                new MethodReference(Class.class, "getSimpleName", String.class));
+        if (getSimpleNameMethod != null) {
+            classesRequiringName.addAll(Arrays.asList(
+                    getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes()));
+        }
+        return classesRequiringName;
     }
 
     private void collectMethodsToCopyFromInterfaces(ClassReader cls, List<MethodReference> targetList) {

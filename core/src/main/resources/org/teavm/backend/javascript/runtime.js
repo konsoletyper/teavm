@@ -429,23 +429,40 @@ function $rt_putStderr(ch) {
     }
 }
 function $rt_metadata(data) {
-    for (var i = 0; i < data.length; i += 8) {
-        var cls = data[i];
+    var i = 0;
+    var packageCount = data[i++];
+    var packages = new Array(packageCount);
+    for (var j = 0; j < packageCount; ++j) {
+        var prefixIndex = data[i++];
+        var prefix = prefixIndex >= 0 ? packages[prefixIndex] : "";
+        packages[j] = prefix + data[i++] + ".";
+    }
+
+    while (i < data.length) {
+        var cls = data[i++];
         cls.$meta = {};
         var m = cls.$meta;
-        var className = data[i + 1];
+        var className = data[i++];
+
         m.name = className !== 0 ? className : null;
+        if (m.name !== null) {
+            var packageIndex = data[i++];
+            if (packageIndex >= 0) {
+                m.name = packages[packageIndex] + m.name;
+            }
+        }
+
         m.binaryName = "L" + m.name + ";";
-        var superclass = data[i + 2];
+        var superclass = data[i++];
         m.superclass = superclass !== 0 ? superclass : null;
-        m.supertypes = data[i + 3];
+        m.supertypes = data[i++];
         if (m.superclass) {
             m.supertypes.push(m.superclass);
             cls.prototype = Object.create(m.superclass.prototype);
         } else {
             cls.prototype = {};
         }
-        var flags = data[i + 4];
+        var flags = data[i++];
         m.enum = (flags & 16) !== 0;
         m.flags = flags;
         m.primitive = false;
@@ -453,13 +470,13 @@ function $rt_metadata(data) {
         cls.prototype.constructor = cls;
         cls.classObject = null;
 
-        m.accessLevel = data[i + 5];
+        m.accessLevel = data[i++];
 
-        var clinit = data[i + 6];
+        var clinit = data[i++];
         cls.$clinit = clinit !== 0 ? clinit : function() {};
 
-        var virtualMethods = data[i + 7];
-        for (var j = 0; j < virtualMethods.length; j += 2) {
+        var virtualMethods = data[i++];
+        for (j = 0; j < virtualMethods.length; j += 2) {
             var name = virtualMethods[j];
             var func = virtualMethods[j + 1];
             if (typeof name === 'string') {
