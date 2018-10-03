@@ -1354,6 +1354,9 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     precedence = Precedence.CONDITIONAL.next();
                     expr.getExpr().acceptVisitor(this);
                     writer.append(" instanceof ").appendClass(clsName);
+                    if (needsParentheses) {
+                        writer.append(')');
+                    }
                     if (expr.getLocation() != null) {
                         popLocation();
                     }

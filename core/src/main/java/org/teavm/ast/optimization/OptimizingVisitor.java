@@ -246,7 +246,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         pushLocation(expr.getLocation());
         try {
             expr.getCondition().acceptVisitor(this);
-            Expr cond = resultExpr;
+            Expr cond = optimizeCondition(resultExpr);
 
             Statement barrier = addBarrier();
             expr.getConsequent().acceptVisitor(this);
@@ -786,7 +786,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(ConditionalStatement statement) {
         statement.getCondition().acceptVisitor(this);
-        statement.setCondition(resultExpr);
+        statement.setCondition(optimizeCondition(resultExpr));
         List<Statement> consequent = processSequence(statement.getConsequent());
         List<Statement> alternative = processSequence(statement.getAlternative());
         if (consequent.isEmpty()) {
@@ -871,7 +871,14 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         List<Statement> newDefault = processSequence(statement.getDefaultClause());
         statement.getDefaultClause().clear();
         statement.getDefaultClause().addAll(newDefault);
-        resultStmt = statement;
+
+        if (statement.getClauses().isEmpty()) {
+            SequentialStatement seq = new SequentialStatement();
+            seq.getSequence().addAll(statement.getDefaultClause());
+            resultStmt = seq;
+        } else {
+            resultStmt = statement;
+        }
     }
 
     @Override
@@ -1073,5 +1080,20 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
 
         return false;
+    }
+
+    private Expr optimizeCondition(Expr expr) {
+        if (expr instanceof BinaryExpr) {
+            BinaryExpr binary = (BinaryExpr) expr;
+            if (isZero(((BinaryExpr) expr).getSecondOperand())) {
+                switch (binary.getOperation()) {
+                    case EQUALS:
+                        return ExprOptimizer.invert(binary.getFirstOperand());
+                    case NOT_EQUALS:
+                        return binary.getFirstOperand();
+                }
+            }
+        }
+        return expr;
     }
 }
