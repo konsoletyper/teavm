@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Predicate;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
@@ -50,6 +51,7 @@ public class RenderingContext {
     private Properties properties;
     private NamingStrategy naming;
     private DependencyInfo dependencyInfo;
+    private Predicate<MethodReference> virtualPredicate;
     private final Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private final Map<String, Integer> stringPoolMap = new HashMap<>();
     private final List<String> stringPool = new ArrayList<>();
@@ -60,7 +62,8 @@ public class RenderingContext {
     public RenderingContext(DebugInformationEmitter debugEmitter,
             ClassReaderSource initialClassSource, ListableClassReaderSource classSource,
             ClassLoader classLoader, ServiceRepository services, Properties properties,
-            NamingStrategy naming, DependencyInfo dependencyInfo) {
+            NamingStrategy naming, DependencyInfo dependencyInfo,
+            Predicate<MethodReference> virtualPredicate) {
         this.debugEmitter = debugEmitter;
         this.initialClassSource = initialClassSource;
         this.classSource = classSource;
@@ -69,6 +72,7 @@ public class RenderingContext {
         this.properties = properties;
         this.naming = naming;
         this.dependencyInfo = dependencyInfo;
+        this.virtualPredicate = virtualPredicate;
     }
 
     public ClassReaderSource getInitialClassSource() {
@@ -105,6 +109,10 @@ public class RenderingContext {
 
     public DebugInformationEmitter getDebugEmitter() {
         return debugEmitter;
+    }
+
+    public boolean isVirtual(MethodReference method) {
+        return virtualPredicate.test(method);
     }
 
     public void pushLocation(TextLocation location) {

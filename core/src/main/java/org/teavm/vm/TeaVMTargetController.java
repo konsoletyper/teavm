@@ -22,6 +22,7 @@ import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodReference;
 
 public interface TeaVMTargetController {
     boolean wasCancelled();
@@ -45,4 +46,6 @@ public interface TeaVMTargetController {
     Map<? extends String, ? extends TeaVMEntryPoint> getEntryPoints();
 
     Set<? extends String> getPreservedClasses();
+
+    boolean isVirtual(MethodReference method);
 }

@@ -19,6 +19,8 @@ import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
+import org.teavm.backend.javascript.spi.VirtualMethodContributor;
+import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
@@ -30,7 +32,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.async.AsyncCallback;
 
-public class AsyncMethodGenerator implements Generator, DependencyPlugin {
+public class AsyncMethodGenerator implements Generator, DependencyPlugin, VirtualMethodContributor {
     private static final MethodReference completeMethod = new MethodReference(AsyncCallback.class, "complete",
             Object.class, void.class);
     private static final MethodReference errorMethod = new MethodReference(AsyncCallback.class, "error",
@@ -121,5 +123,10 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
                 AsyncCallback.class, AsyncCallbackWrapper.class), null).use();
 
         asyncMethod.use();
+    }
+
+    @Override
+    public boolean isVirtual(VirtualMethodContributorContext context, MethodReference methodRef) {
+        return methodRef.equals(completeMethod) || methodRef.equals(errorMethod);
     }
 }

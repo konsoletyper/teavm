@@ -35,12 +35,12 @@ public class JSOPlugin implements TeaVMPlugin {
         JSAliasRenderer aliasRenderer = new JSAliasRenderer();
         host.add(dependencyListener);
 
-
         jsHost.add(aliasRenderer);
         jsHost.addGeneratorProvider(new GeneratorAnnotationInstaller<>(new JSBodyGenerator(),
                 DynamicGenerator.class.getName()));
         jsHost.addInjectorProvider(new GeneratorAnnotationInstaller<>(new JSBodyGenerator(),
                 DynamicInjector.class.getName()));
+        jsHost.addVirtualMethods(aliasRenderer);
 
         TeaVMPluginUtil.handleNatives(host, JS.class);
     }

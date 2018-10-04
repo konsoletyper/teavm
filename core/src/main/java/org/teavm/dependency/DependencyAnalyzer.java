@@ -112,7 +112,11 @@ public class DependencyAnalyzer implements DependencyInfo {
             if (field != null && !field.getReference().equals(preimage)) {
                 return fieldCache.map(field.getReference());
             }
-            return createFieldNode(preimage, field);
+            FieldDependency node = createFieldNode(preimage, field);
+            if (field != null && field.getInitialValue() instanceof String) {
+                node.getValue().propagate(getType("java.lang.String"));
+            }
+            return node;
         });
 
         classCache = new CachedMapper<>(this::createClassDependency);

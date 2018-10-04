@@ -124,6 +124,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private ListableClassHolderSource writtenClasses;
     private TeaVMTarget target;
     private Map<Class<?>, TeaVMHostExtension> extensions = new HashMap<>();
+    private Set<? extends MethodReference> virtualMethods;
 
     TeaVM(TeaVMBuilder builder) {
         target = builder.target;
@@ -457,6 +458,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 return;
             }
         }
+        virtualMethods = devirtualization.getVirtualMethods();
     }
 
     private void inline(ListableClassHolderSource classes, DependencyInfo dependencyInfo) {
@@ -691,6 +693,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         @Override
         public boolean isFriendlyToDebugger() {
             return optimizationLevel == TeaVMOptimizationLevel.SIMPLE;
+        }
+
+        @Override
+        public boolean isVirtual(MethodReference method) {
+            return incremental || virtualMethods == null || virtualMethods.contains(method);
         }
     };
 }

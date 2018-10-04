@@ -741,6 +741,9 @@ public class Renderer implements RenderingManager {
         writer.append("[");
         boolean first = true;
         for (MethodReference method : methods) {
+            if (!isVirtual(method)) {
+                continue;
+            }
             debugEmitter.emitMethod(method.getDescriptor());
             if (!first) {
                 writer.append(",").ws();
@@ -1068,5 +1071,9 @@ public class Renderer implements RenderingManager {
             this.field = field;
             this.value = value;
         }
+    }
+
+    private boolean isVirtual(MethodReference method) {
+        return context.isVirtual(method);
     }
 }

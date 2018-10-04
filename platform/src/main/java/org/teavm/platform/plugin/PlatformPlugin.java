@@ -43,7 +43,8 @@ public class PlatformPlugin implements TeaVMPlugin {
             host.add(new ResourceTransformer());
             host.add(new ResourceAccessorTransformer(host));
             host.add(new ResourceAccessorDependencyListener());
-            host.getExtension(TeaVMJavaScriptHost.class).addGeneratorProvider(context -> {
+            TeaVMJavaScriptHost jsHost = host.getExtension(TeaVMJavaScriptHost.class);
+            jsHost.addGeneratorProvider(context -> {
                 ClassReader cls = context.getClassSource().get(context.getMethod().getClassName());
                 if (cls == null) {
                     return null;
@@ -55,6 +56,7 @@ public class PlatformPlugin implements TeaVMPlugin {
                 return method.getAnnotations().get(Async.class.getName()) != null
                         ? new AsyncMethodGenerator() : null;
             });
+            jsHost.addVirtualMethods(new AsyncMethodGenerator());
         } else if (!isBootstrap()) {
             host.add(new StringAmplifierTransformer());
         }

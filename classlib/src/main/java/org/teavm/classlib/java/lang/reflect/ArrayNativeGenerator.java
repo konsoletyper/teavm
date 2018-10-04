@@ -24,7 +24,6 @@ import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -40,13 +39,18 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         switch (method.getReference().getName()) {
             case "getLength":
-                achieveGetLength(agent, method);
+                reachGetLength(agent, method);
                 break;
             case "newInstance":
                 method.getVariable(1).getClassValueNode().addConsumer(t -> {
-                    String arrayTypeName = t.getName().startsWith("[")
-                            ? t.getName()
-                            : ValueType.object(t.getName()).toString();
+                    String arrayTypeName;
+                    if (t.getName().startsWith("[")) {
+                        arrayTypeName = t.getName();
+                    } else if (t.getName().startsWith("~")) {
+                        arrayTypeName = t.getName().substring(1);
+                    } else {
+                        arrayTypeName = ValueType.object(t.getName()).toString();
+                    }
                     method.getResult().propagate(agent.getType("[" + arrayTypeName));
                 });
                 break;
@@ -81,14 +85,13 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         String array = context.getParameterName(1);
         writer.append("if (" + array + " === null || " + array + ".constructor.$meta.item === undefined) {")
                 .softNewLine().indent();
-        String clsName = "java.lang.IllegalArgumentException";
-        MethodDescriptor cons = new MethodDescriptor("<init>", ValueType.VOID);
-        writer.append("$rt_throw(").appendClass(clsName).append(".").appendMethod(cons).append("());").softNewLine();
+        MethodReference cons = new MethodReference("java.lang.IllegalArgumentException", "<init>", ValueType.VOID);
+        writer.append("$rt_throw(").append(writer.getNaming().getNameForInit(cons)).append("());").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return " + array + ".data.length;").softNewLine();
     }
 
-    private void achieveGetLength(final DependencyAgent agent, final MethodDependency method) {
+    private void reachGetLength(final DependencyAgent agent, final MethodDependency method) {
         method.getVariable(1).addConsumer(type -> {
             if (!type.getName().startsWith("[")) {
                 MethodReference cons = new MethodReference(IllegalArgumentException.class, "<init>", void.class);

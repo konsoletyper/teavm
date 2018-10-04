@@ -403,6 +403,8 @@ class DependencyGraphBuilder {
                         sb.append(cst.toString());
                     }
                     node.getClassValueNode().propagate(dependencyAnalyzer.getType(sb.toString()));
+                } else {
+                    node.getClassValueNode().propagate(dependencyAnalyzer.getType("~" + cst.toString()));
                 }
             }
             while (cst instanceof ValueType.Array) {

@@ -49,6 +49,8 @@ import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
+import org.teavm.backend.javascript.spi.VirtualMethodContributor;
+import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
@@ -104,6 +106,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private final Set<MethodReference> asyncMethods = new HashSet<>();
     private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
     private ClassInitializerInsertionTransformer clinitInsertionTransformer;
+    private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
@@ -194,19 +197,35 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     @Override
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
-        dependencyAnalyzer.linkMethod(new MethodReference(Class.class.getName(), "getClass",
-                ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)), null).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
-                null).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class, char[].class,
-                int.class, void.class), null).use();
+        MethodDependency dep;
+
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(Class.class.getName(), "getClass",
+                ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)), null);
+        dep.getVariable(0).propagate(dependencyAnalyzer.getType("org.teavm.platform.PlatformClass"));
+        dep.getResult().propagate(dependencyAnalyzer.getType("java.lang.Class"));
+        dep.use();
+
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
+                null);
+        dep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        dep.getVariable(1).propagate(dependencyAnalyzer.getType("[C"));
+        dep.use();
+
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class,
+                char[].class, int.class, void.class), null);
+        dep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        dep.getVariable(3).propagate(dependencyAnalyzer.getType("[C"));
+        dep.use();
 
         MethodDependency internDep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "intern",
                 String.class), null);
         internDep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.String"));
         internDep.use();
 
-        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "length", int.class), null).use();
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "length", int.class), null);
+        dep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        dep.use();
+
         dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Thread.class, "currentThread", Thread.class), null).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Thread.class, "getMainThread", Thread.class), null).use();
@@ -264,10 +283,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         if (debugEmitterToUse == null) {
             debugEmitterToUse = new DummyDebugInformationEmitter();
         }
+        VirtualMethodContributorContext virtualMethodContributorContext = new VirtualMethodContributorContextImpl(
+                classes);
         RenderingContext renderingContext = new RenderingContext(debugEmitterToUse,
                 controller.getUnprocessedClassSource(), classes,
                 controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming,
-                controller.getDependencyInfo());
+                controller.getDependencyInfo(), m -> isVirtual(virtualMethodContributorContext, m));
         renderingContext.setMinifying(minifying);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
                 controller.getDiagnostics(), renderingContext);
@@ -506,7 +527,37 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     @Override
+    public void addVirtualMethods(VirtualMethodContributor virtualMethods) {
+        customVirtualMethods.add(virtualMethods);
+    }
+
+    @Override
     public boolean isAsyncSupported() {
         return true;
     }
+
+    private boolean isVirtual(VirtualMethodContributorContext context, MethodReference method) {
+        if (controller.isVirtual(method)) {
+            return true;
+        }
+        for (VirtualMethodContributor predicate : customVirtualMethods) {
+            if (predicate.isVirtual(context, method)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    static class VirtualMethodContributorContextImpl implements VirtualMethodContributorContext {
+        private ClassReaderSource classSource;
+
+        VirtualMethodContributorContextImpl(ClassReaderSource classSource) {
+            this.classSource = classSource;
+        }
+
+        @Override
+        public ClassReaderSource getClassSource() {
+            return classSource;
+        }
+    };
 }

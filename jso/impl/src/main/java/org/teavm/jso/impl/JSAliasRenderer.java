@@ -20,6 +20,8 @@ import java.util.HashMap;
 import java.util.Map;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingManager;
+import org.teavm.backend.javascript.spi.VirtualMethodContributor;
+import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReader;
@@ -27,16 +29,17 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.spi.RendererListener;
 
-class JSAliasRenderer implements RendererListener {
+class JSAliasRenderer implements RendererListener, VirtualMethodContributor {
     private static String variableChars = "abcdefghijklmnopqrstuvwxyz";
     private SourceWriter writer;
     private ListableClassReaderSource classSource;
 
     @Override
-    public void begin(RenderingManager context, BuildTarget buildTarget) throws IOException {
+    public void begin(RenderingManager context, BuildTarget buildTarget) {
         writer = context.getWriter();
         classSource = context.getClassSource();
     }
@@ -171,5 +174,20 @@ class JSAliasRenderer implements RendererListener {
             sb.append(index);
         }
         return sb.toString();
+    }
+
+    @Override
+    public boolean isVirtual(VirtualMethodContributorContext context, MethodReference methodRef) {
+        ClassReader classReader = context.getClassSource().get(methodRef.getClassName());
+        if (classReader == null) {
+            return false;
+        }
+
+        if (getFunctorField(classReader) != null) {
+            return true;
+        }
+
+        MethodReader methodReader = classReader.getMethod(methodRef.getDescriptor());
+        return methodReader != null && getPublicAlias(methodReader) != null;
     }
 }

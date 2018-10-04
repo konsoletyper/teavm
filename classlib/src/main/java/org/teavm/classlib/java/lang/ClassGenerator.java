@@ -267,17 +267,19 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         if (method.getResultType() != ValueType.VOID) {
             writer.append("return ");
         }
-        if (method.hasModifier(ElementModifier.STATIC)) {
-            writer.appendMethodBody(method.getReference());
-        } else {
-            writer.append("obj.").appendMethod(method.getDescriptor());
-        }
+        writer.appendMethodBody(method.getReference());
 
         writer.append('(');
+        boolean first = true;
+        if (!method.hasModifier(ElementModifier.STATIC)) {
+            writer.append("obj").ws();
+            first = false;
+        }
         for (int i = 0; i < method.parameterCount(); ++i) {
-            if (i > 0) {
+            if (!first) {
                 writer.append(',').ws();
             }
+            first = false;
             int index = i;
             unboxIfNecessary(writer, method.parameterType(i), () -> writer.append("args[" + index + "]"));
         }

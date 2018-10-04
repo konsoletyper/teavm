@@ -15,6 +15,7 @@
  */
 package org.teavm.model.optimization;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.teavm.dependency.DependencyInfo;
@@ -33,6 +34,8 @@ import org.teavm.model.instructions.InvokeInstruction;
 public class Devirtualization {
     private DependencyInfo dependency;
     private ClassReaderSource classSource;
+    private Set<MethodReference> virtualMethods = new HashSet<>();
+    private Set<? extends MethodReference> readonlyVirtualMethods = Collections.unmodifiableSet(virtualMethods);
 
     public Devirtualization(DependencyInfo dependency, ClassReaderSource classSource) {
         this.dependency = dependency;
@@ -61,6 +64,8 @@ public class Devirtualization {
                 if (implementations.size() == 1) {
                     invoke.setType(InvocationType.SPECIAL);
                     invoke.setMethod(implementations.iterator().next());
+                } else {
+                    virtualMethods.addAll(implementations);
                 }
             }
         }
@@ -83,5 +88,9 @@ public class Devirtualization {
             }
         }
         return methods;
+    }
+
+    public Set<? extends MethodReference> getVirtualMethods() {
+        return readonlyVirtualMethods;
     }
 }
