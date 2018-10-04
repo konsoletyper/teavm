@@ -520,6 +520,9 @@ function $rt_stringPool(strings) {
 function $rt_s(index) {
     return $rt_stringPool_instance[index];
 }
+function $rt_eraseClinit(target) {
+    return target.$clinit = function() {};
+}
 function TeaVMThread(runner) {
     this.status = 3;
     this.stack = [];

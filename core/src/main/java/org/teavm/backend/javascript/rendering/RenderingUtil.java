@@ -27,7 +27,7 @@ public final class RenderingUtil {
             "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield",
             "NaN")));
     public static final String VARIABLE_START_CHARS = "abcdefghijklmnopqrstuvwxyz";
-    public static final String VARIABLE_PART_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    public static final String VARIABLE_PART_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$_";
 
     private RenderingUtil() {
     }

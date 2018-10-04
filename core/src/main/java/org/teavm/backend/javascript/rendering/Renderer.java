@@ -295,7 +295,7 @@ public class Renderer implements RenderingManager {
     private void renderRuntimeAliases() throws IOException {
         String[] names = { "$rt_throw", "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray",
                 "$rt_isInstance", "$rt_nativeThread", "$rt_suspending", "$rt_resuming", "$rt_invalidPointer",
-                "$rt_s" };
+                "$rt_s", "$rt_eraseClinit" };
         boolean first = true;
         for (String name : names) {
             if (!first) {
@@ -307,7 +307,7 @@ public class Renderer implements RenderingManager {
         writer.newLine();
     }
 
-    public void render(List<ClassNode> classes) throws RenderingException {
+    public void prepare(List<ClassNode> classes) {
         if (minifying) {
             NamingOrderer orderer = new NamingOrderer();
             NameFrequencyEstimator estimator = new NameFrequencyEstimator(orderer, classSource, asyncMethods,
@@ -317,7 +317,9 @@ public class Renderer implements RenderingManager {
             }
             orderer.apply(naming);
         }
+    }
 
+    public void render(List<ClassNode> classes) throws RenderingException {
         if (minifying) {
             try {
                 renderRuntimeAliases();
@@ -484,8 +486,8 @@ public class Renderer implements RenderingManager {
 
     private void renderEraseClinit(ClassNode cls) throws IOException {
         writer.append(naming.getNameForClassInit(cls.getName())).ws().append("=").ws()
-                .appendClass(cls.getName()).append(".$clinit").ws().append("=").ws()
-                .append("function(){};").newLine();
+                .appendFunction("$rt_eraseClinit").append("(")
+                .appendClass(cls.getName()).append(");").softNewLine();
     }
 
     private void renderClassMetadata(List<ClassNode> classes) {
@@ -713,22 +715,24 @@ public class Renderer implements RenderingManager {
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
         writer.append("function ").append(naming.getNameForInit(ref)).append("(");
-        for (int i = 1; i <= ref.parameterCount(); ++i) {
-            if (i > 1) {
+        for (int i = 0; i < ref.parameterCount(); ++i) {
+            if (i > 0) {
                 writer.append(",").ws();
             }
             writer.append(variableNameForInitializer(i));
         }
         writer.append(")").ws().append("{").softNewLine().indent();
-        writer.append("var $r").ws().append("=").ws().append("new ").appendClass(
+
+        String instanceName = variableNameForInitializer(ref.parameterCount());
+        writer.append("var " + instanceName).ws().append("=").ws().append("new ").appendClass(
                 ref.getClassName()).append("();").softNewLine();
-        writer.append(naming.getFullNameFor(ref)).append("($r");
-        for (int i = 1; i <= ref.parameterCount(); ++i) {
+        writer.append(naming.getFullNameFor(ref)).append("(" + instanceName);
+        for (int i = 0; i < ref.parameterCount(); ++i) {
             writer.append(",").ws();
             writer.append(variableNameForInitializer(i));
         }
         writer.append(");").softNewLine();
-        writer.append("return $r;").softNewLine();
+        writer.append("return " + instanceName + ";").softNewLine();
         writer.outdent().append("}").newLine();
         debugEmitter.emitMethod(null);
     }

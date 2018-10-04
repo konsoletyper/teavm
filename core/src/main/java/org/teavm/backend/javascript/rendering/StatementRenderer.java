@@ -462,10 +462,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     }
 
     private String generateVariableName(int index) {
-        if (index == 0 && minifying) {
-            return "$t";
-        }
-
         if (!minifying) {
             VariableNode variable = index < currentMethod.getVariables().size()
                     ? currentMethod.getVariables().get(index)
@@ -484,7 +480,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 return "var$" + index;
             }
         } else {
-            return RenderingUtil.indexToId(--index);
+            return RenderingUtil.indexToId(index);
         }
     }
 

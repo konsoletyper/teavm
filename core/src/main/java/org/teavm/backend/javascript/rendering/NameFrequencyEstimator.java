@@ -100,6 +100,11 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
                 consumer.consumeFunction("$rt_resuming");
                 consumer.consumeFunction("$rt_invalidPointer");
             }
+            method.acceptVisitor(this);
+        }
+
+        if (clinit != null) {
+            consumer.consumeFunction("$rt_eraseClinit");
         }
 
         // Metadata

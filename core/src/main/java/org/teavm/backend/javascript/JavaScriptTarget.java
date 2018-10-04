@@ -318,6 +318,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             }
             int start = sourceWriter.getOffset();
             sourceWriter.append("\"use strict\";").newLine();
+            renderer.prepare(clsNodes);
             renderer.renderRuntime();
             renderer.render(clsNodes);
             renderer.renderStringPool();
