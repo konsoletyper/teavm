@@ -20,6 +20,7 @@ import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -741,7 +742,12 @@ public class Renderer implements RenderingManager {
         return minifying ? RenderingUtil.indexToId(index) : "var_" + index;
     }
 
-    private void renderVirtualDeclarations(Iterable<MethodReference> methods) throws NamingException, IOException {
+    private void renderVirtualDeclarations(Collection<MethodReference> methods) throws NamingException, IOException {
+        if (methods.stream().noneMatch(this::isVirtual)) {
+            writer.append('0');
+            return;
+        }
+
         writer.append("[");
         boolean first = true;
         for (MethodReference method : methods) {

@@ -463,7 +463,7 @@ function $rt_metadata(data) {
             cls.prototype = {};
         }
         var flags = data[i++];
-        m.enum = (flags & 16) !== 0;
+        m.enum = (flags & 8) !== 0;
         m.flags = flags;
         m.primitive = false;
         m.item = null;
@@ -476,14 +476,16 @@ function $rt_metadata(data) {
         cls.$clinit = clinit !== 0 ? clinit : function() {};
 
         var virtualMethods = data[i++];
-        for (j = 0; j < virtualMethods.length; j += 2) {
-            var name = virtualMethods[j];
-            var func = virtualMethods[j + 1];
-            if (typeof name === 'string') {
-                name = [name];
-            }
-            for (var k = 0; k < name.length; ++k) {
-                cls.prototype[name[k]] = func;
+        if (virtualMethods !== 0) {
+            for (j = 0; j < virtualMethods.length; j += 2) {
+                var name = virtualMethods[j];
+                var func = virtualMethods[j + 1];
+                if (typeof name === 'string') {
+                    name = [name];
+                }
+                for (var k = 0; k < name.length; ++k) {
+                    cls.prototype[name[k]] = func;
+                }
             }
         }
 

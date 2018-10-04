@@ -57,6 +57,9 @@ import org.teavm.model.util.PhiUpdater;
 import org.teavm.model.util.ProgramUtils;
 
 public class Parser {
+    private static final int DECL_CLASS = 0;
+    private static final int DECL_METHOD = 1;
+    private static final int DECL_FIELD = 2;
     private ReferenceCache referenceCache;
 
     public Parser(ReferenceCache referenceCache) {
@@ -72,7 +75,7 @@ public class Parser {
         node = nodeWithoutJsr;
         ValueType[] signature = MethodDescriptor.parseSignature(node.desc);
         MethodHolder method = new MethodHolder(node.name, signature);
-        parseModifiers(node.access, method);
+        parseModifiers(node.access, method, DECL_METHOD);
 
         ProgramParser programParser = new ProgramParser(referenceCache);
         programParser.setFileName(fileName);
@@ -227,7 +230,7 @@ public class Parser {
 
     public ClassHolder parseClass(ClassNode node) {
         ClassHolder cls = new ClassHolder(node.name.replace('/', '.'));
-        parseModifiers(node.access, cls);
+        parseModifiers(node.access, cls, DECL_CLASS);
         if (node.superName != null) {
             cls.setParent(node.superName.replace('/', '.'));
         }
@@ -263,12 +266,12 @@ public class Parser {
         FieldHolder field = new FieldHolder(node.name);
         field.setType(ValueType.parse(node.desc));
         field.setInitialValue(node.value);
-        parseModifiers(node.access, field);
+        parseModifiers(node.access, field, DECL_FIELD);
         parseAnnotations(field.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
         return field;
     }
 
-    public void parseModifiers(int access, ElementHolder member) {
+    public void parseModifiers(int access, ElementHolder member, int type) {
         if ((access & Opcodes.ACC_PRIVATE) != 0) {
             member.setLevel(AccessLevel.PRIVATE);
         } else if ((access & Opcodes.ACC_PROTECTED) != 0) {
@@ -284,7 +287,9 @@ public class Parser {
             member.getModifiers().add(ElementModifier.ANNOTATION);
         }
         if ((access & Opcodes.ACC_BRIDGE) != 0) {
-            member.getModifiers().add(ElementModifier.BRIDGE);
+            if (type == DECL_METHOD) {
+                member.getModifiers().add(ElementModifier.BRIDGE);
+            }
         }
         if ((access & Opcodes.ACC_DEPRECATED) != 0) {
             member.getModifiers().add(ElementModifier.DEPRECATED);
@@ -307,23 +312,28 @@ public class Parser {
         if ((access & Opcodes.ACC_STRICT) != 0) {
             member.getModifiers().add(ElementModifier.STRICT);
         }
-        if ((access & Opcodes.ACC_SUPER) != 0) {
-            member.getModifiers().add(ElementModifier.SUPER);
-        }
         if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
-            member.getModifiers().add(ElementModifier.SYNCHRONIZED);
+            if (type == DECL_METHOD) {
+                member.getModifiers().add(ElementModifier.SYNCHRONIZED);
+            }
         }
         if ((access & Opcodes.ACC_SYNTHETIC) != 0) {
             member.getModifiers().add(ElementModifier.SYNTHETIC);
         }
         if ((access & Opcodes.ACC_TRANSIENT) != 0) {
-            member.getModifiers().add(ElementModifier.TRANSIENT);
+            if (type == DECL_FIELD) {
+                member.getModifiers().add(ElementModifier.TRANSIENT);
+            }
         }
         if ((access & Opcodes.ACC_VARARGS) != 0) {
-            member.getModifiers().add(ElementModifier.VARARGS);
+            if (type == DECL_FIELD) {
+                member.getModifiers().add(ElementModifier.VARARGS);
+            }
         }
         if ((access & Opcodes.ACC_VOLATILE) != 0) {
-            member.getModifiers().add(ElementModifier.VOLATILE);
+            if (type == DECL_FIELD) {
+                member.getModifiers().add(ElementModifier.VOLATILE);
+            }
         }
     }
 

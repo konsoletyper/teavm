@@ -20,21 +20,20 @@ public final class Flags {
     }
 
     public static final int ABSTRACT = 1;
-    public static final int ANNOTATION = 2;
-    public static final int BRIDGE = 4;
-    public static final int DEPRECATED = 8;
-    public static final int ENUM = 16;
-    public static final int FINAL = 32;
-    public static final int INTERFACE = 64;
-    public static final int NATIVE = 128;
-    public static final int STATIC = 256;
-    public static final int STRICT = 512;
-    public static final int SUPER = 1024;
+    public static final int INTERFACE = 2;
+    public static final int FINAL = 4;
+    public static final int ENUM = 8;
+    public static final int ANNOTATION = 16;
+    public static final int SYNTHETIC = 32;
+    public static final int BRIDGE = 64;
+    public static final int DEPRECATED = 128;
+    public static final int NATIVE = 256;
+    public static final int STATIC = 512;
+    public static final int STRICT = 1024;
     public static final int SYNCHRONIZED = 2048;
-    public static final int SYNTHETIC = 4096;
-    public static final int TRANSIENT = 8192;
-    public static final int VARARGS = 16384;
-    public static final int VOLATILE = 32768;
+    public static final int TRANSIENT = 4096;
+    public static final int VARARGS = 8192;
+    public static final int VOLATILE = 16384;
 
     public static final int PACKAGE_PRIVATE = 0;
     public static final int PRIVATE = 1;
@@ -56,31 +55,31 @@ public final class Flags {
         }
 
         // static
-        modifiers |= (flags >>> 5) & 8;
+        modifiers |= (flags >>> 6) & 8;
 
         // final
-        modifiers |= (flags >>> 1) & 16;
+        modifiers |= (flags << 2) & 16;
 
         // synchronized
-        modifiers |= (flags >>> 5) & 32;
+        modifiers |= (flags >>> 6) & 32;
 
         // volatile
-        modifiers |= (flags >>> 9) & 64;
+        modifiers |= (flags >>> 8) & 64;
 
         // transient
-        modifiers |= (flags >>> 6) & 128;
+        modifiers |= (flags >>> 5) & 128;
 
         // native
-        modifiers |= (flags << 1) & 256;
+        modifiers |= flags & 256;
 
         // interface
-        modifiers |= (flags << 3) & 512;
+        modifiers |= (flags << 8) & 512;
 
         // abstract
         modifiers |= (flags << 10) & 1024;
 
         // strict
-        modifiers |= (flags << 2) & 2048;
+        modifiers |= (flags << 1) & 2048;
 
         return modifiers;
     }
