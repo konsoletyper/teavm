@@ -34,7 +34,7 @@ class TypeSet {
     private int typesCount;
 
     Set<DependencyNode> domain = new LinkedHashSet<>();
-    ObjectArrayList<DependencyNodeToNodeTransition> transitions;
+    ObjectArrayList<Transition> transitions;
     ArrayList<ConsumerWithNode> consumers;
 
     TypeSet(DependencyAnalyzer dependencyAnalyzer, DependencyNode origin) {
@@ -154,13 +154,13 @@ class TypeSet {
         consumers = null;
     }
 
-    ObjectArrayList<DependencyNodeToNodeTransition> getTransitions() {
+    ObjectArrayList<Transition> getTransitions() {
         if (transitions == null) {
             transitions = new ObjectArrayList<>(domain.size() * 2);
             for (DependencyNode node : domain) {
                 if (node.transitions != null) {
-                    for (ObjectCursor<DependencyNodeToNodeTransition> cursor : node.transitionList) {
-                        DependencyNodeToNodeTransition transition = cursor.value;
+                    for (ObjectCursor<Transition> cursor : node.transitionList) {
+                        Transition transition = cursor.value;
                         if (transition.filter != null || transition.destination.typeSet != this) {
                             transitions.add(transition);
                         }

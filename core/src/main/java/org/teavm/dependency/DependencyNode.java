@@ -36,8 +36,8 @@ public class DependencyNode implements ValueDependencyInfo {
     DependencyAnalyzer dependencyAnalyzer;
     List<DependencyConsumer> followers;
     TypeSet typeSet;
-    ObjectObjectHashMap<DependencyNode, DependencyNodeToNodeTransition> transitions;
-    ObjectArrayList<DependencyNodeToNodeTransition> transitionList;
+    ObjectObjectHashMap<DependencyNode, Transition> transitions;
+    ObjectArrayList<Transition> transitionList;
     String tag;
     private DependencyNode arrayItemNode;
     private DependencyNode classValueNode;
@@ -78,15 +78,15 @@ public class DependencyNode implements ValueDependencyInfo {
             }
         }
 
-        ObjectArrayList<DependencyNodeToNodeTransition> transitions = new ObjectArrayList<>(typeSet.getTransitions());
+        ObjectArrayList<Transition> transitions = new ObjectArrayList<>(typeSet.getTransitions());
         List<ConsumerWithNode> consumerEntries = typeSet.getConsumers();
 
         if (action != null) {
             action.run();
         }
 
-        for (ObjectCursor<DependencyNodeToNodeTransition> cursor : transitions) {
-            DependencyNodeToNodeTransition transition = cursor.value;
+        for (ObjectCursor<Transition> cursor : transitions) {
+            Transition transition = cursor.value;
             if (transition.source.filter(type) && transition.filterType(type)) {
                 dependencyAnalyzer.schedulePropagation(transition, type);
             }
@@ -156,15 +156,15 @@ public class DependencyNode implements ValueDependencyInfo {
             }
         }
 
-        ObjectArrayList<DependencyNodeToNodeTransition> transitions = new ObjectArrayList<>(typeSet.getTransitions());
+        ObjectArrayList<Transition> transitions = new ObjectArrayList<>(typeSet.getTransitions());
         List<ConsumerWithNode> consumerEntries = typeSet.getConsumers();
 
         if (action != null) {
             action.run();
         }
 
-        for (ObjectCursor<DependencyNodeToNodeTransition> cursor : transitions) {
-            DependencyNodeToNodeTransition transition = cursor.value;
+        for (ObjectCursor<Transition> cursor : transitions) {
+            Transition transition = cursor.value;
             DependencyType[] typesToPropagate = newTypes;
             if (transition.source.typeFilter != null || transition.filter != null) {
                 int j = 0;
@@ -276,7 +276,7 @@ public class DependencyNode implements ValueDependencyInfo {
             return;
         }
 
-        DependencyNodeToNodeTransition transition = new DependencyNodeToNodeTransition(this, node, filter);
+        Transition transition = new Transition(this, node, filter);
         transitions.put(node, transition);
         transitionList.add(transition);
         if (DependencyAnalyzer.shouldLog) {
@@ -358,8 +358,7 @@ public class DependencyNode implements ValueDependencyInfo {
             return;
         }
 
-        for (DependencyNodeToNodeTransition transition : classNodeParent.transitionList
-                .toArray(DependencyNodeToNodeTransition.class)) {
+        for (Transition transition : classNodeParent.transitionList.toArray(Transition.class)) {
             connect(transition.destination.getClassValueNode());
         }
     }
@@ -370,7 +369,7 @@ public class DependencyNode implements ValueDependencyInfo {
         }
     }
 
-    private void propagateTypes(DependencyNodeToNodeTransition transition) {
+    private void propagateTypes(Transition transition) {
         if (typeSet != null) {
             dependencyAnalyzer.schedulePropagation(transition, getTypesInternal());
         }
@@ -522,8 +521,8 @@ public class DependencyNode implements ValueDependencyInfo {
             }
 
             if (node.transitions != null) {
-                for (ObjectCursor<DependencyNodeToNodeTransition> cursor : node.transitionList) {
-                    DependencyNodeToNodeTransition transition = cursor.value;
+                for (ObjectCursor<Transition> cursor : node.transitionList) {
+                    Transition transition = cursor.value;
                     if (transition.filter == null && transition.destination.typeSet == typeSet
                             && !visited.contains(transition.destination) && transition.isDestSubsetOfSrc()) {
                         stack.push(transition.destination);

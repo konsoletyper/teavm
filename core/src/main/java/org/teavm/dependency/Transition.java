@@ -22,7 +22,7 @@ import java.util.Collection;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ValueType;
 
-class DependencyNodeToNodeTransition  {
+class Transition {
     DependencyNode source;
     DependencyNode destination;
     DependencyTypeFilter filter;
@@ -30,7 +30,7 @@ class DependencyNodeToNodeTransition  {
     IntHashSet pendingTypes;
     byte destSubsetOfSrc;
 
-    DependencyNodeToNodeTransition(DependencyNode source, DependencyNode destination, DependencyTypeFilter filter) {
+    Transition(DependencyNode source, DependencyNode destination, DependencyTypeFilter filter) {
         this.source = source;
         this.destination = destination;
         this.filter = filter;
@@ -79,7 +79,7 @@ class DependencyNodeToNodeTransition  {
     }
 
     boolean shouldMergeDomains() {
-        if (filter != null) {
+        if (filter != null || !isDestSubsetOfSrc()) {
             return false;
         }
         if (destination.typeSet == null) {

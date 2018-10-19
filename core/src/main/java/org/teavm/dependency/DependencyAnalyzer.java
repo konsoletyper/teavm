@@ -75,7 +75,7 @@ public class DependencyAnalyzer implements DependencyInfo {
     private CachedMapper<String, ClassDependency> classCache;
     private List<DependencyListener> listeners = new ArrayList<>();
     private ServiceRepository services;
-    private Deque<DependencyNodeToNodeTransition> pendingTransitions = new ArrayDeque<>();
+    private Deque<Transition> pendingTransitions = new ArrayDeque<>();
     private Deque<Runnable> tasks = new ArrayDeque<>();
     private Queue<Runnable> deferredTasks = new ArrayDeque<>();
     List<DependencyType> types = new ArrayList<>();
@@ -275,7 +275,7 @@ public class DependencyAnalyzer implements DependencyInfo {
         }
     }
 
-    void schedulePropagation(DependencyNodeToNodeTransition consumer, DependencyType type) {
+    void schedulePropagation(Transition consumer, DependencyType type) {
         if (!consumer.destination.filter(type)) {
             return;
         }
@@ -294,7 +294,7 @@ public class DependencyAnalyzer implements DependencyInfo {
         }
     }
 
-    void schedulePropagation(DependencyNodeToNodeTransition consumer, DependencyType[] types) {
+    void schedulePropagation(Transition consumer, DependencyType[] types) {
         if (types.length == 0) {
             return;
         }
@@ -630,7 +630,7 @@ public class DependencyAnalyzer implements DependencyInfo {
 
     private void processNodeToNodeTransitionQueue() {
         while (!pendingTransitions.isEmpty()) {
-            DependencyNodeToNodeTransition transition = pendingTransitions.remove();
+            Transition transition = pendingTransitions.remove();
             IntSet pendingTypes = transition.pendingTypes;
             transition.pendingTypes = null;
             if (pendingTypes.size() == 1) {
