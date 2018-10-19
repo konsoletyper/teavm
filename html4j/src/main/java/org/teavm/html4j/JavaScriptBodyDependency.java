@@ -40,6 +40,7 @@ import org.teavm.model.ValueType;
 public class JavaScriptBodyDependency extends AbstractDependencyListener {
     private DependencyNode allClassesNode;
     private Map<MethodReference, Set<MethodReference>> reachedMethods = new HashMap<>();
+    Set<MethodReference> virtualMethods = new HashSet<>();
 
     @Override
     public void started(DependencyAgent agent) {
@@ -138,6 +139,11 @@ public class JavaScriptBodyDependency extends AbstractDependencyListener {
         agent.linkMethod(JavaScriptConvGenerator.valueOfShortMethod, location).use();
 
         agent.linkMethod(JavaScriptConvGenerator.valueOfLongMethod, location).use();
+
+        allClassesNode.propagate(agent.getType("java.lang.Integer"));
+        allClassesNode.propagate(agent.getType("java.lang.Float"));
+        allClassesNode.propagate(agent.getType("java.lang.Double"));
+        allClassesNode.propagate(agent.getType("java.lang.String"));
     }
 
     class GeneratorJsCallback extends JsCallback {
@@ -198,10 +204,12 @@ public class JavaScriptBodyDependency extends AbstractDependencyListener {
             if (method == null) {
                 return;
             }
+            virtualMethods.add(method.getReference());
             MethodDependency methodDep = agent.linkMethod(method.getReference(), location);
             methodDep.use();
             for (int i = 0; i < methodDep.getParameterCount(); ++i) {
                 allClassesNode.connect(methodDep.getVariable(i));
+                allClassesNode.connect(methodDep.getVariable(i).getArrayItem());
             }
         }
     }
