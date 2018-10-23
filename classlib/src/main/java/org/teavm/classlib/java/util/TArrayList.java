@@ -21,7 +21,7 @@ import org.teavm.classlib.java.lang.*;
 import org.teavm.classlib.java.util.function.TUnaryOperator;
 import org.teavm.interop.Rename;
 
-public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSerializable {
+public class TArrayList<E> extends TAbstractList<E> implements TCloneable, TSerializable, TRandomAccess {
     private E[] array;
     private int size;
 

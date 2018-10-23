@@ -224,7 +224,7 @@ public class TCollections extends TObject {
             reverse(list, 0, list.size());
         } else {
             TList<Object> randomAccess = new TArrayList<>(list);
-            reverse(list, 0, list.size());
+            reverse(randomAccess, 0, randomAccess.size());
             list.clear();
             ((TList<Object>) list).addAll(randomAccess);
         }
