@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2018 ScraM Team.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,21 +13,34 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.jso.browser;
+package org.teavm.jso.geolocation;
 
-import org.teavm.jso.JSBody;
-import org.teavm.jso.geolocation.Geolocation;
+import org.teavm.jso.JSObject;
+import org.teavm.jso.JSProperty;
 
-public final class Navigator {
-    private Navigator() {
-    }
+/**
+ *
+ * @author ScraM Team
+ */
+public interface Coordinates extends JSObject {
+  @JSProperty
+  double getLatitude();
 
-    @JSBody(script = "return navigator.onLine;")
-    public static native boolean isOnline();
+  @JSProperty
+  double getLongitude();
 
-    @JSBody(script = "return navigator.geolocation;")
-    public static native Geolocation getGeolocation();
+  @JSProperty
+  double getAltitude();
 
-    @JSBody(script = "return (\"geolocation\" in navigator);")
-    public static native boolean isGeolocationAvailable();
+  @JSProperty
+  double getAccuracy();
+
+  @JSProperty
+  double getAltitudeAccuracy();
+
+  @JSProperty
+  double getHeading();
+
+  @JSProperty
+  double getSpeed();
 }
