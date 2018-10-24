@@ -84,7 +84,7 @@ class IrreducibleGraphConverter {
         // Find shared dominator
         int sharedDom = scc[0];
         for (int i = 1; i < scc.length; ++i) {
-            sharedDom = djGraph.getDomTree().commonDominatorOf(sharedDom, scc[i]);
+            sharedDom = djGraph.commonDominatorOf(sharedDom, scc[i]);
         }
 
         for (int i = 0; i < scc.length; ++i) {
@@ -103,7 +103,7 @@ class IrreducibleGraphConverter {
         }
         for (int i = 0; i < scc.length; ++i) {
             int node = scc[i];
-            int idom = djGraph.getDomTree().immediateDominatorOf(node);
+            int idom = djGraph.immediateDominatorOf(node);
             if (idom != sharedDom) {
                 partitions.union(i, sccBack[idom]);
             }
