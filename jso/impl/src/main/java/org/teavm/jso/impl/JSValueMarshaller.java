@@ -462,7 +462,7 @@ class JSValueMarshaller {
         return result;
     }
 
-    private Variable unwrapFunctor(CallLocation location, Variable var, ClassReader type) {
+    Variable unwrapFunctor(CallLocation location, Variable var, ClassReader type) {
         if (!isProperFunctor(type)) {
             diagnostics.error(location, "Wrong functor: {{c0}}", type.getName());
             return var;

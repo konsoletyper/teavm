@@ -61,6 +61,7 @@ import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
@@ -252,23 +253,53 @@ class JSClassProcessor {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
-                if (!(insn instanceof InvokeInstruction)) {
-                    continue;
-                }
-                InvokeInstruction invoke = (InvokeInstruction) insn;
+                if (insn instanceof CastInstruction) {
+                    replacement.clear();
+                    CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
+                    if (processCast((CastInstruction) insn, callLocation)) {
+                        insn.insertNextAll(replacement);
+                        insn.delete();
+                    }
+                } else if (insn instanceof InvokeInstruction) {
+                    InvokeInstruction invoke = (InvokeInstruction) insn;
 
-                MethodReader method = getMethod(invoke.getMethod());
-                if (method == null) {
-                    continue;
-                }
-                CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
-                replacement.clear();
-                if (processInvocation(method, callLocation, invoke, methodToProcess)) {
-                    insn.insertNextAll(replacement);
-                    insn.delete();
+                    MethodReader method = getMethod(invoke.getMethod());
+                    if (method == null) {
+                        continue;
+                    }
+                    CallLocation callLocation = new CallLocation(methodToProcess.getReference(), insn.getLocation());
+                    replacement.clear();
+                    if (processInvocation(method, callLocation, invoke, methodToProcess)) {
+                        insn.insertNextAll(replacement);
+                        insn.delete();
+                    }
                 }
             }
         }
+    }
+
+    private boolean processCast(CastInstruction cast, CallLocation location) {
+        if (!(cast.getTargetType() instanceof ValueType.Object)) {
+            return false;
+        }
+
+        String targetClassName = ((ValueType.Object) cast.getTargetType()).getClassName();
+        if (!typeHelper.isJavaScriptClass(targetClassName)) {
+            return false;
+        }
+        ClassReader targetClass = classSource.get(targetClassName);
+        if (targetClass.getAnnotations().get(JSFunctor.class.getName()) == null) {
+            return false;
+        }
+
+        Variable result = marshaller.unwrapFunctor(location, cast.getValue(), targetClass);
+        AssignInstruction assign = new AssignInstruction();
+        assign.setLocation(location.getSourceLocation());
+        assign.setAssignee(result);
+        assign.setReceiver(cast.getReceiver());
+        replacement.add(assign);
+
+        return true;
     }
 
     private boolean processInvocation(MethodReader method, CallLocation callLocation, InvokeInstruction invoke,
