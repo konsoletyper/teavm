@@ -54,6 +54,9 @@ script:
   - popd
   - rm -rf $BASE_PATH/tests/target/js-tests
   - rm -rf $BASE_PATH/html4j/target/js-tests
+  - du -sh *
+  - du -sh /home/travis/.[!.]* *
+  - df
 
 after_success: >
    if [[ "${TRAVIS_PULL_REQUEST:-unknown}" == "false" && $TRAVIS_BRANCH == dev-* ]] ; then
