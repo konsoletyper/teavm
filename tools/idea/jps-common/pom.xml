@@ -71,6 +71,12 @@
       <version>${idea.version}</version>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.teavm.idea</groupId>
+      <artifactId>jps-builders-6</artifactId>
+      <version>${idea.version}</version>
+      <scope>provided</scope>
+    </dependency>
 
     <dependency>
       <groupId>org.teavm.idea</groupId>

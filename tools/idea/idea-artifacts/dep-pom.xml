@@ -273,6 +273,17 @@
             </configuration>
           </execution>
           <execution>
+            <id>jps-builders-6</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <file>dependencies/idea/lib/jps-builders-6.jar</file>
+              <artifactId>jps-builders-6</artifactId>
+            </configuration>
+          </execution>
+          <execution>
             <id>log4j</id>
             <goals>
               <goal>install-file</goal>
