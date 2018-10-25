@@ -38,6 +38,7 @@ install:
   - npm install
   - npm run build
   - popd
+  - rm -rf $BASE_PATH/idea-artifacts/dependencies
 
 script:
   - mvn -e test -Dteavm.junit.optimized=false -Dteavm.junit.js.runner=none
@@ -52,6 +53,8 @@ script:
   - node start.js $BASE_PATH/html4j/target/js-tests
   - kill $FIREFOX_PID
   - popd
+  - rm -rf $BASE_PATH/tests/target/js-tests
+  - rm -rf $BASE_PATH/html4j/target/js-tests
 
 after_success: >
    if [[ "${TRAVIS_PULL_REQUEST:-unknown}" == "false" && $TRAVIS_BRANCH == dev-* ]] ; then
