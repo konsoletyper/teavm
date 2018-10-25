@@ -11,7 +11,6 @@ cache:
   directories:
   - $HOME/.m2
   - $HOME/.node_modules
-  - $HOME/.chromium_dist
 branches:
   only:
     - master
