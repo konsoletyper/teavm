@@ -19,9 +19,9 @@ branches:
     - /^dev-.+/
 
 before_install:
-  - MVN_CMD='mvn -Dmaven.repo.local=$HOME/mvn_repo'
+  - alias mvn='mvn -Dmaven.repo.local=$HOME/mvn_repo'
   - nvm install 7
-  - OLD_VERSION=`$MVN_CMD help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
+  - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
   - BASE_VERSION=${OLD_VERSION%-SNAPSHOT}
   - NEW_VERSION=${BASE_VERSION}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
   - ECLIPSE_VERSION=${BASE_VERSION}.dev_`printf %d $TRAVIS_BUILD_NUMBER`
@@ -35,7 +35,7 @@ before_install:
   - rm -rf $HOME/.m2
 
 install:
-  - $MVN_CMD install -Dteavm.build.all=false -P with-idea -P with-eclipse -P with-cli -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+  - mvn install -Dteavm.build.all=false -P with-idea -P with-eclipse -P with-cli -DskipTests=true -Dmaven.javadoc.skip=true -B -V
   - pushd tests/src/test/js
   - npm config set prefix=$HOME/.node_modules
   - npm install
@@ -45,7 +45,7 @@ install:
   - rm -rf $HOME/mvn_repo/org/teavm/idea
 
 script:
-  - $MVN_CMD -e test -Dteavm.junit.optimized=false -Dteavm.junit.js.runner=none
+  - mvn -e test -Dteavm.junit.optimized=false -Dteavm.junit.js.runner=none
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
   - "export DISPLAY=:99.0"
@@ -69,7 +69,7 @@ after_success: >
      export TEAVM_FTP_HOST
      export TEAVM_FTP_LOGIN
      export TEAVM_FTP_PASSWORD
-     $MVN_CMD deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
+     mvn deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
      ./upload-files.sh
    fi
 after_script:
