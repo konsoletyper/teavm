@@ -19,7 +19,7 @@ branches:
     - /^dev-.+/
 
 before_install:
-  - export MVN_CMD="mvn -Dmaven.repo.local=$HOME/mvn_repo"
+  - export MVN_CMD="mvn -Dmaven.repo.local=$HOME/mvn_repo -B"
   - nvm install 7
   - OLD_VERSION=`$MVN_CMD help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
   - BASE_VERSION=${OLD_VERSION%-SNAPSHOT}
@@ -35,7 +35,7 @@ before_install:
   - rm -rf $HOME/.m2
 
 install:
-  - $MVN_CMD install -Dteavm.build.all=false -P with-idea -P with-eclipse -P with-cli -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+  - $MVN_CMD install -Dteavm.build.all=false -P with-idea -P with-eclipse -P with-cli -DskipTests=true -Dmaven.javadoc.skip=true -V
   - pushd tests/src/test/js
   - npm config set prefix=$HOME/.node_modules
   - npm install
@@ -68,8 +68,9 @@ after_success: >
      export TEAVM_FTP_HOST
      export TEAVM_FTP_LOGIN
      export TEAVM_FTP_PASSWORD
-     $MVN_CMD deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
-     ./upload-files.sh
+     $MVN_CMD deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml \
+       -P deploy-to-bintray-P with-idea && \
+       ./upload-files.sh
    fi
-after_script:
-  - rm -rf $HOME/.m2/repository/org/teavm
+before_cache:
+  - rm -rf $HOME/mvn_repo/org/teavm

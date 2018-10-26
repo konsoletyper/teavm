@@ -227,6 +227,9 @@
                 <goal>jar</goal>
               </goals>
               <phase>post-integration-test</phase>
+              <configuration>
+                <quiet>true</quiet>
+              </configuration>
             </execution>
           </executions>
           <configuration>
