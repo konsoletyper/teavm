@@ -1,9 +1,9 @@
 #!/bin/sh
 
-mvn versions:set -DnewVersion=$1 -DgenerateBackupPoms=false
+$MVN_CMD versions:set -DnewVersion=$1 -DgenerateBackupPoms=false
 
 cd tools/eclipse
-mvn tycho-versions:set-version -DnewVersion=$2
+$MVN_CMD tycho-versions:set-version -DnewVersion=$2
 
 cd core-plugin
 sed -r -i -e "s/<version><!-- update -->(.+)<\/version>/<version><!-- update -->$1<\/version>/" dep-pom.xml
