@@ -69,7 +69,7 @@ after_success: >
      export TEAVM_FTP_LOGIN
      export TEAVM_FTP_PASSWORD
      $MVN_CMD deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml \
-       -P deploy-to-bintray-P with-idea && \
+       -P deploy-to-bintray -P with-idea && \
        ./upload-files.sh
    fi
 before_cache:
