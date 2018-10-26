@@ -42,7 +42,6 @@ install:
   - npm run build
   - popd
   - rm -rf tools/idea/idea-artifacts/dependencies
-  - rm -rf $HOME/mvn_repo/org/teavm/idea
 
 script:
   - $MVN_CMD -e test -Dteavm.junit.optimized=false -Dteavm.junit.js.runner=none
@@ -59,7 +58,7 @@ script:
   - popd
   - rm -rf $BASE_PATH/tests/target/js-tests
   - rm -rf $BASE_PATH/html4j/target/js-tests
-  - du -sh /home/travis/.[!.]* /home/travis/* | sort -h
+  - du -sh $HOME/.[!.]* /home/travis/* | sort -h
   - df
 
 after_success: >
@@ -68,9 +67,10 @@ after_success: >
      export TEAVM_FTP_HOST
      export TEAVM_FTP_LOGIN
      export TEAVM_FTP_PASSWORD
+     mv -f $HOME/built_artifacts_backup $HOME/mvn_repo/org/teavm
      $MVN_CMD deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml \
-       -P deploy-to-bintray -P with-idea && \
+       -P deploy-to-bintray -P with-idea -P !download-dependencies \
        ./upload-files.sh
    fi
 before_cache:
-  - rm -rf $HOME/mvn_repo/org/teavm
+  - mv -f $HOME/mvn_repo/org/teavm $HOME/built_artifacts_backup
