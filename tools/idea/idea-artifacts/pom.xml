@@ -58,6 +58,7 @@
                     <item>install</item>
                     <item>-Didea.version=${idea.version}</item>
                     <item>-Dteavm.version=${project.version}</item>
+                    <item>-Dmaven.repo.local=${settings.localRepository}</item>
                   </arguments>
                 </configuration>
               </execution>
