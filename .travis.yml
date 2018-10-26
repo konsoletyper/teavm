@@ -9,7 +9,7 @@ jdk:
 
 cache:
   directories:
-  - $HOME/.m2
+  - $HOME/mvn_repo
   - $HOME/.node_modules
 branches:
   only:
@@ -19,8 +19,9 @@ branches:
     - /^dev-.+/
 
 before_install:
+  - MVN_CMD='mvn -Dmaven.repo.local=$HOME/mvn_repo'
   - nvm install 7
-  - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
+  - OLD_VERSION=`$MVN_CMD help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
   - BASE_VERSION=${OLD_VERSION%-SNAPSHOT}
   - NEW_VERSION=${BASE_VERSION}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
   - ECLIPSE_VERSION=${BASE_VERSION}.dev_`printf %d $TRAVIS_BUILD_NUMBER`
@@ -29,18 +30,22 @@ before_install:
   - export BASE_VERSION
   - echo "Building version $NEW_VERSION"
   - ./set-version.sh $NEW_VERSION $ECLIPSE_VERSION
+  - rm -rf $HOME/.phpenv
+  - rm -rf $HOME/.rvm
+  - rm -rf $HOME/.m2
 
 install:
-  - mvn install -Dteavm.build.all=false -P with-idea -P with-eclipse -P with-cli -DskipTests=true -Dmaven.javadoc.skip=true -B -V
+  - $MVN_CMD install -Dteavm.build.all=false -P with-idea -P with-eclipse -P with-cli -DskipTests=true -Dmaven.javadoc.skip=true -B -V
   - pushd tests/src/test/js
   - npm config set prefix=$HOME/.node_modules
   - npm install
   - npm run build
   - popd
-  - rm -rf $BASE_PATH/idea-artifacts/dependencies
+  - rm -rf $BASE_PATH/tools/idea/idea-artifacts/dependencies
+  - rm -rf $HOME/mvn_repo/org/teavm/idea
 
 script:
-  - mvn -e test -Dteavm.junit.optimized=false -Dteavm.junit.js.runner=none
+  - $MVN_CMD -e test -Dteavm.junit.optimized=false -Dteavm.junit.js.runner=none
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
   - "export DISPLAY=:99.0"
@@ -54,7 +59,7 @@ script:
   - popd
   - rm -rf $BASE_PATH/tests/target/js-tests
   - rm -rf $BASE_PATH/html4j/target/js-tests
-  - du -sh *
+  - du -sh /*
   - du -sh /home/travis/.[!.]* *
   - df
 
@@ -64,7 +69,7 @@ after_success: >
      export TEAVM_FTP_HOST
      export TEAVM_FTP_LOGIN
      export TEAVM_FTP_PASSWORD
-     mvn deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
+     $MVN_CMD deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
      ./upload-files.sh
    fi
 after_script:
