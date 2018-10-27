@@ -128,7 +128,7 @@ async function walkDir(path, name, suite) {
                     case "js":
                         suite.testCases.push(new TestCase(
                             "js", name + " " + profileName,
-                            [SERVER_PREFIX + path + "/" + RUNTIME_FILE_NAME, SERVER_PREFIX + path + "/" + fileName]));
+                            [SERVER_PREFIX + path + "/" + fileName]));
                         break;
                     case "wasm":
                         suite.testCases.push(new TestCase(
