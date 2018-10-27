@@ -19,14 +19,17 @@ import org.teavm.classlib.java.io.TIOException;
 import org.teavm.classlib.java.io.TOutputStream;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
-import org.teavm.platform.Platform;
+import org.teavm.jso.JSBody;
 
 class TConsoleOutputStreamStderr extends TOutputStream {
     @Override
     @DelegateTo("writeLowLevel")
     public void write(int b) throws TIOException {
-        Platform.getConsole().error(b);
+        writeJs(b);
     }
+
+    @JSBody(params = "b", script = "$rt_putStderr(b);")
+    private static native void writeJs(int b);
 
     private void writeLowLevel(int b) {
         writeImpl(b);

@@ -14,7 +14,6 @@
  *  limitations under the License.
  */
 "use strict";
-var $rt_global = this;
 var $rt_seed = 2463534242;
 function $rt_nextId() {
     var x = $rt_seed;

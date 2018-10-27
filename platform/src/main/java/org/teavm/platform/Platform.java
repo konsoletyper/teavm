@@ -24,6 +24,8 @@ import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.browser.Window;
+import org.teavm.jso.core.JSString;
 import org.teavm.platform.metadata.ClassResource;
 import org.teavm.platform.metadata.StaticFieldResource;
 import org.teavm.platform.plugin.PlatformGenerator;
@@ -83,10 +85,6 @@ public final class Platform {
     @PluggableDependency(PlatformGenerator.class)
     @Unmanaged
     public static native Class<?> asJavaClass(PlatformObject obj);
-
-    public static PlatformConsole getConsole() {
-        return (PlatformConsole) getGlobal();
-    }
 
     @JSBody(script = "return $rt_nextId();")
     public static native int nextObjectId();
@@ -191,14 +189,14 @@ public final class Platform {
     public static native int schedule(PlatformRunnable runnable, int timeout);
 
     public static void killSchedule(int id) {
-        ((PlatformHelper) getGlobal()).killSchedule(id);
+        Window.clearTimeout(id);
     }
 
     @JSBody(script = "return [];")
     public static native <T> PlatformQueue<T> createQueue();
 
     public static PlatformString stringFromCharCode(int charCode) {
-        return ((PlatformHelper) getGlobal()).getStringClass().fromCharCode(charCode);
+        return JSString.fromCharCode(charCode).cast();
     }
 
     @DelegateTo("isPrimitiveLowLevel")
@@ -231,7 +229,4 @@ public final class Platform {
     public static String getName(PlatformClass cls) {
         return cls.getMetadata().getName();
     }
-
-    @JSBody(script = "return $rt_global;")
-    private static native JSObject getGlobal();
 }
