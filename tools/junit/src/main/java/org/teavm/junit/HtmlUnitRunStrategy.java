@@ -58,7 +58,6 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        page.get().executeJavaScript(readFile(new File(run.getBaseDirectory(), "runtime.js")));
         page.get().executeJavaScript(readFile(new File(run.getBaseDirectory(), run.getFileName())));
 
         AsyncResult asyncResult = new AsyncResult();

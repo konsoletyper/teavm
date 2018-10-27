@@ -46,7 +46,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.PosixParser;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
-import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
@@ -230,22 +229,6 @@ public final class TeaVMRunner {
             tool.setMinifying(true);
         } else {
             tool.setMinifying(false);
-        }
-        if (commandLine.hasOption("r")) {
-            switch (commandLine.getOptionValue("r")) {
-                case "separate":
-                    tool.setRuntime(RuntimeCopyOperation.SEPARATE);
-                    break;
-                case "merge":
-                    tool.setRuntime(RuntimeCopyOperation.MERGED);
-                    break;
-                case "none":
-                    tool.setRuntime(RuntimeCopyOperation.NONE);
-                    break;
-                default:
-                    System.err.println("Wrong parameter for -r option specified");
-                    printUsage();
-            }
         }
     }
 

@@ -39,10 +39,6 @@ public interface TeaVMProfile {
 
     void setTargetFileName(String targetFileName);
 
-    TeaVMRuntimeMode getRuntimeMode();
-
-    void setRuntimeMode(TeaVMRuntimeMode runtimeMode);
-
     boolean isIncremental();
 
     void setIncremental(boolean incremental);

@@ -424,7 +424,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     }
 
     private void copyJsFilesTo(File path) throws IOException {
-        resourceToFile("org/teavm/backend/javascript/runtime.js", new File(path, "runtime.js"));
         resourceToFile("org/teavm/backend/wasm/wasm-runtime.js", new File(path, "test.wasm-runtime.js"));
         resourceToFile("teavm-run-test.html", new File(path, "run-test.html"));
         resourceToFile("teavm-run-test-wasm.html", new File(path, "run-test-wasm.html"));

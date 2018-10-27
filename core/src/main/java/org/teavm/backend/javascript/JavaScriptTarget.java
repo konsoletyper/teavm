@@ -45,6 +45,7 @@ import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
 import org.teavm.backend.javascript.rendering.Renderer;
 import org.teavm.backend.javascript.rendering.RenderingContext;
+import org.teavm.backend.javascript.rendering.RuntimeRenderer;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.InjectedBy;
@@ -292,6 +293,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         renderingContext.setMinifying(minifying);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
                 controller.getDiagnostics(), renderingContext);
+        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(naming, sourceWriter);
         renderer.setProperties(controller.getProperties());
         renderer.setMinifying(minifying);
         if (debugEmitter != null) {
@@ -319,7 +321,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             int start = sourceWriter.getOffset();
             sourceWriter.append("\"use strict\";").newLine();
             renderer.prepare(clsNodes);
-            renderer.renderRuntime();
+            runtimeRenderer.renderRuntime();
             renderer.render(clsNodes);
             renderer.renderStringPool();
             renderer.renderStringConstants();

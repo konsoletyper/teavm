@@ -70,7 +70,6 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
-import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
 import org.teavm.tooling.sources.DirectorySourceFileProvider;
@@ -152,7 +151,6 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         tool.setTargetDirectory(new File(varManager.performStringSubstitution(targetDir, false)));
         tool.setTargetFileName(profile.getTargetFileName());
         tool.setMinifying(false);
-        tool.setRuntime(mapRuntime(profile.getRuntimeMode()));
         tool.setMainClass(profile.getMainClass());
         tool.getProperties().putAll(profile.getProperties());
         tool.setIncremental(profile.isIncremental());
@@ -207,17 +205,6 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
                 job.schedule();
              }
          }
-    }
-
-    private RuntimeCopyOperation mapRuntime(TeaVMRuntimeMode runtimeMode) {
-        switch (runtimeMode) {
-            case MERGE:
-                return RuntimeCopyOperation.MERGED;
-            case SEPARATE:
-                return RuntimeCopyOperation.SEPARATE;
-            default:
-                return RuntimeCopyOperation.NONE;
-        }
     }
 
     private void classesToResources(ProfileData profileData, TeaVMTool tool) {

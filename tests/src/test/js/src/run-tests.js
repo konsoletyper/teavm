@@ -20,7 +20,6 @@ import * as http from "http";
 import {server as WebSocketServer} from "websocket";
 
 const TEST_FILE_NAME = "test.js";
-const RUNTIME_FILE_NAME = "runtime.js";
 const WASM_RUNTIME_FILE_NAME = "test.wasm-runtime.js";
 const TEST_FILES = [
     { file: TEST_FILE_NAME, name: "simple", type: "js" },
@@ -122,7 +121,7 @@ async function serveFile(path, response) {
 
 async function walkDir(path, name, suite) {
     const files = await fs.readdir(rootDir + "/" + path);
-    if (files.includes(WASM_RUNTIME_FILE_NAME) || files.includes(RUNTIME_FILE_NAME)) {
+    if (files.includes(WASM_RUNTIME_FILE_NAME) || files.includes("test.js")) {
         for (const { file: fileName, name: profileName, type: type } of TEST_FILES) {
             if (files.includes(fileName)) {
                 switch (type) {

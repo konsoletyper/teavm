@@ -25,7 +25,6 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
-import org.teavm.tooling.RuntimeCopyOperation;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
@@ -56,9 +55,6 @@ public class TeaVMCompileMojo extends AbstractTeaVMMojo {
     private boolean stopOnErrors = true;
 
     @Parameter
-    protected RuntimeCopyOperation runtime = RuntimeCopyOperation.SEPARATE;
-
-    @Parameter
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.SIMPLE;
 
     @Parameter
@@ -84,7 +80,6 @@ public class TeaVMCompileMojo extends AbstractTeaVMMojo {
         tool.setLog(new MavenTeaVMToolLog(log));
         try {
             tool.setMainClass(mainClass);
-            tool.setRuntime(runtime);
             if (!targetFileName.isEmpty()) {
                 tool.setTargetFileName(targetFileName);
             }

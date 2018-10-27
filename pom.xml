@@ -72,6 +72,7 @@
     <jackson.version>2.6.2</jackson.version>
     <idea.version>2017.3.5</idea.version>
     <asm.version>6.1.1</asm.version>
+    <rhino.version>1.7.7</rhino.version>
 
     <teavm.test.incremental>false</teavm.test.incremental>
     <teavm.test.threads>1</teavm.test.threads>
@@ -200,6 +201,11 @@
         <groupId>com.fasterxml.jackson.core</groupId>
         <artifactId>jackson-databind</artifactId>
         <version>${jackson.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.mozilla</groupId>
+        <artifactId>rhino</artifactId>
+        <version>${rhino.version}</version>
       </dependency>
     </dependencies>
   </dependencyManagement>

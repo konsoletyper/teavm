@@ -30,6 +30,7 @@ import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
 import org.mozilla.javascript.ast.FunctionNode;
+import org.teavm.backend.javascript.rendering.JSParser;
 import org.teavm.cache.NoCache;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Sync;

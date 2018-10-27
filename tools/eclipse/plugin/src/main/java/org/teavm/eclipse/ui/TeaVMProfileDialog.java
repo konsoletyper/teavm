@@ -66,11 +66,8 @@ import org.eclipse.ui.model.WorkbenchLabelProvider;
 import org.eclipse.ui.views.navigator.ResourceComparator;
 import org.teavm.eclipse.TeaVMProfile;
 import org.teavm.eclipse.TeaVMProjectSettings;
-import org.teavm.eclipse.TeaVMRuntimeMode;
 
 public class TeaVMProfileDialog extends Dialog {
-    private static List<TeaVMRuntimeMode> runtimeModes = Arrays.asList(TeaVMRuntimeMode.SEPARATE,
-            TeaVMRuntimeMode.MERGE, TeaVMRuntimeMode.NONE);
     private TabFolder tabFolder;
     private Text nameField;
     private Text mainClassField;
@@ -79,7 +76,6 @@ public class TeaVMProfileDialog extends Dialog {
     private Button targetDirectoryWorkspaceButton;
     private Button targetDirectoryFileSystemButton;
     private Text targetFileNameField;
-    private Combo runtimeField;
     private Button incrementalButton;
     private Text cacheDirectoryField;
     private Button cacheDirectoryWorkspaceButton;
@@ -176,7 +172,6 @@ public class TeaVMProfileDialog extends Dialog {
         Group group = createGroup(parent, "Output settings", 4, false);
         createTargetDirectoryField(group);
         createTargetFileNameField(group);
-        createRuntimeField(group);
     }
 
     private void createIncrementalGroup(Composite parent) {
@@ -425,17 +420,6 @@ public class TeaVMProfileDialog extends Dialog {
         targetFileNameField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, true, false, 3, 1));
     }
 
-    private void createRuntimeField(Composite container) {
-        Label label = new Label(container, SWT.NONE);
-        label.setText("Attach &runtime:");
-
-        runtimeField = new Combo(container, SWT.DROP_DOWN | SWT.READ_ONLY);
-        runtimeField.setLayoutData(new GridData(SWT.FILL, SWT.CENTER, false, false, 3, 1));
-        runtimeField.add("as a separate file (runtime.js)");
-        runtimeField.add("merge into output file");
-        runtimeField.add("don't attach");
-    }
-
     private void createIncrementalField(Composite container) {
         incrementalButton = new Button(container, SWT.CHECK);
         incrementalButton.setLayoutData(new GridData(SWT.LEFT, SWT.CENTER, false, false, 4, 1));
@@ -626,7 +610,6 @@ public class TeaVMProfileDialog extends Dialog {
         mainClassField.setText(profile.getMainClass() != null ? profile.getMainClass() : "");
         targetDirectoryField.setText(profile.getTargetDirectory());
         targetFileNameField.setText(profile.getTargetFileName());
-        runtimeField.select(runtimeModes.indexOf(profile.getRuntimeMode()));
         incrementalButton.setSelection(profile.isIncremental());
         cacheDirectoryField.setText(profile.getCacheDirectory());
         debugInformationButton.setSelection(profile.isDebugInformationGenerated());
@@ -663,7 +646,6 @@ public class TeaVMProfileDialog extends Dialog {
         profile.setMainClass(!mainClass.isEmpty() ? mainClass : null);
         profile.setTargetDirectory(targetDirectoryField.getText());
         profile.setTargetFileName(targetFileNameField.getText().trim());
-        profile.setRuntimeMode(runtimeModes.get(runtimeField.getSelectionIndex()));
         profile.setIncremental(incrementalButton.getSelection());
         profile.setCacheDirectory(cacheDirectoryField.getText());
         profile.setDebugInformationGenerated(debugInformationButton.getSelection());

@@ -23,7 +23,6 @@ import org.eclipse.m2e.core.project.configurator.ProjectConfigurationRequest;
 import org.teavm.eclipse.TeaVMEclipsePlugin;
 import org.teavm.eclipse.TeaVMProfile;
 import org.teavm.eclipse.TeaVMProjectSettings;
-import org.teavm.eclipse.TeaVMRuntimeMode;
 
 public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
     private static final String TOOL_ID = "teavm-eclipse-m2e-plugin.tool";
@@ -88,7 +87,7 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
 
     private void configureProfile(MojoExecution execution, TeaVMProfile profile, IProgressMonitor monitor)
             throws CoreException {
-        monitor.beginTask("Configuring profile " + profile.getName(), 110);
+        monitor.beginTask("Configuring profile " + profile.getName(), 100);
         String buildDir = getProjectBuildDirectory();
 
         String mainClass = maven.getMojoParameterValue(mavenSession, execution, "mainClass", String.class);
@@ -102,10 +101,6 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
 
         String targetFileName = maven.getMojoParameterValue(mavenSession, execution, "targetFileName", String.class);
         profile.setTargetFileName(targetFileName != null ? targetFileName : "classes.js");
-        monitor.worked(10);
-
-        String runtime = maven.getMojoParameterValue(mavenSession, execution, "runtime", String.class);
-        profile.setRuntimeMode(runtime != null ? getRuntimeMode(runtime) : TeaVMRuntimeMode.SEPARATE);
         monitor.worked(10);
 
         Properties properties = maven.getMojoParameterValue(mavenSession, execution, "properties", Properties.class);
@@ -182,19 +177,6 @@ public class TeaVMProjectConfigurator extends AbstractProjectConfigurator {
         }
         path = container.getFullPath().toString();
         return varManager.generateVariableExpression("workspace_loc", path) + suffix;
-    }
-
-    private TeaVMRuntimeMode getRuntimeMode(String name) {
-        switch (name) {
-            case "SEPARATE":
-                return TeaVMRuntimeMode.SEPARATE;
-            case "MERGED":
-                return TeaVMRuntimeMode.MERGE;
-            case "NONE":
-                return TeaVMRuntimeMode.NONE;
-            default:
-                return TeaVMRuntimeMode.NONE;
-        }
     }
 
     private String getIdForProfile(MojoExecution pluginExecution) {
