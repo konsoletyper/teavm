@@ -9,12 +9,13 @@
     </content>
     <orderEntry type="jdk" jdkName="IntelliJ IDEA" jdkType="IDEA JDK" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:openapi:2016.3.4" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:annotations:2016.3.4" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:jdom:2016.3.4" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:util:2016.3.4" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:jps-model:2016.3.4" level="project" />
-    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:jps-builders:2016.3.4" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:openapi:2017.3.5" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:annotations:2017.3.5" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:jdom:2017.3.5" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:util:2017.3.5" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:jps-model:2017.3.5" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:jps-builders:2017.3.5" level="project" />
+    <orderEntry type="library" scope="PROVIDED" name="Maven: org.teavm.idea:jps-builders-6:2017.3.5" level="project" />
     <orderEntry type="library" name="Maven: org.teavm.idea:teavm:0.6.0-SNAPSHOT" level="project" />
   </component>
   <component name="teavm">
