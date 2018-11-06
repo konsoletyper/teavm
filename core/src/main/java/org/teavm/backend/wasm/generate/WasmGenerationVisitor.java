@@ -1376,7 +1376,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             }
         }
 
-        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.XOR, expr, new WasmInt32Constant(1));
+        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, expr, new WasmInt32Constant(0));
     }
 
     private boolean isOne(WasmExpression expression) {
