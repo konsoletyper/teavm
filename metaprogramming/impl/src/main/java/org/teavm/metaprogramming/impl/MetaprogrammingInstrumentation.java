@@ -46,7 +46,7 @@ public class MetaprogrammingInstrumentation {
 
     class ClassTransformer extends ClassVisitor {
         ClassTransformer(ClassVisitor cv) {
-            super(Opcodes.ASM5, cv);
+            super(Opcodes.ASM7, cv);
         }
 
         @Override
@@ -60,7 +60,7 @@ public class MetaprogrammingInstrumentation {
         private boolean instrumented;
 
         MethodTransformer(MethodVisitor mv) {
-            super(Opcodes.ASM5, mv);
+            super(Opcodes.ASM7, mv);
         }
 
         @Override

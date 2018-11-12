@@ -28,7 +28,7 @@ class JCLComparisonVisitor extends ClassVisitor {
     private JCLClass jclClass;
 
     public JCLComparisonVisitor(ClassReaderSource classSource, Map<String, JCLPackage> packageMap) {
-        super(Opcodes.ASM5);
+        super(Opcodes.ASM7);
         this.classSource = classSource;
         this.packageMap = packageMap;
     }

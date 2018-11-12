@@ -435,7 +435,7 @@ public class ProgramParser {
     }
 
     // TODO: invokedynamic support (a great task, involving not only parser, but every layer of TeaVM)
-    private MethodVisitor methodVisitor = new MethodVisitor(Opcodes.ASM5) {
+    private MethodVisitor methodVisitor = new MethodVisitor(Opcodes.ASM7) {
         @Override
         public void visitVarInsn(int opcode, int local) {
             switch (opcode) {

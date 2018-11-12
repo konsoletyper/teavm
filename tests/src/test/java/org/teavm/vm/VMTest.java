@@ -163,6 +163,16 @@ public class VMTest {
     }
 
     @Test
+    public void stringConcat() {
+        assertEquals("(23)", surroundWithParentheses(23));
+        assertEquals("(42)", surroundWithParentheses(42));
+    }
+
+    private String surroundWithParentheses(int value) {
+        return "(" + value + ")";
+    }
+
+    @Test
     public void variableReadInCatchBlock() {
         int n = foo();
         try {
