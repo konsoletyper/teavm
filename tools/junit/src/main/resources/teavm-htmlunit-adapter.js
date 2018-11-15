@@ -1,45 +1,22 @@
-function main(callback) {
-    $rt_startThread(function () {
-        var thread = $rt_nativeThread();
-        var instance;
-        var ptr = 0;
-        var message;
-        if (thread.isResuming()) {
-            ptr = thread.pop();
-            instance = thread.pop();
-        }
-        loop: while (true) {
-            switch (ptr) {
-                case 0:
-                    try {
-                        runTest();
-                    } catch (e) {
-                        message = {};
-                        makeErrorMessage(message, e);
-                        break loop;
-                    }
-                    if (thread.isSuspending()) {
-                        thread.push(instance);
-                        thread.push(ptr);
-                        return;
-                    }
-                    message = {};
-                    message.status = "ok";
-                    break loop;
-            }
+function runMain(callback) {
+    main([], function(result) {
+        var message = {};
+        if (result instanceof Error) {
+            makeErrorMessage(message, result);
+        } else {
+            message.status = "ok";
         }
         callback.complete(JSON.stringify(message));
     });
 
     function makeErrorMessage(message, e) {
         message.status = "exception";
-        var stack = e.stack;
+        var stack = "";
         if (e.$javaException && e.$javaException.constructor.$meta) {
-            message.exception = e.$javaException.constructor.$meta.name;
-            message.stack = e.$javaException.constructor.$meta.name + ": ";
-            var exceptionMessage = extractException(e.$javaException);
-            message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
+            stack = e.$javaException.constructor.$meta.name + ": ";
+            stack += e.$javaException.getMessage() || "";
+            stack += "\n";
         }
-        message.stack += "\n" + stack;
+        message.stack = stack + e.stack;
     }
 }

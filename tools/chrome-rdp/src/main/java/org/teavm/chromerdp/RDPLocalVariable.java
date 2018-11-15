@@ -18,11 +18,11 @@ package org.teavm.chromerdp;
 import org.teavm.debugging.javascript.JavaScriptValue;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
-public class RDPLocalVariable implements JavaScriptVariable {
+class RDPLocalVariable implements JavaScriptVariable {
     private String name;
     private RDPValue value;
 
-    public RDPLocalVariable(String name, RDPValue value) {
+    RDPLocalVariable(String name, RDPValue value) {
         this.name = name;
         this.value = value;
     }

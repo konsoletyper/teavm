@@ -645,7 +645,6 @@ public class DebugInformation {
         int[] methods;
     }
 
-
     class MethodTree {
         int[] data;
         int[] offsets;

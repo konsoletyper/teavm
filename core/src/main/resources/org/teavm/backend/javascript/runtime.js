@@ -241,11 +241,6 @@ function $rt_voidcls() {
     }
     return $rt_voidclsCache;
 }
-function $rt_init(cls, constructor, args) {
-    var obj = new cls();
-    cls.prototype[constructor].apply(obj, args);
-    return obj;
-}
 function $rt_throw(ex) {
     throw $rt_exception(ex);
 }
@@ -406,7 +401,7 @@ function $rt_assertNotNaN(value) {
     return value;
 }
 var $rt_stdoutBuffer = "";
-function $rt_putStdout(ch) {
+var $rt_putStdout = typeof $rt_putStdoutCustom === "function" ? $rt_putStdoutCustom : function(ch) {
     if (ch === 0xA) {
         if (console) {
             console.info($rt_stdoutBuffer);
@@ -415,9 +410,9 @@ function $rt_putStdout(ch) {
     } else {
         $rt_stdoutBuffer += String.fromCharCode(ch);
     }
-}
+};
 var $rt_stderrBuffer = "";
-function $rt_putStderr(ch) {
+var $rt_putStderr = typeof $rt_putStderrCustom === "function" ? $rt_putStderrCustom : function(ch) {
     if (ch === 0xA) {
         if (console) {
             console.info($rt_stderrBuffer);
@@ -426,7 +421,7 @@ function $rt_putStderr(ch) {
     } else {
         $rt_stderrBuffer += String.fromCharCode(ch);
     }
-}
+};
 function $rt_metadata(data) {
     var i = 0;
     var packageCount = data[i++];
@@ -500,7 +495,7 @@ function $rt_threadStarter(f) {
     }
 }
 function $rt_mainStarter(f) {
-    return function(args) {
+    return function(args, callback) {
         if (!args) {
             args = [];
         }
@@ -508,8 +503,8 @@ function $rt_mainStarter(f) {
         for (var i = 0; i < args.length; ++i) {
             javaArgs.data[i] = $rt_str(args[i]);
         }
-        $rt_threadStarter(f)(javaArgs);
-    };
+        $rt_startThread(function() { f.call(null, javaArgs); }, callback);
+    }
 }
 var $rt_stringPool_instance;
 function $rt_stringPool(strings) {
@@ -617,14 +612,7 @@ function $rt_nativeThread() {
 function $rt_invalidPointer() {
     throw new Error("Invalid recorded state");
 }
-
-function $dbg_repr(obj) {
-    return obj.toString ? obj.toString() : "";
-}
 function $dbg_class(obj) {
-    if (obj instanceof Long) {
-        return "long";
-    }
     var cls = obj.constructor;
     var arrayDegree = 0;
     while (cls.$meta && cls.$meta.item) {
@@ -649,7 +637,7 @@ function $dbg_class(obj) {
     } else if (cls === $rt_doublecls()) {
         clsName = "double";
     } else {
-        clsName = cls.$meta ? cls.$meta.name : "@" + cls.name;
+        clsName = cls.$meta ? (cls.$meta.name || ("a/" + cls.name)) : "@" + cls.name;
     }
     while (arrayDegree-- > 0) {
         clsName += "[]";
@@ -661,6 +649,9 @@ function Long(lo, hi) {
     this.lo = lo | 0;
     this.hi = hi | 0;
 }
+Long.prototype.__teavm_class__ = function() {
+    return "long";
+};
 Long.prototype.toString = function() {
     var result = [];
     var n = this;
@@ -676,6 +667,9 @@ Long.prototype.toString = function() {
     } while (n.lo !== 0 || n.hi !== 0);
     result = result.reverse().join('');
     return positive ? result : "-" + result;
+};
+Long.prototype.valueOf = function() {
+    return Long_toNumber(this);
 };
 var Long_ZERO = new Long(0, 0);
 var Long_MAX_NORMAL = 1 << 18;

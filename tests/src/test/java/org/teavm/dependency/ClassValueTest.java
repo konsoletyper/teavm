@@ -21,7 +21,6 @@ import org.apache.commons.io.output.ByteArrayOutputStream;
 import org.junit.Test;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMToolLog;
 import org.teavm.vm.TeaVM;
@@ -76,8 +75,9 @@ public class ClassValueTest {
 
     private DependencyInfo runTest(String methodName) {
         TeaVM vm = new TeaVMBuilder(new JavaScriptTarget()).build();
+        vm.add(new DependencyTestPatcher(getClass().getName(), methodName));
         vm.installPlugins();
-        vm.entryPoint(new MethodReference(getClass().getName(), methodName, ValueType.VOID));
+        vm.entryPoint(getClass().getName());
         vm.build(fileName -> new ByteArrayOutputStream(), "tmp");
         if (!vm.getProblemProvider().getSevereProblems().isEmpty()) {
             fail("Code compiled with errors:\n" + describeProblems(vm));

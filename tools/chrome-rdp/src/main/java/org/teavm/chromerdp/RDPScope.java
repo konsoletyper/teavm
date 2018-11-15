@@ -21,12 +21,12 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
 
-public class RDPScope extends AbstractMap<String, RDPLocalVariable> {
+class RDPScope extends AbstractMap<String, RDPLocalVariable> {
     private AtomicReference<Map<String, RDPLocalVariable>> backingMap = new AtomicReference<>();
     private ChromeRDPDebugger debugger;
     private String id;
 
-    public RDPScope(ChromeRDPDebugger debugger, String id) {
+    RDPScope(ChromeRDPDebugger debugger, String id) {
         this.debugger = debugger;
         this.id = id;
     }

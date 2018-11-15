@@ -19,7 +19,7 @@ import java.util.Collections;
 import java.util.Map;
 import org.teavm.debugging.javascript.*;
 
-public class RDPCallFrame implements JavaScriptCallFrame {
+class RDPCallFrame implements JavaScriptCallFrame {
     private JavaScriptDebugger debugger;
     private String chromeId;
     private JavaScriptLocation location;
@@ -27,7 +27,7 @@ public class RDPCallFrame implements JavaScriptCallFrame {
     private JavaScriptValue thisObject;
     private JavaScriptValue closure;
 
-    public RDPCallFrame(JavaScriptDebugger debugger, String chromeId, JavaScriptLocation location,
+    RDPCallFrame(JavaScriptDebugger debugger, String chromeId, JavaScriptLocation location,
             Map<String, ? extends JavaScriptVariable> variables, JavaScriptValue thisObject,
             JavaScriptValue closure) {
         this.debugger = debugger;

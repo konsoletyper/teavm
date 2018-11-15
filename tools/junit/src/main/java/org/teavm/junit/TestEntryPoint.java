@@ -33,13 +33,7 @@ final class TestEntryPoint {
 
     private static native boolean isExpectedException(Class<?> cls);
 
-    public static void main(String[] args) throws Exception {
-        try {
-            run();
-            System.out.println("SUCCESS");
-        } catch (Throwable e) {
-            e.printStackTrace(System.out);
-            System.out.println("FAILURE");
-        }
+    public static void main(String[] args) throws Throwable {
+        run();
     }
 }

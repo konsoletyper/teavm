@@ -23,6 +23,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
@@ -37,6 +38,7 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.Linker;
+import org.teavm.dependency.MethodDependency;
 import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.diagnostics.ProblemProvider;
@@ -47,12 +49,14 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.MutableClassHolderSource;
 import org.teavm.model.Program;
 import org.teavm.model.ProgramCache;
+import org.teavm.model.ValueType;
 import org.teavm.model.optimization.ArrayUnwrapMotion;
 import org.teavm.model.optimization.ClassInitElimination;
 import org.teavm.model.optimization.ConstantConditionElimination;
@@ -106,11 +110,14 @@ import org.teavm.vm.spi.TeaVMPlugin;
  * @author Alexey Andreev
  */
 public class TeaVM implements TeaVMHost, ServiceRepository {
+    private static final MethodDescriptor MAIN_METHOD_DESC = new MethodDescriptor("main",
+            ValueType.arrayOf(ValueType.object("java.lang.String")), ValueType.VOID);
+
     private final ClassReaderSource classSource;
     private final DependencyAnalyzer dependencyAnalyzer;
     private final AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
     private final ClassLoader classLoader;
-    private final Map<String, TeaVMEntryPoint> entryPoints = new HashMap<>();
+    private final Map<String, TeaVMEntryPoint> entryPoints = new LinkedHashMap<>();
     private final Map<String, TeaVMEntryPoint> readonlyEntryPoints = Collections.unmodifiableMap(entryPoints);
     private final Set<String> preservedClasses = new HashSet<>();
     private final Set<String> readonlyPreservedClasses = Collections.unmodifiableSet(preservedClasses);
@@ -243,58 +250,38 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return target.getPlatformTags();
     }
 
-    /**
-     * <p>Adds an entry point. TeaVM guarantees, that all methods that are required by the entry point
-     * will be available at run-time in browser. Also you need to specify for each parameter of entry point
-     * which actual types will be passed here by calling {@link TeaVMEntryPoint#withValue(int, String)}.
-     * It is highly recommended to read explanation on {@link TeaVMEntryPoint} class documentation.</p>
-     *
-     * <p>You should call this method after installing all plugins and interceptors, but before
-     * doing the actual build.</p>
-     *
-     * @param name the name under which this entry point will be available for JavaScript code.
-     * @param ref a full reference to the method which is an entry point.
-     * @return an entry point that you can additionally adjust.
-     */
-    public TeaVMEntryPoint entryPoint(String name, MethodReference ref) {
-        if (name != null) {
-            if (entryPoints.containsKey(name)) {
-                throw new IllegalArgumentException("Entry point with public name `" + name + "' already defined "
-                        + "for method " + ref);
-            }
+    public void entryPoint(String className, String name) {
+        if (entryPoints.containsKey(name)) {
+            throw new IllegalArgumentException("Entry point with public name `" + name + "' already defined "
+                    + "for class " + className);
         }
-        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, ref, dependencyAnalyzer.linkMethod(ref, null));
+
+        ClassReader cls = dependencyAnalyzer.getClassSource().get(className);
+        if (cls == null) {
+            diagnostics.error(null, "There's no main class: '{{c0}}'", className);
+            return;
+        }
+
+        if (cls.getMethod(MAIN_METHOD_DESC) == null) {
+            diagnostics.error(null, "Specified main class '{{c0}}' does not have method '" + MAIN_METHOD_DESC + "'");
+            return;
+        }
+
+        MethodDependency mainMethod = dependencyAnalyzer.linkMethod(new MethodReference(className,
+                "main", ValueType.parse(String[].class), ValueType.VOID), null);
+
+        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, mainMethod);
         dependencyAnalyzer.defer(() -> {
-            dependencyAnalyzer.linkClass(ref.getClassName(), null).initClass(null);
+            dependencyAnalyzer.linkClass(className, null).initClass(null);
+            mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType("[Ljava/lang/String;"));
+            mainMethod.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getType("java.lang.String"));
+            mainMethod.use();
         });
-        if (name != null) {
-            entryPoints.put(name, entryPoint);
-        }
-        return entryPoint;
+        entryPoints.put(name, entryPoint);
     }
 
-    /**
-     * <p>Adds an entry point. TeaVM guarantees, that all methods that are required by the entry point
-     * will be available at run-time in browser. Also you need to specify for each parameter of entry point
-     * which actual types will be passed here by calling {@link TeaVMEntryPoint#withValue(int, String)}.
-     * It is highly recommended to read explanation on {@link TeaVMEntryPoint} class documentation.</p>
-     *
-     * <p>You should call this method after installing all plugins and interceptors, but before
-     * doing the actual build.</p>
-     *
-     * @param ref a full reference to the method which is an entry point.
-     * @return an entry point that you can additionally adjust.
-     */
-    public TeaVMEntryPoint entryPoint(MethodReference ref) {
-        return entryPoint(null, ref);
-    }
-
-    public TeaVMEntryPoint linkMethod(MethodReference ref) {
-        TeaVMEntryPoint entryPoint = new TeaVMEntryPoint("", ref, dependencyAnalyzer.linkMethod(ref, null));
-        dependencyAnalyzer.defer(() -> {
-            dependencyAnalyzer.linkClass(ref.getClassName(), null).initClass(null);
-        });
-        return entryPoint;
+    public void entryPoint(String className) {
+        entryPoint(className, "main");
     }
 
     public void preserveType(String className) {

@@ -446,7 +446,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private void generateCallToMainMethod(GenerationContext context, CodeWriter writer) {
         TeaVMEntryPoint entryPoint = controller.getEntryPoints().get("main");
         if (entryPoint != null) {
-            String mainMethod = context.getNames().forMethod(entryPoint.getReference());
+            String mainMethod = context.getNames().forMethod(entryPoint.getMethod());
             writer.println(mainMethod + "(NULL);");
         }
     }

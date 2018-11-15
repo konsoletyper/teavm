@@ -189,6 +189,40 @@ public class Renderer implements RenderingManager {
         }
     }
 
+    public void renderCompatibilityStubs() throws RenderingException {
+        try {
+            renderJavaStringToString();
+            renderJavaObjectToString();
+            renderTeaVMClass();
+        } catch (IOException e) {
+            throw new RenderingException("IO error", e);
+        }
+    }
+
+    private void renderJavaStringToString() throws IOException {
+        writer.appendClass("java.lang.String").append(".prototype.toString").ws().append("=").ws()
+                .append("function()").ws().append("{").indent().softNewLine();
+        writer.append("return $rt_ustr(this);").softNewLine();
+        writer.outdent().append("};").newLine();
+        writer.appendClass("java.lang.String").append(".prototype.valueOf").ws().append("=").ws()
+            .appendClass("java.lang.String").append(".prototype.toString;").softNewLine();
+    }
+
+    private void renderJavaObjectToString() throws IOException {
+        writer.appendClass("java.lang.Object").append(".prototype.toString").ws().append("=").ws()
+                .append("function()").ws().append("{").indent().softNewLine();
+        writer.append("return $rt_ustr(").appendMethodBody(Object.class, "toString", String.class).append("(this));")
+                .softNewLine();
+        writer.outdent().append("};").newLine();
+    }
+
+    private void renderTeaVMClass() throws IOException {
+        writer.appendClass("java.lang.Object").append(".prototype.__teavm_class__").ws().append("=").ws()
+                .append("function()").ws().append("{").indent().softNewLine();
+        writer.append("return $dbg_class(this);").softNewLine();
+        writer.outdent().append("};").newLine();
+    }
+
     private void appendClassSize(String className, int sz) {
         sizeByClass.put(className, sizeByClass.getOrDefault(className, 0) + sz);
     }

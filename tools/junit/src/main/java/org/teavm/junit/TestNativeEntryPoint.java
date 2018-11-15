@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,25 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.vm;
+package org.teavm.junit;
 
-import org.teavm.dependency.MethodDependency;
-import org.teavm.model.MethodReference;
-
-public class TeaVMEntryPoint {
-    String publicName;
-    MethodDependency methodDep;
-
-    TeaVMEntryPoint(String publicName, MethodDependency methodDep) {
-        this.publicName = publicName;
-        this.methodDep = methodDep;
+final class TestNativeEntryPoint {
+    private TestNativeEntryPoint() {
     }
 
-    public String getPublicName() {
-        return publicName;
-    }
-
-    public MethodReference getMethod() {
-        return methodDep.getReference();
+    public static void main(String[] args) throws Exception {
+        try {
+            TestEntryPoint.run();
+            System.out.println("SUCCESS");
+        } catch (Throwable e) {
+            e.printStackTrace(System.out);
+            System.out.println("FAILURE");
+        }
     }
 }

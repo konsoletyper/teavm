@@ -397,7 +397,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         module.setStartFunction(initFunction);
 
         for (TeaVMEntryPoint entryPoint : controller.getEntryPoints().values()) {
-            String mangledName = names.forMethod(entryPoint.getReference());
+            String mangledName = names.forMethod(entryPoint.getMethod());
             WasmFunction function = module.getFunctions().get(mangledName);
             if (function != null) {
                 function.setExportName(entryPoint.getPublicName());

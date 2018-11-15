@@ -22,6 +22,7 @@ import java.io.ByteArrayOutputStream;
 import java.util.List;
 import org.junit.Test;
 import org.teavm.backend.javascript.JavaScriptTarget;
+import org.teavm.dependency.DependencyTestPatcher;
 import org.teavm.diagnostics.Problem;
 import org.teavm.jso.JSBody;
 import org.teavm.model.MethodReference;
@@ -94,8 +95,9 @@ public class JSOTest {
 
     private List<Problem> build(String methodName) {
         TeaVM vm = new TeaVMBuilder(new JavaScriptTarget()).build();
+        vm.add(new DependencyTestPatcher(JSOTest.class.getName(), methodName));
         vm.installPlugins();
-        vm.entryPoint("org/teavm/metaprogramming/test", new MethodReference(JSOTest.class, methodName, void.class));
+        vm.entryPoint(JSOTest.class.getName());
         vm.build(name -> new ByteArrayOutputStream(), "tmp");
         return vm.getProblemProvider().getSevereProblems();
     }

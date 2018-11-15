@@ -46,7 +46,6 @@ import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.PreOptimizingClassHolderSource;
@@ -382,11 +381,7 @@ public class TeaVMTool implements BaseTeaVMTool {
                 vm.add(transformer);
             }
             if (mainClass != null) {
-                MethodDescriptor mainMethodDesc = new MethodDescriptor("main", String[].class, void.class);
-                vm.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
-                        .withValue(1, "[java.lang.String")
-                        .withArrayValue(1, "java.lang.String")
-                        .async();
+                vm.entryPoint(mainClass);
             }
             for (String className : classesToPreserve) {
                 vm.preserveType(className);
@@ -418,7 +413,7 @@ public class TeaVMTool implements BaseTeaVMTool {
 
             if (targetType == TeaVMTargetType.JAVASCRIPT) {
                 try (OutputStream output = new FileOutputStream(new File(targetDirectory, outputName), true)) {
-                    try (Writer writer = new OutputStreamWriter(output, "UTF-8")) {
+                    try (Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
                         additionalJavaScriptOutput(writer);
                     }
                 }
@@ -458,10 +453,6 @@ public class TeaVMTool implements BaseTeaVMTool {
     }
 
     private void additionalJavaScriptOutput(Writer writer) throws IOException {
-        if (mainClass != null) {
-            writer.append("main = $rt_mainStarter(main);\n");
-        }
-
         if (debugInformationGenerated) {
             assert debugEmitter != null;
             DebugInformation debugInfo = debugEmitter.getDebugInformation();

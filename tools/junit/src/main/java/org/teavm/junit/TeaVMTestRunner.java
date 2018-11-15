@@ -60,7 +60,6 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
-import org.teavm.model.MethodReference;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ValueType;
 import org.teavm.parsing.ClasspathClassHolderSource;
@@ -432,24 +431,21 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private CompileResult compileToJs(Method method, TeaVMTestConfiguration<JavaScriptTarget> configuration,
             File path) {
         return compileTest(method, configuration, JavaScriptTarget::new, vm -> {
-            MethodReference exceptionMsg = new MethodReference(ExceptionHelper.class, "showException",
-                    Throwable.class, String.class);
-            vm.entryPoint("runTest", new MethodReference(TestEntryPoint.class, "run", void.class)).async();
-            vm.entryPoint("extractException", exceptionMsg);
+            vm.entryPoint(TestEntryPoint.class.getName());
         }, path, ".js");
     }
 
     private CompileResult compileToC(Method method, TeaVMTestConfiguration<CTarget> configuration,
             File path) {
         return compileTest(method, configuration, CTarget::new, vm -> {
-            vm.entryPoint("main", new MethodReference(TestEntryPoint.class, "main", String[].class, void.class));
+            vm.entryPoint(TestNativeEntryPoint.class.getName());
         }, path, ".c");
     }
 
     private CompileResult compileToWasm(Method method, TeaVMTestConfiguration<WasmTarget> configuration,
             File path) {
         return compileTest(method, configuration, WasmTarget::new, vm -> {
-            vm.entryPoint("main", new MethodReference(TestEntryPoint.class, "main", String[].class, void.class));
+            vm.entryPoint(TestNativeEntryPoint.class.getName());
         }, path, ".wasm");
     }
 

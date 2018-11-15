@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.teavm.debugging.javascript.JavaScriptValue;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
-public class RDPValue implements JavaScriptValue {
+class RDPValue implements JavaScriptValue {
     private AtomicReference<String> representation = new AtomicReference<>();
     private AtomicReference<String> className = new AtomicReference<>();
     private String typeName;
@@ -30,15 +30,14 @@ public class RDPValue implements JavaScriptValue {
     private Map<String, ? extends JavaScriptVariable> properties;
     private boolean innerStructure;
 
-    public RDPValue(ChromeRDPDebugger debugger, String representation, String typeName, String objectId,
+    RDPValue(ChromeRDPDebugger debugger, String representation, String typeName, String objectId,
             boolean innerStructure) {
         this.representation.set(representation == null && objectId == null ? "" : representation);
         this.typeName = typeName;
         this.debugger = debugger;
         this.objectId = objectId;
         this.innerStructure = innerStructure;
-        properties = objectId != null ? new RDPScope(debugger, objectId)
-                : Collections.<String, RDPLocalVariable>emptyMap();
+        properties = objectId != null ? new RDPScope(debugger, objectId) : Collections.emptyMap();
     }
 
     @Override

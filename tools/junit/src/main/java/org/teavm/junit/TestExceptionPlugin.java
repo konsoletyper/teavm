@@ -15,12 +15,58 @@
  */
 package org.teavm.junit;
 
+import java.io.IOException;
+import org.teavm.backend.javascript.TeaVMJavaScriptHost;
+import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.rendering.RenderingManager;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.ValueType;
+import org.teavm.vm.BuildTarget;
+import org.teavm.vm.spi.AbstractRendererListener;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 class TestExceptionPlugin implements TeaVMPlugin {
+    static final MethodDescriptor GET_MESSAGE = new MethodDescriptor("getMessage", ValueType.parse(String.class));
+
     @Override
     public void install(TeaVMHost host) {
-        host.add(new TestExceptionDependency());
+        host.add(new TestExceptionDependencyListener());
+
+        TeaVMJavaScriptHost jsHost = host.getExtension(TeaVMJavaScriptHost.class);
+        if (jsHost != null) {
+            install(jsHost);
+        }
+    }
+
+    private void install(TeaVMJavaScriptHost host) {
+        host.addVirtualMethods((context, methodRef) -> {
+            if (!methodRef.getDescriptor().equals(GET_MESSAGE)) {
+                return false;
+            }
+            return context.getClassSource().isSuperType("java.lang.Throwable", methodRef.getClassName()).orElse(false);
+        });
+
+        host.add(new AbstractRendererListener() {
+            RenderingManager manager;
+
+            @Override
+            public void begin(RenderingManager manager, BuildTarget buildTarget) throws IOException {
+                this.manager = manager;
+            }
+
+            @Override
+            public void complete() throws IOException {
+                renderExceptionMessage(manager.getWriter());
+            }
+        });
+    }
+
+    private void renderExceptionMessage(SourceWriter writer) throws IOException {
+        writer.appendClass("java.lang.Throwable").append(".prototype.getMessage").ws().append("=").ws()
+                .append("function()").ws().append("{").indent().softNewLine();
+        writer.append("return $rt_ustr(this.").appendMethod("getMessage", String.class).append("());")
+                .softNewLine();
+        writer.outdent().append("};").newLine();
     }
 }

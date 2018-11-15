@@ -235,6 +235,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         MethodDependency exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                 NoClassDefFoundError.class, "<init>", String.class, void.class), null);
 
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "toString", String.class), null);
+        dep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.Object"));
+        dep.use();
+
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoClassDefFoundError.class.getName()));
         exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getType("java.lang.String"));
         exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(NoSuchFieldError.class, "<init>",
@@ -315,31 +319,51 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             renderingContext.addInjector(entry.getKey(), entry.getValue());
         }
         try {
+            printWrapperStart(sourceWriter);
+
             for (RendererListener listener : rendererListeners) {
                 listener.begin(renderer, target);
             }
             int start = sourceWriter.getOffset();
-            sourceWriter.append("\"use strict\";").newLine();
+
             renderer.prepare(clsNodes);
             runtimeRenderer.renderRuntime();
             renderer.render(clsNodes);
             renderer.renderStringPool();
             renderer.renderStringConstants();
+            renderer.renderCompatibilityStubs();
+
             for (Map.Entry<? extends String, ? extends TeaVMEntryPoint> entry
                     : controller.getEntryPoints().entrySet()) {
-                sourceWriter.append("var ").append(entry.getKey()).ws().append("=").ws();
-                MethodReference ref = entry.getValue().getReference();
-                sourceWriter.append(naming.getFullNameFor(ref));
-                sourceWriter.append(";").newLine();
+                sourceWriter.append("").append(entry.getKey()).ws().append("=").ws();
+                MethodReference ref = entry.getValue().getMethod();
+                sourceWriter.append("$rt_mainStarter(").append(naming.getFullNameFor(ref));
+                sourceWriter.append(");").newLine();
             }
+
             for (RendererListener listener : rendererListeners) {
                 listener.complete();
             }
+
+            printWrapperEnd(sourceWriter);
+
             int totalSize = sourceWriter.getOffset() - start;
             printStats(renderer, totalSize);
         } catch (IOException e) {
             throw new RenderingException("IO Error occured", e);
         }
+    }
+
+    private void printWrapperStart(SourceWriter writer) throws IOException {
+        writer.append("\"use strict\";").newLine();
+        for (String key : controller.getEntryPoints().keySet()) {
+            writer.append("var ").append(key).append(";").softNewLine();
+        }
+        writer.append("(function()").ws().append("{").newLine();
+    }
+
+    private void printWrapperEnd(SourceWriter writer) throws IOException {
+        writer.append("})();").newLine();
     }
 
     private void printStats(Renderer renderer, int totalSize) {

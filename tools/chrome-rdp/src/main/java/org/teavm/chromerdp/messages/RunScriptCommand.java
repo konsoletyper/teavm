@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -18,32 +18,6 @@ package org.teavm.chromerdp.messages;
 import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class ScriptParsedNotification {
-    private String scriptId;
-    private String url;
-    private int executionContextId;
-
-    public String getScriptId() {
-        return scriptId;
-    }
-
-    public void setScriptId(String scriptId) {
-        this.scriptId = scriptId;
-    }
-
-    public String getUrl() {
-        return url;
-    }
-
-    public void setUrl(String url) {
-        this.url = url;
-    }
-
-    public int getExecutionContextId() {
-        return executionContextId;
-    }
-
-    public void setExecutionContextId(int executionContextId) {
-        this.executionContextId = executionContextId;
-    }
+public class RunScriptCommand {
+    public String scriptId;
 }

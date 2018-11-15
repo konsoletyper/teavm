@@ -58,38 +58,25 @@ function appendFiles(files, index, callback, errorCallback) {
 }
 
 function launchTest(callback) {
-    $rt_startThread(() => {
-        let thread = $rt_nativeThread();
-        let instance;
-        let message;
-        if (thread.isResuming()) {
-            instance = thread.pop();
-        }
-        try {
-            runTest();
-        } catch (e) {
-            message = buildErrorMessage(e);
+    main([], result => {
+        if (result instanceof Error) {
             callback({
                 status: "failed",
                 errorMessage: buildErrorMessage(e)
             });
-            return;
-        }
-        if (thread.isSuspending()) {
-            thread.push(instance);
         } else {
             callback({ status: "OK" });
         }
     });
 
     function buildErrorMessage(e) {
-        let stack = e.stack;
+        let stack = "";
         if (e.$javaException && e.$javaException.constructor.$meta) {
             stack = e.$javaException.constructor.$meta.name + ": ";
-            let exceptionMessage = extractException(e.$javaException);
-            stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
+            stack += e.$javaException.getMessage();
+            stack += "\n";
         }
-        stack += "\n" + stack;
+        stack += e.stack;
         return stack;
     }
 }
