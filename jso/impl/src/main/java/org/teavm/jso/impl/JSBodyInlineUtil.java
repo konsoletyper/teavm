@@ -44,7 +44,7 @@ final class JSBodyInlineUtil {
 
         ComplexityCounter complexityCounter = new ComplexityCounter();
         expression.visit(complexityCounter);
-        if (complexityCounter.getComplexity() > COMPLEXITY_THRESHOLD) {
+        if (complexityCounter.hasUnsupportedConstructs || complexityCounter.getComplexity() > COMPLEXITY_THRESHOLD) {
             return null;
         }
 
@@ -86,6 +86,7 @@ final class JSBodyInlineUtil {
 
     static class ComplexityCounter implements NodeVisitor {
         private int complexity;
+        boolean hasUnsupportedConstructs;
 
         public int getComplexity() {
             return complexity;
@@ -94,6 +95,13 @@ final class JSBodyInlineUtil {
         @Override
         public boolean visit(AstNode node) {
             ++complexity;
+            switch (node.getType()) {
+                case Token.FUNCTION:
+                case Token.OBJECTLIT:
+                case Token.ARRAYLIT:
+                    hasUnsupportedConstructs = true;
+                    break;
+            }
             return true;
         }
     }
