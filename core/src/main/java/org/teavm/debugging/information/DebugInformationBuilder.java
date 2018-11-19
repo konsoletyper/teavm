@@ -177,14 +177,17 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     }
 
     @Override
-    public void addClass(String className, String parentName) {
+    public void addClass(String jsName, String className, String parentName) {
         int classIndex = classes.index(className);
         int parentIndex = classes.index(parentName);
         while (classIndex >= classesMetadata.size()) {
             classesMetadata.add(new ClassMetadata());
         }
         currentClassMetadata = classIndex;
-        classesMetadata.get(currentClassMetadata).parentIndex = parentIndex;
+
+        ClassMetadata metadata = classesMetadata.get(classIndex);
+        metadata.parentIndex = parentIndex;
+        metadata.jsName = jsName;
     }
 
     @Override
@@ -288,15 +291,15 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
 
             List<DebugInformation.ClassMetadata> builtMetadata = new ArrayList<>(classes.list.size());
             for (int i = 0; i < classes.list.size(); ++i) {
-                if (i >= classesMetadata.size()) {
-                    builtMetadata.add(new DebugInformation.ClassMetadata());
-                } else {
+                DebugInformation.ClassMetadata mappedMetadata = new DebugInformation.ClassMetadata();
+                mappedMetadata.id = i;
+                if (i < classesMetadata.size()) {
                     ClassMetadata origMetadata = classesMetadata.get(i);
-                    DebugInformation.ClassMetadata mappedMetadata = new DebugInformation.ClassMetadata();
+                    mappedMetadata.jsName = origMetadata.jsName;
                     mappedMetadata.fieldMap.putAll(origMetadata.fieldMap);
                     mappedMetadata.parentId = origMetadata.parentIndex >= 0 ? origMetadata.parentIndex : null;
-                    builtMetadata.add(mappedMetadata);
                 }
+                builtMetadata.add(mappedMetadata);
             }
             debugInformation.classesMetadata = builtMetadata;
 
@@ -340,6 +343,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
 
     static class ClassMetadata {
         int parentIndex;
+        String jsName;
         Map<Integer, Integer> fieldMap = new HashMap<>();
     }
 }

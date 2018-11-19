@@ -272,9 +272,10 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderDeclaration(ClassNode cls) throws RenderingException {
-        debugEmitter.addClass(cls.getName(), cls.getParentName());
+        String jsName = writer.getNaming().getNameFor(cls.getName());
+        debugEmitter.addClass(jsName, cls.getName(), cls.getParentName());
         try {
-            writer.append("function ").appendClass(cls.getName()).append("()").ws().append("{")
+            writer.append("function " + jsName + "()").ws().append("{")
                     .indent().softNewLine();
             boolean thisAliased = false;
             List<FieldNode> nonStaticFields = new ArrayList<>();

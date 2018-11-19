@@ -47,6 +47,7 @@ public class DebugInformation {
     RecordArray[] lineCallSites;
     RecordArray[] controlFlowGraphs;
     List<ClassMetadata> classesMetadata;
+    Map<String, ClassMetadata> classMetadataByJsName;
     RecordArray methodEntrances;
     MethodTree methodTree;
 
@@ -270,6 +271,11 @@ public class DebugInformation {
         return null;
     }
 
+    public String getClassNameByJsName(String className) {
+        ClassMetadata cls = classMetadataByJsName.get(className);
+        return cls != null ? classNames[cls.id] : null;
+    }
+
     public DebuggerCallSite getCallSite(GeneratedLocation location) {
         int keyIndex = indexByKey(callSiteMapping, location);
         return keyIndex >= 0 ? getCallSite(keyIndex) : null;
@@ -411,6 +417,7 @@ public class DebugInformation {
         rebuildEntrances();
         rebuildMethodTree();
         rebuildLineCallSites();
+        rebuildClassMap();
     }
 
     void rebuildMaps() {
@@ -594,6 +601,15 @@ public class DebugInformation {
         return new GeneratedLocation(record.get(0), record.get(1));
     }
 
+    private void rebuildClassMap() {
+        classMetadataByJsName = new HashMap<>();
+        for (DebugInformation.ClassMetadata cls : classesMetadata) {
+            if (cls.jsName != null) {
+                classMetadataByJsName.put(cls.jsName, cls);
+            }
+        }
+    }
+
     private int binarySearchLocation(RecordArray array, int row, int column) {
         int l = 0;
         int u = array.size() - 1;
@@ -640,9 +656,11 @@ public class DebugInformation {
     }
 
     static class ClassMetadata {
+        int id;
         Integer parentId;
         Map<Integer, Integer> fieldMap = new HashMap<>();
         int[] methods;
+        String jsName;
     }
 
     class MethodTree {

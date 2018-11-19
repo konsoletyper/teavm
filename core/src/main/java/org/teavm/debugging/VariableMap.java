@@ -20,6 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
@@ -27,11 +28,14 @@ class VariableMap extends AbstractMap<String, Variable> {
     private AtomicReference<Map<String, Variable>> backingMap = new AtomicReference<>();
     private Map<String, JavaScriptVariable> jsVariables;
     private Debugger debugger;
+    private DebugInformation debugInformation;
     private JavaScriptLocation location;
 
-    public VariableMap(Map<String, JavaScriptVariable> jsVariables, Debugger debugger, JavaScriptLocation location) {
+    public VariableMap(Map<String, JavaScriptVariable> jsVariables, Debugger debugger,
+            DebugInformation debugInformation, JavaScriptLocation location) {
         this.jsVariables = jsVariables;
         this.debugger = debugger;
+        this.debugInformation = debugInformation;
         this.location = location;
     }
 
@@ -61,7 +65,7 @@ class VariableMap extends AbstractMap<String, Variable> {
         for (Map.Entry<String, JavaScriptVariable> entry : jsVariables.entrySet()) {
             JavaScriptVariable jsVar = entry.getValue();
             String[] names = debugger.mapVariable(entry.getKey(), location);
-            Value value = new Value(debugger, jsVar.getValue());
+            Value value = new Value(debugger, debugInformation, jsVar.getValue());
             for (String name : names) {
                 if (name == null) {
                     name = "js:" + jsVar.getName();

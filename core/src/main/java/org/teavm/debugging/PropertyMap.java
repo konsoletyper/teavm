@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicReference;
+import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
 class PropertyMap extends AbstractMap<String, Variable> {
@@ -26,11 +27,14 @@ class PropertyMap extends AbstractMap<String, Variable> {
     private AtomicReference<Map<String, Variable>> backingMap = new AtomicReference<>();
     private Map<String, JavaScriptVariable> jsVariables;
     private Debugger debugger;
+    private DebugInformation debugInformation;
 
-    public PropertyMap(String className, Map<String, JavaScriptVariable> jsVariables, Debugger debugger) {
+    public PropertyMap(String className, Map<String, JavaScriptVariable> jsVariables, Debugger debugger,
+            DebugInformation debugInformation) {
         this.className = className;
         this.jsVariables = jsVariables;
         this.debugger = debugger;
+        this.debugInformation = debugInformation;
     }
 
     @Override
@@ -73,7 +77,7 @@ class PropertyMap extends AbstractMap<String, Variable> {
                     continue;
                 }
             }
-            Value value = new Value(debugger, jsVar.getValue());
+            Value value = new Value(debugger, debugInformation, jsVar.getValue());
             vars.put(name, new Variable(name, value));
         }
         backingMap.compareAndSet(null, vars);

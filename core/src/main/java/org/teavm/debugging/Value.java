@@ -17,15 +17,18 @@ package org.teavm.debugging;
 
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
+import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.javascript.JavaScriptValue;
 
 public class Value {
     private Debugger debugger;
+    private DebugInformation debugInformation;
     private JavaScriptValue jsValue;
     private AtomicReference<PropertyMap> properties = new AtomicReference<>();
 
-    Value(Debugger debugger, JavaScriptValue jsValue) {
+    Value(Debugger debugger, DebugInformation debugInformation, JavaScriptValue jsValue) {
         this.debugger = debugger;
+        this.debugInformation = debugInformation;
         this.jsValue = jsValue;
     }
 
@@ -34,12 +37,23 @@ public class Value {
     }
 
     public String getType() {
-        return jsValue.getClassName();
+        String className = jsValue.getClassName();
+        if (className.startsWith("a/")) {
+            className = className.substring(2);
+            String javaClassName = debugInformation.getClassNameByJsName(className);
+            if (javaClassName != null) {
+                className = javaClassName;
+            }
+        } else if (className.startsWith("@")) {
+            className = className.substring(1);
+        }
+        return className;
     }
 
     public Map<String, Variable> getProperties() {
         if (properties.get() == null) {
-            properties.compareAndSet(null, new PropertyMap(jsValue.getClassName(), jsValue.getProperties(), debugger));
+            properties.compareAndSet(null, new PropertyMap(jsValue.getClassName(), jsValue.getProperties(), debugger,
+                    debugInformation));
         }
         return properties.get();
     }

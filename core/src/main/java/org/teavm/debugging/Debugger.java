@@ -302,7 +302,8 @@ public class Debugger {
                 MethodReference method = !empty ? debugInformation.getMethodAt(jsFrame.getLocation().getLine(),
                         jsFrame.getLocation().getColumn()) : null;
                 if (!empty || !wasEmpty) {
-                    VariableMap vars = new VariableMap(jsFrame.getVariables(), this, jsFrame.getLocation());
+                    VariableMap vars = new VariableMap(jsFrame.getVariables(), this, debugInformation,
+                            jsFrame.getLocation());
                     frames.add(new CallFrame(this, jsFrame, loc, method, vars));
                 }
                 wasEmpty = empty;

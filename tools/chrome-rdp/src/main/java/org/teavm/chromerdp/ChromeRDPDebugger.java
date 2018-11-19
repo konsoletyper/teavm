@@ -204,6 +204,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         if (scripts.putIfAbsent(params.getScriptId(), params.getUrl()) != null) {
             return;
         }
+        if (params.getUrl().equals("file://fake")) {
+            return;
+        }
         scriptIds.put(params.getUrl(), params.getScriptId());
         for (JavaScriptDebuggerListener listener : getListeners()) {
             listener.scriptAdded(params.getUrl());
@@ -355,7 +358,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         breakpoint.updating.set(true);
         try {
             SetBreakpointResponse response = callMethod("Debugger.setBreakpoint", SetBreakpointResponse.class, params);
-            if (response == null) {
+            if (response != null) {
                 breakpoint.chromeId = response.getBreakpointId();
                 if (breakpoint.chromeId != null) {
                     breakpointsByChromeId.put(breakpoint.chromeId, breakpoint);

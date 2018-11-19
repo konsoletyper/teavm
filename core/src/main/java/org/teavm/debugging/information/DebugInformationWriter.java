@@ -17,6 +17,7 @@ package org.teavm.debugging.information;
 
 import java.io.DataOutput;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -69,6 +70,7 @@ class DebugInformationWriter {
     private void writeClassMetadata(List<ClassMetadata> classes) throws IOException {
         for (int i = 0; i < classes.size(); ++i) {
             ClassMetadata cls = classes.get(i);
+            writeNullableString(cls.jsName);
             writeUnsignedNumber(cls.parentId != null ? cls.parentId + 1 : 0);
             writeUnsignedNumber(cls.fieldMap.size());
             List<Integer> keys = new ArrayList<>(cls.fieldMap.keySet());
@@ -295,8 +297,18 @@ class DebugInformationWriter {
     }
 
     private void writeString(String str) throws IOException {
-        byte[] bytes = str.getBytes("UTF-8");
+        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
         writeUnsignedNumber(bytes.length);
+        output.write(bytes);
+    }
+
+    private void writeNullableString(String str) throws IOException {
+        if (str == null) {
+            writeUnsignedNumber(0);
+            return;
+        }
+        byte[] bytes = str.getBytes(StandardCharsets.UTF_8);
+        writeUnsignedNumber(bytes.length + 1);
         output.write(bytes);
     }
 }
