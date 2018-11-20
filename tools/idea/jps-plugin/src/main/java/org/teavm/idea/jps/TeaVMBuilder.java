@@ -81,9 +81,9 @@ public class TeaVMBuilder extends TargetBuilder<BuildRootDescriptor, TeaVMBuildT
 
             build.perform(target.getModule(), target);
         } catch (BuildException e) {
-            context.processMessage(CompilerMessage.createInternalBuilderError("TeaVM", e.getCause()));
+            context.processMessage(new CompilerMessage("TeaVM", e.getCause()));
         } catch (Exception e) {
-            context.processMessage(CompilerMessage.createInternalBuilderError("TeaVM", e));
+            context.processMessage(new CompilerMessage("TeaVM", e));
         }
     }
 

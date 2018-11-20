@@ -22,7 +22,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
 import org.teavm.idea.jps.model.TeaVMJpsWorkspaceConfiguration;
-import org.teavm.idea.jps.util.DaemonUtil;
 import org.teavm.tooling.daemon.BuildDaemon;
 import org.teavm.tooling.daemon.DaemonInfo;
 import org.teavm.tooling.daemon.DaemonLog;
