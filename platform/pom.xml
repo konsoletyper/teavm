@@ -34,6 +34,7 @@
       <groupId>org.teavm</groupId>
       <artifactId>teavm-core</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>

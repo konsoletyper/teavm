@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.jps.model;
+package org.teavm.tooling.builder;
 
-import java.util.Collection;
-import org.teavm.callgraph.CallGraph;
-import org.teavm.diagnostics.ProblemProvider;
+import java.net.URL;
 
-public interface TeaVMBuildResult {
-    CallGraph getCallGraph();
-
-    boolean isErrorOccurred();
-
-    String getStackTrace();
-
-    ProblemProvider getProblems();
-
-    Collection<String> getUsedResources();
-
-    Collection<String> getClasses();
-
-    Collection<String> getGeneratedFiles();
+public interface ClassLoaderFactory {
+    ClassLoader create(URL[] urls, ClassLoader innerClassLoader);
 }

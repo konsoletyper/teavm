@@ -20,7 +20,7 @@ import com.intellij.compiler.server.BuildProcessParametersProvider;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.annotations.NotNull;
-import org.teavm.idea.jps.remote.TeaVMRemoteBuildService;
+import org.teavm.tooling.daemon.RemoteBuildService;
 
 public class TeaVMJPSConfigurator extends BuildProcessParametersProvider {
     private TeaVMJPSRemoteService remoteService;
@@ -37,7 +37,7 @@ public class TeaVMJPSConfigurator extends BuildProcessParametersProvider {
         List<String> result = new ArrayList<>();
         result.add("-D" + REMOTE_PORT + "=" + remoteService.getPort());
         if (daemonComponent.isDaemonRunning()) {
-            result.add("-D" + TeaVMRemoteBuildService.REMOTE_PORT + "=" + daemonComponent.getDaemonPort());
+            result.add("-D" + RemoteBuildService.REMOTE_PORT + "=" + daemonComponent.getDaemonPort());
         }
         return result;
     }

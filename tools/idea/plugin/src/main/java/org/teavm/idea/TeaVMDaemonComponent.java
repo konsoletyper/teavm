@@ -18,13 +18,17 @@ package org.teavm.idea;
 import com.intellij.openapi.components.ApplicationComponent;
 import com.intellij.openapi.components.ServiceManager;
 import java.io.IOException;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.jetbrains.annotations.NotNull;
-import org.teavm.idea.daemon.TeaVMBuildDaemon;
-import org.teavm.idea.daemon.TeaVMDaemonInfo;
 import org.teavm.idea.jps.model.TeaVMJpsWorkspaceConfiguration;
+import org.teavm.idea.jps.util.DaemonUtil;
+import org.teavm.tooling.daemon.BuildDaemon;
+import org.teavm.tooling.daemon.DaemonInfo;
+import org.teavm.tooling.daemon.DaemonLog;
 
 public class TeaVMDaemonComponent implements ApplicationComponent {
-    private TeaVMDaemonInfo daemonInfo;
+    private DaemonInfo daemonInfo;
     private boolean incremental;
     private int daemonMemory;
 
@@ -64,7 +68,9 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
     public void startDaemon() {
         if (daemonInfo == null) {
             try {
-                daemonInfo = TeaVMBuildDaemon.start(incremental, daemonMemory);
+                Log log = LogFactory.getLog(TeaVMDaemonComponent.class);
+                daemonInfo = BuildDaemon.start(incremental, daemonMemory, new LogWrapper(log),
+                        DaemonUtil.detectClassPath().toArray(new String[0]));
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -115,5 +121,28 @@ public class TeaVMDaemonComponent implements ApplicationComponent {
     @Override
     public String getComponentName() {
         return "TeaVM daemon";
+    }
+
+    static class LogWrapper implements DaemonLog {
+        private Log log;
+
+        public LogWrapper(Log log) {
+            this.log = log;
+        }
+
+        @Override
+        public void error(String s) {
+            log.error(s);
+        }
+
+        @Override
+        public void error(String s, Throwable throwable) {
+            log.error(s, throwable);
+        }
+
+        @Override
+        public void info(String s) {
+            log.info(s);
+        }
     }
 }

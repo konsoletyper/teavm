@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,13 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.daemon;
+package org.teavm.tooling.daemon;
 
-public class TeaVMDaemonInfo {
+public class DaemonInfo {
     private int port;
     private Process process;
 
-    TeaVMDaemonInfo(int port, Process process) {
+    DaemonInfo(int port, Process process) {
         this.port = port;
         this.process = process;
     }

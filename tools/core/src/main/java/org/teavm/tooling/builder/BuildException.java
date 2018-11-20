@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,15 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.jps.remote;
+package org.teavm.tooling.builder;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
-
-public interface TeaVMRemoteBuildService extends Remote {
-    String REMOTE_PORT = "teavm.daemon.remote-port";
-    String ID = "TeaVM-Daemon";
-
-    TeaVMRemoteBuildResponse build(TeaVMRemoteBuildRequest request, TeaVMRemoteBuildCallback callback)
-            throws RemoteException;
+public class BuildException extends Exception {
+    public BuildException(Throwable cause) {
+        super(cause);
+    }
 }

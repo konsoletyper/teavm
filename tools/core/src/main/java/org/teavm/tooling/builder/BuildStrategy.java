@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,15 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.jps.model;
+package org.teavm.tooling.builder;
 
 import java.util.List;
 import java.util.Properties;
+import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.TeaVMTargetType;
+import org.teavm.tooling.TeaVMToolLog;
+import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMProgressListener;
 
-public interface TeaVMBuildStrategy {
+public interface BuildStrategy {
     void init();
+
+    void setLog(TeaVMToolLog log);
 
     void addSourcesDirectory(String directory);
 
@@ -45,7 +50,21 @@ public interface TeaVMBuildStrategy {
 
     void setIncremental(boolean incremental);
 
+    void setMinifying(boolean minifying);
+
     void setProperties(Properties properties);
 
-    TeaVMBuildResult build();
+    void setTransformers(String[] transformers);
+
+    void setOptimizationLevel(TeaVMOptimizationLevel level);
+
+    void setTargetFileName(String targetFileName);
+
+    void setClassesToPreserve(String[] classesToPreserve);
+
+    void setCacheDirectory(String cacheDirectory);
+
+    void setWasmVersion(WasmBinaryVersion wasmVersion);
+
+    BuildResult build() throws BuildException;
 }

@@ -22,6 +22,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -57,8 +58,6 @@ import org.teavm.common.IntegerArray;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
 import org.teavm.diagnostics.Problem;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.idea.jps.model.TeaVMBuildResult;
-import org.teavm.idea.jps.model.TeaVMBuildStrategy;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 import org.teavm.idea.jps.model.TeaVMProperty;
 import org.teavm.idea.jps.remote.TeaVMBuilderAssistant;
@@ -67,6 +66,9 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
+import org.teavm.tooling.builder.BuildException;
+import org.teavm.tooling.builder.BuildResult;
+import org.teavm.tooling.builder.BuildStrategy;
 import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
@@ -79,10 +81,10 @@ class TeaVMBuild {
     private final TeaVMBuilderAssistant assistant;
     private final Map<String, File> sourceFileCache = new HashMap<>();
     private final Map<File, int[]> fileLineCache = new HashMap<>();
-    private TeaVMBuildStrategy buildStrategy;
+    private BuildStrategy buildStrategy;
     private BuildOutputConsumer outputConsumer;
 
-    TeaVMBuild(CompileContext context, TeaVMBuilderAssistant assistant, TeaVMBuildStrategy buildStrategy,
+    TeaVMBuild(CompileContext context, TeaVMBuilderAssistant assistant, BuildStrategy buildStrategy,
             BuildOutputConsumer outputConsumer) {
         this.context = context;
         this.assistant = assistant;
@@ -90,7 +92,7 @@ class TeaVMBuild {
         this.outputConsumer = outputConsumer;
     }
 
-    boolean perform(JpsModule module, TeaVMBuildTarget target) throws IOException {
+    boolean perform(JpsModule module, TeaVMBuildTarget target) throws IOException, BuildException {
         TeaVMStorageProvider storageProvider = new TeaVMStorageProvider(
                 target.getConfiguration().getTargetType().name());
         storage = context.getProjectDescriptor().dataManager.getStorage(target, storageProvider);
@@ -128,24 +130,16 @@ class TeaVMBuild {
         }
         buildStrategy.setProperties(properties);
 
-        TeaVMBuildResult buildResult = buildStrategy.build();
+        BuildResult buildResult = buildStrategy.build();
 
-        if (!buildResult.isErrorOccurred() && buildResult.getProblems().getSevereProblems().isEmpty()) {
+        if (!buildResult.getProblems().getSevereProblems().isEmpty()) {
             updateStorage(buildResult);
         }
 
         reportProblems(buildResult.getProblems(), buildResult.getCallGraph());
 
-        if (!buildResult.isErrorOccurred()) {
-            for (String fileName : buildResult.getGeneratedFiles()) {
-                outputConsumer.registerOutputFile(new File(fileName), Collections.emptyList());
-            }
-        }
-
-        if (buildResult.getStackTrace() != null) {
-            context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.ERROR,
-                    "Compiler crashed:\n" + buildResult.getStackTrace(), "",
-                    -1, -1, -1, -1, -1));
+        for (String fileName : buildResult.getGeneratedFiles()) {
+            outputConsumer.registerOutputFile(new File(fileName), Collections.emptyList());
         }
 
         return true;
@@ -390,7 +384,7 @@ class TeaVMBuild {
 
     private int[] getLineOffsetsCacheMiss(File file) {
         IntegerArray lines = new IntegerArray(50);
-        try (Reader reader = new InputStreamReader(new FileInputStream(file), "UTF-8")) {
+        try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
             int offset = 0;
             lines.add(0);
 
@@ -450,10 +444,9 @@ class TeaVMBuild {
         return false;
     }
 
-    private void updateStorage(TeaVMBuildResult buildResult) {
+    private void updateStorage(BuildResult buildResult) {
         Set<String> resources = Stream.concat(buildResult.getClasses().stream()
                 .map(cls -> cls.replace('.', '/') + ".class"), buildResult.getUsedResources().stream())
-                .sorted()
                 .collect(toSet());
         List<TeaVMStorage.Entry> participatingFiles = resources.stream()
                 .map(path -> {

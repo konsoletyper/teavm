@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,48 +13,56 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.jps;
+package org.teavm.tooling.builder;
 
 import java.io.File;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import java.util.stream.Collectors;
-import org.jetbrains.jps.incremental.CompileContext;
-import org.jetbrains.jps.incremental.messages.CompilerMessage;
+import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.idea.jps.model.TeaVMBuildResult;
-import org.teavm.idea.jps.model.TeaVMBuildStrategy;
-import org.teavm.idea.jps.util.ExceptionUtil;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMTargetType;
 import org.teavm.tooling.TeaVMTool;
 import org.teavm.tooling.TeaVMToolException;
+import org.teavm.tooling.TeaVMToolLog;
 import org.teavm.tooling.sources.DirectorySourceFileProvider;
 import org.teavm.tooling.sources.JarSourceFileProvider;
 import org.teavm.tooling.sources.SourceFileProvider;
+import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMProgressListener;
 
-public class InProcessBuildStrategy implements TeaVMBuildStrategy {
-    private final CompileContext context;
+public class InProcessBuildStrategy implements BuildStrategy {
+    private final ClassLoaderFactory classLoaderFactory;
     private List<String> classPathEntries = new ArrayList<>();
     private TeaVMTargetType targetType;
     private String mainClass;
     private String targetDirectory;
+    private String targetFileName = "";
+    private boolean incremental;
+    private String cacheDirectory;
+    private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.ADVANCED;
+    private boolean minifying;
     private boolean sourceMapsFileGenerated;
     private boolean debugInformationGenerated;
     private boolean sourceFilesCopied;
+    private String[] transformers = new String[0];
+    private String[] classesToPreserve = new String[0];
+    private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private TeaVMProgressListener progressListener;
     private Properties properties = new Properties();
+    private TeaVMToolLog log = new EmptyTeaVMToolLog();
 
-    public InProcessBuildStrategy(CompileContext context) {
-        this.context = context;
+    public InProcessBuildStrategy(ClassLoaderFactory classLoaderFactory) {
+        this.classLoaderFactory = classLoaderFactory;
     }
 
     @Override
@@ -115,6 +123,7 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
 
     @Override
     public void setIncremental(boolean incremental) {
+        this.incremental = incremental;
     }
 
     @Override
@@ -124,20 +133,67 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
     }
 
     @Override
-    public TeaVMBuildResult build() {
+    public void setLog(TeaVMToolLog log) {
+        this.log = log;
+    }
+
+    @Override
+    public void setMinifying(boolean minifying) {
+        this.minifying = minifying;
+    }
+
+    @Override
+    public void setTransformers(String[] transformers) {
+        this.transformers = transformers.clone();
+    }
+
+    @Override
+    public void setOptimizationLevel(TeaVMOptimizationLevel level) {
+        this.optimizationLevel = level;
+    }
+
+    @Override
+    public void setTargetFileName(String targetFileName) {
+        this.targetFileName = targetFileName;
+    }
+
+    @Override
+    public void setClassesToPreserve(String[] classesToPreserve) {
+        this.classesToPreserve = classesToPreserve.clone();
+    }
+
+    @Override
+    public void setCacheDirectory(String cacheDirectory) {
+        this.cacheDirectory = cacheDirectory;
+    }
+
+    @Override
+    public void setWasmVersion(WasmBinaryVersion wasmVersion) {
+        this.wasmVersion = wasmVersion;
+    }
+
+    @Override
+    public BuildResult build() throws BuildException {
         TeaVMTool tool = new TeaVMTool();
         tool.setProgressListener(progressListener);
-        tool.setLog(new EmptyTeaVMToolLog());
+        tool.setLog(log);
         tool.setTargetType(targetType);
         tool.setMainClass(mainClass);
         tool.setTargetDirectory(new File(targetDirectory));
+        tool.setTargetFileName(targetFileName);
         tool.setClassLoader(buildClassLoader());
+        tool.setOptimizationLevel(optimizationLevel);
 
         tool.setSourceMapsFileGenerated(sourceMapsFileGenerated);
         tool.setDebugInformationGenerated(debugInformationGenerated);
         tool.setSourceFilesCopied(sourceFilesCopied);
 
-        tool.setMinifying(false);
+        tool.setMinifying(minifying);
+        tool.setIncremental(incremental);
+        tool.getTransformers().addAll(Arrays.asList(transformers));
+        tool.getClassesToPreserve().addAll(Arrays.asList(classesToPreserve));
+        tool.setCacheDirectory(cacheDirectory != null ? new File(cacheDirectory) : null);
+        tool.setWasmVersion(wasmVersion);
 
         tool.getProperties().putAll(properties);
 
@@ -145,22 +201,17 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
             tool.addSourceFileProvider(fileProvider);
         }
 
-        boolean errorOccurred = false;
-        String stackTrace = null;
         try {
             tool.generate();
         } catch (TeaVMToolException | RuntimeException | Error e) {
-            e.printStackTrace(System.err);
-            stackTrace = ExceptionUtil.exceptionToString(e);
-            context.processMessage(new CompilerMessage("TeaVM", e));
-            errorOccurred = true;
+            throw new BuildException(e);
         }
 
         Set<String> generatedFiles = tool.getGeneratedFiles().stream()
                 .map(File::getAbsolutePath)
                 .collect(Collectors.toSet());
 
-        return new InProcessBuildResult(tool.getDependencyInfo().getCallGraph(), errorOccurred, stackTrace,
+        return new InProcessBuildResult(tool.getDependencyInfo().getCallGraph(),
                 tool.getProblemProvider(), tool.getClasses(), tool.getUsedResources(), generatedFiles);
     }
 
@@ -173,26 +224,19 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
             }
         }).toArray(URL[]::new);
 
-        RenamingClassLoader classLoader = new RenamingClassLoader(urls, TeaVMBuilder.class.getClassLoader());
-        classLoader.rename("org/objectweb/asm/", "org/teavm/asm/");
-        return classLoader;
+        return classLoaderFactory.create(urls, InProcessBuildStrategy.class.getClassLoader());
     }
 
-    static class InProcessBuildResult implements TeaVMBuildResult {
+    static class InProcessBuildResult implements BuildResult {
         private CallGraph callGraph;
-        private boolean errorOccurred;
-        private String stackTrace;
         private ProblemProvider problemProvider;
         private Collection<String> classes;
         private Collection<String> usedResources;
         private Collection<String> generatedFiles;
 
-        InProcessBuildResult(CallGraph callGraph, boolean errorOccurred, String stackTrace,
-                ProblemProvider problemProvider, Collection<String> classes, Collection<String> usedResources,
-                Collection<String> generatedFiles) {
+        InProcessBuildResult(CallGraph callGraph, ProblemProvider problemProvider,
+                Collection<String> classes, Collection<String> usedResources, Collection<String> generatedFiles) {
             this.callGraph = callGraph;
-            this.errorOccurred = errorOccurred;
-            this.stackTrace = stackTrace;
             this.problemProvider = problemProvider;
             this.classes = classes;
             this.usedResources = usedResources;
@@ -202,16 +246,6 @@ public class InProcessBuildStrategy implements TeaVMBuildStrategy {
         @Override
         public CallGraph getCallGraph() {
             return callGraph;
-        }
-
-        @Override
-        public boolean isErrorOccurred() {
-            return errorOccurred;
-        }
-
-        @Override
-        public String getStackTrace() {
-            return stackTrace;
         }
 
         @Override

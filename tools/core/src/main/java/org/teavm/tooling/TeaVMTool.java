@@ -22,6 +22,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -61,7 +63,7 @@ import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMProgressListener;
 import org.teavm.vm.TeaVMTarget;
 
-public class TeaVMTool implements BaseTeaVMTool {
+public class TeaVMTool {
     private File targetDirectory = new File(".");
     private TeaVMTargetType targetType = TeaVMTargetType.JAVASCRIPT;
     private String targetFileName = "";
@@ -73,7 +75,7 @@ public class TeaVMTool implements BaseTeaVMTool {
     private boolean sourceFilesCopied;
     private boolean incremental;
     private File cacheDirectory = new File("./teavm-cache");
-    private List<ClassHolderTransformer> transformers = new ArrayList<>();
+    private List<String> transformers = new ArrayList<>();
     private List<String> classesToPreserve = new ArrayList<>();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private ClassLoader classLoader = TeaVMTool.class.getClassLoader();
@@ -99,7 +101,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         return targetDirectory;
     }
 
-    @Override
     public void setTargetDirectory(File targetDirectory) {
         this.targetDirectory = targetDirectory;
     }
@@ -116,7 +117,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         return minifying;
     }
 
-    @Override
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
     }
@@ -125,7 +125,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         return incremental;
     }
 
-    @Override
     public void setIncremental(boolean incremental) {
         this.incremental = incremental;
     }
@@ -142,7 +141,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         return debugInformationGenerated;
     }
 
-    @Override
     public void setDebugInformationGenerated(boolean debugInformationGenerated) {
         this.debugInformationGenerated = debugInformationGenerated;
     }
@@ -159,7 +157,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         return sourceMapsFileGenerated;
     }
 
-    @Override
     public void setSourceMapsFileGenerated(boolean sourceMapsFileGenerated) {
         this.sourceMapsFileGenerated = sourceMapsFileGenerated;
     }
@@ -168,18 +165,15 @@ public class TeaVMTool implements BaseTeaVMTool {
         return sourceFilesCopied;
     }
 
-    @Override
     public void setSourceFilesCopied(boolean sourceFilesCopied) {
         this.sourceFilesCopied = sourceFilesCopied;
     }
 
-    @Override
     public Properties getProperties() {
         return properties;
     }
 
-    @Override
-    public List<ClassHolderTransformer> getTransformers() {
+    public List<String> getTransformers() {
         return transformers;
     }
 
@@ -191,7 +185,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         return log;
     }
 
-    @Override
     public void setLog(TeaVMToolLog log) {
         this.log = log;
     }
@@ -220,7 +213,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         return classLoader;
     }
 
-    @Override
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
@@ -289,7 +281,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         return resources;
     }
 
-    @Override
     public void addSourceFileProvider(SourceFileProvider sourceFileProvider) {
         sourceFileProviders.add(sourceFileProvider);
     }
@@ -377,7 +368,7 @@ public class TeaVMTool implements BaseTeaVMTool {
             vm.setOptimizationLevel(optimizationLevel);
 
             vm.installPlugins();
-            for (ClassHolderTransformer transformer : transformers) {
+            for (ClassHolderTransformer transformer : resolveTransformers(classLoader)) {
                 vm.add(transformer);
             }
             if (mainClass != null) {
@@ -402,10 +393,8 @@ public class TeaVMTool implements BaseTeaVMTool {
                 log.info("Output file successfully built");
             } else if (problemProvider.getSevereProblems().isEmpty()) {
                 log.info("Output file built with warnings");
-                TeaVMProblemRenderer.describeProblems(vm, log);
             } else {
                 log.info("Output file built with errors");
-                TeaVMProblemRenderer.describeProblems(vm, log);
             }
 
             File outputFile = new File(targetDirectory, outputName);
@@ -506,5 +495,42 @@ public class TeaVMTool implements BaseTeaVMTool {
         copier.addClasses(vm.getWrittenClasses());
         copier.setLog(log);
         copier.copy(new File(targetDirectory, "src"));
+    }
+
+    private List<ClassHolderTransformer> resolveTransformers(ClassLoader classLoader) {
+        List<ClassHolderTransformer> transformerInstances = new ArrayList<>();
+        if (transformers == null) {
+            return transformerInstances;
+        }
+        for (String transformerName : transformers) {
+            Class<?> transformerRawType;
+            try {
+                transformerRawType = Class.forName(transformerName, true, classLoader);
+            } catch (ClassNotFoundException e) {
+                log.error("Transformer not found: " + transformerName, e);
+                continue;
+            }
+            if (!ClassHolderTransformer.class.isAssignableFrom(transformerRawType)) {
+                log.error("Transformer " + transformerName + " is not subtype of "
+                        + ClassHolderTransformer.class.getName());
+                continue;
+            }
+            Class<? extends ClassHolderTransformer> transformerType = transformerRawType.asSubclass(
+                    ClassHolderTransformer.class);
+            Constructor<? extends ClassHolderTransformer> ctor;
+            try {
+                ctor = transformerType.getConstructor();
+            } catch (NoSuchMethodException e) {
+                log.error("Transformer " + transformerName + " has no default constructor");
+                continue;
+            }
+            try {
+                ClassHolderTransformer transformer = ctor.newInstance();
+                transformerInstances.add(transformer);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                log.error("Error instantiating transformer " + transformerName, e);
+            }
+        }
+        return transformerInstances;
     }
 }

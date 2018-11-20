@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,33 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.jps.remote;
+package org.teavm.tooling.daemon;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Properties;
+import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.tooling.TeaVMTargetType;
+import org.teavm.vm.TeaVMOptimizationLevel;
 
-public class TeaVMRemoteBuildRequest implements Serializable {
+public class RemoteBuildRequest implements Serializable {
     public final List<String> sourceDirectories = new ArrayList<>();
     public final List<String> sourceJarFiles = new ArrayList<>();
     public final List<String> classPath = new ArrayList<>();
+    public String[] transformers;
+    public String[] classesToPreserve;
     public TeaVMTargetType targetType;
     public String mainClass;
     public String targetDirectory;
+    public String tagetFileName = "";
     public boolean sourceMapsFileGenerated;
     public boolean debugInformationGenerated;
     public boolean sourceFilesCopied;
     public boolean incremental;
+    public String cacheDirectory;
+    public boolean minifying;
     public Properties properties;
+    public TeaVMOptimizationLevel optimizationLevel;
+    public WasmBinaryVersion wasmVersion;
 }

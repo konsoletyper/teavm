@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,39 +13,44 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.jps;
+package org.teavm.tooling.builder;
 
 import java.rmi.RemoteException;
 import java.rmi.server.UnicastRemoteObject;
 import java.util.Collection;
 import java.util.List;
 import java.util.Properties;
+import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.Problem;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.idea.jps.model.TeaVMBuildResult;
-import org.teavm.idea.jps.model.TeaVMBuildStrategy;
-import org.teavm.idea.jps.remote.TeaVMRemoteBuildCallback;
-import org.teavm.idea.jps.remote.TeaVMRemoteBuildRequest;
-import org.teavm.idea.jps.remote.TeaVMRemoteBuildResponse;
-import org.teavm.idea.jps.remote.TeaVMRemoteBuildService;
+import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMTargetType;
+import org.teavm.tooling.TeaVMToolLog;
+import org.teavm.tooling.daemon.RemoteBuildCallback;
+import org.teavm.tooling.daemon.RemoteBuildRequest;
+import org.teavm.tooling.daemon.RemoteBuildResponse;
+import org.teavm.tooling.daemon.RemoteBuildService;
+import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
-public class RemoteBuildStrategy implements TeaVMBuildStrategy {
-    private TeaVMRemoteBuildRequest request;
-    private TeaVMRemoteBuildService buildService;
+public class RemoteBuildStrategy implements BuildStrategy {
+    private RemoteBuildRequest request;
+    private RemoteBuildService buildService;
     private TeaVMProgressListener progressListener;
+    private TeaVMToolLog log = new EmptyTeaVMToolLog();
 
-    public RemoteBuildStrategy(TeaVMRemoteBuildService buildService) {
+    public RemoteBuildStrategy(RemoteBuildService buildService) {
         this.buildService = buildService;
     }
 
     @Override
     public void init() {
-        request = new TeaVMRemoteBuildRequest();
+        request = new RemoteBuildRequest();
+        request.optimizationLevel = TeaVMOptimizationLevel.ADVANCED;
+        request.wasmVersion = WasmBinaryVersion.V_0x1;
     }
 
     @Override
@@ -110,14 +115,57 @@ public class RemoteBuildStrategy implements TeaVMBuildStrategy {
     }
 
     @Override
-    public TeaVMBuildResult build() {
-        TeaVMRemoteBuildResponse response;
+    public void setLog(TeaVMToolLog log) {
+        this.log = log;
+    }
+
+    @Override
+    public void setMinifying(boolean minifying) {
+        request.minifying = minifying;
+    }
+
+    @Override
+    public void setTransformers(String[] transformers) {
+        request.transformers = transformers.clone();
+    }
+
+    @Override
+    public void setOptimizationLevel(TeaVMOptimizationLevel level) {
+        request.optimizationLevel = level;
+    }
+
+    @Override
+    public void setTargetFileName(String targetFileName) {
+        request.tagetFileName = targetFileName;
+    }
+
+    @Override
+    public void setClassesToPreserve(String[] classesToPreserve) {
+        request.classesToPreserve = classesToPreserve.clone();
+    }
+
+    @Override
+    public void setCacheDirectory(String cacheDirectory) {
+        request.cacheDirectory = cacheDirectory;
+    }
+
+    @Override
+    public void setWasmVersion(WasmBinaryVersion wasmVersion) {
+        request.wasmVersion = wasmVersion;
+    }
+
+    @Override
+    public BuildResult build() throws BuildException {
+        RemoteBuildResponse response;
         try {
-            response = buildService.build(request, new CallbackImpl(progressListener));
+            response = buildService.build(request, new CallbackImpl(progressListener, log));
         } catch (Throwable e) {
-            throw new RuntimeException(e);
+            throw new BuildException(e);
         }
-        return new TeaVMBuildResult() {
+        if (response.exception != null) {
+            throw new BuildException(response.exception);
+        }
+        return new BuildResult() {
             private ProblemProvider problems = new ProblemProvider() {
                 @Override
                 public List<Problem> getProblems() {
@@ -133,16 +181,6 @@ public class RemoteBuildStrategy implements TeaVMBuildStrategy {
             @Override
             public CallGraph getCallGraph() {
                 return response.callGraph;
-            }
-
-            @Override
-            public boolean isErrorOccurred() {
-                return response.errorOccurred;
-            }
-
-            @Override
-            public String getStackTrace() {
-                return response.stackTrace;
             }
 
             @Override
@@ -167,22 +205,54 @@ public class RemoteBuildStrategy implements TeaVMBuildStrategy {
         };
     }
 
-    static class CallbackImpl extends UnicastRemoteObject implements TeaVMRemoteBuildCallback {
+    static class CallbackImpl extends UnicastRemoteObject implements RemoteBuildCallback {
         private TeaVMProgressListener listener;
+        private TeaVMToolLog log;
 
-        public CallbackImpl(TeaVMProgressListener listener) throws RemoteException {
+        public CallbackImpl(TeaVMProgressListener listener, TeaVMToolLog log) throws RemoteException {
             super();
             this.listener = listener;
+            this.log = log;
         }
 
         @Override
-        public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) throws RemoteException {
-            return listener.phaseStarted(phase, count);
+        public TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) {
+            return listener != null ? listener.phaseStarted(phase, count) : TeaVMProgressFeedback.CONTINUE;
         }
 
         @Override
-        public TeaVMProgressFeedback progressReached(int progress) throws RemoteException {
-            return listener.progressReached(progress);
+        public TeaVMProgressFeedback progressReached(int progress) {
+            return listener != null ? listener.progressReached(progress) : TeaVMProgressFeedback.CONTINUE;
+        }
+
+        @Override
+        public void errorReported(String message, Throwable e) {
+            log.error(message, e);
+        }
+
+        @Override
+        public void errorReported(String message) {
+            log.error(message);
+        }
+
+        @Override
+        public void warningReported(String message, Throwable e) {
+            log.warning(message, e);
+        }
+
+        @Override
+        public void warningReported(String message) {
+            log.warning(message);
+        }
+
+        @Override
+        public void infoReported(String message, Throwable e) {
+            log.info(message, e);
+        }
+
+        @Override
+        public void infoReported(String message) {
+            log.info(message);
         }
     }
 }

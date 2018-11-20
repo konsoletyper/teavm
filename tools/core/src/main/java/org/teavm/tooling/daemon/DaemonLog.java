@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,15 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.jps.remote;
+package org.teavm.tooling.daemon;
 
-import java.rmi.Remote;
-import java.rmi.RemoteException;
-import org.teavm.vm.TeaVMPhase;
-import org.teavm.vm.TeaVMProgressFeedback;
+public interface DaemonLog {
+    void error(String message);
 
-public interface TeaVMRemoteBuildCallback extends Remote {
-    TeaVMProgressFeedback phaseStarted(TeaVMPhase phase, int count) throws RemoteException;
+    void error(String message, Throwable e);
 
-    TeaVMProgressFeedback progressReached(int progress) throws RemoteException;
+    void info(String message);
 }

@@ -157,9 +157,7 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
         String cacheDir = profile.getCacheDirectory();
         tool.setCacheDirectory(!cacheDir.isEmpty() ?
                 new File(varManager.performStringSubstitution(cacheDir, false)) : null);
-        for (ClassHolderTransformer transformer : instantiateTransformers(profile, classLoader)) {
-            tool.getTransformers().add(transformer);
-        }
+        tool.getTransformers().addAll(Arrays.asList(profile.getTransformers()));
         tool.getClassesToPreserve().addAll(profile.getClassesToPreserve());
         for (SourceFileProvider provider : sourceProviders) {
             tool.addSourceFileProvider(provider);
@@ -538,42 +536,6 @@ public class TeaVMProjectBuilder extends IncrementalProjectBuilder {
             }
         }
         return projects;
-    }
-
-    private List<ClassHolderTransformer> instantiateTransformers(TeaVMProfile profile, ClassLoader classLoader)
-            throws CoreException{
-        List<ClassHolderTransformer> transformerInstances = new ArrayList<>();
-        for (String transformerName : profile.getTransformers()) {
-            Class<?> transformerRawType;
-            try {
-                transformerRawType = Class.forName(transformerName, true, classLoader);
-            } catch (ClassNotFoundException e) {
-                putConfigMarker("Transformer not found: " + transformerName);
-                continue;
-            }
-            if (!ClassHolderTransformer.class.isAssignableFrom(transformerRawType)) {
-                putConfigMarker("Transformer " + transformerName + " is not a subtype of " +
-                        ClassHolderTransformer.class.getName());
-                continue;
-            }
-            Class<? extends ClassHolderTransformer> transformerType = transformerRawType.asSubclass(
-                    ClassHolderTransformer.class);
-            Constructor<? extends ClassHolderTransformer> ctor;
-            try {
-                ctor = transformerType.getConstructor();
-            } catch (NoSuchMethodException e) {
-                putConfigMarker("Transformer " + transformerName + " has no default constructor");
-                continue;
-            }
-            try {
-                ClassHolderTransformer transformer = ctor.newInstance();
-                transformerInstances.add(transformer);
-            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
-                putConfigMarker("Error instantiating transformer " + transformerName);
-                continue;
-            }
-        }
-        return transformerInstances;
     }
 
     private void putConfigMarker(String message) throws CoreException {
