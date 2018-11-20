@@ -331,7 +331,7 @@ public class TeaVMTool {
     public void generate() throws TeaVMToolException {
         try {
             cancelled = false;
-            log.info("Building JavaScript file");
+            log.info("Running TeaVM");
             TeaVMBuilder vmBuilder = new TeaVMBuilder(prepareTarget());
             if (incremental) {
                 cacheDirectory.mkdirs();

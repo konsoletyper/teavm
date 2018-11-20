@@ -56,6 +56,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private String[] transformers = new String[0];
     private String[] classesToPreserve = new String[0];
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
+    private int heapSize = 32;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private TeaVMProgressListener progressListener;
     private Properties properties = new Properties();
@@ -173,6 +174,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setHeapSize(int heapSize) {
+        this.heapSize = heapSize;
+    }
+
+    @Override
     public BuildResult build() throws BuildException {
         TeaVMTool tool = new TeaVMTool();
         tool.setProgressListener(progressListener);
@@ -194,6 +200,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.getClassesToPreserve().addAll(Arrays.asList(classesToPreserve));
         tool.setCacheDirectory(cacheDirectory != null ? new File(cacheDirectory) : null);
         tool.setWasmVersion(wasmVersion);
+        tool.setMinHeapSize(heapSize);
 
         tool.getProperties().putAll(properties);
 

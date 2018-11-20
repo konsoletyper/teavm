@@ -165,6 +165,21 @@
               <debugInformationGenerated>true</debugInformationGenerated>
               <targetType>WEBASSEMBLY</targetType>
               <optimizationLevel>FULL</optimizationLevel>
+              <heapSize>8</heapSize>
+            </configuration>
+          </execution>
+          <execution>
+            <id>native-client</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <configuration>
+              <targetDirectory>${project.build.directory}/generated/c</targetDirectory>
+              <mainClass>org.teavm.samples.benchmark.teavm.Gtk3BenchmarkStarter</mainClass>
+              <debugInformationGenerated>true</debugInformationGenerated>
+              <targetType>C</targetType>
+              <optimizationLevel>FULL</optimizationLevel>
+              <heapSize>8</heapSize>
             </configuration>
           </execution>
         </executions>

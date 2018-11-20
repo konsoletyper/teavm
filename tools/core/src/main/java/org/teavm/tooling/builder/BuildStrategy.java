@@ -66,5 +66,7 @@ public interface BuildStrategy {
 
     void setWasmVersion(WasmBinaryVersion wasmVersion);
 
+    void setHeapSize(int heapSize);
+
     BuildResult build() throws BuildException;
 }

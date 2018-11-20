@@ -77,22 +77,22 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter
     private List<String> compileScopes;
 
-    @Parameter
+    @Parameter(property = "teavm.minifying", defaultValue = "true")
     private boolean minifying = true;
 
     @Parameter
     private Properties properties;
 
-    @Parameter
+    @Parameter(property = "teavm.debugInformationGenerated", defaultValue = "false")
     private boolean debugInformationGenerated;
 
-    @Parameter
+    @Parameter(property = "teavm.sourceMapsGenerated", defaultValue = "false")
     private boolean sourceMapsGenerated;
 
-    @Parameter
+    @Parameter(property = "teavm.sourceFilesCopied", defaultValue = "false")
     private boolean sourceFilesCopied;
 
-    @Parameter
+    @Parameter(property = "teavm.incremental", defaultValue = "false")
     private boolean incremental;
 
     @Parameter
@@ -104,29 +104,32 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.sourceDirectory}")
     private File sourceDirectory;
 
-    @Parameter
+    @Parameter(property = "teavm.targetFileName", defaultValue = "")
     private String targetFileName = "";
 
-    @Parameter
+    @Parameter(property = "teavm.mainClass")
     private String mainClass;
 
     @Parameter
     private String[] classesToPreserve;
 
-    @Parameter
+    @Parameter(property = "teavm.stopOnErrors", defaultValue = "true")
     private boolean stopOnErrors = true;
 
-    @Parameter
+    @Parameter(property = "teavm.optimizationLevel", defaultValue = "SIMPLE")
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.SIMPLE;
 
-    @Parameter
+    @Parameter(property = "teavm.targetType", defaultValue = "JAVASCRIPT")
     private TeaVMTargetType targetType = TeaVMTargetType.JAVASCRIPT;
 
     @Parameter(defaultValue = "${project.build.directory}/teavm-cache")
     private File cacheDirectory;
 
-    @Parameter
+    @Parameter(property = "teavm.wasmVersion", defaultValue = "V_0x1")
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
+
+    @Parameter(property = "teavm.heapSize", defaultValue = "32")
+    private int heapSize;
 
     @Parameter(property = "teavm.outOfProcess", defaultValue = "false")
     private boolean outOfProcess;
@@ -154,6 +157,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setDebugInformationGenerated(debugInformationGenerated);
             builder.setSourceMapsFileGenerated(sourceMapsGenerated);
             builder.setSourceFilesCopied(sourceFilesCopied);
+            builder.setHeapSize(heapSize * 1024 * 1024);
         } catch (RuntimeException e) {
             throw new MojoExecutionException("Unexpected error occurred", e);
         }
@@ -161,7 +165,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
 
     private List<String> prepareClassPath() {
         Log log = getLog();
-        log.info("Preparing classpath for JavaScript generation");
+        log.info("Preparing classpath for TeaVM");
         List<String> paths = new ArrayList<>();
         StringBuilder classpath = new StringBuilder();
         for (Artifact artifact : project.getArtifacts()) {
@@ -180,7 +184,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
         }
         classpath.append(classFiles.getPath());
         paths.add(classFiles.getAbsolutePath());
-        log.info("Using the following classpath for JavaScript generation: " + classpath);
+        log.info("Using the following classpath for TeaVM: " + classpath);
         return paths;
     }
 
