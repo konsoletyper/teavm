@@ -35,7 +35,7 @@ before_install:
   - rm -rf $HOME/.m2
 
 install:
-  - $MVN_CMD install -Dteavm.build.all=false -P with-idea -P with-eclipse -P with-cli -DskipTests=true -Dmaven.javadoc.skip=true -V
+  - $MVN_CMD install -Dteavm.build.all=false -P with-idea -P with-cli -DskipTests=true -Dmaven.javadoc.skip=true -V
   - pushd tests/src/test/js
   - npm config set prefix=$HOME/.node_modules
   - npm install

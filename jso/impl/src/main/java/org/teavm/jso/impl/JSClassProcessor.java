@@ -587,7 +587,7 @@ class JSClassProcessor {
         JSParser parser = new JSParser(env, errorReporter);
         AstRoot rootNode;
         try {
-            rootNode = parser.parse(new StringReader("function(){" + script + "}"), null, 0);
+            rootNode = (AstRoot) parser.parseAsObject(new StringReader("function(){" + script + "}"), null, 0);
         } catch (IOException e) {
             throw new RuntimeException("IO Error occurred", e);
         }

@@ -15,13 +15,23 @@
  */
 package org.teavm.backend.javascript.rendering;
 
+import java.io.IOException;
+import java.io.Reader;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.ErrorReporter;
 import org.mozilla.javascript.Parser;
 
 public class JSParser extends Parser {
+    public JSParser(Object compilerEnv, Object errorReporter) {
+        this((CompilerEnvirons) compilerEnv, (ErrorReporter) errorReporter);
+    }
+
     public JSParser(CompilerEnvirons compilerEnv, ErrorReporter errorReporter) {
         super(compilerEnv, errorReporter);
+    }
+
+    public JSParser(Object compilerEnv) {
+        this((CompilerEnvirons) compilerEnv);
     }
 
     public JSParser(CompilerEnvirons compilerEnv) {
@@ -34,5 +44,9 @@ public class JSParser extends Parser {
 
     public void exitFunction() {
         --nestingOfFunction;
+    }
+
+    public Object parseAsObject(Reader sourceReader, String sourceURI, int lineno) throws IOException {
+        return parse(sourceReader, sourceURI, lineno);
     }
 }

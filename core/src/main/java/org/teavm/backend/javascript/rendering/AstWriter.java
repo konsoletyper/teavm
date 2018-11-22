@@ -119,6 +119,10 @@ public class AstWriter {
         nameMap.put(name, emitter);
     }
 
+    public void hoist(Object node) {
+        hoist((AstNode) node);
+    }
+
     public void hoist(AstNode node) {
         node.visit(n -> {
             if (n instanceof Scope) {
@@ -131,6 +135,14 @@ public class AstWriter {
             }
             return true;
         });
+    }
+
+    public void print(Object node) throws IOException {
+        print((AstNode) node);
+    }
+
+    public void print(Object node, int precedence) throws IOException {
+        print((AstNode) node, precedence);
     }
 
     public void print(AstNode node) throws IOException {

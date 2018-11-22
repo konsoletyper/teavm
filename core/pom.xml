@@ -24,8 +24,6 @@
   </parent>
   <artifactId>teavm-core</artifactId>
 
-  <packaging>bundle</packaging>
-
   <name>TeaVM core</name>
   <description>TeaVM compiler and SPI</description>
 
@@ -48,19 +46,23 @@
     <dependency>
       <groupId>commons-io</groupId>
       <artifactId>commons-io</artifactId>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-commons</artifactId>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-util</artifactId>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.carrotsearch</groupId>
       <artifactId>hppc</artifactId>
       <version>0.7.3</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
@@ -70,6 +72,7 @@
     <dependency>
       <groupId>org.mozilla</groupId>
       <artifactId>rhino</artifactId>
+      <optional>true</optional>
     </dependency>
   </dependencies>
 
@@ -90,16 +93,45 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
+
       <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Export-Package>org.teavm.*</Export-Package>
-            <Bundle-SymbolicName>teavm-core</Bundle-SymbolicName>
-          </instructions>
-        </configuration>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <artifactSet>
+                <excludes>
+                  <exclude>junit:junit</exclude>
+                  <exclude>org:teavm:*</exclude>
+                  <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
+                </excludes>
+              </artifactSet>
+              <relocations>
+                <relocation>
+                  <pattern>org.objectweb.asm</pattern>
+                  <shadedPattern>org.teavm.asm</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.mozilla</pattern>
+                  <shadedPattern>org.teavm.rhino</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.carrotsearch.hppc</pattern>
+                  <shadedPattern>org.teavm.hppc</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons</pattern>
+                  <shadedPattern>org.teavm.apachecommons</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

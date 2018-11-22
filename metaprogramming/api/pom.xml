@@ -28,8 +28,6 @@
   </parent>
   <artifactId>teavm-metaprogramming-api</artifactId>
 
-  <packaging>bundle</packaging>
-
   <name>TeaVM metaprogramming API</name>
   <description>Declaration of interfaces and annotations for TeaVM metaprogramming</description>
 
@@ -69,17 +67,6 @@
             </goals>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Export-Package>org.teavm.metaprogramming.*</Export-Package>
-            <Bundle-SymbolicName>teavm-metaprogramming-api</Bundle-SymbolicName>
-          </instructions>
-        </configuration>
       </plugin>
     </plugins>
   </build>

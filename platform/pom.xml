@@ -24,8 +24,6 @@
   </parent>
   <artifactId>teavm-platform</artifactId>
 
-  <packaging>bundle</packaging>
-
   <name>TeaVM platform</name>
   <description>A low-level classes that help to implement Java class library</description>
 
@@ -50,17 +48,6 @@
 
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Export-Package>org.teavm.platform.*</Export-Package>
-            <Bundle-SymbolicName>teavm-platform</Bundle-SymbolicName>
-          </instructions>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>

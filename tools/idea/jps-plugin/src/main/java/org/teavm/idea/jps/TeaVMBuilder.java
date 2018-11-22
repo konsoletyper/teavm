@@ -77,7 +77,7 @@ public class TeaVMBuilder extends TargetBuilder<BuildRootDescriptor, TeaVMBuildT
             BuildStrategy buildStrategy = buildService != null
                     ? new RemoteBuildStrategy(buildService)
                     : createInProcessBuilder();
-            TeaVMBuild build = new TeaVMBuild(context, assistant, buildStrategy, outputConsumer);
+            TeaVMBuild build = new TeaVMBuild(context, assistant, buildStrategy, outputConsumer, buildService != null);
 
             build.perform(target.getModule(), target);
         } catch (BuildException e) {

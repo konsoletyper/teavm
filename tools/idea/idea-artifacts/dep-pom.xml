@@ -62,11 +62,6 @@
         </exclusion>
       </exclusions>
     </dependency>
-    <dependency>
-      <groupId>org.teavm</groupId>
-      <artifactId>teavm-metaprogramming-impl</artifactId>
-      <version>${teavm.version}</version>
-    </dependency>
   </dependencies>
 
   <build>
@@ -128,16 +123,6 @@
                   <exclude>com.jetbrains.intellij.idea:ideaIC:zip:*</exclude>
                 </excludes>
               </atrifactSet>
-              <relocations>
-                <relocation>
-                  <pattern>org.objectweb.asm</pattern>
-                  <shadedPattern>org.teavm.asm</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.objectweb.asm</pattern>
-                  <shadedPattern>org.teavm.asm</shadedPattern>
-                </relocation>
-              </relocations>
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <outputFile>dependencies/teavm.jar</outputFile>
             </configuration>

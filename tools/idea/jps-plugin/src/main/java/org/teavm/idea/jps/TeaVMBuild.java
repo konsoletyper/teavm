@@ -74,6 +74,12 @@ import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
 class TeaVMBuild {
+    private static final String[] BLACKLISTED_CLASSES = {
+            "org/teavm/jso/impl/JSOPlugin.class",
+            "org/teavm/metaprogramming/impl/MetaprogrammingImpl.class",
+            "org/teavm/classlib/impl/JCLPlugin.class"
+    };
+
     private final CompileContext context;
     private final List<String> classPathEntries = new ArrayList<>();
     private List<String> directoryClassPathEntries;
@@ -83,13 +89,15 @@ class TeaVMBuild {
     private final Map<File, int[]> fileLineCache = new HashMap<>();
     private BuildStrategy buildStrategy;
     private BuildOutputConsumer outputConsumer;
+    private boolean incrementaSupported;
 
     TeaVMBuild(CompileContext context, TeaVMBuilderAssistant assistant, BuildStrategy buildStrategy,
-            BuildOutputConsumer outputConsumer) {
+            BuildOutputConsumer outputConsumer, boolean incrementalSupported) {
         this.context = context;
         this.assistant = assistant;
         this.buildStrategy = buildStrategy;
         this.outputConsumer = outputConsumer;
+        this.incrementaSupported = incrementalSupported;
     }
 
     boolean perform(JpsModule module, TeaVMBuildTarget target) throws IOException, BuildException {
@@ -122,7 +130,7 @@ class TeaVMBuild {
         buildStrategy.setTargetType(config.getTargetType());
         buildStrategy.setTargetDirectory(config.getTargetDirectory());
         buildStrategy.setProgressListener(createProgressListener(context));
-        buildStrategy.setIncremental(!isRebuild(target));
+        buildStrategy.setIncremental(incrementaSupported && !isRebuild(target));
 
         Properties properties = new Properties();
         for (TeaVMProperty property : config.getProperties()) {
@@ -484,7 +492,7 @@ class TeaVMBuild {
                 JpsModuleDependency moduleDependency = (JpsModuleDependency) dependency;
                 File dependencyOutput = JpsJavaExtensionService.getInstance().getOutputDirectory(
                         moduleDependency.getModule(), false);
-                if (dependencyOutput != null) {
+                if (dependencyOutput != null && !isBlacklistedDependency(dependencyOutput)) {
                     classPathEntries.add(dependencyOutput.getPath());
                 }
                 for (JpsModuleSourceRoot sourceRoot : moduleDependency.getModule().getSourceRoots()) {
@@ -510,6 +518,15 @@ class TeaVMBuild {
                 }
             }
         }
+    }
+
+    private static boolean isBlacklistedDependency(File dependency) {
+        for (String entry : BLACKLISTED_CLASSES) {
+            if (new File(dependency, entry).exists()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private File getFileFromUrl(String url) {

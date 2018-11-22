@@ -24,7 +24,6 @@
     <relativePath>../..</relativePath>
   </parent>
   <artifactId>teavm-tooling</artifactId>
-  <packaging>bundle</packaging>
 
   <name>TeaVM tooling core</name>
   <description>TeaVM API that helps to create tooling</description>
@@ -38,6 +37,11 @@
     <dependency>
       <groupId>com.fasterxml.jackson.core</groupId>
       <artifactId>jackson-annotations</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
       <optional>true</optional>
     </dependency>
   </dependencies>
@@ -60,16 +64,43 @@
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
       </plugin>
+
       <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Export-Package>org.teavm.*</Export-Package>
-            <Bundle-SymbolicName>teavm-tooling</Bundle-SymbolicName>
-          </instructions>
-        </configuration>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <artifactSet>
+                <includes>
+                  <include>org.teavm:teavm-tooling</include>
+                </includes>
+              </artifactSet>
+              <relocations>
+                <relocation>
+                  <pattern>org.objectweb.asm</pattern>
+                  <shadedPattern>org.teavm.asm</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.mozilla</pattern>
+                  <shadedPattern>org.teavm.rhino</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.carrotsearch.hppc</pattern>
+                  <shadedPattern>org.teavm.hppc</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons</pattern>
+                  <shadedPattern>org.teavm.apachecommons</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

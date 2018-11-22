@@ -24,8 +24,6 @@
   </parent>
   <artifactId>teavm-classlib</artifactId>
 
-  <packaging>bundle</packaging>
-
   <name>TeaVM Java class library</name>
   <description>TeaVM Java class library emulation</description>
 
@@ -49,6 +47,7 @@
       <artifactId>teavm-core</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
@@ -79,6 +78,7 @@
       <groupId>org.ow2.asm</groupId>
       <artifactId>asm-util</artifactId>
       <scope>provided</scope>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>com.google.code.gson</groupId>
@@ -107,23 +107,37 @@
         </configuration>
       </plugin>
       <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Export-Package>org.teavm.classlib.*</Export-Package>
-            <Bundle-SymbolicName>teavm-classlib</Bundle-SymbolicName>
-          </instructions>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-source-plugin</artifactId>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-shade-plugin</artifactId>
+        <executions>
+          <execution>
+            <phase>package</phase>
+            <goals>
+              <goal>shade</goal>
+            </goals>
+            <configuration>
+              <artifactSet>
+                <includes>
+                  <include>org.teavm:teavm-classlib</include>
+                </includes>
+              </artifactSet>
+              <relocations>
+                <relocation>cd
+                  <pattern>org.objectweb.asm</pattern>
+                  <shadedPattern>org.teavm.asm</shadedPattern>
+                </relocation>
+              </relocations>
+            </configuration>
+          </execution>
+        </executions>
       </plugin>
     </plugins>
   </build>

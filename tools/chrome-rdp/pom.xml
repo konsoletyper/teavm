@@ -25,8 +25,6 @@
   </parent>
   <artifactId>teavm-chrome-rdp</artifactId>
 
-  <packaging>bundle</packaging>
-
   <name>TeaVM debugging backend for Google Chrome RDP</name>
   <description>TeaVM debugging backend for Google Chrome RDP</description>
 
@@ -81,17 +79,6 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-javadoc-plugin</artifactId>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.felix</groupId>
-        <artifactId>maven-bundle-plugin</artifactId>
-        <extensions>true</extensions>
-        <configuration>
-          <instructions>
-            <Export-Package>org.teavm.chromerdp</Export-Package>
-            <Bundle-SymbolicName>teavm-chrome-rdp</Bundle-SymbolicName>
-          </instructions>
-        </configuration>
       </plugin>
     </plugins>
   </build>

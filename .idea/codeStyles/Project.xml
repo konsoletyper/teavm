@@ -47,5 +47,11 @@
       <option name="VARIABLE_ANNOTATION_WRAP" value="1" />
       <option name="ENUM_CONSTANTS_WRAP" value="2" />
     </codeStyleSettings>
+    <codeStyleSettings language="XML">
+      <indentOptions>
+        <option name="INDENT_SIZE" value="2" />
+        <option name="CONTINUATION_INDENT_SIZE" value="4" />
+      </indentOptions>
+    </codeStyleSettings>
   </code_scheme>
 </component>
