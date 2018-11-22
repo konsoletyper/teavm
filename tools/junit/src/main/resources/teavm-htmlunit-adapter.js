@@ -6,17 +6,19 @@ function runMain(callback) {
         } else {
             message.status = "ok";
         }
-        callback.complete(JSON.stringify(message));
+        callback.complete(message);
     });
 
     function makeErrorMessage(message, e) {
         message.status = "exception";
-        var stack = "";
-        if (e.$javaException && e.$javaException.constructor.$meta) {
-            stack = e.$javaException.constructor.$meta.name + ": ";
-            stack += e.$javaException.getMessage() || "";
-            stack += "\n";
+        if (e.$javaException) {
+            message.className = e.$javaException.constructor.name;
+            message.message = e.$javaException.getMessage();
+        } else {
+            message.className = Object.getPrototypeOf(e).name;
+            message.message = e.message;
         }
-        message.stack = stack + e.stack;
+        message.exception = e;
+        message.stack = e.stack;
     }
 }

@@ -28,6 +28,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import net.sourceforge.htmlunit.corejs.javascript.Function;
 import net.sourceforge.htmlunit.corejs.javascript.NativeJavaObject;
+import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
 import org.apache.commons.io.IOUtils;
 
 class HtmlUnitRunStrategy implements TestRunStrategy {
@@ -65,7 +66,9 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
                 .getJavaScriptResult();
         Object[] args = new Object[] { new NativeJavaObject(function, asyncResult, AsyncResult.class) };
         page.get().executeJavaScriptFunctionIfPossible(function, function, args, page.get());
-        JavaScriptResultParser.parseResult((String) asyncResult.getResult(), run.getCallback());
+
+        RhinoResultParser.parseResult((Scriptable) asyncResult.getResult(), run.getCallback(),
+                new File(run.getBaseDirectory(), run.getFileName() + ".teavmdbg"));
     }
 
     private void cleanUp() {

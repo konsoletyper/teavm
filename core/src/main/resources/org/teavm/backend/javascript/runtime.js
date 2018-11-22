@@ -248,6 +248,9 @@ function $rt_exception(ex) {
     var err = ex.$jsException;
     if (!err) {
         err = new Error("Java exception thrown");
+        if (typeof Error.captureStackTrace === "function") {
+            Error.captureStackTrace(err);
+        }
         err.$javaException = ex;
         ex.$jsException = err;
     }

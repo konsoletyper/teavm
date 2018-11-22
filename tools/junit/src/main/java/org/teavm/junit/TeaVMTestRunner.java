@@ -571,6 +571,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         CompilePostProcessor postBuild = (vm, file) -> {
             DebugInformation debugInfo = debugEmitter.getDebugInformation();
             File sourceMapsFile = new File(file.getPath() + ".map");
+            File debugFile = new File(file.getPath() + ".teavmdbg");
             try {
                 try (Writer writer = new OutputStreamWriter(new FileOutputStream(file, true), UTF_8)) {
                     writer.write("\n//# sourceMappingURL=");
@@ -578,7 +579,11 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 }
 
                 try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(sourceMapsFile), UTF_8)) {
-                    debugInfo.writeAsSourceMaps(sourceMapsOut, "src", file.getPath());
+                    debugInfo.writeAsSourceMaps(sourceMapsOut, "", file.getPath());
+                }
+
+                try (OutputStream out = new FileOutputStream(debugFile)) {
+                    debugInfo.write(out);
                 }
             } catch (IOException e) {
                 throw new RuntimeException(e);
