@@ -17,11 +17,12 @@ package org.teavm.vm;
 
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.parsing.ClasspathClassHolderSource;
 
 public class TeaVMBuilder {
     TeaVMTarget target;
-    ClassHolderSource classSource;
+    ClassReaderSource classSource;
     ClassLoader classLoader;
 
     public TeaVMBuilder(TeaVMTarget target) {
@@ -30,7 +31,7 @@ public class TeaVMBuilder {
         classSource = !isBootstrap() ? new ClasspathClassHolderSource(classLoader) : name -> null;
     }
 
-    public ClassHolderSource getClassSource() {
+    public ClassReaderSource getClassSource() {
         return classSource;
     }
 

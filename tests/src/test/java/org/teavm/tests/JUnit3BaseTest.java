@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,25 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.html4j.testing;
+package org.teavm.tests;
 
-import org.teavm.testing.TestLauncher;
-import org.teavm.testing.TestRunner;
+import junit.framework.TestCase;
 
-public class KOTestRunner implements TestRunner {
+public abstract class JUnit3BaseTest extends TestCase {
+    String a;
+    String b;
+
     @Override
-    public void run(TestLauncher launcher) throws Throwable {
-        int repeatCount = 0;
-        while (true) {
-            try {
-                launcher.launch();
-                break;
-            } catch (InterruptedException e) {
-                if (++repeatCount == 10) {
-                    throw e;
-                }
-                Thread.sleep(50);
-            }
-        }
+    protected void setUp() throws Exception {
+        super.setUp();
+        a = "start";
+    }
+
+    public void testFoo() {
+        assertEquals("start", a);
     }
 }

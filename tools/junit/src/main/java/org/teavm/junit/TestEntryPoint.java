@@ -15,8 +15,6 @@
  */
 package org.teavm.junit;
 
-import org.teavm.testing.TestRunner;
-
 final class TestEntryPoint {
     private static Object testCase;
 
@@ -24,14 +22,23 @@ final class TestEntryPoint {
     }
 
     public static void run() throws Throwable {
-        createRunner().run(() -> launchTest());
+        before();
+        try {
+            launchTest();
+        } finally {
+            try {
+                after();
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+        }
     }
 
-    private static native TestRunner createRunner();
+    private static native void before();
 
     private static native void launchTest();
 
-    private static native boolean isExpectedException(Class<?> cls);
+    private static native void after();
 
     public static void main(String[] args) throws Throwable {
         run();

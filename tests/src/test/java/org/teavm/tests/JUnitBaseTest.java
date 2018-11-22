@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,16 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.testing;
+package org.teavm.tests;
 
-import org.teavm.model.MethodReader;
+import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
 
-public interface TestAdapter {
-    boolean acceptClass(Class<?> cls);
+public abstract class JUnitBaseTest {
+    String a;
+    String b;
 
-    boolean acceptMethod(MethodReader method);
+    @Before
+    public void startBase() {
+        a = "start";
+    }
 
-    Iterable<String> getExpectedExceptions(MethodReader method);
-
-    Class<? extends TestRunner> getRunner(MethodReader method);
+    @Test
+    public void foo() {
+        assertEquals("start", a);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Jaroslav Tulach.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.html4j.testing;
+package org.teavm.tests;
 
-import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
-/**
- *
- * @author Jaroslav Tulach
- */
-public class KOTestAdapterTest {
-    @Test
-    public void verifyKOTestClassNameIsCorrect() throws ClassNotFoundException {
-        Class.forName(KOTestAdapter.KO_TEST_CLASS);
+@RunWith(TeaVMTestRunner.class)
+public class JUnit3DerivedTest extends JUnit3BaseTest {
+    @Override
+    protected void setUp() throws Exception {
+        super.setUp();
+        b = "derived";
+    }
+
+    public void testBar() {
+        assertEquals("derived", b);
     }
 }

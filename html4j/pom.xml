@@ -40,12 +40,6 @@
     <dependency>
       <groupId>org.netbeans.html</groupId>
       <artifactId>net.java.html.boot</artifactId>
-      <exclusions>
-        <exclusion>
-          <groupId>org.ow2.asm</groupId>
-          <artifactId>asm</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.netbeans.html</groupId>

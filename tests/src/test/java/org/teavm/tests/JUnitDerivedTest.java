@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,11 +13,23 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.testing;
+package org.teavm.tests;
 
-public class SimpleTestRunner implements TestRunner {
-    @Override
-    public void run(TestLauncher launcher) throws Throwable {
-        launcher.launch();
+import static org.junit.Assert.assertEquals;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+
+@RunWith(TeaVMTestRunner.class)
+public class JUnitDerivedTest extends JUnitBaseTest {
+    @Before
+    public void startDerived() {
+        b = "derived";
+    }
+
+    @Test
+    public void bar() {
+        assertEquals("derived", b);
     }
 }
