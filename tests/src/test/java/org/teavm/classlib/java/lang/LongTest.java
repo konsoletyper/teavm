@@ -38,4 +38,18 @@ public class LongTest {
     public void calculatesHashCode() {
         assertEquals(23 ^ 42, Long.hashCode((23L << 32) | 42));
     }
+
+    @Test
+    public void bitsReversed() {
+        assertEquals(0, Long.reverse(0));
+        assertEquals(0x8000000000000000L, Long.reverse(1));
+        assertEquals(0x0020000000000000L, Long.reverse(0x400));
+        assertEquals(0x0000000000000001L, Long.reverse(0x8000000000000000L));
+        assertEquals(0x8888888888888888L, Long.reverse(0x1111111111111111L));
+        assertEquals(0x0C0C0C0C0C0C0C0CL, Long.reverse(0x3030303030303030L));
+        assertEquals(0x00000000000000FFL, Long.reverse(0xFF00000000000000L));
+        assertEquals(0xFF00000000000000L, Long.reverse(0x00000000000000FFL));
+        assertEquals(0xFFFFFFFFFFFFFFFFL, Long.reverse(0xFFFFFFFFFFFFFFFFL));
+        assertEquals(0xF63BA00000000000L, Long.reverse(0x5DC6F));
+    }
 }
