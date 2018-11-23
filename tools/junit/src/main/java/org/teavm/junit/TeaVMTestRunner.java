@@ -25,8 +25,6 @@ import java.io.OutputStreamWriter;
 import java.io.Writer;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -93,7 +91,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static final String PATH_PARAM = "teavm.junit.target";
     private static final String JS_RUNNER = "teavm.junit.js.runner";
     private static final String THREAD_COUNT = "teavm.junit.js.threads";
-    private static final String SELENIUM_URL = "teavm.junit.js.selenium.url";
     private static final String JS_ENABLED = "teavm.junit.js";
     private static final String C_ENABLED = "teavm.junit.c";
     private static final String WASM_ENABLED = "teavm.junit.wasm";
@@ -151,13 +148,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         if (runStrategyName != null) {
             TestRunStrategy jsRunStrategy;
             switch (runStrategyName) {
-                case "selenium":
-                    try {
-                        jsRunStrategy = new SeleniumRunStrategy(new URL(System.getProperty(SELENIUM_URL)));
-                    } catch (MalformedURLException e) {
-                        throw new InitializationError(e);
-                    }
-                    break;
                 case "htmlunit":
                     jsRunStrategy = new HtmlUnitRunStrategy();
                     break;
