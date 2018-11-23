@@ -62,25 +62,29 @@ final class RhinoResultParser {
                 String stack = result.get("stack", result).toString();
                 String[] script = getScript(new File(debugFile.getParentFile(),
                         debugFile.getName().substring(0, debugFile.getName().length() - 9)));
-                stack = decodeStack(stack, script, debugInformation);
-
-                if (className.equals("java.lang.AssertionError")) {
-                    callback.error(new AssertionError(message + stack));
-                } else {
-                    callback.error(new RuntimeException(className + ": " + message + stack));
+                StackTraceElement[] decodedStack = decodeStack(stack, script, debugInformation);
+                if (decodedStack != null) {
+                    stack = "";
                 }
+
+                Throwable e;
+                if (className.equals("java.lang.AssertionError")) {
+                    e = new AssertionError(message + stack);
+                } else {
+                    e = new RuntimeException(className + ": " + message + stack);
+                }
+                e.setStackTrace(decodedStack);
+                callback.error(e);
                 break;
             }
         }
     }
 
-    private static String decodeStack(String stack, String[] script, DebugInformation debugInformation) {
-        StringBuilder sb = new StringBuilder();
+    private static StackTraceElement[] decodeStack(String stack, String[] script, DebugInformation debugInformation) {
+        List<StackTraceElement> elements = new ArrayList<>();
         for (String line : lineSeparator.split(stack)) {
-            sb.append("\n\tat ");
             Matcher matcher = pattern.matcher(line);
             if (!matcher.matches()) {
-                sb.append(line);
                 continue;
             }
 
@@ -90,26 +94,32 @@ final class RhinoResultParser {
             String scriptLine = script[lineNumber];
             int column = firstNonSpace(scriptLine);
             MethodReference method = debugInformation.getMethodAt(lineNumber, column);
+            String className;
+            String methodName;
 
             if (method != null) {
-                sb.append(method.getClassName()).append(".").append(method.getName());
+                className = method.getClassName();
+                methodName = method.getName();
             } else {
-                sb.append(functionName != null ? functionName : "<unknown_function>");
+                className = "<JS>";
+                methodName = functionName != null ? functionName : "<unknown_function>";
             }
 
-            sb.append("(");
+            String fileName;
             SourceLocation location = debugInformation.getSourceLocation(lineNumber, column);
             if (location != null && location.getFileName() != null) {
-                String fileName = location.getFileName();
+                fileName = location.getFileName();
                 fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
-                sb.append(fileName).append(":").append(location.getLine());
+                lineNumber = location.getLine();
             } else {
-                sb.append("test.js:").append(lineNumber + 1);
+                fileName = "test.js";
+                lineNumber++;
             }
-            sb.append(")");
+
+            elements.add(new StackTraceElement(className, methodName, fileName, lineNumber));
         }
 
-        return sb.toString();
+        return elements.toArray(new StackTraceElement[0]);
     }
 
     private static DebugInformation getDebugInformation(File debugFile) {
