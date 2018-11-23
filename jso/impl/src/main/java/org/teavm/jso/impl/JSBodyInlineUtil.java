@@ -23,7 +23,6 @@ import org.mozilla.javascript.ast.ExpressionStatement;
 import org.mozilla.javascript.ast.Name;
 import org.mozilla.javascript.ast.NodeVisitor;
 import org.mozilla.javascript.ast.ReturnStatement;
-import org.mozilla.javascript.ast.ThrowStatement;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -63,8 +62,6 @@ final class JSBodyInlineUtil {
         if (method.getReturnType() == ValueType.VOID) {
             if (statement instanceof ExpressionStatement) {
                 return ((ExpressionStatement) statement).getExpression();
-            } else if (statement instanceof ThrowStatement) {
-                return ((ThrowStatement) statement).getExpression();
             }
         } else {
             if (statement instanceof ReturnStatement) {

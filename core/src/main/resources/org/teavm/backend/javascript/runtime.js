@@ -611,6 +611,14 @@ function $rt_intBitsToFloat(n) {
     return $rt_numberConversionView.getFloat32(0);
 }
 
+function $rt_javaException(e) {
+    return e instanceof Error && typeof e.$javaException === 'object' ? e.$javaException : null;
+}
+
+function $rt_jsException(e) {
+    return typeof e.$jsException === 'object' ? e.$jsException : null;
+}
+
 function $dbg_class(obj) {
     var cls = obj.constructor;
     var arrayDegree = 0;
