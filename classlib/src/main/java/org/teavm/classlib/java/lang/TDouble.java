@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.interop.Import;
 import org.teavm.jso.JSBody;
 
@@ -241,52 +242,11 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return doubleToLongBits(value);
     }
 
-    public static long doubleToLongBits(double value) {
-        if (value == POSITIVE_INFINITY) {
-            return 0x7FF0000000000000L;
-        } else if (value == NEGATIVE_INFINITY) {
-            return 0xFFF0000000000000L;
-        } else if (isNaN(value)) {
-            return 0x7FF8000000000000L;
-        }
-        double abs = TMath.abs(value);
-        int exp = TMath.getExponent(abs);
-        int negExp = -exp + 52;
-        if (exp < -1022) {
-            exp = -1023;
-            negExp = 1022 + 52;
-        }
-        double doubleMantissa;
-        if (negExp <= 1022) {
-            doubleMantissa = abs * binaryExponent(negExp);
-        } else {
-            doubleMantissa = abs * 0x1p1022 * binaryExponent(negExp - 1022);
-        }
-        long mantissa = (long) (doubleMantissa + 0.5) & 0xFFFFFFFFFFFFFL;
-        return mantissa | ((exp + 1023L) << 52) | (value < 0 || 1 / value == NEGATIVE_INFINITY ? (1L << 63) : 0);
-    }
+    @InjectedBy(DoubleGenerator.class)
+    public static native long doubleToLongBits(double value);
 
-    public static double longBitsToDouble(long bits) {
-        if ((bits & 0x7FF0000000000000L) == 0x7FF0000000000000L) {
-            if (bits == 0x7FF0000000000000L) {
-                return POSITIVE_INFINITY;
-            } else if (bits == 0xFFF0000000000000L) {
-                return NEGATIVE_INFINITY;
-            } else {
-                return NaN;
-            }
-        }
-        boolean negative = (bits & (1L << 63)) != 0;
-        int rawExp = (int) ((bits >> 52) & 0x7FFL);
-        long mantissa = bits & 0xFFFFFFFFFFFFFL;
-        if (rawExp == 0) {
-            mantissa <<= 1;
-        } else {
-            mantissa |= 1L << 52;
-        }
-        double value = mantissa * binaryExponent(rawExp - 1023 - 52);
-        return !negative ? value : -value;
-    }
+    @InjectedBy(DoubleGenerator.class)
+    public static native double longBitsToDouble(long bits);
 
     public static TString toHexString(double d) {
         if (isNaN(d)) {
@@ -350,30 +310,5 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         }
 
         return new TString(buffer, 0, sz);
-    }
-
-    private static double binaryExponent(int n) {
-        double result = 1;
-        if (n >= 0) {
-            double d = 2;
-            while (n != 0) {
-                if (n % 2 != 0) {
-                    result *= d;
-                }
-                n /= 2;
-                d *= d;
-            }
-        } else {
-            n = -n;
-            double d = 0.5;
-            while (n != 0) {
-                if (n % 2 != 0) {
-                    result *= d;
-                }
-                n /= 2;
-                d *= d;
-            }
-        }
-        return result;
     }
 }

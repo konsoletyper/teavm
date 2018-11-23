@@ -415,9 +415,13 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             exp = 0;
             double digit = 1;
             for (int i = negDoublePowersOfTen.length - 1; i >= 0; --i) {
-                if ((exp | bit) <= DOUBLE_MAX_EXPONENT && negDoublePowersOfTen[i] * digit * 10 > value) {
-                    digit *= negDoublePowersOfTen[i];
+                if ((exp | bit) <= 324 && negDoublePowersOfTen[i] * digit * 10 > value) {
                     exp |= bit;
+                    if (exp == 324) {
+                        value /= negDoublePowersOfTen[i];
+                    } else {
+                        digit *= negDoublePowersOfTen[i];
+                    }
                 }
                 bit >>= 1;
             }

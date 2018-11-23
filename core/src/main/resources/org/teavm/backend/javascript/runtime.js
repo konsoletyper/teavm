@@ -67,56 +67,31 @@ function $rt_createLongArray(sz) {
     }
     return arr;
 }
-var $rt_createNumericArray;
-var $rt_createCharArray;
-var $rt_createByteArray;
-var $rt_createShortArray;
-var $rt_createIntArray;
-var $rt_createBooleanArray;
-var $rt_createFloatArray;
-var $rt_createDoubleArray;
-if (typeof 'ArrayBuffer' !== 'undefined') {
-    $rt_createNumericArray = function(cls, nativeArray) {
-        return new ($rt_arraycls(cls))(nativeArray);
-    };
-    $rt_createCharArray = function(sz) {
-        return $rt_createNumericArray($rt_charcls(), new Uint16Array(sz));
-    };
-    $rt_createByteArray = function(sz) {
-        return $rt_createNumericArray($rt_bytecls(), new Int8Array(sz));
-    };
-    $rt_createShortArray = function(sz) {
-        return $rt_createNumericArray($rt_shortcls(), new Int16Array(sz));
-    };
-    $rt_createIntArray = function(sz) {
-        return $rt_createNumericArray($rt_intcls(), new Int32Array(sz));
-    };
-    $rt_createBooleanArray = function(sz) {
-        return $rt_createNumericArray($rt_booleancls(), new Int8Array(sz));
-    };
-    $rt_createFloatArray = function(sz) {
-        return $rt_createNumericArray($rt_floatcls(), new Float32Array(sz));
-    };
-    $rt_createDoubleArray = function(sz) {
-        return $rt_createNumericArray($rt_doublecls(), new Float64Array(sz));
-    };
-} else {
-    $rt_createNumericArray = function(cls, sz) {
-      var data = new Array(sz);
-      var arr = new ($rt_arraycls(cls))(data);
-      for (var i = 0; i < sz; i = (i + 1) | 0) {
-          data[i] = 0;
-      }
-      return arr;
-    };
-    $rt_createByteArray = function(sz) { return $rt_createNumericArray($rt_bytecls(), sz); };
-    $rt_createShortArray = function(sz) { return $rt_createNumericArray($rt_shortcls(), sz); };
-    $rt_createIntArray = function(sz) { return $rt_createNumericArray($rt_intcls(), sz); };
-    $rt_createBooleanArray = function(sz) { return $rt_createNumericArray($rt_booleancls(), sz); };
-    $rt_createFloatArray = function(sz) { return $rt_createNumericArray($rt_floatcls(), sz); };
-    $rt_createDoubleArray = function(sz) { return $rt_createNumericArray($rt_doublecls(), sz); };
-    $rt_createCharArray = function(sz) { return $rt_createNumericArray($rt_charcls(), sz); }
+function $rt_createNumericArray(cls, nativeArray) {
+    return new ($rt_arraycls(cls))(nativeArray);
 }
+function $rt_createCharArray(sz) {
+    return $rt_createNumericArray($rt_charcls(), new Uint16Array(sz));
+}
+function $rt_createByteArray(sz) {
+    return $rt_createNumericArray($rt_bytecls(), new Int8Array(sz));
+}
+function $rt_createShortArray(sz) {
+    return $rt_createNumericArray($rt_shortcls(), new Int16Array(sz));
+}
+function $rt_createIntArray(sz) {
+    return $rt_createNumericArray($rt_intcls(), new Int32Array(sz));
+}
+function $rt_createBooleanArray(sz) {
+    return $rt_createNumericArray($rt_booleancls(), new Int8Array(sz));
+}
+function $rt_createFloatArray(sz) {
+    return $rt_createNumericArray($rt_floatcls(), new Float32Array(sz));
+}
+function $rt_createDoubleArray(sz) {
+    return $rt_createNumericArray($rt_doublecls(), new Float64Array(sz));
+}
+
 function $rt_arraycls(cls) {
     var result = cls.$array;
     if (result === null) {
@@ -615,6 +590,27 @@ function $rt_nativeThread() {
 function $rt_invalidPointer() {
     throw new Error("Invalid recorded state");
 }
+
+var $rt_numberConversionView = new DataView(new ArrayBuffer(8));
+
+function $rt_doubleToLongBits(n) {
+    $rt_numberConversionView.setFloat64(0, n, true);
+    return new Long($rt_numberConversionView.getInt32(0, true), $rt_numberConversionView.getInt32(4, true));
+}
+function $rt_longBitsToDouble(n) {
+    $rt_numberConversionView.setInt32(0, n.lo, true);
+    $rt_numberConversionView.setInt32(4, n.hi, true);
+    return $rt_numberConversionView.getFloat64(0, true);
+}
+function $rt_floatToIntBits(n) {
+    $rt_numberConversionView.setFloat32(0, n);
+    return $rt_numberConversionView.getInt32(0);
+}
+function $rt_intBitsToFloat(n) {
+    $rt_numberConversionView.setInt32(0, n);
+    return $rt_numberConversionView.getFloat32(0);
+}
+
 function $dbg_class(obj) {
     var cls = obj.constructor;
     var arrayDegree = 0;
