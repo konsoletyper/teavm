@@ -511,9 +511,9 @@ public class AstWriter {
         printList(node.getArguments());
         writer.append(')');
         if (node instanceof NewExpression) {
-            writer.ws();
             NewExpression newExpr = (NewExpression) node;
             if (newExpr.getInitializer() != null) {
+                writer.ws();
                 print(newExpr.getInitializer());
             }
         }
