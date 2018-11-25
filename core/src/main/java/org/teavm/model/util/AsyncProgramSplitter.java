@@ -40,6 +40,7 @@ import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.MonitorEnterInstruction;
@@ -82,8 +83,14 @@ public class AsyncProgramSplitter {
             for (Instruction insn : sourceBlock) {
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction) insn;
-                    if (!asyncMethods.contains(findRealMethod(invoke.getMethod()))) {
-                        continue;
+                    if (invoke.getType() == InvocationType.VIRTUAL) {
+                        if (!isAsyncMethod(findRealMethod(invoke.getMethod()))) {
+                            continue;
+                        }
+                    } else {
+                        if (!asyncMethods.contains(findRealMethod(invoke.getMethod()))) {
+                            continue;
+                        }
                     }
                 } else if (insn instanceof InitClassInstruction) {
                     if (!isSplittingClassInitializer(((InitClassInstruction) insn).getClassName())) {
@@ -225,6 +232,33 @@ public class AsyncProgramSplitter {
             }
         }
         return method;
+    }
+
+    private boolean isAsyncMethod(MethodReference method) {
+        if (asyncMethods.isEmpty()) {
+            return false;
+        }
+        if (asyncMethods.contains(method)) {
+            return true;
+        }
+
+        ClassReader cls = classSource.get(method.getClassName());
+        if (cls == null) {
+            return false;
+        }
+
+        if (cls.getParent() != null) {
+            if (isAsyncMethod(new MethodReference(cls.getParent(), method.getDescriptor()))) {
+                return true;
+            }
+        }
+        for (String itf : cls.getInterfaces()) {
+            if (isAsyncMethod(new MethodReference(itf, method.getDescriptor()))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private Program createStubCopy(Program program) {
