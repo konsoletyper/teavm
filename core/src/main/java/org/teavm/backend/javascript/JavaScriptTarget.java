@@ -251,6 +251,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         exceptionCons.use();
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoSuchMethodError.class.getName()));
         exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getType("java.lang.String"));
+
+        exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
+                RuntimeException.class, "<init>", String.class, void.class), null);
+        exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(RuntimeException.class.getName()));
+        exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        exceptionCons.use();
     }
 
     @Override

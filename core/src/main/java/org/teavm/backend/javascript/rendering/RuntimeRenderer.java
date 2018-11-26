@@ -50,6 +50,7 @@ public class RuntimeRenderer {
             renderRuntimeNullCheck();
             renderRuntimeIntern();
             renderRuntimeThreads();
+            renderRuntimeCreateException();
         } catch (NamingException e) {
             throw new RenderingException("Error rendering runtime methods. See a cause for details", e);
         } catch (IOException e) {
@@ -158,6 +159,15 @@ public class RuntimeRenderer {
         writer.append("function $rt_setThread(t)").ws().append("{").indent().softNewLine();
         writer.append("return ").appendMethodBody(Thread.class, "setCurrentThread", Thread.class, void.class)
                 .append("(t);").softNewLine();
+        writer.outdent().append("}").newLine();
+    }
+
+    private void renderRuntimeCreateException() throws IOException {
+        writer.append("function $rt_createException(message)").ws().append("{").indent().softNewLine();
+        writer.append("return ");
+        writer.append(writer.getNaming().getNameForInit(new MethodReference(RuntimeException.class,
+                "<init>", String.class, void.class)));
+        writer.append("(message);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 }

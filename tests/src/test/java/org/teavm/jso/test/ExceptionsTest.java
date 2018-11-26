@@ -96,6 +96,18 @@ public class ExceptionsTest {
         assertEquals("foobar", sb.toString());
     }
 
+    @Test
+    public void catchNativeExceptionAsRuntimeException() {
+        StringBuilder sb = new StringBuilder();
+        try {
+            throwNativeException();
+        } catch (RuntimeException e) {
+            sb.append(e.getMessage());
+        }
+
+        assertEquals("(JavaScript) Error: foo", sb.toString());
+    }
+
     @JSBody(params = "runnable", script = "runnable();")
     private static native void runJsCode(JSRunnable runnable);
 

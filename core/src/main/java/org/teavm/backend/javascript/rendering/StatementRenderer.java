@@ -1400,24 +1400,46 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             visitStatements(protectedBody);
             writer.outdent().append("}").ws().append("catch").ws().append("($$e)")
                     .ws().append("{").indent().softNewLine();
-            writer.append("$$je").ws().append("=").ws().append("$$e.$javaException;").softNewLine();
+            writer.append("$$je").ws().append("=").ws().append("$rt_wrapException($$e);").softNewLine();
+            boolean first = true;
+            boolean defaultHandlerOccurred = false;
             for (TryCatchStatement catchClause : sequence) {
-                writer.append("if").ws().append("($$je");
-                if (catchClause.getExceptionType() != null) {
-                    writer.ws().append("&&").ws().append("$$je instanceof ")
-                            .appendClass(catchClause.getExceptionType());
+                if (!first) {
+                    writer.ws().append("else");
                 }
-                writer.append(")").ws().append("{").indent().softNewLine();
+                if (catchClause.getExceptionType() != null) {
+                    if (!first) {
+                        writer.append(" ");
+                    }
+                    writer.append("if").ws().append("($$je instanceof ").appendClass(catchClause.getExceptionType());
+                    writer.append(")").ws();
+                } else {
+                    defaultHandlerOccurred = true;
+                }
+
+                if (catchClause.getExceptionType() != null || !first) {
+                    writer.append("{").indent().softNewLine();
+                }
+
                 if (catchClause.getExceptionVariable() != null) {
                     writer.append(variableName(catchClause.getExceptionVariable())).ws().append("=").ws()
                             .append("$$je;").softNewLine();
                 }
                 visitStatements(catchClause.getHandler());
-                writer.outdent().append("}").ws().append("else ");
+
+                if (catchClause.getExceptionType() != null || !first) {
+                    writer.outdent().append("}");
+                }
+
+                first = false;
             }
-            writer.append("{").indent().softNewLine();
-            writer.append("throw $$e;").softNewLine();
-            writer.outdent().append("}").softNewLine();
+            if (!defaultHandlerOccurred) {
+                writer.ws().append("else").ws().append("{").indent().softNewLine();
+                writer.append("throw $$je;").softNewLine();
+                writer.outdent().append("}").softNewLine();
+            } else {
+                writer.softNewLine();
+            }
             writer.outdent().append("}").softNewLine();
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);

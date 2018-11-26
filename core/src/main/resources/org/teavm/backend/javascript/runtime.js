@@ -614,9 +614,17 @@ function $rt_intBitsToFloat(n) {
 function $rt_javaException(e) {
     return e instanceof Error && typeof e.$javaException === 'object' ? e.$javaException : null;
 }
-
 function $rt_jsException(e) {
     return typeof e.$jsException === 'object' ? e.$jsException : null;
+}
+function $rt_wrapException(err) {
+    var ex = err.$javaException;
+    if (!ex) {
+        ex = $rt_createException($rt_str("(JavaScript) " + err.toString()));
+        err.$javaException = ex;
+        ex.$jsException = err;
+    }
+    return ex;
 }
 
 function $dbg_class(obj) {
