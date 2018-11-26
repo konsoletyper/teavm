@@ -31,7 +31,6 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
-import org.teavm.model.Incoming;
 import org.teavm.model.IncomingReader;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
@@ -39,7 +38,6 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
-import org.teavm.model.Phi;
 import org.teavm.model.PhiReader;
 import org.teavm.model.Program;
 import org.teavm.model.RuntimeConstant;
@@ -56,6 +54,7 @@ import org.teavm.model.instructions.InstructionReader;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.text.ListingBuilder;
+import org.teavm.model.util.BasicBlockSplitter;
 
 class DependencyGraphBuilder {
     private DependencyAnalyzer dependencyAnalyzer;
@@ -191,6 +190,7 @@ class DependencyGraphBuilder {
         }
         ProgramEmitter pe = ProgramEmitter.create(program, dependencyAnalyzer.getClassSource());
         boolean hasIndy = false;
+        BasicBlockSplitter splitter = new BasicBlockSplitter(program);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
@@ -216,23 +216,7 @@ class DependencyGraphBuilder {
                 }
 
                 hasIndy = true;
-                BasicBlock splitBlock = program.createBasicBlock();
-                while (insn.getNext() != null) {
-                    Instruction nextInsn = insn.getNext();
-                    nextInsn.delete();
-                    splitBlock.add(nextInsn);
-                }
-
-                for (int k = 0; k < program.basicBlockCount() - 1; ++k) {
-                    BasicBlock replaceBlock = program.basicBlockAt(k);
-                    for (Phi phi : replaceBlock.getPhis()) {
-                        for (Incoming incoming : phi.getIncomings()) {
-                            if (incoming.getSource() == block) {
-                                incoming.setSource(splitBlock);
-                            }
-                        }
-                    }
-                }
+                BasicBlock splitBlock = splitter.split(block, insn);
 
                 pe.enter(block);
                 pe.setCurrentLocation(indy.getLocation());
@@ -256,8 +240,10 @@ class DependencyGraphBuilder {
                     pe.addInstruction(assign);
                 }
                 pe.jump(splitBlock);
+                block = splitBlock;
             }
         }
+        splitter.fixProgram();
 
         if (hasIndy && methodDep.method.getAnnotations().get(NoCache.class.getName()) == null) {
             methodDep.method.getAnnotations().add(new AnnotationHolder(NoCache.class.getName()));

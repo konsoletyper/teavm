@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.fail;
+import java.util.function.Supplier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
@@ -36,6 +37,16 @@ public class VMTest {
         assertEquals(3, array[0].length);
         assertEquals(int[][].class, array.getClass());
         assertEquals(int[].class, array[0].getClass());
+    }
+
+    @Test
+    public void catchExceptionFromLambda() {
+        try {
+            Runnable r = () -> throwException();
+            r.run();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -462,5 +473,9 @@ public class VMTest {
     }
 
     static class DerivedClassWithConstantFields extends BaseClassWithConstantFields {
+    }
+
+    interface ScriptExecutionWrapper {
+        Object wrap(Supplier<Object> execution);
     }
 }
