@@ -67,8 +67,9 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
         Object[] args = new Object[] { new NativeJavaObject(function, asyncResult, AsyncResult.class) };
         page.get().executeJavaScriptFunctionIfPossible(function, function, args, page.get());
 
-        RhinoResultParser.parseResult((Scriptable) asyncResult.getResult(), run.getCallback(),
-                new File(run.getBaseDirectory(), run.getFileName() + ".teavmdbg"));
+        boolean decodeStack = Boolean.parseBoolean(System.getProperty(TeaVMTestRunner.JS_DECODE_STACK, "true"));
+        File debugFile = decodeStack ? new File(run.getBaseDirectory(), run.getFileName() + ".teavmdbg") : null;
+        RhinoResultParser.parseResult((Scriptable) asyncResult.getResult(), run.getCallback(), debugFile);
     }
 
     private void cleanUp() {

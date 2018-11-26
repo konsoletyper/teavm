@@ -43,7 +43,7 @@ install:
   - rm -rf tools/idea/idea-artifacts/dependencies
 
 script:
-  - $MVN_CMD -e install -Dteavm.junit.optimized=false -P with-idea -P with-cli -Dteavm.junit.js.runner=none -V
+  - $MVN_CMD -e install -Dteavm.junit.optimized=false -Dteavm.junit.js.decodeStack=false -P with-idea -P with-cli -Dteavm.junit.js.runner=none -V
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
   - "export DISPLAY=:99.0"

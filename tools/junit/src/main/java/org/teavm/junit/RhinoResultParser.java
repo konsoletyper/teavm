@@ -24,6 +24,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -50,21 +51,30 @@ final class RhinoResultParser {
                 callback.complete();
                 break;
             case "exception": {
-                DebugInformation debugInformation = getDebugInformation(debugFile);
+                DebugInformation debugInformation = debugFile != null ? getDebugInformation(debugFile) : null;
 
                 String className = String.valueOf(result.get("className", result));
-                String decodedName = debugInformation.getClassNameByJsName(className);
-                if (decodedName != null) {
-                    className = decodedName;
+                if (debugInformation != null) {
+                    String decodedName = debugInformation.getClassNameByJsName(className);
+                    if (decodedName != null) {
+                        className = decodedName;
+                    }
                 }
                 String message = String.valueOf(result.get("message", result));
 
                 String stack = result.get("stack", result).toString();
-                String[] script = getScript(new File(debugFile.getParentFile(),
-                        debugFile.getName().substring(0, debugFile.getName().length() - 9)));
-                StackTraceElement[] decodedStack = decodeStack(stack, script, debugInformation);
-                if (decodedStack != null) {
+                StackTraceElement[] decodedStack = null;
+                if (debugInformation != null) {
+                    String[] script = getScript(new File(debugFile.getParentFile(),
+                            debugFile.getName().substring(0, debugFile.getName().length() - 9)));
+                    List<StackTraceElement> elements = new ArrayList<>();
+                    elements.addAll(Arrays.asList(decodeStack(stack, script, debugInformation)));
+                    List<StackTraceElement> currentElements = Arrays.asList(Thread.currentThread().getStackTrace());
+                    elements.addAll(currentElements.subList(2, currentElements.size()));
+                    decodedStack = elements.toArray(new StackTraceElement[0]);
                     stack = "";
+                } else {
+                    stack = "\n" + stack;
                 }
 
                 Throwable e;
@@ -73,7 +83,9 @@ final class RhinoResultParser {
                 } else {
                     e = new RuntimeException(className + ": " + message + stack);
                 }
-                e.setStackTrace(decodedStack);
+                if (decodedStack != null) {
+                    e.setStackTrace(decodedStack);
+                }
                 callback.error(e);
                 break;
             }

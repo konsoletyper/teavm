@@ -92,6 +92,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static final String JS_RUNNER = "teavm.junit.js.runner";
     private static final String THREAD_COUNT = "teavm.junit.js.threads";
     private static final String JS_ENABLED = "teavm.junit.js";
+    static final String JS_DECODE_STACK = "teavm.junit.js.decodeStack";
     private static final String C_ENABLED = "teavm.junit.c";
     private static final String WASM_ENABLED = "teavm.junit.wasm";
     private static final String C_COMPILER = "teavm.junit.c.compiler";
@@ -552,33 +553,39 @@ public class TeaVMTestRunner extends Runner implements Filterable {
 
     private CompileResult compileToJs(Method method, TeaVMTestConfiguration<JavaScriptTarget> configuration,
             File path) {
+        boolean decodeStack = Boolean.parseBoolean(System.getProperty(JS_DECODE_STACK, "true"));
         DebugInformationBuilder debugEmitter = new DebugInformationBuilder();
         Supplier<JavaScriptTarget> targetSupplier = () -> {
             JavaScriptTarget target = new JavaScriptTarget();
-            target.setDebugEmitter(debugEmitter);
+            if (decodeStack) {
+                target.setDebugEmitter(debugEmitter);
+            }
             return target;
         };
-        CompilePostProcessor postBuild = (vm, file) -> {
-            DebugInformation debugInfo = debugEmitter.getDebugInformation();
-            File sourceMapsFile = new File(file.getPath() + ".map");
-            File debugFile = new File(file.getPath() + ".teavmdbg");
-            try {
-                try (Writer writer = new OutputStreamWriter(new FileOutputStream(file, true), UTF_8)) {
-                    writer.write("\n//# sourceMappingURL=");
-                    writer.write(sourceMapsFile.getName());
-                }
+        CompilePostProcessor postBuild = null;
+        if (decodeStack) {
+            postBuild = (vm, file) -> {
+                DebugInformation debugInfo = debugEmitter.getDebugInformation();
+                File sourceMapsFile = new File(file.getPath() + ".map");
+                File debugFile = new File(file.getPath() + ".teavmdbg");
+                try {
+                    try (Writer writer = new OutputStreamWriter(new FileOutputStream(file, true), UTF_8)) {
+                        writer.write("\n//# sourceMappingURL=");
+                        writer.write(sourceMapsFile.getName());
+                    }
 
-                try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(sourceMapsFile), UTF_8)) {
-                    debugInfo.writeAsSourceMaps(sourceMapsOut, "", file.getPath());
-                }
+                    try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(sourceMapsFile), UTF_8)) {
+                        debugInfo.writeAsSourceMaps(sourceMapsOut, "", file.getPath());
+                    }
 
-                try (OutputStream out = new FileOutputStream(debugFile)) {
-                    debugInfo.write(out);
+                    try (OutputStream out = new FileOutputStream(debugFile)) {
+                        debugInfo.write(out);
+                    }
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
                 }
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        };
+            };
+        }
         return compileTest(method, configuration, targetSupplier, TestEntryPoint.class.getName(), path, ".js",
                 postBuild);
     }
