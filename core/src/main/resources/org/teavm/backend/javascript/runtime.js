@@ -228,6 +228,16 @@ function $rt_exception(ex) {
         }
         err.$javaException = ex;
         ex.$jsException = err;
+        if (typeof $rt_decodeStack === "function" && err.stack) {
+            var stack = $rt_decodeStack(err.stack);
+            var javaStack = $rt_createArray($rt_objcls(), stack.length);
+            for (var i = 0; i < stack.length; ++i) {
+                var element = stack[i];
+                javaStack.data[i] = $rt_createStackElement($rt_str(element.className),
+                        $rt_str(element.methodName), $rt_str(element.fileName), element.lineNumber);
+            }
+            $rt_setStack(ex, javaStack);
+        }
     }
     return err;
 }
@@ -393,7 +403,7 @@ var $rt_stderrBuffer = "";
 var $rt_putStderr = typeof $rt_putStderrCustom === "function" ? $rt_putStderrCustom : function(ch) {
     if (ch === 0xA) {
         if (console) {
-            console.info($rt_stderrBuffer);
+            console.error($rt_stderrBuffer);
         }
         $rt_stderrBuffer = "";
     } else {

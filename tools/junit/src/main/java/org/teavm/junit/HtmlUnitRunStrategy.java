@@ -18,6 +18,7 @@ package org.teavm.junit;
 import com.gargoylesoftware.htmlunit.BrowserVersion;
 import com.gargoylesoftware.htmlunit.Page;
 import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.WebConsole;
 import com.gargoylesoftware.htmlunit.WebWindow;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import java.io.File;
@@ -26,7 +27,10 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import net.sourceforge.htmlunit.corejs.javascript.BaseFunction;
+import net.sourceforge.htmlunit.corejs.javascript.Context;
 import net.sourceforge.htmlunit.corejs.javascript.Function;
+import net.sourceforge.htmlunit.corejs.javascript.NativeArray;
 import net.sourceforge.htmlunit.corejs.javascript.NativeJavaObject;
 import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
 import org.apache.commons.io.IOUtils;
@@ -59,17 +63,33 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
         } catch (IOException e) {
             throw new RuntimeException(e);
         }
-        page.get().executeJavaScript(readFile(new File(run.getBaseDirectory(), run.getFileName())));
+        HtmlPage pageRef = page.get();
+
+        pageRef.executeJavaScript(readFile(new File(run.getBaseDirectory(), run.getFileName())));
+        boolean decodeStack = Boolean.parseBoolean(System.getProperty(TeaVMTestRunner.JS_DECODE_STACK, "true"));
+        File debugFile = decodeStack ? new File(run.getBaseDirectory(), run.getFileName() + ".teavmdbg") : null;
+        RhinoResultParser resultParser = new RhinoResultParser(debugFile);
 
         AsyncResult asyncResult = new AsyncResult();
         Function function = (Function) page.get().executeJavaScript(readResource("teavm-htmlunit-adapter.js"))
                 .getJavaScriptResult();
-        Object[] args = new Object[] { new NativeJavaObject(function, asyncResult, AsyncResult.class) };
-        page.get().executeJavaScriptFunctionIfPossible(function, function, args, page.get());
+        Object[] args = new Object[] {
+                decodeStack ? createStackDecoderFunction(resultParser) : null,
+                new NativeJavaObject(function, asyncResult, AsyncResult.class)
+        };
+        pageRef.executeJavaScriptFunctionIfPossible(function, function, args, page.get());
 
-        boolean decodeStack = Boolean.parseBoolean(System.getProperty(TeaVMTestRunner.JS_DECODE_STACK, "true"));
-        File debugFile = decodeStack ? new File(run.getBaseDirectory(), run.getFileName() + ".teavmdbg") : null;
-        RhinoResultParser.parseResult((Scriptable) asyncResult.getResult(), run.getCallback(), debugFile);
+        resultParser.parseResult((Scriptable) asyncResult.getResult(), run.getCallback());
+    }
+
+    private Function createStackDecoderFunction(RhinoResultParser resultParser) {
+        return new BaseFunction() {
+            @Override
+            public Object call(Context cx, Scriptable scope, Scriptable thisObj, Object[] args) {
+                String stack = args[0].toString();
+                return new NativeArray(resultParser.decodeStack(stack));
+            }
+        };
     }
 
     private void cleanUp() {
@@ -86,7 +106,57 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
     }
 
     private void init() {
-        webClient.set(new WebClient(BrowserVersion.CHROME));
+        WebClient client = new WebClient(BrowserVersion.CHROME);
+        client.getWebConsole().setLogger(new WebConsole.Logger() {
+            @Override
+            public boolean isTraceEnabled() {
+                return false;
+            }
+
+            @Override
+            public void trace(Object message) {
+            }
+
+            @Override
+            public boolean isDebugEnabled() {
+                return false;
+            }
+
+            @Override
+            public void debug(Object message) {
+            }
+
+            @Override
+            public boolean isInfoEnabled() {
+                return true;
+            }
+
+            @Override
+            public void info(Object message) {
+                System.out.println(message);
+            }
+
+            @Override
+            public boolean isWarnEnabled() {
+                return true;
+            }
+
+            @Override
+            public void warn(Object message) {
+                System.out.println(message);
+            }
+
+            @Override
+            public boolean isErrorEnabled() {
+                return true;
+            }
+
+            @Override
+            public void error(Object message) {
+                System.err.println(message);
+            }
+        });
+        webClient.set(client);
     }
 
     private String readFile(File file) throws IOException {

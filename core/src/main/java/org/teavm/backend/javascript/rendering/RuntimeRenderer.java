@@ -51,6 +51,8 @@ public class RuntimeRenderer {
             renderRuntimeIntern();
             renderRuntimeThreads();
             renderRuntimeCreateException();
+            renderCreateStackTraceElement();
+            renderSetStackTrace();
         } catch (NamingException e) {
             throw new RenderingException("Error rendering runtime methods. See a cause for details", e);
         } catch (IOException e) {
@@ -168,6 +170,30 @@ public class RuntimeRenderer {
         writer.append(writer.getNaming().getNameForInit(new MethodReference(RuntimeException.class,
                 "<init>", String.class, void.class)));
         writer.append("(message);").softNewLine();
+        writer.outdent().append("}").newLine();
+    }
+
+    private void renderCreateStackTraceElement() throws IOException {
+        writer.append("function $rt_createStackElement(")
+                .append("className,").ws()
+                .append("methodName,").ws()
+                .append("fileName,").ws()
+                .append("lineNumber)").ws().append("{").indent().softNewLine();
+        writer.append("return ");
+        writer.append(writer.getNaming().getNameForInit(new MethodReference(StackTraceElement.class,
+                "<init>", String.class, String.class, String.class, int.class, void.class)));
+        writer.append("(className,").ws()
+                .append("methodName,").ws()
+                .append("fileName,").ws()
+                .append("lineNumber);").softNewLine();
+        writer.outdent().append("}").newLine();
+    }
+
+    private void renderSetStackTrace() throws IOException {
+        writer.append("function $rt_setStack(e,").ws().append("stack)").ws().append("{").indent().softNewLine();
+        writer.appendMethodBody(new MethodReference(Throwable.class, "setStackTrace", StackTraceElement[].class,
+                void.class));
+        writer.append("(e,").ws().append("stack);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 }

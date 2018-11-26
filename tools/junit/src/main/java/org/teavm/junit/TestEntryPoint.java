@@ -21,7 +21,7 @@ final class TestEntryPoint {
     private TestEntryPoint() {
     }
 
-    public static void run() throws Throwable {
+    public static void run() {
         before();
         try {
             launchTest();

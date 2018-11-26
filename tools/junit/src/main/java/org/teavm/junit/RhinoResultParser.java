@@ -36,11 +36,17 @@ import org.teavm.model.MethodReference;
 final class RhinoResultParser {
     private static Pattern pattern = Pattern.compile("(([A-Za-z_$]+)\\(\\))?@.+:([0-9]+)");
     private static Pattern lineSeparator = Pattern.compile("\\r\\n|\r|\n");
+    private File debugFile;
+    private DebugInformation debugInformation;
+    private String[] script;
 
-    private RhinoResultParser() {
+    RhinoResultParser(File debugFile) {
+        debugInformation = debugFile != null ? getDebugInformation(debugFile) : null;
+        script = getScript(new File(debugFile.getParentFile(),
+                debugFile.getName().substring(0, debugFile.getName().length() - 9)));
     }
 
-    static void parseResult(Scriptable result, TestRunCallback callback, File debugFile) {
+    void parseResult(Scriptable result, TestRunCallback callback) {
         if (result == null) {
             callback.complete();
             return;
@@ -65,10 +71,8 @@ final class RhinoResultParser {
                 String stack = result.get("stack", result).toString();
                 StackTraceElement[] decodedStack = null;
                 if (debugInformation != null) {
-                    String[] script = getScript(new File(debugFile.getParentFile(),
-                            debugFile.getName().substring(0, debugFile.getName().length() - 9)));
                     List<StackTraceElement> elements = new ArrayList<>();
-                    elements.addAll(Arrays.asList(decodeStack(stack, script, debugInformation)));
+                    elements.addAll(Arrays.asList(decodeStack(stack)));
                     List<StackTraceElement> currentElements = Arrays.asList(Thread.currentThread().getStackTrace());
                     elements.addAll(currentElements.subList(2, currentElements.size()));
                     decodedStack = elements.toArray(new StackTraceElement[0]);
@@ -92,7 +96,7 @@ final class RhinoResultParser {
         }
     }
 
-    private static StackTraceElement[] decodeStack(String stack, String[] script, DebugInformation debugInformation) {
+    StackTraceElement[] decodeStack(String stack) {
         List<StackTraceElement> elements = new ArrayList<>();
         for (String line : lineSeparator.split(stack)) {
             Matcher matcher = pattern.matcher(line);

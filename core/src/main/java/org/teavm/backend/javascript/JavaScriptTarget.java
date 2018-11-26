@@ -57,6 +57,7 @@ import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
+import org.teavm.dependency.DependencyType;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.interop.PlatformMarkers;
@@ -200,6 +201,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
         MethodDependency dep;
 
+        DependencyType stringType = dependencyAnalyzer.getType("java.lang.String");
+
         dep = dependencyAnalyzer.linkMethod(new MethodReference(Class.class.getName(), "getClass",
                 ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)), null);
         dep.getVariable(0).propagate(dependencyAnalyzer.getType("org.teavm.platform.PlatformClass"));
@@ -208,23 +211,23 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
                 null);
-        dep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        dep.getVariable(0).propagate(stringType);
         dep.getVariable(1).propagate(dependencyAnalyzer.getType("[C"));
         dep.use();
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class,
                 char[].class, int.class, void.class), null);
-        dep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        dep.getVariable(0).propagate(stringType);
         dep.getVariable(3).propagate(dependencyAnalyzer.getType("[C"));
         dep.use();
 
         MethodDependency internDep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "intern",
                 String.class), null);
-        internDep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        internDep.getVariable(0).propagate(stringType);
         internDep.use();
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "length", int.class), null);
-        dep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        dep.getVariable(0).propagate(stringType);
         dep.use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
@@ -240,23 +243,39 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         dep.use();
 
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoClassDefFoundError.class.getName()));
-        exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        exceptionCons.getVariable(1).propagate(stringType);
         exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(NoSuchFieldError.class, "<init>",
                 String.class, void.class), null);
         exceptionCons.use();
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoSuchFieldError.class.getName()));
-        exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        exceptionCons.getVariable(1).propagate(stringType);
         exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(NoSuchMethodError.class, "<init>",
                 String.class, void.class), null);
         exceptionCons.use();
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoSuchMethodError.class.getName()));
-        exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        exceptionCons.getVariable(1).propagate(stringType);
 
         exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                 RuntimeException.class, "<init>", String.class, void.class), null);
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(RuntimeException.class.getName()));
-        exceptionCons.getVariable(1).propagate(dependencyAnalyzer.getType("java.lang.String"));
+        exceptionCons.getVariable(1).propagate(stringType);
         exceptionCons.use();
+
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(
+                StackTraceElement.class, "<init>", String.class, String.class, String.class,
+                int.class, void.class), null);
+        dep.getVariable(0).propagate(dependencyAnalyzer.getType(StackTraceElement.class.getName()));
+        dep.getVariable(1).propagate(stringType);
+        dep.getVariable(2).propagate(stringType);
+        dep.getVariable(3).propagate(stringType);
+        dep.use();
+
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(
+                Throwable.class, "setStackTrace", StackTraceElement[].class, void.class), null);
+        dep.getVariable(0).propagate(dependencyAnalyzer.getType(Throwable.class.getName()));
+        dep.getVariable(1).propagate(dependencyAnalyzer.getType("[Ljava/lang/StackTraceElement;"));
+        dep.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getType(StackTraceElement.class.getName()));
+        dep.use();
     }
 
     @Override
