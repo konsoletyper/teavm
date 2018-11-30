@@ -28,7 +28,7 @@ import org.teavm.model.TextLocation;
 public class DefaultCallGraphNode implements CallGraphNode {
     private DefaultCallGraph graph;
     private MethodReference method;
-    private Set<DefaultCallSite> callSites = new LinkedHashSet<>();
+    private Set<DefaultCallSite> callSites = new LinkedHashSet<>(10, 0.5f);
     private Set<DefaultCallSite> safeCallSites;
     private List<DefaultCallSite> callerCallSites = new ArrayList<>();
     private List<DefaultCallSite> safeCallersCallSites;

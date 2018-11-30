@@ -83,6 +83,8 @@ public class AstIO {
     private final SymbolTable symbolTable;
     private final SymbolTable fileTable;
     private final Map<String, IdentifiedStatement> statementMap = new HashMap<>();
+    private Map<String, MethodDescriptor> methodDescriptorCache = new HashMap<>();
+    private Map<String, Map<MethodDescriptor, MethodReference>> methodReferenceCache = new HashMap<>();
 
     public AstIO(SymbolTable symbolTable, SymbolTable fileTable) {
         this.symbolTable = symbolTable;
@@ -949,8 +951,12 @@ public class AstIO {
         InvocationExpr expr = new InvocationExpr();
         expr.setType(invocationType);
         String className = symbolTable.at(input.readInt());
-        MethodDescriptor method = MethodDescriptor.parse(symbolTable.at(input.readInt()));
-        expr.setMethod(new MethodReference(className, method));
+        MethodDescriptor method = methodDescriptorCache.computeIfAbsent(symbolTable.at(input.readInt()),
+                MethodDescriptor::parse);
+        MethodReference methodRef = methodReferenceCache
+                .computeIfAbsent(className, k -> new HashMap<>())
+                .computeIfAbsent(method, k -> new MethodReference(className, k));
+        expr.setMethod(methodRef);
         int argCount = input.readShort();
         for (int i = 0; i < argCount; ++i) {
             expr.getArguments().add(readExpr(input));

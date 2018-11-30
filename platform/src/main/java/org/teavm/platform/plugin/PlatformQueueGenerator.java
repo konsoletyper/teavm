@@ -21,16 +21,15 @@ import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.PlatformObject;
 import org.teavm.platform.PlatformQueue;
 
 public class PlatformQueueGenerator implements Injector, DependencyPlugin {
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         MethodDependency addMethod = agent.linkMethod(new MethodReference(PlatformQueue.class, "wrap",
-                Object.class, PlatformObject.class), null);
+                Object.class, PlatformObject.class));
         addMethod.getVariable(1).connect(method.getResult());
     }
 

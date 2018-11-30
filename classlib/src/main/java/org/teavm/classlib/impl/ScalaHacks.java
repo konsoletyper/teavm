@@ -16,11 +16,11 @@
 package org.teavm.classlib.impl;
 
 import java.util.Properties;
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
@@ -33,10 +33,10 @@ import org.teavm.model.instructions.PutFieldInstruction;
 public class ScalaHacks implements ClassHolderTransformer {
     private static final String ATTR_NAME_CLASS = "java.util.jar.Attributes$Name";
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         switch (cls.getName()) {
             case "scala.util.PropertiesTrait$class":
-                transformPropertiesTrait(cls, innerSource);
+                transformPropertiesTrait(cls, context.getHierarchy());
                 break;
             case "scala.util.Properties$":
                 transformProperties(cls);
@@ -44,10 +44,10 @@ public class ScalaHacks implements ClassHolderTransformer {
         }
     }
 
-    private void transformPropertiesTrait(ClassHolder cls, ClassReaderSource innerSource) {
+    private void transformPropertiesTrait(ClassHolder cls, ClassHierarchy hierarchy) {
         for (MethodHolder method : cls.getMethods()) {
             if (method.getName().equals("scalaProps")) {
-                ProgramEmitter pe = ProgramEmitter.create(method, innerSource);
+                ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
                 pe.construct(Properties.class).returnValue();
             }
         }

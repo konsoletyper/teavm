@@ -17,11 +17,11 @@ package org.teavm.classlib.impl;
 
 import java.util.Arrays;
 import org.teavm.common.DisjointSet;
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
@@ -43,16 +43,20 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
     private static final MethodReference initMethod = new MethodReference(Class.class, "initialize", void.class);
 
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         for (MethodHolder method : cls.getMethods()) {
             Program program = method.getProgram();
             if (program != null) {
-                transformProgram(program, innerSource);
+                transformProgram(program, context.getHierarchy());
             }
         }
     }
 
-    private void transformProgram(Program program, ClassReaderSource classSource) {
+    private void transformProgram(Program program, ClassHierarchy hierarchy) {
+        if (!hasForNameCall(program)) {
+            return;
+        }
+
         DisjointSet varSet = new DisjointSet();
         for (int i = 0; i < program.variableCount(); i++) {
             varSet.create();
@@ -116,7 +120,7 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
                 if (nameIndex >= 0) {
                     representative = program.variableAt(nameRepresentatives[nameIndex]);
                 } else if (constant != null) {
-                    if (classSource.get(constant) == null || !filterClassName(constant)) {
+                    if (hierarchy.getClassSource().get(constant) == null || !filterClassName(constant)) {
                         continue;
                     }
                     ClassConstantInstruction classConstant = new ClassConstantInstruction();
@@ -147,6 +151,24 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
                 }
             }
         }
+    }
+
+    private boolean hasForNameCall(Program program) {
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction instruction : block) {
+                if (!(instruction instanceof InvokeInstruction)) {
+                    continue;
+                }
+
+                InvokeInstruction invoke = (InvokeInstruction) instruction;
+
+                if (invoke.getMethod().equals(forNameMethod) || invoke.getMethod().equals(forNameShortMethod)) {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
     private boolean filterClassName(String className) {

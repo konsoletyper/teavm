@@ -1459,6 +1459,10 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 }
 
                 first = false;
+
+                if (defaultHandlerOccurred) {
+                    break;
+                }
             }
             if (!defaultHandlerOccurred) {
                 writer.ws().append("else").ws().append("{").indent().softNewLine();
@@ -1492,17 +1496,13 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     public void visit(MonitorEnterStatement statement) {
         try {
             if (async) {
-                MethodReference monitorEnterRef = new MethodReference(
-                        Object.class, "monitorEnter", Object.class, void.class);
-                writer.appendMethodBody(monitorEnterRef).append("(");
+                writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_METHOD).append("(");
                 precedence = Precedence.min();
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
                 emitSuspendChecker();
             } else {
-                MethodReference monitorEnterRef = new MethodReference(
-                        Object.class, "monitorEnterSync", Object.class, void.class);
-                writer.appendMethodBody(monitorEnterRef).append('(');
+                writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_SYNC_METHOD).append('(');
                 precedence = Precedence.min();
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
@@ -1523,16 +1523,12 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     public void visit(MonitorExitStatement statement) {
         try {
             if (async) {
-                MethodReference monitorExitRef = new MethodReference(
-                        Object.class, "monitorExit", Object.class, void.class);
-                writer.appendMethodBody(monitorExitRef).append("(");
+                writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_METHOD).append("(");
                 precedence = Precedence.min();
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();
             } else {
-                MethodReference monitorEnterRef = new MethodReference(
-                        Object.class, "monitorExitSync", Object.class, void.class);
-                writer.appendMethodBody(monitorEnterRef).append('(');
+                writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_SYNC_METHOD).append('(');
                 precedence = Precedence.min();
                 statement.getObjectRef().acceptVisitor(this);
                 writer.append(");").softNewLine();

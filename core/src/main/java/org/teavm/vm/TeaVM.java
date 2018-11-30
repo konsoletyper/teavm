@@ -29,8 +29,13 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
-import org.teavm.cache.NoCache;
+import org.teavm.cache.AlwaysStaleCacheStatus;
+import org.teavm.cache.AnnotationAwareCacheStatus;
+import org.teavm.cache.CacheStatus;
+import org.teavm.cache.EmptyProgramCache;
+import org.teavm.cache.ProgramDependencyExtractor;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DependencyAnalyzer;
@@ -123,8 +128,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private final Set<String> readonlyPreservedClasses = Collections.unmodifiableSet(preservedClasses);
     private final Map<Class<?>, Object> services = new HashMap<>();
     private final Properties properties = new Properties();
-    private ProgramCache programCache;
-    private boolean incremental;
+    private ProgramCache programCache = EmptyProgramCache.INSTANCE;
+    private CacheStatus rawCacheStatus = AlwaysStaleCacheStatus.INSTANCE;
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.SIMPLE;
     private TeaVMProgressListener progressListener;
     private boolean cancelled;
@@ -132,12 +137,16 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private TeaVMTarget target;
     private Map<Class<?>, TeaVMHostExtension> extensions = new HashMap<>();
     private Set<? extends MethodReference> virtualMethods;
+    private AnnotationAwareCacheStatus cacheStatus;
+    private ProgramDependencyExtractor programDependencyExtractor = new ProgramDependencyExtractor();
+    private List<Predicate<MethodReference>> additionalVirtualMethods = new ArrayList<>();
 
     TeaVM(TeaVMBuilder builder) {
         target = builder.target;
         classSource = builder.classSource;
         classLoader = builder.classLoader;
-        dependencyAnalyzer = new DependencyAnalyzer(this.classSource, classLoader, this, diagnostics);
+        dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(this.classSource, classLoader,
+                this, diagnostics);
         progressListener = new TeaVMProgressListener() {
             @Override public TeaVMProgressFeedback progressReached(int progress) {
                 return TeaVMProgressFeedback.CONTINUE;
@@ -159,6 +168,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 extensions.put(extensionType, extension);
             }
         }
+    }
+
+    public void addVirtualMethods(Predicate<MethodReference> virtualMethods) {
+        additionalVirtualMethods.add(virtualMethods);
     }
 
     @Override
@@ -213,12 +226,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         this.programCache = programCache;
     }
 
-    public boolean isIncremental() {
-        return incremental;
-    }
-
-    public void setIncremental(boolean incremental) {
-        this.incremental = incremental;
+    public void setCacheStatus(CacheStatus cacheStatus) {
+        rawCacheStatus = cacheStatus;
     }
 
     public TeaVMOptimizationLevel getOptimizationLevel() {
@@ -263,16 +272,17 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         if (cls.getMethod(MAIN_METHOD_DESC) == null) {
-            diagnostics.error(null, "Specified main class '{{c0}}' does not have method '" + MAIN_METHOD_DESC + "'");
+            diagnostics.error(null, "Specified main class '{{c0}}' does not have method '" + MAIN_METHOD_DESC + "'",
+                    cls.getName());
             return;
         }
 
         MethodDependency mainMethod = dependencyAnalyzer.linkMethod(new MethodReference(className,
-                "main", ValueType.parse(String[].class), ValueType.VOID), null);
+                "main", ValueType.parse(String[].class), ValueType.VOID));
 
         TeaVMEntryPoint entryPoint = new TeaVMEntryPoint(name, mainMethod);
         dependencyAnalyzer.defer(() -> {
-            dependencyAnalyzer.linkClass(className, null).initClass(null);
+            dependencyAnalyzer.linkClass(className).initClass(null);
             mainMethod.getVariable(1).propagate(dependencyAnalyzer.getType("[Ljava/lang/String;"));
             mainMethod.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getType("java.lang.String"));
             mainMethod.use();
@@ -286,7 +296,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     public void preserveType(String className) {
         dependencyAnalyzer.defer(() -> {
-            dependencyAnalyzer.linkClass(className, null).initClass(null);
+            dependencyAnalyzer.linkClass(className).initClass(null);
         });
         preservedClasses.add(className);
     }
@@ -304,7 +314,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     /**
      * Gets a {@link ClassReaderSource} which is similar to that of {@link #getClassSource()},
      * except that it also contains classes with applied transformations together with
-     * classes, generated via {@link DependencyAnalyzer#submitClass(ClassHolder)}.
+     * classes, generated via {@link org.teavm.dependency.DependencyAgent#submitClass(ClassHolder)}.
      */
     public ClassReaderSource getDependencyClassSource() {
         return dependencyAnalyzer.getClassSource();
@@ -354,6 +364,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
+        cacheStatus = new AnnotationAwareCacheStatus(rawCacheStatus, dependencyAnalyzer.getIncrementalDependencies());
+        cacheStatus.addSynthesizedClasses(dependencyAnalyzer::isSynthesizedClass);
+
         // Link
         reportPhase(TeaVMPhase.LINKING, 1);
         if (wasCancelled()) {
@@ -368,17 +381,17 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         // Optimize and allocate registers
         reportPhase(TeaVMPhase.OPTIMIZATION, 1);
 
-        if (!incremental) {
+        if (optimizationLevel != TeaVMOptimizationLevel.SIMPLE) {
             devirtualize(classSet, dependencyAnalyzer);
             if (wasCancelled()) {
                 return;
             }
+        }
 
-            dependencyAnalyzer.cleanup();
-            inline(classSet, dependencyAnalyzer);
-            if (wasCancelled()) {
-                return;
-            }
+        dependencyAnalyzer.cleanup();
+        inline(classSet, dependencyAnalyzer);
+        if (wasCancelled()) {
+            return;
         }
 
         optimize(classSet);
@@ -498,9 +511,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
-        boolean noCache = method.getAnnotations().get(NoCache.class.getName()) != null;
-        Program optimizedProgram = incremental && !noCache && programCache != null
-                ? programCache.get(method.getReference()) : null;
+        Program optimizedProgram = !cacheStatus.isStaleMethod(method.getReference())
+                ? programCache.get(method.getReference(), cacheStatus)
+                : null;
         MethodOptimizationContextImpl context = new MethodOptimizationContextImpl(method, classSource);
         if (optimizedProgram == null) {
             optimizedProgram = ProgramUtils.copy(method.getProgram());
@@ -529,9 +542,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     allocator.allocateRegisters(method, optimizedProgram);
                 }
             }
-            if (incremental && programCache != null) {
-                programCache.store(method.getReference(), optimizedProgram);
-            }
+
+            Program finalProgram = optimizedProgram;
+            programCache.store(method.getReference(), finalProgram,
+                    () -> programDependencyExtractor.extractDependencies(finalProgram));
         }
         method.setProgram(optimizedProgram);
     }
@@ -643,6 +657,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         @Override
+        public CacheStatus getCacheStatus() {
+            return cacheStatus;
+        }
+
+        @Override
         public DependencyInfo getDependencyInfo() {
             return dependencyAnalyzer;
         }
@@ -663,11 +682,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         @Override
-        public boolean isIncremental() {
-            return incremental;
-        }
-
-        @Override
         public Map<String, TeaVMEntryPoint> getEntryPoints() {
             return readonlyEntryPoints;
         }
@@ -684,7 +698,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         @Override
         public boolean isVirtual(MethodReference method) {
-            return incremental || virtualMethods == null || virtualMethods.contains(method);
+            return virtualMethods == null || virtualMethods.contains(method);
         }
     };
 }

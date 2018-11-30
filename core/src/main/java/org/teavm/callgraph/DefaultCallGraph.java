@@ -38,7 +38,7 @@ public class DefaultCallGraph implements CallGraph, Serializable {
 
     @Override
     public DefaultCallGraphNode getNode(MethodReference method) {
-        return nodes.computeIfAbsent(method, k -> new DefaultCallGraphNode(this, method));
+        return nodes.computeIfAbsent(method, k -> new DefaultCallGraphNode(this, k));
     }
 
     @Override

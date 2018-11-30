@@ -119,6 +119,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.optimizationLevel", defaultValue = "SIMPLE")
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.SIMPLE;
 
+    @Parameter(property = "teavm.fastGlobalAnalysis", defaultValue = "false")
+    private boolean fastGlobalAnalysis;
+
     @Parameter(property = "teavm.targetType", defaultValue = "JAVASCRIPT")
     private TeaVMTargetType targetType = TeaVMTargetType.JAVASCRIPT;
 
@@ -259,6 +262,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
                 builder.setTargetFileName(targetFileName);
             }
             builder.setOptimizationLevel(optimizationLevel);
+            builder.setFastDependencyAnalysis(fastGlobalAnalysis);
             if (classesToPreserve != null) {
                 builder.setClassesToPreserve(classesToPreserve);
             }

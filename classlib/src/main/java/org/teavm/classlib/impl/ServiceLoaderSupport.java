@@ -24,11 +24,9 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
-import java.util.Set;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
@@ -42,9 +40,9 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public class ServiceLoaderSupport extends AbstractDependencyListener implements Generator {
-    private Set<String> reachedClasses = new HashSet<>();
+    private static final MethodReference LOAD_METHOD = new MethodReference(ServiceLoader.class, "load", Class.class,
+            ServiceLoader.class);
     private Map<String, List<String>> serviceMap = new HashMap<>();
-    private DependencyNode allClassesNode;
     private ClassLoader classLoader;
 
     public ServiceLoaderSupport(ClassLoader classLoader) {
@@ -87,30 +85,8 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
         writer.append("return result;").softNewLine();
     }
 
-    @Override
-    public void started(DependencyAgent agent) {
-        allClassesNode = agent.createNode();
-    }
-
-    @Override
-    public void classReached(DependencyAgent agent, String className, CallLocation location) {
-        if (!reachedClasses.add(className)) {
-            return;
-        }
-        try {
-            Enumeration<URL> resources = classLoader.getResources("META-INF/services/" + className);
-            while (resources.hasMoreElements()) {
-                URL resource = resources.nextElement();
-                try (InputStream stream = resource.openStream()) {
-                    parseServiceFile(agent, className, stream);
-                }
-            }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
-    }
-
-    private void parseServiceFile(DependencyAgent agent, String service, InputStream input) throws IOException {
+    private void parseServiceFile(DependencyAgent agent, DependencyNode targetNode, String service,
+            InputStream input, CallLocation location) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
         while (true) {
             String line = reader.readLine();
@@ -122,24 +98,37 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
                 continue;
             }
             serviceMap.computeIfAbsent(service, k -> new ArrayList<>()).add(line);
-            allClassesNode.propagate(agent.getType(line));
+
+            MethodReference ctor = new MethodReference(line, new MethodDescriptor("<init>", ValueType.VOID));
+            agent.linkMethod(ctor).addLocation(location).use();
+            targetNode.propagate(agent.getType(line));
         }
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
             method.getResult().propagate(agent.getType("[Ljava/lang/Object;"));
-            DependencyNode sourceNode = agent.linkMethod(new MethodReference(ServiceLoader.class, "load", Class.class,
-                    ServiceLoader.class), null).getVariable(1).getClassValueNode();
+            DependencyNode sourceNode = agent.linkMethod(LOAD_METHOD).getVariable(1).getClassValueNode();
             sourceNode.connect(method.getResult().getArrayItem());
-            sourceNode.addConsumer(type -> initConstructor(agent, type.getName(), location));
+            sourceNode.addConsumer(type -> initConstructor(agent, method.getResult().getArrayItem(),
+                    type.getName(), new CallLocation(LOAD_METHOD)));
         }
     }
 
-    private void initConstructor(DependencyAgent agent, String type, CallLocation location) {
-        MethodReference ctor = new MethodReference(type, new MethodDescriptor("<init>", ValueType.VOID));
-        agent.linkMethod(ctor, location).use();
+    private void initConstructor(DependencyAgent agent, DependencyNode targetNode, String type,
+            CallLocation location) {
+        try {
+            Enumeration<URL> resources = classLoader.getResources("META-INF/services/" + type);
+            while (resources.hasMoreElements()) {
+                URL resource = resources.nextElement();
+                try (InputStream stream = resource.openStream()) {
+                    parseServiceFile(agent, targetNode, type, stream, location);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

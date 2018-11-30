@@ -48,7 +48,7 @@ public class DefaultFieldAccessSite implements FieldAccessSite, Serializable {
 
     @Override
     public int hashCode() {
-        return Objects.hash(location, callee, field);
+        return Objects.hash(location, field);
     }
 
     @Override
@@ -60,7 +60,6 @@ public class DefaultFieldAccessSite implements FieldAccessSite, Serializable {
             return false;
         }
         DefaultFieldAccessSite other = (DefaultFieldAccessSite) obj;
-        return Objects.equals(location, other.location) && Objects.equals(callee, other.callee)
-                && Objects.equals(field, other.field);
+        return Objects.equals(location, other.location) && Objects.equals(field, other.field);
     }
 }

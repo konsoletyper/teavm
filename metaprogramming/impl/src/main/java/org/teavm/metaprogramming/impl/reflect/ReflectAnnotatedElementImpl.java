@@ -45,7 +45,7 @@ public class ReflectAnnotatedElementImpl implements ReflectAnnotatedElement {
                 return null;
             }
 
-            AnnotationProxy handler = new AnnotationProxy(context.getClassLoader(), context.getClassSource(),
+            AnnotationProxy handler = new AnnotationProxy(context.getClassLoader(), context.getHierarchy(),
                     annot, t);
             return (Annotation) Proxy.newProxyInstance(context.getClassLoader(), new Class<?>[] { t }, handler);
         });

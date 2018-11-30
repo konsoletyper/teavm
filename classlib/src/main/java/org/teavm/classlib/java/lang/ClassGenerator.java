@@ -28,7 +28,6 @@ import org.teavm.classlib.impl.ReflectionDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
@@ -65,7 +64,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "newEmptyInstance":
                 method.getVariable(0).getClassValueNode().connect(method.getResult());

@@ -21,9 +21,10 @@ import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
@@ -50,16 +51,17 @@ public class PlatformMarkerSupport implements ClassHolderTransformer {
     }
 
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         for (MethodHolder method : cls.getMethods()) {
             if (method.getProgram() != null) {
-                transformProgram(method.getReference(), method.getProgram(), innerSource, diagnostics);
+                transformProgram(method.getReference(), method.getProgram(), context.getHierarchy(),
+                        context.getDiagnostics());
             }
         }
     }
 
     private void transformProgram(MethodReference containingMethod, Program program,
-            ClassReaderSource innerSource, Diagnostics diagnostics) {
+            ClassHierarchy hierarchy, Diagnostics diagnostics) {
         boolean hasChanges = false;
 
         for (BasicBlock block : program.getBasicBlocks()) {
@@ -68,7 +70,7 @@ public class PlatformMarkerSupport implements ClassHolderTransformer {
                 MarkerKind kind;
                 if (instruction instanceof InvokeInstruction) {
                     MethodReference methodRef = ((InvokeInstruction) instruction).getMethod();
-                    MethodReader method = innerSource.resolve(methodRef);
+                    MethodReader method = hierarchy.getClassSource().resolveImplementation(methodRef);
                     if (method == null) {
                         continue;
                     }
@@ -92,7 +94,7 @@ public class PlatformMarkerSupport implements ClassHolderTransformer {
                     receiver = ((InvokeInstruction) instruction).getReceiver();
                 } else if (instruction instanceof GetFieldInstruction) {
                     FieldReference fieldRef = ((GetFieldInstruction) instruction).getField();
-                    FieldReader field = innerSource.resolve(fieldRef);
+                    FieldReader field = hierarchy.getClassSource().resolve(fieldRef);
                     if (field == null) {
                         continue;
                     }

@@ -25,7 +25,6 @@ import org.teavm.backend.javascript.spi.InjectorContext;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -37,7 +36,7 @@ import org.teavm.platform.PlatformRunnable;
 
 public class PlatformGenerator implements Generator, Injector, DependencyPlugin {
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "asJavaClass":
                 method.getResult().propagate(agent.getType("java.lang.Class"));
@@ -48,7 +47,7 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
             case "startThread":
             case "schedule": {
                 MethodDependency launchMethod = agent.linkMethod(new MethodReference(Platform.class,
-                        "launchThread", PlatformRunnable.class, void.class), null);
+                        "launchThread", PlatformRunnable.class, void.class));
                 method.getVariable(1).connect(launchMethod.getVariable(1));
                 launchMethod.use();
                 break;

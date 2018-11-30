@@ -23,21 +23,24 @@ public final class ModelUtils {
     private ModelUtils() {
     }
 
-    public static ClassHolder copyClass(ClassReader original) {
-        ClassHolder copy = new ClassHolder(original.getName());
-        copy.setLevel(original.getLevel());
-        copy.getModifiers().addAll(original.readModifiers());
-        copy.setParent(original.getParent());
-        copy.getInterfaces().addAll(original.getInterfaces());
+    public static ClassHolder copyClass(ClassReader original, ClassHolder target) {
+        target.setLevel(original.getLevel());
+        target.getModifiers().addAll(original.readModifiers());
+        target.setParent(original.getParent());
+        target.getInterfaces().addAll(original.getInterfaces());
         for (MethodReader method : original.getMethods()) {
-            copy.addMethod(copyMethod(method));
+            target.addMethod(copyMethod(method));
         }
         for (FieldReader field : original.getFields()) {
-            copy.addField(copyField(field));
+            target.addField(copyField(field));
         }
-        copy.setOwnerName(original.getOwnerName());
-        copyAnnotations(original.getAnnotations(), copy.getAnnotations());
-        return copy;
+        target.setOwnerName(original.getOwnerName());
+        copyAnnotations(original.getAnnotations(), target.getAnnotations());
+        return target;
+    }
+
+    public static ClassHolder copyClass(ClassReader original) {
+        return copyClass(original, new ClassHolder(original.getName()));
     }
 
     public static MethodHolder copyMethod(MethodReader method) {

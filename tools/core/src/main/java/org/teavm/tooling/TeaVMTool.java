@@ -36,13 +36,18 @@ import org.teavm.backend.c.CTarget;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
+import org.teavm.cache.AlwaysStaleCacheStatus;
+import org.teavm.cache.CacheStatus;
 import org.teavm.cache.DiskCachedClassHolderSource;
+import org.teavm.cache.DiskMethodNodeCache;
 import org.teavm.cache.DiskProgramCache;
-import org.teavm.cache.DiskRegularMethodNodeCache;
+import org.teavm.cache.EmptyProgramCache;
 import org.teavm.cache.FileSymbolTable;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.DependencyInfo;
+import org.teavm.dependency.FastDependencyAnalyzer;
+import org.teavm.dependency.PreciseDependencyAnalyzer;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
@@ -81,12 +86,13 @@ public class TeaVMTool {
     private ClassLoader classLoader = TeaVMTool.class.getClassLoader();
     private DiskCachedClassHolderSource cachedClassSource;
     private DiskProgramCache programCache;
-    private DiskRegularMethodNodeCache astCache;
+    private DiskMethodNodeCache astCache;
     private FileSymbolTable symbolTable;
     private FileSymbolTable fileTable;
     private boolean cancelled;
     private TeaVMProgressListener progressListener;
     private TeaVM vm;
+    private boolean fastDependencyAnalysis;
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.SIMPLE;
     private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private DebugInformationBuilder debugEmitter;
@@ -205,6 +211,14 @@ public class TeaVMTool {
         this.optimizationLevel = optimizationLevel;
     }
 
+    public boolean isFastDependencyAnalysis() {
+        return fastDependencyAnalysis;
+    }
+
+    public void setFastDependencyAnalysis(boolean fastDependencyAnalysis) {
+        this.fastDependencyAnalysis = fastDependencyAnalysis;
+    }
+
     public void setMinHeapSize(int minHeapSize) {
         this.minHeapSize = minHeapSize;
     }
@@ -305,10 +319,6 @@ public class TeaVMTool {
                 ? new DebugInformationBuilder() : null;
         javaScriptTarget.setDebugEmitter(debugEmitter);
 
-        if (incremental) {
-            javaScriptTarget.setAstCache(astCache);
-        }
-
         return javaScriptTarget;
     }
 
@@ -333,6 +343,7 @@ public class TeaVMTool {
             cancelled = false;
             log.info("Running TeaVM");
             TeaVMBuilder vmBuilder = new TeaVMBuilder(prepareTarget());
+            CacheStatus cacheStatus;
             if (incremental) {
                 cacheDirectory.mkdirs();
                 symbolTable = new FileSymbolTable(new File(cacheDirectory, "symbols"));
@@ -341,10 +352,10 @@ public class TeaVMTool {
                 ClassHolderSource classSource = new PreOptimizingClassHolderSource(innerClassSource);
                 cachedClassSource = new DiskCachedClassHolderSource(cacheDirectory, symbolTable, fileTable,
                         classSource, innerClassSource);
-                programCache = new DiskProgramCache(cacheDirectory, symbolTable, fileTable, innerClassSource);
-
-                if (targetType == TeaVMTargetType.JAVASCRIPT) {
-                    astCache = new DiskRegularMethodNodeCache(cacheDirectory, symbolTable, fileTable, innerClassSource);
+                programCache = new DiskProgramCache(cacheDirectory, symbolTable, fileTable);
+                if (incremental && targetType == TeaVMTargetType.JAVASCRIPT) {
+                    astCache = new DiskMethodNodeCache(cacheDirectory, symbolTable, fileTable);
+                    javaScriptTarget.setAstCache(astCache);
                 }
                 try {
                     symbolTable.update();
@@ -353,19 +364,31 @@ public class TeaVMTool {
                     log.info("Cache is missing");
                 }
                 vmBuilder.setClassLoader(classLoader).setClassSource(cachedClassSource);
+                cacheStatus = cachedClassSource;
             } else {
                 vmBuilder.setClassLoader(classLoader).setClassSource(new PreOptimizingClassHolderSource(
                         new ClasspathClassHolderSource(classLoader)));
+                cacheStatus = AlwaysStaleCacheStatus.INSTANCE;
             }
+
+            vmBuilder.setDependencyAnalyzerFactory(fastDependencyAnalysis
+                    ? FastDependencyAnalyzer::new
+                    : PreciseDependencyAnalyzer::new);
+
             vm = vmBuilder.build();
             if (progressListener != null) {
                 vm.setProgressListener(progressListener);
             }
 
             vm.setProperties(properties);
-            vm.setProgramCache(programCache);
-            vm.setIncremental(incremental);
-            vm.setOptimizationLevel(optimizationLevel);
+            vm.setProgramCache(incremental ? programCache : EmptyProgramCache.INSTANCE);
+            vm.setCacheStatus(cacheStatus);
+            vm.setOptimizationLevel(!fastDependencyAnalysis && !incremental
+                    ? optimizationLevel
+                    : TeaVMOptimizationLevel.SIMPLE);
+            if (incremental) {
+                vm.addVirtualMethods(m -> true);
+            }
 
             vm.installPlugins();
             for (ClassHolderTransformer transformer : resolveTransformers(classLoader)) {
@@ -409,7 +432,7 @@ public class TeaVMTool {
             }
 
             if (incremental) {
-                programCache.flush();
+                programCache.flush(vm.getDependencyClassSource());
                 if (astCache != null) {
                     astCache.flush();
                 }

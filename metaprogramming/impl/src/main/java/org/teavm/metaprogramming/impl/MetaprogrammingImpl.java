@@ -17,6 +17,7 @@ package org.teavm.metaprogramming.impl;
 
 import java.util.HashMap;
 import java.util.Map;
+import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.metaprogramming.Action;
 import org.teavm.metaprogramming.Computation;
@@ -58,20 +59,22 @@ import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.util.TransitionExtractor;
 
 public final class MetaprogrammingImpl {
+    static String suffix;
     static Map<String, Integer> proxySuffixGenerators = new HashMap<>();
     static ClassLoader classLoader;
     static ClassReaderSource classSource;
+    static IncrementalDependencyRegistration incrementaDependencies;
     static ReflectContext reflectContext;
     static DependencyAgent agent;
     static VariableContext varContext;
     static MethodReference templateMethod;
     static CompositeMethodGenerator generator;
     static ValueType returnType;
+    static boolean unsupportedCase;
 
     private MetaprogrammingImpl() {
     }
 
-    @SuppressWarnings("WeakerAccess")
     public static <T> Value<T> emit(Computation<T> computation) {
         if (computation instanceof ValueImpl<?>) {
             @SuppressWarnings("unchecked")
@@ -109,7 +112,7 @@ public final class MetaprogrammingImpl {
         return new LazyValueImpl<>(varContext, computation, type, generator.forcedLocation);
     }
 
-    @SuppressWarnings({"WeakerAccess", "SameParameterValue"})
+    @SuppressWarnings("SameParameterValue")
     public static void exit(Computation<?> value) {
         if (value == null) {
             returnValue(null);
@@ -315,14 +318,15 @@ public final class MetaprogrammingImpl {
 
         ValueImpl<T> result = new ValueImpl<>(nestedVarContext.createInstance(generator), varContext, innerType);
 
+        incrementaDependencies.setNoCache(cls.getName());
         agent.submitClass(cls);
         return result;
     }
 
     private static String createProxyName(String className) {
-        int suffix = proxySuffixGenerators.getOrDefault(className, 0);
-        proxySuffixGenerators.put(className, suffix + 1);
-        return className + "$proxy" + suffix;
+        int ownSuffix = proxySuffixGenerators.getOrDefault(className, 0);
+        proxySuffixGenerators.put(className, ownSuffix + 1);
+        return className + "$proxy$" + suffix + "_" + ownSuffix;
     }
 
     private static void returnValue(Variable var) {
@@ -333,10 +337,6 @@ public final class MetaprogrammingImpl {
 
     public static Diagnostics getDiagnostics() {
         return diagnostics;
-    }
-
-    public void submitClass(ClassHolder cls) {
-        agent.submitClass(cls);
     }
 
     public static void close() {
@@ -395,9 +395,8 @@ public final class MetaprogrammingImpl {
         returnValue(var);
     }
 
-    private static void unsupported() {
-        throw new UnsupportedOperationException("This operation is only supported from TeaVM compile-time "
-                + "environment");
+    public static void unsupportedCase() {
+        unsupportedCase = true;
     }
 
     private static Diagnostics diagnostics = new Diagnostics() {

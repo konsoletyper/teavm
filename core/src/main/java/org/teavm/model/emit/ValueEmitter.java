@@ -16,7 +16,7 @@
 package org.teavm.model.emit;
 
 import org.teavm.model.BasicBlock;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
 import org.teavm.model.MethodReference;
@@ -424,16 +424,15 @@ public class ValueEmitter {
             throw new EmitException("Can't invoke method on non-object type: " + type);
         }
 
-        ClassReaderSource classSource = pe.getClassSource();
+        ClassHierarchy hierarchy = pe.hierarchy;
         for (int i = 0; i < method.parameterCount(); ++i) {
-            if (!classSource.isSuperType(method.parameterType(i), arguments[i].getType()).orElse(false)) {
+            if (!hierarchy.isSuperType(method.parameterType(i), arguments[i].getType(), false)) {
                 throw new EmitException("Argument " + i + " of type " + arguments[i].getType() + " is "
                         + "not compatible with method " + method);
             }
         }
 
-        if (!pe.classSource.isSuperType(method.getClassName(), ((ValueType.Object) type).getClassName())
-                .orElse(true)) {
+        if (!hierarchy.isSuperType(method.getClassName(), ((ValueType.Object) type).getClassName(), true)) {
             throw new EmitException("Can't call " + method + " on non-compatible class " + type);
         }
 
@@ -639,7 +638,7 @@ public class ValueEmitter {
     }
 
     public void raise() {
-        if (!pe.classSource.isSuperType(ValueType.object("java.lang.Throwable"), type).orElse(true)) {
+        if (!pe.hierarchy.isSuperType(ValueType.object("java.lang.Throwable"), type, true)) {
             throw new EmitException("Can't throw non-exception value: " + type);
         }
 
@@ -655,7 +654,7 @@ public class ValueEmitter {
     public ValueEmitter cast(ValueType type) {
         if (type.equals(this.type)) {
             return this;
-        } else if (pe.classSource.isSuperType(type, this.type).orElse(false)) {
+        } else if (pe.hierarchy.isSuperType(type, this.type, false)) {
             return pe.var(variable.getIndex(), type);
         }
 
@@ -735,7 +734,7 @@ public class ValueEmitter {
         PrimitiveType primitiveType = ((ValueType.Primitive) this.type).getKind();
         String boxClassName = getPrimitiveClassName(primitiveType);
         ValueEmitter result = invokeValueOf(boxClassName);
-        if (!pe.getClassSource().isSuperType(targetClass, boxClassName).orElse(false)) {
+        if (!pe.hierarchy.isSuperType(targetClass, boxClassName, false)) {
             throw new EmitException("Can't convert " + this.type + " to " + targetClass);
         }
         return result;
@@ -837,7 +836,7 @@ public class ValueEmitter {
     }
 
     public ValueEmitter assertIs(ValueType type) {
-        if (!pe.classSource.isSuperType(type, this.type).orElse(true)) {
+        if (!pe.hierarchy.isSuperType(type, this.type, true)) {
             throw new EmitException("Value type " + this.type + " is not subtype of " + type);
         }
         return this;

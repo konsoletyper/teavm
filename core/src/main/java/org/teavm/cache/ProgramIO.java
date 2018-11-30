@@ -15,14 +15,81 @@
  */
 package org.teavm.cache;
 
-import java.io.*;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
 import java.util.Objects;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.FieldReference;
+import org.teavm.model.Incoming;
+import org.teavm.model.Instruction;
+import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHandle;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Phi;
+import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
+import org.teavm.model.RuntimeConstant;
+import org.teavm.model.TextLocation;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.ArrayElementType;
+import org.teavm.model.instructions.ArrayLengthInstruction;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryBranchingCondition;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BranchingCondition;
+import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.CastIntegerDirection;
+import org.teavm.model.instructions.CastIntegerInstruction;
+import org.teavm.model.instructions.CastNumberInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
+import org.teavm.model.instructions.DoubleConstantInstruction;
+import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.instructions.InstructionVisitor;
+import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.IntegerSubtype;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
+import org.teavm.model.instructions.MonitorExitInstruction;
+import org.teavm.model.instructions.NegateInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.PutElementInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.SwitchInstruction;
+import org.teavm.model.instructions.SwitchTableEntry;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class ProgramIO {
     private SymbolTable symbolTable;
     private SymbolTable fileTable;
+    private ReferenceCache referenceCache = new ReferenceCache();
     private static BinaryOperation[] binaryOperations = BinaryOperation.values();
     private static NumericOperandType[] numericOperandTypes = NumericOperandType.values();
     private static IntegerSubtype[] integerSubtypes = IntegerSubtype.values();
@@ -733,7 +800,7 @@ public class ProgramIO {
             case 1: {
                 ClassConstantInstruction insn = new ClassConstantInstruction();
                 insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setConstant(ValueType.parse(symbolTable.at(input.readInt())));
+                insn.setConstant(parseValueType(symbolTable.at(input.readInt())));
                 return insn;
             }
             case 2: {
@@ -798,7 +865,7 @@ public class ProgramIO {
             case 11: {
                 CastInstruction insn = new CastInstruction();
                 insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setTargetType(ValueType.parse(symbolTable.at(input.readInt())));
+                insn.setTargetType(parseValueType(symbolTable.at(input.readInt())));
                 insn.setValue(program.variableAt(input.readShort()));
                 return insn;
             }
@@ -870,7 +937,7 @@ public class ProgramIO {
             case 21: {
                 ConstructArrayInstruction insn = new ConstructArrayInstruction();
                 insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setItemType(ValueType.parse(symbolTable.at(input.readInt())));
+                insn.setItemType(parseValueType(symbolTable.at(input.readInt())));
                 insn.setSize(program.variableAt(input.readShort()));
                 return insn;
             }
@@ -883,7 +950,7 @@ public class ProgramIO {
             case 23: {
                 ConstructMultiArrayInstruction insn = new ConstructMultiArrayInstruction();
                 insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setItemType(ValueType.parse(symbolTable.at(input.readInt())));
+                insn.setItemType(parseValueType(symbolTable.at(input.readInt())));
                 int dimensionCount = input.readByte();
                 for (int i = 0; i < dimensionCount; ++i) {
                     insn.getDimensions().add(program.variableAt(input.readShort()));
@@ -897,7 +964,7 @@ public class ProgramIO {
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
                 insn.setField(new FieldReference(className, fieldName));
-                insn.setFieldType(ValueType.parse(symbolTable.at(input.readInt())));
+                insn.setFieldType(parseValueType(symbolTable.at(input.readInt())));
                 return insn;
             }
             case 25: {
@@ -906,7 +973,7 @@ public class ProgramIO {
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
                 insn.setField(new FieldReference(className, fieldName));
-                insn.setFieldType(ValueType.parse(symbolTable.at(input.readInt())));
+                insn.setFieldType(parseValueType(symbolTable.at(input.readInt())));
                 return insn;
             }
             case 26: {
@@ -914,7 +981,7 @@ public class ProgramIO {
                 insn.setInstance(program.variableAt(input.readShort()));
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
-                ValueType type = ValueType.parse(symbolTable.at(input.readInt()));
+                ValueType type = parseValueType(symbolTable.at(input.readInt()));
                 insn.setField(new FieldReference(className, fieldName));
                 insn.setValue(program.variableAt(input.readShort()));
                 insn.setFieldType(type);
@@ -924,7 +991,7 @@ public class ProgramIO {
                 PutFieldInstruction insn = new PutFieldInstruction();
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
-                ValueType type = ValueType.parse(symbolTable.at(input.readInt()));
+                ValueType type = parseValueType(symbolTable.at(input.readInt()));
                 insn.setField(new FieldReference(className, fieldName));
                 insn.setValue(program.variableAt(input.readShort()));
                 insn.setFieldType(type);
@@ -969,8 +1036,8 @@ public class ProgramIO {
                 int receiverIndex = input.readShort();
                 insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
                 String className = symbolTable.at(input.readInt());
-                MethodDescriptor methodDesc = MethodDescriptor.parse(symbolTable.at(input.readInt()));
-                insn.setMethod(new MethodReference(className, methodDesc));
+                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readInt()));
+                insn.setMethod(createMethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
                 for (int i = 0; i < paramCount; ++i) {
                     insn.getArguments().add(program.variableAt(input.readShort()));
@@ -984,8 +1051,8 @@ public class ProgramIO {
                 insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
                 insn.setInstance(program.variableAt(input.readShort()));
                 String className = symbolTable.at(input.readInt());
-                MethodDescriptor methodDesc = MethodDescriptor.parse(symbolTable.at(input.readInt()));
-                insn.setMethod(new MethodReference(className, methodDesc));
+                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readInt()));
+                insn.setMethod(createMethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
                 for (int i = 0; i < paramCount; ++i) {
                     insn.getArguments().add(program.variableAt(input.readShort()));
@@ -999,8 +1066,8 @@ public class ProgramIO {
                 insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
                 insn.setInstance(program.variableAt(input.readShort()));
                 String className = symbolTable.at(input.readInt());
-                MethodDescriptor methodDesc = MethodDescriptor.parse(symbolTable.at(input.readInt()));
-                insn.setMethod(new MethodReference(className, methodDesc));
+                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readInt()));
+                insn.setMethod(createMethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
                 for (int i = 0; i < paramCount; ++i) {
                     insn.getArguments().add(program.variableAt(input.readShort()));
@@ -1010,7 +1077,7 @@ public class ProgramIO {
             case 36: {
                 IsInstanceInstruction insn = new IsInstanceInstruction();
                 insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setType(ValueType.parse(symbolTable.at(input.readInt())));
+                insn.setType(parseValueType(symbolTable.at(input.readInt())));
                 insn.setValue(program.variableAt(input.readShort()));
                 return insn;
             }
@@ -1041,7 +1108,7 @@ public class ProgramIO {
                 short instance = input.readShort();
                 insn.setReceiver(receiver >= 0 ? program.variableAt(receiver) : null);
                 insn.setInstance(instance >= 0 ? program.variableAt(instance) : null);
-                insn.setMethod(MethodDescriptor.parse(symbolTable.at(input.readInt())));
+                insn.setMethod(parseMethodDescriptor(symbolTable.at(input.readInt())));
                 int argsCount = insn.getMethod().parameterCount();
                 for (int i = 0; i < argsCount; ++i) {
                     insn.getArguments().add(program.variableAt(input.readShort()));
@@ -1063,31 +1130,31 @@ public class ProgramIO {
         switch (kind) {
             case 0:
                 return MethodHandle.fieldGetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        ValueType.parse(symbolTable.at(input.readInt())));
+                        parseValueType(symbolTable.at(input.readInt())));
             case 1:
                 return MethodHandle.staticFieldGetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        ValueType.parse(symbolTable.at(input.readInt())));
+                        parseValueType(symbolTable.at(input.readInt())));
             case 2:
                 return MethodHandle.fieldSetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        ValueType.parse(symbolTable.at(input.readInt())));
+                        parseValueType(symbolTable.at(input.readInt())));
             case 3:
                 return MethodHandle.staticFieldSetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        ValueType.parse(symbolTable.at(input.readInt())));
+                        parseValueType(symbolTable.at(input.readInt())));
             case 4:
                 return MethodHandle.virtualCaller(symbolTable.at(input.readInt()),
-                        MethodDescriptor.parse(symbolTable.at(input.readInt())));
+                        parseMethodDescriptor(symbolTable.at(input.readInt())));
             case 5:
                 return MethodHandle.staticCaller(symbolTable.at(input.readInt()),
-                        MethodDescriptor.parse(symbolTable.at(input.readInt())));
+                        parseMethodDescriptor(symbolTable.at(input.readInt())));
             case 6:
                 return MethodHandle.specialCaller(symbolTable.at(input.readInt()),
-                        MethodDescriptor.parse(symbolTable.at(input.readInt())));
+                        parseMethodDescriptor(symbolTable.at(input.readInt())));
             case 7:
                 return MethodHandle.constructorCaller(symbolTable.at(input.readInt()),
-                        MethodDescriptor.parse(symbolTable.at(input.readInt())));
+                        parseMethodDescriptor(symbolTable.at(input.readInt())));
             case 8:
                 return MethodHandle.interfaceCaller(symbolTable.at(input.readInt()),
-                        MethodDescriptor.parse(symbolTable.at(input.readInt())));
+                        parseMethodDescriptor(symbolTable.at(input.readInt())));
             default:
                 throw new IllegalArgumentException("Unexpected method handle type: " + kind);
         }
@@ -1107,7 +1174,7 @@ public class ProgramIO {
             case 4:
                 return new RuntimeConstant(input.readUTF());
             case 5:
-                return new RuntimeConstant(ValueType.parse(symbolTable.at(input.readInt())));
+                return new RuntimeConstant(parseValueType(symbolTable.at(input.readInt())));
             case 6:
                 return new RuntimeConstant(MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
             case 7:
@@ -1115,5 +1182,17 @@ public class ProgramIO {
             default:
                 throw new IllegalArgumentException("Unexpected runtime constant type: " + kind);
         }
+    }
+    
+    private MethodDescriptor parseMethodDescriptor(String key) {
+        return referenceCache.parseDescriptorCached(key);
+    }
+    
+    private ValueType parseValueType(String key) {
+        return referenceCache.parseValueTypeCached(key);
+    }
+    
+    private MethodReference createMethodReference(String className, MethodDescriptor method) {
+        return referenceCache.getCached(className, method);
     }
 }

@@ -86,7 +86,7 @@ class JSValueMarshaller {
         Variable nameVar = addStringWrap(addString(name, location.getSourceLocation()), location.getSourceLocation());
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class, "function", JSObject.class, JSObject.class, JSObject.class));
+        insn.setMethod(JSMethods.FUNCTION);
         insn.setReceiver(functor);
         insn.getArguments().add(var);
         insn.getArguments().add(nameVar);
@@ -98,7 +98,7 @@ class JSValueMarshaller {
     Variable wrap(Variable var, ValueType type, TextLocation location, boolean byRef) {
         if (byRef) {
             InvokeInstruction insn = new InvokeInstruction();
-            insn.setMethod(new MethodReference(JS.class, "arrayData", Object.class, JSObject.class));
+            insn.setMethod(JSMethods.ARRAY_DATA);
             insn.setReceiver(program.createVariable());
             insn.setType(InvocationType.SPECIAL);
             insn.getArguments().add(var);
@@ -142,7 +142,7 @@ class JSValueMarshaller {
 
             while (--degree > 1) {
                 insn = new InvokeInstruction();
-                insn.setMethod(new MethodReference(JS.class, "arrayMapper", Function.class, Function.class));
+                insn.setMethod(JSMethods.ARRAY_MAPPER);
                 insn.getArguments().add(function);
                 function = program.createVariable();
                 insn.setReceiver(function);
@@ -195,26 +195,26 @@ class JSValueMarshaller {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
-                    return new MethodReference(JS.class, "booleanArrayWrapper", Function.class);
+                    return JSMethods.BOOLEAN_ARRAY_WRAPPER;
                 case BYTE:
-                    return new MethodReference(JS.class, "byteArrayWrapper", Function.class);
+                    return JSMethods.BYTE_ARRAY_WRAPPER;
                 case SHORT:
-                    return new MethodReference(JS.class, "shortArrayWrapper", Function.class);
+                    return JSMethods.SHORT_ARRAY_WRAPPER;
                 case CHARACTER:
-                    return new MethodReference(JS.class, "charArrayWrapper", Function.class);
+                    return JSMethods.CHAR_ARRAY_WRAPPER;
                 case INTEGER:
-                    return new MethodReference(JS.class, "intArrayWrapper", Function.class);
+                    return JSMethods.INT_ARRAY_WRAPPER;
                 case FLOAT:
-                    return new MethodReference(JS.class, "floatArrayWrapper", Function.class);
+                    return JSMethods.FLOAT_ARRAY_WRAPPER;
                 case DOUBLE:
-                    return new MethodReference(JS.class, "doubleArrayWrapper", Function.class);
+                    return JSMethods.DOUBLE_ARRAY_WRAPPER;
                 default:
                     break;
             }
         } else if (type.isObject(String.class)) {
-            return new MethodReference(JS.class, "stringArrayWrapper", Function.class);
+            return JSMethods.STRING_ARRAY_WRAPPER;
         }
-        return new MethodReference(JS.class, "arrayWrapper", Function.class);
+        return JSMethods.ARRAY_WRAPPER;
     }
 
     Variable unwrapReturnValue(CallLocation location, Variable var, ValueType type) {
@@ -356,8 +356,7 @@ class JSValueMarshaller {
             replacement.add(clsInsn);
 
             insn = new InvokeInstruction();
-            insn.setMethod(new MethodReference(JS.class, "arrayUnmapper", Class.class, Function.class,
-                    Function.class));
+            insn.setMethod(JSMethods.ARRAY_UNMAPPER);
             insn.setType(InvocationType.SPECIAL);
             insn.getArguments().add(cls);
             insn.getArguments().add(function);
@@ -374,8 +373,7 @@ class JSValueMarshaller {
         replacement.add(clsInsn);
 
         insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class, "unmapArray", Class.class, JSArrayReader.class, Function.class,
-                Object[].class));
+        insn.setMethod(JSMethods.UNMAP_ARRAY);
         insn.getArguments().add(cls);
         insn.getArguments().add(var);
         insn.getArguments().add(function);
@@ -391,52 +389,52 @@ class JSValueMarshaller {
         if (itemType instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) itemType).getKind()) {
                 case BOOLEAN:
-                    return new MethodReference(JS.class, "unwrapBooleanArray", JSArrayReader.class, boolean[].class);
+                    return JSMethods.UNWRAP_BOOLEAN_ARRAY;
                 case BYTE:
-                    return new MethodReference(JS.class, "unwrapByteArray", JSArrayReader.class, byte[].class);
+                    return JSMethods.UNWRAP_BYTE_ARRAY;
                 case SHORT:
-                    return new MethodReference(JS.class, "unwrapShortArray", JSArrayReader.class, short[].class);
+                    return JSMethods.UNWRAP_SHORT_ARRAY;
                 case CHARACTER:
-                    return new MethodReference(JS.class, "unwrapCharArray", JSArrayReader.class, char[].class);
+                    return JSMethods.UNWRAP_CHAR_ARRAY;
                 case INTEGER:
-                    return new MethodReference(JS.class, "unwrapIntArray", JSArrayReader.class, int[].class);
+                    return JSMethods.UNWRAP_INT_ARRAY;
                 case FLOAT:
-                    return new MethodReference(JS.class, "unwrapFloatArray", JSArrayReader.class, float[].class);
+                    return JSMethods.UNWRAP_FLOAT_ARRAY;
                 case DOUBLE:
-                    return new MethodReference(JS.class, "unwrapDoubleArray", JSArrayReader.class, double[].class);
+                    return JSMethods.UNWRAP_DOUBLE_ARRAY;
                 default:
                     break;
             }
         } else if (itemType.isObject(String.class)) {
-            return new MethodReference(JS.class, "unwrapStringArray", JSArrayReader.class, String[].class);
+            return JSMethods.UNWRAP_STRING_ARRAY;
         }
-        return new MethodReference(JS.class, "unwrapArray", Class.class, JSArrayReader.class, JSObject[].class);
+        return JSMethods.UNWRAP_ARRAY;
     }
 
     private MethodReference multipleDimensionArrayUnwrapper(ValueType itemType) {
         if (itemType instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) itemType).getKind()) {
                 case BOOLEAN:
-                    return new MethodReference(JS.class, "booleanArrayUnwrapper", Function.class);
+                    return JSMethods.BOOLEAN_ARRAY_UNWRAPPER;
                 case BYTE:
-                    return new MethodReference(JS.class, "byteArrayUnwrapper", Function.class);
+                    return JSMethods.BYTE_ARRAY_UNWRAPPER;
                 case SHORT:
-                    return new MethodReference(JS.class, "shortArrayUnwrapper", Function.class);
+                    return JSMethods.SHORT_ARRAY_UNWRAPPER;
                 case CHARACTER:
-                    return new MethodReference(JS.class, "charArrayUnwrapper", Function.class);
+                    return JSMethods.CHAR_ARRAY_UNWRAPPER;
                 case INTEGER:
-                    return new MethodReference(JS.class, "intArrayUnwrapper", Function.class);
+                    return JSMethods.INT_ARRAY_UNWRAPPER;
                 case FLOAT:
-                    return new MethodReference(JS.class, "floatArrayUnwrapper", Function.class);
+                    return JSMethods.FLOAT_ARRAY_UNWRAPPER;
                 case DOUBLE:
-                    return new MethodReference(JS.class, "doubleArrayUnwrapper", Function.class);
+                    return JSMethods.DOUBLE_ARRAY_UNWRAPPER;
                 default:
                     break;
             }
         } else if (itemType.isObject(String.class)) {
-            return new MethodReference(JS.class, "stringArrayUnwrapper", Function.class);
+            return JSMethods.STRING_ARRAY_UNWRAPPER;
         }
-        return new MethodReference(JS.class, "arrayUnwrapper", Class.class, Function.class);
+        return JSMethods.ARRAY_UNWRAPPER;
     }
 
     private Variable unwrap(Variable var, String methodName, ValueType argType, ValueType resultType,
@@ -474,8 +472,7 @@ class JSValueMarshaller {
         Variable nameVar = addStringWrap(addString(name, location.getSourceLocation()), location.getSourceLocation());
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class, "functionAsObject", JSObject.class, JSObject.class,
-                JSObject.class));
+        insn.setMethod(JSMethods.FUNCTION_AS_OBJECT);
         insn.setReceiver(functor);
         insn.getArguments().add(var);
         insn.getArguments().add(nameVar);

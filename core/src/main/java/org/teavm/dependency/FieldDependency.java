@@ -15,6 +15,12 @@
  */
 package org.teavm.dependency;
 
+import java.util.ArrayList;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import org.teavm.callgraph.DefaultCallGraphNode;
+import org.teavm.model.CallLocation;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 
@@ -22,6 +28,9 @@ public class FieldDependency implements FieldDependencyInfo {
     DependencyNode value;
     private FieldReader field;
     private FieldReference reference;
+    private List<LocationListener> locationListeners;
+    private Set<CallLocation> locations;
+    boolean activated;
 
     FieldDependency(DependencyNode value, FieldReader field, FieldReference reference) {
         this.value = value;
@@ -46,5 +55,33 @@ public class FieldDependency implements FieldDependencyInfo {
     @Override
     public boolean isMissing() {
         return field == null;
+    }
+
+    public FieldDependency addLocation(CallLocation location) {
+        DefaultCallGraphNode node = value.dependencyAnalyzer.callGraph.getNode(location.getMethod());
+        if (locations == null) {
+            locations = new LinkedHashSet<>();
+        }
+        if (locations.add(location)) {
+            node.addFieldAccess(reference, location.getSourceLocation());
+            if (locationListeners != null) {
+                for (LocationListener listener : locationListeners.toArray(new LocationListener[0])) {
+                    listener.locationAdded(location);
+                }
+            }
+        }
+        return this;
+    }
+
+    public void addLocationListener(LocationListener listener) {
+        if (locationListeners == null) {
+            locationListeners = new ArrayList<>();
+            locationListeners.add(listener);
+            if (locations != null) {
+                for (CallLocation location : locations.toArray(new CallLocation[0])) {
+                    listener.locationAdded(location);
+                }
+            }
+        }
     }
 }

@@ -15,16 +15,19 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.*;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.Program;
 
 class ResourceTransformer implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         for (MethodHolder method : cls.getMethods()) {
             Program program = method.getProgram();
             if (program != null) {
-                new ResourceProgramTransformer(innerSource, program).transformProgram();
+                new ResourceProgramTransformer(context.getHierarchy(), program).transformProgram();
             }
         }
     }

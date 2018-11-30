@@ -16,16 +16,16 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
-import org.teavm.cache.NoCache;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.MethodHolder;
@@ -37,21 +37,20 @@ import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 import org.teavm.platform.metadata.MetadataProvider;
 
 class MetadataProviderTransformer implements ClassHolderTransformer {
-    static int fieldIdGen;
-
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
+        int index = 0;
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             AnnotationReader providerAnnot = method.getAnnotations().get(MetadataProvider.class.getName());
             if (providerAnnot != null) {
-                transformMetadataMethod(cls, method, diagnostics, innerSource);
+                transformMetadataMethod(cls, method, context.getDiagnostics(), context.getHierarchy(), index++);
             }
             providerAnnot = method.getAnnotations().get(ClassScopedMetadataProvider.class.getName());
             if (providerAnnot != null) {
                 ValueType[] params = method.getParameterTypes();
                 if (params.length != 1 && params[0].isObject(PlatformClass.class.getName())) {
-                    diagnostics.error(new CallLocation(method.getReference()), "Method {{m0}} marked with {{c1}} "
-                            + "must take exactly one parameter of type {{c2}}",
+                    context.getDiagnostics().error(new CallLocation(method.getReference()),
+                            "Method {{m0}} marked with {{c1}} must take exactly one parameter of type {{c2}}",
                             method.getReference(), ClassScopedMetadataProvider.class.getName(),
                             PlatformClass.class.getName());
                 }
@@ -60,20 +59,17 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
                 genAnnot.getValues().put("value", new AnnotationValue(ValueType.object(
                         ClassScopedMetadataProviderNativeGenerator.class.getName())));
                 method.getAnnotations().add(genAnnot);
-
-                AnnotationHolder noCacheAnnot = new AnnotationHolder(NoCache.class.getName());
-                method.getAnnotations().add(noCacheAnnot);
             }
         }
     }
 
     private void transformMetadataMethod(ClassHolder cls, MethodHolder method, Diagnostics diagnostics,
-            ClassReaderSource classSource) {
+            ClassHierarchy hierarchy, int suffix) {
         if (!validate(method, diagnostics)) {
             return;
         }
 
-        FieldHolder field = new FieldHolder("$$metadata$$" + fieldIdGen++);
+        FieldHolder field = new FieldHolder("$$metadata$$" + suffix);
         field.setType(method.getResultType());
         field.setLevel(AccessLevel.PRIVATE);
         field.getModifiers().add(ElementModifier.STATIC);
@@ -95,15 +91,12 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
         createMethod.getAnnotations().add(refAnnot);
 
         method.getModifiers().remove(ElementModifier.NATIVE);
-        ProgramEmitter pe = ProgramEmitter.create(method, classSource);
+        ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
         pe.when(pe.getField(field.getReference(), field.getType()).isNull())
                 .thenDo(() -> pe.setField(field.getReference(), pe.invoke(createMethod.getReference().getClassName(),
                             createMethod.getReference().getName(), createMethod.getResultType())));
         pe.getField(field.getReference(), field.getType())
                 .returnValue();
-
-        AnnotationHolder noCacheAnnot = new AnnotationHolder(NoCache.class.getName());
-        method.getAnnotations().add(noCacheAnnot);
     }
 
     private boolean validate(MethodHolder method, Diagnostics diagnostics) {

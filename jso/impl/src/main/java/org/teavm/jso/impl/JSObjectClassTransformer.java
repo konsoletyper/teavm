@@ -31,10 +31,11 @@ import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.Instruction;
@@ -53,7 +54,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     private JSClassProcessor processor;
     private JSBodyRepository repository;
     private JSTypeHelper typeHelper;
-    private ClassReaderSource innerSource;
+    private ClassHierarchy hierarchy;
     private Map<String, ExposedClass> exposedClasses = new HashMap<>();
 
     JSObjectClassTransformer(JSBodyRepository repository) {
@@ -61,11 +62,12 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     }
 
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
-        this.innerSource = innerSource;
-        if (processor == null || processor.getClassSource() != innerSource) {
-            typeHelper = new JSTypeHelper(innerSource);
-            processor = new JSClassProcessor(innerSource, typeHelper, repository, diagnostics);
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
+        this.hierarchy = context.getHierarchy();
+        if (processor == null || processor.getClassSource() != hierarchy.getClassSource()) {
+            typeHelper = new JSTypeHelper(hierarchy.getClassSource());
+            processor = new JSClassProcessor(hierarchy.getClassSource(), typeHelper, repository,
+                    context.getDiagnostics(), context.getIncrementalCache());
         }
         processor.processClass(cls);
         if (typeHelper.isJavaScriptClass(cls.getName())) {
@@ -89,7 +91,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             }
         }
 
-        ClassReader originalClass = innerSource.get(cls.getName());
+        ClassReader originalClass = hierarchy.getClassSource().get(cls.getName());
         ExposedClass exposedClass;
         if (originalClass != null) {
             exposedClass = getExposedClass(cls.getName());
@@ -98,7 +100,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             createExposedClass(cls, exposedClass);
         }
 
-        exposeMethods(cls, exposedClass, diagnostics, functorMethod);
+        exposeMethods(cls, exposedClass, context.getDiagnostics(), functorMethod);
     }
 
     private void exposeMethods(ClassHolder classHolder, ExposedClass classToExpose, Diagnostics diagnostics,
@@ -120,8 +122,8 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
 
             BasicBlock basicBlock = program.createBasicBlock();
             List<Instruction> marshallInstructions = new ArrayList<>();
-            JSValueMarshaller marshaller = new JSValueMarshaller(diagnostics, typeHelper, innerSource, program,
-                    marshallInstructions);
+            JSValueMarshaller marshaller = new JSValueMarshaller(diagnostics, typeHelper, hierarchy.getClassSource(),
+                    program, marshallInstructions);
 
             List<Variable> variablesToPass = new ArrayList<>();
             for (int i = 0; i < method.parameterCount(); ++i) {
@@ -179,7 +181,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
     }
 
     private ExposedClass createExposedClass(String name) {
-        ClassReader cls = innerSource.get(name);
+        ClassReader cls = hierarchy.getClassSource().get(name);
         ExposedClass exposedCls = new ExposedClass();
         if (cls != null) {
             createExposedClass(cls, exposedCls);
@@ -206,7 +208,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             if (exposedCls.implementedInterfaces.contains(ifaceName)) {
                 continue;
             }
-            ClassReader iface = innerSource.get(ifaceName);
+            ClassReader iface = hierarchy.getClassSource().get(ifaceName);
             if (iface == null) {
                 continue;
             }

@@ -99,6 +99,10 @@ public interface ClassReaderSource {
                 methodReference.getDescriptor(), new HashSet<>());
     }
 
+    default MethodReader resolveImplementation(String className, MethodDescriptor descriptor) {
+        return ClassReaderSourceHelper.resolveMethodImplementation(this, className, descriptor, new HashSet<>());
+    }
+
     default FieldReader resolve(FieldReference field) {
         return getAncestors(field.getClassName())
                 .map(cls -> cls.getField(field.getFieldName()))
@@ -114,25 +118,5 @@ public interface ClassReaderSource {
 
     default Optional<Boolean> isSuperType(String superType, String subType) {
         return ClassReaderSourceHelper.isSuperType(this, superType, subType);
-    }
-
-    default Optional<Boolean> isSuperType(ValueType superType, ValueType subType) {
-        if (superType.equals(subType)) {
-            return Optional.of(true);
-        }
-        if (superType instanceof ValueType.Primitive || subType instanceof ValueType.Primitive) {
-            return Optional.of(false);
-        }
-        if (superType.isObject("java.lang.Object")) {
-            return Optional.of(true);
-        }
-        if (superType instanceof ValueType.Object && subType instanceof ValueType.Object) {
-            return isSuperType(((ValueType.Object) superType).getClassName(),
-                    ((ValueType.Object) subType).getClassName());
-        } else if (superType instanceof ValueType.Array & subType instanceof ValueType.Array) {
-            return isSuperType(((ValueType.Array) superType).getItemType(), ((ValueType.Array) subType).getItemType());
-        } else {
-            return Optional.of(false);
-        }
     }
 }

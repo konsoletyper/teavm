@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,13 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.ast.cache;
+package org.teavm.dependency;
 
-import org.teavm.ast.AsyncMethodNode;
-import org.teavm.ast.RegularMethodNode;
-import org.teavm.model.MethodReference;
+import org.teavm.common.ServiceRepository;
+import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.ClassReaderSource;
 
-public interface MethodNodeCache {
-    RegularMethodNode get(MethodReference methodReference);
-
-    void store(MethodReference methodReference, RegularMethodNode node);
-
-    AsyncMethodNode getAsync(MethodReference methodReference);
-
-    void storeAsync(MethodReference methodReference, AsyncMethodNode node);
+public interface DependencyAnalyzerFactory {
+    DependencyAnalyzer create(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
+            Diagnostics diagnostics);
 }

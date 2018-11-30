@@ -42,12 +42,13 @@ import org.teavm.ast.Statement;
 import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.VariableNode;
 import org.teavm.ast.WhileStatement;
-import org.teavm.ast.cache.MethodNodeCache;
 import org.teavm.ast.optimization.Optimizer;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.InjectedBy;
-import org.teavm.cache.NoCache;
+import org.teavm.cache.AstDependencyExtractor;
+import org.teavm.cache.CacheStatus;
+import org.teavm.cache.MethodNodeCache;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphIndexer;
 import org.teavm.common.Loop;
@@ -74,6 +75,7 @@ import org.teavm.model.util.TypeInferer;
 public class Decompiler {
     private ClassHolderSource classSource;
     private ClassLoader classLoader;
+    private CacheStatus cacheStatus;
     private Graph graph;
     private LoopGraph loopGraph;
     private GraphIndexer indexer;
@@ -90,15 +92,18 @@ public class Decompiler {
     private Set<MethodReference> asyncMethods;
     private Set<MethodReference> splitMethods = new HashSet<>();
     private List<TryCatchBookmark> tryCatchBookmarks = new ArrayList<>();
+    private final AstDependencyExtractor astDependencyExtractor = new AstDependencyExtractor();
     private Deque<Block> stack;
     private Program program;
     private boolean friendlyToDebugger;
     private boolean moveConstants;
 
-    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader, Set<MethodReference> asyncMethods,
-            Set<MethodReference> asyncFamilyMethods, boolean friendlyToDebugger, boolean moveConstants) {
+    public Decompiler(ClassHolderSource classSource, ClassLoader classLoader,
+            CacheStatus cacheStatus, Set<MethodReference> asyncMethods, Set<MethodReference> asyncFamilyMethods,
+            boolean friendlyToDebugger, boolean moveConstants) {
         this.classSource = classSource;
         this.classLoader = classLoader;
+        this.cacheStatus = cacheStatus;
         this.asyncMethods = asyncMethods;
         splitMethods.addAll(asyncMethods);
         splitMethods.addAll(asyncFamilyMethods);
@@ -239,8 +244,7 @@ public class Decompiler {
                         + " for native method " + method.getOwnerName() + "." + method.getDescriptor());
             }
         }
-        NativeMethodNode methodNode = new NativeMethodNode(new MethodReference(method.getOwnerName(),
-                method.getDescriptor()));
+        NativeMethodNode methodNode = new NativeMethodNode(method.getReference());
         methodNode.getModifiers().addAll(method.getModifiers());
         methodNode.setGenerator(generator);
         methodNode.setAsync(asyncMethods.contains(method.getReference()));
@@ -253,13 +257,16 @@ public class Decompiler {
     }
 
     public RegularMethodNode decompileRegular(MethodHolder method) {
-        if (regularMethodCache == null || method.getAnnotations().get(NoCache.class.getName()) != null) {
+        if (regularMethodCache == null) {
             return decompileRegularCacheMiss(method);
         }
-        RegularMethodNode node = regularMethodCache.get(method.getReference());
+        RegularMethodNode node = !cacheStatus.isStaleMethod(method.getReference())
+                ? regularMethodCache.get(method.getReference(), cacheStatus)
+                : null;
         if (node == null) {
             node = decompileRegularCacheMiss(method);
-            regularMethodCache.store(method.getReference(), node);
+            RegularMethodNode finalNode = node;
+            regularMethodCache.store(method.getReference(), node, () -> astDependencyExtractor.extract(finalNode));
         }
         return node;
     }
@@ -293,34 +300,18 @@ public class Decompiler {
     }
 
     public AsyncMethodNode decompileAsync(MethodHolder method) {
-        if (regularMethodCache == null || method.getAnnotations().get(NoCache.class.getName()) != null) {
+        if (regularMethodCache == null) {
             return decompileAsyncCacheMiss(method);
         }
-        AsyncMethodNode node = regularMethodCache.getAsync(method.getReference());
-        if (node == null || !checkAsyncRelevant(node)) {
+        AsyncMethodNode node = !cacheStatus.isStaleMethod(method.getReference())
+                ? regularMethodCache.getAsync(method.getReference(), cacheStatus)
+                : null;
+        if (node == null) {
             node = decompileAsyncCacheMiss(method);
-            regularMethodCache.storeAsync(method.getReference(), node);
+            AsyncMethodNode finalNode = node;
+            regularMethodCache.storeAsync(method.getReference(), node, () -> astDependencyExtractor.extract(finalNode));
         }
         return node;
-    }
-
-    private boolean checkAsyncRelevant(AsyncMethodNode node) {
-        AsyncCallsFinder asyncCallsFinder = new AsyncCallsFinder();
-        for (AsyncMethodPart part : node.getBody()) {
-            part.getStatement().acceptVisitor(asyncCallsFinder);
-        }
-        for (MethodReference asyncCall : asyncCallsFinder.asyncCalls) {
-            if (!splitMethods.contains(asyncCall)) {
-                return false;
-            }
-        }
-        asyncCallsFinder.allCalls.removeAll(asyncCallsFinder.asyncCalls);
-        for (MethodReference asyncCall : asyncCallsFinder.allCalls) {
-            if (splitMethods.contains(asyncCall)) {
-                return false;
-            }
-        }
-        return true;
     }
 
     private AsyncMethodNode decompileAsyncCacheMiss(MethodHolder method) {

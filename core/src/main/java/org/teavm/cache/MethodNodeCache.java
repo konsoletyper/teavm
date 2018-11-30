@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,28 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.ast.cache;
+package org.teavm.cache;
 
+import java.util.function.Supplier;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.model.MethodReference;
 
-public class EmptyRegularMethodNodeCache implements MethodNodeCache {
-    @Override
-    public RegularMethodNode get(MethodReference methodReference) {
-        return null;
-    }
+public interface MethodNodeCache {
+    RegularMethodNode get(MethodReference methodReference, CacheStatus cacheStatus);
 
-    @Override
-    public void store(MethodReference methodReference, RegularMethodNode node) {
-    }
+    void store(MethodReference methodReference, RegularMethodNode node, Supplier<String[]> dependencies);
 
-    @Override
-    public AsyncMethodNode getAsync(MethodReference methodReference) {
-        return null;
-    }
+    AsyncMethodNode getAsync(MethodReference methodReference, CacheStatus cacheStatus);
 
-    @Override
-    public void storeAsync(MethodReference methodReference, AsyncMethodNode node) {
-    }
+    void storeAsync(MethodReference methodReference, AsyncMethodNode node, Supplier<String[]> dependencies);
 }

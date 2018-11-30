@@ -15,8 +15,11 @@
  */
 package org.teavm.metaprogramming.impl.model;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.metaprogramming.Meta;
 import org.teavm.metaprogramming.ReflectClass;
@@ -32,7 +35,8 @@ import org.teavm.model.ValueType;
 public class MethodDescriber {
     private Diagnostics diagnostics;
     private ClassReaderSource classSource;
-    private Map<MethodReference, MethodModel> cache = new HashMap<>();
+    private Map<MethodReference, Optional<MethodModel>> cache = new HashMap<>();
+    private List<MethodModel> knownMethods = new ArrayList<>();
 
     public MethodDescriber(Diagnostics diagnostics, ClassReaderSource classSource) {
         this.diagnostics = diagnostics;
@@ -40,19 +44,25 @@ public class MethodDescriber {
     }
 
     public MethodModel getMethod(MethodReference method) {
-        return cache.computeIfAbsent(method, this::describeMethod);
-    }
-
-    public MethodModel getKnownMethod(MethodReference method) {
-        return cache.get(method);
+        return cache.computeIfAbsent(method, k -> {
+            MethodModel model = describeMethod(k);
+            if (model != null) {
+                knownMethods.add(model);
+            }
+            return Optional.ofNullable(model);
+        }).orElse(null);
     }
 
     public Iterable<MethodModel> getKnownMethods() {
-        return cache.values();
+        return knownMethods;
     }
 
     private MethodModel describeMethod(MethodReference methodRef) {
-        MethodReader method = classSource.resolve(methodRef);
+        ClassReader cls = classSource.get(methodRef.getClassName());
+        if (cls == null) {
+            return null;
+        }
+        MethodReader method = cls.getMethod(methodRef.getDescriptor());
         if (method == null) {
             return null;
         }

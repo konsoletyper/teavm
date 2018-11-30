@@ -20,7 +20,6 @@ import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.Platform;
@@ -28,6 +27,7 @@ import org.teavm.platform.PlatformAnnotationProvider;
 
 public class AnnotationDependencySupport extends AbstractDependencyListener {
     private DependencyNode allClasses;
+    private MethodDependency getAnnotationsDep;
 
     @Override
     public void started(DependencyAgent agent) {
@@ -35,29 +35,39 @@ public class AnnotationDependencySupport extends AbstractDependencyListener {
     }
 
     @Override
-    public void classReached(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className) {
         allClasses.propagate(agent.getType(className));
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().getClassName().equals(Platform.class.getName())
                 && method.getReference().getName().equals("getAnnotations")) {
             method.getResult().propagate(agent.getType("[" + ValueType.parse(Annotation.class).toString()));
-            agent.linkMethod(new MethodReference(PlatformAnnotationProvider.class, "getAnnotations",
-                    Annotation[].class), location);
+            if (getAnnotationsDep == null) {
+                getAnnotationsDep = agent.linkMethod(new MethodReference(PlatformAnnotationProvider.class,
+                        "getAnnotations", Annotation[].class));
+            }
+            method.addLocationListener(getAnnotationsDep::addLocation);
+
             allClasses.addConsumer(type -> {
                 if (type.getName().endsWith("$$__annotations__$$")) {
                     return;
                 }
                 String className = type.getName() + "$$__annotations__$$";
-                agent.linkMethod(new MethodReference(className, "<init>", ValueType.VOID), location)
-                        .propagate(0, className)
-                        .use();
+                MethodDependency initMethod = agent.linkMethod(new MethodReference(className, "<init>",
+                        ValueType.VOID));
+                initMethod.propagate(0, className);
+                initMethod.use();
                 MethodDependency readMethod = agent.linkMethod(new MethodReference(className,
-                        "getAnnotations", ValueType.parse(Annotation[].class)), location);
+                        "getAnnotations", ValueType.parse(Annotation[].class)));
                 readMethod.getResult().getArrayItem().connect(method.getResult().getArrayItem());
                 readMethod.use();
+
+                method.addLocationListener(location -> {
+                    initMethod.addLocation(location);
+                    readMethod.addLocation(location);
+                });
             });
         }
     }

@@ -19,6 +19,7 @@ import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ElementReader;
@@ -26,11 +27,13 @@ import org.teavm.model.ValueType;
 
 public class ReflectContext {
     private ClassReaderSource classSource;
+    private ClassHierarchy hierarchy;
     private Map<ValueType, ReflectClassImpl<?>> classes = new HashMap<>();
     private ClassLoader classLoader;
 
-    public ReflectContext(ClassReaderSource classSource, ClassLoader classLoader) {
-        this.classSource = classSource;
+    public ReflectContext(ClassHierarchy hierarchy, ClassLoader classLoader) {
+        this.classSource = hierarchy.getClassSource();
+        this.hierarchy = hierarchy;
         this.classLoader = classLoader;
     }
 
@@ -40,6 +43,10 @@ public class ReflectContext {
 
     public ClassReaderSource getClassSource() {
         return classSource;
+    }
+
+    public ClassHierarchy getHierarchy() {
+        return hierarchy;
     }
 
     public ReflectClassImpl<?> getClass(ValueType type) {

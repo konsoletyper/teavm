@@ -16,6 +16,7 @@
 package org.teavm.model.emit;
 
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReader;
@@ -52,12 +53,14 @@ public final class ProgramEmitter {
     private Program program;
     private BasicBlock block;
     ClassReaderSource classSource;
+    ClassHierarchy hierarchy;
     private TextLocation currentLocation;
 
-    private ProgramEmitter(Program program, BasicBlock block, ClassReaderSource classSource) {
+    private ProgramEmitter(Program program, BasicBlock block, ClassHierarchy hierarchy) {
         this.program = program;
         this.block = block;
-        this.classSource = classSource;
+        this.classSource = hierarchy.getClassSource();
+        this.hierarchy = hierarchy;
     }
 
     public Program getProgram() {
@@ -218,7 +221,7 @@ public final class ProgramEmitter {
 
     public ValueEmitter invoke(MethodReference method, ValueEmitter... arguments) {
         for (int i = 0; i < method.parameterCount(); ++i) {
-            if (!classSource.isSuperType(method.parameterType(i), arguments[i].getType()).orElse(true)) {
+            if (!hierarchy.isSuperType(method.parameterType(i), arguments[i].getType(), true)) {
                 throw new EmitException("Argument " + i + " of type " + arguments[i].getType() + " is "
                         + "not compatible with method " + method);
             }
@@ -387,13 +390,13 @@ public final class ProgramEmitter {
         block.add(insn);
     }
 
-    public static ProgramEmitter create(MethodHolder method, ClassReaderSource classSource) {
+    public static ProgramEmitter create(MethodHolder method, ClassHierarchy classSource) {
         ProgramEmitter pe = create(method.getDescriptor(), classSource);
         method.setProgram(pe.getProgram());
         return pe;
     }
 
-    public static ProgramEmitter create(MethodDescriptor method, ClassReaderSource classSource) {
+    public static ProgramEmitter create(MethodDescriptor method, ClassHierarchy classSource) {
         Program program = new Program();
         BasicBlock zeroBlock = program.createBasicBlock();
         BasicBlock block = program.createBasicBlock();
@@ -483,7 +486,7 @@ public final class ProgramEmitter {
         return new StringBuilderEmitter(this);
     }
 
-    public static ProgramEmitter create(Program program, ClassReaderSource classSource) {
+    public static ProgramEmitter create(Program program, ClassHierarchy classSource) {
         return new ProgramEmitter(program, null, classSource);
     }
 }

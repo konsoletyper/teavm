@@ -48,9 +48,6 @@ public class JCLPlugin implements TeaVMPlugin {
                 jsExtension.add(loadServicesMethod, serviceLoaderSupp);
                 jsExtension.addVirtualMethods(new AnnotationVirtualMethods());
             }
-
-            JavacSupport javacSupport = new JavacSupport();
-            host.add(javacSupport);
         }
 
         if (!isBootstrap()) {

@@ -99,6 +99,10 @@ public final class Metaprogramming {
         return null;
     }
 
+    public static void unsupportedCase() {
+        unsupported();
+    }
+
     private static void unsupported() {
         throw new UnsupportedOperationException("This operation is only supported from TeaVM compile-time "
                 + "environment");

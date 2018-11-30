@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -50,11 +51,13 @@ public class TimeZoneGenerator implements MetadataGenerator {
                         case "northamerica":
                         case "pacificnew":
                         case "southamerica":
-                            compiler.parseDataFile(new BufferedReader(new InputStreamReader(zip, "UTF-8")), false);
+                            compiler.parseDataFile(new BufferedReader(
+                                    new InputStreamReader(zip, StandardCharsets.UTF_8)), false);
                             break;
                         case "backward":
                         case "backzone":
-                            compiler.parseDataFile(new BufferedReader(new InputStreamReader(zip, "UTF-8")), true);
+                            compiler.parseDataFile(new BufferedReader(
+                                    new InputStreamReader(zip, StandardCharsets.UTF_8)), true);
                             break;
                     }
                 }

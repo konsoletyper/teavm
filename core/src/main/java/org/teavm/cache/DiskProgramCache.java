@@ -15,28 +15,42 @@
  */
 package org.teavm.cache;
 
-import java.io.*;
-import java.util.*;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
-import org.teavm.parsing.ClassDateProvider;
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.DataInput;
+import java.io.DataInputStream;
+import java.io.DataOutput;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Supplier;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.ProgramCache;
 
 public class DiskProgramCache implements ProgramCache {
     private File directory;
     private ProgramIO programIO;
     private Map<MethodReference, Item> cache = new HashMap<>();
     private Set<MethodReference> newMethods = new HashSet<>();
-    private ClassDateProvider classDateProvider;
 
-    public DiskProgramCache(File directory, SymbolTable symbolTable, SymbolTable fileTable,
-            ClassDateProvider classDateProvider) {
+    public DiskProgramCache(File directory, SymbolTable symbolTable, SymbolTable fileTable) {
         this.directory = directory;
         programIO = new ProgramIO(symbolTable, fileTable);
-        this.classDateProvider = classDateProvider;
     }
 
     @Override
-    public Program get(MethodReference method) {
+    public Program get(MethodReference method, CacheStatus cacheStatus) {
         Item item = cache.get(method);
         if (item == null) {
             item = new Item();
@@ -49,8 +63,7 @@ public class DiskProgramCache implements ProgramCache {
                     boolean dependenciesChanged = false;
                     for (int i = 0; i < depCount; ++i) {
                         String depClass = input.readUTF();
-                        Date depDate = classDateProvider.getModificationDate(depClass);
-                        if (depDate == null || depDate.after(new Date(file.lastModified()))) {
+                        if (cacheStatus.isStaleClass(depClass)) {
                             dependenciesChanged = true;
                             break;
                         }
@@ -67,33 +80,29 @@ public class DiskProgramCache implements ProgramCache {
     }
 
     @Override
-    public void store(MethodReference method, Program program) {
+    public void store(MethodReference method, Program program, Supplier<String[]> dependencies) {
         Item item = new Item();
         cache.put(method, item);
         item.program = program;
+        item.dependencies = dependencies.get().clone();
         newMethods.add(method);
     }
 
-    public void flush() throws IOException {
+    public void flush(ClassReaderSource classSource) throws IOException {
+        Date currentTime = new Date();
         for (MethodReference method : newMethods) {
+            Item item = cache.get(method);
             File file = getMethodFile(method);
-            ProgramDependencyAnalyzer analyzer = new ProgramDependencyAnalyzer();
-            analyzer.dependencies.add(method.getClassName());
-            Program program = cache.get(method).program;
-            for (int i = 0; i < program.basicBlockCount(); ++i) {
-                BasicBlock block = program.basicBlockAt(i);
-                for (Instruction insn : block) {
-                    insn.acceptVisitor(analyzer);
-                }
-            }
             file.getParentFile().mkdirs();
+
             try (OutputStream stream = new BufferedOutputStream(new FileOutputStream(file))) {
                 DataOutput output = new DataOutputStream(stream);
-                output.writeShort(analyzer.dependencies.size());
-                for (String dep : analyzer.dependencies) {
+
+                output.writeShort(item.dependencies.length);
+                for (String dep : item.dependencies) {
                     output.writeUTF(dep);
                 }
-                programIO.write(program, stream);
+                programIO.write(item.program, stream);
             }
         }
     }
@@ -105,60 +114,6 @@ public class DiskProgramCache implements ProgramCache {
 
     static class Item {
         Program program;
-    }
-
-    static class ProgramDependencyAnalyzer implements InstructionVisitor {
-        Set<String> dependencies = new HashSet<>();
-        @Override public void visit(GetFieldInstruction insn) {
-            dependencies.add(insn.getField().getClassName());
-        }
-        @Override public void visit(PutFieldInstruction insn) {
-            dependencies.add(insn.getField().getClassName());
-        }
-        @Override public void visit(InvokeInstruction insn) {
-            dependencies.add(insn.getMethod().getClassName());
-        }
-        @Override
-        public void visit(InvokeDynamicInstruction insn) {
-            for (RuntimeConstant cst : insn.getBootstrapArguments()) {
-                if (cst.getKind() == RuntimeConstant.METHOD_HANDLE) {
-                    MethodHandle handle = cst.getMethodHandle();
-                    dependencies.add(handle.getClassName());
-                }
-            }
-        }
-        @Override public void visit(EmptyInstruction insn) { }
-        @Override public void visit(ClassConstantInstruction insn) { }
-        @Override public void visit(NullConstantInstruction insn) { }
-        @Override public void visit(IntegerConstantInstruction insn) { }
-        @Override public void visit(LongConstantInstruction insn) { }
-        @Override public void visit(FloatConstantInstruction insn) { }
-        @Override public void visit(DoubleConstantInstruction insn) { }
-        @Override public void visit(StringConstantInstruction insn) { }
-        @Override public void visit(BinaryInstruction insn) { }
-        @Override public void visit(NegateInstruction insn) { }
-        @Override public void visit(AssignInstruction insn) { }
-        @Override public void visit(CastInstruction insn) { }
-        @Override public void visit(CastNumberInstruction insn) { }
-        @Override public void visit(CastIntegerInstruction insn) { }
-        @Override public void visit(BranchingInstruction insn) { }
-        @Override public void visit(BinaryBranchingInstruction insn) { }
-        @Override public void visit(JumpInstruction insn) { }
-        @Override public void visit(SwitchInstruction insn) { }
-        @Override public void visit(ExitInstruction insn) { }
-        @Override public void visit(RaiseInstruction insn) { }
-        @Override public void visit(ConstructArrayInstruction insn) { }
-        @Override public void visit(ConstructInstruction insn) { }
-        @Override public void visit(ConstructMultiArrayInstruction insn) { }
-        @Override public void visit(ArrayLengthInstruction insn) { }
-        @Override public void visit(CloneArrayInstruction insn) { }
-        @Override public void visit(UnwrapArrayInstruction insn) { }
-        @Override public void visit(GetElementInstruction insn) { }
-        @Override public void visit(PutElementInstruction insn) { }
-        @Override public void visit(IsInstanceInstruction insn) { }
-        @Override public void visit(InitClassInstruction insn) { }
-        @Override public void visit(NullCheckInstruction insn) { }
-        @Override public void visit(MonitorEnterInstruction insn) { }
-        @Override public void visit(MonitorExitInstruction insn) { }
+        String[] dependencies;
     }
 }

@@ -90,7 +90,7 @@ public class Problem implements Serializable {
             default:
                 return index;
         }
-        int digitsEnd = passDigits(next);
+        int digitsEnd = skipDigits(next);
         if (digitsEnd == next) {
             return index;
         }
@@ -139,7 +139,7 @@ public class Problem implements Serializable {
         return next;
     }
 
-    private int passDigits(int index) {
+    private int skipDigits(int index) {
         while (index < text.length() && Character.isDigit(text.charAt(index))) {
             ++index;
         }

@@ -49,6 +49,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private boolean incremental;
     private String cacheDirectory;
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.ADVANCED;
+    private boolean fastDependencyAnalysis;
     private boolean minifying;
     private boolean sourceMapsFileGenerated;
     private boolean debugInformationGenerated;
@@ -154,6 +155,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setFastDependencyAnalysis(boolean fastDependencyAnalysis) {
+        this.fastDependencyAnalysis = fastDependencyAnalysis;
+    }
+
+    @Override
     public void setTargetFileName(String targetFileName) {
         this.targetFileName = targetFileName;
     }
@@ -189,6 +195,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setTargetFileName(targetFileName);
         tool.setClassLoader(buildClassLoader());
         tool.setOptimizationLevel(optimizationLevel);
+        tool.setFastDependencyAnalysis(fastDependencyAnalysis);
 
         tool.setSourceMapsFileGenerated(sourceMapsFileGenerated);
         tool.setDebugInformationGenerated(debugInformationGenerated);

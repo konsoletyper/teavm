@@ -140,7 +140,7 @@ public class MethodReference implements Serializable {
     @JsonValue
     public String toString() {
         if (reprCache == null) {
-            reprCache = className + "." + name + signatureToString();
+            reprCache = className + "." + getDescriptor().toString();
         }
         return reprCache;
     }

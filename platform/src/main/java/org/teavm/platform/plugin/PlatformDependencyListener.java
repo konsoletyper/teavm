@@ -19,7 +19,6 @@ import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
 import org.teavm.platform.Platform;
 
 public class PlatformDependencyListener extends AbstractDependencyListener {
@@ -31,12 +30,12 @@ public class PlatformDependencyListener extends AbstractDependencyListener {
     }
 
     @Override
-    public void classReached(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className) {
         allClasses.propagate(agent.getType(className));
     }
 
     @Override
-    public void methodReached(final DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(final DependencyAgent agent, MethodDependency method) {
         if (!method.getReference().getClassName().equals(Platform.class.getName())) {
             return;
         }

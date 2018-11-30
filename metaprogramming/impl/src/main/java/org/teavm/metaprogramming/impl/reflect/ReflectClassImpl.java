@@ -265,9 +265,8 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
                 if (candidate == null) {
                     candidate = method;
                 } else {
-                    boolean moreSpecial = context.getClassSource()
-                            .isSuperType(candidate.getResultType(), method.getResultType())
-                            .orElse(false);
+                    boolean moreSpecial = context.getHierarchy().isSuperType(candidate.getResultType(),
+                            method.getResultType(), false);
                     if (moreSpecial) {
                         candidate = method;
                     }

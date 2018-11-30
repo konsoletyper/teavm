@@ -18,16 +18,13 @@ package org.teavm.classlib.java.lang;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
 
 public class ClassDependencyListener implements DependencyPlugin {
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getMethod().getName()) {
             case "initialize":
-                method.getVariable(0).getClassValueNode().addConsumer(type -> agent
-                        .linkClass(type.getName(), location)
-                        .initClass(location));
+                method.getVariable(0).getClassValueNode().addConsumer(type -> agent.linkClass(type.getName()));
                 break;
             case "getSimpleNameCacheLowLevel":
                 method.getResult().propagate(agent.getType("java.lang.String"));

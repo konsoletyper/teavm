@@ -15,8 +15,9 @@
  */
 package org.teavm.vm;
 
+import org.teavm.dependency.DependencyAnalyzerFactory;
+import org.teavm.dependency.PreciseDependencyAnalyzer;
 import org.teavm.interop.PlatformMarker;
-import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.parsing.ClasspathClassHolderSource;
 
@@ -24,6 +25,7 @@ public class TeaVMBuilder {
     TeaVMTarget target;
     ClassReaderSource classSource;
     ClassLoader classLoader;
+    DependencyAnalyzerFactory dependencyAnalyzerFactory = PreciseDependencyAnalyzer::new;
 
     public TeaVMBuilder(TeaVMTarget target) {
         this.target = target;
@@ -35,7 +37,7 @@ public class TeaVMBuilder {
         return classSource;
     }
 
-    public TeaVMBuilder setClassSource(ClassHolderSource classSource) {
+    public TeaVMBuilder setClassSource(ClassReaderSource classSource) {
         this.classSource = classSource;
         return this;
     }
@@ -46,6 +48,15 @@ public class TeaVMBuilder {
 
     public TeaVMBuilder setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
+        return this;
+    }
+
+    public DependencyAnalyzerFactory getDependencyAnalyzerFactory() {
+        return dependencyAnalyzerFactory;
+    }
+
+    public TeaVMBuilder setDependencyAnalyzerFactory(DependencyAnalyzerFactory dependencyAnalyzerFactory) {
+        this.dependencyAnalyzerFactory = dependencyAnalyzerFactory;
         return this;
     }
 

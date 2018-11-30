@@ -45,6 +45,9 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 
 public final class ProgramUtils {
+    private static final MethodReference NPE_INIT_METHOD = new MethodReference(
+            NullPointerException.class, "<init>", void.class);
+
     private ProgramUtils() {
     }
 
@@ -219,7 +222,7 @@ public final class ProgramUtils {
         InvokeInstruction initNPE = new InvokeInstruction();
         initNPE.setType(InvocationType.SPECIAL);
         initNPE.setInstance(newNPE.getReceiver());
-        initNPE.setMethod(new MethodReference(NullPointerException.class, "<init>", void.class));
+        initNPE.setMethod(NPE_INIT_METHOD);
         initNPE.setLocation(location);
 
         RaiseInstruction raise = new RaiseInstruction();

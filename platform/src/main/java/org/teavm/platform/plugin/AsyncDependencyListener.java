@@ -19,13 +19,12 @@ import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.interop.Async;
-import org.teavm.model.CallLocation;
 
 public class AsyncDependencyListener extends AbstractDependencyListener {
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         if (method.getMethod() != null && method.getMethod().getAnnotations().get(Async.class.getName()) != null) {
-            new AsyncMethodGenerator().methodReached(agent, method, location);
+            new AsyncMethodGenerator().methodReached(agent, method);
         }
     }
 }

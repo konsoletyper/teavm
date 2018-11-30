@@ -23,11 +23,11 @@ import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 
 class ResourceProgramTransformer {
-    private ClassReaderSource innerSource;
+    private ClassHierarchy hierarchy;
     private Program program;
 
-    public ResourceProgramTransformer(ClassReaderSource innerSource, Program program) {
-        this.innerSource = innerSource;
+    public ResourceProgramTransformer(ClassHierarchy hierarchy, Program program) {
+        this.hierarchy = hierarchy;
         this.program = program;
     }
 
@@ -72,8 +72,8 @@ class ResourceProgramTransformer {
             accessInsn.setReceiver(insn.getReceiver());
             return Arrays.asList(accessInsn);
         }
-        ClassReader iface = innerSource.get(method.getClassName());
-        if (iface == null || !innerSource.isSuperType(Resource.class.getName(), iface.getName()).orElse(false)) {
+        ClassReader iface = hierarchy.getClassSource().get(method.getClassName());
+        if (iface == null || !hierarchy.isSuperType(Resource.class.getName(), iface.getName(), false)) {
             return null;
         }
         if (method.getName().startsWith("get")) {

@@ -31,8 +31,8 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Function;
 import org.teavm.model.BasicBlockReader;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -65,7 +65,7 @@ public class ExportDependencyListener extends AbstractDependencyListener {
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         if (method.getMethod() == null || method.getMethod().getProgram() == null) {
             return;
         }
@@ -127,10 +127,10 @@ public class ExportDependencyListener extends AbstractDependencyListener {
     private void processInvocation(DependencyAgent agent, CallLocation location, String functionClassName,
             String targetClassName, String methodName) {
         Diagnostics diagnostics = agent.getDiagnostics();
-        ClassReaderSource classSource = agent.getClassSource();
+        ClassHierarchy hierarchy = agent.getClassHierarchy();
         boolean valid = true;
 
-        ClassReader functionClass = classSource.get(functionClassName);
+        ClassReader functionClass = hierarchy.getClassSource().get(functionClassName);
         if (functionClass == null) {
             diagnostics.error(location, "Class '{{c0}}' not found in class path", functionClassName);
             valid = false;
@@ -139,7 +139,7 @@ public class ExportDependencyListener extends AbstractDependencyListener {
             valid = false;
         }
 
-        ClassReader targetClass = classSource.get(targetClassName);
+        ClassReader targetClass = hierarchy.getClassSource().get(targetClassName);
         if (targetClass == null) {
             diagnostics.error(location, "Class '{{c0}}' not found in class path", functionClassName);
             valid = false;
@@ -168,7 +168,7 @@ public class ExportDependencyListener extends AbstractDependencyListener {
         }
 
         List<MethodReader> signatureCandidates = candidates.stream()
-                .filter(method -> matchSignature(classSource, sam, method))
+                .filter(method -> matchSignature(hierarchy, sam, method))
                 .collect(Collectors.toList());
         if (signatureCandidates.isEmpty()) {
             if (candidates.size() == 1) {
@@ -181,12 +181,14 @@ public class ExportDependencyListener extends AbstractDependencyListener {
             return;
         }
 
-        MethodReader resolvedMethod = findMostSpecific(diagnostics, location, classSource, signatureCandidates);
+        MethodReader resolvedMethod = findMostSpecific(diagnostics, location, hierarchy, signatureCandidates);
         if (resolvedMethod != null) {
             MethodReference reference = resolvedMethod.getReference();
             resolvedMethods.put(new ExportedMethodKey(functionClassName, targetClassName, methodName), reference);
             exportedMethods.add(reference);
-            agent.linkMethod(reference, location).use();
+            MethodDependency dep = agent.linkMethod(reference);
+            dep.addLocation(location);
+            dep.use();
         }
     }
 
@@ -216,13 +218,13 @@ public class ExportDependencyListener extends AbstractDependencyListener {
     }
 
     private MethodReader findMostSpecific(Diagnostics diagnostics, CallLocation location,
-            ClassReaderSource classSource, List<MethodReader> methods) {
+            ClassHierarchy hierarchy, List<MethodReader> methods) {
         MethodReader mostSpecificSoFar = methods.get(0);
         for (int i = 1; i < methods.size(); ++i) {
             MethodReader candidate = methods.get(i);
-            if (matchSignature(classSource, mostSpecificSoFar, candidate)) {
+            if (matchSignature(hierarchy, mostSpecificSoFar, candidate)) {
                 mostSpecificSoFar = candidate;
-            } else if (!matchSignature(classSource, candidate, mostSpecificSoFar)) {
+            } else if (!matchSignature(hierarchy, candidate, mostSpecificSoFar)) {
                 diagnostics.error(location, "Ambiguous methods found for this export, examples are '{{m0}}' "
                         + "and {{m1}}", candidate, mostSpecificSoFar);
                 return null;
@@ -232,15 +234,14 @@ public class ExportDependencyListener extends AbstractDependencyListener {
         return mostSpecificSoFar;
     }
 
-    private boolean matchSignature(ClassReaderSource classSource, MethodReader functionMethod,
+    private boolean matchSignature(ClassHierarchy hierarchy, MethodReader functionMethod,
             MethodReader candidateMethod) {
         if (functionMethod.parameterCount() > candidateMethod.parameterCount()) {
             return false;
         }
 
         for (int i = 0; i < functionMethod.parameterCount(); ++i) {
-            if (!classSource.isSuperType(functionMethod.parameterType(i),
-                    candidateMethod.parameterType(i)).orElse(false)) {
+            if (!hierarchy.isSuperType(functionMethod.parameterType(i), candidateMethod.parameterType(i), false)) {
                 return false;
             }
         }

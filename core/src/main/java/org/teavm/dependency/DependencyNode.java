@@ -22,6 +22,7 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -40,10 +41,10 @@ public class DependencyNode implements ValueDependencyInfo {
     ObjectArrayList<Transition> transitionList;
     String tag;
     private DependencyNode arrayItemNode;
-    private DependencyNode classValueNode;
+    DependencyNode classValueNode;
     DependencyNode classNodeParent;
     boolean classNodeComplete;
-    private int degree;
+    int degree;
     boolean locked;
     MethodReference method;
     ValueType typeFilter;
@@ -78,15 +79,14 @@ public class DependencyNode implements ValueDependencyInfo {
             }
         }
 
-        ObjectArrayList<Transition> transitions = new ObjectArrayList<>(typeSet.getTransitions());
+        Transition[] transitions = typeSet.getTransitions().toArray(Transition.class);
         List<ConsumerWithNode> consumerEntries = typeSet.getConsumers();
 
         if (action != null) {
             action.run();
         }
 
-        for (ObjectCursor<Transition> cursor : transitions) {
-            Transition transition = cursor.value;
+        for (Transition transition : transitions) {
             if (transition.source.filter(type) && transition.filterType(type)) {
                 dependencyAnalyzer.schedulePropagation(transition, type);
             }
@@ -233,17 +233,24 @@ public class DependencyNode implements ValueDependencyInfo {
             return true;
         }
 
-        if (cachedTypeFilter == null) {
-            String superClass;
-            if (typeFilter instanceof ValueType.Object) {
-                superClass = ((ValueType.Object) typeFilter).getClassName();
-            } else {
-                superClass = "java.lang.Object";
-            }
-            cachedTypeFilter = dependencyAnalyzer.getSuperClassFilter(superClass);
-        }
+        return getFilter().match(type);
+    }
 
-        return cachedTypeFilter.match(type);
+    DependencyTypeFilter getFilter() {
+        if (cachedTypeFilter == null) {
+            if (typeFilter == null) {
+                cachedTypeFilter = t -> true;
+            } else {
+                String superClass;
+                if (typeFilter instanceof ValueType.Object) {
+                    superClass = ((ValueType.Object) typeFilter).getClassName();
+                } else {
+                    superClass = typeFilter.toString();
+                }
+                cachedTypeFilter = dependencyAnalyzer.getSuperClassFilter(superClass);
+            }
+        }
+        return cachedTypeFilter;
     }
 
     public void addConsumer(DependencyConsumer consumer) {
@@ -262,8 +269,18 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     public void connect(DependencyNode node, DependencyTypeFilter filter) {
+        if (connectWithoutChildNodes(node, filter)) {
+            connectArrayItemNodes(node);
+
+            if (classValueNode != null && classValueNode != this) {
+                classValueNode.connect(node.getClassValueNode());
+            }
+        }
+    }
+
+    boolean connectWithoutChildNodes(DependencyNode node, DependencyTypeFilter filter) {
         if (this == node) {
-            return;
+            return false;
         }
         if (node == null) {
             throw new IllegalArgumentException("Node must not be null");
@@ -273,7 +290,7 @@ public class DependencyNode implements ValueDependencyInfo {
             transitionList = new ObjectArrayList<>();
         }
         if (transitions.containsKey(node)) {
-            return;
+            return false;
         }
 
         Transition transition = new Transition(this, node, filter);
@@ -285,7 +302,7 @@ public class DependencyNode implements ValueDependencyInfo {
 
         if (typeSet != null) {
             if (typeSet == node.typeSet) {
-                return;
+                return false;
             }
             if (typeSet.transitions != null) {
                 typeSet.transitions.add(transition);
@@ -303,14 +320,13 @@ public class DependencyNode implements ValueDependencyInfo {
             }
         }
 
-        connectArrayItemNodes(node);
-
-        if (classValueNode != null && classValueNode != this) {
-            classValueNode.connect(node.getClassValueNode());
-        }
+        return true;
     }
 
     private void connectArrayItemNodes(DependencyNode node) {
+        if (degree > DEGREE_THRESHOLD || node.degree > DEGREE_THRESHOLD) {
+            return;
+        }
         if (!isArray(typeFilter) || !isArray(node.typeFilter)) {
             return;
         }
@@ -382,15 +398,7 @@ public class DependencyNode implements ValueDependencyInfo {
     @Override
     public DependencyNode getArrayItem() {
         if (arrayItemNode == null) {
-            ValueType itemTypeFilter = typeFilter instanceof ValueType.Array
-                    ? ((ValueType.Array) typeFilter).getItemType()
-                    : null;
-            arrayItemNode = dependencyAnalyzer.createNode(itemTypeFilter);
-            arrayItemNode.degree = degree + 1;
-            arrayItemNode.method = method;
-            if (DependencyAnalyzer.shouldTag) {
-                arrayItemNode.tag = tag + "[";
-            }
+            arrayItemNode = dependencyAnalyzer.createArrayItemNode(this);
         }
         return arrayItemNode;
     }
@@ -398,13 +406,7 @@ public class DependencyNode implements ValueDependencyInfo {
     @Override
     public DependencyNode getClassValueNode() {
         if (classValueNode == null) {
-            classValueNode = dependencyAnalyzer.createNode();
-            classValueNode.degree = degree;
-            classValueNode.classValueNode = classValueNode;
-            classValueNode.classNodeParent = this;
-            if (DependencyAnalyzer.shouldTag) {
-                classValueNode.tag = tag + "@";
-            }
+            classValueNode = dependencyAnalyzer.createClassValueNode(degree, this);
         }
         return classValueNode;
     }
@@ -507,6 +509,10 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     Collection<DependencyNode> findDomain() {
+        if (!dependencyAnalyzer.domainOptimizationEnabled()) {
+            return Collections.singleton(this);
+        }
+
         Set<DependencyNode> visited = new LinkedHashSet<>(50);
         Deque<DependencyNode> stack = new ArrayDeque<>(50);
         stack.push(this);

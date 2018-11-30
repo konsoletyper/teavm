@@ -24,8 +24,8 @@ function $rt_startThread(runner, callback) {
     }
     if (typeof callback !== 'undefined') {
         callback(result);
-    } else if (e instanceof Error) {
-        throw e;
+    } else if (result instanceof Error) {
+        throw result;
     }
 }
 function $rt_suspending() {

@@ -91,6 +91,7 @@ import org.teavm.backend.wasm.render.WasmCRenderer;
 import org.teavm.backend.wasm.render.WasmRenderer;
 import org.teavm.backend.wasm.transformation.IndirectCallTraceTransformation;
 import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
+import org.teavm.cache.AlwaysStaleCacheStatus;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
@@ -241,61 +242,60 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
         for (Class<?> type : Arrays.asList(int.class, long.class, float.class, double.class)) {
             MethodReference method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
-            dependencyAnalyzer.linkMethod(method, null).use();
+            dependencyAnalyzer.linkMethod(method).use();
         }
         for (Class<?> type : Arrays.asList(float.class, double.class)) {
             MethodReference method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
-            dependencyAnalyzer.linkMethod(method, null).use();
+            dependencyAnalyzer.linkMethod(method).use();
         }
 
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "align", Address.class, int.class,
-                Address.class), null).use();
+                Address.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "fillZero", Address.class, int.class,
-                void.class), null).use();
+                void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "moveMemoryBlock", Address.class,
-                Address.class, int.class, void.class), null).use();
+                Address.class, int.class, void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "allocStack",
-                int.class, Address.class), null).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "getStackTop", Address.class),
-                null) .use();
+                int.class, Address.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "getStackTop", Address.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "getNextStackFrame", Address.class,
-                Address.class), null).use();
+                Address.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "getStackRootCount", Address.class,
-                int.class), null).use();
+                int.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "getStackRootPointer", Address.class,
-                Address.class), null).use();
+                Address.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "setExceptionHandlerId", Address.class,
-                int.class, void.class), null).use();
+                int.class, void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "getCallSiteId", Address.class,
-                int.class), null).use();
+                int.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "resourceMapKeys", Address.class,
-                String[].class), null).use();
+                String[].class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "lookupResource", Address.class,
-                String.class, Address.class), null).use();
+                String.class, Address.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "allocate",
-                RuntimeClass.class, Address.class), null).use();
+                RuntimeClass.class, Address.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "allocateArray",
-                RuntimeClass.class, int.class, Address.class), null).use();
+                RuntimeClass.class, int.class, Address.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "allocateMultiArray",
-                RuntimeClass.class, Address.class, int.class, RuntimeArray.class), null).use();
+                RuntimeClass.class, Address.class, int.class, RuntimeArray.class)).use();
 
-        dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class), null).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwException",
-                Throwable.class, void.class), null).use();
+                Throwable.class, void.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "catchException",
-                Throwable.class), null).use();
+                Throwable.class)).use();
 
-        dependencyAnalyzer.linkField(new FieldReference("java.lang.Object", "monitor"), null);
+        dependencyAnalyzer.linkField(new FieldReference("java.lang.Object", "monitor"));
 
-        ClassDependency runtimeClassDep = dependencyAnalyzer.linkClass(RuntimeClass.class.getName(), null);
-        ClassDependency runtimeObjectDep = dependencyAnalyzer.linkClass(RuntimeObject.class.getName(), null);
-        ClassDependency runtimeArrayDep = dependencyAnalyzer.linkClass(RuntimeArray.class.getName(), null);
+        ClassDependency runtimeClassDep = dependencyAnalyzer.linkClass(RuntimeClass.class.getName());
+        ClassDependency runtimeObjectDep = dependencyAnalyzer.linkClass(RuntimeObject.class.getName());
+        ClassDependency runtimeArrayDep = dependencyAnalyzer.linkClass(RuntimeArray.class.getName());
         for (ClassDependency classDep : Arrays.asList(runtimeClassDep, runtimeObjectDep, runtimeArrayDep)) {
             for (FieldReader field : classDep.getClassReader().getFields()) {
-                dependencyAnalyzer.linkField(field.getReference(), null);
+                dependencyAnalyzer.linkField(field.getReference());
             }
         }
     }
@@ -325,8 +325,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         WasmClassGenerator classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),
                 vtableProvider, tagRegistry, binaryWriter, names);
 
-        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
-                new HashSet<>(), false, true);
+        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(),
+                AlwaysStaleCacheStatus.INSTANCE, new HashSet<>(), new HashSet<>(), false, true);
         WasmStringPool stringPool = classGenerator.getStringPool();
         WasmGenerationContext context = new WasmGenerationContext(classes, module, controller.getDiagnostics(),
                 vtableProvider, tagRegistry, stringPool, names);

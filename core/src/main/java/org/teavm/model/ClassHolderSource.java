@@ -37,6 +37,10 @@ public interface ClassHolderSource extends ClassReaderSource {
         return (MethodHolder) resolveImplementation(method);
     }
 
+    default MethodHolder resolveMutableImplementation(String className, MethodDescriptor descriptor) {
+        return (MethodHolder) resolveImplementation(className, descriptor);
+    }
+
     default FieldHolder resolveMutable(FieldReference field) {
         return (FieldHolder) resolve(field);
     }

@@ -120,7 +120,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
                 if (method.getLevel() == AccessLevel.PRIVATE && !className.equals(methodRef.getClassName())) {
                     return null;
                 }
-                return new MethodReference(className, method.getDescriptor());
+                return method.getReference();
             }
             className = cls.getParent();
         }

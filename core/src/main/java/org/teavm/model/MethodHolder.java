@@ -21,6 +21,7 @@ public class MethodHolder extends MemberHolder implements MethodReader {
     private Program program;
     private AnnotationValue annotationDefault;
     private AnnotationContainer[] parameterAnnotations;
+    private MethodReference reference;
 
     public MethodHolder(MethodDescriptor descriptor) {
         super(descriptor.getName());
@@ -80,6 +81,7 @@ public class MethodHolder extends MemberHolder implements MethodReader {
     }
 
     void setOwner(ClassHolder owner) {
+        reference = null;
         this.owner = owner;
     }
 
@@ -90,7 +92,13 @@ public class MethodHolder extends MemberHolder implements MethodReader {
 
     @Override
     public MethodReference getReference() {
-        return owner != null ? new MethodReference(owner.getName(), descriptor) : null;
+        if (owner == null) {
+            return null;
+        }
+        if (reference == null) {
+            reference = new MethodReference(owner.getName(), descriptor);
+        }
+        return reference;
     }
 
     @Override

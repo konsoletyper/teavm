@@ -124,17 +124,8 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
     public RemoteBuildResponse build(RemoteBuildRequest request, RemoteBuildCallback callback) {
         System.out.println("Build started");
 
-        if (!request.incremental && incremental) {
-            try {
-                System.out.println("Dropping incremental cache");
-                FileUtils.cleanDirectory(incrementalCache);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-        }
-
         TeaVMTool tool = new TeaVMTool();
-        tool.setIncremental(incremental && request.incremental);
+        tool.setIncremental(incremental || request.incremental);
         if (tool.isIncremental()) {
             tool.setCacheDirectory(request.cacheDirectory != null
                     ? new File(request.cacheDirectory)
@@ -162,6 +153,7 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
         }
 
         tool.setOptimizationLevel(request.optimizationLevel);
+        tool.setFastDependencyAnalysis(request.fastDependencyAnalysis);
         tool.setMinifying(request.minifying);
         tool.setWasmVersion(request.wasmVersion);
         tool.setMinHeapSize(request.heapSize);

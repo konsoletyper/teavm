@@ -18,7 +18,6 @@ package org.teavm.jso.impl;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -31,7 +30,7 @@ import org.mozilla.javascript.ast.AstNode;
 import org.mozilla.javascript.ast.AstRoot;
 import org.mozilla.javascript.ast.FunctionNode;
 import org.teavm.backend.javascript.rendering.JSParser;
-import org.teavm.cache.NoCache;
+import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Sync;
 import org.teavm.jso.JSBody;
@@ -81,13 +80,15 @@ class JSClassProcessor {
     private int methodIndexGenerator;
     private final Map<MethodReference, MethodReader> overriddenMethodCache = new HashMap<>();
     private JSValueMarshaller marshaller;
+    private IncrementalDependencyRegistration incrementalCache;
 
     JSClassProcessor(ClassReaderSource classSource, JSTypeHelper typeHelper, JSBodyRepository repository,
-            Diagnostics diagnostics) {
+            Diagnostics diagnostics, IncrementalDependencyRegistration incrementalCache) {
         this.classSource = classSource;
         this.typeHelper = typeHelper;
         this.repository = repository;
         this.diagnostics = diagnostics;
+        this.incrementalCache = incrementalCache;
         javaInvocationProcessor = new JavaInvocationProcessor(typeHelper, repository, classSource, diagnostics);
     }
 
@@ -151,7 +152,7 @@ class JSClassProcessor {
                 MethodHolder callerMethod = new MethodHolder(new MethodDescriptor(method.getName() + "$static",
                         staticSignature));
                 callerMethod.getModifiers().add(ElementModifier.STATIC);
-                final Program program = ProgramUtils.copy(method.getProgram());
+                Program program = ProgramUtils.copy(method.getProgram());
                 program.createVariable();
                 InstructionVariableMapper variableMapper = new InstructionVariableMapper(var ->
                          program.variableAt(var.getIndex() + 1));
@@ -264,7 +265,8 @@ class JSClassProcessor {
                 } else if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction) insn;
 
-                    MethodReader method = getMethod(invoke.getMethod());
+                    MethodReader method = getMethod(invoke.getMethod().getClassName(),
+                            invoke.getMethod().getDescriptor());
                     if (method == null) {
                         continue;
                     }
@@ -383,9 +385,7 @@ class JSClassProcessor {
             copyVar(result, invoke.getReceiver(), invoke.getLocation());
         }
 
-        if (methodToProcess.getAnnotations().get(NoCache.class.getName()) == null) {
-            methodToProcess.getAnnotations().add(new AnnotationHolder(NoCache.class.getName()));
-        }
+        incrementalCache.addDependencies(methodToProcess.getReference(), method.getOwnerName());
 
         return true;
     }
@@ -498,9 +498,7 @@ class JSClassProcessor {
 
         Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
         InvokeInstruction newInvoke = new InvokeInstruction();
-        ValueType[] signature = new ValueType[method.parameterCount() + 3];
-        Arrays.fill(signature, ValueType.object(JSObject.class.getName()));
-        newInvoke.setMethod(new MethodReference(JS.class.getName(), "invoke", signature));
+        newInvoke.setMethod(JSMethods.invoke(method.parameterCount()));
         newInvoke.setType(InvocationType.SPECIAL);
         newInvoke.setReceiver(result);
         newInvoke.getArguments().add(invoke.getInstance());
@@ -691,7 +689,7 @@ class JSClassProcessor {
         Variable nameVar = marshaller.addStringWrap(marshaller.addString(propertyName, location), location);
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class));
+        insn.setMethod(JSMethods.GET);
         insn.setReceiver(receiver);
         insn.getArguments().add(instance);
         insn.getArguments().add(nameVar);
@@ -703,8 +701,7 @@ class JSClassProcessor {
         Variable nameVar = marshaller.addStringWrap(marshaller.addString(propertyName, location), location);
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
-                JSObject.class, void.class));
+        insn.setMethod(JSMethods.SET);
         insn.getArguments().add(instance);
         insn.getArguments().add(nameVar);
         insn.getArguments().add(value);
@@ -715,7 +712,7 @@ class JSClassProcessor {
     private void addIndexerGet(Variable array, Variable index, Variable receiver, TextLocation location) {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class, "get", JSObject.class, JSObject.class, JSObject.class));
+        insn.setMethod(JSMethods.GET);
         insn.setReceiver(receiver);
         insn.getArguments().add(array);
         insn.getArguments().add(index);
@@ -726,8 +723,7 @@ class JSClassProcessor {
     private void addIndexerSet(Variable array, Variable index, Variable value, TextLocation location) {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
-                JSObject.class, void.class));
+        insn.setMethod(JSMethods.SET);
         insn.getArguments().add(array);
         insn.getArguments().add(index);
         insn.getArguments().add(value);
@@ -743,23 +739,23 @@ class JSClassProcessor {
         replacement.add(insn);
     }
 
-    private MethodReader getMethod(MethodReference ref) {
-        ClassReader cls = classSource.get(ref.getClassName());
+    private MethodReader getMethod(String className, MethodDescriptor descriptor) {
+        ClassReader cls = classSource.get(className);
         if (cls == null) {
             return null;
         }
-        MethodReader method = cls.getMethod(ref.getDescriptor());
+        MethodReader method = cls.getMethod(descriptor);
         if (method != null) {
             return method;
         }
         if (cls.getParent() != null && !cls.getParent().equals("java.lang.Object")) {
-            method = getMethod(new MethodReference(cls.getParent(), ref.getDescriptor()));
+            method = getMethod(cls.getParent(), descriptor);
             if (method != null) {
                 return method;
             }
         }
         for (String iface : cls.getInterfaces()) {
-            method = getMethod(new MethodReference(iface, ref.getDescriptor()));
+            method = getMethod(iface, descriptor);
             if (method != null) {
                 return method;
             }

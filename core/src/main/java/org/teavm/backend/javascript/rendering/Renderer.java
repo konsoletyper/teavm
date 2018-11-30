@@ -836,7 +836,29 @@ public class Renderer implements RenderingManager {
 
                 statementRenderer.setEnd(true);
                 statementRenderer.setCurrentPart(0);
+
+                if (method.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
+                    writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_SYNC_METHOD);
+                    writer.append("(");
+                    appendMonitor(statementRenderer, method);
+                    writer.append(");").softNewLine();
+
+                    writer.append("try").ws().append("{").softNewLine().indent();
+                }
+
                 method.getBody().acceptVisitor(statementRenderer);
+
+                if (method.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
+                    writer.outdent().append("}").ws().append("finally").ws().append("{").indent().softNewLine();
+
+                    writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_SYNC_METHOD);
+                    writer.append("(");
+                    appendMonitor(statementRenderer, method);
+                    writer.append(");").softNewLine();
+
+                    writer.outdent().append("}").softNewLine();
+                }
+
             } catch (IOException e) {
                 throw new RenderingException("IO error occurred", e);
             }
@@ -913,8 +935,7 @@ public class Renderer implements RenderingManager {
                 for (int i = 0; i < methodNode.getBody().size(); ++i) {
                     writer.append("case ").append(i).append(":").indent().softNewLine();
                     if (i == 0 && methodNode.getModifiers().contains(ElementModifier.SYNCHRONIZED)) {
-                        writer.appendMethodBody(new MethodReference(Object.class, "monitorEnter",
-                                Object.class, void.class));
+                        writer.appendMethodBody(NameFrequencyEstimator.MONITOR_ENTER_METHOD);
                         writer.append("(");
                         appendMonitor(statementRenderer, methodNode);
                         writer.append(");").softNewLine();
@@ -932,8 +953,7 @@ public class Renderer implements RenderingManager {
                     writer.outdent().append("}").ws().append("finally").ws().append('{').indent().softNewLine();
                     writer.append("if").ws().append("(!").appendFunction("$rt_suspending").append("())")
                             .ws().append("{").indent().softNewLine();
-                    writer.appendMethodBody(new MethodReference(Object.class, "monitorExit",
-                            Object.class, void.class));
+                    writer.appendMethodBody(NameFrequencyEstimator.MONITOR_EXIT_METHOD);
                     writer.append("(");
                     appendMonitor(statementRenderer, methodNode);
                     writer.append(");").softNewLine();

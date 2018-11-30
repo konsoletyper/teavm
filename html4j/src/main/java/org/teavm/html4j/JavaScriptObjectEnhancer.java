@@ -34,7 +34,7 @@ public class JavaScriptObjectEnhancer implements RendererListener {
     }
 
     @Override
-    public void begin(RenderingManager context, BuildTarget buildTarget) throws IOException {
+    public void begin(RenderingManager context, BuildTarget buildTarget) {
         classSource = context.getClassSource();
         writer = context.getWriter();
     }

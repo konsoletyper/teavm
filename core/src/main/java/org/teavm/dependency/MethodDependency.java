@@ -15,7 +15,13 @@
  */
 package org.teavm.dependency;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Set;
+import org.teavm.callgraph.DefaultCallGraphNode;
+import org.teavm.model.CallLocation;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -31,6 +37,9 @@ public class MethodDependency implements MethodDependencyInfo {
     boolean used;
     DependencyPlugin dependencyPlugin;
     boolean dependencyPluginAttached;
+    private List<LocationListener> locationListeners;
+    private Set<CallLocation> locations;
+    boolean activated;
 
     MethodDependency(DependencyAnalyzer dependencyAnalyzer, DependencyNode[] variableNodes, int parameterCount,
             DependencyNode resultNode, DependencyNode thrown, MethodHolder method, MethodReference reference) {
@@ -98,6 +107,34 @@ public class MethodDependency implements MethodDependencyInfo {
     @Override
     public boolean isUsed() {
         return used;
+    }
+
+    public MethodDependency addLocation(CallLocation location) {
+        DefaultCallGraphNode node = dependencyAnalyzer.callGraph.getNode(location.getMethod());
+        if (locations == null) {
+            locations = new LinkedHashSet<>();
+        }
+        if (locations.add(location)) {
+            node.addCallSite(reference, location.getSourceLocation());
+            if (locationListeners != null) {
+                for (LocationListener listener : locationListeners.toArray(new LocationListener[0])) {
+                    listener.locationAdded(location);
+                }
+            }
+        }
+        return this;
+    }
+
+    public void addLocationListener(LocationListener listener) {
+        if (locationListeners == null) {
+            locationListeners = new ArrayList<>();
+            locationListeners.add(listener);
+            if (locations != null) {
+                for (CallLocation location : locations.toArray(new CallLocation[0])) {
+                    listener.locationAdded(location);
+                }
+            }
+        }
     }
 
     public MethodDependency propagate(int parameterIndex, Class<?> type) {

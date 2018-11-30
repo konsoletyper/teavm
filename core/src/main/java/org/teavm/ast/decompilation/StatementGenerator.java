@@ -44,11 +44,9 @@ import org.teavm.common.GraphIndexer;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.InvokeDynamicInstruction;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
-import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.ArrayLengthInstruction;
@@ -93,6 +91,7 @@ import org.teavm.model.instructions.SwitchTableEntry;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 class StatementGenerator implements InstructionVisitor {
+    private static final MethodReference CLONE_METHOD = new MethodReference(Object.class, "clone", Object.class);
     private int lastSwitchId;
     final List<Statement> statements = new ArrayList<>();
     GraphIndexer indexer;
@@ -432,9 +431,7 @@ class StatementGenerator implements InstructionVisitor {
 
     @Override
     public void visit(CloneArrayInstruction insn) {
-        MethodDescriptor cloneMethodDesc = new MethodDescriptor("clone", ValueType.object("java.lang.Object"));
-        MethodReference cloneMethod = new MethodReference("java.lang.Object", cloneMethodDesc);
-        assign(Expr.invoke(cloneMethod, Expr.var(insn.getArray().getIndex()), new Expr[0]), insn.getReceiver());
+        assign(Expr.invoke(CLONE_METHOD, Expr.var(insn.getArray().getIndex()), new Expr[0]), insn.getReceiver());
     }
 
     @Override

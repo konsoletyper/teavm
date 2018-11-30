@@ -15,12 +15,11 @@
  */
 package org.teavm.dependency;
 
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
@@ -40,7 +39,7 @@ public class DependencyTestPatcher implements ClassHolderTransformer {
     }
 
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         if (cls.getName().equals(className)) {
             MethodHolder method = new MethodHolder("main", ValueType.parse(String[].class), ValueType.VOID);
             method.setLevel(AccessLevel.PUBLIC);

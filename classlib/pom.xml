@@ -100,6 +100,27 @@
   <build>
     <plugins>
       <plugin>
+        <groupId>org.codehaus.mojo</groupId>
+        <artifactId>exec-maven-plugin</artifactId>
+        <version>1.2.1</version>
+        <executions>
+          <execution>
+            <id>generate-tz-cache</id>
+            <goals>
+              <goal>java</goal>
+            </goals>
+            <phase>process-classes</phase>
+            <configuration>
+              <mainClass>org.teavm.classlib.impl.tz.TimeZoneCache</mainClass>
+              <arguments>
+                <argument>${project.build.directory}/classes/org/teavm/classlib/impl/tz/cache</argument>
+              </arguments>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
+      <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>
         <configuration>

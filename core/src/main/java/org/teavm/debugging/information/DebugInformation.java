@@ -22,6 +22,7 @@ import org.teavm.common.RecordArray;
 import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ReferenceCache;
 
 public class DebugInformation {
     String[] fileNames;
@@ -50,6 +51,7 @@ public class DebugInformation {
     Map<String, ClassMetadata> classMetadataByJsName;
     RecordArray methodEntrances;
     MethodTree methodTree;
+    ReferenceCache referenceCache = new ReferenceCache();
 
     public String[] getFilesNames() {
         return fileNames.clone();
@@ -82,13 +84,13 @@ public class DebugInformation {
     public MethodDescriptor[] getMethods() {
         MethodDescriptor[] descriptors = new MethodDescriptor[methods.length];
         for (int i = 0; i < descriptors.length; ++i) {
-            descriptors[i] = MethodDescriptor.parse(methods[i]);
+            descriptors[i] = referenceCache.parseDescriptorCached(methods[i]);
         }
         return descriptors;
     }
 
     public MethodDescriptor getMethod(int methodId) {
-        return MethodDescriptor.parse(methods[methodId]);
+        return referenceCache.parseDescriptorCached(methods[methodId]);
     }
 
     public MethodReference[] getExactMethods() {
@@ -115,7 +117,8 @@ public class DebugInformation {
         long item = exactMethods[index];
         int classIndex = (int) (item >>> 32);
         int methodIndex = (int) item;
-        return new MethodReference(classNames[classIndex], MethodDescriptor.parse(methods[methodIndex]));
+        return referenceCache.getCached(classNames[classIndex], referenceCache.parseDescriptorCached(
+                methods[methodIndex]));
     }
 
     public int getExactMethodId(int classNameId, int methodId) {
@@ -186,7 +189,7 @@ public class DebugInformation {
         if (method == null) {
             return null;
         }
-        return new MethodReference(className, MethodDescriptor.parse(method));
+        return referenceCache.getCached(className, referenceCache.parseDescriptorCached(method));
     }
 
     public MethodReference getMethodAt(int line, int column) {
@@ -678,8 +681,8 @@ public class DebugInformation {
                 long item = exactMethods[data[start + i]];
                 int classIndex = (int) (item >>> 32);
                 int methodIndex = (int) item;
-                references[i] = new MethodReference(classNames[classIndex],
-                        MethodDescriptor.parse(methods[methodIndex]));
+                references[i] = referenceCache.getCached(classNames[classIndex],
+                        referenceCache.parseDescriptorCached(methods[methodIndex]));
             }
             return references;
         }

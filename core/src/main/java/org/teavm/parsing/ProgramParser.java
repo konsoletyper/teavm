@@ -43,7 +43,6 @@ import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
-import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.RuntimeConstant;
@@ -654,7 +653,7 @@ public class ProgramParser {
                     if (instance == -1) {
                         InvokeInstruction insn = new InvokeInstruction();
                         insn.setType(InvocationType.SPECIAL);
-                        insn.setMethod(referenceCache.getCached(new MethodReference(ownerCls, method)));
+                        insn.setMethod(referenceCache.getCached(ownerCls, method));
                         if (result >= 0) {
                             insn.setReceiver(getVariable(result));
                         }
@@ -667,7 +666,7 @@ public class ProgramParser {
                         } else {
                             insn.setType(InvocationType.VIRTUAL);
                         }
-                        insn.setMethod(referenceCache.getCached(new MethodReference(ownerCls, method)));
+                        insn.setMethod(referenceCache.getCached(ownerCls, method));
                         if (result >= 0) {
                             insn.setReceiver(getVariable(result));
                         }

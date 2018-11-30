@@ -23,7 +23,6 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 
 public class SystemNativeGenerator implements Generator, DependencyPlugin {
@@ -40,7 +39,7 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "doArrayCopy":
                 reachArrayCopy(method);

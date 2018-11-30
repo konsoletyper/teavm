@@ -63,6 +63,9 @@ import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
+import org.teavm.dependency.DependencyAnalyzerFactory;
+import org.teavm.dependency.FastDependencyAnalyzer;
+import org.teavm.dependency.PreciseDependencyAnalyzer;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
 import org.teavm.diagnostics.Problem;
 import org.teavm.model.AnnotationHolder;
@@ -79,6 +82,7 @@ import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.vm.DirectoryBuildTarget;
 import org.teavm.vm.TeaVM;
 import org.teavm.vm.TeaVMBuilder;
+import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMTarget;
 
 public class TeaVMTestRunner extends Runner implements Filterable {
@@ -98,6 +102,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static final String C_COMPILER = "teavm.junit.c.compiler";
     private static final String MINIFIED = "teavm.junit.minified";
     private static final String OPTIMIZED = "teavm.junit.optimized";
+    private static final String FAST_ANALYSIS = "teavm.junit.fastAnalysis";
 
     private static final int stopTimeout = 15000;
     private Class<?> testClass;
@@ -625,16 +630,22 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         T target = targetSupplier.get();
         configuration.apply(target);
 
+        DependencyAnalyzerFactory dependencyAnalyzerFactory = PreciseDependencyAnalyzer::new;
+        boolean fastAnalysis = Boolean.parseBoolean(System.getProperty(FAST_ANALYSIS));
+        if (fastAnalysis) {
+            dependencyAnalyzerFactory = FastDependencyAnalyzer::new;
+        }
+
         TeaVM vm = new TeaVMBuilder(target)
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
+                .setDependencyAnalyzerFactory(dependencyAnalyzerFactory)
                 .build();
 
         Properties properties = new Properties();
         applyProperties(method.getDeclaringClass(), properties);
         vm.setProperties(properties);
 
-        vm.setIncremental(false);
         configuration.apply(vm);
         vm.installPlugins();
 
@@ -642,6 +653,11 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         new TestEntryPointTransformer(methodHolder.getReference(), testClass.getName()).install(vm);
 
         vm.entryPoint(entryPoint);
+
+        if (fastAnalysis) {
+            vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
+            vm.addVirtualMethods(m -> true);
+        }
         vm.build(new DirectoryBuildTarget(outputFile.getParentFile()), outputFile.getName());
         if (!vm.getProblemProvider().getProblems().isEmpty()) {
             result.success = false;

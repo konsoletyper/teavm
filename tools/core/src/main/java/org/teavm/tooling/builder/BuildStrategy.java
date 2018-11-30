@@ -58,6 +58,8 @@ public interface BuildStrategy {
 
     void setOptimizationLevel(TeaVMOptimizationLevel level);
 
+    void setFastDependencyAnalysis(boolean value);
+
     void setTargetFileName(String targetFileName);
 
     void setClassesToPreserve(String[] classesToPreserve);

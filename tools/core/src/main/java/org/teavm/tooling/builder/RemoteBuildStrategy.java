@@ -135,6 +135,11 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setFastDependencyAnalysis(boolean value) {
+        request.fastDependencyAnalysis = value;
+    }
+
+    @Override
     public void setTargetFileName(String targetFileName) {
         request.tagetFileName = targetFileName;
     }

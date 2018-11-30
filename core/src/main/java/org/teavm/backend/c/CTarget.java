@@ -59,6 +59,7 @@ import org.teavm.backend.c.intrinsic.PlatformObjectIntrinsic;
 import org.teavm.backend.c.intrinsic.RuntimeClassIntrinsic;
 import org.teavm.backend.c.intrinsic.ShadowStackIntrinsic;
 import org.teavm.backend.c.intrinsic.StructureIntrinsic;
+import org.teavm.cache.AlwaysStaleCacheStatus;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
@@ -164,34 +165,34 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     @Override
     public void contributeDependencies(DependencyAnalyzer dependencyAnalyzer) {
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "allocate",
-                RuntimeClass.class, Address.class), null).use();
+                RuntimeClass.class, Address.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "allocateArray",
-                RuntimeClass.class, int.class, Address.class), null).use();
+                RuntimeClass.class, int.class, Address.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "allocateMultiArray",
-                RuntimeClass.class, Address.class, int.class, RuntimeArray.class), null).use();
+                RuntimeClass.class, Address.class, int.class, RuntimeArray.class)).use();
 
-        dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class), null).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwException",
-                Throwable.class, void.class), null).use();
+                Throwable.class, void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwClassCastException",
-                void.class), null).use();
+                void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwNullPointerException",
-                void.class), null).use();
+                void.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "catchException",
-                Throwable.class), null).use();
+                Throwable.class)).use();
 
-        dependencyAnalyzer.linkClass("java.lang.String", null);
-        dependencyAnalyzer.linkClass("java.lang.Class", null);
-        dependencyAnalyzer.linkField(new FieldReference("java.lang.String", "hashCode"), null);
+        dependencyAnalyzer.linkClass("java.lang.String");
+        dependencyAnalyzer.linkClass("java.lang.Class");
+        dependencyAnalyzer.linkField(new FieldReference("java.lang.String", "hashCode"));
 
-        ClassDependency runtimeClassDep = dependencyAnalyzer.linkClass(RuntimeClass.class.getName(), null);
-        ClassDependency runtimeObjectDep = dependencyAnalyzer.linkClass(RuntimeObject.class.getName(), null);
-        ClassDependency runtimeArrayDep = dependencyAnalyzer.linkClass(RuntimeArray.class.getName(), null);
+        ClassDependency runtimeClassDep = dependencyAnalyzer.linkClass(RuntimeClass.class.getName());
+        ClassDependency runtimeObjectDep = dependencyAnalyzer.linkClass(RuntimeObject.class.getName());
+        ClassDependency runtimeArrayDep = dependencyAnalyzer.linkClass(RuntimeArray.class.getName());
         for (ClassDependency classDep : Arrays.asList(runtimeClassDep, runtimeObjectDep, runtimeArrayDep)) {
             for (FieldReader field : classDep.getClassReader().getFields()) {
-                dependencyAnalyzer.linkField(field.getReference(), null);
+                dependencyAnalyzer.linkField(field.getReference());
             }
         }
     }
@@ -216,8 +217,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         TagRegistry tagRegistry = new TagRegistry(classes);
         StringPool stringPool = new StringPool();
 
-        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), new HashSet<>(),
-                new HashSet<>(), false, true);
+        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(),
+                AlwaysStaleCacheStatus.INSTANCE, new HashSet<>(), new HashSet<>(), false, true);
         Characteristics characteristics = new Characteristics(controller.getUnprocessedClassSource());
 
         NameProvider nameProvider = new NameProvider(controller.getUnprocessedClassSource());

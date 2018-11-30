@@ -17,6 +17,7 @@ package org.teavm.dependency;
 
 class ExactTypeFilter implements DependencyTypeFilter {
     String typeName;
+    int cache = -1;
 
     ExactTypeFilter(String typeName) {
         this.typeName = typeName;
@@ -24,6 +25,13 @@ class ExactTypeFilter implements DependencyTypeFilter {
 
     @Override
     public boolean match(DependencyType type) {
-        return typeName.equals(type.getName());
+        if (cache >= 0) {
+            return type.index == cache;
+        }
+        boolean result = typeName.equals(type.getName());
+        if (result) {
+            cache = type.index;
+        }
+        return result;
     }
 }

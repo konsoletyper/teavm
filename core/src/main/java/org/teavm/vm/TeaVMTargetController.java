@@ -18,6 +18,7 @@ package org.teavm.vm;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import org.teavm.cache.CacheStatus;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
@@ -31,6 +32,8 @@ public interface TeaVMTargetController {
 
     ClassReaderSource getUnprocessedClassSource();
 
+    CacheStatus getCacheStatus();
+
     DependencyInfo getDependencyInfo();
 
     Diagnostics getDiagnostics();
@@ -38,8 +41,6 @@ public interface TeaVMTargetController {
     Properties getProperties();
 
     ServiceRepository getServices();
-
-    boolean isIncremental();
 
     boolean isFriendlyToDebugger();
 

@@ -17,16 +17,14 @@ package org.teavm.dependency;
 
 import com.carrotsearch.hppc.IntHashSet;
 import java.util.Arrays;
-import java.util.BitSet;
 import java.util.Collection;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ValueType;
 
 class Transition {
     DependencyNode source;
     DependencyNode destination;
     DependencyTypeFilter filter;
-    private BitSet knownFilteredOffTypes;
     IntHashSet pendingTypes;
     byte destSubsetOfSrc;
 
@@ -79,7 +77,7 @@ class Transition {
     }
 
     boolean shouldMergeDomains() {
-        if (filter != null || !isDestSubsetOfSrc()) {
+        if (!source.dependencyAnalyzer.domainOptimizationEnabled() || filter != null || !isDestSubsetOfSrc()) {
             return false;
         }
         if (destination.typeSet == null) {
@@ -163,18 +161,7 @@ class Transition {
             return true;
         }
 
-        if (knownFilteredOffTypes != null && knownFilteredOffTypes.get(type.index)) {
-            return false;
-        }
-        if (!filter.match(type)) {
-            if (knownFilteredOffTypes == null) {
-                knownFilteredOffTypes = new BitSet(64);
-            }
-            knownFilteredOffTypes.set(type.index);
-            return false;
-        }
-
-        return true;
+        return filter.match(type);
     }
 
     boolean pointsToDomainOrigin() {
@@ -198,7 +185,8 @@ class Transition {
 
         ValueType sourceType = source.typeFilter;
         ValueType destType = destination.typeFilter;
-        ClassReaderSource classSource = source.dependencyAnalyzer.getClassSource();
-        return classSource.isSuperType(sourceType, destType).orElse(false);
+        ClassHierarchy hierarchy = source.dependencyAnalyzer.getClassHierarchy();
+
+        return hierarchy.isSuperType(sourceType, destType, false);
     }
 }

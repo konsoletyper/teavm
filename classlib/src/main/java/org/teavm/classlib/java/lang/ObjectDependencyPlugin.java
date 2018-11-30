@@ -18,11 +18,10 @@ package org.teavm.classlib.java.lang;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
 
 public class ObjectDependencyPlugin implements DependencyPlugin {
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getMethod().getName()) {
             case "clone":
                 method.getVariable(0).connect(method.getResult());

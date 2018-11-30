@@ -18,10 +18,12 @@ package org.teavm.model.optimization;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import org.teavm.common.OptionalPredicate;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.dependency.ValueDependencyInfo;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.Instruction;
@@ -34,12 +36,14 @@ import org.teavm.model.instructions.InvokeInstruction;
 public class Devirtualization {
     private DependencyInfo dependency;
     private ClassReaderSource classSource;
+    private ClassHierarchy hierarchy;
     private Set<MethodReference> virtualMethods = new HashSet<>();
     private Set<? extends MethodReference> readonlyVirtualMethods = Collections.unmodifiableSet(virtualMethods);
 
     public Devirtualization(DependencyInfo dependency, ClassReaderSource classSource) {
         this.dependency = dependency;
         this.classSource = classSource;
+        hierarchy = new ClassHierarchy(classSource);
     }
 
     public void apply(MethodHolder method) {
@@ -72,13 +76,14 @@ public class Devirtualization {
     }
 
     private Set<MethodReference> getImplementations(String[] classNames, MethodReference ref) {
+        OptionalPredicate<String> isSuperclass = hierarchy.getSuperclassPredicate(ref.getClassName());
         Set<MethodReference> methods = new HashSet<>();
         for (String className : classNames) {
             if (className.startsWith("[")) {
                 className = "java.lang.Object";
             }
             ClassReader cls = classSource.get(className);
-            if (cls == null || !classSource.isSuperType(ref.getClassName(), cls.getName()).orElse(false)) {
+            if (cls == null || !isSuperclass.test(cls.getName(), false)) {
                 continue;
             }
             MethodDependencyInfo methodDep = dependency.getMethodImplementation(new MethodReference(

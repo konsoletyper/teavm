@@ -35,8 +35,6 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import org.teavm.ast.ClassNode;
-import org.teavm.ast.cache.EmptyRegularMethodNodeCache;
-import org.teavm.ast.cache.MethodNodeCache;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.javascript.codegen.AliasProvider;
 import org.teavm.backend.javascript.codegen.DefaultAliasProvider;
@@ -53,6 +51,8 @@ import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.VirtualMethodContributor;
 import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
+import org.teavm.cache.EmptyMethodNodeCache;
+import org.teavm.cache.MethodNodeCache;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
@@ -107,7 +107,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private final List<Function<ProviderContext, Injector>> injectorProviders = new ArrayList<>();
     private final List<RendererListener> rendererListeners = new ArrayList<>();
     private DebugInformationEmitter debugEmitter;
-    private MethodNodeCache astCache = new EmptyRegularMethodNodeCache();
+    private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
     private final Set<MethodReference> asyncMethods = new HashSet<>();
     private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
     private ClassInitializerInsertionTransformer clinitInsertionTransformer;
@@ -211,42 +211,41 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         DependencyType stringType = dependencyAnalyzer.getType("java.lang.String");
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(Class.class.getName(), "getClass",
-                ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)), null);
+                ValueType.object("org.teavm.platform.PlatformClass"), ValueType.parse(Class.class)));
         dep.getVariable(0).propagate(dependencyAnalyzer.getType("org.teavm.platform.PlatformClass"));
         dep.getResult().propagate(dependencyAnalyzer.getType("java.lang.Class"));
         dep.use();
 
-        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class),
-                null);
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "<init>", char[].class, void.class));
         dep.getVariable(0).propagate(stringType);
         dep.getVariable(1).propagate(dependencyAnalyzer.getType("[C"));
         dep.use();
 
-        dependencyAnalyzer.linkField(new FieldReference(String.class.getName(), "characters"), null);
+        dependencyAnalyzer.linkField(new FieldReference(String.class.getName(), "characters"));
 
-        dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "clone", Object.class), null);
+        dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "clone", Object.class));
         MethodDependency exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
-                NoClassDefFoundError.class, "<init>", String.class, void.class), null);
+                NoClassDefFoundError.class, "<init>", String.class, void.class));
 
-        dep = dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "toString", String.class), null);
+        dep = dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "toString", String.class));
         dep.getVariable(0).propagate(dependencyAnalyzer.getType("java.lang.Object"));
         dep.use();
 
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoClassDefFoundError.class.getName()));
         exceptionCons.getVariable(1).propagate(stringType);
         exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(NoSuchFieldError.class, "<init>",
-                String.class, void.class), null);
+                String.class, void.class));
         exceptionCons.use();
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoSuchFieldError.class.getName()));
         exceptionCons.getVariable(1).propagate(stringType);
         exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(NoSuchMethodError.class, "<init>",
-                String.class, void.class), null);
+                String.class, void.class));
         exceptionCons.use();
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(NoSuchMethodError.class.getName()));
         exceptionCons.getVariable(1).propagate(stringType);
 
         exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
-                RuntimeException.class, "<init>", String.class, void.class), null);
+                RuntimeException.class, "<init>", String.class, void.class));
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(RuntimeException.class.getName()));
         exceptionCons.getVariable(1).propagate(stringType);
         exceptionCons.use();
@@ -263,7 +262,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(
                 StackTraceElement.class, "<init>", String.class, String.class, String.class,
-                int.class, void.class), null);
+                int.class, void.class));
         dep.getVariable(0).propagate(dependencyAnalyzer.getType(StackTraceElement.class.getName()));
         dep.getVariable(1).propagate(stringType);
         dep.getVariable(2).propagate(stringType);
@@ -271,7 +270,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         dep.use();
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(
-                Throwable.class, "setStackTrace", StackTraceElement[].class, void.class), null);
+                Throwable.class, "setStackTrace", StackTraceElement[].class, void.class));
         dep.getVariable(0).propagate(dependencyAnalyzer.getType(Throwable.class.getName()));
         dep.getVariable(1).propagate(dependencyAnalyzer.getType("[Ljava/lang/StackTraceElement;"));
         dep.getVariable(1).getArrayItem().propagate(dependencyAnalyzer.getType(StackTraceElement.class.getName()));
@@ -440,9 +439,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         asyncMethods.addAll(asyncFinder.getAsyncMethods());
         asyncFamilyMethods.addAll(asyncFinder.getAsyncFamilyMethods());
 
-        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), asyncMethods, asyncFamilyMethods,
-                controller.isFriendlyToDebugger(), false);
-        decompiler.setRegularMethodCache(controller.isIncremental() ? astCache : null);
+        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), controller.getCacheStatus(),
+                asyncMethods, asyncFamilyMethods, controller.isFriendlyToDebugger(), false);
+        decompiler.setRegularMethodCache(astCache);
 
         for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
             decompiler.addGenerator(entry.getKey(), entry.getValue());

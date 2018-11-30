@@ -16,12 +16,11 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Async;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
@@ -30,7 +29,7 @@ import org.teavm.platform.async.AsyncCallback;
 
 public class AsyncMethodProcessor implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         for (MethodHolder method : cls.getMethods()) {
             if (method.hasModifier(ElementModifier.NATIVE)
                     && method.getAnnotations().get(Async.class.getName()) != null
@@ -46,8 +45,8 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
                 if (asyncMethod != null) {
                     if (asyncMethod.hasModifier(ElementModifier.STATIC)
                             != method.hasModifier(ElementModifier.STATIC)) {
-                        diagnostics.error(new CallLocation(method.getReference()), "Methods {{m0}} and {{m1}} must "
-                                + "both be either static or non-static",
+                        context.getDiagnostics().error(new CallLocation(method.getReference()),
+                                "Methods {{m0}} and {{m1}} must both be either static or non-static",
                                 method.getReference(), asyncMethod.getReference());
                     }
                 }

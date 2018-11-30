@@ -20,7 +20,6 @@ import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.jso.JSExceptions;
-import org.teavm.model.CallLocation;
 
 public class JSExceptionsDependencyListener extends AbstractDependencyListener {
     private DependencyNode allExceptions;
@@ -31,7 +30,7 @@ public class JSExceptionsDependencyListener extends AbstractDependencyListener {
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().getClassName().equals(JSExceptions.class.getName())) {
             if (method.getReference().getName().equals("getJavaException")) {
                 allExceptions.connect(method.getResult());

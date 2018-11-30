@@ -16,13 +16,14 @@
 package org.teavm.classlib.java.lang.reflect;
 
 import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -35,8 +36,13 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
     private static final ValueType[] primitiveTypes = { ValueType.BYTE, ValueType.SHORT, ValueType.CHARACTER,
             ValueType.INTEGER, ValueType.LONG, ValueType.FLOAT, ValueType.DOUBLE, ValueType.BOOLEAN };
 
+    private Set<MethodReference> reachedMethods = new HashSet<>();
+
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
+        if (!reachedMethods.add(method.getReference())) {
+            return;
+        }
         switch (method.getReference().getName()) {
             case "getLength":
                 reachGetLength(agent, method);
@@ -51,7 +57,9 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
                     } else {
                         arrayTypeName = ValueType.object(t.getName()).toString();
                     }
-                    method.getResult().propagate(agent.getType("[" + arrayTypeName));
+                    if (!arrayTypeName.startsWith("[[[")) {
+                        method.getResult().propagate(agent.getType("[" + arrayTypeName));
+                    }
                 });
                 break;
             case "getImpl":
@@ -91,11 +99,11 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         writer.append("return " + array + ".data.length;").softNewLine();
     }
 
-    private void reachGetLength(final DependencyAgent agent, final MethodDependency method) {
+    private void reachGetLength(DependencyAgent agent, MethodDependency method) {
         method.getVariable(1).addConsumer(type -> {
             if (!type.getName().startsWith("[")) {
                 MethodReference cons = new MethodReference(IllegalArgumentException.class, "<init>", void.class);
-                agent.linkMethod(cons, null).use();
+                agent.linkMethod(cons).use();
             }
         });
     }
@@ -170,7 +178,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
                         String wrapper = "java.lang." + primitiveWrappers[i];
                         MethodReference methodRef = new MethodReference(wrapper, "valueOf",
                                 primitiveTypes[i], ValueType.object(wrapper));
-                        agent.linkMethod(methodRef, null).use();
+                        agent.linkMethod(methodRef).use();
                         method.getResult().propagate(agent.getType("java.lang." + primitiveWrappers[i]));
                     }
                 }
@@ -188,7 +196,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
                         String wrapper = "java.lang." + primitiveWrappers[i];
                         MethodReference methodRef = new MethodReference(wrapper,
                                 primitives[i].toLowerCase() + "Value", primitiveTypes[i]);
-                        agent.linkMethod(methodRef, null).use();
+                        agent.linkMethod(methodRef).use();
                     }
                 }
             }

@@ -15,27 +15,40 @@
  */
 package org.teavm.dependency;
 
-import com.carrotsearch.hppc.IntIntHashMap;
-import com.carrotsearch.hppc.IntIntMap;
-import org.teavm.model.ClassReaderSource;
+import java.util.BitSet;
+import org.teavm.common.OptionalPredicate;
 
 class SuperClassFilter implements DependencyTypeFilter {
-    private ClassReaderSource classSource;
-    private String superType;
-    private IntIntMap cache = new IntIntHashMap();
+    private static final int[] EMPTY_ARRAY = new int[0];
+    private DependencyType superType;
+    private OptionalPredicate<String> predicate;
+    private BitSet knownTypes = new BitSet();
+    private BitSet cache = new BitSet();
 
-    SuperClassFilter(ClassReaderSource classSource, String superType) {
-        this.classSource = classSource;
+    SuperClassFilter(DependencyAnalyzer dependencyAnalyzer, DependencyType superType) {
         this.superType = superType;
+        predicate = dependencyAnalyzer.getClassHierarchy().getSuperclassPredicate(superType.getName());
     }
 
     @Override
     public boolean match(DependencyType type) {
-        int result = cache.getOrDefault(type.index, -1);
-        if (result < 0) {
-            result = classSource.isSuperType(superType, type.getName()).orElse(false) ? 1 : 0;
-            cache.put(type.index, result);
+        if (!superType.subtypeExists) {
+            return superType.index == type.index;
         }
-        return result != 0;
+        if (knownTypes.get(type.index)) {
+            return cache.get(type.index);
+        }
+        boolean result = predicate.test(type.getName(), false);
+        knownTypes.set(type.index);
+        cache.set(type.index, result);
+        return result;
+    }
+
+    @Override
+    public int[] tryExtract(BitSet types) {
+        if (superType.subtypeExists) {
+            return null;
+        }
+        return types.get(superType.index) ? new int[] { superType.index } : EMPTY_ARRAY;
     }
 }
