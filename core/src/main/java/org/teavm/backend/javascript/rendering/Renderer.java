@@ -77,6 +77,9 @@ public class Renderer implements RenderingManager {
     private int stringPoolSize;
     private int metadataSize;
 
+    private boolean longLibraryUsed;
+    private boolean threadLibraryUsed;
+
     public Renderer(SourceWriter writer, Set<MethodReference> asyncMethods, Set<MethodReference> asyncFamilyMethods,
             Diagnostics diagnostics, RenderingContext context) {
         this.naming = context.getNaming();
@@ -88,6 +91,14 @@ public class Renderer implements RenderingManager {
         this.asyncFamilyMethods = new HashSet<>(asyncFamilyMethods);
         this.diagnostics = diagnostics;
         this.context = context;
+    }
+
+    public boolean isLongLibraryUsed() {
+        return longLibraryUsed;
+    }
+
+    public boolean isThreadLibraryUsed() {
+        return threadLibraryUsed;
     }
 
     public int getStringPoolSize() {
@@ -752,6 +763,8 @@ public class Renderer implements RenderingManager {
 
         writer.newLine();
         debugEmitter.emitMethod(null);
+
+        longLibraryUsed |= statementRenderer.isLongLibraryUsed();
     }
 
     private void renderAsyncPrologue() throws IOException {
@@ -831,6 +844,7 @@ public class Renderer implements RenderingManager {
 
         @Override
         public void visit(AsyncMethodNode methodNode) {
+            threadLibraryUsed = true;
             try {
                 statementRenderer.setAsync(true);
                 this.async = true;

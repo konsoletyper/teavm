@@ -150,7 +150,7 @@ public class TThrowable extends RuntimeException {
 
     @Override
     public void printStackTrace() {
-        printStackTrace(TSystem.err);
+        printStackTrace(TSystem.err());
     }
 
     public void printStackTrace(TPrintStream stream) {

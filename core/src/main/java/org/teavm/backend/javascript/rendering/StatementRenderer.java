@@ -102,6 +102,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private int currentPart;
     private List<String> blockIds = new ArrayList<>();
     private IntIndexedContainer blockIndexMap = new IntArrayList();
+    private boolean longLibraryUsed;
 
     public StatementRenderer(RenderingContext context, SourceWriter writer) {
         this.context = context;
@@ -110,6 +111,10 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         this.minifying = context.isMinifying();
         this.naming = context.getNaming();
         this.debugEmitter = context.getDebugEmitter();
+    }
+
+    public boolean isLongLibraryUsed() {
+        return longLibraryUsed;
     }
 
     public boolean isAsync() {
@@ -621,6 +626,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(BinaryExpr expr) {
         if (expr.getType() == OperationType.LONG) {
+            longLibraryUsed = true;
             switch (expr.getOperation()) {
                 case ADD:
                     visitBinaryFunction(expr, "Long_add");
@@ -763,6 +769,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             switch (expr.getOperation()) {
                 case NOT: {
                     if (expr.getType() == OperationType.LONG) {
+                        longLibraryUsed = true;
                         writer.append("Long_not(");
                         precedence = Precedence.min();
                         expr.getOperand().acceptVisitor(this);
@@ -782,6 +789,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 }
                 case NEGATE:
                     if (expr.getType() == OperationType.LONG) {
+                        longLibraryUsed = true;
                         writer.append("Long_neg(");
                         precedence = Precedence.min();
                         expr.getOperand().acceptVisitor(this);

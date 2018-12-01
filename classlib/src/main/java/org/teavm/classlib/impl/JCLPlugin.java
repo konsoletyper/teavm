@@ -90,6 +90,7 @@ public class JCLPlugin implements TeaVMPlugin {
         }
 
         host.add(new NumericClassTransformer());
+        host.add(new SystemClassTransformer());
 
         if (!isBootstrap()) {
             List<ReflectionSupplier> reflectionSuppliers = new ArrayList<>();

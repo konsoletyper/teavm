@@ -276,34 +276,27 @@ class TestRunner {
 
 function runTeaVM() {
     return new Promise(resolve => {
-        $rt_startThread(() => {
-            const thread = $rt_nativeThread();
-            let instance;
-            if (thread.isResuming()) {
-                instance = thread.pop();
+        main([], result => {
+            const message = {};
+            if (result instanceof Error) {
+                makeErrorMessage(message, result);
+            } else {
+                message.status = "OK";
             }
-            try {
-                runTest();
-            } catch (e) {
-                resolve({ status: "failed", errorMessage: buildErrorMessage(e) });
-                return;
-            }
-            if (thread.isSuspending()) {
-                thread.push(instance);
-                return;
-            }
-            resolve({ status: "OK" });
+            resolve(message);
         });
 
-        function buildErrorMessage(e) {
-            let stack = e.stack;
-            if (e.$javaException && e.$javaException.constructor.$meta) {
-                stack = e.$javaException.constructor.$meta.name + ": ";
-                const exceptionMessage = extractException(e.$javaException);
-                stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
+        function makeErrorMessage(message, e) {
+            message.status = "failed";
+            if (e.$javaException) {
+                message.className = e.$javaException.constructor.name;
+                message.message = e.$javaException.getMessage();
+            } else {
+                message.className = Object.getPrototypeOf(e).name;
+                message.message = e.message;
             }
-            stack += "\n" + stack;
-            return stack;
+            message.exception = e;
+            message.stack = e.stack;
         }
     })
 }

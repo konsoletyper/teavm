@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -67,6 +68,7 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodHolder;
@@ -215,26 +217,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         dep.getVariable(1).propagate(dependencyAnalyzer.getType("[C"));
         dep.use();
 
-        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "getChars", int.class, int.class,
-                char[].class, int.class, void.class), null);
-        dep.getVariable(0).propagate(stringType);
-        dep.getVariable(3).propagate(dependencyAnalyzer.getType("[C"));
-        dep.use();
-
-        MethodDependency internDep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "intern",
-                String.class), null);
-        internDep.getVariable(0).propagate(stringType);
-        internDep.use();
-
-        dep = dependencyAnalyzer.linkMethod(new MethodReference(String.class, "length", int.class), null);
-        dep.getVariable(0).propagate(stringType);
-        dep.use();
+        dependencyAnalyzer.linkField(new FieldReference(String.class.getName(), "characters"), null);
 
         dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(Thread.class, "currentThread", Thread.class), null).use();
-        dependencyAnalyzer.linkMethod(new MethodReference(Thread.class, "getMainThread", Thread.class), null).use();
-        dependencyAnalyzer.linkMethod(
-                new MethodReference(Thread.class, "setCurrentThread", Thread.class, void.class), null).use();
         MethodDependency exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                 NoClassDefFoundError.class, "<init>", String.class, void.class), null);
 
@@ -281,7 +266,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     @Override
     public void emit(ListableClassHolderSource classes, BuildTarget target, String outputName) {
         try (OutputStream output = target.createResource(outputName);
-                Writer writer = new OutputStreamWriter(output, "UTF-8")) {
+                Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
             emit(classes, writer, target);
         } catch (IOException e) {
             throw new RenderingException(e);
@@ -322,7 +307,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         renderingContext.setMinifying(minifying);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
                 controller.getDiagnostics(), renderingContext);
-        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(naming, sourceWriter);
+        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, naming, sourceWriter);
         renderer.setProperties(controller.getProperties());
         renderer.setMinifying(minifying);
         if (debugEmitter != null) {
@@ -357,6 +342,15 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             renderer.renderStringPool();
             renderer.renderStringConstants();
             renderer.renderCompatibilityStubs();
+
+            if (renderer.isLongLibraryUsed()) {
+                runtimeRenderer.renderHandWrittenRuntime("long.js");
+            }
+            if (renderer.isThreadLibraryUsed()) {
+                runtimeRenderer.renderHandWrittenRuntime("thread.js");
+            } else {
+                runtimeRenderer.renderHandWrittenRuntime("simpleThread.js");
+            }
 
             for (Map.Entry<? extends String, ? extends TeaVMEntryPoint> entry
                     : controller.getEntryPoints().entrySet()) {

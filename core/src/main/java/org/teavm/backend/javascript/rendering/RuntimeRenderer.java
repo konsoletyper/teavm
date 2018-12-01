@@ -26,22 +26,38 @@ import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.backend.javascript.codegen.NamingException;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.vm.RenderingException;
 
 public class RuntimeRenderer {
+    private static final String STRING_CLASS = String.class.getName();
+    private static final String THREAD_CLASS = Thread.class.getName();
+
+    private static final MethodReference NPE_INIT_METHOD = new MethodReference(NullPointerException.class,
+            "<init>", void.class);
+    private static final MethodDescriptor STRING_INTERN_METHOD = new MethodDescriptor("intern",
+            String.class, String.class);
+    private static final MethodDescriptor CURRENT_THREAD_METHOD = new MethodDescriptor("currentThread",
+            Thread.class);
+
+    private final ClassReaderSource classSource;
     private final NamingStrategy naming;
     private final SourceWriter writer;
 
-    public RuntimeRenderer(NamingStrategy naming, SourceWriter writer) {
+    public RuntimeRenderer(ClassReaderSource classSource, NamingStrategy naming, SourceWriter writer) {
+        this.classSource = classSource;
         this.naming = naming;
         this.writer = writer;
     }
 
     public void renderRuntime() throws RenderingException {
         try {
-            renderHandWrittenRuntime();
+            renderHandWrittenRuntime("runtime.js");
             renderSetCloneMethod();
             renderRuntimeCls();
             renderRuntimeString();
@@ -60,22 +76,22 @@ public class RuntimeRenderer {
         }
     }
 
-    private void renderHandWrittenRuntime() throws IOException {
-        AstRoot ast = parseRuntime();
+    public void renderHandWrittenRuntime(String name) throws IOException {
+        AstRoot ast = parseRuntime(name);
         ast.visit(new StringConstantElimination());
         AstWriter astWriter = new AstWriter(writer);
         astWriter.hoist(ast);
         astWriter.print(ast);
     }
 
-    private AstRoot parseRuntime() throws IOException {
+    private AstRoot parseRuntime(String name) throws IOException {
         CompilerEnvirons env = new CompilerEnvirons();
         env.setRecoverFromErrors(true);
         env.setLanguageVersion(Context.VERSION_1_8);
         JSParser factory = new JSParser(env);
 
         ClassLoader loader = RuntimeRenderer.class.getClassLoader();
-        try (InputStream input = loader.getResourceAsStream("org/teavm/backend/javascript/runtime.js");
+        try (InputStream input = loader.getResourceAsStream("org/teavm/backend/javascript/" + name);
                 Reader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
             return factory.parse(reader, null, 0);
         }
@@ -113,29 +129,21 @@ public class RuntimeRenderer {
     }
 
     private void renderRuntimeUnwrapString() throws IOException {
-        MethodReference stringLen = new MethodReference(String.class, "length", int.class);
-        MethodReference getChars = new MethodReference(String.class, "getChars", int.class, int.class,
-                char[].class, int.class, void.class);
+        FieldReference stringChars = new FieldReference(STRING_CLASS, "characters");
         writer.append("function $rt_ustr(str) {").indent().softNewLine();
         writer.append("if (str === null) {").indent().softNewLine();
         writer.append("return null;").softNewLine();
         writer.outdent().append("}").softNewLine();
-        writer.append("var result = \"\";").softNewLine();
-        writer.append("var sz = ").appendMethodBody(stringLen).append("(str);").softNewLine();
-        writer.append("var array = $rt_createCharArray(sz);").softNewLine();
-        writer.appendMethodBody(getChars).append("(str, 0, sz, array, 0);").softNewLine();
-        writer.append("for (var i = 0; i < sz; i = (i + 1) | 0) {").indent().softNewLine();
-        writer.append("result += String.fromCharCode(array.data[i]);").softNewLine();
-        writer.outdent().append("}").softNewLine();
-        writer.append("return result;").softNewLine();
+
+        writer.append("return String.fromCharCode.apply(null, str.").appendField(stringChars)
+                .append(".data);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
     private void renderRuntimeNullCheck() throws IOException {
         writer.append("function $rt_nullCheck(val) {").indent().softNewLine();
         writer.append("if (val === null) {").indent().softNewLine();
-        writer.append("$rt_throw(").append(naming.getNameForInit(new MethodReference(NullPointerException.class,
-                "<init>", void.class))).append("());").softNewLine();
+        writer.append("$rt_throw(").append(naming.getNameForInit(NPE_INIT_METHOD)).append("());").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return val;").softNewLine();
         writer.outdent().append("}").newLine();
@@ -143,8 +151,14 @@ public class RuntimeRenderer {
 
     private void renderRuntimeIntern() throws IOException {
         writer.append("function $rt_intern(str) {").indent().softNewLine();
-        writer.append("return ").appendMethodBody(new MethodReference(String.class, "intern", String.class))
-                .append("(str);").softNewLine();
+        ClassReader stringCls = classSource.get(STRING_CLASS);
+        if (stringCls != null && stringCls.getMethod(STRING_INTERN_METHOD) != null) {
+            writer.append("return ").appendMethodBody(new MethodReference(String.class, "intern", String.class))
+                    .append("(str);").softNewLine();
+        } else {
+            writer.append("return str;").softNewLine();
+        }
+
         writer.outdent().append("}").newLine();
     }
 
@@ -153,14 +167,23 @@ public class RuntimeRenderer {
     }
 
     private void renderRuntimeThreads() throws IOException {
+        ClassReader threadCls = classSource.get(THREAD_CLASS);
+        boolean threadUsed = threadCls != null && threadCls.getMethod(CURRENT_THREAD_METHOD) != null;
+
         writer.append("function $rt_getThread()").ws().append("{").indent().softNewLine();
-        writer.append("return ").appendMethodBody(Thread.class, "currentThread", Thread.class).append("();")
-                .softNewLine();
+        if (threadUsed) {
+            writer.append("return ").appendMethodBody(Thread.class, "currentThread", Thread.class).append("();")
+                    .softNewLine();
+        } else {
+            writer.append("return null;").softNewLine();
+        }
         writer.outdent().append("}").newLine();
 
         writer.append("function $rt_setThread(t)").ws().append("{").indent().softNewLine();
-        writer.append("return ").appendMethodBody(Thread.class, "setCurrentThread", Thread.class, void.class)
-                .append("(t);").softNewLine();
+        if (threadUsed) {
+            writer.append("return ").appendMethodBody(Thread.class, "setCurrentThread", Thread.class, void.class)
+                    .append("(t);").softNewLine();
+        }
         writer.outdent().append("}").newLine();
     }
 

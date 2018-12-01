@@ -23,7 +23,6 @@ import org.teavm.classlib.java.io.TConsole;
 import org.teavm.classlib.java.io.TInputStream;
 import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.lang.reflect.TArray;
-import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
@@ -34,12 +33,33 @@ import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 
 public final class TSystem extends TObject {
-    public static final TPrintStream out = new TPrintStream(new TConsoleOutputStreamStdout(), false);
-    public static final TPrintStream err = new TPrintStream(new TConsoleOutputStreamStderr(), false);
-    public static final TInputStream in = new TConsoleInputStream();
+    private static TPrintStream outCache;
+    private static TPrintStream errCache;
+    private static TInputStream inCache;
     private static Properties properties;
 
     private TSystem() {
+    }
+
+    public static TPrintStream out() {
+        if (outCache == null) {
+            new TPrintStream(new TConsoleOutputStreamStdout(), false);
+        }
+        return outCache;
+    }
+
+    public static TPrintStream err() {
+        if (errCache == null) {
+            errCache = new TPrintStream(new TConsoleOutputStreamStderr(), false);
+        }
+        return errCache;
+    }
+
+    public static TInputStream in() {
+        if (inCache == null) {
+            inCache = new TConsoleInputStream();
+        }
+        return inCache;
     }
 
     public static TConsole console() {
@@ -177,13 +197,13 @@ public final class TSystem extends TObject {
         return (String) properties.remove(key);
     }
 
-    @GeneratedBy(SystemNativeGenerator.class)
-    @PluggableDependency(SystemNativeGenerator.class)
-    public static native void setErr(TPrintStream err);
+    public static void setErr(TPrintStream err) {
+        errCache = err;
+    }
 
-    @GeneratedBy(SystemNativeGenerator.class)
-    @PluggableDependency(SystemNativeGenerator.class)
-    public static native void setOut(TPrintStream err);
+    public static void setOut(TPrintStream out) {
+        outCache = out;
+    }
 
     @DelegateTo("gcLowLevel")
     public static void gc() {

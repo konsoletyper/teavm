@@ -36,7 +36,6 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     public static final TComparator<TString> CASE_INSENSITIVE_ORDER = (o1, o2) -> o1.compareToIgnoreCase(o2);
     private char[] characters;
     private transient int hashCode;
-    private static TMap<TString, TString> pool = new THashMap<>();
 
     public TString() {
         this.characters = new char[0];
@@ -633,10 +632,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public TString intern() {
-        TString interned = pool.get(this);
+        TString interned = PoolHolder.pool.get(this);
         if (interned == null) {
             interned = this;
-            pool.put(interned, interned);
+            PoolHolder.pool.put(interned, interned);
         }
         return interned;
     }
@@ -711,5 +710,9 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             sb.append(iter.next());
         }
         return sb.toString();
+    }
+
+    static class PoolHolder {
+        static TMap<TString, TString> pool = new THashMap<>();
     }
 }

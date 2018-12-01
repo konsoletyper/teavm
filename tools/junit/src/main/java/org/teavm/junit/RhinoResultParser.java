@@ -36,14 +36,15 @@ import org.teavm.model.MethodReference;
 final class RhinoResultParser {
     private static Pattern pattern = Pattern.compile("(([A-Za-z_$]+)\\(\\))?@.+:([0-9]+)");
     private static Pattern lineSeparator = Pattern.compile("\\r\\n|\r|\n");
-    private File debugFile;
     private DebugInformation debugInformation;
     private String[] script;
 
     RhinoResultParser(File debugFile) {
-        debugInformation = debugFile != null ? getDebugInformation(debugFile) : null;
-        script = getScript(new File(debugFile.getParentFile(),
-                debugFile.getName().substring(0, debugFile.getName().length() - 9)));
+        if (debugFile != null) {
+            debugInformation = getDebugInformation(debugFile);
+            script = getScript(new File(debugFile.getParentFile(),
+                    debugFile.getName().substring(0, debugFile.getName().length() - 9)));
+        }
     }
 
     void parseResult(Scriptable result, TestRunCallback callback) {
@@ -57,8 +58,6 @@ final class RhinoResultParser {
                 callback.complete();
                 break;
             case "exception": {
-                DebugInformation debugInformation = debugFile != null ? getDebugInformation(debugFile) : null;
-
                 String className = String.valueOf(result.get("className", result));
                 if (debugInformation != null) {
                     String decodedName = debugInformation.getClassNameByJsName(className);

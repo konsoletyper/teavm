@@ -103,9 +103,13 @@ class UsageGenerator {
 
         MethodDependency hashCodeDep = agent.linkMethod(new MethodReference(String.class, "hashCode", int.class),
                 location);
+        hashCodeDep.getVariable(0).propagate(agent.getType("java.lang.String"));
         nameDep.getResult().connect(hashCodeDep.getVariable(0));
         hashCodeDep.getThrown().connect(methodDep.getThrown());
         hashCodeDep.use();
+
+        agent.linkMethod(new MethodReference(Object.class, "hashCode", int.class), null);
+        agent.linkMethod(new MethodReference(Object.class, "equals", Object.class, boolean.class), null);
 
         return nameDep;
     }
