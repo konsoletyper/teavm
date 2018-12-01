@@ -49,6 +49,7 @@ import org.teavm.backend.wasm.intrinsics.ExceptionHandlingIntrinsic;
 import org.teavm.backend.wasm.intrinsics.FloatIntrinsic;
 import org.teavm.backend.wasm.intrinsics.FunctionIntrinsic;
 import org.teavm.backend.wasm.intrinsics.GCIntrinsic;
+import org.teavm.backend.wasm.intrinsics.LongIntrinsic;
 import org.teavm.backend.wasm.intrinsics.MutatorIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ObjectIntrinsic;
 import org.teavm.backend.wasm.intrinsics.PlatformClassIntrinsic;
@@ -343,6 +344,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         context.addIntrinsic(new RuntimeClassIntrinsic());
         context.addIntrinsic(new FloatIntrinsic());
         context.addIntrinsic(new DoubleIntrinsic());
+        context.addIntrinsic(new LongIntrinsic());
         context.addIntrinsic(new ObjectIntrinsic());
         context.addGenerator(new ArrayGenerator());
 

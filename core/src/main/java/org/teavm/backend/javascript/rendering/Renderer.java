@@ -1006,6 +1006,11 @@ public class Renderer implements RenderingManager {
         public String typeToClassString(ValueType type) {
             return context.typeToClsString(type);
         }
+
+        @Override
+        public void useLongLibrary() {
+            longLibraryUsed = true;
+        }
     }
 
     private void appendMonitor(StatementRenderer statementRenderer, MethodNode methodNode) throws IOException {

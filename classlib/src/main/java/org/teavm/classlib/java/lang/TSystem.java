@@ -43,7 +43,7 @@ public final class TSystem extends TObject {
 
     public static TPrintStream out() {
         if (outCache == null) {
-            new TPrintStream(new TConsoleOutputStreamStdout(), false);
+            outCache = new TPrintStream(new TConsoleOutputStreamStdout(), false);
         }
         return outCache;
     }

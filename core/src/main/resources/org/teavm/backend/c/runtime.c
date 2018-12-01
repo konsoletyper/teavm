@@ -274,3 +274,24 @@ static int32_t teavm_timeZoneOffset() {
 
 static char* teavm_stringToC(void*);
 static inline void teavm_free(void*);
+
+static inline int64_t teavm_reinterpretDoubleToLong(double v) {
+    union { int64_t longValue; double doubleValue; } conv;
+    conv.doubleValue = v;
+    return conv.longValue;
+}
+static inline double teavm_reinterpretLongToDouble(int64_t v) {
+    union { int64_t longValue; double doubleValue; } conv;
+    conv.longValue = v;
+    return conv.doubleValue;
+}
+static inline int32_t teavm_reinterpretFloatToInt(float v) {
+    union { int32_t intValue; float floatValue; } conv;
+    conv.floatValue = v;
+    return conv.intValue;
+}
+static inline float teavm_reinterpretIntToFloat(int32_t v) {
+    union { int32_t intValue; float floatValue; } conv;
+    conv.intValue = v;
+    return conv.floatValue;
+}

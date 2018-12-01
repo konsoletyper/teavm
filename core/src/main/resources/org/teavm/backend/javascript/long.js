@@ -197,11 +197,23 @@ function Long_div(a, b) {
     }
     return Long_divRem(a, b)[0];
 }
+function Long_udiv(a, b) {
+    if (a.hi >= 0 && a.hi < Long_MAX_NORMAL && b.hi >= 0 && b.hi < Long_MAX_NORMAL) {
+        return Long_fromNumber(Long_toNumber(a) / Long_toNumber(b));
+    }
+    return Long_udivRem(a, b)[0];
+}
 function Long_rem(a, b) {
     if (Math.abs(a.hi) < Long_MAX_NORMAL && Math.abs(b.hi) < Long_MAX_NORMAL) {
         return Long_fromNumber(Long_toNumber(a) % Long_toNumber(b));
     }
     return Long_divRem(a, b)[1];
+}
+function Long_urem(a, b) {
+    if (a.hi >= 0 && a.hi < Long_MAX_NORMAL && b.hi >= 0 && b.hi < Long_MAX_NORMAL) {
+        return Long_fromNumber(Long_toNumber(a) / Long_toNumber(b));
+    }
+    return Long_udivRem(a, b)[1];
 }
 function Long_divRem(a, b) {
     if (b.lo === 0 && b.hi === 0) {
@@ -220,6 +232,17 @@ function Long_divRem(a, b) {
     a = new Long(a.lo, a.hi);
     q = new Long(q.lo, q.hi);
     return positive ? [q, a] : [Long_neg(q), Long_neg(a)];
+}
+function Long_udivRem(a, b) {
+    if (b.lo === 0 && b.hi === 0) {
+        throw new Error("Division by zero");
+    }
+    a = new LongInt(a.lo, a.hi, 0);
+    b = new LongInt(b.lo, b.hi, 0);
+    var q = LongInt_div(a, b);
+    a = new Long(a.lo, a.hi);
+    q = new Long(q.lo, q.hi);
+    return [q, a];
 }
 function Long_shiftLeft16(a) {
     return new Long(a.lo << 16, (a.lo >>> 16) | (a.hi << 16));

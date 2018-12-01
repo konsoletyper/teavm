@@ -247,9 +247,11 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     }
 
     @JSBody(params = "value", script = "return $rt_floatToIntBits(value);")
+    @Import(name = "teavm_reinterpretFloatToInt")
     public static native int floatToIntBits(float value);
 
     @JSBody(params = "bits", script = "return $rt_intBitsToFloat(bits);")
+    @Import(name = "teavm_reinterpretIntToFloat")
     public static native float intBitsToFloat(int bits);
 
     public static TString toHexString(float f) {

@@ -243,9 +243,11 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     }
 
     @InjectedBy(DoubleGenerator.class)
+    @Import(name = "teavm_reinterpretDoubleToLong")
     public static native long doubleToLongBits(double value);
 
     @InjectedBy(DoubleGenerator.class)
+    @Import(name = "teavm_reinterpretLongToDouble")
     public static native double longBitsToDouble(long bits);
 
     public static TString toHexString(double d) {

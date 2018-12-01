@@ -279,8 +279,8 @@ public class StringBuilderTest {
     @Test
     public void minDoubleAppended() {
         StringBuilder sb = new StringBuilder();
-        sb.append(2.2250738585072E-308);
-        assertEquals("2.2250738585072E-308", sb.toString());
+        sb.append(3E-308);
+        assertEquals("3.0E-308", sb.toString());
     }
 
     @Test

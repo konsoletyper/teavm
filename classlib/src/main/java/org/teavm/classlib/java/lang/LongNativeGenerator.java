@@ -28,6 +28,17 @@ public class LongNativeGenerator implements Generator {
             case "compare":
                 writer.append("return Long_compare(").append(context.getParameterName(1)).append(", ")
                         .append(context.getParameterName(2)).append(");").softNewLine();
+                context.useLongLibrary();
+                break;
+            case "divideUnsigned":
+                writer.append("return Long_udiv(").append(context.getParameterName(1)).append(", ")
+                        .append(context.getParameterName(2)).append(");").softNewLine();
+                context.useLongLibrary();
+                break;
+            case "remainderUnsigned":
+                writer.append("return Long_urem(").append(context.getParameterName(1)).append(", ")
+                        .append(context.getParameterName(2)).append(");").softNewLine();
+                context.useLongLibrary();
                 break;
         }
     }

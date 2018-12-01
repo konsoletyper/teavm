@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.teavm.classlib.impl.IntegerUtil.toUnsignedLogRadixString;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 
 public class TLong extends TNumber implements TComparable<TLong> {
     public static final long MIN_VALUE = -0x8000000000000000L;
@@ -348,4 +349,10 @@ public class TLong extends TNumber implements TComparable<TLong> {
     public static int signum(long i) {
         return (int) ((i >> 63) | (-i >>> 63));
     }
+
+    @GeneratedBy(LongNativeGenerator.class)
+    public static native long divideUnsigned(long dividend, long divisor);
+
+    @GeneratedBy(LongNativeGenerator.class)
+    public static native long remainderUnsigned(long dividend, long divisor);
 }

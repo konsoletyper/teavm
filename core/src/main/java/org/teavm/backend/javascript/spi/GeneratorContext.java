@@ -43,4 +43,6 @@ public interface GeneratorContext extends ServiceRepository {
     Diagnostics getDiagnostics();
 
     String typeToClassString(ValueType type);
+
+    void useLongLibrary();
 }
