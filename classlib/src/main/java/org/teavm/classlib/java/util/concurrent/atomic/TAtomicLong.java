@@ -16,42 +16,42 @@
 package org.teavm.classlib.java.util.concurrent.atomic;
 
 import java.io.Serializable;
-import java.util.function.IntBinaryOperator;
-import java.util.function.IntUnaryOperator;
+import java.util.function.LongBinaryOperator;
+import java.util.function.LongUnaryOperator;
 
-public class TAtomicInteger extends Number implements Serializable {
-    private int value;
+public class TAtomicLong extends Number implements Serializable {
+    private long value;
     private int version;
 
-    public TAtomicInteger() {
+    public TAtomicLong() {
     }
 
-    public TAtomicInteger(int value) {
+    public TAtomicLong(long value) {
         this.value = value;
     }
 
-    public final int get() {
+    public final long get() {
         return value;
     }
 
-    public final void set(int newValue) {
+    public final void set(long newValue) {
         value = newValue;
         version++;
     }
 
-    public final void lazySet(int newValue) {
+    public final void lazySet(long newValue) {
         value = newValue;
         version++;
     }
 
-    public final int getAndSet(int newValue) {
-        int result = value;
+    public final long getAndSet(long newValue) {
+        long result = value;
         value = newValue;
         version++;
         return result;
     }
 
-    public final boolean compareAndSet(int expect, int update) {
+    public final boolean compareAndSet(long expect, long update) {
         if (value != expect) {
             return false;
         }
@@ -60,7 +60,7 @@ public class TAtomicInteger extends Number implements Serializable {
         return true;
     }
 
-    public final boolean weakCompareAndSet(int expect, int update) {
+    public final boolean weakCompareAndSet(long expect, long update) {
         if (value != expect) {
             return false;
         }
@@ -69,85 +69,85 @@ public class TAtomicInteger extends Number implements Serializable {
         return true;
     }
 
-    public final int getAndIncrement() {
+    public final long getAndIncrement() {
         version++;
         return value++;
     }
 
-    public final int getAndDecrement() {
+    public final long getAndDecrement() {
         version++;
         return value--;
     }
 
-    public final int getAndAdd(int delta) {
+    public final long getAndAdd(long delta) {
         version++;
-        int result = value;
+        long result = value;
         value += delta;
         return result;
     }
 
-    public final int incrementAndGet() {
+    public final long incrementAndGet() {
         version++;
         return ++value;
     }
 
-    public final int decrementAndGet() {
+    public final long decrementAndGet() {
         version++;
         return --value;
     }
 
-    public final int addAndGet(int delta) {
+    public final long addAndGet(long delta) {
         version++;
         value += delta;
         return value;
     }
 
-    public final int getAndUpdate(IntUnaryOperator updateFunction) {
+    public final long getAndUpdate(LongUnaryOperator updateFunction) {
         int expectedVersion;
-        int result;
-        int newValue;
+        long result;
+        long newValue;
         do {
             expectedVersion = version;
             result = value;
-            newValue = updateFunction.applyAsInt(value);
+            newValue = updateFunction.applyAsLong(value);
         } while (expectedVersion != version);
         ++version;
         value = newValue;
         return result;
     }
 
-    public final int updateAndGet(IntUnaryOperator updateFunction) {
+    public final long updateAndGet(LongUnaryOperator updateFunction) {
         int expectedVersion;
-        int newValue;
+        long newValue;
         do {
             expectedVersion = version;
-            newValue = updateFunction.applyAsInt(value);
+            newValue = updateFunction.applyAsLong(value);
         } while (expectedVersion != version);
         ++version;
         value = newValue;
         return newValue;
     }
 
-    public final int getAndAccumulate(int x, IntBinaryOperator accumulatorFunction) {
+    public final long getAndAccumulate(long x, LongBinaryOperator accumulatorFunction) {
         int expectedVersion;
-        int newValue;
-        int result;
+        long newValue;
+        long result;
         do {
             expectedVersion = version;
             result = value;
-            newValue = accumulatorFunction.applyAsInt(value, x);
+            newValue = accumulatorFunction.applyAsLong(value, x);
         } while (expectedVersion != version);
         ++version;
         value = newValue;
         return result;
     }
 
-    public final int accumulateAndGet(int x, IntBinaryOperator accumulatorFunction) {
+    public final long accumulateAndGet(long x, LongBinaryOperator accumulatorFunction) {
         int expectedVersion;
-        int newValue;
+        long newValue;
         do {
             expectedVersion = version;
-            newValue = accumulatorFunction.applyAsInt(value, x);
+            newValue = accumulatorFunction.applyAsLong(value, x);
         } while (expectedVersion != version);
         ++version;
         value = newValue;
@@ -161,7 +161,7 @@ public class TAtomicInteger extends Number implements Serializable {
 
     @Override
     public int intValue() {
-        return value;
+        return (int) value;
     }
 
     @Override

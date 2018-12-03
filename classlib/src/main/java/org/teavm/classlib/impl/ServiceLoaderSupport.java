@@ -27,6 +27,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
 import java.util.Set;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
@@ -126,12 +127,14 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
     }
 
     @Override
-    public void methodReached(final DependencyAgent agent, MethodDependency method, final CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
         MethodReference ref = method.getReference();
         if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
             method.getResult().propagate(agent.getType("[Ljava/lang/Object;"));
-            allClassesNode.connect(method.getResult().getArrayItem());
-            method.getResult().getArrayItem().addConsumer(type -> initConstructor(agent, type.getName(), location));
+            DependencyNode sourceNode = agent.linkMethod(new MethodReference(ServiceLoader.class, "load", Class.class,
+                    ServiceLoader.class), null).getVariable(1).getClassValueNode();
+            sourceNode.connect(method.getResult().getArrayItem());
+            sourceNode.addConsumer(type -> initConstructor(agent, type.getName(), location));
         }
     }
 

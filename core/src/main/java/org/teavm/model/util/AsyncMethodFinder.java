@@ -49,6 +49,7 @@ public class AsyncMethodFinder {
     private CallGraph callGraph;
     private Diagnostics diagnostics;
     private ListableClassReaderSource classSource;
+    private boolean hasAsyncMethods;
 
     public AsyncMethodFinder(CallGraph callGraph, Diagnostics diagnostics) {
         this.callGraph = callGraph;
@@ -65,6 +66,7 @@ public class AsyncMethodFinder {
 
     public void find(ListableClassReaderSource classSource) {
         this.classSource = classSource;
+        hasAsyncMethods = hasAsyncMethods();
         for (String clsName : classSource.getClassNames()) {
             ClassReader cls = classSource.get(clsName);
             for (MethodReader method : cls.getMethods()) {
@@ -76,7 +78,7 @@ public class AsyncMethodFinder {
                 }
             }
         }
-        if (hasAsyncMethods()) {
+        if (hasAsyncMethods) {
             for (String clsName : classSource.getClassNames()) {
                 ClassReader cls = classSource.get(clsName);
                 for (MethodReader method : cls.getMethods()) {
@@ -168,6 +170,11 @@ public class AsyncMethodFinder {
                         + "is claimed to be synchronous, but it is has invocations of "
                         + "asynchronous methods:" + stack.toString(), methodRef);
             }
+        }
+
+        if (!hasAsyncMethods && methodRef.getClassName().equals("java.lang.Object")
+                && (methodRef.getName().equals("monitorEnter") || methodRef.getName().equals("monitorExit"))) {
+            return;
         }
         for (CallSite callSite : node.getCallerCallSites()) {
             MethodReference nextMethod = callSite.getCaller().getMethod();
