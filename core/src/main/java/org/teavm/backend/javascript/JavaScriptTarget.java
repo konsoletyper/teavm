@@ -100,7 +100,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     private TeaVMTargetController controller;
     private boolean minifying = true;
-    private boolean stackTraceIncluded = false;
+    private boolean stackTraceIncluded;
     private final Map<MethodReference, Generator> methodGenerators = new HashMap<>();
     private final Map<MethodReference, Injector> methodInjectors = new HashMap<>();
     private final List<Function<ProviderContext, Generator>> generatorProviders = new ArrayList<>();
