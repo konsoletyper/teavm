@@ -16,13 +16,12 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.classlib.impl.text.DoubleAnalyzer;
+import org.teavm.classlib.impl.text.FloatAnalyzer;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.util.TArrays;
 
 class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequence {
     static class Constants {
-        static float[] powersOfTen = { 1E1f, 1E2f, 1E4f, 1E8f, 1E16f, 1E32f };
-        static float[] negPowersOfTen = { 1E-1f, 1E-2f, 1E-4f, 1E-8f, 1E-16f, 1E-32f };
         static int[] intPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
                 1000000000 };
         static long[] longPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
@@ -30,12 +29,8 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 1000000000000000L, 10000000000000000L, 100000000000000000L, 1000000000000000000L };
         static final long[] longLogPowersOfTen = { 1, 10, 100, 10000, 100000000, 10000000000000000L, };
 
-        static final int FLOAT_DECIMAL_PRECISION = 7;
-        static final float FLOAT_DECIMAL_FACTOR = 1E6f;
-        static final int FLOAT_MAX_EXPONENT = 38;
-        static final int FLOAT_MAX_POS = 1000000;
-
         static final DoubleAnalyzer.Result doubleAnalysisResult = new DoubleAnalyzer.Result();
+        static final FloatAnalyzer.Result floatAnalysisResult = new FloatAnalyzer.Result();
     }
 
     char[] buffer;
@@ -225,54 +220,21 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             buffer[target++] = 'y';
             return this;
         }
-        // Get absolute value
-        boolean negative = false;
+
+        FloatAnalyzer.Result number = Constants.floatAnalysisResult;
+        FloatAnalyzer.analyze(value, number);
+        int mantissa = number.mantissa;
+        int exp = number.exponent;
+        boolean negative = number.sign;
+        int intPart = 1;
         int sz = 1; // Decimal point always included
-        if (value < 0) {
+        if (negative) {
             negative = true;
-            value = -value;
             ++sz; // including '-' sign of mantissa
         }
 
-        // Split into decimal mantissa and decimal exponent
-        int exp = 0;
-        int mantissa = 0;
-        int intPart = 1;
-        int digits = 0;
-        if (value >= 1) {
-            int bit = 32;
-            exp = 0;
-            float digit = 1;
-            for (int i = Constants.powersOfTen.length - 1; i >= 0; --i) {
-                if ((exp | bit) <= Constants.FLOAT_MAX_EXPONENT && Constants.powersOfTen[i] * digit <= value) {
-                    digit *= Constants.powersOfTen[i];
-                    exp |= bit;
-                }
-                bit >>= 1;
-            }
-            mantissa = (int) ((value / (digit / Constants.FLOAT_DECIMAL_FACTOR)) + 0.5f);
-        } else {
-            int bit = 32;
-            exp = 0;
-            float digit = 1;
-            for (int i = Constants.negPowersOfTen.length - 1; i >= 0; --i) {
-                if ((exp | bit) <= 38 && Constants.negPowersOfTen[i] * digit * 10 > value) {
-                    digit *= Constants.negPowersOfTen[i];
-                    exp |= bit;
-                }
-                bit >>= 1;
-            }
-            exp = -exp;
-            mantissa = (int) (((value * Constants.FLOAT_MAX_POS) / digit) + 0.5f);
-
-            while (mantissa >= 10000000) {
-                mantissa /= 10;
-                exp--;
-            }
-        }
-
         // Remove trailing zeros
-        digits = Constants.FLOAT_DECIMAL_PRECISION;
+        int digits = FloatAnalyzer.PRECISION;
         int zeros = trailingDecimalZeros(mantissa);
         if (zeros > 0) {
             digits -= zeros;
@@ -312,7 +274,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         if (negative) {
             buffer[target++] = '-';
         }
-        int pos = Constants.FLOAT_MAX_POS;
+        int pos = FloatAnalyzer.MAX_POS;
         for (int i = 0; i < digits; ++i) {
             int intDigit;
             if (pos > 0) {

@@ -130,6 +130,9 @@ public final class DoubleAnalyzer {
         if (decMantissa >= 1000000000000000000L) {
             decExponent++;
             decMantissa /= 10;
+        } else if (decMantissa < 100000000000000000L) {
+            decExponent--;
+            decMantissa *= 10;
         }
 
         result.mantissa = decMantissa;

@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import static org.teavm.classlib.impl.IntegerUtil.toUnsignedLogRadixString;
+import org.teavm.backend.javascript.spi.InjectedBy;
 
 public class TInteger extends TNumber implements TComparable<TInteger> {
     public static final int SIZE = 32;
@@ -353,4 +354,10 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     public static int signum(int i) {
         return (i >> 31) | (-i >>> 31);
     }
+
+    @InjectedBy(IntegerNativeGenerator.class)
+    public static native int divideUnsigned(int dividend, int divisor);
+
+    @InjectedBy(IntegerNativeGenerator.class)
+    public static native int remainderUnsigned(int dividend, int divisor);
 }

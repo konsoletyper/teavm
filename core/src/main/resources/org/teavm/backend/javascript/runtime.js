@@ -623,3 +623,29 @@ function Long_toNumber(val) {
     }
     return 0x100000000 * hi + lo;
 }
+
+var $rt_imul = Math.imul || function(a, b) {
+    var ah = (a >>> 16) & 0xFFFF;
+    var al = a & 0xFFFF;
+    var bh = (b >>> 16) & 0xFFFF;
+    var bl = b & 0xFFFF;
+    return (al * bl + (((ah * bl + al * bh) << 16) >>> 0)) | 0;
+};
+var $rt_udiv = function(a, b) {
+    if (a < 0) {
+        a += 0x100000000;
+    }
+    if (b < 0) {
+        b += 0x100000000;
+    }
+    return (a / b) | 0;
+};
+var $rt_umod = function(a, b) {
+    if (a < 0) {
+        a += 0x100000000;
+    }
+    if (b < 0) {
+        b += 0x100000000;
+    }
+    return (a % b) | 0;
+};

@@ -164,8 +164,8 @@ public class StringBuilderTest {
     @Test
     public void minFloatAppended() {
         StringBuilder sb = new StringBuilder();
-        sb.append(1.175494E-38f);
-        assertEquals("1.175494E-38", sb.toString());
+        sb.append(1.17549E-38f);
+        assertEquals("1.17549E-38", sb.toString());
     }
 
     @Test

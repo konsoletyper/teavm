@@ -47,6 +47,7 @@ import org.teavm.backend.c.intrinsic.AllocatorIntrinsic;
 import org.teavm.backend.c.intrinsic.ExceptionHandlingIntrinsic;
 import org.teavm.backend.c.intrinsic.FunctionIntrinsic;
 import org.teavm.backend.c.intrinsic.GCIntrinsic;
+import org.teavm.backend.c.intrinsic.IntegerIntrinsic;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicFactory;
 import org.teavm.backend.c.intrinsic.LongIntrinsic;
@@ -236,6 +237,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         intrinsics.add(new FunctionIntrinsic(characteristics, exportDependencyListener.getResolvedMethods()));
         intrinsics.add(new RuntimeClassIntrinsic());
         intrinsics.add(new LongIntrinsic());
+        intrinsics.add(new IntegerIntrinsic());
 
         List<Generator> generators = new ArrayList<>();
         generators.add(new ArrayGenerator());
