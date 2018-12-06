@@ -44,6 +44,10 @@ public class RuntimeRenderer {
             String.class, String.class);
     private static final MethodDescriptor CURRENT_THREAD_METHOD = new MethodDescriptor("currentThread",
             Thread.class);
+    private static final MethodReference STACK_TRACE_ELEM_INIT = new MethodReference(StackTraceElement.class,
+            "<init>", String.class, String.class, String.class, int.class, void.class);
+    private static final MethodReference SET_STACK_TRACE_METHOD = new MethodReference(Throwable.class,
+            "setStackTrace", StackTraceElement[].class, void.class);
 
     private final ClassReaderSource classSource;
     private final NamingStrategy naming;
@@ -197,26 +201,37 @@ public class RuntimeRenderer {
     }
 
     private void renderCreateStackTraceElement() throws IOException {
+        ClassReader cls = classSource.get(STACK_TRACE_ELEM_INIT.getClassName());
+        boolean supported = cls != null && cls.getMethod(STACK_TRACE_ELEM_INIT.getDescriptor()) != null;
+
         writer.append("function $rt_createStackElement(")
                 .append("className,").ws()
                 .append("methodName,").ws()
                 .append("fileName,").ws()
                 .append("lineNumber)").ws().append("{").indent().softNewLine();
         writer.append("return ");
-        writer.append(writer.getNaming().getNameForInit(new MethodReference(StackTraceElement.class,
-                "<init>", String.class, String.class, String.class, int.class, void.class)));
-        writer.append("(className,").ws()
-                .append("methodName,").ws()
-                .append("fileName,").ws()
-                .append("lineNumber);").softNewLine();
+        if (supported) {
+            writer.append(writer.getNaming().getNameForInit(STACK_TRACE_ELEM_INIT));
+            writer.append("(className,").ws()
+                    .append("methodName,").ws()
+                    .append("fileName,").ws()
+                    .append("lineNumber)");
+        } else {
+            writer.append("null");
+        }
+        writer.append(";").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
     private void renderSetStackTrace() throws IOException {
+        ClassReader cls = classSource.get(SET_STACK_TRACE_METHOD.getClassName());
+        boolean supported = cls != null && cls.getMethod(SET_STACK_TRACE_METHOD.getDescriptor()) != null;
+
         writer.append("function $rt_setStack(e,").ws().append("stack)").ws().append("{").indent().softNewLine();
-        writer.appendMethodBody(new MethodReference(Throwable.class, "setStackTrace", StackTraceElement[].class,
-                void.class));
-        writer.append("(e,").ws().append("stack);").softNewLine();
+        if (supported) {
+            writer.appendMethodBody(SET_STACK_TRACE_METHOD);
+            writer.append("(e,").ws().append("stack);").softNewLine();
+        }
         writer.outdent().append("}").newLine();
     }
 }

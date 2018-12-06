@@ -559,6 +559,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             JavaScriptTarget target = new JavaScriptTarget();
             if (decodeStack) {
                 target.setDebugEmitter(debugEmitter);
+                target.setStackTraceIncluded(true);
             }
             return target;
         };

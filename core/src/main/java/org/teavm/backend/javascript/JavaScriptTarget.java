@@ -100,6 +100,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     private TeaVMTargetController controller;
     private boolean minifying = true;
+    private boolean stackTraceIncluded = false;
     private final Map<MethodReference, Generator> methodGenerators = new HashMap<>();
     private final Map<MethodReference, Injector> methodInjectors = new HashMap<>();
     private final List<Function<ProviderContext, Generator>> generatorProviders = new ArrayList<>();
@@ -194,6 +195,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         return true;
     }
 
+    public void setStackTraceIncluded(boolean stackTraceIncluded) {
+        this.stackTraceIncluded = stackTraceIncluded;
+    }
+
     @Override
     public List<TeaVMHostExtension> getHostExtensions() {
         return Collections.singletonList(this);
@@ -219,7 +224,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
         dependencyAnalyzer.linkField(new FieldReference(String.class.getName(), "characters"), null);
 
-        dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "clone", Object.class), null).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "clone", Object.class), null);
         MethodDependency exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
                 NoClassDefFoundError.class, "<init>", String.class, void.class), null);
 
@@ -245,6 +250,16 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(RuntimeException.class.getName()));
         exceptionCons.getVariable(1).propagate(stringType);
         exceptionCons.use();
+
+        if (stackTraceIncluded) {
+            includeStackTraceMethods(dependencyAnalyzer);
+        }
+    }
+
+    public static void includeStackTraceMethods(DependencyAnalyzer dependencyAnalyzer) {
+        MethodDependency dep;
+
+        DependencyType stringType = dependencyAnalyzer.getType("java.lang.String");
 
         dep = dependencyAnalyzer.linkMethod(new MethodReference(
                 StackTraceElement.class, "<init>", String.class, String.class, String.class,

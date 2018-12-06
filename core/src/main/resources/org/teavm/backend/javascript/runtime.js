@@ -231,12 +231,21 @@ function $rt_exception(ex) {
         if (typeof $rt_decodeStack === "function" && err.stack) {
             var stack = $rt_decodeStack(err.stack);
             var javaStack = $rt_createArray($rt_objcls(), stack.length);
+            var elem;
+            var noStack = false;
             for (var i = 0; i < stack.length; ++i) {
                 var element = stack[i];
-                javaStack.data[i] = $rt_createStackElement($rt_str(element.className),
+                elem = $rt_createStackElement($rt_str(element.className),
                         $rt_str(element.methodName), $rt_str(element.fileName), element.lineNumber);
+                if (elem == null) {
+                    noStack = true;
+                    break;
+                }
+                javaStack.data[i] = elem;
             }
-            $rt_setStack(ex, javaStack);
+            if (!noStack) {
+                $rt_setStack(ex, javaStack);
+            }
         }
     }
     return err;
