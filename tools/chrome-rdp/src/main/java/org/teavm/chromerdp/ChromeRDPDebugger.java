@@ -15,6 +15,8 @@
  */
 package org.teavm.chromerdp;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -29,8 +31,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.map.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.teavm.chromerdp.data.CallArgumentDTO;
@@ -149,7 +149,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                         future.completeExceptionally(e);
                     }
                 } else {
-                    Message message = mapper.reader(Message.class).readValue(messageText);
+                    Message message = mapper.readerFor(Message.class).readValue(messageText);
                     if (message.getMethod() == null) {
                         return;
                     }
@@ -404,7 +404,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
 
         CallFunctionResponse response = callMethod("Runtime.callFunctionOn", CallFunctionResponse.class, params);
         RemoteObjectDTO result = response != null ? response.getResult() : null;
-        return result.getValue() != null ? result.getValue().getTextValue() : null;
+        return result.getValue() != null ? result.getValue().textValue() : null;
     }
 
     String getRepresentation(String objectId) {
@@ -417,7 +417,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
 
         CallFunctionResponse response = callMethod("Runtime.callFunctionOn", CallFunctionResponse.class, params);
         RemoteObjectDTO result = response != null ? response.getResult() : null;
-        return result.getValue() != null ? result.getValue().getTextValue() : null;
+        return result.getValue() != null ? result.getValue().textValue() : null;
     }
 
     private List<RDPLocalVariable> parseProperties(PropertyDescriptorDTO[] properties) {
@@ -452,7 +452,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
     }
 
     private <T> T parseJson(Class<T> type, JsonNode node) throws IOException {
-        return mapper.reader(type).readValue(node);
+        return mapper.readerFor(type).readValue(node);
     }
 
     private void sendMessage(Message message) {
@@ -516,7 +516,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
             if (node == null) {
                 out.complete(null);
             } else {
-                R response = returnType != void.class ? mapper.reader(returnType).readValue(node) : null;
+                R response = returnType != void.class ? mapper.readerFor(returnType).readValue(node) : null;
                 out.complete(response);
             }
         });

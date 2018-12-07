@@ -182,8 +182,6 @@ class TeaVMBuild {
                 return "Discovering classes to compile";
             case LINKING:
                 return "Resolving method invocations";
-            case DECOMPILATION:
-                return "Compiling classes";
             case OPTIMIZATION:
                 return "Optimizing code";
             case RENDERING:

@@ -243,6 +243,7 @@ public class MissingItemsProcessor {
         public void visit(CastInstruction insn) {
             checkClass(insn.getLocation(), insn.getTargetType());
         }
+
         @Override
         public void visit(ClassConstantInstruction insn) {
             checkClass(insn.getLocation(), insn.getConstant());

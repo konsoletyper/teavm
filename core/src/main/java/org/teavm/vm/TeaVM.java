@@ -140,6 +140,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private AnnotationAwareCacheStatus cacheStatus;
     private ProgramDependencyExtractor programDependencyExtractor = new ProgramDependencyExtractor();
     private List<Predicate<MethodReference>> additionalVirtualMethods = new ArrayList<>();
+    private int lastKnownClasses;
 
     TeaVM(TeaVMBuilder builder) {
         target = builder.target;
@@ -336,6 +337,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         return writtenClasses;
     }
 
+    public void setLastKnownClasses(int lastKnownClasses) {
+        this.lastKnownClasses = lastKnownClasses;
+    }
+
     /**
      * <p>Does actual build. Call this method after TeaVM is fully configured and all entry points
      * are specified. This method may fail if there are items (classes, methods and fields)
@@ -351,13 +356,16 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         target.setController(targetController);
 
         // Check dependencies
-        reportPhase(TeaVMPhase.DEPENDENCY_ANALYSIS, 1);
+        reportPhase(TeaVMPhase.DEPENDENCY_ANALYSIS, lastKnownClasses > 0 ? lastKnownClasses : 1);
         if (wasCancelled()) {
             return;
         }
 
         dependencyAnalyzer.setAsyncSupported(target.isAsyncSupported());
-        dependencyAnalyzer.setInterruptor(() -> progressListener.progressReached(0) == TeaVMProgressFeedback.CONTINUE);
+        dependencyAnalyzer.setInterruptor(() -> {
+            int progress = lastKnownClasses > 0 ? dependencyAnalyzer.getReachableClasses().size() : 0;
+            return progressListener.progressReached(progress) == TeaVMProgressFeedback.CONTINUE;
+        });
         target.contributeDependencies(dependencyAnalyzer);
         dependencyAnalyzer.processDependencies();
         if (wasCancelled() || !diagnostics.getSevereProblems().isEmpty()) {
@@ -368,7 +376,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         cacheStatus.addSynthesizedClasses(dependencyAnalyzer::isSynthesizedClass);
 
         // Link
-        reportPhase(TeaVMPhase.LINKING, 1);
         if (wasCancelled()) {
             return;
         }
@@ -379,28 +386,36 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         // Optimize and allocate registers
-        reportPhase(TeaVMPhase.OPTIMIZATION, 1);
+        int maxOptimizationProgress = classSet.getClassNames().size();
+        if (optimizationLevel == TeaVMOptimizationLevel.ADVANCED) {
+            maxOptimizationProgress *= 2;
+        } else if (optimizationLevel == TeaVMOptimizationLevel.FULL) {
+            maxOptimizationProgress *= 3;
+        }
+        reportPhase(TeaVMPhase.OPTIMIZATION, maxOptimizationProgress);
 
+        int progress = 0;
         if (optimizationLevel != TeaVMOptimizationLevel.SIMPLE) {
-            devirtualize(classSet, dependencyAnalyzer);
+            progress = devirtualize(progress, classSet, dependencyAnalyzer);
             if (wasCancelled()) {
                 return;
             }
         }
 
         dependencyAnalyzer.cleanup();
-        inline(classSet, dependencyAnalyzer);
+        progress = inline(progress, classSet, dependencyAnalyzer);
         if (wasCancelled()) {
             return;
         }
 
-        optimize(classSet);
+        optimize(progress, classSet);
         if (wasCancelled()) {
             return;
         }
 
         // Render
         try {
+            reportPhase(TeaVMPhase.RENDERING, 1000);
             target.emit(classSet, buildTarget, outputName);
         } catch (IOException e) {
             throw new RuntimeException("Error generating output files", e);
@@ -442,28 +457,31 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
-    private void devirtualize(ListableClassHolderSource classes, DependencyInfo dependency) {
+    private int devirtualize(int progress, ListableClassHolderSource classes, DependencyInfo dependency) {
         if (wasCancelled()) {
-            return;
+            return progress;
         }
         Devirtualization devirtualization = new Devirtualization(dependency, classes);
+        int index = 0;
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
-            for (final MethodHolder method : cls.getMethods()) {
+            for (MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null) {
                     devirtualization.apply(method);
                 }
             }
+            progressListener.progressReached(++index);
             if (wasCancelled()) {
-                return;
+                break;
             }
         }
         virtualMethods = devirtualization.getVirtualMethods();
+        return progress;
     }
 
-    private void inline(ListableClassHolderSource classes, DependencyInfo dependencyInfo) {
+    private int inline(int progress, ListableClassHolderSource classes, DependencyInfo dependencyInfo) {
         if (optimizationLevel != TeaVMOptimizationLevel.FULL) {
-            return;
+            return progress;
         }
 
         Map<MethodReference, Program> inlinedPrograms = new HashMap<>();
@@ -479,8 +497,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     inlinedPrograms.put(method.getReference(), program);
                 }
             }
+            progressListener.progressReached(++progress);
             if (wasCancelled()) {
-                return;
+                break;
             }
         }
 
@@ -492,18 +511,22 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 }
             }
         }
+
+        return progress;
     }
 
-    private void optimize(ListableClassHolderSource classSource) {
+    private int optimize(int progress, ListableClassHolderSource classSource) {
         for (String className : classSource.getClassNames()) {
             ClassHolder cls = classSource.get(className);
             for (MethodHolder method : cls.getMethods()) {
                 processMethod(method, classSource);
             }
+            progressListener.progressReached(++progress);
             if (wasCancelled()) {
-                return;
+                break;
             }
         }
+        return progress;
     }
 
     private void processMethod(MethodHolder method, ListableClassReaderSource classSource) {
@@ -699,6 +722,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         @Override
         public boolean isVirtual(MethodReference method) {
             return virtualMethods == null || virtualMethods.contains(method);
+        }
+
+        @Override
+        public TeaVMProgressFeedback reportProgress(int progres) {
+            return progressListener.progressReached(progres);
         }
     };
 }

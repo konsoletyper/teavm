@@ -49,4 +49,6 @@ public interface TeaVMTargetController {
     Set<? extends String> getPreservedClasses();
 
     boolean isVirtual(MethodReference method);
+
+    TeaVMProgressFeedback reportProgress(int progress);
 }

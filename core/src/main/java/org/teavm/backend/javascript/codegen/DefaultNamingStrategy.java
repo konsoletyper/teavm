@@ -52,20 +52,20 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public String getFullNameFor(MethodReference method) throws NamingException {
+    public String getFullNameFor(MethodReference method) {
         return getFullNameFor(method, 'M');
     }
 
     @Override
-    public String getNameForInit(MethodReference method) throws NamingException {
+    public String getNameForInit(MethodReference method) {
         return getFullNameFor(method, 'I');
     }
 
-    private String getFullNameFor(MethodReference method, char classifier) throws NamingException {
+    private String getFullNameFor(MethodReference method, char classifier) {
         MethodReference originalMethod = method;
         method = getRealMethod(method);
         if (method == null) {
-            throw new NamingException("Can't provide name for method as it was not found: " + originalMethod);
+            method = originalMethod;
         }
 
         MethodReference resolvedMethod = method;
@@ -86,7 +86,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public String getFullNameFor(FieldReference field) throws NamingException {
+    public String getFullNameFor(FieldReference field) {
         String realCls = getRealFieldOwner(field.getClassName(), field.getFieldName());
         if (!realCls.equals(field.getClassName())) {
             String alias = getNameFor(new FieldReference(realCls, field.getFieldName()));
@@ -99,12 +99,12 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public String getNameForFunction(String name) throws NamingException {
+    public String getNameForFunction(String name) {
         return functionAliases.computeIfAbsent(name, key -> aliasProvider.getFunctionAlias(key));
     }
 
     @Override
-    public String getNameForClassInit(String className) throws NamingException {
+    public String getNameForClassInit(String className) {
         return classInitAliases.computeIfAbsent(className, key -> aliasProvider.getClassInitAlias(key));
     }
 
@@ -131,17 +131,16 @@ public class DefaultNamingStrategy implements NamingStrategy {
         String initialCls = cls;
         while (!fieldExists(cls, field)) {
             ClassReader clsHolder = classSource.get(cls);
-            cls = clsHolder.getParent();
-            if (cls == null) {
-                throw new NamingException("Can't provide name for field as the field not found: "
-                        + initialCls + "." + field);
+            if (clsHolder == null || clsHolder.getParent() == null) {
+                return initialCls;
             }
+            cls = clsHolder.getParent();
         }
         return cls;
     }
 
     private boolean fieldExists(String cls, String field) {
         ClassReader classHolder = classSource.get(cls);
-        return classHolder.getField(field) != null;
+        return classHolder != null && classHolder.getField(field) != null;
     }
 }

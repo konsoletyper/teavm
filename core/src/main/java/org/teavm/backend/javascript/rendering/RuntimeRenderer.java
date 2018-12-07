@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstRoot;
-import org.teavm.backend.javascript.codegen.NamingException;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.model.ClassReader;
@@ -73,8 +72,6 @@ public class RuntimeRenderer {
             renderRuntimeCreateException();
             renderCreateStackTraceElement();
             renderSetStackTrace();
-        } catch (NamingException e) {
-            throw new RenderingException("Error rendering runtime methods. See a cause for details", e);
         } catch (IOException e) {
             throw new RenderingException("IO error", e);
         }

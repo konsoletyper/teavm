@@ -648,7 +648,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         if (interrupted) {
             return;
         }
-        int index = 0;
         while (!deferredTasks.isEmpty() || !tasks.isEmpty() || !pendingTransitions.isEmpty()) {
             while (true) {
                 processNodeToNodeTransitionQueue();
@@ -658,12 +657,9 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                 while (!tasks.isEmpty()) {
                     tasks.remove().run();
                 }
-                if (++index == 100) {
-                    if (interruptor != null && !interruptor.shouldContinue()) {
-                        interrupted = true;
-                        break;
-                    }
-                    index = 0;
+                if (interruptor != null && !interruptor.shouldContinue()) {
+                    interrupted = true;
+                    return;
                 }
             }
 

@@ -324,6 +324,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, naming, sourceWriter);
         renderer.setProperties(controller.getProperties());
         renderer.setMinifying(minifying);
+        renderer.setProgressConsumer(controller::reportProgress);
         if (debugEmitter != null) {
             for (String className : classes.getClassNames()) {
                 ClassHolder cls = classes.get(className);
@@ -352,7 +353,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
             renderer.prepare(clsNodes);
             runtimeRenderer.renderRuntime();
-            renderer.render(clsNodes);
+            if (!renderer.render(clsNodes)) {
+                return;
+            }
             renderer.renderStringPool();
             renderer.renderStringConstants();
             renderer.renderCompatibilityStubs();

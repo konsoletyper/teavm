@@ -98,45 +98,43 @@ public class SourceWriter implements Appendable, LocationProvider {
         innerWriter.append(csq, start, end);
     }
 
-    public SourceWriter appendClass(String cls) throws NamingException, IOException {
+    public SourceWriter appendClass(String cls) throws IOException {
         return append(naming.getNameFor(cls));
     }
 
-    public SourceWriter appendClass(Class<?> cls) throws NamingException, IOException {
+    public SourceWriter appendClass(Class<?> cls) throws IOException {
         return append(naming.getNameFor(cls.getName()));
     }
 
-    public SourceWriter appendField(FieldReference field) throws NamingException, IOException {
+    public SourceWriter appendField(FieldReference field) throws IOException {
         return append(naming.getNameFor(field));
     }
 
-    public SourceWriter appendStaticField(FieldReference field) throws NamingException, IOException {
+    public SourceWriter appendStaticField(FieldReference field) throws IOException {
         return append(naming.getFullNameFor(field));
     }
 
-    public SourceWriter appendMethod(MethodDescriptor method) throws NamingException, IOException {
+    public SourceWriter appendMethod(MethodDescriptor method) throws IOException {
         return append(naming.getNameFor(method));
     }
 
-    public SourceWriter appendMethod(String name, Class<?>... params) throws NamingException, IOException {
+    public SourceWriter appendMethod(String name, Class<?>... params) throws IOException {
         return append(naming.getNameFor(new MethodDescriptor(name, params)));
     }
 
-    public SourceWriter appendMethodBody(MethodReference method) throws NamingException, IOException {
+    public SourceWriter appendMethodBody(MethodReference method) throws IOException {
         return append(naming.getFullNameFor(method));
     }
 
-    public SourceWriter appendMethodBody(String className, String name, ValueType... params)
-            throws NamingException, IOException {
+    public SourceWriter appendMethodBody(String className, String name, ValueType... params) throws IOException {
         return append(naming.getFullNameFor(new MethodReference(className, new MethodDescriptor(name, params))));
     }
 
-    public SourceWriter appendMethodBody(Class<?> cls, String name, Class<?>... params)
-            throws NamingException, IOException {
+    public SourceWriter appendMethodBody(Class<?> cls, String name, Class<?>... params) throws IOException {
         return append(naming.getFullNameFor(new MethodReference(cls, name, params)));
     }
 
-    public SourceWriter appendFunction(String name) throws NamingException, IOException {
+    public SourceWriter appendFunction(String name) throws IOException {
         return append(naming.getNameForFunction(name));
     }
 

@@ -66,7 +66,7 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
     <html4j.version>1.5</html4j.version>
-    <jetty.version>9.2.1.v20140609</jetty.version>
+    <jetty.version>9.4.14.v20181114</jetty.version>
     <slf4j.version>1.7.7</slf4j.version>
     <jackson.version>2.6.2</jackson.version>
     <idea.version>2017.3.5</idea.version>
@@ -93,6 +93,7 @@
     <module>tools/maven</module>
     <module>tools/chrome-rdp</module>
     <module>tools/junit</module>
+    <module>tools/devserver</module>
     <module>tests</module>
     <module>extras-slf4j</module>
     <module>metaprogramming/impl</module>

@@ -27,6 +27,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
@@ -37,7 +38,6 @@ import org.teavm.ast.MethodNodeVisitor;
 import org.teavm.ast.NativeMethodNode;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
-import org.teavm.backend.javascript.codegen.NamingException;
 import org.teavm.backend.javascript.codegen.NamingOrderer;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.SourceWriter;
@@ -57,6 +57,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.vm.RenderingException;
+import org.teavm.vm.TeaVMProgressFeedback;
 
 public class Renderer implements RenderingManager {
     private final NamingStrategy naming;
@@ -72,6 +73,7 @@ public class Renderer implements RenderingManager {
     private final Diagnostics diagnostics;
     private RenderingContext context;
     private List<PostponedFieldInitializer> postponedFieldInitializers = new ArrayList<>();
+    private IntFunction<TeaVMProgressFeedback> progressConsumer = p -> TeaVMProgressFeedback.CONTINUE;
 
     private ObjectIntMap<String> sizeByClass = new ObjectIntHashMap<>();
     private int stringPoolSize;
@@ -159,6 +161,10 @@ public class Renderer implements RenderingManager {
 
     public void setDebugEmitter(DebugInformationEmitter debugEmitter) {
         this.debugEmitter = debugEmitter;
+    }
+
+    public void setProgressConsumer(IntFunction<TeaVMProgressFeedback> progressConsumer) {
+        this.progressConsumer = progressConsumer;
     }
 
     public void setProperties(Properties properties) {
@@ -265,7 +271,7 @@ public class Renderer implements RenderingManager {
         }
     }
 
-    public void render(List<ClassNode> classes) throws RenderingException {
+    public boolean render(List<ClassNode> classes) throws RenderingException {
         if (minifying) {
             try {
                 renderRuntimeAliases();
@@ -273,13 +279,18 @@ public class Renderer implements RenderingManager {
                 throw new RenderingException(e);
             }
         }
+        int index = 0;
         for (ClassNode cls : classes) {
             int start = writer.getOffset();
             renderDeclaration(cls);
             renderMethodBodies(cls);
             appendClassSize(cls.getName(), writer.getOffset() - start);
+            if (progressConsumer.apply(1000 * ++index / classes.size()) == TeaVMProgressFeedback.CANCEL) {
+                return false;
+            }
         }
         renderClassMetadata(classes);
+        return true;
     }
 
     private void renderDeclaration(ClassNode cls) throws RenderingException {
@@ -337,8 +348,6 @@ public class Renderer implements RenderingManager {
                 writer.append("var ").appendStaticField(fieldRef).ws().append("=").ws()
                         .append(context.constantToString(value)).append(";").softNewLine();
             }
-        } catch (NamingException e) {
-            throw new RenderingException("Error rendering class " + cls.getName() + ". See cause for details", e);
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
         }
@@ -366,8 +375,6 @@ public class Renderer implements RenderingManager {
             for (MethodNode method : cls.getMethods()) {
                 renderBody(method);
             }
-        } catch (NamingException e) {
-            throw new RenderingException("Error rendering class " + cls.getName() + ". See a cause for details", e);
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
         }
@@ -508,8 +515,6 @@ public class Renderer implements RenderingManager {
                 renderVirtualDeclarations(virtualMethods);
             }
             writer.append("]);").newLine();
-        } catch (NamingException e) {
-            throw new RenderingException("Error rendering class metadata. See a cause for details", e);
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
         }
@@ -688,7 +693,7 @@ public class Renderer implements RenderingManager {
         return minifying ? RenderingUtil.indexToId(index) : "var_" + index;
     }
 
-    private void renderVirtualDeclarations(Collection<MethodReference> methods) throws NamingException, IOException {
+    private void renderVirtualDeclarations(Collection<MethodReference> methods) throws IOException {
         if (methods.stream().noneMatch(this::isVirtual)) {
             writer.append('0');
             return;

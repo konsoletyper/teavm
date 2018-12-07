@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,11 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.cli;
+package org.teavm.tooling;
 
-import org.teavm.tooling.TeaVMToolLog;
+public class ConsoleTeaVMToolLog implements TeaVMToolLog {
+    private boolean debug;
 
-class ConsoleTeaVMToolLog implements TeaVMToolLog {
+    public ConsoleTeaVMToolLog(boolean debug) {
+        this.debug = debug;
+    }
+
     @Override
     public void info(String text) {
         System.out.println("INFO: " + text);
@@ -25,7 +29,9 @@ class ConsoleTeaVMToolLog implements TeaVMToolLog {
 
     @Override
     public void debug(String text) {
-        System.out.println("DEBUG: " + text);
+        if (debug) {
+            System.out.println("DEBUG: " + text);
+        }
     }
 
     @Override
@@ -46,8 +52,10 @@ class ConsoleTeaVMToolLog implements TeaVMToolLog {
 
     @Override
     public void debug(String text, Throwable e) {
-        System.out.println("DEBUG: " + text);
-        e.printStackTrace(System.out);
+        if (debug) {
+            System.out.println("DEBUG: " + text);
+            e.printStackTrace(System.out);
+        }
     }
 
     @Override

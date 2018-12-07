@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,12 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.chromerdp;
+package org.teavm.devserver;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Consumer;
 import javax.websocket.Decoder;
 import javax.websocket.Encoder;
 import javax.websocket.Extension;
@@ -27,27 +29,59 @@ import javax.websocket.server.ServerEndpointConfig;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
+import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
+import org.teavm.tooling.ConsoleTeaVMToolLog;
+import org.teavm.tooling.TeaVMToolLog;
 
-public class ChromeRDPServer {
-    private int port = 2357;
-    private ChromeRDPExchangeConsumer exchangeConsumer;
+public class DevServer {
+    private String mainClass;
+    private String[] classPath;
+    private String pathToFile = "";
+    private String fileName = "classes.js";
+    private List<String> sourcePath = new ArrayList<>();
+    private boolean indicator;
+    private TeaVMToolLog log = new ConsoleTeaVMToolLog(false);
+
     private Server server;
+    private int port = 9090;
 
-    public int getPort() {
-        return port;
+    public void setMainClass(String mainClass) {
+        this.mainClass = mainClass;
+    }
+
+    public void setClassPath(String[] classPath) {
+        this.classPath = classPath;
     }
 
     public void setPort(int port) {
         this.port = port;
     }
 
-    public ChromeRDPExchangeConsumer getExchangeConsumer() {
-        return exchangeConsumer;
+    public void setPathToFile(String pathToFile) {
+        if (!pathToFile.startsWith("/")) {
+            pathToFile = "/" + pathToFile;
+        }
+        if (!pathToFile.endsWith("/")) {
+            pathToFile += "/";
+        }
+        this.pathToFile = pathToFile;
     }
 
-    public void setExchangeConsumer(ChromeRDPExchangeConsumer exchangeConsumer) {
-        this.exchangeConsumer = exchangeConsumer;
+    public void setLog(TeaVMToolLog log) {
+        this.log = log;
+    }
+
+    public void setFileName(String fileName) {
+        this.fileName = fileName;
+    }
+
+    public void setIndicator(boolean indicator) {
+        this.indicator = indicator;
+    }
+
+    public List<String> getSourcePath() {
+        return sourcePath;
     }
 
     public void start() {
@@ -59,10 +93,18 @@ public class ChromeRDPServer {
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         server.setHandler(context);
+        CodeServlet servlet = new CodeServlet(mainClass, classPath);
+        servlet.setFileName(fileName);
+        servlet.setPathToFile(pathToFile);
+        servlet.setLog(log);
+        servlet.getSourcePath().addAll(sourcePath);
+        servlet.setIndicator(indicator);
+        servlet.setPort(port);
+        context.addServlet(new ServletHolder(servlet), "/*");
 
         try {
             ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(context);
-            wscontainer.addEndpoint(new RPDEndpointConfig());
+            wscontainer.addEndpoint(new DevServerEndpointConfig(servlet::setWsEndpoint));
             server.start();
             server.join();
         } catch (Exception e) {
@@ -78,11 +120,11 @@ public class ChromeRDPServer {
         }
     }
 
-    private class RPDEndpointConfig implements ServerEndpointConfig {
+    private class DevServerEndpointConfig implements ServerEndpointConfig {
         private Map<String, Object> userProperties = new HashMap<>();
 
-        public RPDEndpointConfig() {
-            userProperties.put("chrome.rdp", exchangeConsumer);
+        public DevServerEndpointConfig(Consumer<CodeWsEndpoint> consumer) {
+            userProperties.put("ws.consumer", consumer);
         }
 
         @Override
@@ -107,7 +149,7 @@ public class ChromeRDPServer {
 
         @Override
         public Class<?> getEndpointClass() {
-            return ChromeRDPDebuggerEndpoint.class;
+            return CodeWsEndpoint.class;
         }
 
         @Override
@@ -117,7 +159,7 @@ public class ChromeRDPServer {
 
         @Override
         public String getPath() {
-            return "/";
+            return pathToFile + fileName + ".ws";
         }
 
         @Override
