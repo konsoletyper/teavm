@@ -194,11 +194,7 @@ public class MissingItemsProcessor {
         return true;
     }
 
-    private InstructionVisitor instructionProcessor = new InstructionVisitor() {
-        @Override
-        public void visit(NullCheckInstruction insn) {
-        }
-
+    private InstructionVisitor instructionProcessor = new AbstractInstructionVisitor() {
         @Override
         public void visit(InitClassInstruction insn) {
             checkClass(insn.getLocation(), insn.getClassName());
@@ -216,30 +212,6 @@ public class MissingItemsProcessor {
             } else {
                 checkVirtualMethod(insn.getLocation(), insn.getMethod());
             }
-        }
-
-        @Override
-        public void visit(InvokeDynamicInstruction insn) {
-        }
-
-        @Override
-        public void visit(PutElementInstruction insn) {
-        }
-
-        @Override
-        public void visit(GetElementInstruction insn) {
-        }
-
-        @Override
-        public void visit(UnwrapArrayInstruction insn) {
-        }
-
-        @Override
-        public void visit(CloneArrayInstruction insn) {
-        }
-
-        @Override
-        public void visit(ArrayLengthInstruction insn) {
         }
 
         @Override
@@ -268,93 +240,12 @@ public class MissingItemsProcessor {
         }
 
         @Override
-        public void visit(RaiseInstruction insn) {
-        }
-
-        @Override
-        public void visit(ExitInstruction insn) {
-        }
-
-        @Override
-        public void visit(SwitchInstruction insn) {
-        }
-
-        @Override
-        public void visit(JumpInstruction insn) {
-        }
-
-        @Override
-        public void visit(BinaryBranchingInstruction insn) {
-        }
-
-        @Override
-        public void visit(BranchingInstruction insn) {
-        }
-
-        @Override
-        public void visit(CastIntegerInstruction insn) {
-        }
-
-        @Override
-        public void visit(CastNumberInstruction insn) {
-        }
-
-        @Override
         public void visit(CastInstruction insn) {
             checkClass(insn.getLocation(), insn.getTargetType());
         }
-
-        @Override
-        public void visit(AssignInstruction insn) {
-        }
-
-        @Override
-        public void visit(NegateInstruction insn) {
-        }
-
-        @Override
-        public void visit(BinaryInstruction insn) {
-        }
-
-        @Override
-        public void visit(StringConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(DoubleConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(FloatConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(LongConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(IntegerConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(NullConstantInstruction insn) {
-        }
-
         @Override
         public void visit(ClassConstantInstruction insn) {
             checkClass(insn.getLocation(), insn.getConstant());
-        }
-
-        @Override
-        public void visit(EmptyInstruction insn) {
-        }
-
-        @Override
-        public void visit(MonitorEnterInstruction insn) {
-        }
-
-        @Override
-        public void visit(MonitorExitInstruction insn) {
         }
     };
 }

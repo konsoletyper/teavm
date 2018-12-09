@@ -436,6 +436,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         MethodDependency dep = getMethodDependency(className, descriptor);
 
         if (!dep.activated) {
+            reachedMethods.add(dep.getReference());
             dep.activated = true;
             if (!dep.isMissing()) {
                 for (DependencyListener listener : listeners) {
