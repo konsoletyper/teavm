@@ -71,7 +71,7 @@ class TypeSet {
 
     DependencyType[] getTypes() {
         if (this.types != null) {
-            DependencyType[] types = new DependencyType[typesCount];
+            DependencyType[] types = new DependencyType[this.types.cardinality()];
             int j = 0;
             for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
                 DependencyType type = dependencyAnalyzer.types.get(index);
