@@ -34,6 +34,7 @@ import org.teavm.ast.NativeMethodNode;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
+import org.teavm.ast.OperationType;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.RecursiveVisitor;
 import org.teavm.ast.RegularMethodNode;
@@ -199,6 +200,12 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         switch (expr.getOperation()) {
             case COMPARE:
                 consumer.consumeFunction("$rt_compare");
+                break;
+            case MULTIPLY:
+                if (expr.getType() == OperationType.INT && !RenderingUtil.isSmallInteger(expr.getFirstOperand())
+                        && !RenderingUtil.isSmallInteger(expr.getSecondOperand())) {
+                    consumer.consumeFunction("$rt_imul");
+                }
                 break;
             default:
                 break;

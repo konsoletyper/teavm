@@ -19,6 +19,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
+import org.teavm.ast.ConstantExpr;
+import org.teavm.ast.Expr;
 
 public final class RenderingUtil {
     public static final Set<String> KEYWORDS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("break", "case",
@@ -97,5 +99,19 @@ public final class RenderingUtil {
 
     public static String indexToId(int index) {
         return indexToId(index, VARIABLE_START_CHARS);
+    }
+
+    public static boolean isSmallInteger(Expr expr) {
+        if (!(expr instanceof ConstantExpr)) {
+            return false;
+        }
+
+        Object constant = ((ConstantExpr) expr).getValue();
+        if (!(constant instanceof Integer)) {
+            return false;
+        }
+
+        int value = (Integer) constant;
+        return Math.abs(value) < (1 << 18);
     }
 }

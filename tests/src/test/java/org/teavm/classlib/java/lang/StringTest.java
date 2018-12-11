@@ -282,7 +282,8 @@ public class StringTest {
 
     @Test
     public void interns() {
-        assertSame(("ab" + "c").intern(), ("a" + "bc").intern());
+        assertSame("xabc".substring(1).intern(), "abcx".substring(0, 3).intern());
+        assertSame("xabc".substring(1).intern(), "abc");
     }
 
     @Test

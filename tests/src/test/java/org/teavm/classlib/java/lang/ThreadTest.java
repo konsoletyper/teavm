@@ -32,7 +32,7 @@ public class ThreadTest {
         long start = System.currentTimeMillis();
         Thread.sleep(100);
         long duration = System.currentTimeMillis() - start;
-        assertTrue("Thread.sleed did not wait enogh", duration >= 100);
+        assertTrue("Thread.sleep did not wait enough", duration >= 100);
     }
 
     @Test

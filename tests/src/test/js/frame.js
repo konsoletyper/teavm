@@ -62,7 +62,7 @@ function launchTest(callback) {
         if (result instanceof Error) {
             callback({
                 status: "failed",
-                errorMessage: buildErrorMessage(e)
+                errorMessage: buildErrorMessage(result)
             });
         } else {
             callback({ status: "OK" });

@@ -694,8 +694,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     visitBinary(expr, "-", expr.getType() == OperationType.INT);
                     break;
                 case MULTIPLY:
-                    if (expr.getType() != OperationType.INT || isSmallInteger(expr.getFirstOperand())
-                            || isSmallInteger(expr.getSecondOperand())) {
+                    if (expr.getType() != OperationType.INT || RenderingUtil.isSmallInteger(expr.getFirstOperand())
+                            || RenderingUtil.isSmallInteger(expr.getSecondOperand())) {
                         visitBinary(expr, "*", expr.getType() == OperationType.INT);
                     } else {
                         visitBinaryFunction(expr, naming.getNameForFunction("$rt_imul"));
@@ -762,20 +762,6 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     break;
             }
         }
-    }
-
-    private static boolean isSmallInteger(Expr expr) {
-        if (!(expr instanceof ConstantExpr)) {
-            return false;
-        }
-
-        Object constant = ((ConstantExpr) expr).getValue();
-        if (!(constant instanceof Integer)) {
-            return false;
-        }
-
-        int value = (Integer) constant;
-        return Math.abs(value) < (1 << 18);
     }
 
     @Override

@@ -39,8 +39,7 @@ public class RuntimeRenderer {
 
     private static final MethodReference NPE_INIT_METHOD = new MethodReference(NullPointerException.class,
             "<init>", void.class);
-    private static final MethodDescriptor STRING_INTERN_METHOD = new MethodDescriptor("intern",
-            String.class, String.class);
+    private static final MethodDescriptor STRING_INTERN_METHOD = new MethodDescriptor("intern", String.class);
     private static final MethodDescriptor CURRENT_THREAD_METHOD = new MethodDescriptor("currentThread",
             Thread.class);
     private static final MethodReference STACK_TRACE_ELEM_INIT = new MethodReference(StackTraceElement.class,
@@ -154,7 +153,7 @@ public class RuntimeRenderer {
         writer.append("function $rt_intern(str) {").indent().softNewLine();
         ClassReader stringCls = classSource.get(STRING_CLASS);
         if (stringCls != null && stringCls.getMethod(STRING_INTERN_METHOD) != null) {
-            writer.append("return ").appendMethodBody(new MethodReference(String.class, "intern", String.class))
+            writer.append("return ").appendMethodBody(new MethodReference(STRING_CLASS, STRING_INTERN_METHOD))
                     .append("(str);").softNewLine();
         } else {
             writer.append("return str;").softNewLine();
