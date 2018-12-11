@@ -15,6 +15,7 @@
  */
 (function () {
     var boot = BOOT_FLAG;
+    var reload = RELOAD_FLAG;
 
     function createWebSocket() {
         var loc = window.location;
@@ -90,7 +91,7 @@
             timer: void 0,
 
             show: function(text, timeout) {
-                this.container.style.display = "";
+                this.container.style.display = "block";
                 this.label.innerText = text;
                 if (this.timer) {
                     clearTimeout(this.timer);
@@ -111,14 +112,27 @@
 
             hideProgress() {
                 this.progress.container.style.display = "none";
-            }
+            },
         };
     }
 
     var indicator = createIndicator();
-    window.addEventListener("load", function() {
+    function onLoad() {
         document.body.appendChild(indicator.container);
-    });
+    }
+
+    if (document.body) {
+        onLoad();
+    } else {
+        window.addEventListener("load", onLoad);
+    }
+
+    function startMain() {
+        ws.close();
+        window.removeEventListener("load", onLoad);
+        document.body.removeChild(indicator.container);
+        main();
+    }
 
     var ws = createWebSocket();
     ws.onmessage = function(event) {
@@ -131,12 +145,12 @@
             case "complete":
                 if (message.success) {
                     indicator.show("Compilation complete", 10);
-                    if (boot) {
+                    if (reload) {
+                        window.location.reload(true);
+                    } else if (boot) {
                         var scriptElem = document.createElement("script");
                         scriptElem.src = "FILE_NAME";
-                        scriptElem.onload = function() {
-                            main();
-                        };
+                        scriptElem.onload = startMain;
                         document.head.appendChild(scriptElem);
                     }
                 } else {

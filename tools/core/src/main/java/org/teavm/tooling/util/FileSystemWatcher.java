@@ -159,6 +159,9 @@ public class FileSystemWatcher {
             return Collections.emptyList();
         }
         Path basePath = keysToPath.get(baseKey);
+        if (basePath == null) {
+            return Collections.emptyList();
+        }
         Path path = basePath.resolve((Path) event.context());
         WatchKey key = pathsToKey.get(path);
 

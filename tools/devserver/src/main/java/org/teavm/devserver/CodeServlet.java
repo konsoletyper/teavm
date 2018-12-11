@@ -75,6 +75,7 @@ public class CodeServlet extends HttpServlet {
     private List<String> sourcePath = new ArrayList<>();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private boolean indicator;
+    private boolean automaticallyReloaded;
     private int port;
 
     private Map<String, Supplier<InputStream>> sourceFileCache = new HashMap<>();
@@ -130,6 +131,10 @@ public class CodeServlet extends HttpServlet {
 
     public void setWsEndpoint(CodeWsEndpoint wsEndpoint) {
         this.wsEndpoint = wsEndpoint;
+    }
+
+    public void setAutomaticallyReloaded(boolean automaticallyReloaded) {
+        this.automaticallyReloaded = automaticallyReloaded;
     }
 
     @Override
@@ -353,6 +358,9 @@ public class CodeServlet extends HttpServlet {
         log.info("Starting build");
         progressListener.last = 0;
         progressListener.lastTime = System.currentTimeMillis();
+        if (wsEndpoint != null) {
+            wsEndpoint.progress(0);
+        }
         vm.build(buildTarget, fileName);
         addIndicator();
         generateDebug(debugInformationBuilder);
@@ -381,6 +389,7 @@ public class CodeServlet extends HttpServlet {
             script = script.substring(script.indexOf("*/") + 2);
             script = script.replace("WS_PATH", "localhost:" + port + pathToFile + fileName + ".ws");
             script = script.replace("BOOT_FLAG", Boolean.toString(boot));
+            script = script.replace("RELOAD_FLAG", Boolean.toString(automaticallyReloaded));
             script = script.replace("FILE_NAME", "http://localhost:" + port + pathToFile + fileName);
             return script;
         } catch (IOException e) {
@@ -510,7 +519,7 @@ public class CodeServlet extends HttpServlet {
             switch (phase) {
                 case DEPENDENCY_ANALYSIS:
                     start = 0;
-                    end = 500;
+                    end = 400;
                     break;
                 case LINKING:
                     start = 400;

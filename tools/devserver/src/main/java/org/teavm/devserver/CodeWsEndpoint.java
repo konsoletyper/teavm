@@ -23,6 +23,8 @@ import javax.websocket.server.ServerEndpoint;
 @ServerEndpoint("/")
 public class CodeWsEndpoint {
     private Session session;
+    private boolean compiling;
+    private double progress;
 
     @OnOpen
     public void open(Session session) {
@@ -32,13 +34,27 @@ public class CodeWsEndpoint {
         if (consumer != null) {
             consumer.accept(this);
         }
+        if (compiling) {
+            sendProgress(progress);
+        }
     }
 
     public void progress(double value) {
-        session.getAsyncRemote().sendText("{ \"command\": \"compiling\", \"progress\": " + value + " }");
+        if (session != null) {
+            sendProgress(value);
+        }
+        compiling = true;
+        progress = value;
     }
 
     public void complete(boolean success) {
-        session.getAsyncRemote().sendText("{ \"command\": \"complete\", \"success\": " + success + " }");
+        if (session != null) {
+            session.getAsyncRemote().sendText("{ \"command\": \"complete\", \"success\": " + success + " }");
+        }
+        compiling = false;
+    }
+
+    private void sendProgress(double value) {
+        session.getAsyncRemote().sendText("{ \"command\": \"compiling\", \"progress\": " + value + " }");
     }
 }

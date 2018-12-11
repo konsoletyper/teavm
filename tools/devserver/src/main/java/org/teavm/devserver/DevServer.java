@@ -37,10 +37,11 @@ import org.teavm.tooling.TeaVMToolLog;
 public class DevServer {
     private String mainClass;
     private String[] classPath;
-    private String pathToFile = "";
+    private String pathToFile = "/";
     private String fileName = "classes.js";
     private List<String> sourcePath = new ArrayList<>();
     private boolean indicator;
+    private boolean reloadedAutomatically;
     private TeaVMToolLog log = new ConsoleTeaVMToolLog(false);
 
     private Server server;
@@ -80,6 +81,10 @@ public class DevServer {
         this.indicator = indicator;
     }
 
+    public void setReloadedAutomatically(boolean reloadedAutomatically) {
+        this.reloadedAutomatically = reloadedAutomatically;
+    }
+
     public List<String> getSourcePath() {
         return sourcePath;
     }
@@ -99,6 +104,7 @@ public class DevServer {
         servlet.setLog(log);
         servlet.getSourcePath().addAll(sourcePath);
         servlet.setIndicator(indicator);
+        servlet.setAutomaticallyReloaded(reloadedAutomatically);
         servlet.setPort(port);
         context.addServlet(new ServletHolder(servlet), "/*");
 

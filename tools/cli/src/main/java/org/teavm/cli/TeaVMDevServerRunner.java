@@ -52,7 +52,7 @@ public final class TeaVMDevServerRunner {
                 .create('f'));
         options.addOption(OptionBuilder
                 .withArgName("classpath")
-                .hasArg()
+                .hasArgs()
                 .withDescription("classpath element (either directory or jar file)")
                 .withLongOpt("classpath")
                 .create('p'));
@@ -66,10 +66,16 @@ public final class TeaVMDevServerRunner {
                 .withArgName("number")
                 .hasArg()
                 .withDescription("port (default is 9090)")
-                .create("port"));
+                .withLongOpt("port")
+                .create());
         options.addOption(OptionBuilder
                 .withDescription("display indicator on web page")
-                .create("indicator"));
+                .withLongOpt("indicator")
+                .create());
+        options.addOption(OptionBuilder
+                .withDescription("automatically reload page when compilation completes")
+                .withLongOpt("auto-reload")
+                .create());
         options.addOption(OptionBuilder
                 .withDescription("display more messages on server log")
                 .withLongOpt("verbose")
@@ -107,6 +113,7 @@ public final class TeaVMDevServerRunner {
         parseOutputOptions();
 
         devServer.setIndicator(commandLine.hasOption("indicator"));
+        devServer.setReloadedAutomatically(commandLine.hasOption("auto-reload"));
         if (commandLine.hasOption("port")) {
             try {
                 devServer.setPort(Integer.parseInt(commandLine.getOptionValue("port")));
