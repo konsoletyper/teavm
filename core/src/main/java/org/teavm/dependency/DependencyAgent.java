@@ -88,7 +88,6 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
         return analyzer.getClassLoader();
     }
 
-    @Override
     public ClassHierarchy getClassHierarchy() {
         return analyzer.getClassHierarchy();
     }

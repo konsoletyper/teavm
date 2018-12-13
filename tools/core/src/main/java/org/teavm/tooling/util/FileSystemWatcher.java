@@ -43,6 +43,7 @@ public class FileSystemWatcher {
     private WatchService watchService;
     private Map<WatchKey, Path> keysToPath = new HashMap<>();
     private Map<Path, WatchKey> pathsToKey = new HashMap<>();
+    private Map<Path, Integer> refCount = new HashMap<>();
     private Set<File> changedFiles = new LinkedHashSet<>();
 
     public FileSystemWatcher(String[] classPath) throws IOException {
@@ -51,9 +52,7 @@ public class FileSystemWatcher {
             Path path = Paths.get(entry);
             File file = path.toFile();
             if (file.exists()) {
-                if (!file.isDirectory()) {
-                    registerSingle(path.getParent());
-                } else {
+                if (file.isDirectory()) {
                     register(path);
                 }
             }
@@ -74,6 +73,13 @@ public class FileSystemWatcher {
                         .collect(Collectors.toList()));
                 return FileVisitResult.CONTINUE;
             }
+
+            @Override
+            public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
+                Path parent = file.getParent();
+                refCount.put(parent, refCount.getOrDefault(parent, 0) + 1);
+                return FileVisitResult.CONTINUE;
+            }
         });
         return files;
     }
@@ -83,6 +89,9 @@ public class FileSystemWatcher {
                 StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY);
         keysToPath.put(key, path);
         pathsToKey.put(path, key);
+        refCount.put(path, refCount.getOrDefault(path, 0) + 1);
+        Path parent = path.getParent();
+        refCount.put(parent, refCount.getOrDefault(parent, 0) + 1);
     }
 
     public boolean hasChanges() throws IOException {
@@ -159,9 +168,6 @@ public class FileSystemWatcher {
             return Collections.emptyList();
         }
         Path basePath = keysToPath.get(baseKey);
-        if (basePath == null) {
-            return Collections.emptyList();
-        }
         Path path = basePath.resolve((Path) event.context());
         WatchKey key = pathsToKey.get(path);
 
@@ -170,9 +176,8 @@ public class FileSystemWatcher {
 
         if (event.kind() == StandardWatchEventKinds.ENTRY_DELETE) {
             if (key != null) {
-                pathsToKey.remove(path);
-                keysToPath.remove(key);
                 key.cancel();
+                releasePath(path);
             }
         } else if (event.kind() == StandardWatchEventKinds.ENTRY_CREATE) {
             if (Files.isDirectory(path)) {
@@ -180,5 +185,19 @@ public class FileSystemWatcher {
             }
         }
         return result;
+    }
+
+    private void releasePath(Path path) {
+        refCount.put(path, refCount.getOrDefault(path, 0) - 1);
+        while (refCount.getOrDefault(path, 0) <= 0) {
+            WatchKey key = pathsToKey.get(path);
+            if (key == null) {
+                break;
+            }
+            pathsToKey.remove(path);
+            keysToPath.remove(key);
+            path = path.getParent();
+            refCount.put(path, refCount.getOrDefault(path, 0) - 1);
+        }
     }
 }

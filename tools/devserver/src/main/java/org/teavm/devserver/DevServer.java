@@ -20,7 +20,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.function.Consumer;
 import javax.websocket.Decoder;
 import javax.websocket.Encoder;
 import javax.websocket.Extension;
@@ -42,7 +41,8 @@ public class DevServer {
     private List<String> sourcePath = new ArrayList<>();
     private boolean indicator;
     private boolean reloadedAutomatically;
-    private TeaVMToolLog log = new ConsoleTeaVMToolLog(false);
+    private boolean verbose;
+    private TeaVMToolLog log;
 
     private Server server;
     private int port = 9090;
@@ -85,11 +85,16 @@ public class DevServer {
         this.reloadedAutomatically = reloadedAutomatically;
     }
 
+    public void setVerbose(boolean verbose) {
+        this.verbose = verbose;
+    }
+
     public List<String> getSourcePath() {
         return sourcePath;
     }
 
     public void start() {
+        log = new ConsoleTeaVMToolLog(verbose);
         server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(port);
@@ -110,7 +115,7 @@ public class DevServer {
 
         try {
             ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(context);
-            wscontainer.addEndpoint(new DevServerEndpointConfig(servlet::setWsEndpoint));
+            wscontainer.addEndpoint(new DevServerEndpointConfig(servlet));
             server.start();
             server.join();
         } catch (Exception e) {
@@ -129,8 +134,8 @@ public class DevServer {
     private class DevServerEndpointConfig implements ServerEndpointConfig {
         private Map<String, Object> userProperties = new HashMap<>();
 
-        public DevServerEndpointConfig(Consumer<CodeWsEndpoint> consumer) {
-            userProperties.put("ws.consumer", consumer);
+        public DevServerEndpointConfig(CodeServlet servlet) {
+            userProperties.put("teavm.servlet", servlet);
         }
 
         @Override

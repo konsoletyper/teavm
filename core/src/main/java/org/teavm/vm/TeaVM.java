@@ -47,6 +47,7 @@ import org.teavm.dependency.MethodDependency;
 import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.diagnostics.ProblemProvider;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
@@ -372,7 +373,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
-        cacheStatus = new AnnotationAwareCacheStatus(rawCacheStatus, dependencyAnalyzer.getIncrementalDependencies());
+        cacheStatus = new AnnotationAwareCacheStatus(rawCacheStatus, dependencyAnalyzer.getIncrementalDependencies(),
+                dependencyAnalyzer.getClassSource());
         cacheStatus.addSynthesizedClasses(dependencyAnalyzer::isSynthesizedClass);
 
         // Link
@@ -423,11 +425,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     @SuppressWarnings("WeakerAccess")
-    public ListableClassHolderSource link(DependencyInfo dependency) {
+    public ListableClassHolderSource link(DependencyAnalyzer dependency) {
         reportPhase(TeaVMPhase.LINKING, dependency.getReachableClasses().size());
         Linker linker = new Linker();
         MutableClassHolderSource cutClasses = new MutableClassHolderSource();
-        MissingItemsProcessor missingItemsProcessor = new MissingItemsProcessor(dependency, diagnostics);
+        MissingItemsProcessor missingItemsProcessor = new MissingItemsProcessor(dependency,
+                dependency.getClassHierarchy(), diagnostics);
         if (wasCancelled()) {
             return cutClasses;
         }
@@ -446,13 +449,22 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             cutClasses.putClassHolder(cls);
             missingItemsProcessor.processClass(cls);
             linker.link(dependency, cls);
-            progressListener.progressReached(++index);
+            reportProgress(++index);
+            if (wasCancelled()) {
+                break;
+            }
         }
         return cutClasses;
     }
 
     private void reportPhase(TeaVMPhase phase, int progressLimit) {
         if (progressListener.phaseStarted(phase, progressLimit) == TeaVMProgressFeedback.CANCEL) {
+            cancelled = true;
+        }
+    }
+
+    private void reportProgress(int progress) {
+        if (progressListener.progressReached(progress) == TeaVMProgressFeedback.CANCEL) {
             cancelled = true;
         }
     }
@@ -470,7 +482,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     devirtualization.apply(method);
                 }
             }
-            progressListener.progressReached(++index);
+            reportProgress(++index);
             if (wasCancelled()) {
                 break;
             }
@@ -485,19 +497,19 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         Map<MethodReference, Program> inlinedPrograms = new HashMap<>();
-        Inlining inlining = new Inlining();
+        Inlining inlining = new Inlining(new ClassHierarchy(classes), dependencyInfo);
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
             for (MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null) {
                     Program program = ProgramUtils.copy(method.getProgram());
                     MethodOptimizationContextImpl context = new MethodOptimizationContextImpl(method, classes);
-                    inlining.apply(program, method.getReference(), classes, dependencyInfo);
+                    inlining.apply(program, method.getReference());
                     new UnusedVariableElimination().optimize(context, program);
                     inlinedPrograms.put(method.getReference(), program);
                 }
             }
-            progressListener.progressReached(++progress);
+            reportProgress(++progress);
             if (wasCancelled()) {
                 break;
             }
@@ -521,7 +533,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             for (MethodHolder method : cls.getMethods()) {
                 processMethod(method, classSource);
             }
-            progressListener.progressReached(++progress);
+            reportProgress(++progress);
             if (wasCancelled()) {
                 break;
             }

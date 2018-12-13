@@ -20,6 +20,8 @@ import com.carrotsearch.hppc.ObjectByteMap;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Predicate;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 
 public final class AnnotationAwareCacheStatus implements CacheStatus {
@@ -32,10 +34,13 @@ public final class AnnotationAwareCacheStatus implements CacheStatus {
     private IncrementalDependencyProvider dependencyProvider;
     private List<Predicate<String>> synthesizedClasses = new ArrayList<>();
     private ObjectByteMap<String> classStatusCache = new ObjectByteHashMap<>();
+    private ClassReaderSource classSource;
 
-    public AnnotationAwareCacheStatus(CacheStatus underlyingStatus, IncrementalDependencyProvider dependencyProvider) {
+    public AnnotationAwareCacheStatus(CacheStatus underlyingStatus, IncrementalDependencyProvider dependencyProvider,
+            ClassReaderSource classSource) {
         this.underlyingStatus = underlyingStatus;
         this.dependencyProvider = dependencyProvider;
+        this.classSource = classSource;
     }
 
     public void addSynthesizedClasses(Predicate<String> synthesizedClasses) {
@@ -70,6 +75,18 @@ public final class AnnotationAwareCacheStatus implements CacheStatus {
 
         if (hasStaleDependencies(dependencyProvider.getDependencies(className))) {
             return STALE;
+        }
+
+        ClassReader cls = classSource.get(className);
+        if (cls != null) {
+            if (cls.getParent() != null && getClassStatus(cls.getParent()) == STALE) {
+                return STALE;
+            }
+            for (String itf : cls.getInterfaces()) {
+                if (getClassStatus(cls.getParent()) == STALE) {
+                    return STALE;
+                }
+            }
         }
 
         return FRESH;

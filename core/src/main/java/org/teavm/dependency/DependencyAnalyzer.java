@@ -214,7 +214,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         return classSource.isGeneratedClass(className);
     }
 
-    @Override
     public ClassHierarchy getClassHierarchy() {
         return classHierarchy;
     }

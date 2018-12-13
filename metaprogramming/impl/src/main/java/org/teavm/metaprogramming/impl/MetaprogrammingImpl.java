@@ -36,6 +36,7 @@ import org.teavm.metaprogramming.reflect.ReflectMethod;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -63,6 +64,7 @@ public final class MetaprogrammingImpl {
     static Map<String, Integer> proxySuffixGenerators = new HashMap<>();
     static ClassLoader classLoader;
     static ClassReaderSource classSource;
+    static ClassHierarchy hierarchy;
     static IncrementalDependencyRegistration incrementaDependencies;
     static ReflectContext reflectContext;
     static DependencyAgent agent;
@@ -87,7 +89,7 @@ public final class MetaprogrammingImpl {
             return var != null ? new ValueImpl<>(var, varContext, valueImpl.type) : null;
         } else {
             Fragment fragment = (Fragment) computation;
-            MethodReader method = classSource.resolve(fragment.method);
+            MethodReader method = hierarchy.resolve(fragment.method);
             generator.addProgram(method.getProgram(), fragment.capturedValues);
             return new ValueImpl<>(generator.getResultVar(), varContext, fragment.method.getReturnType());
         }
@@ -95,7 +97,7 @@ public final class MetaprogrammingImpl {
 
     public static void emit(Action action) {
         Fragment fragment = (Fragment) action;
-        MethodReader method = classSource.resolve(fragment.method);
+        MethodReader method = hierarchy.resolve(fragment.method);
         generator.addProgram(method.getProgram(), fragment.capturedValues);
     }
 
@@ -121,7 +123,7 @@ public final class MetaprogrammingImpl {
 
         if (value instanceof Fragment) {
             Fragment fragment = (Fragment) value;
-            MethodReader method = classSource.resolve(fragment.method);
+            MethodReader method = hierarchy.resolve(fragment.method);
             generator.addProgram(method.getProgram(), fragment.capturedValues);
             generator.blockIndex = generator.returnBlockIndex;
 

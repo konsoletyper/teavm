@@ -18,21 +18,26 @@ package org.teavm.ast;
 import java.util.EnumSet;
 import java.util.Set;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReference;
 import org.teavm.model.ValueType;
 
 public class FieldNode {
-    private String name;
+    private FieldReference reference;
     private ValueType type;
     private Set<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
     private Object initialValue;
 
-    public FieldNode(String name, ValueType type) {
-        this.name = name;
+    public FieldNode(FieldReference reference, ValueType type) {
+        this.reference = reference;
         this.type = type;
     }
 
+    public FieldReference getReference() {
+        return reference;
+    }
+
     public String getName() {
-        return name;
+        return reference.getFieldName();
     }
 
     public Set<ElementModifier> getModifiers() {

@@ -70,7 +70,7 @@ public class PlatformMarkerSupport implements ClassHolderTransformer {
                 MarkerKind kind;
                 if (instruction instanceof InvokeInstruction) {
                     MethodReference methodRef = ((InvokeInstruction) instruction).getMethod();
-                    MethodReader method = hierarchy.getClassSource().resolveImplementation(methodRef);
+                    MethodReader method = hierarchy.resolve(methodRef);
                     if (method == null) {
                         continue;
                     }
@@ -94,7 +94,7 @@ public class PlatformMarkerSupport implements ClassHolderTransformer {
                     receiver = ((InvokeInstruction) instruction).getReceiver();
                 } else if (instruction instanceof GetFieldInstruction) {
                     FieldReference fieldRef = ((GetFieldInstruction) instruction).getField();
-                    FieldReader field = hierarchy.getClassSource().resolve(fieldRef);
+                    FieldReader field = hierarchy.resolve(fieldRef);
                     if (field == null) {
                         continue;
                     }

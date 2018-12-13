@@ -19,11 +19,14 @@ import com.carrotsearch.hppc.ObjectByteHashMap;
 import com.carrotsearch.hppc.ObjectByteMap;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Optional;
 import org.teavm.common.OptionalPredicate;
 
 public class ClassHierarchy {
     private final ClassReaderSource classSource;
     private final Map<String, OptionalPredicate<String>> superclassPredicateCache = new HashMap<>();
+    private final Map<String, Map<MethodDescriptor, Optional<MethodReader>>> resolveMethodCache = new HashMap<>();
+    private final Map<String, Map<String, Optional<FieldReader>>> resolveFieldCache = new HashMap<>();
 
     public ClassHierarchy(ClassReaderSource classSource) {
         this.classSource = classSource;
@@ -60,6 +63,67 @@ public class ClassHierarchy {
             return true;
         }
         return getSuperclassPredicate(superType).test(subType, defaultValue);
+    }
+
+    public MethodReader resolve(MethodReference method) {
+        return resolve(method.getClassName(), method.getDescriptor());
+    }
+
+    public MethodReader resolve(String className, MethodDescriptor method) {
+        Map<MethodDescriptor, Optional<MethodReader>> cache = resolveMethodCache.computeIfAbsent(className,
+                k -> new HashMap<>());
+        Optional<MethodReader> opt = cache.get(method);
+        if (opt == null) {
+            MethodReader reader = null;
+            ClassReader cls = classSource.get(className);
+            if (cls != null) {
+                reader = cls.getMethod(method);
+                if (reader == null && cls.getParent() != null) {
+                    reader = resolve(cls.getParent(), method);
+                }
+                if (reader == null) {
+                    for (String itf : cls.getInterfaces()) {
+                        reader = resolve(itf, method);
+                        if (reader != null) {
+                            break;
+                        }
+                    }
+                }
+            }
+            opt = Optional.ofNullable(reader);
+            cache.put(method, opt);
+        }
+        return opt.orElse(null);
+    }
+
+    public FieldReader resolve(FieldReference field) {
+        return resolve(field.getClassName(), field.getFieldName());
+    }
+
+    public FieldReader resolve(String className, String fieldName) {
+        Map<String, Optional<FieldReader>> cache = resolveFieldCache.computeIfAbsent(className,
+                k -> new HashMap<>());
+        Optional<FieldReader> opt = cache.get(fieldName);
+        if (opt == null) {
+            FieldReader reader = null;
+            ClassReader cls = classSource.get(className);
+            if (cls != null) {
+                if (cls.getParent() != null) {
+                    reader = resolve(cls.getParent(), fieldName);
+                }
+                if (reader == null) {
+                    for (String itf : cls.getInterfaces()) {
+                        reader = resolve(itf, fieldName);
+                        if (reader != null) {
+                            break;
+                        }
+                    }
+                }
+            }
+            opt = Optional.ofNullable(reader);
+            cache.put(fieldName, opt);
+        }
+        return opt.orElse(null);
     }
 
     public OptionalPredicate<String> getSuperclassPredicate(String superclass) {

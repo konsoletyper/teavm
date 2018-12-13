@@ -25,7 +25,9 @@ import org.teavm.model.MethodReference;
 
 public class InMemoryMethodNodeCache implements MethodNodeCache {
     private Map<MethodReference, RegularItem> cache = new HashMap<>();
+    private Map<MethodReference, RegularItem> newItems = new HashMap<>();
     private Map<MethodReference, AsyncItem> asyncCache = new HashMap<>();
+    private Map<MethodReference, AsyncItem> newAsyncItems = new HashMap<>();
 
     @Override
     public RegularMethodNode get(MethodReference methodReference, CacheStatus cacheStatus) {
@@ -43,7 +45,7 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
 
     @Override
     public void store(MethodReference methodReference, RegularMethodNode node, Supplier<String[]> dependencies) {
-        cache.put(methodReference, new RegularItem(node, dependencies.get().clone()));
+        newItems.put(methodReference, new RegularItem(node, dependencies.get().clone()));
     }
 
     @Override
@@ -62,7 +64,19 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
 
     @Override
     public void storeAsync(MethodReference methodReference, AsyncMethodNode node, Supplier<String[]> dependencies) {
-        asyncCache.put(methodReference, new AsyncItem(node, dependencies.get().clone()));
+        newAsyncItems.put(methodReference, new AsyncItem(node, dependencies.get().clone()));
+    }
+
+    public void commit() {
+        cache.putAll(newItems);
+        asyncCache.putAll(newAsyncItems);
+        newItems.clear();
+        newAsyncItems.clear();
+    }
+
+    public void discard() {
+        newItems.clear();
+        newAsyncItems.clear();
     }
 
     static final class RegularItem {

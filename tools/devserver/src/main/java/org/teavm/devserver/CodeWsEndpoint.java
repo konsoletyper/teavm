@@ -15,7 +15,7 @@
  */
 package org.teavm.devserver;
 
-import java.util.function.Consumer;
+import javax.websocket.OnClose;
 import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
@@ -23,38 +23,35 @@ import javax.websocket.server.ServerEndpoint;
 @ServerEndpoint("/")
 public class CodeWsEndpoint {
     private Session session;
-    private boolean compiling;
-    private double progress;
+    private CodeServlet servlet;
 
     @OnOpen
     public void open(Session session) {
         this.session = session;
-        @SuppressWarnings("unchecked")
-        Consumer<CodeWsEndpoint> consumer = (Consumer<CodeWsEndpoint>) session.getUserProperties().get("ws.consumer");
-        if (consumer != null) {
-            consumer.accept(this);
+        servlet = (CodeServlet) session.getUserProperties().get("teavm.servlet");
+        if (servlet != null) {
+            servlet.addWsEndpoint(this);
         }
-        if (compiling) {
-            sendProgress(progress);
+    }
+
+    @OnClose
+    public void close() {
+        if (servlet != null) {
+            servlet.removeWsEndpoint(this);
         }
+        servlet = null;
+        session = null;
     }
 
     public void progress(double value) {
         if (session != null) {
-            sendProgress(value);
+            session.getAsyncRemote().sendText("{ \"command\": \"compiling\", \"progress\": " + value + " }");
         }
-        compiling = true;
-        progress = value;
     }
 
     public void complete(boolean success) {
         if (session != null) {
             session.getAsyncRemote().sendText("{ \"command\": \"complete\", \"success\": " + success + " }");
         }
-        compiling = false;
-    }
-
-    private void sendProgress(double value) {
-        session.getAsyncRemote().sendText("{ \"command\": \"compiling\", \"progress\": " + value + " }");
     }
 }

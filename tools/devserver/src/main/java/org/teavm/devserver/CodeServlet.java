@@ -32,8 +32,10 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -92,7 +94,10 @@ public class CodeServlet extends HttpServlet {
     private final Map<String, byte[]> content = new HashMap<>();
     private MemoryBuildTarget buildTarget = new MemoryBuildTarget();
 
-    private CodeWsEndpoint wsEndpoint;
+    private final Set<CodeWsEndpoint> wsEndpoints = new LinkedHashSet<>();
+    private final Object statusLock = new Object();
+    private boolean compiling;
+    private double progress;
 
     public CodeServlet(String mainClass, String[] classPath) {
         this.mainClass = mainClass;
@@ -129,12 +134,30 @@ public class CodeServlet extends HttpServlet {
         this.port = port;
     }
 
-    public void setWsEndpoint(CodeWsEndpoint wsEndpoint) {
-        this.wsEndpoint = wsEndpoint;
-    }
-
     public void setAutomaticallyReloaded(boolean automaticallyReloaded) {
         this.automaticallyReloaded = automaticallyReloaded;
+    }
+
+    public void addWsEndpoint(CodeWsEndpoint endpoint) {
+        synchronized (wsEndpoints) {
+            wsEndpoints.add(endpoint);
+        }
+
+        double progress;
+        synchronized (statusLock) {
+            if (!compiling) {
+                return;
+            }
+            progress = this.progress;
+        }
+
+        endpoint.progress(progress);
+    }
+
+    public void removeWsEndpoint(CodeWsEndpoint endpoint) {
+        synchronized (wsEndpoints) {
+            wsEndpoints.remove(endpoint);
+        }
     }
 
     @Override
@@ -289,8 +312,17 @@ public class CodeServlet extends HttpServlet {
                     break;
                 }
                 log.info("Changes detected. Recompiling.");
+
                 List<String> staleClasses = getChangedClasses(watcher.grabChangedFiles());
-                log.debug("Following classes changed: " + staleClasses);
+                if (staleClasses.size() > 15) {
+                    List<String> displayedStaleClasses = staleClasses.subList(0, 10);
+                    log.debug("Following classes changed (" + staleClasses.size() + "): "
+                            + String.join(", ", displayedStaleClasses) + " and more...");
+                } else {
+                    log.debug("Following classes changed (" + staleClasses.size() + "): "
+                            + String.join(", ", staleClasses));
+                }
+
                 classSource.evict(staleClasses);
             }
         } catch (Throwable e) {
@@ -358,9 +390,7 @@ public class CodeServlet extends HttpServlet {
         log.info("Starting build");
         progressListener.last = 0;
         progressListener.lastTime = System.currentTimeMillis();
-        if (wsEndpoint != null) {
-            wsEndpoint.progress(0);
-        }
+        reportProgress(0);
         vm.build(buildTarget, fileName);
         addIndicator();
         generateDebug(debugInformationBuilder);
@@ -419,19 +449,18 @@ public class CodeServlet extends HttpServlet {
 
     private void postBuild(TeaVM vm, long startTime) {
         if (!vm.wasCancelled()) {
+            log.info("Recompiled stale methods: " + programCache.getPendingItemsCount());
             if (vm.getProblemProvider().getSevereProblems().isEmpty()) {
                 log.info("Build complete successfully");
                 saveNewResult();
                 lastReachedClasses = vm.getDependencyInfo().getReachableClasses().size();
                 classSource.commit();
-                if (wsEndpoint != null) {
-                    wsEndpoint.complete(true);
-                }
+                programCache.commit();
+                astCache.commit();
+                reportCompilationComplete(true);
             } else {
                 log.info("Build complete with errors");
-                if (wsEndpoint != null) {
-                    wsEndpoint.complete(false);
-                }
+                reportCompilationComplete(false);
             }
             printStats(vm, startTime);
             TeaVMProblemRenderer.describeProblems(vm, log);
@@ -439,6 +468,8 @@ public class CodeServlet extends HttpServlet {
             log.info("Build cancelled");
         }
 
+        astCache.discard();
+        programCache.discard();
         buildTarget.clear();
     }
 
@@ -505,6 +536,43 @@ public class CodeServlet extends HttpServlet {
         return new URLClassLoader(urls, CodeServlet.class.getClassLoader());
     }
 
+    private void reportProgress(double progress) {
+        synchronized (statusLock) {
+            if (compiling && this.progress == progress) {
+                return;
+            }
+            compiling = true;
+            this.progress = progress;
+        }
+
+        CodeWsEndpoint[] endpoints;
+        synchronized (wsEndpoints) {
+            endpoints = wsEndpoints.toArray(new CodeWsEndpoint[0]);
+        }
+
+        for (CodeWsEndpoint endpoint : endpoints) {
+            endpoint.progress(progress);
+        }
+    }
+
+    private void reportCompilationComplete(boolean success) {
+        synchronized (statusLock) {
+            if (!compiling) {
+                return;
+            }
+            compiling = false;
+        }
+
+        CodeWsEndpoint[] endpoints;
+        synchronized (wsEndpoints) {
+            endpoints = wsEndpoints.toArray(new CodeWsEndpoint[0]);
+        }
+
+        for (CodeWsEndpoint endpoint : endpoints) {
+            endpoint.complete(success);
+        }
+    }
+
     private final ProgressListenerImpl progressListener = new ProgressListenerImpl();
 
     class ProgressListenerImpl implements TeaVMProgressListener {
@@ -540,13 +608,13 @@ public class CodeServlet extends HttpServlet {
 
         @Override
         public TeaVMProgressFeedback progressReached(int progress) {
-            if (wsEndpoint != null && indicator) {
+            if (indicator) {
                 int current = start + Math.min(progress, phaseLimit) * (end - start) / phaseLimit;
                 if (current != last) {
                     if (current - last > 10 || System.currentTimeMillis() - lastTime > 100) {
                         lastTime = System.currentTimeMillis();
                         last = current;
-                        wsEndpoint.progress(current / 10.0);
+                        reportProgress(current / 10.0);
                     }
                 }
             }

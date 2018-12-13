@@ -67,6 +67,7 @@ import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class ClassInference {
     private DependencyInfo dependencyInfo;
+    private ClassHierarchy hierarchy;
     private Graph assignmentGraph;
     private Graph cloneGraph;
     private Graph arrayGraph;
@@ -89,8 +90,9 @@ public class ClassInference {
 
     private static final int MAX_DEGREE = 3;
 
-    public ClassInference(DependencyInfo dependencyInfo) {
+    public ClassInference(DependencyInfo dependencyInfo, ClassHierarchy hierarchy) {
         this.dependencyInfo = dependencyInfo;
+        this.hierarchy = hierarchy;
     }
 
     public void infer(Program program, MethodReference methodReference) {
@@ -403,8 +405,6 @@ public class ClassInference {
     }
 
     private void propagateAlongCasts() {
-        ClassHierarchy hierarchy = dependencyInfo.getClassHierarchy();
-
         for (ValueCast cast : casts) {
             int fromNode = nodeMapping[packNodeAndDegree(cast.fromVariable, 0)];
             if (!formerNodeChanged[fromNode] && !nodeChanged[fromNode]) {
@@ -500,8 +500,6 @@ public class ClassInference {
     }
 
     private void propagateException(String thrownTypeName, BasicBlock block) {
-        ClassHierarchy hierarchy = dependencyInfo.getClassHierarchy();
-
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
             String expectedType = tryCatch.getExceptionType();
             if (expectedType == null || hierarchy.isSuperType(expectedType, thrownTypeName, false)) {

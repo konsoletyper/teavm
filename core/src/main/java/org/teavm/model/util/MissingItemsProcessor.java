@@ -27,6 +27,7 @@ import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
 
 public class MissingItemsProcessor {
     private DependencyInfo dependencyInfo;
+    private ClassHierarchy hierarchy;
     private Diagnostics diagnostics;
     private List<Instruction> instructionsToAdd = new ArrayList<>();
     private MethodHolder methodHolder;
@@ -35,9 +36,10 @@ public class MissingItemsProcessor {
     private Collection<MethodReference> reachableMethods;
     private Collection<FieldReference> reachableFields;
 
-    public MissingItemsProcessor(DependencyInfo dependencyInfo, Diagnostics diagnostics) {
+    public MissingItemsProcessor(DependencyInfo dependencyInfo, ClassHierarchy hierarchy, Diagnostics diagnostics) {
         this.dependencyInfo = dependencyInfo;
         this.diagnostics = diagnostics;
+        this.hierarchy = hierarchy;
         reachableClasses = dependencyInfo.getReachableClasses();
         reachableMethods = dependencyInfo.getReachableMethods();
         reachableFields = dependencyInfo.getReachableFields();
@@ -171,7 +173,7 @@ public class MissingItemsProcessor {
             return true;
         }
 
-        if (dependencyInfo.getClassSource().resolve(method) != null) {
+        if (hierarchy.resolve(method) != null) {
             return true;
         }
 

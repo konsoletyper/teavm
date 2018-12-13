@@ -25,8 +25,8 @@ public class DefaultNamingStrategy implements NamingStrategy {
     private final Map<String, String> aliases = new HashMap<>();
     private final Map<String, String> privateAliases = new HashMap<>();
     private final Map<String, String> classAliases = new HashMap<>();
-    private final Map<String, String> fieldAliases = new HashMap<>();
-    private final Map<String, String> staticFieldAliases = new HashMap<>();
+    private final Map<FieldReference, String> fieldAliases = new HashMap<>();
+    private final Map<FieldReference, String> staticFieldAliases = new HashMap<>();
     private final Map<String, String> functionAliases = new HashMap<>();
     private final Map<String, String> classInitAliases = new HashMap<>();
 
@@ -75,27 +75,32 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     @Override
     public String getNameFor(FieldReference field) {
-        String realCls = getRealFieldOwner(field.getClassName(), field.getFieldName());
-        if (!realCls.equals(field.getClassName())) {
-            String alias = getNameFor(new FieldReference(realCls, field.getFieldName()));
-            fieldAliases.put(field.getClassName() + "#" + field, alias);
-            return alias;
-        } else {
-            return fieldAliases.computeIfAbsent(realCls + "#" + field, key -> aliasProvider.getFieldAlias(field));
+        String alias = fieldAliases.get(field);
+        if (alias == null) {
+            FieldReference realField = getRealField(field);
+            if (realField.equals(field)) {
+                alias = aliasProvider.getFieldAlias(realField);
+            } else {
+                alias = getNameFor(realField);
+            }
+            fieldAliases.put(field, alias);
         }
+        return alias;
     }
 
     @Override
     public String getFullNameFor(FieldReference field) {
-        String realCls = getRealFieldOwner(field.getClassName(), field.getFieldName());
-        if (!realCls.equals(field.getClassName())) {
-            String alias = getNameFor(new FieldReference(realCls, field.getFieldName()));
-            staticFieldAliases.put(field.getClassName() + "#" + field, alias);
-            return alias;
-        } else {
-            return staticFieldAliases.computeIfAbsent(realCls + "#" + field,
-                    key -> aliasProvider.getStaticFieldAlias(field));
+        String alias = staticFieldAliases.get(field);
+        if (alias == null) {
+            FieldReference realField = getRealField(field);
+            if (realField.equals(field)) {
+                alias = aliasProvider.getStaticFieldAlias(realField);
+            } else {
+                alias = getNameFor(realField);
+            }
+            staticFieldAliases.put(field, alias);
         }
+        return alias;
     }
 
     @Override
@@ -127,20 +132,19 @@ public class DefaultNamingStrategy implements NamingStrategy {
         return null;
     }
 
-    private String getRealFieldOwner(String cls, String field) {
-        String initialCls = cls;
-        while (!fieldExists(cls, field)) {
-            ClassReader clsHolder = classSource.get(cls);
-            if (clsHolder == null || clsHolder.getParent() == null) {
-                return initialCls;
+    private FieldReference getRealField(FieldReference fieldRef) {
+        String initialCls = fieldRef.getClassName();
+        String cls = fieldRef.getClassName();
+        while (cls != null) {
+            ClassReader clsReader = classSource.get(cls);
+            if (clsReader != null) {
+                FieldReader fieldReader = clsReader.getField(fieldRef.getFieldName());
+                if (fieldReader != null) {
+                    return fieldReader.getReference();
+                }
             }
-            cls = clsHolder.getParent();
+            cls = clsReader.getParent();
         }
-        return cls;
-    }
-
-    private boolean fieldExists(String cls, String field) {
-        ClassReader classHolder = classSource.get(cls);
-        return classHolder != null && classHolder.getField(field) != null;
+        return fieldRef;
     }
 }

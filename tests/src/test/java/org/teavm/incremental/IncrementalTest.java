@@ -213,6 +213,8 @@ public class IncrementalTest {
             if (!problems.isEmpty()) {
                 fail("Compiler error generating file '" + name + "'\n" + buildErrorMessage(vm));
             }
+            astCache.commit();
+            programCache.commit();
         }
 
         private String buildErrorMessage(TeaVM vm) {

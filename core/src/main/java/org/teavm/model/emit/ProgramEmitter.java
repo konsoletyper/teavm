@@ -175,7 +175,7 @@ public final class ProgramEmitter {
     }
 
     public ValueEmitter getField(FieldReference field, ValueType type) {
-        FieldReader resolvedField = classSource.resolve(field);
+        FieldReader resolvedField = hierarchy.resolve(field);
         if (resolvedField != null) {
             field = resolvedField.getReference();
         }
@@ -198,7 +198,7 @@ public final class ProgramEmitter {
     }
 
     public ProgramEmitter setField(FieldReference field, ValueEmitter value) {
-        FieldReader resolvedField = classSource.resolve(field);
+        FieldReader resolvedField = hierarchy.resolve(field);
         if (resolvedField != null) {
             field = resolvedField.getReference();
         }

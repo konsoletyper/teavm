@@ -28,7 +28,7 @@ class FastVirtualCallConsumer implements DependencyConsumer {
     private final MethodDescriptor methodDesc;
     private final DependencyAnalyzer analyzer;
     private final Map<MethodReference, CallLocation> callLocations = new LinkedHashMap<>();
-    private final Set<MethodDependency> methods = new LinkedHashSet<>();
+    private final Set<MethodDependency> methods = new LinkedHashSet<>(100, 0.5f);
 
     FastVirtualCallConsumer(DependencyNode node, MethodDescriptor methodDesc, DependencyAnalyzer analyzer) {
         this.node = node;

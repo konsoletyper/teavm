@@ -25,6 +25,7 @@ import org.teavm.model.ProgramCache;
 
 public class InMemoryProgramCache implements ProgramCache {
     private Map<MethodReference, Item> cache = new HashMap<>();
+    private Map<MethodReference, Item> newItems = new HashMap<>();
 
     @Override
     public Program get(MethodReference method, CacheStatus cacheStatus) {
@@ -42,7 +43,20 @@ public class InMemoryProgramCache implements ProgramCache {
 
     @Override
     public void store(MethodReference method, Program program, Supplier<String[]> dependencies) {
-        cache.put(method, new Item(program, dependencies.get().clone()));
+        newItems.put(method, new Item(program, dependencies.get().clone()));
+    }
+
+    public void commit() {
+        cache.putAll(newItems);
+        newItems.clear();
+    }
+
+    public int getPendingItemsCount() {
+        return newItems.size();
+    }
+
+    public void discard() {
+        newItems.clear();
     }
 
     static final class Item {

@@ -199,7 +199,7 @@ public class Decompiler {
     public ClassNode decompile(ClassHolder cls) {
         ClassNode clsNode = new ClassNode(cls.getName(), cls.getParent());
         for (FieldHolder field : cls.getFields()) {
-            FieldNode fieldNode = new FieldNode(field.getName(), field.getType());
+            FieldNode fieldNode = new FieldNode(field.getReference(), field.getType());
             fieldNode.getModifiers().addAll(field.getModifiers());
             fieldNode.setInitialValue(field.getInitialValue());
             clsNode.getFields().add(fieldNode);

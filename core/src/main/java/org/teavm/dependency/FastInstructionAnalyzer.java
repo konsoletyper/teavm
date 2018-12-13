@@ -22,7 +22,7 @@ import org.teavm.model.VariableReader;
 
 class FastInstructionAnalyzer extends AbstractInstructionAnalyzer {
     private FastDependencyAnalyzer dependencyAnalyzer;
-    private MethodReference callerMethod;
+    private CallLocation impreciseLocation;
 
     FastInstructionAnalyzer(FastDependencyAnalyzer dependencyAnalyzer) {
         this.dependencyAnalyzer = dependencyAnalyzer;
@@ -31,7 +31,7 @@ class FastInstructionAnalyzer extends AbstractInstructionAnalyzer {
     @Override
     protected void invokeSpecial(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments) {
-        CallLocation callLocation = getCallLocation();
+        CallLocation callLocation = impreciseLocation;
         if (instance == null) {
             dependencyAnalyzer.linkClass(method.getClassName()).initClass(callLocation);
         }
@@ -43,19 +43,14 @@ class FastInstructionAnalyzer extends AbstractInstructionAnalyzer {
     @Override
     protected void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments) {
-        dependencyAnalyzer.getVirtualCallConsumer(method).addLocation(getCallLocation());
-
-        dependencyAnalyzer.getClassSource().overriddenMethods(method).forEach(methodImpl -> {
-            dependencyAnalyzer.linkMethod(methodImpl.getReference()).addLocation(getCallLocation());
-        });
+        dependencyAnalyzer.getVirtualCallConsumer(method).addLocation(impreciseLocation);
     }
-
 
     @Override
     public void cloneArray(VariableReader receiver, VariableReader array) {
         DependencyNode arrayNode = getNode(array);
         MethodDependency cloneDep = getAnalyzer().linkMethod(CLONE_METHOD);
-        cloneDep.addLocation(getCallLocation());
+        cloneDep.addLocation(impreciseLocation);
         cloneDep.use();
     }
 
@@ -67,5 +62,16 @@ class FastInstructionAnalyzer extends AbstractInstructionAnalyzer {
     @Override
     protected DependencyAnalyzer getAnalyzer() {
         return dependencyAnalyzer;
+    }
+
+    @Override
+    protected CallLocation getCallLocation() {
+        return impreciseLocation;
+    }
+
+    @Override
+    public void setCaller(MethodReference caller) {
+        super.setCaller(caller);
+        impreciseLocation = new CallLocation(caller);
     }
 }

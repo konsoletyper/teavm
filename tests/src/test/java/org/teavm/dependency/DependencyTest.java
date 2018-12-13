@@ -33,6 +33,7 @@ import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.common.DisjointSet;
 import org.teavm.diagnostics.Problem;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
@@ -145,7 +146,8 @@ public class DependencyTest {
 
     private void processAssertions(List<Assertion> assertions, MethodDependencyInfo methodDep,
             DependencyInfo dependencyInfo, Program program) {
-        ClassInference classInference = new ClassInference(dependencyInfo);
+        ClassInference classInference = new ClassInference(dependencyInfo, new ClassHierarchy(
+                dependencyInfo.getClassSource()));
         classInference.infer(program, methodDep.getReference());
 
         for (Assertion assertion : assertions) {

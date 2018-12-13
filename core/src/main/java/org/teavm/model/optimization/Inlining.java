@@ -25,6 +25,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.Incoming;
@@ -55,16 +56,24 @@ public class Inlining {
     private static final int MAX_DEPTH = 7;
     private IntArrayList depthsByBlock;
     private Set<Instruction> instructionsToSkip;
+    private ClassHierarchy hierarchy;
+    private ClassReaderSource classes;
+    private DependencyInfo dependencyInfo;
 
-    public void apply(Program program, MethodReference method, ClassReaderSource classes,
-            DependencyInfo dependencyInfo) {
+    public Inlining(ClassHierarchy hierarchy, DependencyInfo dependencyInfo) {
+        this.hierarchy = hierarchy;
+        this.classes = hierarchy.getClassSource();
+        this.dependencyInfo = dependencyInfo;
+    }
+
+    public void apply(Program program, MethodReference method) {
         depthsByBlock = new IntArrayList(program.basicBlockCount());
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             depthsByBlock.add(0);
         }
         instructionsToSkip = new HashSet<>();
 
-        while (applyOnce(program, classes)) {
+        while (applyOnce(program)) {
             devirtualize(program, method, dependencyInfo);
         }
         depthsByBlock = null;
@@ -73,8 +82,8 @@ public class Inlining {
         new UnreachableBasicBlockEliminator().optimize(program);
     }
 
-    private boolean applyOnce(Program program, ClassReaderSource classSource) {
-        List<PlanEntry> plan = buildPlan(program, classSource, 0);
+    private boolean applyOnce(Program program) {
+        List<PlanEntry> plan = buildPlan(program, 0);
         if (plan.isEmpty()) {
             return false;
         }
@@ -210,7 +219,7 @@ public class Inlining {
         execPlan(program, planEntry.innerPlan, firstInlineBlock.getIndex());
     }
 
-    private List<PlanEntry> buildPlan(Program program, ClassReaderSource classSource, int depth) {
+    private List<PlanEntry> buildPlan(Program program, int depth) {
         if (depth >= MAX_DEPTH) {
             return Collections.emptyList();
         }
@@ -243,7 +252,7 @@ public class Inlining {
                     continue;
                 }
 
-                MethodReader invokedMethod = getMethod(classSource, invoke.getMethod());
+                MethodReader invokedMethod = getMethod(invoke.getMethod());
                 if (invokedMethod == null || invokedMethod.getProgram() == null
                         || invokedMethod.getProgram().basicBlockCount() == 0) {
                     instructionsToSkip.add(insn);
@@ -264,7 +273,7 @@ public class Inlining {
                 entry.targetBlock = block.getIndex();
                 entry.targetInstruction = insn;
                 entry.program = invokedProgram;
-                entry.innerPlan.addAll(buildPlan(invokedProgram, classSource, depth + 1));
+                entry.innerPlan.addAll(buildPlan(invokedProgram, depth + 1));
                 entry.depth = depth;
                 plan.add(entry);
             }
@@ -274,8 +283,8 @@ public class Inlining {
         return plan;
     }
 
-    private MethodReader getMethod(ClassReaderSource classSource, MethodReference methodRef) {
-        ClassReader cls = classSource.get(methodRef.getClassName());
+    private MethodReader getMethod(MethodReference methodRef) {
+        ClassReader cls = classes.get(methodRef.getClassName());
         return cls != null ? cls.getMethod(methodRef.getDescriptor()) : null;
     }
 
@@ -308,7 +317,7 @@ public class Inlining {
     }
 
     private void devirtualize(Program program, MethodReference method, DependencyInfo dependencyInfo) {
-        ClassInference inference = new ClassInference(dependencyInfo);
+        ClassInference inference = new ClassInference(dependencyInfo, hierarchy);
         inference.infer(program, method);
 
         for (BasicBlock block : program.getBasicBlocks()) {
