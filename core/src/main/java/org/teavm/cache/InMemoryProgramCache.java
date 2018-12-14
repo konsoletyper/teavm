@@ -59,6 +59,11 @@ public class InMemoryProgramCache implements ProgramCache {
         newItems.clear();
     }
 
+    public void invalidate() {
+        cache.clear();
+        newItems.clear();
+    }
+
     static final class Item {
         final Program program;
         final String[] dependencies;

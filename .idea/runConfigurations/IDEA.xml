@@ -1,9 +1,11 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="IDEA" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType" factoryName="Plugin">
+  <configuration default="false" name="IDEA" type="#org.jetbrains.idea.devkit.run.PluginConfigurationType">
     <module name="teavm-idea" />
     <option name="VM_PARAMETERS" value="-Xmx1024m -Xms256m -ea" />
     <option name="PROGRAM_PARAMETERS" value="" />
-    <predefined_log_file id="idea.log" enabled="true" />
-    <method />
+    <predefined_log_file enabled="true" id="idea.log" />
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
   </configuration>
 </component>

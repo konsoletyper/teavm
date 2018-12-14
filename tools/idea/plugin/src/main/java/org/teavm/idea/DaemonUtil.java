@@ -24,13 +24,16 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import org.teavm.idea.devserver.DevServerRunner;
 import org.teavm.tooling.daemon.BuildDaemon;
 
 public final class DaemonUtil {
     private static final Set<String> PLUGIN_FILES = new HashSet<>(Arrays.asList("teavm-jps-common.jar",
             "teavm-plugin.jar", "teavm.jar"));
     private static final String DAEMON_CLASS = BuildDaemon.class.getName().replace('.', '/') + ".class";
+    private static final String DEV_SERVER_CLASS = DevServerRunner.class.getName().replace('.', '/') + ".class";
     private static final int DAEMON_CLASS_DEPTH;
+    private static final int DEV_SERVER_CLASS_DEPTH;
 
     static {
         int depth = 0;
@@ -40,6 +43,14 @@ public final class DaemonUtil {
             }
         }
         DAEMON_CLASS_DEPTH = depth;
+
+        depth = 0;
+        for (int i = 0; i < DEV_SERVER_CLASS.length(); ++i) {
+            if (DEV_SERVER_CLASS.charAt(i) == '/') {
+                depth++;
+            }
+        }
+        DEV_SERVER_CLASS_DEPTH = depth;
     }
 
     private DaemonUtil() {
@@ -61,6 +72,11 @@ public final class DaemonUtil {
             targetFiles.add(file.getAbsolutePath());
         } else if (file.getPath().endsWith(DAEMON_CLASS)) {
             for (int i = 0; i <= DAEMON_CLASS_DEPTH; ++i) {
+                file = file.getParentFile();
+            }
+            targetFiles.add(file.getAbsolutePath());
+        } else if (file.getPath().endsWith(DEV_SERVER_CLASS)) {
+            for (int i = 0; i <= DEV_SERVER_CLASS_DEPTH; ++i) {
                 file = file.getParentFile();
             }
             targetFiles.add(file.getAbsolutePath());

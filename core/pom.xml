@@ -107,10 +107,19 @@
               <artifactSet>
                 <excludes>
                   <exclude>junit:junit</exclude>
-                  <exclude>org:teavm:*</exclude>
+                  <exclude>org.teavm:teavm-interop</exclude>
+                  <exclude>org.teavm:teavm-metaprogramming-api</exclude>
                   <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
                 </excludes>
               </artifactSet>
+              <filters>
+                <filter>
+                  <artifact>*:*</artifact>
+                  <excludes>
+                    <exclude>**/module-info.class</exclude>
+                  </excludes>
+                </filter>
+              </filters>
               <relocations>
                 <relocation>
                   <pattern>org.objectweb.asm</pattern>

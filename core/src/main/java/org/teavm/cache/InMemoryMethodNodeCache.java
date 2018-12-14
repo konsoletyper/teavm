@@ -79,6 +79,13 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
         newAsyncItems.clear();
     }
 
+    public void invalidate() {
+        cache.clear();
+        newItems.clear();
+        asyncCache.clear();
+        newAsyncItems.clear();
+    }
+
     static final class RegularItem {
         final RegularMethodNode node;
         final String[] dependencies;

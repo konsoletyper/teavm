@@ -30,7 +30,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
 import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
-import org.teavm.tooling.ConsoleTeaVMToolLog;
 import org.teavm.tooling.TeaVMToolLog;
 
 public class DevServer {
@@ -41,8 +40,9 @@ public class DevServer {
     private List<String> sourcePath = new ArrayList<>();
     private boolean indicator;
     private boolean reloadedAutomatically;
-    private boolean verbose;
     private TeaVMToolLog log;
+    private CodeServlet servlet;
+    private List<DevServerListener> listeners = new ArrayList<>();
 
     private Server server;
     private int port = 9090;
@@ -85,16 +85,27 @@ public class DevServer {
         this.reloadedAutomatically = reloadedAutomatically;
     }
 
-    public void setVerbose(boolean verbose) {
-        this.verbose = verbose;
-    }
-
     public List<String> getSourcePath() {
         return sourcePath;
     }
 
+    public void invalidateCache() {
+        servlet.invalidateCache();
+    }
+
+    public void buildProject() {
+        servlet.buildProject();
+    }
+
+    public void cancelBuild() {
+        servlet.cancelBuild();
+    }
+
+    public void addListener(DevServerListener listener) {
+        listeners.add(listener);
+    }
+
     public void start() {
-        log = new ConsoleTeaVMToolLog(verbose);
         server = new Server();
         ServerConnector connector = new ServerConnector(server);
         connector.setPort(port);
@@ -103,7 +114,7 @@ public class DevServer {
         ServletContextHandler context = new ServletContextHandler(ServletContextHandler.SESSIONS);
         context.setContextPath("/");
         server.setHandler(context);
-        CodeServlet servlet = new CodeServlet(mainClass, classPath);
+        servlet = new CodeServlet(mainClass, classPath);
         servlet.setFileName(fileName);
         servlet.setPathToFile(pathToFile);
         servlet.setLog(log);
@@ -111,6 +122,9 @@ public class DevServer {
         servlet.setIndicator(indicator);
         servlet.setAutomaticallyReloaded(reloadedAutomatically);
         servlet.setPort(port);
+        for (DevServerListener listener : listeners) {
+            servlet.addListener(listener);
+        }
         context.addServlet(new ServletHolder(servlet), "/*");
 
         try {
@@ -129,6 +143,8 @@ public class DevServer {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+        server = null;
+        servlet = null;
     }
 
     private class DevServerEndpointConfig implements ServerEndpointConfig {

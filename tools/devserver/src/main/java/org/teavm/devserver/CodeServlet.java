@@ -96,8 +96,12 @@ public class CodeServlet extends HttpServlet {
 
     private final Set<CodeWsEndpoint> wsEndpoints = new LinkedHashSet<>();
     private final Object statusLock = new Object();
+    private volatile boolean cancelRequested;
     private boolean compiling;
     private double progress;
+    private boolean waiting;
+    private Thread buildThread;
+    private List<DevServerListener> listeners = new ArrayList<>();
 
     public CodeServlet(String mainClass, String[] classPath) {
         this.mainClass = mainClass;
@@ -160,6 +164,37 @@ public class CodeServlet extends HttpServlet {
         }
     }
 
+    public void addListener(DevServerListener listener) {
+        listeners.add(listener);
+    }
+
+    public void invalidateCache() {
+        synchronized (statusLock) {
+            if (compiling) {
+                return;
+            }
+            astCache.invalidate();
+            programCache.invalidate();
+            classSource.invalidate();
+        }
+    }
+
+    public void buildProject() {
+        synchronized (statusLock) {
+            if (waiting) {
+                buildThread.interrupt();
+            }
+        }
+    }
+
+    public void cancelBuild() {
+        synchronized (statusLock) {
+            if (compiling) {
+                cancelRequested = true;
+            }
+        }
+    }
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String path = req.getPathInfo();
@@ -206,15 +241,20 @@ public class CodeServlet extends HttpServlet {
     public void destroy() {
         super.destroy();
         stopped = true;
+        synchronized (statusLock) {
+            if (waiting) {
+                buildThread.interrupt();
+            }
+        }
     }
 
     @Override
     public void init() throws ServletException {
         super.init();
         Thread thread = new Thread(this::runTeaVM);
-        thread.setDaemon(true);
         thread.setName("TeaVM compiler");
         thread.start();
+        buildThread = thread;
     }
 
     private boolean serveSourceFile(String fileName, HttpServletResponse resp) throws IOException {
@@ -306,12 +346,20 @@ public class CodeServlet extends HttpServlet {
                 }
 
                 try {
+                    synchronized (statusLock) {
+                        waiting = true;
+                    }
                     watcher.waitForChange(750);
+                    synchronized (statusLock) {
+                        waiting = false;
+                    }
+                    log.info("Changes detected. Recompiling.");
                 } catch (InterruptedException e) {
-                    log.info("Build thread interrupted");
-                    break;
+                    if (stopped) {
+                        break;
+                    }
+                    log.info("Build triggered by user");
                 }
-                log.info("Changes detected. Recompiling.");
 
                 List<String> staleClasses = getChangedClasses(watcher.grabChangedFiles());
                 if (staleClasses.size() > 15) {
@@ -325,6 +373,7 @@ public class CodeServlet extends HttpServlet {
 
                 classSource.evict(staleClasses);
             }
+            log.info("Build process stopped");
         } catch (Throwable e) {
             log.error("Compile server crashed", e);
         } finally {
@@ -359,6 +408,9 @@ public class CodeServlet extends HttpServlet {
     }
 
     private void buildOnce() {
+        fireBuildStarted();
+        reportProgress(0);
+
         DebugInformationBuilder debugInformationBuilder = new DebugInformationBuilder();
         ClassLoader classLoader = initClassLoader();
         classSource.setUnderlyingSource(new PreOptimizingClassHolderSource(
@@ -390,7 +442,6 @@ public class CodeServlet extends HttpServlet {
         log.info("Starting build");
         progressListener.last = 0;
         progressListener.lastTime = System.currentTimeMillis();
-        reportProgress(0);
         vm.build(buildTarget, fileName);
         addIndicator();
         generateDebug(debugInformationBuilder);
@@ -450,6 +501,7 @@ public class CodeServlet extends HttpServlet {
     private void postBuild(TeaVM vm, long startTime) {
         if (!vm.wasCancelled()) {
             log.info("Recompiled stale methods: " + programCache.getPendingItemsCount());
+            fireBuildComplete(vm);
             if (vm.getProblemProvider().getSevereProblems().isEmpty()) {
                 log.info("Build complete successfully");
                 saveNewResult();
@@ -466,11 +518,13 @@ public class CodeServlet extends HttpServlet {
             TeaVMProblemRenderer.describeProblems(vm, log);
         } else {
             log.info("Build cancelled");
+            fireBuildCancelled();
         }
 
         astCache.discard();
         programCache.discard();
         buildTarget.clear();
+        cancelRequested = false;
     }
 
     private void printStats(TeaVM vm, long startTime) {
@@ -553,6 +607,10 @@ public class CodeServlet extends HttpServlet {
         for (CodeWsEndpoint endpoint : endpoints) {
             endpoint.progress(progress);
         }
+
+        for (DevServerListener listener : listeners) {
+            listener.compilationProgress(progress);
+        }
     }
 
     private void reportCompilationComplete(boolean success) {
@@ -570,6 +628,25 @@ public class CodeServlet extends HttpServlet {
 
         for (CodeWsEndpoint endpoint : endpoints) {
             endpoint.complete(success);
+        }
+    }
+
+    private void fireBuildStarted() {
+        for (DevServerListener listener : listeners) {
+            listener.compilationStarted();
+        }
+    }
+
+    private void fireBuildCancelled() {
+        for (DevServerListener listener : listeners) {
+            listener.compilationCancelled();
+        }
+    }
+
+    private void fireBuildComplete(TeaVM vm) {
+        CodeServletBuildResult result = new CodeServletBuildResult(vm, new ArrayList<>(buildTarget.getNames()));
+        for (DevServerListener listener : listeners) {
+            listener.compilationComplete(result);
         }
     }
 
@@ -622,6 +699,11 @@ public class CodeServlet extends HttpServlet {
         }
 
         private TeaVMProgressFeedback getResult() {
+            if (cancelRequested) {
+                log.info("Trying to cancel compilation due to user request");
+                return TeaVMProgressFeedback.CANCEL;
+            }
+
             if (stopped) {
                 log.info("Trying to cancel compilation due to server stopping");
                 return TeaVMProgressFeedback.CANCEL;

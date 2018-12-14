@@ -52,11 +52,7 @@ import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.MethodReader;
-import org.teavm.model.MethodReference;
 import org.teavm.model.PreOptimizingClassHolderSource;
-import org.teavm.model.ProgramReader;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.tooling.sources.SourceFilesCopier;
@@ -268,31 +264,7 @@ public class TeaVMTool {
             return Collections.emptyList();
         }
 
-        Set<String> resources = new HashSet<>();
-        ClassReaderSource classSource = vm.getDependencyClassSource();
-        InstructionLocationReader reader = new InstructionLocationReader(resources);
-        for (MethodReference methodRef : vm.getMethods()) {
-            ClassReader cls = classSource.get(methodRef.getClassName());
-            if (cls == null) {
-                continue;
-            }
-
-            MethodReader method = cls.getMethod(methodRef.getDescriptor());
-            if (method == null) {
-                continue;
-            }
-
-            ProgramReader program = method.getProgram();
-            if (program == null) {
-                continue;
-            }
-
-            for (int i = 0; i < program.basicBlockCount(); ++i) {
-                program.basicBlockAt(i).readAllInstructions(reader);
-            }
-        }
-
-        return resources;
+        return InstructionLocationReader.extractUsedResources(vm);
     }
 
     public void addSourceFileProvider(SourceFileProvider sourceFileProvider) {

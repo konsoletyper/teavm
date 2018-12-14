@@ -81,6 +81,11 @@
       <optional>true</optional>
     </dependency>
     <dependency>
+      <groupId>commons-io</groupId>
+      <artifactId>commons-io</artifactId>
+      <optional>true</optional>
+    </dependency>
+    <dependency>
       <groupId>com.google.code.gson</groupId>
       <artifactId>gson</artifactId>
       <version>2.2.4</version>
@@ -137,6 +142,15 @@
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
+        <artifactId>maven-jar-plugin</artifactId>
+        <configuration>
+          <excludes>
+            <exclude>html/**</exclude>
+          </excludes>
+        </configuration>
+      </plugin>
+      <plugin>
+        <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
         <executions>
           <execution>
@@ -151,7 +165,7 @@
                 </includes>
               </artifactSet>
               <relocations>
-                <relocation>cd
+                <relocation>
                   <pattern>org.objectweb.asm</pattern>
                   <shadedPattern>org.teavm.asm</shadedPattern>
                 </relocation>

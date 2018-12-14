@@ -365,7 +365,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         dependencyAnalyzer.setAsyncSupported(target.isAsyncSupported());
         dependencyAnalyzer.setInterruptor(() -> {
             int progress = lastKnownClasses > 0 ? dependencyAnalyzer.getReachableClasses().size() : 0;
-            return progressListener.progressReached(progress) == TeaVMProgressFeedback.CONTINUE;
+            cancelled |= progressListener.progressReached(progress) != TeaVMProgressFeedback.CONTINUE;
+            return !cancelled;
         });
         target.contributeDependencies(dependencyAnalyzer);
         dependencyAnalyzer.processDependencies();

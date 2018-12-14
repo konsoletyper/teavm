@@ -62,4 +62,9 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
         cache.keySet().removeAll(classes);
         freshClasses.removeAll(classes);
     }
+
+    public void invalidate() {
+        cache.clear();
+        freshClasses.clear();
+    }
 }

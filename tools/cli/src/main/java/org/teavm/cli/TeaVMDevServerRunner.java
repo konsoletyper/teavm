@@ -114,7 +114,7 @@ public final class TeaVMDevServerRunner {
 
         devServer.setIndicator(commandLine.hasOption("indicator"));
         devServer.setReloadedAutomatically(commandLine.hasOption("auto-reload"));
-        devServer.setVerbose(commandLine.hasOption('v'));
+        devServer.setLog(new ConsoleTeaVMToolLog(commandLine.hasOption('v')));
         if (commandLine.hasOption("port")) {
             try {
                 devServer.setPort(Integer.parseInt(commandLine.getOptionValue("port")));
