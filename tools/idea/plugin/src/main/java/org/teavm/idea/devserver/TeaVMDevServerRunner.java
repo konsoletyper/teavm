@@ -20,11 +20,21 @@ import com.intellij.execution.ExecutionResult;
 import com.intellij.execution.configurations.RunProfile;
 import com.intellij.execution.configurations.RunProfileState;
 import com.intellij.execution.configurations.RunnerSettings;
+import com.intellij.execution.process.ProcessAdapter;
+import com.intellij.execution.process.ProcessEvent;
+import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.GenericProgramRunner;
+import com.intellij.execution.runners.RunContentBuilder;
+import com.intellij.execution.ui.ExecutionConsole;
 import com.intellij.execution.ui.RunContentDescriptor;
+import com.intellij.xdebugger.XDebugProcess;
+import com.intellij.xdebugger.XDebugProcessStarter;
+import com.intellij.xdebugger.XDebugSession;
+import com.intellij.xdebugger.XDebuggerManager;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.teavm.idea.debug.TeaVMDebugProcess;
 
 public class TeaVMDevServerRunner extends GenericProgramRunner<RunnerSettings> {
     @NotNull
@@ -47,6 +57,32 @@ public class TeaVMDevServerRunner extends GenericProgramRunner<RunnerSettings> {
             return null;
         }
 
-        return null;
+        RunContentDescriptor runContent = new RunContentBuilder(executionResult, environment).showRunContent(null);
+        int debugPort = ((TeaVMProcessHandler) executionResult.getProcessHandler()).config.debugPort;
+        ExecutionConsole console = runContent.getExecutionConsole();
+        ProcessHandler processHandler = runContent.getProcessHandler();
+        if (debugPort > 0) {
+            XDebuggerManager debuggerManager = XDebuggerManager.getInstance(environment.getProject());
+            XDebugSession debugSession = debuggerManager.startSession(environment, new XDebugProcessStarter() {
+                @NotNull
+                @Override
+                public XDebugProcess start(@NotNull XDebugSession session) {
+                    TeaVMDebugProcess debugProcess = new TeaVMDebugProcess(session, debugPort);
+                    debugProcess.console = console;
+                    return debugProcess;
+                }
+            });
+            runContent = debugSession.getRunContentDescriptor();
+
+            ProcessHandler debugProcessHandler = debugSession.getDebugProcess().getProcessHandler();
+            debugProcessHandler.addProcessListener(new ProcessAdapter() {
+                @Override
+                public void processTerminated(@NotNull ProcessEvent event) {
+                    processHandler.destroyProcess();
+                }
+            });
+        }
+
+        return runContent;
     }
 }

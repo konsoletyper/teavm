@@ -125,6 +125,9 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
                 case "-f":
                     server.setFileName(args[++i]);
                     break;
+                case "-P":
+                    server.setDebugPort(Integer.parseInt(args[++i]));
+                    break;
             }
         }
         server.setClassPath(classPath.toArray(new String[0]));
@@ -177,6 +180,11 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
         for (String entry : options.sourcePath) {
             arguments.add("-s");
             arguments.add(entry);
+        }
+
+        if (options.debugPort > 0) {
+            arguments.add("-P");
+            arguments.add(Integer.toString(options.debugPort));
         }
 
         ProcessBuilder builder = new ProcessBuilder(arguments.toArray(new String[0]));

@@ -46,6 +46,7 @@ public class DevServer {
 
     private Server server;
     private int port = 9090;
+    private int debugPort;
 
     public void setMainClass(String mainClass) {
         this.mainClass = mainClass;
@@ -57,6 +58,10 @@ public class DevServer {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public void setDebugPort(int debugPort) {
+        this.debugPort = debugPort;
     }
 
     public void setPathToFile(String pathToFile) {
@@ -122,6 +127,7 @@ public class DevServer {
         servlet.setIndicator(indicator);
         servlet.setAutomaticallyReloaded(reloadedAutomatically);
         servlet.setPort(port);
+        servlet.setDebugPort(debugPort);
         for (DevServerListener listener : listeners) {
             servlet.addListener(listener);
         }

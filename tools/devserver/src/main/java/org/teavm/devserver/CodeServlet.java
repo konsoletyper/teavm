@@ -79,6 +79,7 @@ public class CodeServlet extends HttpServlet {
     private boolean indicator;
     private boolean automaticallyReloaded;
     private int port;
+    private int debugPort;
 
     private Map<String, Supplier<InputStream>> sourceFileCache = new HashMap<>();
 
@@ -136,6 +137,10 @@ public class CodeServlet extends HttpServlet {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public void setDebugPort(int debugPort) {
+        this.debugPort = debugPort;
     }
 
     public void setAutomaticallyReloaded(boolean automaticallyReloaded) {
@@ -450,10 +455,6 @@ public class CodeServlet extends HttpServlet {
     }
 
     private void addIndicator() {
-        if (!indicator) {
-            return;
-        }
-
         String script = getIndicatorScript(false);
         try (Writer writer = new OutputStreamWriter(buildTarget.appendToResource(fileName), StandardCharsets.UTF_8)) {
             writer.append("\n");
@@ -472,6 +473,8 @@ public class CodeServlet extends HttpServlet {
             script = script.replace("BOOT_FLAG", Boolean.toString(boot));
             script = script.replace("RELOAD_FLAG", Boolean.toString(automaticallyReloaded));
             script = script.replace("FILE_NAME", "http://localhost:" + port + pathToFile + fileName);
+            script = script.replace("INDICATOR_FLAG", Boolean.toString(indicator));
+            script = script.replace("DEBUG_PORT", Integer.toString(debugPort));
             return script;
         } catch (IOException e) {
             throw new RuntimeException("IO error occurred writing debug information", e);

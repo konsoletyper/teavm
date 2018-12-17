@@ -21,12 +21,11 @@ import com.intellij.execution.ExecutionResult;
 import com.intellij.execution.Executor;
 import com.intellij.execution.configurations.RunProfileState;
 import com.intellij.execution.configurations.SearchScopeProvider;
+import com.intellij.execution.executors.DefaultDebugExecutor;
 import com.intellij.execution.filters.TextConsoleBuilder;
 import com.intellij.execution.filters.TextConsoleBuilderFactory;
-import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ProgramRunner;
-import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.util.JavaParametersUtil;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
@@ -36,24 +35,24 @@ import com.intellij.openapi.vfs.JarFileSystem;
 import com.intellij.openapi.vfs.VirtualFile;
 import com.intellij.psi.search.GlobalSearchScope;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.net.Socket;
 import java.util.Arrays;
 import java.util.Objects;
+import java.util.Random;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.teavm.idea.DaemonUtil;
-import org.teavm.idea.DevServerRunnerListener;
 import org.teavm.idea.devserver.ui.TeaVMDevServerConsole;
 
 public class TeaVMDevServerRunState implements RunProfileState {
     private final TeaVMDevServerConfiguration configuration;
     private final TextConsoleBuilder consoleBuilder;
+    private final Project project;
 
     public TeaVMDevServerRunState(@NotNull ExecutionEnvironment environment,
             @NotNull TeaVMDevServerConfiguration configuration) {
         this.configuration = configuration;
 
-        Project project = environment.getProject();
+        project = environment.getProject();
         GlobalSearchScope searchScope = SearchScopeProvider.createSearchScope(project, environment.getRunProfile());
         consoleBuilder = TextConsoleBuilderFactory.getInstance().createBuilder(project, searchScope);
     }
@@ -83,14 +82,43 @@ public class TeaVMDevServerRunState implements RunProfileState {
         config.mainClass = configuration.getMainClass();
         config.maxHeap = configuration.getMaxHeap();
 
+        if (executor.getId().equals(DefaultDebugExecutor.EXECUTOR_ID)) {
+            config.debugPort = choosePort();
+        }
+
+        TeaVMProcessHandler processHandler;
+        ExecutionResult executionResult;
         try {
             TeaVMDevServerConsole console = new TeaVMDevServerConsole(consoleBuilder.getConsole());
-            ProcessHandlerImpl processHandler = new ProcessHandlerImpl(config, console);
+            processHandler = new TeaVMProcessHandler(config, console);
             console.getUnderlyingConsole().attachToProcess(processHandler);
             processHandler.start();
-            return new DefaultExecutionResult(console, processHandler);
+            executionResult = new DefaultExecutionResult(console, processHandler);
         } catch (IOException e) {
             throw new ExecutionException(e);
+        }
+
+        return executionResult;
+    }
+
+    private int choosePort() {
+        Random random = new Random();
+        int minPort = 10000;
+        int maxPort = 1 << 16;
+        for (int i = 0; i < 20; ++i) {
+            int port = minPort + random.nextInt(maxPort - minPort);
+            if (isPortAvailable(port)) {
+                return port;
+            }
+        }
+        throw new RuntimeException("Could not find available port");
+    }
+
+    private boolean isPortAvailable(int port) {
+        try (Socket ignored = new Socket("localhost", port)) {
+            return false;
+        } catch (IOException ignored) {
+            return true;
         }
     }
 
@@ -102,64 +130,5 @@ public class TeaVMDevServerRunState implements RunProfileState {
             }
         }
         return file.getCanonicalPath();
-    }
-
-    class ProcessHandlerImpl extends ProcessHandler implements DevServerRunnerListener {
-        private DevServerConfiguration config;
-        private TeaVMDevServerConsole console;
-        private DevServerInfo info;
-
-        ProcessHandlerImpl(DevServerConfiguration config, TeaVMDevServerConsole console) {
-            this.config = config;
-            this.console = console;
-        }
-
-        void start() throws IOException {
-            info = DevServerRunner.start(DaemonUtil.detectClassPath().toArray(new String[0]), config, this);
-            console.setServerManager(info.server);
-            startNotify();
-        }
-
-        @Override
-        protected void destroyProcessImpl() {
-            info.process.destroy();
-        }
-
-        @Override
-        protected void detachProcessImpl() {
-            try {
-                info.server.stop();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-
-        @Override
-        public boolean detachIsDefault() {
-            return true;
-        }
-
-        @Nullable
-        @Override
-        public OutputStream getProcessInput() {
-            return null;
-        }
-
-
-        @Override
-        public void error(String text) {
-            console.getUnderlyingConsole().print(text + System.lineSeparator(), ConsoleViewContentType.ERROR_OUTPUT);
-        }
-
-        @Override
-        public void info(String text) {
-            console.getUnderlyingConsole().print(text + System.lineSeparator(), ConsoleViewContentType.NORMAL_OUTPUT);
-        }
-
-        @Override
-        public void stopped(int code) {
-            console.stop();
-            notifyProcessTerminated(code);
-        }
     }
 }

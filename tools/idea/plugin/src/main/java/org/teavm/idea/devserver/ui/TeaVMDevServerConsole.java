@@ -15,8 +15,12 @@
  */
 package org.teavm.idea.devserver.ui;
 
+import com.intellij.execution.filters.Filter;
+import com.intellij.execution.filters.HyperlinkInfo;
+import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.ui.ConsoleView;
-import com.intellij.execution.ui.ExecutionConsole;
+import com.intellij.execution.ui.ConsoleViewContentType;
+import com.intellij.openapi.actionSystem.AnAction;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.rmi.RemoteException;
@@ -26,11 +30,13 @@ import javax.swing.JButton;
 import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JProgressBar;
+import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.teavm.idea.devserver.DevServerBuildResult;
 import org.teavm.idea.devserver.DevServerManager;
 import org.teavm.idea.devserver.DevServerManagerListener;
 
-public class TeaVMDevServerConsole extends JPanel implements ExecutionConsole {
+public class TeaVMDevServerConsole extends JPanel implements ConsoleView {
     private ConsoleView underlyingConsole;
     private DevServerManager serverManager;
     private ServerListenerImpl serverListener;
@@ -133,6 +139,82 @@ public class TeaVMDevServerConsole extends JPanel implements ExecutionConsole {
     public void stop() {
         progressBar.setVisible(false);
         rebuildButton.setEnabled(false);
+    }
+
+    @Override
+    public void print(@NotNull String s, @NotNull ConsoleViewContentType consoleViewContentType) {
+        underlyingConsole.print(s, consoleViewContentType);
+    }
+
+    @Override
+    public void clear() {
+        underlyingConsole.clear();
+    }
+
+    @Override
+    public void scrollTo(int i) {
+        underlyingConsole.scrollTo(i);
+    }
+
+    @Override
+    public void attachToProcess(ProcessHandler processHandler) {
+        underlyingConsole.attachToProcess(processHandler);
+    }
+
+    @Override
+    public void setOutputPaused(boolean b) {
+        underlyingConsole.setOutputPaused(b);
+    }
+
+    @Override
+    public boolean isOutputPaused() {
+        return underlyingConsole.isOutputPaused();
+    }
+
+    @Override
+    public boolean hasDeferredOutput() {
+        return underlyingConsole.hasDeferredOutput();
+    }
+
+    @Override
+    public void performWhenNoDeferredOutput(@NotNull Runnable runnable) {
+        underlyingConsole.performWhenNoDeferredOutput(runnable);
+    }
+
+    @Override
+    public void setHelpId(@NotNull String s) {
+        underlyingConsole.setHelpId(s);
+    }
+
+    @Override
+    public void addMessageFilter(@NotNull Filter filter) {
+        underlyingConsole.addMessageFilter(filter);
+    }
+
+    @Override
+    public void printHyperlink(@NotNull String s, @Nullable HyperlinkInfo hyperlinkInfo) {
+        underlyingConsole.printHyperlink(s, hyperlinkInfo);
+    }
+
+    @Override
+    public int getContentSize() {
+        return underlyingConsole.getContentSize();
+    }
+
+    @Override
+    public boolean canPause() {
+        return underlyingConsole.canPause();
+    }
+
+    @NotNull
+    @Override
+    public AnAction[] createConsoleActions() {
+        return underlyingConsole.createConsoleActions();
+    }
+
+    @Override
+    public void allowHeavyFilters() {
+        underlyingConsole.allowHeavyFilters();
     }
 
     class ServerListenerImpl extends UnicastRemoteObject implements DevServerManagerListener {

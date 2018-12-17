@@ -13,18 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.devserver;
 
-public class DevServerConfiguration {
-    public String javaHome;
-    public int maxHeap;
-    public String mainClass;
-    public String[] classPath;
-    public String[] sourcePath;
-    public boolean indicator;
-    public boolean autoReload;
-    public int port;
-    public String pathToFile;
-    public String fileName;
-    public int debugPort;
-}
+window.addEventListener("message", function(event) {
+    if (event.source !== window) {
+        return;
+    }
+
+    var data = event.data;
+    if (typeof data.teavmDebugger !== "undefined") {
+        chrome.runtime.sendMessage({ command: "debug", port: data.teavmDebugger.port });
+    }
+}, false);
+window.postMessage({ teavmDebuggerRequest: true }, "*");

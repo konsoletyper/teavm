@@ -94,7 +94,7 @@
               <target>
                 <mkdir dir="${basedir}/dependencies/"/>
                 <get src="https://plugins.jetbrains.com/plugin/download?updateId=42362"
-                     dest="${basedir}/dependencies/scala.zip"/>
+                     dest="${basedir}/dependencies/scala.zip" skipexisting="true"/>
                 <unzip src="${basedir}/dependencies/scala.zip" dest="${basedir}/dependencies"/>
               </target>
             </configuration>

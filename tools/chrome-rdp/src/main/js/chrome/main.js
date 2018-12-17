@@ -1,15 +1,16 @@
 debuggerAgentMap = {};
 
 chrome.browserAction.onClicked.addListener(function(tab) {
-    new DebuggerAgent(tab).attach();
+    new DebuggerAgent(tab, 2357).attach();
 });
-function DebuggerAgent(tab) {
+function DebuggerAgent(tab, port) {
     this.pendingMessages = [];
     this.connection = null;
     this.tab = null;
     this.debuggee = { tabId : tab.id };
     this.attachedToDebugger = false;
     this.messageBuffer = "";
+    this.port = port;
     debuggerAgentMap[tab.id] = this;
 }
 DebuggerAgent.MAX_MESSAGE_SIZE = 65534;
@@ -20,12 +21,12 @@ DebuggerAgent.prototype.attach = function() {
     }.bind(this, this.connectToServer.bind(this)));
 };
 DebuggerAgent.prototype.connectToServer = function() {
-    this.connection = new WebSocket("ws://localhost:2357/");
+    this.connection = new WebSocket("ws://localhost:" + this.port + "/");
     this.connection.onmessage = function(event) {
         var str = event.data;
         var ctl = str.substring(0, 1);
         this.messageBuffer += str.substring(1);
-        if (ctl == '.') {
+        if (ctl === '.') {
             this.receiveMessage(JSON.parse(this.messageBuffer));
             this.messageBuffer = "";
         }
@@ -94,5 +95,11 @@ chrome.debugger.onDetach.addListener(function(source) {
     if (agent) {
         agent.attachedToDebugger = false;
         agent.disconnect();
+    }
+});
+
+chrome.runtime.onMessage.addListener(function(message, sender, callback) {
+    if (message.command === "debug") {
+        new DebuggerAgent(sender.tab, message.port).attach();
     }
 });

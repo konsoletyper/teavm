@@ -16,6 +16,8 @@
 (function () {
     var boot = BOOT_FLAG;
     var reload = RELOAD_FLAG;
+    var indicatorVisible = INDICATOR_FLAG;
+    var debugPort = DEBUG_PORT;
 
     function createWebSocket() {
         var loc = window.location;
@@ -121,10 +123,12 @@
         document.body.appendChild(indicator.container);
     }
 
-    if (document.body) {
-        onLoad();
-    } else {
-        window.addEventListener("load", onLoad);
+    if (indicatorVisible) {
+        if (document.body) {
+            onLoad();
+        } else {
+            window.addEventListener("load", onLoad);
+        }
     }
 
     function startMain() {
@@ -163,5 +167,18 @@
 
     if (boot) {
         indicator.show("File is not ready, about to compile");
+    }
+
+    if (debugPort > 0) {
+        function connectDebugAgent(event) {
+            if (event.source !== window) {
+                return;
+            }
+            var data = event.data;
+            if (typeof data.teavmDebuggerRequest !== "undefined") {
+                window.postMessage({teavmDebugger: {port: debugPort}}, "*");
+            }
+        }
+        window.addEventListener("message", connectDebugAgent);
     }
 })();
