@@ -86,7 +86,7 @@ public final class BenchmarkStarter {
     private static void render() {
         CanvasRenderingContext2D context = (CanvasRenderingContext2D) canvas.getContext("2d");
         context.setFillStyle("white");
-        context.setStrokeStyle("red");
+        context.setStrokeStyle("grey");
         context.fillRect(0, 0, 600, 600);
         context.save();
         context.translate(0, 600);

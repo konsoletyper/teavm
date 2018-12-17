@@ -26,7 +26,6 @@ import com.intellij.execution.filters.TextConsoleBuilderFactory;
 import com.intellij.execution.process.ProcessHandler;
 import com.intellij.execution.runners.ExecutionEnvironment;
 import com.intellij.execution.runners.ProgramRunner;
-import com.intellij.execution.ui.ConsoleView;
 import com.intellij.execution.ui.ConsoleViewContentType;
 import com.intellij.execution.util.JavaParametersUtil;
 import com.intellij.openapi.module.Module;
@@ -44,6 +43,7 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.teavm.idea.DaemonUtil;
 import org.teavm.idea.DevServerRunnerListener;
+import org.teavm.idea.devserver.ui.TeaVMDevServerConsole;
 
 public class TeaVMDevServerRunState implements RunProfileState {
     private final TeaVMDevServerConfiguration configuration;
@@ -84,9 +84,9 @@ public class TeaVMDevServerRunState implements RunProfileState {
         config.maxHeap = configuration.getMaxHeap();
 
         try {
-            ConsoleView console = consoleBuilder.getConsole();
+            TeaVMDevServerConsole console = new TeaVMDevServerConsole(consoleBuilder.getConsole());
             ProcessHandlerImpl processHandler = new ProcessHandlerImpl(config, console);
-            console.attachToProcess(processHandler);
+            console.getUnderlyingConsole().attachToProcess(processHandler);
             processHandler.start();
             return new DefaultExecutionResult(console, processHandler);
         } catch (IOException e) {
@@ -106,16 +106,18 @@ public class TeaVMDevServerRunState implements RunProfileState {
 
     class ProcessHandlerImpl extends ProcessHandler implements DevServerRunnerListener {
         private DevServerConfiguration config;
-        private ConsoleView console;
+        private TeaVMDevServerConsole console;
         private DevServerInfo info;
 
-        ProcessHandlerImpl(DevServerConfiguration config, ConsoleView console) {
+        ProcessHandlerImpl(DevServerConfiguration config, TeaVMDevServerConsole console) {
             this.config = config;
             this.console = console;
         }
 
         void start() throws IOException {
             info = DevServerRunner.start(DaemonUtil.detectClassPath().toArray(new String[0]), config, this);
+            console.setServerManager(info.server);
+            startNotify();
         }
 
         @Override
@@ -146,16 +148,17 @@ public class TeaVMDevServerRunState implements RunProfileState {
 
         @Override
         public void error(String text) {
-            console.print(text + System.lineSeparator(), ConsoleViewContentType.ERROR_OUTPUT);
+            console.getUnderlyingConsole().print(text + System.lineSeparator(), ConsoleViewContentType.ERROR_OUTPUT);
         }
 
         @Override
         public void info(String text) {
-            console.print(text + System.lineSeparator(), ConsoleViewContentType.NORMAL_OUTPUT);
+            console.getUnderlyingConsole().print(text + System.lineSeparator(), ConsoleViewContentType.NORMAL_OUTPUT);
         }
 
         @Override
         public void stopped(int code) {
+            console.stop();
             notifyProcessTerminated(code);
         }
     }

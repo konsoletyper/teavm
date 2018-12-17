@@ -139,7 +139,11 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
         configuration.setPathToFile(pathToFileField.getText());
         configuration.setIndicator(indicatorField.isSelected());
         configuration.setAutomaticallyReloaded(autoReloadField.isSelected());
-        configuration.setMaxHeap(Integer.parseInt(maxHeapField.getText()));
-        configuration.setPort(Integer.parseInt(portField.getText()));
+        if (!maxHeapField.getText().isEmpty()) {
+            configuration.setMaxHeap(Integer.parseInt(maxHeapField.getText()));
+        }
+        if (!portField.getText().isEmpty()) {
+            configuration.setPort(Integer.parseInt(portField.getText()));
+        }
     }
 }

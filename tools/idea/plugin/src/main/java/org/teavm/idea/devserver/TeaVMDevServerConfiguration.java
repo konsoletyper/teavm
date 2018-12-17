@@ -22,7 +22,6 @@ import com.intellij.execution.configurations.RunConfiguration;
 import com.intellij.execution.configurations.RunConfigurationModule;
 import com.intellij.execution.configurations.RunProfileState;
 import com.intellij.execution.runners.ExecutionEnvironment;
-import com.intellij.facet.FacetManager;
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.module.ModuleManager;
 import com.intellij.openapi.options.SettingsEditor;
@@ -31,17 +30,14 @@ import com.intellij.openapi.util.WriteExternalException;
 import com.intellij.util.xmlb.XmlSerializer;
 import com.intellij.util.xmlb.annotations.Property;
 import com.intellij.util.xmlb.annotations.Tag;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import org.jdom.Element;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.teavm.idea.TeaVMFacetType;
 import org.teavm.idea.devserver.ui.TeaVMDevServerSettingsEditor;
 
-public class TeaVMDevServerConfiguration
-        extends ModuleBasedConfiguration<RunConfigurationModule> {
+public class TeaVMDevServerConfiguration extends ModuleBasedConfiguration<RunConfigurationModule> {
     private String mainClass = "";
     private String jdkPath;
     private int port = 9090;
@@ -59,15 +55,7 @@ public class TeaVMDevServerConfiguration
 
     @Override
     public Collection<Module> getValidModules() {
-        Module[] modules = ModuleManager.getInstance(getProject()).getModules();
-        List<Module> validModules = new ArrayList<>();
-        for (Module module : modules) {
-            FacetManager facetManager = FacetManager.getInstance(module);
-            if (facetManager.getFacetByType(TeaVMFacetType.TYPE_ID) != null) {
-                validModules.add(module);
-            }
-        }
-        return validModules;
+        return Arrays.asList(ModuleManager.getInstance(getProject()).getModules());
     }
 
     @Override
