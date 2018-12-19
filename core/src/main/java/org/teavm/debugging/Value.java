@@ -54,9 +54,24 @@ public class Value {
             type = jsValue.getClassName().then(className -> {
                 if (className.startsWith("a/")) {
                     className = className.substring(2);
+                    String origClassName = className;
+                    int degree = 0;
+                    while (className.endsWith("[]")) {
+                        className = className.substring(0, className.length() - 2);
+                        ++degree;
+                    }
                     String javaClassName = debugInformation.getClassNameByJsName(className);
                     if (javaClassName != null) {
+                        if (degree > 0) {
+                            StringBuilder sb = new StringBuilder(javaClassName);
+                            for (int i = 0; i < degree; ++i) {
+                                sb.append("[]");
+                            }
+                            javaClassName = sb.toString();
+                        }
                         className = javaClassName;
+                    } else {
+                        className = origClassName;
                     }
                 }
                 return className;
@@ -68,33 +83,40 @@ public class Value {
     public Promise<Map<String, Variable>> getProperties() {
         if (properties == null) {
             properties = jsValue.getProperties().thenAsync(jsVariables -> {
-                return jsValue.getClassName().then(className -> {
+                return getType().thenAsync(className -> {
+                    if (!className.startsWith("@") && className.endsWith("[]") && jsVariables.containsKey("data")) {
+                        return jsVariables.get("data").getValue().getProperties()
+                                .then(arrayData -> fillArray(arrayData));
+                    }
                     Map<String, Variable> vars = new HashMap<>();
                     for (Map.Entry<String, ? extends JavaScriptVariable> entry : jsVariables.entrySet()) {
                         JavaScriptVariable jsVar = entry.getValue();
                         String name;
-                        if (className.endsWith("[]")) {
-                            if (entry.getKey().equals("data")) {
-                                name = entry.getKey();
-                            } else {
-                                continue;
-                            }
-                        } else if (isNumeric(entry.getKey())) {
-                            name = entry.getKey();
-                        } else {
-                            name = debugger.mapField(className, entry.getKey());
-                            if (name == null) {
-                                continue;
-                            }
+                        name = debugger.mapField(className, entry.getKey());
+                        if (name == null) {
+                            continue;
                         }
                         Value value = new Value(debugger, debugInformation, jsVar.getValue());
                         vars.put(name, new Variable(name, value));
                     }
-                    return vars;
+                    return Promise.of(vars);
                 });
             });
         }
         return properties;
+    }
+
+    private Map<String, Variable> fillArray(Map<String, ? extends JavaScriptVariable> jsVariables) {
+        Map<String, Variable> vars = new HashMap<>();
+        for (Map.Entry<String, ? extends JavaScriptVariable> entry : jsVariables.entrySet()) {
+            JavaScriptVariable jsVar = entry.getValue();
+            if (!isNumeric(entry.getKey())) {
+                continue;
+            }
+            Value value = new Value(debugger, debugInformation, jsVar.getValue());
+            vars.put(entry.getKey(), new Variable(entry.getKey(), value));
+        }
+        return vars;
     }
 
     public boolean hasInnerStructure() {

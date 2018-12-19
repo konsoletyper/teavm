@@ -30,6 +30,8 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
+import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.instructions.JumpInstruction;
 
 class LocationGraphBuilder {
     private Map<TextLocation, Set<TextLocation>> graphBuilder;
@@ -44,7 +46,7 @@ class LocationGraphBuilder {
     }
 
     private void dfs(Graph graph, Program program) {
-        startLocations = new ArrayList<>(Collections.<Set<TextLocation>>nCopies(graph.size(), null));
+        startLocations = new ArrayList<>(Collections.nCopies(graph.size(), null));
         additionalConnections = new ArrayList<>();
         Deque<Step> stack = new ArrayDeque<>();
         for (int i = 0; i < graph.size(); ++i) {
@@ -69,6 +71,9 @@ class LocationGraphBuilder {
             TextLocation location = step.location;
             boolean started = false;
             for (Instruction insn : block) {
+                if (insn instanceof JumpInstruction || insn instanceof EmptyInstruction) {
+                    continue;
+                }
                 if (insn.getLocation() != null) {
                     if (!started) {
                         step.startLocations.add(insn.getLocation());

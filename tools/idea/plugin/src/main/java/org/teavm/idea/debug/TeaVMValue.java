@@ -63,32 +63,26 @@ public class TeaVMValue extends XNamedValue {
             if (charactersProperty == null) {
                 return errorString();
             }
-            return charactersProperty.getValue().getProperties().thenAsync(charsProperties -> {
-                Variable dataProperty = charsProperties.get("data");
-                if (dataProperty == null) {
-                    return errorString();
-                }
-                return dataProperty.getValue().getProperties().thenAsync(dataValueProperties -> {
-                    int[] indexes = dataValueProperties.keySet().stream()
-                            .filter(t -> isDigits(t))
-                            .mapToInt(Integer::parseInt)
-                            .toArray();
-                    int maxIndex = Math.min(Arrays.stream(indexes).max().orElse(-1) + 1, 256);
-                    char[] chars = new char[maxIndex];
-                    List<Promise<Void>> promises = new ArrayList<>();
-                    for (int i = 0; i < maxIndex; ++i) {
-                        Variable charProperty = dataValueProperties.get(Integer.toString(i));
-                        if (charProperty != null) {
-                            int index = i;
-                            promises.add(charProperty.getValue().getRepresentation().thenVoid(charRepr -> {
-                                if (isDigits(charRepr)) {
-                                    chars[index] = (char) Integer.parseInt(charRepr);
-                                }
-                            }));
-                        }
+            return charactersProperty.getValue().getProperties().thenAsync(dataValueProperties -> {
+                int[] indexes = dataValueProperties.keySet().stream()
+                        .filter(t -> isDigits(t))
+                        .mapToInt(Integer::parseInt)
+                        .toArray();
+                int maxIndex = Math.min(Arrays.stream(indexes).max().orElse(-1) + 1, 256);
+                char[] chars = new char[maxIndex];
+                List<Promise<Void>> promises = new ArrayList<>();
+                for (int i = 0; i < maxIndex; ++i) {
+                    Variable charProperty = dataValueProperties.get(Integer.toString(i));
+                    if (charProperty != null) {
+                        int index = i;
+                        promises.add(charProperty.getValue().getRepresentation().thenVoid(charRepr -> {
+                            if (isDigits(charRepr)) {
+                                chars[index] = (char) Integer.parseInt(charRepr);
+                            }
+                        }));
                     }
-                    return Promise.allVoid(promises).thenAsync(v -> Promise.of(new String(chars)));
-                });
+                }
+                return Promise.allVoid(promises).thenAsync(v -> Promise.of(new String(chars)));
             });
         });
     }

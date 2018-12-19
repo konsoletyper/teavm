@@ -46,6 +46,13 @@ public class Optimizer {
         boolean[] preservedVars = new boolean[stats.writes.length];
         BreakEliminator breakEliminator = new BreakEliminator();
         breakEliminator.eliminate(method.getBody());
+        if (friendlyToDebugger) {
+            for (int i = 0; i < method.getVariables().size(); ++i) {
+                if (method.getVariables().get(i).getName() != null) {
+                    preservedVars[i] = true;
+                }
+            }
+        }
         OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads,
                 moveConstants ? stats.constants : new Object[stats.constants.length], friendlyToDebugger);
         method.getBody().acceptVisitor(optimizer);

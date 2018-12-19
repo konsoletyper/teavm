@@ -575,7 +575,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 target.afterOptimizations(optimizedProgram, method, classSource);
                 if (target.requiresRegisterAllocation()) {
                     RegisterAllocator allocator = new RegisterAllocator();
-                    allocator.allocateRegisters(method, optimizedProgram);
+                    allocator.allocateRegisters(method, optimizedProgram,
+                            optimizationLevel == TeaVMOptimizationLevel.SIMPLE);
                 }
             }
 

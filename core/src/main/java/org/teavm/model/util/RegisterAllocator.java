@@ -36,7 +36,7 @@ import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 
 public class RegisterAllocator {
-    public void allocateRegisters(MethodReader method, Program program) {
+    public void allocateRegisters(MethodReader method, Program program, boolean debuggerFriendly) {
         insertPhiArgumentsCopies(program);
         InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
         LivenessAnalyzer liveness = new LivenessAnalyzer();
@@ -61,7 +61,7 @@ public class RegisterAllocator {
             maxClass = Math.max(maxClass, cls + 1);
         }
         int[] categories = getVariableCategories(program, method.getReference());
-        String[] names = getVariableNames(program);
+        String[] names = getVariableNames(program, debuggerFriendly);
         colorer.colorize(MutableGraphNode.toGraph(interferenceGraph), colors, categories, names);
 
         int maxColor = 0;
@@ -100,10 +100,13 @@ public class RegisterAllocator {
         return categories;
     }
 
-    private String[] getVariableNames(ProgramReader program) {
+    private String[] getVariableNames(ProgramReader program, boolean debuggerFriendly) {
         String[] names = new String[program.variableCount()];
         for (int i = 0; i < names.length; ++i) {
             names[i] = program.variableAt(i).getDebugName();
+            if (debuggerFriendly && names[i] == null) {
+                names[i] = "";
+            }
         }
         return names;
     }
@@ -231,14 +234,14 @@ public class RegisterAllocator {
         }
     }
 
-    private void renameVariables(final Program program, final int[] varMap) {
+    private void renameVariables(Program program, int[] varMap) {
         InstructionVariableMapper mapper = new InstructionVariableMapper(var ->
                 program.variableAt(varMap[var.getIndex()]));
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             mapper.apply(block);
         }
-        String[] originalNames = getVariableNames(program);
+        String[] originalNames = getVariableNames(program, false);
         for (int i = 0; i < program.variableCount(); ++i) {
             program.variableAt(i).setDebugName(null);
         }
