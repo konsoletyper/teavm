@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,19 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.debugging.javascript;
+package org.teavm.common;
 
-import java.util.Map;
-import org.teavm.common.Promise;
+public class CompletablePromise<T> extends Promise<T> {
+    public CompletablePromise() {
+    }
 
-public interface JavaScriptValue {
-    Promise<String> getRepresentation();
+    @Override
+    public void complete(T value) {
+        super.complete(value);
+    }
 
-    Promise<String> getClassName();
-
-    Promise<Map<String, ? extends JavaScriptVariable>> getProperties();
-
-    boolean hasInnerStructure();
-
-    String getInstanceId();
+    @Override
+    public void completeWithError(Throwable e) {
+        super.completeWithError(e);
+    }
 }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2018 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,35 +15,29 @@
  */
 package org.teavm.chromerdp;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import org.teavm.common.Promise;
-import org.teavm.debugging.javascript.JavaScriptBreakpoint;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 
-class RDPBreakpoint implements JavaScriptBreakpoint {
+class RDPNativeBreakpoint {
+    volatile String chromeId;
     ChromeRDPDebugger debugger;
-    RDPNativeBreakpoint nativeBreakpoint;
+    private JavaScriptLocation location;
+    Promise<Void> initPromise;
     Promise<Void> destroyPromise;
+    Set<RDPBreakpoint> breakpoints = new LinkedHashSet<>();
 
-    RDPBreakpoint(ChromeRDPDebugger debugger) {
+    RDPNativeBreakpoint(ChromeRDPDebugger debugger, JavaScriptLocation location) {
         this.debugger = debugger;
+        this.location = location;
     }
 
-    @Override
     public JavaScriptLocation getLocation() {
-        return nativeBreakpoint.getLocation();
+        return location;
     }
 
-    @Override
-    public Promise<Void> destroy() {
-        if (destroyPromise == null) {
-            destroyPromise = debugger.destroyBreakpoint(this);
-            debugger = null;
-        }
-        return destroyPromise;
-    }
-
-    @Override
     public boolean isValid() {
-        return nativeBreakpoint != null && nativeBreakpoint.isValid();
+        return chromeId != null && debugger != null && debugger.isAttached();
     }
 }

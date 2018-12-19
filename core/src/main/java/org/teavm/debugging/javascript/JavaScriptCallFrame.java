@@ -16,13 +16,14 @@
 package org.teavm.debugging.javascript;
 
 import java.util.Map;
+import org.teavm.common.Promise;
 
 public interface JavaScriptCallFrame {
     JavaScriptDebugger getDebugger();
 
     JavaScriptLocation getLocation();
 
-    Map<String, JavaScriptVariable> getVariables();
+    Promise<Map<String, ? extends JavaScriptVariable>> getVariables();
 
     JavaScriptValue getThisVariable();
 

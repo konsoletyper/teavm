@@ -26,7 +26,8 @@ public class Scene {
     private Body axis;
     private Body reel;
     private long lastCalculated;
-    private long startTime;
+    private long relativeTime;
+    private boolean hasUnfinishedComputations;
 
     public Scene() {
         world = new World(new Vec2(0, -9.8f));
@@ -35,7 +36,6 @@ public class Scene {
         joinReelToAxis();
         initBalls();
         lastCalculated = System.currentTimeMillis();
-        startTime = lastCalculated;
     }
 
     private void initAxis() {
@@ -133,18 +133,27 @@ public class Scene {
 
     public void calculate() {
         long currentTime = System.currentTimeMillis();
-        int timeToCalculate = (int) (currentTime - lastCalculated);
-        long relativeTime = currentTime - startTime;
+        long timeToCalculate = currentTime - lastCalculated;
+        int count = 5;
         while (timeToCalculate > 10) {
             int period = (int) ((relativeTime + 5000) / 10000);
             reel.applyTorque(period % 2 == 0 ? 8f : -8f);
             world.step(0.01f, 20, 40);
             lastCalculated += 10;
             timeToCalculate -= 10;
+            relativeTime += 10;
+            if (count-- == 0) {
+                hasUnfinishedComputations = true;
+                return;
+            }
         }
+        hasUnfinishedComputations = false;
     }
 
     public int timeUntilNextStep() {
+        if (hasUnfinishedComputations) {
+            return 0;
+        }
         return (int) Math.max(0, lastCalculated + 10 - System.currentTimeMillis());
     }
 

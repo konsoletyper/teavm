@@ -21,10 +21,10 @@ import com.intellij.xdebugger.frame.XNamedValue;
 import com.intellij.xdebugger.frame.XValueChildrenList;
 import com.intellij.xdebugger.frame.XValueNode;
 import com.intellij.xdebugger.frame.XValuePlace;
+import java.util.stream.Collectors;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
 import org.teavm.debugging.javascript.JavaScriptValue;
-import org.teavm.debugging.javascript.JavaScriptVariable;
 
 public class TeaVMOriginalValue extends XNamedValue {
     private boolean root;
@@ -39,20 +39,25 @@ public class TeaVMOriginalValue extends XNamedValue {
     @Override
     public void computePresentation(@NotNull XValueNode node, @NotNull XValuePlace place) {
         Icon icon = root ? PlatformIcons.VARIABLE_ICON : PlatformIcons.FIELD_ICON;
-        String representation = innerValue.getRepresentation();
-        if (representation == null) {
-            representation = "null";
-        }
-        node.setPresentation(icon, innerValue.getClassName(), representation, !innerValue.getProperties().isEmpty());
+        innerValue.getRepresentation().thenVoid(representation -> {
+            innerValue.getClassName().thenVoid(className -> {
+                String nonNullRepr = representation != null ? representation : "null";
+                node.setPresentation(icon, className.substring(1), nonNullRepr, innerValue.hasInnerStructure());
+            });
+        });
     }
-
 
     @Override
     public void computeChildren(@NotNull XCompositeNode node) {
-        XValueChildrenList children = new XValueChildrenList();
-        for (JavaScriptVariable variable : innerValue.getProperties().values()) {
-            children.add(new TeaVMOriginalValue(variable.getName(), false, variable.getValue()));
-        }
-        node.addChildren(children, true);
+        innerValue.getProperties().then(properties -> properties.values().stream()
+                .map(variable -> new TeaVMOriginalValue(variable.getName(), false, variable.getValue()))
+                .collect(Collectors.toList()))
+                .thenVoid(values -> {
+                    XValueChildrenList children = new XValueChildrenList();
+                    for (TeaVMOriginalValue value : values) {
+                        children.add(value);
+                    }
+                    node.addChildren(children, true);
+                });
     }
 }

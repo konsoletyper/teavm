@@ -15,22 +15,24 @@
  */
 package org.teavm.debugging.javascript;
 
+import org.teavm.common.Promise;
+
 public interface JavaScriptDebugger {
     void addListener(JavaScriptDebuggerListener listener);
 
     void removeListener(JavaScriptDebuggerListener listener);
 
-    void suspend();
+    Promise<Void> suspend();
 
-    void resume();
+    Promise<Void> resume();
 
-    void stepInto();
+    Promise<Void> stepInto();
 
-    void stepOut();
+    Promise<Void> stepOut();
 
-    void stepOver();
+    Promise<Void> stepOver();
 
-    void continueToLocation(JavaScriptLocation location);
+    Promise<Void> continueToLocation(JavaScriptLocation location);
 
     boolean isSuspended();
 
@@ -40,5 +42,5 @@ public interface JavaScriptDebugger {
 
     JavaScriptCallFrame[] getCallStack();
 
-    JavaScriptBreakpoint createBreakpoint(JavaScriptLocation location);
+    Promise<JavaScriptBreakpoint> createBreakpoint(JavaScriptLocation location);
 }

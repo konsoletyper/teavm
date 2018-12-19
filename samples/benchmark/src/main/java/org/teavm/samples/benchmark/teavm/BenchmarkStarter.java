@@ -44,7 +44,6 @@ public final class BenchmarkStarter {
     private static double timeSpentCalculating;
     private static double totalTime;
 
-
     private BenchmarkStarter() {
     }
 

@@ -23,8 +23,11 @@ import com.intellij.xdebugger.frame.XCompositeNode;
 import com.intellij.xdebugger.frame.XNamedValue;
 import com.intellij.xdebugger.frame.XStackFrame;
 import com.intellij.xdebugger.frame.XValueChildrenList;
+import java.util.Map;
+import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.teavm.common.Promise;
 import org.teavm.debugging.CallFrame;
 import org.teavm.debugging.Value;
 import org.teavm.debugging.Variable;
@@ -74,16 +77,33 @@ class TeaVMStackFrame extends XStackFrame {
 
     @Override
     public void computeChildren(@NotNull XCompositeNode node) {
-        XValueChildrenList children = new XValueChildrenList();
-        for (Variable variable : innerFrame.getVariables().values()) {
-            children.add(createValueNode(variable.getName(), true, variable.getValue()));
-        }
-        node.addChildren(children, true);
+        computeChildrenImpl(node, innerFrame.getVariables(), true);
     }
 
-    static XNamedValue createValueNode(String name, boolean root, Value value) {
-        return !value.getType().startsWith("@")
+    static void computeChildrenImpl(XCompositeNode node, Promise<Map<String, Variable>> variablesPromise,
+            boolean root) {
+        variablesPromise.then(variables -> variables.values()
+                .stream()
+                .map(var -> createValueNode(var.getName(), root, var.getValue()))
+                .collect(Collectors.toList()))
+                .thenAsync(Promise::all)
+                .thenVoid(values -> {
+                    XValueChildrenList children = new XValueChildrenList();
+                    for (XNamedValue value : values) {
+                        children.add(value);
+                    }
+                    node.addChildren(children, true);
+                })
+                .catchError(e -> {
+                    node.setErrorMessage("Error occurred calculating scope: " + e.getMessage());
+                    e.printStackTrace();
+                    return null;
+                });
+    }
+
+    static Promise<XNamedValue> createValueNode(String name, boolean root, Value value) {
+        return value.getType().then(type -> !type.startsWith("@")
                 ? new TeaVMValue(name, root, value)
-                : new TeaVMOriginalValue(name, root, value.getOriginalValue());
+                : new TeaVMOriginalValue(name, root, value.getOriginalValue()));
     }
 }
