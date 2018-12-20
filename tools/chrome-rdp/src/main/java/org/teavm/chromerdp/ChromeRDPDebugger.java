@@ -81,6 +81,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
     private ConcurrentMap<Integer, ResponseHandler<Object>> responseHandlers = new ConcurrentHashMap<>();
     private ConcurrentMap<Integer, CompletablePromise<Object>> promises = new ConcurrentHashMap<>();
     private AtomicInteger messageIdGenerator = new AtomicInteger();
+    private Promise<Void> runtimeEnabledPromise;
 
     private List<JavaScriptDebuggerListener> getListeners() {
         return new ArrayList<>(listeners);
@@ -121,7 +122,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
     }
 
     private Promise<Void> injectFunctions(int contextId) {
-        return callMethodAsync("Runtime.enable", void.class, null)
+        return enableRuntime()
                 .thenAsync(v -> {
                     CompileScriptCommand compileParams = new CompileScriptCommand();
                     compileParams.expression = "$dbg_class = function(obj) { return typeof obj === 'object' "
@@ -138,6 +139,13 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
                     runParams.scriptId = response.scriptId;
                     return callMethodAsync("Runtime.runScript", void.class, runParams);
                 });
+    }
+
+    private Promise<Void> enableRuntime() {
+        if (runtimeEnabledPromise == null) {
+            runtimeEnabledPromise = callMethodAsync("Runtime.enable", void.class, null);
+        }
+        return runtimeEnabledPromise;
     }
 
     private ChromeRDPExchangeListener exchangeListener = messageText -> {
@@ -225,6 +233,9 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
     }
 
     private Promise<Void> scriptParsed(ScriptParsedNotification params) {
+        if (params.getUrl() == null) {
+            return Promise.VOID;
+        }
         if (scripts.putIfAbsent(params.getScriptId(), params.getUrl()) != null) {
             return Promise.VOID;
         }
