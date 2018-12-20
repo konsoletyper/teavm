@@ -135,8 +135,12 @@ public class RuntimeRenderer {
         writer.append("return null;").softNewLine();
         writer.outdent().append("}").softNewLine();
 
-        writer.append("return String.fromCharCode.apply(null, str.").appendField(stringChars)
-                .append(".data);").softNewLine();
+        writer.append("var data = str.").appendField(stringChars).append(".data;").softNewLine();
+        writer.append("var result = \"\";").softNewLine();
+        writer.append("for (var i = 0; i < data.length; i = (i + 1) | 0) {").indent().softNewLine();
+        writer.append("result += String.fromCharCode(data[i]);").softNewLine();
+        writer.outdent().append("}").softNewLine();
+        writer.append("return result;").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
