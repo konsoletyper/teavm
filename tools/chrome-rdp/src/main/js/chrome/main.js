@@ -1,8 +1,13 @@
 debuggerAgentMap = {};
 
 chrome.browserAction.onClicked.addListener(function(tab) {
-    new DebuggerAgent(tab, 2357).attach();
+    chrome.storage.sync.get({
+        port: 2357,
+    }, function(items) {
+        new DebuggerAgent(tab, items.port).attach();
+    });
 });
+
 function DebuggerAgent(tab, port) {
     this.pendingMessages = [];
     this.connection = null;
