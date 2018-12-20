@@ -17,10 +17,12 @@ package org.teavm.dependency;
 
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -31,6 +33,8 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 
 public class Linker {
+    private static final MethodDescriptor clinitDescriptor = new MethodDescriptor("<clinit>", void.class);
+
     public void link(DependencyInfo dependency, ClassHolder cls) {
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             MethodReference methodRef = method.getReference();
@@ -73,21 +77,35 @@ public class Linker {
                     }
 
                     FieldReference fieldRef = getField.getField();
-                    if (!fieldRef.getClassName().equals(method.getOwnerName())) {
-                        InitClassInstruction initInsn = new InitClassInstruction();
-                        initInsn.setClassName(fieldRef.getClassName());
-                        initInsn.setLocation(insn.getLocation());
-                        insn.insertPrevious(initInsn);
+                    if (getField.getInstance() == null) {
+                        insertClinit(dependency, fieldRef.getClassName(), method, insn);
+                    }
+                } else if (insn instanceof PutFieldInstruction) {
+                    PutFieldInstruction putField = (PutFieldInstruction) insn;
+                    FieldDependencyInfo linkedField = dependency.getField(putField.getField());
+                    if (linkedField != null) {
+                        putField.setField(linkedField.getReference());
                     }
 
-                } else if (insn instanceof PutFieldInstruction) {
-                    PutFieldInstruction getField = (PutFieldInstruction) insn;
-                    FieldDependencyInfo linkedField = dependency.getField(getField.getField());
-                    if (linkedField != null) {
-                        getField.setField(linkedField.getReference());
+                    FieldReference fieldRef = putField.getField();
+                    if (putField.getInstance() == null) {
+                        insertClinit(dependency, fieldRef.getClassName(), method, insn);
                     }
                 }
             }
+        }
+    }
+
+    private void insertClinit(DependencyInfo dependency, String className, MethodHolder method, Instruction insn) {
+        if (className.equals(method.getOwnerName())) {
+            return;
+        }
+        ClassReader cls = dependency.getClassSource().get(className);
+        if (cls == null || cls.getMethod(clinitDescriptor) != null) {
+            InitClassInstruction initInsn = new InitClassInstruction();
+            initInsn.setClassName(className);
+            initInsn.setLocation(insn.getLocation());
+            insn.insertPrevious(initInsn);
         }
     }
 }
