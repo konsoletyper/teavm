@@ -183,7 +183,7 @@ public class Renderer implements RenderingManager {
                 if (i > 0) {
                     writer.append(',').ws();
                 }
-                writer.append('"').append(RenderingUtil.escapeString(context.getStringPool().get(i))).append('"');
+                RenderingUtil.writeString(writer, context.getStringPool().get(i));
             }
             writer.append("]);").newLine();
             stringPoolSize = writer.getOffset() - start;

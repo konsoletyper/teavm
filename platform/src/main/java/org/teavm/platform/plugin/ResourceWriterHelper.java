@@ -17,6 +17,7 @@ package org.teavm.platform.plugin;
 
 import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.rendering.RenderingUtil;
 
 final class ResourceWriterHelper {
     private ResourceWriterHelper() {
@@ -33,7 +34,7 @@ final class ResourceWriterHelper {
             } else if (resource instanceof Boolean) {
                 writer.append(resource == Boolean.TRUE ? "true" : "false");
             } else if (resource instanceof String) {
-                writeString(writer, (String) resource);
+                RenderingUtil.writeString(writer, (String) resource);
             } else {
                 throw new RuntimeException("Error compiling resources. Value of illegal type found: "
                         + resource.getClass());
@@ -43,12 +44,12 @@ final class ResourceWriterHelper {
 
     public static void writeIdentifier(SourceWriter writer, String id) throws IOException {
         if (id.isEmpty() || !isIdentifierStart(id.charAt(0))) {
-            writeString(writer, id);
+            RenderingUtil.writeString(writer, id);
             return;
         }
         for (int i = 1; i < id.length(); ++i) {
             if (isIdentifierPart(id.charAt(i))) {
-                writeString(writer, id);
+                RenderingUtil.writeString(writer, id);
                 return;
             }
         }
@@ -67,35 +68,5 @@ final class ResourceWriterHelper {
             return true;
         }
         return c >= '0' && c <= '9';
-    }
-
-    public static void writeString(SourceWriter writer, String s) throws IOException {
-        writer.append('"');
-        for (int i = 0; i < s.length(); ++i) {
-            char c = s.charAt(i);
-            switch (c) {
-                case '\0':
-                    writer.append("\\0");
-                    break;
-                case '\n':
-                    writer.append("\\n");
-                    break;
-                case '\r':
-                    writer.append("\\r");
-                    break;
-                case '\t':
-                    writer.append("\\t");
-                    break;
-                default:
-                    if (c < 32) {
-                        writer.append("\\u00").append(Character.forDigit(c / 16, 16))
-                                .append(Character.forDigit(c % 16, 16));
-                    } else {
-                        writer.append(c);
-                    }
-                    break;
-            }
-        }
-        writer.append('"');
     }
 }

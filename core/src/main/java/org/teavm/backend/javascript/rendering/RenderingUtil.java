@@ -15,12 +15,14 @@
  */
 package org.teavm.backend.javascript.rendering;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.Expr;
+import org.teavm.backend.javascript.codegen.SourceWriter;
 
 public final class RenderingUtil {
     public static final Set<String> KEYWORDS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("break", "case",
@@ -41,6 +43,59 @@ public final class RenderingUtil {
             sb.append(Character.isJavaIdentifierPart(c) ? c : '_');
         }
         return sb.toString();
+    }
+
+    public static void writeString(SourceWriter writer, String s) throws IOException {
+        if (s.isEmpty()) {
+            writer.append("\"\"");
+            return;
+        }
+        for (int i = 0; i < s.length(); i += 512) {
+            int next = Math.min(i + 512, s.length());
+            if (i > 0) {
+                writer.newLine().append("+").ws();
+            }
+            writer.append('"');
+            for (int j = i; j < next; ++j) {
+                char c = s.charAt(j);
+                switch (c) {
+                    case '\r':
+                        writer.append("\\r");
+                        break;
+                    case '\n':
+                        writer.append("\\n");
+                        break;
+                    case '\t':
+                        writer.append("\\t");
+                        break;
+                    case '\'':
+                        writer.append("\\'");
+                        break;
+                    case '\"':
+                        writer.append("\\\"");
+                        break;
+                    case '\\':
+                        writer.append("\\\\");
+                        break;
+                    default:
+                        if (c < ' ') {
+                            writer.append("\\u00").append(Character.forDigit(c / 16, 16))
+                                    .append(Character.forDigit(c % 16, 16));
+                        } else if (Character.isLowSurrogate(c) || Character.isHighSurrogate(c)
+                                || !Character.isDefined(c)) {
+                            writer.append("\\u")
+                                    .append(Character.forDigit(c / 0x1000, 0x10))
+                                    .append(Character.forDigit((c / 0x100) % 0x10, 0x10))
+                                    .append(Character.forDigit((c / 0x10) % 0x10, 0x10))
+                                    .append(Character.forDigit(c % 0x10, 0x10));
+                        } else {
+                            writer.append(c);
+                        }
+                        break;
+                }
+            }
+            writer.append('"');
+        }
     }
 
     public static String escapeString(String str) {
