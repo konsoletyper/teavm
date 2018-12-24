@@ -77,7 +77,7 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
                 decodeStack ? createStackDecoderFunction(resultParser) : null,
                 new NativeJavaObject(function, asyncResult, AsyncResult.class)
         };
-        pageRef.executeJavaScriptFunctionIfPossible(function, function, args, page.get());
+        pageRef.executeJavaScriptFunction(function, function, args, page.get());
 
         resultParser.parseResult((Scriptable) asyncResult.getResult(), run.getCallback());
     }
