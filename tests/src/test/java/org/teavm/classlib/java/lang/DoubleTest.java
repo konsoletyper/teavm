@@ -34,6 +34,8 @@ public class DoubleTest {
         assertEquals(23, Double.parseDouble("00230000e-4"), 1E-12);
         assertEquals(23, Double.parseDouble("2300000000000000000000e-20"), 1E-12);
         assertEquals(23, Double.parseDouble("2300000000000000000000e-20"), 1E-12);
+        assertEquals(23, Double.parseDouble("23."), 1E-12);
+        assertEquals(0.1, Double.parseDouble("0.1"), 0.001);
         assertEquals(0.1, Double.parseDouble(".1"), 0.001);
     }
 

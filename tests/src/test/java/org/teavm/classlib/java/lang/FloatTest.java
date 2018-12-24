@@ -35,7 +35,9 @@ public class FloatTest {
         assertEquals(23, Float.parseFloat("2300000000000000000000e-20"), 1E-12F);
         assertEquals(23, Float.parseFloat("2300000000000000000000e-20"), 1E-12F);
         assertEquals(23, Float.parseFloat("2300000000000000000000e-20"), 1E-12F);
+        assertEquals(23, Float.parseFloat("23."), 1E-12F);
         assertEquals(0.1F, Float.parseFloat("0.1"), 0.001F);
+        assertEquals(0.1F, Float.parseFloat(".1"), 0.001F);
     }
 
     @Test

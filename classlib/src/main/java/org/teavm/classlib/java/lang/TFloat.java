@@ -120,7 +120,10 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
 
         int mantissa = 0;
         int exp = 0;
+
+        boolean hasOneDigit = false;
         if (c != '.') {
+            hasOneDigit = true;
             if (c < '0' || c > '9') {
                 throw new TNumberFormatException();
             }
@@ -146,7 +149,6 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
 
         if (index < string.length() && string.charAt(index) == '.') {
             ++index;
-            boolean hasOneDigit = false;
             while (index < string.length()) {
                 c = string.charAt(index);
                 if (c < '0' || c > '9') {
@@ -177,7 +179,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
                 ++index;
             }
             int numExp = 0;
-            boolean hasOneDigit = false;
+            hasOneDigit = false;
             while (index < string.length()) {
                 c = string.charAt(index);
                 if (c < '0' || c > '9') {

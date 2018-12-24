@@ -37,7 +37,6 @@ class TeaVMProcessHandler extends ProcessHandler implements DevServerRunnerListe
     void start() throws IOException {
         info = DevServerRunner.start(DaemonUtil.detectClassPath().toArray(new String[0]), config, this);
         console.setServerManager(info.server);
-        startNotify();
         Runtime.getRuntime().addShutdownHook(new Thread(() -> info.process.destroy()));
     }
 
