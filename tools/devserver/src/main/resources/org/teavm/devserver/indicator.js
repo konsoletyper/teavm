@@ -20,10 +20,7 @@
     var debugPort = DEBUG_PORT;
 
     function createWebSocket() {
-        var loc = window.location;
-        var newUri = loc.protocol === "https:" ? "wss:" : "ws:";
-        newUri += "//WS_PATH";
-        return new WebSocket(newUri);
+        return new WebSocket("ws://WS_PATH");
     }
 
     function createIndicator() {
@@ -170,15 +167,18 @@
     }
 
     if (debugPort > 0) {
+        var connected = false;
         function connectDebugAgent(event) {
             if (event.source !== window) {
                 return;
             }
             var data = event.data;
-            if (typeof data.teavmDebuggerRequest !== "undefined") {
+            if (typeof data.teavmDebuggerRequest !== "undefined" && !connected) {
+                connected = true;
                 window.postMessage({teavmDebugger: {port: debugPort}}, "*");
             }
         }
         window.addEventListener("message", connectDebugAgent);
+        window.postMessage({teavmDebugger: {port: debugPort}}, "*");
     }
 })();

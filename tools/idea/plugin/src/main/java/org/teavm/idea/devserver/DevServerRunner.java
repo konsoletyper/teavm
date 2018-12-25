@@ -46,7 +46,7 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
     private int port;
     private Registry registry;
     private DevServer server;
-    private List<DevServerManagerListener> listeners = new ArrayList<>();
+    private final List<DevServerManagerListener> listeners = new ArrayList<>();
 
     private DevServerRunner(DevServer server) throws RemoteException {
         super();
@@ -94,7 +94,16 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
 
     @Override
     public void addListener(DevServerManagerListener listener) {
-        listeners.add(listener);
+        synchronized (listeners) {
+            listeners.add(listener);
+        }
+    }
+
+    @Override
+    public void removeListener(DevServerManagerListener listener) {
+        synchronized (listeners) {
+            listeners.remove(listener);
+        }
     }
 
     public static void main(String[] args) throws Exception {
@@ -265,10 +274,16 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
         }
     }
 
+    private List<DevServerManagerListener> getListeners() {
+        synchronized (listeners) {
+            return new ArrayList<>(listeners);
+        }
+    }
+
     final DevServerListener devServerListener = new DevServerListener() {
         @Override
         public void compilationStarted() {
-            for (DevServerManagerListener listener : listeners) {
+            for (DevServerManagerListener listener : getListeners()) {
                 try {
                     listener.compilationStarted();
                 } catch (RemoteException e) {
@@ -279,7 +294,7 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
 
         @Override
         public void compilationProgress(double v) {
-            for (DevServerManagerListener listener : listeners) {
+            for (DevServerManagerListener listener : getListeners()) {
                 try {
                     listener.compilationProgress(v);
                 } catch (RemoteException e) {
@@ -293,7 +308,7 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
             DevServerBuildResult result = new DevServerBuildResult();
             result.callGraph = buildResult.getCallGraph();
             result.problems.addAll(buildResult.getProblems().getProblems());
-            for (DevServerManagerListener listener : listeners) {
+            for (DevServerManagerListener listener : getListeners()) {
                 try {
                     listener.compilationComplete(result);
                 } catch (RemoteException e) {
@@ -304,7 +319,7 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
 
         @Override
         public void compilationCancelled() {
-            for (DevServerManagerListener listener : listeners) {
+            for (DevServerManagerListener listener : getListeners()) {
                 try {
                     listener.compilationCancelled();
                 } catch (RemoteException e) {

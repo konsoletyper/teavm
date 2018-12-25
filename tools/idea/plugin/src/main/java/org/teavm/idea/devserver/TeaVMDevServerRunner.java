@@ -74,11 +74,15 @@ public class TeaVMDevServerRunner extends GenericProgramRunner<RunnerSettings> {
             });
             runContent = debugSession.getRunContentDescriptor();
 
-            ProcessHandler debugProcessHandler = debugSession.getDebugProcess().getProcessHandler();
-            debugProcessHandler.addProcessListener(new ProcessAdapter() {
+            runContent.getProcessHandler().addProcessListener(new ProcessAdapter() {
+                @Override
+                public void startNotified(@NotNull ProcessEvent event) {
+                    processHandler.startNotify();
+                }
+
                 @Override
                 public void processTerminated(@NotNull ProcessEvent event) {
-                    processHandler.destroyProcess();
+                    processHandler.detachProcess();
                 }
             });
         }

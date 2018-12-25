@@ -30,4 +30,6 @@ public interface DevServerManager extends Remote {
     void cancelBuild() throws RemoteException;
 
     void addListener(DevServerManagerListener listener) throws RemoteException;
+
+    void removeListener(DevServerManagerListener listener) throws RemoteException;
 }

@@ -14,13 +14,15 @@
  *  limitations under the License.
  */
 
+var connected = false;
 window.addEventListener("message", function(event) {
     if (event.source !== window) {
         return;
     }
 
     var data = event.data;
-    if (typeof data.teavmDebugger !== "undefined") {
+    if (typeof data.teavmDebugger !== "undefined" && !connected) {
+        connected = true;
         chrome.runtime.sendMessage({ command: "debug", port: data.teavmDebugger.port });
     }
 }, false);

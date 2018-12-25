@@ -96,6 +96,7 @@ public class TeaVMDevServerConsole extends JPanel implements ConsoleView {
             } catch (RemoteException e) {
                 throw new RuntimeException(e);
             }
+            serverListener = null;
         }
         underlyingConsole.dispose();
     }
