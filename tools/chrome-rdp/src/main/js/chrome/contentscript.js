@@ -14,13 +14,13 @@
  *  limitations under the License.
  */
 
-var connected = false;
-window.addEventListener("message", function(event) {
+let connected = false;
+window.addEventListener("message", (event) => {
     if (event.source !== window) {
         return;
     }
 
-    var data = event.data;
+    const data = event.data;
     if (typeof data.teavmDebugger !== "undefined" && !connected) {
         connected = true;
         chrome.runtime.sendMessage({ command: "debug", port: data.teavmDebugger.port });

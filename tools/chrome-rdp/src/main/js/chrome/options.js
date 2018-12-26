@@ -15,7 +15,7 @@
  */
 
 function saveOptions() {
-    var port = document.getElementById("port").value;
+    const port = document.getElementById("port").value;
     chrome.storage.sync.set({
         port: port !== "" ? parseInt(port) : 2357,
     });
@@ -24,7 +24,7 @@ function saveOptions() {
 function loadOptions() {
     chrome.storage.sync.get({
         port: 2357,
-    }, function(items) {
+    }, (items) => {
         document.getElementById("port").value = items.port;
     });
 }
