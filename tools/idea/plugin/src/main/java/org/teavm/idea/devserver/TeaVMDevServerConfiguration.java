@@ -46,6 +46,8 @@ public class TeaVMDevServerConfiguration extends ModuleBasedConfiguration<RunCon
     private boolean indicator = true;
     private boolean automaticallyReloaded;
     private int maxHeap = 1024;
+    private String proxyUrl = "";
+    private String proxyPath = "";
 
     public TeaVMDevServerConfiguration(
             @NotNull RunConfigurationModule configurationModule,
@@ -171,5 +173,25 @@ public class TeaVMDevServerConfiguration extends ModuleBasedConfiguration<RunCon
 
     public void setMaxHeap(int maxHeap) {
         this.maxHeap = maxHeap;
+    }
+
+    @Property
+    @Tag
+    public String getProxyUrl() {
+        return proxyUrl;
+    }
+
+    public void setProxyUrl(String proxyUrl) {
+        this.proxyUrl = proxyUrl;
+    }
+
+    @Property
+    @Tag
+    public String getProxyPath() {
+        return proxyPath;
+    }
+
+    public void setProxyPath(String proxyPath) {
+        this.proxyPath = proxyPath;
     }
 }

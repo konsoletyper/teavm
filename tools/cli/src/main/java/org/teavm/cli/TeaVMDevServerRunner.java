@@ -28,7 +28,6 @@ import org.teavm.tooling.ConsoleTeaVMToolLog;
 
 public final class TeaVMDevServerRunner {
     private static Options options = new Options();
-    private ConsoleTeaVMToolLog log = new ConsoleTeaVMToolLog(false);
     private DevServer devServer;
     private CommandLine commandLine;
 
@@ -71,7 +70,7 @@ public final class TeaVMDevServerRunner {
         options.addOption(OptionBuilder
                 .withDescription("display indicator on web page")
                 .withLongOpt("indicator")
-                .create());
+                .create('i'));
         options.addOption(OptionBuilder
                 .withDescription("automatically reload page when compilation completes")
                 .withLongOpt("auto-reload")
@@ -80,6 +79,18 @@ public final class TeaVMDevServerRunner {
                 .withDescription("display more messages on server log")
                 .withLongOpt("verbose")
                 .create('v'));
+        options.addOption(OptionBuilder
+                .withArgName("URL")
+                .hasArg()
+                .withDescription("delegate requests to URL")
+                .withLongOpt("proxy-url")
+                .create());
+        options.addOption(OptionBuilder
+                .withArgName("path")
+                .hasArg()
+                .withDescription("delegate requests from path")
+                .withLongOpt("proxy-path")
+                .create());
     }
 
     private TeaVMDevServerRunner(CommandLine commandLine) {
@@ -103,7 +114,6 @@ public final class TeaVMDevServerRunner {
 
         TeaVMDevServerRunner runner = new TeaVMDevServerRunner(commandLine);
         runner.parseArguments();
-        runner.setUp();
         runner.runAll();
     }
 
@@ -122,6 +132,13 @@ public final class TeaVMDevServerRunner {
                 System.err.println("port must be numeric");
                 printUsage();
             }
+        }
+
+        if (commandLine.hasOption("proxy-url")) {
+            devServer.setProxyUrl(commandLine.getOptionValue("proxy-url"));
+        }
+        if (commandLine.hasOption("proxy-path")) {
+            devServer.setProxyPath(commandLine.getOptionValue("proxy-path"));
         }
 
         String[] args = commandLine.getArgs();
@@ -152,10 +169,6 @@ public final class TeaVMDevServerRunner {
         if (commandLine.hasOption('s')) {
             devServer.getSourcePath().addAll(Arrays.asList(commandLine.getOptionValues('s')));
         }
-    }
-
-    private void setUp() {
-        devServer.setLog(log);
     }
 
     private void runAll() {

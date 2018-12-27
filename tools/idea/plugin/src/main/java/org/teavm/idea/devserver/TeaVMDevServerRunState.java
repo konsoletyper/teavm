@@ -81,6 +81,8 @@ public class TeaVMDevServerRunState implements RunProfileState {
         config.autoReload = configuration.isAutomaticallyReloaded();
         config.mainClass = configuration.getMainClass();
         config.maxHeap = configuration.getMaxHeap();
+        config.proxyUrl = configuration.getProxyUrl();
+        config.proxyPath = configuration.getProxyPath();
 
         if (executor.getId().equals(DefaultDebugExecutor.EXECUTOR_ID)) {
             config.debugPort = choosePort();

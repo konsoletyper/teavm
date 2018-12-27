@@ -25,13 +25,19 @@ import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
 import java.net.MalformedURLException;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.channels.Channels;
+import java.nio.channels.WritableByteChannel;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -40,11 +46,26 @@ import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
+import javax.servlet.AsyncContext;
+import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.io.IOUtils;
+import org.eclipse.jetty.client.HttpClient;
+import org.eclipse.jetty.client.api.Request;
+import org.eclipse.jetty.client.api.Response;
+import org.eclipse.jetty.client.util.InputStreamContentProvider;
+import org.eclipse.jetty.http.HttpField;
+import org.eclipse.jetty.websocket.api.UpgradeRequest;
+import org.eclipse.jetty.websocket.api.UpgradeResponse;
+import org.eclipse.jetty.websocket.api.WebSocketBehavior;
+import org.eclipse.jetty.websocket.api.WebSocketPolicy;
+import org.eclipse.jetty.websocket.client.ClientUpgradeRequest;
+import org.eclipse.jetty.websocket.client.WebSocketClient;
+import org.eclipse.jetty.websocket.client.io.UpgradeListener;
+import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.cache.InMemoryMethodNodeCache;
 import org.teavm.cache.InMemoryProgramCache;
@@ -69,17 +90,25 @@ import org.teavm.vm.TeaVMProgressListener;
 
 public class CodeServlet extends HttpServlet {
     private static final Supplier<InputStream> EMPTY_CONTENT = () -> null;
+    private WebSocketServletFactory wsFactory;
 
     private String mainClass;
     private String[] classPath;
     private String fileName = "classes.js";
     private String pathToFile = "/";
+    private String indicatorWsPath;
     private List<String> sourcePath = new ArrayList<>();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private boolean indicator;
     private boolean automaticallyReloaded;
     private int port;
     private int debugPort;
+    private String proxyUrl;
+    private String proxyPath = "/";
+    private String proxyHost;
+    private String proxyProtocol;
+    private int proxyPort;
+    private String proxyBaseUrl;
 
     private Map<String, Supplier<InputStream>> sourceFileCache = new HashMap<>();
 
@@ -95,7 +124,7 @@ public class CodeServlet extends HttpServlet {
     private final Map<String, byte[]> content = new HashMap<>();
     private MemoryBuildTarget buildTarget = new MemoryBuildTarget();
 
-    private final Set<CodeWsEndpoint> wsEndpoints = new LinkedHashSet<>();
+    private final Set<ProgressHandler> progressHandlers = new LinkedHashSet<>();
     private final Object statusLock = new Object();
     private volatile boolean cancelRequested;
     private boolean compiling;
@@ -103,10 +132,15 @@ public class CodeServlet extends HttpServlet {
     private boolean waiting;
     private Thread buildThread;
     private List<DevServerListener> listeners = new ArrayList<>();
+    private HttpClient httpClient;
+    private WebSocketClient wsClient = new WebSocketClient();
 
     public CodeServlet(String mainClass, String[] classPath) {
         this.mainClass = mainClass;
         this.classPath = classPath.clone();
+
+        httpClient = new HttpClient();
+        httpClient.setFollowRedirects(false);
     }
 
     public void setFileName(String fileName) {
@@ -114,13 +148,7 @@ public class CodeServlet extends HttpServlet {
     }
 
     public void setPathToFile(String pathToFile) {
-        if (!pathToFile.endsWith("/")) {
-            pathToFile += "/";
-        }
-        if (!pathToFile.startsWith("/")) {
-            pathToFile = "/" + pathToFile;
-        }
-        this.pathToFile = pathToFile;
+        this.pathToFile = normalizePath(pathToFile);
     }
 
     public List<String> getSourcePath() {
@@ -147,9 +175,17 @@ public class CodeServlet extends HttpServlet {
         this.automaticallyReloaded = automaticallyReloaded;
     }
 
-    public void addWsEndpoint(CodeWsEndpoint endpoint) {
-        synchronized (wsEndpoints) {
-            wsEndpoints.add(endpoint);
+    public void setProxyUrl(String proxyUrl) {
+        this.proxyUrl = proxyUrl;
+    }
+
+    public void setProxyPath(String proxyPath) {
+        this.proxyPath = normalizePath(proxyPath);
+    }
+
+    public void addProgressHandler(ProgressHandler handler) {
+        synchronized (progressHandlers) {
+            progressHandlers.add(handler);
         }
 
         double progress;
@@ -160,12 +196,12 @@ public class CodeServlet extends HttpServlet {
             progress = this.progress;
         }
 
-        endpoint.progress(progress);
+        handler.progress(progress);
     }
 
-    public void removeWsEndpoint(CodeWsEndpoint endpoint) {
-        synchronized (wsEndpoints) {
-            wsEndpoints.remove(endpoint);
+    public void removeProgressHandler(ProgressHandler handler) {
+        synchronized (progressHandlers) {
+            progressHandlers.remove(handler);
         }
     }
 
@@ -201,19 +237,72 @@ public class CodeServlet extends HttpServlet {
     }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    public void init(ServletConfig config) throws ServletException {
+        super.init(config);
+
+        if (proxyUrl != null) {
+            try {
+                httpClient.start();
+                wsClient.start();
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+
+            try {
+                URL url = new URL(proxyUrl);
+                proxyPort = url.getPort();
+                proxyHost = proxyPort != 80 ? url.getHost() + ":" + proxyPort : url.getHost();
+                proxyProtocol = url.getProtocol();
+
+                StringBuilder sb = new StringBuilder();
+                sb.append(proxyProtocol).append("://").append(proxyHost);
+                proxyBaseUrl = sb.toString();
+            } catch (MalformedURLException e) {
+                log.warning("Could not extract host from URL: " + proxyUrl, e);
+            }
+        }
+
+        indicatorWsPath = pathToFile + fileName + ".ws";
+        WebSocketPolicy wsPolicy = new WebSocketPolicy(WebSocketBehavior.SERVER);
+        wsFactory = WebSocketServletFactory.Loader.load(config.getServletContext(), wsPolicy);
+        wsFactory.setCreator((req, resp) -> {
+            ProxyWsClient proxyClient = (ProxyWsClient) req.getHttpServletRequest().getAttribute("teavm.ws.client");
+            if (proxyClient == null) {
+                return new CodeWsEndpoint(this);
+            } else {
+                ProxyWsClient proxy = new ProxyWsClient();
+                proxy.setTarget(proxyClient);
+                proxyClient.setTarget(proxy);
+                return proxy;
+            }
+        });
+        try {
+            wsFactory.start();
+        } catch (Exception e) {
+            throw new ServletException(e);
+        }
+    }
+
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         String path = req.getPathInfo();
         if (path != null) {
             log.debug("Serving " + path);
             if (!path.startsWith("/")) {
                 path = "/" + path;
             }
-            if (path.startsWith(pathToFile) && path.length() > pathToFile.length()) {
+            if (req.getMethod().equals("GET") && path.startsWith(pathToFile) && path.length() > pathToFile.length()) {
                 String fileName = path.substring(pathToFile.length());
                 if (fileName.startsWith("src/")) {
                     if (serveSourceFile(fileName.substring("src/".length()), resp)) {
                         log.debug("File " + path + " served as source file");
                         return;
+                    }
+                } else if (path.equals(indicatorWsPath)) {
+                    if (wsFactory.isUpgradeRequest(req, resp)) {
+                        if (wsFactory.acceptWebSocket(req, resp) || resp.isCommitted()) {
+                            return;
+                        }
                     }
                 } else {
                     byte[] fileContent;
@@ -236,15 +325,216 @@ public class CodeServlet extends HttpServlet {
                     }
                 }
             }
+
+            if (proxyUrl != null && path.startsWith(proxyPath)) {
+                if (wsFactory.isUpgradeRequest(req, resp)) {
+                    proxyWebSocket(req, resp, path);
+                } else {
+                    proxy(req, resp, path);
+                }
+                return;
+            }
         }
 
         log.debug("File " + path + " not found");
         resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
     }
 
+    private void proxy(HttpServletRequest req, HttpServletResponse resp, String path) throws IOException {
+        AsyncContext async = req.startAsync();
+
+        String relPath = path.substring(proxyPath.length());
+        StringBuilder sb = new StringBuilder(proxyUrl);
+        if (!relPath.isEmpty() && !proxyUrl.endsWith("/")) {
+            sb.append("/");
+        }
+        sb.append(relPath);
+
+        if (req.getQueryString() != null) {
+            sb.append("?").append(req.getQueryString());
+        }
+        log.debug("Trying to serve '" + relPath + "' from '" + sb + "'");
+
+        Request proxyReq = httpClient.newRequest(sb.toString());
+        proxyReq.method(req.getMethod());
+        copyRequestHeaders(req, proxyReq::header);
+
+        proxyReq.content(new InputStreamContentProvider(req.getInputStream()));
+        HeaderSender headerSender = new HeaderSender(resp);
+
+        proxyReq.onResponseContent((response, responseContent) -> {
+            headerSender.send(response);
+            try {
+                WritableByteChannel channel = Channels.newChannel(resp.getOutputStream());
+                while (responseContent.remaining() > 0) {
+                    channel.write(responseContent);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+        });
+        proxyReq.send(result -> {
+            headerSender.send(result.getResponse());
+            async.complete();
+        });
+    }
+
+    class HeaderSender {
+        final HttpServletResponse resp;
+        boolean sent;
+
+        HeaderSender(HttpServletResponse resp) {
+            this.resp = resp;
+        }
+
+        void send(Response response) {
+            if (sent) {
+                return;
+            }
+
+            sent = true;
+            resp.setStatus(response.getStatus());
+
+            for (HttpField field : response.getHeaders()) {
+                if (field.getName().toLowerCase().equals("location")) {
+                    String value = field.getValue();
+                    if (value.startsWith(proxyUrl)) {
+                        String relLocation = value.substring(proxyUrl.length());
+                        resp.addHeader(field.getName(), "http://localhost:" + port + proxyPath + relLocation);
+                        continue;
+                    }
+                }
+                resp.addHeader(field.getName(), field.getValue());
+            }
+        }
+    }
+
+    private void proxyWebSocket(HttpServletRequest req, HttpServletResponse resp, String path) throws IOException {
+        AsyncContext async = req.startAsync();
+
+        String relPath = path.substring(proxyPath.length());
+        StringBuilder sb = new StringBuilder(proxyProtocol.equals("http") ? "ws" : "wss").append("://");
+        sb.append(proxyHost);
+        if (!relPath.isEmpty()) {
+            sb.append("/");
+        }
+        sb.append(relPath);
+        if (req.getQueryString() != null) {
+            sb.append("?").append(req.getQueryString());
+        }
+        URI uri;
+        try {
+            uri = new URI(sb.toString());
+        } catch (URISyntaxException e) {
+            throw new RuntimeException(e);
+        }
+
+        ProxyWsClient client = new ProxyWsClient();
+        req.setAttribute("teavm.ws.client", client);
+        ClientUpgradeRequest proxyReq = new ClientUpgradeRequest();
+        proxyReq.setMethod(req.getMethod());
+        Map<String, List<String>> headers = new LinkedHashMap<>();
+        copyRequestHeaders(req, (key, value) -> headers.computeIfAbsent(key, k -> new ArrayList<>()).add(value));
+        proxyReq.setHeaders(headers);
+
+        wsClient.connect(client, uri, proxyReq, new UpgradeListener() {
+            @Override
+            public void onHandshakeRequest(UpgradeRequest request) {
+            }
+
+            @Override
+            public void onHandshakeResponse(UpgradeResponse response) {
+                resp.setStatus(response.getStatusCode());
+                for (String header : response.getHeaderNames()) {
+                    switch (header.toLowerCase()) {
+                        case "connection":
+                        case "date":
+                        case "sec-websocket-accept":
+                        case "upgrade":
+                            continue;
+                    }
+                    for (String value : response.getHeaders(header)) {
+                        resp.addHeader(header, value);
+                    }
+                }
+
+                try {
+                    wsFactory.acceptWebSocket(req, resp);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                async.complete();
+            }
+        });
+    }
+
+    private void copyRequestHeaders(HttpServletRequest req, HeaderConsumer proxyReq) {
+        Enumeration<String> headers = req.getHeaderNames();
+        while (headers.hasMoreElements()) {
+            String header = headers.nextElement();
+            String headerLower = header.toLowerCase();
+            switch (headerLower) {
+                case "host":
+                    if (proxyHost != null) {
+                        proxyReq.header(header, proxyHost);
+                        continue;
+                    }
+                    break;
+                case "origin":
+                    if (proxyBaseUrl != null) {
+                        String origin = req.getHeader(header);
+                        if (origin.equals("http://localhost:" + port)) {
+                            proxyReq.header(header, proxyBaseUrl);
+                            continue;
+                        }
+                    }
+                    break;
+                case "referer": {
+                    String referer = req.getHeader(header);
+                    String localUrl = "http://localhost:" + port + "/";
+                    if (referer.startsWith(localUrl)) {
+                        String relReferer = referer.substring(localUrl.length());
+                        proxyReq.header(header, proxyUrl + relReferer);
+                        continue;
+                    }
+                    break;
+                }
+                case "connection":
+                case "upgrade":
+                case "user-agent":
+                case "sec-websocket-key":
+                case "sec-websocket-version":
+                case "sec-websocket-extensions":
+                case "accept-encoding":
+                    continue;
+            }
+            Enumeration<String> values = req.getHeaders(header);
+            while (values.hasMoreElements()) {
+                proxyReq.header(header, values.nextElement());
+            }
+        }
+    }
+
     @Override
     public void destroy() {
         super.destroy();
+        try {
+            wsFactory.stop();
+        } catch (Exception e) {
+            log.warning("Error stopping WebSocket server", e);
+        }
+        if (proxyUrl != null) {
+            try {
+                httpClient.stop();
+            } catch (Exception e) {
+                log.warning("Error stopping HTTP client", e);
+            }
+            try {
+                wsClient.stop();
+            } catch (Exception e) {
+                log.warning("Error stopping WebSocket client", e);
+            }
+        }
         stopped = true;
         synchronized (statusLock) {
             if (waiting) {
@@ -602,13 +892,13 @@ public class CodeServlet extends HttpServlet {
             this.progress = progress;
         }
 
-        CodeWsEndpoint[] endpoints;
-        synchronized (wsEndpoints) {
-            endpoints = wsEndpoints.toArray(new CodeWsEndpoint[0]);
+        ProgressHandler[] handlers;
+        synchronized (progressHandlers) {
+            handlers = progressHandlers.toArray(new ProgressHandler[0]);
         }
 
-        for (CodeWsEndpoint endpoint : endpoints) {
-            endpoint.progress(progress);
+        for (ProgressHandler handler : handlers) {
+            handler.progress(progress);
         }
 
         for (DevServerListener listener : listeners) {
@@ -624,13 +914,13 @@ public class CodeServlet extends HttpServlet {
             compiling = false;
         }
 
-        CodeWsEndpoint[] endpoints;
-        synchronized (wsEndpoints) {
-            endpoints = wsEndpoints.toArray(new CodeWsEndpoint[0]);
+        ProgressHandler[] handlers;
+        synchronized (progressHandlers) {
+            handlers = progressHandlers.toArray(new ProgressHandler[0]);
         }
 
-        for (CodeWsEndpoint endpoint : endpoints) {
-            endpoint.complete(success);
+        for (ProgressHandler handler : handlers) {
+            handler.complete(success);
         }
     }
 
@@ -724,5 +1014,15 @@ public class CodeServlet extends HttpServlet {
 
             return TeaVMProgressFeedback.CONTINUE;
         }
+    }
+
+    static String normalizePath(String path) {
+        if (!path.endsWith("/")) {
+            path += "/";
+        }
+        if (!path.startsWith("/")) {
+            path = "/" + path;
+        }
+        return path;
     }
 }

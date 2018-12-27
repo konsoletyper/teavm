@@ -13,20 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.devserver;
+package org.teavm.devserver;
 
-public class DevServerConfiguration {
-    public String javaHome;
-    public int maxHeap;
-    public String mainClass;
-    public String[] classPath;
-    public String[] sourcePath;
-    public boolean indicator;
-    public boolean autoReload;
-    public int port;
-    public String pathToFile;
-    public String fileName;
-    public int debugPort;
-    public String proxyUrl;
-    public String proxyPath;
+public interface ProgressHandler {
+    void complete(boolean success);
+
+    void progress(double value);
 }

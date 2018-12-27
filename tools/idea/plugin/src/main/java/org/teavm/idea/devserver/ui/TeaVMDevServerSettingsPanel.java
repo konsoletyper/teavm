@@ -50,6 +50,8 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
     private JCheckBox indicatorField;
     private JCheckBox autoReloadField;
     private JFormattedTextField maxHeapField;
+    private JTextField proxyUrlField;
+    private JTextField proxyPathField;
 
     public TeaVMDevServerSettingsPanel(Project project) {
         moduleField = new ModuleDescriptionsComboBox();
@@ -76,6 +78,9 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
         indicatorField = new JCheckBox("Display indicator on a web page:");
         autoReloadField = new JCheckBox("Reload page automatically:");
         maxHeapField = new JFormattedTextField(new DecimalFormat("#0"));
+
+        proxyUrlField = new JTextField();
+        proxyPathField = new JTextField();
 
         initLayout();
     }
@@ -117,6 +122,12 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
 
         add(new JLabel("Server heap limit:"), labelConstraints);
         add(maxHeapField, constraints);
+
+        add(new JLabel("Proxy URL:"), labelConstraints);
+        add(proxyUrlField, constraints);
+
+        add(new JLabel("Proxy from path:"), labelConstraints);
+        add(proxyPathField, constraints);
     }
 
     public void load(TeaVMDevServerConfiguration configuration) {
@@ -129,21 +140,25 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
         autoReloadField.setSelected(configuration.isAutomaticallyReloaded());
         maxHeapField.setText(Integer.toString(configuration.getMaxHeap()));
         portField.setText(Integer.toString(configuration.getPort()));
+        proxyUrlField.setText(configuration.getProxyUrl());
+        proxyPathField.setText(configuration.getProxyPath());
     }
 
     public void save(TeaVMDevServerConfiguration configuration) {
-        configuration.setMainClass(mainClassField.getText());
+        configuration.setMainClass(mainClassField.getText().trim());
         moduleSelector.applyTo(configuration);
         configuration.setJdkPath(jrePathEditor.getJrePathOrName());
-        configuration.setFileName(fileNameField.getText());
-        configuration.setPathToFile(pathToFileField.getText());
+        configuration.setFileName(fileNameField.getText().trim());
+        configuration.setPathToFile(pathToFileField.getText().trim());
         configuration.setIndicator(indicatorField.isSelected());
         configuration.setAutomaticallyReloaded(autoReloadField.isSelected());
-        if (!maxHeapField.getText().isEmpty()) {
+        if (!maxHeapField.getText().trim().isEmpty()) {
             configuration.setMaxHeap(Integer.parseInt(maxHeapField.getText()));
         }
-        if (!portField.getText().isEmpty()) {
+        if (!portField.getText().trim().isEmpty()) {
             configuration.setPort(Integer.parseInt(portField.getText()));
         }
+        configuration.setProxyUrl(proxyUrlField.getText().trim());
+        configuration.setProxyPath(proxyPathField.getText().trim());
     }
 }

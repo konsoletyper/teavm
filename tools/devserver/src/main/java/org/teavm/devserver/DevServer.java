@@ -16,20 +16,11 @@
 package org.teavm.devserver;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
-import javax.websocket.Decoder;
-import javax.websocket.Encoder;
-import javax.websocket.Extension;
-import javax.websocket.server.ServerContainer;
-import javax.websocket.server.ServerEndpointConfig;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.servlet.ServletContextHandler;
 import org.eclipse.jetty.servlet.ServletHolder;
-import org.eclipse.jetty.websocket.jsr356.server.deploy.WebSocketServerContainerInitializer;
 import org.teavm.tooling.TeaVMToolLog;
 
 public class DevServer {
@@ -47,6 +38,8 @@ public class DevServer {
     private Server server;
     private int port = 9090;
     private int debugPort;
+    private String proxyUrl;
+    private String proxyPath = "/";
 
     public void setMainClass(String mainClass) {
         this.mainClass = mainClass;
@@ -90,6 +83,14 @@ public class DevServer {
         this.reloadedAutomatically = reloadedAutomatically;
     }
 
+    public void setProxyUrl(String proxyUrl) {
+        this.proxyUrl = proxyUrl;
+    }
+
+    public void setProxyPath(String proxyPath) {
+        this.proxyPath = proxyPath;
+    }
+
     public List<String> getSourcePath() {
         return sourcePath;
     }
@@ -128,14 +129,16 @@ public class DevServer {
         servlet.setAutomaticallyReloaded(reloadedAutomatically);
         servlet.setPort(port);
         servlet.setDebugPort(debugPort);
+        servlet.setProxyUrl(proxyUrl);
+        servlet.setProxyPath(proxyPath);
         for (DevServerListener listener : listeners) {
             servlet.addListener(listener);
         }
-        context.addServlet(new ServletHolder(servlet), "/*");
+        ServletHolder servletHolder = new ServletHolder(servlet);
+        servletHolder.setAsyncSupported(true);
+        context.addServlet(servletHolder, "/*");
 
         try {
-            ServerContainer wscontainer = WebSocketServerContainerInitializer.configureContext(context);
-            wscontainer.addEndpoint(new DevServerEndpointConfig(servlet));
             server.start();
             server.join();
         } catch (Exception e) {
@@ -151,53 +154,5 @@ public class DevServer {
         }
         server = null;
         servlet = null;
-    }
-
-    private class DevServerEndpointConfig implements ServerEndpointConfig {
-        private Map<String, Object> userProperties = new HashMap<>();
-
-        public DevServerEndpointConfig(CodeServlet servlet) {
-            userProperties.put("teavm.servlet", servlet);
-        }
-
-        @Override
-        public List<Class<? extends Decoder>> getDecoders() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public List<Class<? extends Encoder>> getEncoders() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public Map<String, Object> getUserProperties() {
-            return userProperties;
-        }
-
-        @Override
-        public Configurator getConfigurator() {
-            return null;
-        }
-
-        @Override
-        public Class<?> getEndpointClass() {
-            return CodeWsEndpoint.class;
-        }
-
-        @Override
-        public List<Extension> getExtensions() {
-            return Collections.emptyList();
-        }
-
-        @Override
-        public String getPath() {
-            return pathToFile + fileName + ".ws";
-        }
-
-        @Override
-        public List<String> getSubprotocols() {
-            return Collections.emptyList();
-        }
     }
 }

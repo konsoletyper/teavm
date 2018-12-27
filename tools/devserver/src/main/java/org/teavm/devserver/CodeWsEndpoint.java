@@ -15,43 +15,50 @@
  */
 package org.teavm.devserver;
 
-import javax.websocket.OnClose;
-import javax.websocket.OnOpen;
-import javax.websocket.Session;
-import javax.websocket.server.ServerEndpoint;
+import java.util.HashMap;
+import java.util.Map;
+import org.eclipse.jetty.websocket.api.Session;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketClose;
+import org.eclipse.jetty.websocket.api.annotations.OnWebSocketConnect;
+import org.eclipse.jetty.websocket.api.annotations.WebSocket;
 
-@ServerEndpoint("/")
+@WebSocket
 public class CodeWsEndpoint {
-    private Session session;
+    private Map<Session, ProgressHandlerImpl> progressHandlerMap = new HashMap<>();
     private CodeServlet servlet;
 
-    @OnOpen
+    public CodeWsEndpoint(CodeServlet servlet) {
+        this.servlet = servlet;
+    }
+
+    @OnWebSocketConnect
     public void open(Session session) {
-        this.session = session;
-        servlet = (CodeServlet) session.getUserProperties().get("teavm.servlet");
-        if (servlet != null) {
-            servlet.addWsEndpoint(this);
-        }
+        ProgressHandlerImpl progressHandler = new ProgressHandlerImpl(session);
+        progressHandlerMap.put(session, progressHandler);
+        servlet.addProgressHandler(progressHandler);
     }
 
-    @OnClose
-    public void close() {
-        if (servlet != null) {
-            servlet.removeWsEndpoint(this);
-        }
-        servlet = null;
-        session = null;
+    @OnWebSocketClose
+    public void close(Session session, int code, String reason) {
+        ProgressHandlerImpl handler = progressHandlerMap.remove(session);
+        servlet.removeProgressHandler(handler);
     }
 
-    public void progress(double value) {
-        if (session != null) {
-            session.getAsyncRemote().sendText("{ \"command\": \"compiling\", \"progress\": " + value + " }");
-        }
-    }
+    static class ProgressHandlerImpl implements ProgressHandler {
+        Session session;
 
-    public void complete(boolean success) {
-        if (session != null) {
-            session.getAsyncRemote().sendText("{ \"command\": \"complete\", \"success\": " + success + " }");
+        ProgressHandlerImpl(Session session) {
+            this.session = session;
+        }
+
+        @Override
+        public void progress(double value) {
+            session.getRemote().sendStringByFuture("{ \"command\": \"compiling\", \"progress\": " + value + " }");
+        }
+
+        @Override
+        public void complete(boolean success) {
+            session.getRemote().sendStringByFuture("{ \"command\": \"complete\", \"success\": " + success + " }");
         }
     }
 }

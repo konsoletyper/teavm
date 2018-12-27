@@ -108,7 +108,7 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
 
     public static void main(String[] args) throws Exception {
         DevServer server = new DevServer();
-        server.setLog(new ConsoleTeaVMToolLog(true));
+        server.setLog(new ConsoleTeaVMToolLog(false));
         server.setMainClass(args[0]);
         List<String> classPath = new ArrayList<>();
         for (int i = 1; i < args.length; ++i) {
@@ -136,6 +136,12 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
                     break;
                 case "-P":
                     server.setDebugPort(Integer.parseInt(args[++i]));
+                    break;
+                case "-proxy-url":
+                    server.setProxyUrl(args[++i]);
+                    break;
+                case "-proxy-path":
+                    server.setProxyPath(args[++i]);
                     break;
             }
         }
@@ -194,6 +200,15 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
         if (options.debugPort > 0) {
             arguments.add("-P");
             arguments.add(Integer.toString(options.debugPort));
+        }
+
+        if (options.proxyUrl != null && !options.proxyUrl.isEmpty()) {
+            arguments.add("-proxy-url");
+            arguments.add(options.proxyUrl);
+        }
+        if (options.proxyPath != null) {
+            arguments.add("-proxy-path");
+            arguments.add(options.proxyPath);
         }
 
         ProcessBuilder builder = new ProcessBuilder(arguments.toArray(new String[0]));
