@@ -101,6 +101,13 @@ public class MethodHolder extends MemberHolder implements MethodReader {
         return reference;
     }
 
+    public void updateReference(ReferenceCache cache) {
+        MethodReference reference = getReference();
+        if (reference != null) {
+            this.reference = cache.getCached(reference);
+        }
+    }
+
     @Override
     public Program getProgram() {
         return program;

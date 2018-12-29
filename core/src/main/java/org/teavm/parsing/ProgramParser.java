@@ -321,7 +321,7 @@ public class ProgramParser {
                 if (block != null) {
                     TryCatchBlock tryCatch = new TryCatchBlock();
                     if (tryCatchNode.type != null) {
-                        tryCatch.setExceptionType(tryCatchNode.type.replace('/', '.'));
+                        tryCatch.setExceptionType(referenceCache.getCached(tryCatchNode.type.replace('/', '.')));
                     }
                     tryCatch.setHandler(getBasicBlock(labelIndexes.get(tryCatchNode.handler.getLabel())));
                     tryCatch.getHandler().setExceptionVariable(program.variableAt(minLocal + method.maxLocals));
@@ -359,7 +359,7 @@ public class ProgramParser {
                 Map<Integer, String> debugNames = new HashMap<>();
                 variableDebugNames.put(builtInstructions.get(0), debugNames);
                 for (LocalVariableNode localVar : localVarNodes) {
-                    debugNames.put(localVar.index + minLocal, localVar.name);
+                    debugNames.put(localVar.index + minLocal, referenceCache.getCached(localVar.name));
                 }
                 accumulatedDebugNames.putAll(debugNames);
             }
@@ -474,7 +474,7 @@ public class ProgramParser {
                     String cls = type.replace('/', '.');
                     ConstructInstruction insn = new ConstructInstruction();
                     insn.setReceiver(getVariable(pushSingle()));
-                    insn.setType(cls);
+                    insn.setType(referenceCache.getCached(cls));
                     addInstruction(insn);
                     break;
                 }
@@ -602,7 +602,7 @@ public class ProgramParser {
             } else if (value instanceof Type) {
                 Type type = (Type) value;
                 if (type.getSort() == Type.METHOD) {
-                    return new RuntimeConstant(MethodDescriptor.parseSignature(type.getDescriptor()));
+                    return new RuntimeConstant(parseSignature(type.getDescriptor()));
                 } else {
                     return new RuntimeConstant(referenceCache.parseValueTypeCached(type.getDescriptor()));
                 }
@@ -725,7 +725,7 @@ public class ProgramParser {
                 pushConstant((Double) cst);
             } else if (cst instanceof String) {
                 StringConstantInstruction insn = new StringConstantInstruction();
-                insn.setConstant((String) cst);
+                insn.setConstant(referenceCache.getCached((String) cst));
                 insn.setReceiver(getVariable(pushSingle()));
                 addInstruction(insn);
             } else if (cst instanceof Type) {
@@ -1800,38 +1800,43 @@ public class ProgramParser {
         }
     };
 
-    private static MethodHandle parseHandle(Handle handle) {
+    private MethodHandle parseHandle(Handle handle) {
+        String owner = referenceCache.getCached(handle.getOwner().replace('/', '.'));
+        String name = referenceCache.getCached(handle.getName());
         switch (handle.getTag()) {
             case Opcodes.H_GETFIELD:
-                return MethodHandle.fieldGetter(handle.getOwner().replace('/', '.'), handle.getName(),
-                        ValueType.parse(handle.getDesc()));
+                return MethodHandle.fieldGetter(owner, name,
+                        referenceCache.getCached(ValueType.parse(handle.getDesc())));
             case Opcodes.H_GETSTATIC:
-                return MethodHandle.staticFieldGetter(handle.getOwner().replace('/', '.'), handle.getName(),
-                        ValueType.parse(handle.getDesc()));
+                return MethodHandle.staticFieldGetter(owner, name,
+                        referenceCache.getCached(ValueType.parse(handle.getDesc())));
             case Opcodes.H_PUTFIELD:
-                return MethodHandle.fieldSetter(handle.getOwner().replace('/', '.'), handle.getName(),
-                        ValueType.parse(handle.getDesc()));
+                return MethodHandle.fieldSetter(owner, name,
+                        referenceCache.getCached(ValueType.parse(handle.getDesc())));
             case Opcodes.H_PUTSTATIC:
-                return MethodHandle.staticFieldSetter(handle.getOwner().replace('/', '.'), handle.getName(),
-                        ValueType.parse(handle.getDesc()));
+                return MethodHandle.staticFieldSetter(owner, name,
+                        referenceCache.getCached(ValueType.parse(handle.getDesc())));
             case Opcodes.H_INVOKEVIRTUAL:
-                return MethodHandle.virtualCaller(handle.getOwner().replace('/', '.'), handle.getName(),
-                        MethodDescriptor.parseSignature(handle.getDesc()));
+                return MethodHandle.virtualCaller(owner, name, parseSignature(handle.getDesc()));
             case Opcodes.H_INVOKESTATIC:
-                return MethodHandle.staticCaller(handle.getOwner().replace('/', '.'), handle.getName(),
-                        MethodDescriptor.parseSignature(handle.getDesc()));
+                return MethodHandle.staticCaller(owner, name, parseSignature(handle.getDesc()));
             case Opcodes.H_INVOKESPECIAL:
-                return MethodHandle.specialCaller(handle.getOwner().replace('/', '.'), handle.getName(),
-                        MethodDescriptor.parseSignature(handle.getDesc()));
+                return MethodHandle.specialCaller(owner, name, parseSignature(handle.getDesc()));
             case Opcodes.H_NEWINVOKESPECIAL:
-                return MethodHandle.constructorCaller(handle.getOwner().replace('/', '.'), handle.getName(),
-                        MethodDescriptor.parseSignature(handle.getDesc()));
+                return MethodHandle.constructorCaller(owner, name, parseSignature(handle.getDesc()));
             case Opcodes.H_INVOKEINTERFACE:
-                return MethodHandle.interfaceCaller(handle.getOwner().replace('/', '.'), handle.getName(),
-                        MethodDescriptor.parseSignature(handle.getDesc()));
+                return MethodHandle.interfaceCaller(owner, name, parseSignature(handle.getDesc()));
             default:
                 throw new IllegalArgumentException("Unknown handle tag: " + handle.getTag());
         }
+    }
+
+    private ValueType[] parseSignature(String desc) {
+        ValueType[] signature = MethodDescriptor.parseSignature(desc);
+        for (int i = 0; i < signature.length; ++i) {
+            signature[i] = referenceCache.getCached(signature[i]);
+        }
+        return signature;
     }
 
     private static ValueType getPrimitiveTypeField(String fieldName) {

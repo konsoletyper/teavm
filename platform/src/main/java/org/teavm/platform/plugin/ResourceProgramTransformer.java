@@ -23,6 +23,19 @@ import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 
 class ResourceProgramTransformer {
+    private static final MethodReference CAST_TO_STRING = new MethodReference(ResourceAccessor.class, "castToString",
+            Object.class, String.class);
+    private static final MethodReference CAST_FROM_STRING = new MethodReference(ResourceAccessor.class,
+            "castFromString", String.class, Object.class);
+    private static final MethodReference PUT = new MethodReference(ResourceAccessor.class, "put",
+            Object.class, String.class, Object.class, void.class);
+    private static final MethodReference KEYS = new MethodReference(ResourceAccessor.class, "keys",
+            Object.class, Object.class);
+    private static final MethodReference KEYS_TO_STRINGS = new MethodReference(ResourceAccessor.class, "keysToStrings",
+            Object.class, String[].class);
+    private static final MethodReference GET_PROPERTY = new MethodReference(ResourceAccessor.class, "getProperty",
+            Object.class, String.class, Object.class);
+
     private ClassHierarchy hierarchy;
     private Program program;
 
@@ -97,14 +110,13 @@ class ResourceProgramTransformer {
 
         InvokeInstruction keysInsn = new InvokeInstruction();
         keysInsn.setType(InvocationType.SPECIAL);
-        keysInsn.setMethod(new MethodReference(ResourceAccessor.class, "keys", Object.class, Object.class));
+        keysInsn.setMethod(KEYS);
         keysInsn.getArguments().add(insn.getInstance());
         keysInsn.setReceiver(tmp);
 
         InvokeInstruction transformInsn = new InvokeInstruction();
         transformInsn.setType(InvocationType.SPECIAL);
-        transformInsn.setMethod(new MethodReference(ResourceAccessor.class, "keysToStrings",
-                Object.class, String[].class));
+        transformInsn.setMethod(KEYS_TO_STRINGS);
         transformInsn.getArguments().add(tmp);
         transformInsn.setReceiver(insn.getReceiver());
 
@@ -148,8 +160,7 @@ class ResourceProgramTransformer {
                     getProperty(insn, property, instructions, resultVar);
                     InvokeInstruction castInvoke = new InvokeInstruction();
                     castInvoke.setType(InvocationType.SPECIAL);
-                    castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castToString",
-                            Object.class, String.class));
+                    castInvoke.setMethod(CAST_TO_STRING);
                     castInvoke.getArguments().add(resultVar);
                     castInvoke.setReceiver(insn.getReceiver());
                     instructions.add(castInvoke);
@@ -179,8 +190,7 @@ class ResourceProgramTransformer {
         instructions.add(nameInsn);
         InvokeInstruction accessorInvoke = new InvokeInstruction();
         accessorInvoke.setType(InvocationType.SPECIAL);
-        accessorInvoke.setMethod(new MethodReference(ResourceAccessor.class, "getProperty",
-                Object.class, String.class, Object.class));
+        accessorInvoke.setMethod(GET_PROPERTY);
         accessorInvoke.getArguments().add(insn.getInstance());
         accessorInvoke.getArguments().add(nameVar);
         accessorInvoke.setReceiver(resultVar);
@@ -236,8 +246,7 @@ class ResourceProgramTransformer {
                     Variable castVar = insn.getProgram().createVariable();
                     InvokeInstruction castInvoke = new InvokeInstruction();
                     castInvoke.setType(InvocationType.SPECIAL);
-                    castInvoke.setMethod(new MethodReference(ResourceAccessor.class, "castFromString",
-                            String.class, Object.class));
+                    castInvoke.setMethod(CAST_FROM_STRING);
                     castInvoke.getArguments().add(insn.getArguments().get(0));
                     castInvoke.setReceiver(castVar);
                     instructions.add(castInvoke);
@@ -262,8 +271,7 @@ class ResourceProgramTransformer {
         instructions.add(nameInsn);
         InvokeInstruction accessorInvoke = new InvokeInstruction();
         accessorInvoke.setType(InvocationType.SPECIAL);
-        accessorInvoke.setMethod(new MethodReference(ResourceAccessor.class, "put",
-                Object.class, String.class, Object.class, void.class));
+        accessorInvoke.setMethod(PUT);
         accessorInvoke.getArguments().add(insn.getInstance());
         accessorInvoke.getArguments().add(nameVar);
         accessorInvoke.getArguments().add(valueVar);

@@ -23,7 +23,7 @@ public class ReferenceCache {
     private Map<FieldReference, FieldReference> fieldRefenceCache = new HashMap<>();
     private Map<MethodDescriptor, MethodDescriptor> descriptorCache = new HashMap<>();
     private Map<ValueType, ValueType> valueTypeCache = new HashMap<>();
-    private Map<String, String> classCache = new HashMap<>();
+    private Map<String, String> stringCache = new HashMap<>();
     private Map<String, MethodReference> referenceParseCache = new HashMap<>();
     private Map<String, MethodDescriptor> descriptorParseCache = new HashMap<>();
     private Map<String, ValueType> valueTypeParseCache = new HashMap<>();
@@ -103,11 +103,11 @@ public class ReferenceCache {
         return result;
     }
 
-    public String getCached(String className) {
-        String result = classCache.get(className);
+    public String getCached(String s) {
+        String result = stringCache.get(s);
         if (result == null) {
-            result = className;
-            classCache.put(result, result);
+            result = s;
+            stringCache.put(result, result);
         }
         return result;
     }

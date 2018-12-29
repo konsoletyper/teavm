@@ -19,7 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Program implements ProgramReader {
-    private List<BasicBlock> basicBlocks = new ArrayList<>();
+    private List<BasicBlock> basicBlocks = new ArrayList<>(2);
     private List<Variable> variables = new ArrayList<>();
     private MethodHolder method;
     private boolean packed;

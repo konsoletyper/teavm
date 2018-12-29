@@ -20,6 +20,7 @@ import java.io.File;
 import java.util.Properties;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.resource.DirectoryResourceReader;
 import org.teavm.parsing.resource.MapperClassHolderSource;
 import org.teavm.parsing.resource.ResourceClassHolderMapper;
@@ -29,9 +30,10 @@ public class DirectoryClasspathClassHolderSource implements ClassHolderSource {
     private ClasspathResourceMapper classPathMapper;
 
     public DirectoryClasspathClassHolderSource(File baseDir, Properties properties) {
+        ReferenceCache referenceCache = new ReferenceCache();
         DirectoryResourceReader reader = new DirectoryResourceReader(baseDir);
-        ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader);
-        classPathMapper = new ClasspathResourceMapper(properties, rawMapper);
+        ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader, referenceCache);
+        classPathMapper = new ClasspathResourceMapper(properties, referenceCache, rawMapper);
         innerClassSource = new MapperClassHolderSource(classPathMapper);
     }
 

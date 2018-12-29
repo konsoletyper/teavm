@@ -24,6 +24,7 @@ import java.util.*;
 import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ReferenceCache;
 
 public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, ClassDateProvider {
     private static final String PACKAGE_PREFIX = "packagePrefix.";
@@ -33,6 +34,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
     private ClassRefsRenamer renamer;
     private ClassLoader classLoader;
     private Map<String, ModificationDate> modificationDates = new HashMap<>();
+    private ReferenceCache referenceCache;
 
     private static class Transformation {
         String packageName;
@@ -41,8 +43,10 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
         String classPrefix = "";
     }
 
-    public ClasspathResourceMapper(ClassLoader classLoader, Mapper<String, ClassHolder> innerMapper) {
+    public ClasspathResourceMapper(ClassLoader classLoader, ReferenceCache referenceCache,
+            Mapper<String, ClassHolder> innerMapper) {
         this.innerMapper = innerMapper;
+        this.referenceCache = referenceCache;
         try {
             Enumeration<URL> resources = classLoader.getResources("META-INF/teavm.properties");
             Map<String, Transformation> transformationMap = new HashMap<>();
@@ -58,16 +62,18 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
         } catch (IOException e) {
             throw new RuntimeException("Error reading resources", e);
         }
-        renamer = new ClassRefsRenamer(new CachedMapper<>(classNameMapper));
+        renamer = new ClassRefsRenamer(referenceCache, new CachedMapper<>(classNameMapper));
         this.classLoader = classLoader;
     }
 
-    public ClasspathResourceMapper(Properties properties, Mapper<String, ClassHolder> innerMapper) {
+    public ClasspathResourceMapper(Properties properties, ReferenceCache referenceCache,
+            Mapper<String, ClassHolder> innerMapper) {
         this.innerMapper = innerMapper;
+        this.referenceCache = referenceCache;
         Map<String, Transformation> transformationMap = new HashMap<>();
         loadProperties(properties, transformationMap);
         transformations.addAll(transformationMap.values());
-        renamer = new ClassRefsRenamer(new CachedMapper<>(classNameMapper));
+        renamer = new ClassRefsRenamer(referenceCache, new CachedMapper<>(classNameMapper));
     }
 
     private void loadProperties(Properties properties, Map<String, Transformation> cache) {
@@ -121,8 +127,9 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
                 String className = name.substring(index + 1);
                 String packageName = name.substring(0, index);
                 if (className.startsWith(transformation.classPrefix)) {
-                    return packageName.substring(transformation.packagePrefix.length()) + "."
+                    String newName = packageName.substring(transformation.packagePrefix.length()) + "."
                             + className.substring(transformation.classPrefix.length());
+                    return referenceCache.getCached(newName);
                 }
             }
         }

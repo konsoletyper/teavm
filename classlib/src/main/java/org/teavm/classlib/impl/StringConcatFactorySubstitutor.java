@@ -18,12 +18,14 @@ package org.teavm.classlib.impl;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DynamicCallSite;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.RuntimeConstant;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
 
-public class StringConcatFactorySubstritutor implements BootstrapMethodSubstitutor {
+public class StringConcatFactorySubstitutor implements BootstrapMethodSubstitutor {
+    private ReferenceCache referenceCache = new ReferenceCache();
     private static final String STRING_BUILDER = "java.lang.StringBuilder";
     private static final char VALUE_ARGUMENT = '\1';
     private static final char CONST_ARGUMENT = '\2';
@@ -100,7 +102,8 @@ public class StringConcatFactorySubstritutor implements BootstrapMethodSubstitut
         if (!(type instanceof ValueType.Primitive)) {
             type = ValueType.object("java.lang.Object");
         }
-        MethodReference method = new MethodReference(STRING_BUILDER, "append", type, ValueType.object(STRING_BUILDER));
+        MethodReference method = referenceCache.getCached(new MethodReference(STRING_BUILDER, "append", type,
+                ValueType.object(STRING_BUILDER)));
         return sb.invokeSpecial(method, argument);
     }
 

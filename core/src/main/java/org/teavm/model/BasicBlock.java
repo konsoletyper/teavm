@@ -17,7 +17,6 @@ package org.teavm.model;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -28,8 +27,8 @@ import org.teavm.model.util.TransitionExtractor;
 public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
     private Program program;
     private int index;
-    private List<Phi> phis = new ArrayList<>();
-    private List<TryCatchBlock> tryCatchBlocks = new ArrayList<>();
+    private List<Phi> phis;
+    private List<TryCatchBlock> tryCatchBlocks;
     private Variable exceptionVariable;
     private String label;
     Instruction firstInstruction;
@@ -172,12 +171,15 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
     private List<Phi> safePhis = new AbstractList<Phi>() {
         @Override
         public Phi get(int index) {
+            if (phis == null) {
+                throw new IndexOutOfBoundsException();
+            }
             return phis.get(index);
         }
 
         @Override
         public int size() {
-            return phis.size();
+            return phis != null ? phis.size() : 0;
         }
 
         @Override
@@ -186,6 +188,9 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
                 throw new IllegalArgumentException("This phi is already in some basic block");
             }
             e.setBasicBlock(BasicBlock.this);
+            if (phis == null) {
+                phis = new ArrayList<>(1);
+            }
             phis.add(index, e);
         }
 
@@ -193,6 +198,9 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
         public Phi set(int index, Phi element) {
             if (element.getBasicBlock() != null) {
                 throw new IllegalArgumentException("This phi is already in some basic block");
+            }
+            if (phis == null) {
+                phis = new ArrayList<>(1);
             }
             Phi oldPhi = phis.get(index);
             oldPhi.setBasicBlock(null);
@@ -202,6 +210,9 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
 
         @Override
         public Phi remove(int index) {
+            if (phis == null) {
+                throw new IndexOutOfBoundsException();
+            }
             Phi phi = phis.remove(index);
             phi.setBasicBlock(null);
             return phi;
@@ -209,10 +220,13 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
 
         @Override
         public void clear() {
+            if (phis == null) {
+                return;
+            }
             for (Phi phi : phis) {
                 phi.setBasicBlock(null);
             }
-            phis.clear();
+            phis = null;
         }
     };
 
@@ -220,7 +234,20 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
         return safePhis;
     }
 
-    private List<Phi> immutablePhis = Collections.unmodifiableList(phis);
+    private List<Phi> immutablePhis = new AbstractList<Phi>() {
+        @Override
+        public Phi get(int index) {
+            if (phis == null) {
+                throw new IndexOutOfBoundsException();
+            }
+            return phis.get(index);
+        }
+
+        @Override
+        public int size() {
+            return phis != null ? phis.size() : 0;
+        }
+    };
 
     @Override
     public List<? extends PhiReader> readPhis() {
@@ -299,7 +326,20 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
         }
     }
 
-    private List<TryCatchBlock> immutableTryCatchBlocks = Collections.unmodifiableList(tryCatchBlocks);
+    private List<TryCatchBlock> immutableTryCatchBlocks = new AbstractList<TryCatchBlock>() {
+        @Override
+        public TryCatchBlock get(int index) {
+            if (tryCatchBlocks == null) {
+                throw new IndexOutOfBoundsException();
+            }
+            return tryCatchBlocks.get(index);
+        }
+
+        @Override
+        public int size() {
+            return tryCatchBlocks != null ? tryCatchBlocks.size() : 0;
+        }
+    };
 
     @Override
     public List<TryCatchBlock> readTryCatchBlocks() {
@@ -307,25 +347,43 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
     }
 
     private List<TryCatchBlock> safeTryCatchBlocks = new AbstractList<TryCatchBlock>() {
-        @Override public TryCatchBlock get(int index) {
+        @Override
+        public TryCatchBlock get(int index) {
+            if (tryCatchBlocks == null) {
+                throw new IndexOutOfBoundsException();
+            }
             return tryCatchBlocks.get(index);
         }
-        @Override public int size() {
-            return tryCatchBlocks.size();
+
+        @Override
+        public int size() {
+            return tryCatchBlocks != null ? tryCatchBlocks.size() : 0;
         }
-        @Override public void add(int index, TryCatchBlock element) {
+
+        @Override
+        public void add(int index, TryCatchBlock element) {
             if (element.protectedBlock == BasicBlock.this) {
                 throw new IllegalStateException("This try/catch block is already added to basic block");
             }
             element.protectedBlock = BasicBlock.this;
+            if (tryCatchBlocks == null) {
+                tryCatchBlocks = new ArrayList<>(1);
+            }
             tryCatchBlocks.add(index, element);
         }
-        @Override public TryCatchBlock remove(int index) {
+
+        @Override
+        public TryCatchBlock remove(int index) {
+            if (tryCatchBlocks == null) {
+                throw new IndexOutOfBoundsException();
+            }
             TryCatchBlock tryCatch = tryCatchBlocks.remove(index);
             tryCatch.protectedBlock = null;
             return tryCatch;
         }
-        @Override public TryCatchBlock set(int index, TryCatchBlock element) {
+
+        @Override
+        public TryCatchBlock set(int index, TryCatchBlock element) {
             TryCatchBlock oldTryCatch = tryCatchBlocks.get(index);
             if (oldTryCatch == element) {
                 return oldTryCatch;
@@ -335,14 +393,22 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
             }
             oldTryCatch.protectedBlock = null;
             element.protectedBlock = BasicBlock.this;
+            if (tryCatchBlocks == null) {
+                tryCatchBlocks = new ArrayList<>(1);
+            }
             tryCatchBlocks.set(index, element);
             return oldTryCatch;
         }
-        @Override public void clear() {
+
+        @Override
+        public void clear() {
+            if (tryCatchBlocks == null) {
+                return;
+            }
             for (TryCatchBlock tryCatch : tryCatchBlocks) {
                 tryCatch.protectedBlock = null;
             }
-            tryCatchBlocks.clear();
+            tryCatchBlocks = null;
         }
     };
 

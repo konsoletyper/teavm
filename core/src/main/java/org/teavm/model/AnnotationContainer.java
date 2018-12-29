@@ -15,13 +15,17 @@
  */
 package org.teavm.model;
 
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class AnnotationContainer implements AnnotationContainerReader {
-    private Map<String, AnnotationHolder> annotations = new LinkedHashMap<>();
+    private Map<String, AnnotationHolder> annotations;
 
     public void add(AnnotationHolder annotation) {
+        if (annotations == null) {
+            annotations = new LinkedHashMap<>();
+        }
         if (annotations.containsKey(annotation.getType())) {
             throw new IllegalArgumentException("Annotation of type " + annotation.getType() + " is already there");
         }
@@ -30,7 +34,7 @@ public class AnnotationContainer implements AnnotationContainerReader {
 
     @Override
     public AnnotationHolder get(String type) {
-        return annotations.get(type);
+        return annotations != null ? annotations.get(type) : null;
     }
 
     public void remove(AnnotationHolder annotation) {
@@ -42,11 +46,13 @@ public class AnnotationContainer implements AnnotationContainerReader {
     }
 
     public void remove(String type) {
-        annotations.remove(type);
+        if (annotations != null) {
+            annotations.remove(type);
+        }
     }
 
     @Override
     public Iterable<AnnotationHolder> all() {
-        return annotations.values();
+        return annotations != null ? annotations.values() : Collections.emptyList();
     }
 }

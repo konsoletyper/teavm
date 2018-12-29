@@ -70,7 +70,7 @@ public class JCLPlugin implements TeaVMPlugin {
                 ValueType.arrayOf(ValueType.object("java.lang.Object")),
                 ValueType.object("java.lang.invoke.CallSite")), lms);
 
-        StringConcatFactorySubstritutor stringConcatSubstitutor = new StringConcatFactorySubstritutor();
+        StringConcatFactorySubstitutor stringConcatSubstitutor = new StringConcatFactorySubstitutor();
         host.add(new MethodReference("java.lang.invoke.StringConcatFactory", "makeConcat",
                 ValueType.object("java.lang.invoke.MethodHandles$Lookup"), ValueType.object("java.lang.String"),
                 ValueType.object("java.lang.invoke.MethodType"), ValueType.object("java.lang.invoke.CallSite")),

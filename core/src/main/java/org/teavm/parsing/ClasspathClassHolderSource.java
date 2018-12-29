@@ -18,6 +18,7 @@ package org.teavm.parsing;
 import java.util.Date;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.resource.ClasspathResourceReader;
 import org.teavm.parsing.resource.MapperClassHolderSource;
 import org.teavm.parsing.resource.ResourceClassHolderMapper;
@@ -27,9 +28,10 @@ public class ClasspathClassHolderSource implements ClassHolderSource, ClassDateP
     private ClasspathResourceMapper classPathMapper;
 
     public ClasspathClassHolderSource(ClassLoader classLoader) {
+        ReferenceCache referenceCache = new ReferenceCache();
         ClasspathResourceReader reader = new ClasspathResourceReader(classLoader);
-        ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader);
-        classPathMapper = new ClasspathResourceMapper(classLoader, rawMapper);
+        ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader, referenceCache);
+        classPathMapper = new ClasspathResourceMapper(classLoader, referenceCache, rawMapper);
         innerClassSource = new MapperClassHolderSource(classPathMapper);
     }
 

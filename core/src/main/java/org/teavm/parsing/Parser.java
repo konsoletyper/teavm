@@ -74,7 +74,7 @@ public class Parser {
         node.accept(adapter);
         node = nodeWithoutJsr;
         ValueType[] signature = MethodDescriptor.parseSignature(node.desc);
-        MethodHolder method = new MethodHolder(node.name, signature);
+        MethodHolder method = new MethodHolder(referenceCache.getCached(new MethodDescriptor(node.name, signature)));
         parseModifiers(node.access, method, DECL_METHOD);
 
         ProgramParser programParser = new ProgramParser(referenceCache);
@@ -229,26 +229,31 @@ public class Parser {
     }
 
     public ClassHolder parseClass(ClassNode node) {
-        ClassHolder cls = new ClassHolder(node.name.replace('/', '.'));
+        ClassHolder cls = new ClassHolder(referenceCache.getCached(node.name.replace('/', '.')));
         parseModifiers(node.access, cls, DECL_CLASS);
         if (node.superName != null) {
-            cls.setParent(node.superName.replace('/', '.'));
+            cls.setParent(referenceCache.getCached(node.superName.replace('/', '.')));
         }
         if (cls.getName().equals("java.lang.Object")) {
             cls.setParent(null);
         }
         if (node.interfaces != null) {
             for (String iface : node.interfaces) {
-                cls.getInterfaces().add(iface.replace('/', '.'));
+                cls.getInterfaces().add(referenceCache.getCached(iface.replace('/', '.')));
             }
         }
         for (Object obj : node.fields) {
             FieldNode fieldNode = (FieldNode) obj;
-            cls.addField(parseField(fieldNode));
+            FieldHolder field = parseField(fieldNode);
+            cls.addField(field);
+            field.updateReference(referenceCache);
         }
-        String fullFileName = node.name.substring(0, node.name.lastIndexOf('/') + 1) + node.sourceFile;
+        String fullFileName = referenceCache.getCached(node.name.substring(0, node.name.lastIndexOf('/') + 1)
+                + node.sourceFile);
         for (MethodNode methodNode : node.methods) {
-            cls.addMethod(parseMethod(methodNode, fullFileName));
+            MethodHolder method = parseMethod(methodNode, fullFileName);
+            cls.addMethod(method);
+            method.updateReference(referenceCache);
         }
         if (node.outerClass != null) {
             cls.setOwnerName(node.outerClass.replace('/', '.'));
@@ -263,8 +268,8 @@ public class Parser {
     }
 
     public FieldHolder parseField(FieldNode node) {
-        FieldHolder field = new FieldHolder(node.name);
-        field.setType(ValueType.parse(node.desc));
+        FieldHolder field = new FieldHolder(referenceCache.getCached(node.name));
+        field.setType(referenceCache.getCached(ValueType.parse(node.desc)));
         field.setInitialValue(node.value);
         parseModifiers(node.access, field, DECL_FIELD);
         parseAnnotations(field.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
@@ -358,7 +363,7 @@ public class Parser {
                 continue;
             }
 
-            AnnotationHolder annot = new AnnotationHolder(desc);
+            AnnotationHolder annot = new AnnotationHolder(referenceCache.getCached(desc));
             parseAnnotationValues(annot, annotNode.values);
             annotations.add(annot);
         }
@@ -379,10 +384,11 @@ public class Parser {
         if (value instanceof String[]) {
             String[] enumInfo = (String[]) value;
             ValueType.Object object = (ValueType.Object) ValueType.parse(enumInfo[0]);
-            return new AnnotationValue(new FieldReference(object.getClassName(), enumInfo[1]));
+            return new AnnotationValue(referenceCache.getCached(new FieldReference(object.getClassName(),
+                    enumInfo[1])));
         } else if (value instanceof Type) {
             Type cls = (Type) value;
-            return new AnnotationValue(ValueType.parse(cls.getDescriptor()));
+            return new AnnotationValue(referenceCache.getCached(ValueType.parse(cls.getDescriptor())));
         } else if (value instanceof List<?>) {
             List<?> originalList = (List<?>) value;
             List<AnnotationValue> resultList = new ArrayList<>();
@@ -392,7 +398,7 @@ public class Parser {
             return new AnnotationValue(resultList);
         } else if (value instanceof AnnotationNode) {
             AnnotationNode annotNode = (AnnotationNode) value;
-            ValueType.Object object = (ValueType.Object) ValueType.parse(annotNode.desc);
+            ValueType.Object object = (ValueType.Object) referenceCache.getCached(ValueType.parse(annotNode.desc));
             AnnotationHolder annotation = new AnnotationHolder(object.getClassName());
             parseAnnotationValues(annotation, annotNode.values);
             return new AnnotationValue(annotation);

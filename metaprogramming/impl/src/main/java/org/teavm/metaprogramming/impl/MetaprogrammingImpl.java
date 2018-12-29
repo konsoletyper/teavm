@@ -65,7 +65,7 @@ public final class MetaprogrammingImpl {
     static ClassLoader classLoader;
     static ClassReaderSource classSource;
     static ClassHierarchy hierarchy;
-    static IncrementalDependencyRegistration incrementaDependencies;
+    static IncrementalDependencyRegistration incrementalDependencies;
     static ReflectContext reflectContext;
     static DependencyAgent agent;
     static VariableContext varContext;
@@ -320,7 +320,7 @@ public final class MetaprogrammingImpl {
 
         ValueImpl<T> result = new ValueImpl<>(nestedVarContext.createInstance(generator), varContext, innerType);
 
-        incrementaDependencies.setNoCache(cls.getName());
+        incrementalDependencies.setNoCache(cls.getName());
         agent.submitClass(cls);
         return result;
     }

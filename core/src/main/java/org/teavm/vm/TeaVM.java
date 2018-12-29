@@ -377,6 +377,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         cacheStatus = new AnnotationAwareCacheStatus(rawCacheStatus, dependencyAnalyzer.getIncrementalDependencies(),
                 dependencyAnalyzer.getClassSource());
         cacheStatus.addSynthesizedClasses(dependencyAnalyzer::isSynthesizedClass);
+        dependencyAnalyzer.setInterruptor(null);
 
         // Link
         if (wasCancelled()) {

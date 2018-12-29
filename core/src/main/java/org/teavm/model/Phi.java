@@ -23,7 +23,7 @@ import java.util.List;
 public class Phi implements PhiReader {
     private BasicBlock basicBlock;
     private Variable receiver;
-    private List<Incoming> incomings = new ArrayList<>();
+    private List<Incoming> incomings = new ArrayList<>(2);
 
     @Override
     public BasicBlock getBasicBlock() {

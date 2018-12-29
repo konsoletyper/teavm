@@ -700,6 +700,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             }
         }
 
+        for (DependencyListener listener : listeners) {
+            listener.complete();
+        }
+
         if (dependencyReport) {
             reportDependencies();
         }
@@ -745,6 +749,8 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         }
 
         allNodes.clear();
+        classSource.cleanup();
+        agent.cleanup();
     }
 
     static class ReportEntry {
@@ -903,7 +909,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         splitter.fixProgram();
     }
 
-    class IncrementalCache implements IncrementalDependencyProvider, IncrementalDependencyRegistration {
+    static class IncrementalCache implements IncrementalDependencyProvider, IncrementalDependencyRegistration {
         private final String[] emptyArray = new String[0];
         private Map<String, IncrementalItem> classes = new HashMap<>();
         private Map<MethodReference, IncrementalItem> methods = new HashMap<>();

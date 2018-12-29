@@ -25,4 +25,6 @@ public interface DependencyListener {
     void fieldReached(DependencyAgent agent, FieldDependency field);
 
     void completing(DependencyAgent agent);
+
+    void complete();
 }

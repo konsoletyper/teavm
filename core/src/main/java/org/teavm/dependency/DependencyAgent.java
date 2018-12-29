@@ -135,4 +135,8 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
     public IncrementalDependencyRegistration getIncrementalCache() {
         return analyzer.incrementalCache;
     }
+
+    void cleanup() {
+        analyzer = null;
+    }
 }

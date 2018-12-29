@@ -35,4 +35,8 @@ public abstract class AbstractDependencyListener implements DependencyListener {
     @Override
     public void completing(DependencyAgent agent) {
     }
+
+    @Override
+    public void complete() {
+    }
 }

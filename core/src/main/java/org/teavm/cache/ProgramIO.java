@@ -162,7 +162,7 @@ public class ProgramIO {
         for (int i = 0; i < varCount; ++i) {
             Variable var = program.createVariable();
             var.setRegister(data.readShort());
-            var.setDebugName(data.readUTF());
+            var.setDebugName(referenceCache.getCached(data.readUTF()));
             if (var.getDebugName().isEmpty()) {
                 var.setDebugName(null);
             }

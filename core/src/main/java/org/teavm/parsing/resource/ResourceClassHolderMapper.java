@@ -25,11 +25,12 @@ import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.Parser;
 
 public class ResourceClassHolderMapper implements Mapper<String, ClassHolder> {
-    private Parser parser = new Parser(new ReferenceCache());
+    private Parser parser;
     private ResourceReader resourceReader;
 
-    public ResourceClassHolderMapper(ResourceReader resourceReader) {
+    public ResourceClassHolderMapper(ResourceReader resourceReader, ReferenceCache referenceCache) {
         this.resourceReader = resourceReader;
+        parser = new Parser(referenceCache);
     }
 
     @Override

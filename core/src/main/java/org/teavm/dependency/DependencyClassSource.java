@@ -105,6 +105,10 @@ class DependencyClassSource implements ClassHolderSource {
         transformers.add(transformer);
     }
 
+    public void cleanup() {
+        transformers.clear();
+    }
+
     final ClassHolderTransformerContext transformContext = new ClassHolderTransformerContext() {
         @Override
         public ClassHierarchy getHierarchy() {

@@ -25,7 +25,7 @@ public class InvokeInstruction extends Instruction {
     private InvocationType type;
     private MethodReference method;
     private Variable instance;
-    private List<Variable> arguments = new ArrayList<>();
+    private List<Variable> arguments = new ArrayList<>(1);
     private Variable receiver;
 
     public InvocationType getType() {

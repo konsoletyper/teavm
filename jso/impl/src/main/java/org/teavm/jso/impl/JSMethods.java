@@ -18,6 +18,7 @@ package org.teavm.jso.impl;
 import java.util.Arrays;
 import java.util.function.Function;
 import org.teavm.jso.JSObject;
+import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSArrayReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -95,7 +96,8 @@ public final class JSMethods {
     public static final MethodReference FUNCTION_AS_OBJECT = new MethodReference(JS.class, "functionAsObject",
             JSObject.class, JSObject.class, JSObject.class);
 
-    private static final ValueType JS_OBJECT = ValueType.object(JSObject.class.getName());
+    public static final ValueType JS_OBJECT = ValueType.object(JSObject.class.getName());
+    public static final ValueType JS_ARRAY = ValueType.object(JSArray.class.getName());
     private static final MethodReference[] INVOKE_METHODS = new MethodReference[13];
 
     static {

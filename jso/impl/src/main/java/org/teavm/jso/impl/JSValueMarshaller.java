@@ -20,7 +20,6 @@ import java.util.function.Function;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.jso.JSFunctor;
 import org.teavm.jso.JSObject;
-import org.teavm.jso.core.JSArray;
 import org.teavm.jso.core.JSArrayReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
@@ -29,6 +28,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
@@ -39,6 +39,8 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 
 class JSValueMarshaller {
+    private static final ValueType stringType = ValueType.parse(String.class);
+    private ReferenceCache referenceCache = new ReferenceCache();
     private Diagnostics diagnostics;
     private JSTypeHelper typeHelper;
     private ClassReaderSource classSource;
@@ -123,8 +125,8 @@ class JSValueMarshaller {
 
         if (degree <= 1) {
             InvokeInstruction insn = new InvokeInstruction();
-            insn.setMethod(new MethodReference(JS.class.getName(), "wrap", getWrappedType(type),
-                    getWrapperType(type)));
+            insn.setMethod(referenceCache.getCached(new MethodReference(JS.class.getName(), "wrap",
+                    getWrappedType(type), getWrapperType(type))));
             insn.getArguments().add(var);
             insn.setReceiver(result);
             insn.setType(InvocationType.SPECIAL);
@@ -152,8 +154,8 @@ class JSValueMarshaller {
             }
 
             insn = new InvokeInstruction();
-            insn.setMethod(new MethodReference(JS.class.getName(), "map", getWrappedType(type),
-                    ValueType.parse(Function.class), getWrapperType(type)));
+            insn.setMethod(referenceCache.getCached(new MethodReference(JS.class.getName(), "map",
+                    getWrappedType(type), ValueType.parse(Function.class), getWrapperType(type))));
             insn.getArguments().add(var);
             insn.getArguments().add(function);
             insn.setReceiver(result);
@@ -176,7 +178,7 @@ class JSValueMarshaller {
             if (type.isObject(String.class)) {
                 return type;
             } else {
-                return ValueType.parse(JSObject.class);
+                return JSMethods.JS_OBJECT;
             }
         } else {
             return type;
@@ -185,9 +187,9 @@ class JSValueMarshaller {
 
     private ValueType getWrapperType(ValueType type) {
         if (type instanceof ValueType.Array) {
-            return ValueType.parse(JSArray.class);
+            return JSMethods.JS_ARRAY;
         } else {
-            return ValueType.parse(JSObject.class);
+            return JSMethods.JS_OBJECT;
         }
     }
 
@@ -232,25 +234,25 @@ class JSValueMarshaller {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
-                    return unwrap(var, "unwrapBoolean", ValueType.parse(JSObject.class), ValueType.BOOLEAN,
+                    return unwrap(var, "unwrapBoolean", JSMethods.JS_OBJECT, ValueType.BOOLEAN,
                             location.getSourceLocation());
                 case BYTE:
-                    return unwrap(var, "unwrapByte", ValueType.parse(JSObject.class), ValueType.BYTE,
+                    return unwrap(var, "unwrapByte", JSMethods.JS_OBJECT, ValueType.BYTE,
                             location.getSourceLocation());
                 case SHORT:
-                    return unwrap(var, "unwrapShort", ValueType.parse(JSObject.class), ValueType.SHORT,
+                    return unwrap(var, "unwrapShort", JSMethods.JS_OBJECT, ValueType.SHORT,
                             location.getSourceLocation());
                 case INTEGER:
-                    return unwrap(var, "unwrapInt", ValueType.parse(JSObject.class), ValueType.INTEGER,
+                    return unwrap(var, "unwrapInt", JSMethods.JS_OBJECT, ValueType.INTEGER,
                             location.getSourceLocation());
                 case CHARACTER:
-                    return unwrap(var, "unwrapCharacter", ValueType.parse(JSObject.class), ValueType.CHARACTER,
+                    return unwrap(var, "unwrapCharacter", JSMethods.JS_OBJECT, ValueType.CHARACTER,
                             location.getSourceLocation());
                 case DOUBLE:
-                    return unwrap(var, "unwrapDouble", ValueType.parse(JSObject.class), ValueType.DOUBLE,
+                    return unwrap(var, "unwrapDouble", JSMethods.JS_OBJECT, ValueType.DOUBLE,
                             location.getSourceLocation());
                 case FLOAT:
-                    return unwrap(var, "unwrapFloat", ValueType.parse(JSObject.class), ValueType.FLOAT,
+                    return unwrap(var, "unwrapFloat", JSMethods.JS_OBJECT, ValueType.FLOAT,
                             location.getSourceLocation());
                 case LONG:
                     break;
@@ -260,8 +262,7 @@ class JSValueMarshaller {
             if (className.equals(JSObject.class.getName())) {
                 return var;
             } else if (className.equals("java.lang.String")) {
-                return unwrap(var, "unwrapString", ValueType.parse(JSObject.class), ValueType.parse(String.class),
-                        location.getSourceLocation());
+                return unwrap(var, "unwrapString", JSMethods.JS_OBJECT, stringType, location.getSourceLocation());
             } else if (typeHelper.isJavaScriptClass(className)) {
                 Variable result = program.createVariable();
                 CastInstruction castInsn = new CastInstruction();
@@ -451,7 +452,8 @@ class JSValueMarshaller {
         }
         Variable result = program.createVariable();
         InvokeInstruction insn = new InvokeInstruction();
-        insn.setMethod(new MethodReference(JS.class.getName(), methodName, argType, resultType));
+        insn.setMethod(referenceCache.getCached(referenceCache.getCached(new MethodReference(
+                JS.class.getName(), methodName, argType, resultType))));
         insn.getArguments().add(var);
         insn.setReceiver(result);
         insn.setType(InvocationType.SPECIAL);
@@ -482,7 +484,7 @@ class JSValueMarshaller {
     }
 
     Variable addStringWrap(Variable var, TextLocation location) {
-        return wrap(var, ValueType.object("java.lang.String"), location, false);
+        return wrap(var, stringType, location, false);
     }
 
     Variable addString(String str, TextLocation location) {
