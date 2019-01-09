@@ -117,7 +117,7 @@ public class MissingItemsProcessor {
         initExceptionInsn.setMethod(new MethodReference(exceptionName, "<init>", ValueType.object("java.lang.String"),
                 ValueType.VOID));
         initExceptionInsn.setType(InvocationType.SPECIAL);
-        initExceptionInsn.getArguments().add(constVar);
+        initExceptionInsn.setArguments(constVar);
         initExceptionInsn.setLocation(location);
         instructionsToAdd.add(initExceptionInsn);
 

@@ -60,7 +60,7 @@ public class StringAmplifierTransformer implements ClassHolderTransformer {
                         amplifyInstruction.setMethod(new MethodReference(StringAmplifier.class, "amplify",
                                 String.class, String.class));
                         amplifyInstruction.setType(InvocationType.SPECIAL);
-                        amplifyInstruction.getArguments().add(var);
+                        amplifyInstruction.setArguments(var);
                         amplifyInstruction.setReceiver(invoke.getReceiver());
                         amplifyInstruction.setLocation(invoke.getLocation());
 

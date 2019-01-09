@@ -125,15 +125,14 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             JSValueMarshaller marshaller = new JSValueMarshaller(diagnostics, typeHelper, hierarchy.getClassSource(),
                     program, marshallInstructions);
 
-            List<Variable> variablesToPass = new ArrayList<>();
+            Variable[] variablesToPass = new Variable[method.parameterCount()];
             for (int i = 0; i < method.parameterCount(); ++i) {
-                variablesToPass.add(program.createVariable());
+                variablesToPass[i] = program.createVariable();
             }
 
             for (int i = 0; i < method.parameterCount(); ++i) {
-                Variable var = marshaller.unwrapReturnValue(callLocation, variablesToPass.get(i),
+                variablesToPass[i] = marshaller.unwrapReturnValue(callLocation, variablesToPass[i],
                         method.parameterType(i));
-                variablesToPass.set(i, var);
             }
 
             basicBlock.addAll(marshallInstructions);
@@ -143,7 +142,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
             invocation.setType(InvocationType.VIRTUAL);
             invocation.setInstance(program.variableAt(0));
             invocation.setMethod(methodRef);
-            invocation.getArguments().addAll(variablesToPass);
+            invocation.setArguments(variablesToPass);
             basicBlock.add(invocation);
 
             ExitInstruction exit = new ExitInstruction();

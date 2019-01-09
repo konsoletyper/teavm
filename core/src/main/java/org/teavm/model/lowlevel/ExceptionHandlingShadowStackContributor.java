@@ -185,7 +185,7 @@ public class ExceptionHandlingShadowStackContributor {
                     raise.setMethod(new MethodReference(ExceptionHandling.class, "throwException", Throwable.class,
                             void.class));
                     raise.setType(InvocationType.SPECIAL);
-                    raise.getArguments().add(((RaiseInstruction) insn).getException());
+                    raise.setArguments(((RaiseInstruction) insn).getException());
                     raise.setLocation(insn.getLocation());
                     insn.replace(raise);
                     insn = raise;
@@ -300,7 +300,7 @@ public class ExceptionHandlingShadowStackContributor {
         InvokeInstruction registerInsn = new InvokeInstruction();
         registerInsn.setMethod(new MethodReference(ShadowStack.class, "registerCallSite", int.class, void.class));
         registerInsn.setType(InvocationType.SPECIAL);
-        registerInsn.getArguments().add(idVariable);
+        registerInsn.setArguments(idVariable);
         instructions.add(registerInsn);
 
         return instructions;

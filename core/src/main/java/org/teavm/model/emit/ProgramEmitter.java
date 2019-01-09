@@ -236,9 +236,12 @@ public final class ProgramEmitter {
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(method);
         insn.setReceiver(result);
-        for (ValueEmitter arg : arguments) {
-            insn.getArguments().add(arg.variable);
+        Variable[] insnArguments = new Variable[arguments.length];
+        for (int i = 0; i < insnArguments.length; ++i) {
+            insnArguments[i] = arguments[i].variable;
         }
+        insn.setArguments(insnArguments);
+
         addInstruction(insn);
         return result != null ? var(result, method.getReturnType()) : null;
     }
@@ -260,9 +263,11 @@ public final class ProgramEmitter {
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(method);
         insn.setReceiver(result);
-        for (ValueEmitter arg : arguments) {
-            insn.getArguments().add(arg.variable);
+        Variable[] insnArguments = new Variable[arguments.length];
+        for (int i = 0; i < insnArguments.length; ++i) {
+            insnArguments[i] = arguments[i].variable;
         }
+        insn.setArguments(insnArguments);
         addInstruction(insn);
         return result != null ? var(result, resultType) : null;
     }

@@ -374,18 +374,20 @@ public class GCShadowStackContributor {
             slotConstant.setLocation(callInstruction.getLocation());
             instructionsToAdd.add(slotConstant);
 
+            List<Variable> arguments = new ArrayList<>();
             InvokeInstruction registerInvocation = new InvokeInstruction();
             registerInvocation.setLocation(callInstruction.getLocation());
             registerInvocation.setType(InvocationType.SPECIAL);
-            registerInvocation.getArguments().add(slotVar);
+            arguments.add(slotVar);
             if (var >= 0) {
                 registerInvocation.setMethod(new MethodReference(ShadowStack.class, "registerGCRoot", int.class,
                         Object.class, void.class));
-                registerInvocation.getArguments().add(program.variableAt(var));
+                arguments.add(program.variableAt(var));
             } else {
                 registerInvocation.setMethod(new MethodReference(ShadowStack.class, "removeGCRoot", int.class,
                         void.class));
             }
+            registerInvocation.setArguments(arguments.toArray(new Variable[0]));
             instructionsToAdd.add(registerInvocation);
         }
 

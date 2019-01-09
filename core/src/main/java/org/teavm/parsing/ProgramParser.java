@@ -657,7 +657,7 @@ public class ProgramParser {
                         if (result >= 0) {
                             insn.setReceiver(getVariable(result));
                         }
-                        insn.getArguments().addAll(Arrays.asList(args));
+                        insn.setArguments(args);
                         addInstruction(insn);
                     } else {
                         InvokeInstruction insn = new InvokeInstruction();
@@ -671,7 +671,7 @@ public class ProgramParser {
                             insn.setReceiver(getVariable(result));
                         }
                         insn.setInstance(getVariable(instance));
-                        insn.getArguments().addAll(Arrays.asList(args));
+                        insn.setArguments(args);
                         addInstruction(insn);
                     }
                     break;

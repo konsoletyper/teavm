@@ -445,9 +445,11 @@ public class ValueEmitter {
         insn.setMethod(method);
         insn.setInstance(variable);
         insn.setReceiver(result);
-        for (ValueEmitter arg : arguments) {
-            insn.getArguments().add(arg.variable);
+        Variable[] insnArguments = new Variable[arguments.length];
+        for (int i = 0; i < insnArguments.length; ++i) {
+            insnArguments[i] = arguments[i].variable;
         }
+        insn.setArguments(insnArguments);
         pe.addInstruction(insn);
         return result != null ? pe.var(result, method.getReturnType()) : null;
     }
@@ -474,9 +476,11 @@ public class ValueEmitter {
         insn.setMethod(method);
         insn.setInstance(variable);
         insn.setReceiver(result);
-        for (ValueEmitter arg : arguments) {
-            insn.getArguments().add(arg.variable);
+        Variable[] insnArguments = new Variable[arguments.length];
+        for (int i = 0; i < insnArguments.length; ++i) {
+            insnArguments[i] = arguments[i].variable;
         }
+        insn.setArguments(insnArguments);
         pe.addInstruction(insn);
         return result != null ? pe.var(result, resultType) : null;
     }

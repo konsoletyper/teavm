@@ -1039,9 +1039,11 @@ public class ProgramIO {
                 MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readInt()));
                 insn.setMethod(createMethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
+                Variable[] arguments = new Variable[paramCount];
                 for (int i = 0; i < paramCount; ++i) {
-                    insn.getArguments().add(program.variableAt(input.readShort()));
+                    arguments[i] = program.variableAt(input.readShort());
                 }
+                insn.setArguments(arguments);
                 return insn;
             }
             case 34: {
@@ -1054,9 +1056,11 @@ public class ProgramIO {
                 MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readInt()));
                 insn.setMethod(createMethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
+                Variable[] arguments = new Variable[paramCount];
                 for (int i = 0; i < paramCount; ++i) {
-                    insn.getArguments().add(program.variableAt(input.readShort()));
+                    arguments[i] = program.variableAt(input.readShort());
                 }
+                insn.setArguments(arguments);
                 return insn;
             }
             case 35: {
@@ -1069,9 +1073,11 @@ public class ProgramIO {
                 MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readInt()));
                 insn.setMethod(createMethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
+                Variable[] arguments = new Variable[paramCount];
                 for (int i = 0; i < paramCount; ++i) {
-                    insn.getArguments().add(program.variableAt(input.readShort()));
+                    arguments[i] = program.variableAt(input.readShort());
                 }
+                insn.setArguments(arguments);
                 return insn;
             }
             case 36: {

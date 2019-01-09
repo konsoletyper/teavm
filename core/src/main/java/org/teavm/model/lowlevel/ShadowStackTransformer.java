@@ -74,7 +74,7 @@ public class ShadowStackTransformer {
         InvokeInstruction invocation = new InvokeInstruction();
         invocation.setType(InvocationType.SPECIAL);
         invocation.setMethod(new MethodReference(ShadowStack.class, "allocStack", int.class, void.class));
-        invocation.getArguments().add(sizeVariable);
+        invocation.setArguments(sizeVariable);
         instructionsToAdd.add(invocation);
 
         block.addFirstAll(instructionsToAdd);
@@ -139,7 +139,7 @@ public class ShadowStackTransformer {
         InvokeInstruction invocation = new InvokeInstruction();
         invocation.setType(InvocationType.SPECIAL);
         invocation.setMethod(new MethodReference(ShadowStack.class, "releaseStack", int.class, void.class));
-        invocation.getArguments().add(sizeVariable);
+        invocation.setArguments(sizeVariable);
         instructionsToAdd.add(invocation);
 
         exitBlock.getLastInstruction().insertPreviousAll(instructionsToAdd);

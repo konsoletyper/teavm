@@ -727,7 +727,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                 int instance = map[insn.getInstance().getIndex()];
                 insn.setInstance(program.variableAt(instance));
             }
-            insn.getArguments().replaceAll(mapper);
+            insn.replaceArguments(mapper);
         }
 
         @Override

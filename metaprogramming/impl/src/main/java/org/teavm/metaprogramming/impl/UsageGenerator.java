@@ -333,7 +333,7 @@ class UsageGenerator {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(new MethodReference(boxed, "valueOf", primitive, boxed));
-        insn.getArguments().add(var);
+        insn.setArguments(var);
         var = program.createVariable();
         insn.setReceiver(var);
 

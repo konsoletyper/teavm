@@ -686,10 +686,7 @@ public class PhiUpdater {
 
         @Override
         public void visit(InvokeInstruction insn) {
-            List<Variable> args = insn.getArguments();
-            for (int i = 0; i < args.size(); ++i) {
-                args.set(i, use(args.get(i)));
-            }
+            insn.replaceArguments(v -> use(v));
             if (insn.getInstance() != null) {
                 insn.setInstance(use(insn.getInstance()));
             }

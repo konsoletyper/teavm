@@ -531,7 +531,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         initExceptionInsn.setInstance(exceptionVar);
         initExceptionInsn.setMethod(new MethodReference(NoSuchMethodError.class, "<init>", String.class, void.class));
         initExceptionInsn.setType(InvocationType.SPECIAL);
-        initExceptionInsn.getArguments().add(constVar);
+        initExceptionInsn.setArguments(constVar);
         block.add(initExceptionInsn);
 
         RaiseInstruction raiseInsn = new RaiseInstruction();

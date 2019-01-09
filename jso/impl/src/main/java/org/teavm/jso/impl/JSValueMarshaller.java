@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.impl;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import org.teavm.diagnostics.Diagnostics;
@@ -90,8 +91,7 @@ class JSValueMarshaller {
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(JSMethods.FUNCTION);
         insn.setReceiver(functor);
-        insn.getArguments().add(var);
-        insn.getArguments().add(nameVar);
+        insn.setArguments(var, nameVar);
         insn.setLocation(location.getSourceLocation());
         replacement.add(insn);
         return functor;
@@ -103,7 +103,7 @@ class JSValueMarshaller {
             insn.setMethod(JSMethods.ARRAY_DATA);
             insn.setReceiver(program.createVariable());
             insn.setType(InvocationType.SPECIAL);
-            insn.getArguments().add(var);
+            insn.setArguments(var);
             replacement.add(insn);
             return insn.getReceiver();
         }
@@ -127,7 +127,7 @@ class JSValueMarshaller {
             InvokeInstruction insn = new InvokeInstruction();
             insn.setMethod(referenceCache.getCached(new MethodReference(JS.class.getName(), "wrap",
                     getWrappedType(type), getWrapperType(type))));
-            insn.getArguments().add(var);
+            insn.setArguments(var);
             insn.setReceiver(result);
             insn.setType(InvocationType.SPECIAL);
             insn.setLocation(location);
@@ -145,7 +145,7 @@ class JSValueMarshaller {
             while (--degree > 1) {
                 insn = new InvokeInstruction();
                 insn.setMethod(JSMethods.ARRAY_MAPPER);
-                insn.getArguments().add(function);
+                insn.setArguments(function);
                 function = program.createVariable();
                 insn.setReceiver(function);
                 insn.setType(InvocationType.SPECIAL);
@@ -156,8 +156,7 @@ class JSValueMarshaller {
             insn = new InvokeInstruction();
             insn.setMethod(referenceCache.getCached(new MethodReference(JS.class.getName(), "map",
                     getWrappedType(type), ValueType.parse(Function.class), getWrapperType(type))));
-            insn.getArguments().add(var);
-            insn.getArguments().add(function);
+            insn.setArguments(var, function);
             insn.setReceiver(result);
             insn.setType(InvocationType.SPECIAL);
             insn.setLocation(location);
@@ -309,6 +308,7 @@ class JSValueMarshaller {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setMethod(singleDimensionArrayUnwrapper(type));
         insn.setType(InvocationType.SPECIAL);
+        List<Variable> args = new ArrayList<>();
 
         if (insn.getMethod().parameterCount() == 2) {
             Variable cls = program.createVariable();
@@ -317,10 +317,11 @@ class JSValueMarshaller {
             clsInsn.setLocation(location.getSourceLocation());
             clsInsn.setReceiver(cls);
             replacement.add(clsInsn);
-            insn.getArguments().add(cls);
+            args.add(cls);
         }
 
-        insn.getArguments().add(var);
+        args.add(var);
+        insn.setArguments(args.toArray(new Variable[0]));
         insn.setReceiver(result);
         replacement.add(insn);
         return result;
@@ -340,7 +341,7 @@ class JSValueMarshaller {
             clsInsn.setLocation(location.getSourceLocation());
             clsInsn.setReceiver(cls);
             replacement.add(clsInsn);
-            insn.getArguments().add(cls);
+            insn.setArguments(cls);
         }
 
         insn.setReceiver(function);
@@ -359,8 +360,7 @@ class JSValueMarshaller {
             insn = new InvokeInstruction();
             insn.setMethod(JSMethods.ARRAY_UNMAPPER);
             insn.setType(InvocationType.SPECIAL);
-            insn.getArguments().add(cls);
-            insn.getArguments().add(function);
+            insn.setArguments(cls, function);
             function = program.createVariable();
             insn.setReceiver(function);
             replacement.add(insn);
@@ -375,9 +375,7 @@ class JSValueMarshaller {
 
         insn = new InvokeInstruction();
         insn.setMethod(JSMethods.UNMAP_ARRAY);
-        insn.getArguments().add(cls);
-        insn.getArguments().add(var);
-        insn.getArguments().add(function);
+        insn.setArguments(cls, var, function);
         insn.setReceiver(var);
         insn.setType(InvocationType.SPECIAL);
         insn.setLocation(location.getSourceLocation());
@@ -454,7 +452,7 @@ class JSValueMarshaller {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setMethod(referenceCache.getCached(referenceCache.getCached(new MethodReference(
                 JS.class.getName(), methodName, argType, resultType))));
-        insn.getArguments().add(var);
+        insn.setArguments(var);
         insn.setReceiver(result);
         insn.setType(InvocationType.SPECIAL);
         insn.setLocation(location);
@@ -476,8 +474,7 @@ class JSValueMarshaller {
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(JSMethods.FUNCTION_AS_OBJECT);
         insn.setReceiver(functor);
-        insn.getArguments().add(var);
-        insn.getArguments().add(nameVar);
+        insn.setArguments(var, nameVar);
         insn.setLocation(location.getSourceLocation());
         replacement.add(insn);
         return functor;

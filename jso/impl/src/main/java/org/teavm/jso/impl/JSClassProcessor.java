@@ -329,7 +329,12 @@ class JSClassProcessor {
             if (method.getProgram() != null && method.getProgram().basicBlockCount() > 0) {
                 invoke.setMethod(new MethodReference(method.getOwnerName(), method.getName() + "$static",
                         getStaticSignature(method.getReference())));
-                invoke.getArguments().add(0, invoke.getInstance());
+                Variable[] newArguments = new Variable[invoke.getArguments().size() + 1];
+                newArguments[0] = invoke.getInstance();
+                for (int i = 0; i < invoke.getArguments().size(); ++i) {
+                    newArguments[i + 1] = invoke.getArguments().get(i);
+                }
+                invoke.setArguments(newArguments);
                 invoke.setInstance(null);
             }
             invoke.setType(InvocationType.SPECIAL);
@@ -369,16 +374,18 @@ class JSClassProcessor {
         newInvoke.setType(InvocationType.SPECIAL);
         newInvoke.setReceiver(result);
         newInvoke.setLocation(invoke.getLocation());
+        List<Variable> newArgs = new ArrayList<>();
         if (invoke.getInstance() != null) {
             Variable arg = marshaller.wrapArgument(callLocation, invoke.getInstance(),
                     ValueType.object(method.getOwnerName()), false);
-            newInvoke.getArguments().add(arg);
+            newArgs.add(arg);
         }
         for (int i = 0; i < invoke.getArguments().size(); ++i) {
             Variable arg = marshaller.wrapArgument(callLocation, invoke.getArguments().get(i),
                     method.parameterType(i), byRefParams[i]);
-            newInvoke.getArguments().add(arg);
+            newArgs.add(arg);
         }
+        newInvoke.setArguments(newArgs.toArray(new Variable[0]));
         replacement.add(newInvoke);
         if (result != null) {
             result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType());
@@ -501,15 +508,17 @@ class JSClassProcessor {
         newInvoke.setMethod(JSMethods.invoke(method.parameterCount()));
         newInvoke.setType(InvocationType.SPECIAL);
         newInvoke.setReceiver(result);
-        newInvoke.getArguments().add(invoke.getInstance());
-        newInvoke.getArguments().add(marshaller.addStringWrap(marshaller.addString(name, invoke.getLocation()),
+        List<Variable> newArguments = new ArrayList<>();
+        newArguments.add(invoke.getInstance());
+        newArguments.add(marshaller.addStringWrap(marshaller.addString(name, invoke.getLocation()),
                 invoke.getLocation()));
         newInvoke.setLocation(invoke.getLocation());
         for (int i = 0; i < invoke.getArguments().size(); ++i) {
             Variable arg = marshaller.wrapArgument(callLocation, invoke.getArguments().get(i),
                     method.parameterType(i), byRefParams[i]);
-            newInvoke.getArguments().add(arg);
+            newArguments.add(arg);
         }
+        newInvoke.setArguments(newArguments.toArray(new Variable[0]));
         replacement.add(newInvoke);
         if (result != null) {
             result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType());
@@ -661,10 +670,12 @@ class JSClassProcessor {
             insn.setInstance(marshaller.unwrapReturnValue(location, program.variableAt(paramIndex++),
                     ValueType.object(calleeRef.getClassName())));
         }
+        Variable[] args = new Variable[callee.parameterCount()];
         for (int i = 0; i < callee.parameterCount(); ++i) {
-            insn.getArguments().add(marshaller.unwrapReturnValue(location, program.variableAt(paramIndex++),
-                    callee.parameterType(i)));
+            args[i] = marshaller.unwrapReturnValue(location, program.variableAt(paramIndex++),
+                    callee.parameterType(i));
         }
+        insn.setArguments(args);
         if (callee.getResultType() != ValueType.VOID) {
             insn.setReceiver(program.createVariable());
         }
@@ -691,8 +702,7 @@ class JSClassProcessor {
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(JSMethods.GET);
         insn.setReceiver(receiver);
-        insn.getArguments().add(instance);
-        insn.getArguments().add(nameVar);
+        insn.setArguments(instance, nameVar);
         insn.setLocation(location);
         replacement.add(insn);
     }
@@ -702,9 +712,7 @@ class JSClassProcessor {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(JSMethods.SET);
-        insn.getArguments().add(instance);
-        insn.getArguments().add(nameVar);
-        insn.getArguments().add(value);
+        insn.setArguments(instance, nameVar, value);
         insn.setLocation(location);
         replacement.add(insn);
     }
@@ -714,8 +722,7 @@ class JSClassProcessor {
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(JSMethods.GET);
         insn.setReceiver(receiver);
-        insn.getArguments().add(array);
-        insn.getArguments().add(index);
+        insn.setArguments(array, index);
         insn.setLocation(location);
         replacement.add(insn);
     }
@@ -724,9 +731,7 @@ class JSClassProcessor {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(JSMethods.SET);
-        insn.getArguments().add(array);
-        insn.getArguments().add(index);
-        insn.getArguments().add(value);
+        insn.setArguments(array, index, value);
         insn.setLocation(location);
         replacement.add(insn);
     }

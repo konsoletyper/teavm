@@ -130,9 +130,11 @@ public class ProxyVariableContext extends VariableContext {
         initInsn.setInstance(constructInsn.getReceiver());
         initInsn.setMethod(ctor.getReference());
         initInsn.setType(InvocationType.SPECIAL);
+        Variable[] initArgs = new Variable[capturedValues.size()];
         for (int i = 0; i < capturedValues.size(); ++i) {
-            initInsn.getArguments().add(capturedValues.get(i).value);
+            initArgs[i] =  capturedValues.get(i).value;
         }
+        initInsn.setArguments(initArgs);
         generator.add(initInsn);
 
         return constructInsn.getReceiver();
