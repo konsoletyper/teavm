@@ -16,7 +16,6 @@
 package org.teavm.model.instructions;
 
 import java.util.AbstractList;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.function.UnaryOperator;
 import org.teavm.model.Instruction;
