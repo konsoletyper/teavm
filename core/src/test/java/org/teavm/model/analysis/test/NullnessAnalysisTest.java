@@ -16,7 +16,9 @@
 package org.teavm.model.analysis.test;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
 import com.carrotsearch.hppc.ObjectByteHashMap;
 import com.carrotsearch.hppc.ObjectByteMap;
 import com.carrotsearch.hppc.cursors.ObjectCursor;
@@ -24,6 +26,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.HashMap;
 import java.util.Map;
 import org.junit.Rule;
@@ -44,6 +47,7 @@ public class NullnessAnalysisTest {
 
     private static final String NOT_NULL_DIRECTIVE = "// NOT_NULL ";
     private static final String NULLABLE_DIRECTIVE = "// NULLABLE ";
+    private static final String NULL_DIRECTIVE = "// NULL ";
 
     @Test
     public void simple() {
@@ -90,6 +94,11 @@ public class NullnessAnalysisTest {
         test();
     }
 
+    @Test
+    public void irreduciblePhiLoop() {
+        test();
+    }
+
     private void test() {
         String baseName = "model/analysis/nullness/" + name.getMethodName();
         String originalResourceName = baseName + ".original.txt";
@@ -115,8 +124,20 @@ public class NullnessAnalysisTest {
             String varName = varNameCursor.value;
             Variable var = variablesByLabel.get(varName);
             assertNotNull("Variable " + varName + " is missing", var);
-            boolean notNull = expectedNullness.get(varName) != 0;
-            assertEquals("Variable " + varName + " non-null", notNull, information.isNotNull(var));
+            byte nullness = expectedNullness.get(varName);
+            switch (nullness) {
+                case 0:
+                    assertTrue("Variable " + varName + " must be null",  information.isNull(var));
+                    break;
+                case 1:
+                    assertTrue("Variable " + varName + " must be non-null",  information.isNotNull(var));
+                    break;
+                case 2:
+                    assertFalse("Variable " + varName + " must not be null",  information.isNull(var));
+                    assertFalse("Variable " + varName + " must not be non-null", information.isNotNull(var));
+                    break;
+            }
+
         }
 
         information.dispose();
@@ -127,7 +148,7 @@ public class NullnessAnalysisTest {
     private ObjectByteMap<String> extractExpectedNullness(String name) {
         ClassLoader classLoader = NullnessAnalysisTest.class.getClassLoader();
         try (InputStream input = classLoader.getResourceAsStream(name);
-                BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"))) {
+                BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
             ObjectByteMap<String> result = new ObjectByteHashMap<>();
 
             while (true) {
@@ -136,7 +157,13 @@ public class NullnessAnalysisTest {
                     break;
                 }
 
-                int index = line.indexOf(NOT_NULL_DIRECTIVE);
+                int index = line.indexOf(NULL_DIRECTIVE);
+                if (index >= 0) {
+                    String variable = line.substring(index + NULL_DIRECTIVE.length()).trim();
+                    result.put(variable, (byte) 0);
+                }
+
+                index = line.indexOf(NOT_NULL_DIRECTIVE);
                 if (index >= 0) {
                     String variable = line.substring(index + NOT_NULL_DIRECTIVE.length()).trim();
                     result.put(variable, (byte) 1);
@@ -145,7 +172,7 @@ public class NullnessAnalysisTest {
                 index = line.indexOf(NULLABLE_DIRECTIVE);
                 if (index >= 0) {
                     String variable = line.substring(index + NULLABLE_DIRECTIVE.length()).trim();
-                    result.put(variable, (byte) 0);
+                    result.put(variable, (byte) 2);
                 }
             }
 

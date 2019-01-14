@@ -169,12 +169,52 @@ class NullnessInformationBuilder {
                 }
             }
         }
-        assignmentGraph = GraphUtils.removeLoops(builder.build());
+        assignmentGraph = removeLoops(builder.build());
 
         notNullPredecessorsLeft = new int[assignmentGraph.size()];
         for (int i = 0; i < assignmentGraph.size(); ++i) {
             notNullPredecessorsLeft[i] = assignmentGraph.incomingEdgesCount(i);
         }
+    }
+
+    private Graph removeLoops(Graph graph) {
+        int[][] sccs = GraphUtils.findStronglyConnectedComponents(graph);
+        if (sccs.length == 0) {
+            return graph;
+        }
+
+        int[] backMap = new int[graph.size()];
+        for (int i = 0; i < backMap.length; ++i) {
+            backMap[i] = i;
+        }
+        boolean hasNonTrivialSccs = false;
+        GraphBuilder builder = new GraphBuilder(graph.size());
+        for (int[] scc : sccs) {
+            if (scc.length == 1) {
+                continue;
+            }
+            hasNonTrivialSccs = true;
+
+            for (int i = 1; i < scc.length; ++i) {
+                backMap[scc[i]] = scc[0];
+                builder.addEdge(scc[0], scc[i]);
+            }
+        }
+        if (!hasNonTrivialSccs) {
+            return graph;
+        }
+
+        for (int i = 0; i < graph.size(); ++i) {
+            for (int j : graph.outgoingEdges(i)) {
+                if (backMap[j] == i) {
+                    continue;
+                }
+
+                builder.addEdge(i, backMap[j]);
+            }
+        }
+
+        return builder.build();
     }
 
     private void initNullness(IntDeque queue) {

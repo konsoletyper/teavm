@@ -15,5 +15,5 @@ $join
     return
 
 // NULLABLE v
-// NULLABLE v_1
+// NULL v_1
 // NOT_NULL v_3

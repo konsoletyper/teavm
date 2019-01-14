@@ -13,5 +13,5 @@ $joint
     return @c
 
 // NULLABLE c
-// NULLABLE a_1
+// NULL a_1
 // NOT_NULL a_2

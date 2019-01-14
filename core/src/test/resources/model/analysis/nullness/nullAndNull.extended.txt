@@ -18,8 +18,8 @@ $join
     @v := @b_3
     return
 
-// NULLABLE tmp
-// NULLABLE p
-// NULLABLE q
+// NULL tmp
+// NULL p
+// NULL q
 // NULLABLE u
 // NULLABLE v
