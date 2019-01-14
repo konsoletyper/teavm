@@ -56,6 +56,7 @@ import org.teavm.common.LoopGraph;
 import org.teavm.common.RangeTree;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.AnnotationHolder;
+import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ElementModifier;
@@ -67,6 +68,9 @@ import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.text.ListingBuilder;
 import org.teavm.model.util.AsyncProgramSplitter;
 import org.teavm.model.util.ProgramUtils;
@@ -82,6 +86,7 @@ public class Decompiler {
     private int[] loops;
     private int[] loopSuccessors;
     private Block[] blockMap;
+    private boolean[] exceptionHandlers;
     private int lastBlockId;
     private RangeTree codeTree;
     private RangeTree.Node currentNode;
@@ -124,19 +129,41 @@ public class Decompiler {
     }
 
     static class Block {
-        public Block parent;
-        public int parentOffset;
-        public final IdentifiedStatement statement;
-        public final List<Statement> body;
-        public final int end;
-        public final int start;
-        public final List<TryCatchBookmark> tryCatches = new ArrayList<>();
+        Block parent;
+        int parentOffset;
+        final IdentifiedStatement statement;
+        final List<Statement> body;
+        final int end;
+        final int start;
+        final List<TryCatchBookmark> tryCatches = new ArrayList<>();
+        int nodeToRestore;
+        Block nodeBackup;
+        int nodeToRestore2 = -1;
+        Block nodeBackup2;
 
-        public Block(IdentifiedStatement statement, List<Statement> body, int start, int end) {
+        Block(IdentifiedStatement statement, List<Statement> body, int start, int end) {
             this.statement = statement;
             this.body = body;
             this.start = start;
             this.end = end;
+        }
+
+        void installTo(int index, Block[] blockMap) {
+            if (nodeBackup == null) {
+                nodeToRestore = index;
+                nodeBackup = blockMap[index];
+            } else {
+                nodeToRestore2 = index;
+                nodeBackup2 = blockMap[index];
+            }
+            blockMap[index] = this;
+        }
+
+        void removeFrom(Block[] blockMap) {
+            blockMap[nodeToRestore] = nodeBackup;
+            if (nodeToRestore2 >= 0) {
+                blockMap[nodeToRestore2] = nodeBackup2;
+            }
         }
     }
 
@@ -379,6 +406,7 @@ public class Decompiler {
         parentNode = codeTree.getRoot();
         currentNode = parentNode.getFirstChild();
         generator.async = async;
+        fillExceptionHandlers(program);
         for (int i = 0; i < this.graph.size(); ++i) {
             int node = i < indexer.size() ? indexer.nodeAt(i) : -1;
             int next = i + 1;
@@ -393,45 +421,7 @@ public class Decompiler {
                 generator.nextBlock = tmp >= 0 && next < indexer.size() ? program.basicBlockAt(tmp) : null;
             }
 
-            closeExpiredBookmarks(generator, node, generator.currentBlock.getTryCatchBlocks());
-
-            List<TryCatchBookmark> inheritedBookmarks = new ArrayList<>();
             Block block = stack.peek();
-            while (block.end == i) {
-                Block oldBlock = block;
-                stack.pop();
-                block = stack.peek();
-                if (block.start >= 0) {
-                    int mappedStart = indexer.nodeAt(block.start);
-                    if (blockMap[mappedStart] == oldBlock) {
-                        blockMap[mappedStart] = block;
-                    }
-                }
-
-                for (int j = 0; j < oldBlock.tryCatches.size(); ++j) {
-                    TryCatchBookmark bookmark = oldBlock.tryCatches.get(j);
-                    TryCatchStatement tryCatchStmt = new TryCatchStatement();
-                    tryCatchStmt.setExceptionType(bookmark.exceptionType);
-                    tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
-                    tryCatchStmt.getHandler().add(generator.generateJumpStatement(
-                            program.basicBlockAt(bookmark.exceptionHandler)));
-                    List<Statement> blockPart = oldBlock.body.subList(bookmark.offset, oldBlock.body.size());
-                    tryCatchStmt.getProtectedBody().addAll(blockPart);
-                    blockPart.clear();
-                    if (!tryCatchStmt.getProtectedBody().isEmpty()) {
-                        blockPart.add(tryCatchStmt);
-                    }
-                    inheritedBookmarks.add(0, bookmark);
-                }
-                oldBlock.tryCatches.clear();
-            }
-
-            for (int j = inheritedBookmarks.size() - 1; j >= 0; --j) {
-                TryCatchBookmark bookmark = inheritedBookmarks.get(j);
-                bookmark.block = block;
-                bookmark.offset = block.body.size();
-                block.tryCatches.add(bookmark);
-            }
 
             while (parentNode.getEnd() == i) {
                 currentNode = parentNode.getNext();
@@ -466,14 +456,78 @@ public class Decompiler {
 
                 block.body.addAll(generator.statements);
             }
+
+            List<Runnable> deferred = new ArrayList<>();
+            while (block.end == i + 1) {
+                Block oldBlock = block;
+                stack.pop();
+                block = stack.peek();
+                if (block.start >= 0) {
+                    int mappedStart = indexer.nodeAt(block.start);
+                    if (blockMap[mappedStart] == oldBlock) {
+                        blockMap[mappedStart] = block;
+                    }
+                }
+
+                for (int j = 0; j < oldBlock.tryCatches.size(); ++j) {
+                    TryCatchBookmark bookmark = oldBlock.tryCatches.get(j);
+                    TryCatchStatement tryCatchStmt = new TryCatchStatement();
+                    tryCatchStmt.setExceptionType(bookmark.exceptionType);
+                    tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
+                    tryCatchStmt.getHandler().add(generator.generateJumpStatement(
+                            program.basicBlockAt(bookmark.exceptionHandler)));
+                    List<Statement> blockPart = oldBlock.body.subList(bookmark.offset, oldBlock.body.size());
+                    tryCatchStmt.getProtectedBody().addAll(blockPart);
+                    blockPart.clear();
+                    if (!tryCatchStmt.getProtectedBody().isEmpty()) {
+                        blockPart.add(tryCatchStmt);
+                    }
+                }
+
+                tryCatchBookmarks.subList(tryCatchBookmarks.size() - oldBlock.tryCatches.size(),
+                        tryCatchBookmarks.size()).clear();
+                oldBlock.tryCatches.clear();
+                oldBlock.removeFrom(blockMap);
+            }
+            for (Runnable r : deferred) {
+                r.run();
+            }
+
+            if (generator.nextBlock != null && !isTrivialBlock(generator.nextBlock)) {
+                closeExpiredBookmarks(generator, generator.nextBlock.getTryCatchBlocks());
+            }
         }
+
         SequentialStatement resultBody = new SequentialStatement();
         resultBody.getSequence().addAll(rootStmt.getBody());
         result.setStatement(resultBody);
         return result;
     }
 
-    private void closeExpiredBookmarks(StatementGenerator generator, int node, List<TryCatchBlock> tryCatchBlocks) {
+    private void fillExceptionHandlers(Program program) {
+        exceptionHandlers = new boolean[program.basicBlockCount()];
+        for (int i = 0; i < exceptionHandlers.length; ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                exceptionHandlers[tryCatch.getHandler().getIndex()] = true;
+            }
+        }
+    }
+
+    private boolean isTrivialBlock(BasicBlock block) {
+        if (exceptionHandlers[block.getIndex()]) {
+            return false;
+        }
+        if (block.instructionCount() != 1 || block.getExceptionVariable() != null) {
+            return false;
+        }
+        Instruction instruction = block.getLastInstruction();
+        return instruction instanceof JumpInstruction
+                || instruction instanceof BranchingInstruction
+                || instruction instanceof BinaryBranchingInstruction;
+    }
+
+    private void closeExpiredBookmarks(StatementGenerator generator, List<TryCatchBlock> tryCatchBlocks) {
         tryCatchBlocks = new ArrayList<>(tryCatchBlocks);
         Collections.reverse(tryCatchBlocks);
 
@@ -503,24 +557,25 @@ public class Decompiler {
         for (TryCatchBookmark bookmark : removedBookmarks) {
             Block block = stack.peek();
             while (block != bookmark.block) {
-                TryCatchStatement tryCatchStmt = new TryCatchStatement();
-                tryCatchStmt.setExceptionType(bookmark.exceptionType);
-                tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
-                tryCatchStmt.getHandler().add(generator.generateJumpStatement(
-                        program.basicBlockAt(bookmark.exceptionHandler)));
-                tryCatchStmt.getProtectedBody().addAll(block.body);
-                block.body.clear();
-                if (!tryCatchStmt.getProtectedBody().isEmpty()) {
-                    block.body.add(tryCatchStmt);
+                if (block.body.size() > 1) {
+                    TryCatchStatement tryCatchStmt = new TryCatchStatement();
+                    tryCatchStmt.setExceptionType(bookmark.exceptionType);
+                    tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
+                    tryCatchStmt.getHandler().add(generator.generateJumpStatement(
+                            program.basicBlockAt(bookmark.exceptionHandler)));
+                    List<Statement> body = block.body.subList(0, block.body.size() - 1);
+                    tryCatchStmt.getProtectedBody().addAll(body);
+                    body.clear();
+                    body.add(tryCatchStmt);
                 }
                 block = block.parent;
             }
             TryCatchStatement tryCatchStmt = new TryCatchStatement();
             tryCatchStmt.setExceptionType(bookmark.exceptionType);
             tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
-            if (node != bookmark.exceptionHandler) {
-                tryCatchStmt.getHandler().add(generator.generateJumpStatement(
-                        program.basicBlockAt(bookmark.exceptionHandler)));
+            Statement jumpToHandler = generator.generateJumpStatement(program.basicBlockAt(bookmark.exceptionHandler));
+            if (jumpToHandler != null) {
+                tryCatchStmt.getHandler().add(jumpToHandler);
             }
             List<Statement> blockPart = block.body.subList(bookmark.offset, block.body.size());
             tryCatchStmt.getProtectedBody().addAll(blockPart);
@@ -528,6 +583,7 @@ public class Decompiler {
             if (!tryCatchStmt.getProtectedBody().isEmpty()) {
                 blockPart.add(tryCatchStmt);
             }
+            block.tryCatches.remove(bookmark);
         }
 
         tryCatchBookmarks.subList(start, tryCatchBookmarks.size()).clear();
@@ -569,10 +625,10 @@ public class Decompiler {
             int mappedIndex = indexer.nodeAt(currentNode.getEnd());
             if (mappedIndex >= 0 && (blockMap[mappedIndex] == null
                     || !(blockMap[mappedIndex].statement instanceof WhileStatement))) {
-                blockMap[mappedIndex] = block;
+                block.installTo(mappedIndex, blockMap);
             }
             if (loop) {
-                blockMap[indexer.nodeAt(start)] = block;
+                block.installTo(indexer.nodeAt(start), blockMap);
             }
             parentNode = currentNode;
             currentNode = currentNode.getFirstChild();

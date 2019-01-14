@@ -149,7 +149,7 @@ public class RegisterAllocator {
     }
 
     private void insertCopy(Incoming incoming, Map<BasicBlock, BasicBlock> blockMap) {
-        final Phi phi = incoming.getPhi();
+        Phi phi = incoming.getPhi();
         Program program = phi.getBasicBlock().getProgram();
         AssignInstruction copyInstruction = new AssignInstruction();
         Variable firstCopy = program.createVariable();
@@ -164,8 +164,9 @@ public class RegisterAllocator {
             incoming.setSource(source);
         }
         if (!(incoming.getSource().getLastInstruction() instanceof JumpInstruction)) {
-            final BasicBlock copyBlock = program.createBasicBlock();
+            BasicBlock copyBlock = program.createBasicBlock();
             JumpInstruction jumpInstruction = new JumpInstruction();
+            jumpInstruction.setLocation(incoming.getSource().getLastInstruction().getLocation());
             jumpInstruction.setTarget(phi.getBasicBlock());
             copyBlock.add(jumpInstruction);
             incoming.getSource().getLastInstruction().acceptVisitor(new BasicBlockMapper((int block) ->
