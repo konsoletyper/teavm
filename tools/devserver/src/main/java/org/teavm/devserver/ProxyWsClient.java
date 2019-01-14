@@ -43,6 +43,8 @@ public class ProxyWsClient {
 
     @OnWebSocketConnect
     public void connect(Session session) {
+        session.getPolicy().setMaxBinaryMessageSize(100_000_000);
+        session.getPolicy().setMaxTextMessageSize(100_000_000);
         this.session = session;
         flush();
         if (target != null) {
