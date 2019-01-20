@@ -51,7 +51,7 @@ class BuildTimeResourceProxyBuilder {
         private Object[] initialData;
         private ResourceTypeDescriptor descriptor;
 
-        public ProxyFactoryCreation(ResourceTypeDescriptor descriptor) {
+        ProxyFactoryCreation(ResourceTypeDescriptor descriptor) {
             this.descriptor = descriptor;
             int index = 0;
             for (String propertyName : descriptor.getPropertyTypes().keySet()) {

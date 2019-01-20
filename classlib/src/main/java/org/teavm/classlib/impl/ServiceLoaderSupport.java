@@ -19,17 +19,21 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.ServiceLoader;
+import java.util.Set;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
+import org.teavm.classlib.ServiceLoaderFilter;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
@@ -85,8 +89,48 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
         writer.append("return result;").softNewLine();
     }
 
-    private void parseServiceFile(DependencyAgent agent, DependencyNode targetNode, String service,
-            InputStream input, CallLocation location) throws IOException {
+    @Override
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
+        MethodReference ref = method.getReference();
+        if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
+            List<ServiceLoaderFilter> filters = getFilters(agent);
+            method.getResult().propagate(agent.getType("[Ljava/lang/Object;"));
+            DependencyNode sourceNode = agent.linkMethod(LOAD_METHOD).getVariable(1).getClassValueNode();
+            sourceNode.connect(method.getResult().getArrayItem());
+            sourceNode.addConsumer(type -> {
+                CallLocation location = new CallLocation(LOAD_METHOD);
+                for (String implementationType : getImplementations(type.getName())) {
+                    if (filters.stream().anyMatch(filter -> !filter.apply(type.getName(), implementationType))) {
+                        continue;
+                    }
+                    serviceMap.computeIfAbsent(type.getName(), k -> new ArrayList<>()).add(implementationType);
+
+                    MethodReference ctor = new MethodReference(implementationType,
+                            new MethodDescriptor("<init>", ValueType.VOID));
+                    agent.linkMethod(ctor).addLocation(location).use();
+                    method.getResult().getArrayItem().propagate(agent.getType(implementationType));
+                }
+            });
+        }
+    }
+
+    private Set<String> getImplementations(String type) {
+        Set<String> result = new LinkedHashSet<>();
+        try {
+            Enumeration<URL> resources = classLoader.getResources("META-INF/services/" + type);
+            while (resources.hasMoreElements()) {
+                URL resource = resources.nextElement();
+                try (InputStream stream = resource.openStream()) {
+                    parseServiceFile(stream, result);
+                }
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+        return result;
+    }
+
+    private void parseServiceFile(InputStream input, Set<String> consumer) throws IOException {
         BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
         while (true) {
             String line = reader.readLine();
@@ -97,38 +141,37 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
             if (line.startsWith("#") || line.isEmpty()) {
                 continue;
             }
-            serviceMap.computeIfAbsent(service, k -> new ArrayList<>()).add(line);
 
-            MethodReference ctor = new MethodReference(line, new MethodDescriptor("<init>", ValueType.VOID));
-            agent.linkMethod(ctor).addLocation(location).use();
-            targetNode.propagate(agent.getType(line));
+            consumer.add(line);
         }
     }
 
-    @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method) {
-        MethodReference ref = method.getReference();
-        if (ref.getClassName().equals("java.util.ServiceLoader") && ref.getName().equals("loadServices")) {
-            method.getResult().propagate(agent.getType("[Ljava/lang/Object;"));
-            DependencyNode sourceNode = agent.linkMethod(LOAD_METHOD).getVariable(1).getClassValueNode();
-            sourceNode.connect(method.getResult().getArrayItem());
-            sourceNode.addConsumer(type -> initConstructor(agent, method.getResult().getArrayItem(),
-                    type.getName(), new CallLocation(LOAD_METHOD)));
-        }
-    }
-
-    private void initConstructor(DependencyAgent agent, DependencyNode targetNode, String type,
-            CallLocation location) {
-        try {
-            Enumeration<URL> resources = classLoader.getResources("META-INF/services/" + type);
-            while (resources.hasMoreElements()) {
-                URL resource = resources.nextElement();
-                try (InputStream stream = resource.openStream()) {
-                    parseServiceFile(agent, targetNode, type, stream, location);
-                }
+    private List<ServiceLoaderFilter> getFilters(DependencyAgent agent) {
+        List<ServiceLoaderFilter> filters = new ArrayList<>();
+        for (String filterTypeName : getImplementations(ServiceLoaderFilter.class.getName())) {
+            Class<?> filterType;
+            try {
+                filterType = Class.forName(filterTypeName, true, classLoader);
+            } catch (ClassNotFoundException e) {
+                agent.getDiagnostics().error(null, "Could not load ServiceLoader filter class '{{c0}}'",
+                        filterTypeName);
+                continue;
             }
-        } catch (IOException e) {
-            throw new RuntimeException(e);
+
+            if (!ServiceLoaderFilter.class.isAssignableFrom(filterType)) {
+                agent.getDiagnostics().error(null, "Class '{{c0}}' does not implement ServiceLoaderFilter interface",
+                        filterTypeName);
+                continue;
+            }
+
+            try {
+                filters.add((ServiceLoaderFilter) filterType.getConstructor().newInstance());
+            } catch (NoSuchMethodException | IllegalAccessException | InvocationTargetException
+                    | InstantiationException e) {
+                agent.getDiagnostics().error(null, "Could not instantiate ServiceLoader filter '{{c0}}'",
+                        filterTypeName);
+            }
         }
+        return filters;
     }
 }

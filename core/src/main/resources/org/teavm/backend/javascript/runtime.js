@@ -419,16 +419,20 @@ var $rt_putStderr = typeof $rt_putStderrCustom === "function" ? $rt_putStderrCus
         $rt_stderrBuffer += String.fromCharCode(ch);
     }
 };
-function $rt_metadata(data) {
+var $rt_packageData = null;
+function $rt_packages(data) {
     var i = 0;
-    var packageCount = data[i++];
-    var packages = new Array(packageCount);
-    for (var j = 0; j < packageCount; ++j) {
+    var packages = new Array(data.length);
+    for (var j = 0; j < data.length; ++j) {
         var prefixIndex = data[i++];
         var prefix = prefixIndex >= 0 ? packages[prefixIndex] : "";
         packages[j] = prefix + data[i++] + ".";
     }
-
+    $rt_packageData = packages;
+}
+function $rt_metadata(data) {
+    var packages = $rt_packageData;
+    var i = 0;
     while (i < data.length) {
         var cls = data[i++];
         cls.$meta = {};
@@ -468,7 +472,7 @@ function $rt_metadata(data) {
 
         var virtualMethods = data[i++];
         if (virtualMethods !== 0) {
-            for (j = 0; j < virtualMethods.length; j += 2) {
+            for (var j = 0; j < virtualMethods.length; j += 2) {
                 var name = virtualMethods[j];
                 var func = virtualMethods[j + 1];
                 if (typeof name === 'string') {

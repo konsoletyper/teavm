@@ -23,7 +23,7 @@ class BuildTimeResourceProxyFactory {
     private Object[] initialData;
     ResourceTypeDescriptor typeDescriptor;
 
-    public BuildTimeResourceProxyFactory(Map<Method, BuildTimeResourceMethod> methods, Object[] initialData,
+    BuildTimeResourceProxyFactory(Map<Method, BuildTimeResourceMethod> methods, Object[] initialData,
             ResourceTypeDescriptor typeDescriptor) {
         this.methods = methods;
         this.initialData = initialData;

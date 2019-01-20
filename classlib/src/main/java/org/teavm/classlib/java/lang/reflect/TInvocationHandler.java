@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,17 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.plugin;
+package org.teavm.classlib.java.lang.reflect;
 
-class BuildTimeResourceGetter implements BuildTimeResourceMethod {
-    private int index;
+import java.lang.reflect.Method;
 
-    public BuildTimeResourceGetter(int index) {
-        this.index = index;
-    }
-
-    @Override
-    public Object invoke(BuildTimeResourceProxy proxy, Object[] args) {
-        return proxy.data[index];
-    }
+public interface TInvocationHandler {
+    Object invoke(Object proxy, Method method, Object[] args) throws Throwable;
 }

@@ -453,73 +453,84 @@ public class Renderer implements RenderingManager {
 
         int start = writer.getOffset();
         try {
-            writer.append("$rt_metadata([");
+            writer.append("$rt_packages([");
             ObjectIntMap<String> packageIndexes = generatePackageMetadata(classes, classesRequiringName);
-
-            boolean first = true;
-            for (ClassNode cls : classes) {
-                if (!first) {
-                    writer.append(',').softNewLine();
-                }
-                first = false;
-                writer.appendClass(cls.getName()).append(",").ws();
-
-                if (classesRequiringName.contains(cls.getName())) {
-                    String className = cls.getName();
-                    int dotIndex = className.lastIndexOf('.') + 1;
-                    String packageName = className.substring(0, dotIndex);
-                    className = className.substring(dotIndex);
-                    writer.append("\"").append(RenderingUtil.escapeString(className)).append("\"").append(",").ws();
-                    writer.append(String.valueOf(packageIndexes.getOrDefault(packageName, -1)));
-                } else {
-                    writer.append("0");
-                }
-                writer.append(",").ws();
-
-                if (cls.getParentName() != null) {
-                    writer.appendClass(cls.getParentName());
-                } else {
-                    writer.append("0");
-                }
-                writer.append(',').ws();
-                writer.append("[");
-                for (int i = 0; i < cls.getInterfaces().size(); ++i) {
-                    String iface = cls.getInterfaces().get(i);
-                    if (i > 0) {
-                        writer.append(",").ws();
-                    }
-                    writer.appendClass(iface);
-                }
-                writer.append("],").ws();
-
-                writer.append(ElementModifier.pack(cls.getModifiers())).append(',').ws();
-                writer.append(cls.getAccessLevel().ordinal()).append(',').ws();
-
-                MethodReader clinit = classSource.get(cls.getName()).getMethod(
-                        new MethodDescriptor("<clinit>", ValueType.VOID));
-                if (clinit != null) {
-                    writer.append(naming.getNameForClassInit(cls.getName()));
-                } else {
-                    writer.append('0');
-                }
-                writer.append(',').ws();
-
-                List<MethodReference> virtualMethods = new ArrayList<>();
-                for (MethodNode method : cls.getMethods()) {
-                    if (!method.getModifiers().contains(ElementModifier.STATIC)) {
-                        virtualMethods.add(method.getReference());
-                    }
-                }
-                collectMethodsToCopyFromInterfaces(classSource.get(cls.getName()), virtualMethods);
-
-                renderVirtualDeclarations(virtualMethods);
-            }
             writer.append("]);").newLine();
+
+            for (int i = 0; i < classes.size(); i += 50) {
+                int j = Math.min(i + 50, classes.size());
+                renderClassMetadataPortion(classes.subList(i, j), packageIndexes, classesRequiringName);
+            }
+
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
         }
 
         metadataSize = writer.getOffset() - start;
+    }
+
+    private void renderClassMetadataPortion(List<ClassNode> classes, ObjectIntMap<String> packageIndexes,
+            Set<String> classesRequiringName) throws IOException {
+        writer.append("$rt_metadata([");
+        boolean first = true;
+        for (ClassNode cls : classes) {
+            if (!first) {
+                writer.append(',').softNewLine();
+            }
+            first = false;
+            writer.appendClass(cls.getName()).append(",").ws();
+
+            if (classesRequiringName.contains(cls.getName())) {
+                String className = cls.getName();
+                int dotIndex = className.lastIndexOf('.') + 1;
+                String packageName = className.substring(0, dotIndex);
+                className = className.substring(dotIndex);
+                writer.append("\"").append(RenderingUtil.escapeString(className)).append("\"").append(",").ws();
+                writer.append(String.valueOf(packageIndexes.getOrDefault(packageName, -1)));
+            } else {
+                writer.append("0");
+            }
+            writer.append(",").ws();
+
+            if (cls.getParentName() != null) {
+                writer.appendClass(cls.getParentName());
+            } else {
+                writer.append("0");
+            }
+            writer.append(',').ws();
+            writer.append("[");
+            for (int i = 0; i < cls.getInterfaces().size(); ++i) {
+                String iface = cls.getInterfaces().get(i);
+                if (i > 0) {
+                    writer.append(",").ws();
+                }
+                writer.appendClass(iface);
+            }
+            writer.append("],").ws();
+
+            writer.append(ElementModifier.pack(cls.getModifiers())).append(',').ws();
+            writer.append(cls.getAccessLevel().ordinal()).append(',').ws();
+
+            MethodReader clinit = classSource.get(cls.getName()).getMethod(
+                    new MethodDescriptor("<clinit>", ValueType.VOID));
+            if (clinit != null) {
+                writer.append(naming.getNameForClassInit(cls.getName()));
+            } else {
+                writer.append('0');
+            }
+            writer.append(',').ws();
+
+            List<MethodReference> virtualMethods = new ArrayList<>();
+            for (MethodNode method : cls.getMethods()) {
+                if (!method.getModifiers().contains(ElementModifier.STATIC)) {
+                    virtualMethods.add(method.getReference());
+                }
+            }
+            collectMethodsToCopyFromInterfaces(classSource.get(cls.getName()), virtualMethods);
+
+            renderVirtualDeclarations(virtualMethods);
+        }
+        writer.append("]);").newLine();
     }
 
     private ObjectIntMap<String> generatePackageMetadata(List<ClassNode> classes, Set<String> classesRequiringName)
@@ -541,7 +552,6 @@ public class Renderer implements RenderingManager {
         }
 
         ObjectIntMap<String> indexes = new ObjectIntHashMap<>();
-        writer.append(String.valueOf(root.count())).append(",").ws();
         writePackageStructure(root, -1, "", indexes);
         writer.softNewLine();
         return indexes;
@@ -551,8 +561,11 @@ public class Renderer implements RenderingManager {
             throws IOException {
         int index = startIndex;
         for (PackageNode child : node.children.values()) {
+            if (index >= 0) {
+                writer.append(",").ws();
+            }
             writer.append(String.valueOf(startIndex)).append(",").ws()
-                    .append("\"").append(RenderingUtil.escapeString(child.name)).append("\",").ws();
+                    .append("\"").append(RenderingUtil.escapeString(child.name)).append("\"");
             String fullName = prefix + child.name + ".";
             ++index;
             indexes.put(fullName, index);
