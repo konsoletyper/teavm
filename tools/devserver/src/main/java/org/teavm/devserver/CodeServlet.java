@@ -724,6 +724,7 @@ public class CodeServlet extends HttpServlet {
         jsTarget.setMinifying(false);
         jsTarget.setAstCache(astCache);
         jsTarget.setDebugEmitter(debugInformationBuilder);
+        jsTarget.setClassScoped(true);
         vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
         vm.setCacheStatus(classSource);
         vm.addVirtualMethods(m -> true);

@@ -442,7 +442,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             if (statement.getLocation() != null) {
                 pushLocation(statement.getLocation());
             }
-            writer.append(naming.getNameForClassInit(statement.getClassName())).append("();").softNewLine();
+            writer.appendClassInit(statement.getClassName()).append("();").softNewLine();
             if (statement.isAsync()) {
                 emitSuspendChecker();
             }
@@ -1095,7 +1095,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 boolean virtual = false;
                 switch (expr.getType()) {
                     case STATIC:
-                        writer.append(naming.getFullNameFor(method)).append("(");
+                        writer.appendMethodBody(method).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
                         for (int i = 0; i < expr.getArguments().size(); ++i) {
                             if (i > 0) {
@@ -1106,7 +1106,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                         }
                         break;
                     case SPECIAL:
-                        writer.append(naming.getFullNameFor(method)).append("(");
+                        writer.appendMethodBody(method).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
                         precedence = Precedence.min();
                         expr.getArguments().get(0).acceptVisitor(this);
@@ -1129,7 +1129,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                         virtual = true;
                         break;
                     case CONSTRUCTOR:
-                        writer.append(naming.getNameForInit(expr.getMethod())).append("(");
+                        writer.appendInit(expr.getMethod()).append("(");
                         prevCallSite = debugEmitter.emitCallSite();
                         for (int i = 0; i < expr.getArguments().size(); ++i) {
                             if (i > 0) {

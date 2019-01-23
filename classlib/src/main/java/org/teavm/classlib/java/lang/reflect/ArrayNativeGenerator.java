@@ -94,7 +94,7 @@ public class ArrayNativeGenerator implements Generator, DependencyPlugin {
         writer.append("if (" + array + " === null || " + array + ".constructor.$meta.item === undefined) {")
                 .softNewLine().indent();
         MethodReference cons = new MethodReference("java.lang.IllegalArgumentException", "<init>", ValueType.VOID);
-        writer.append("$rt_throw(").append(writer.getNaming().getNameForInit(cons)).append("());").softNewLine();
+        writer.append("$rt_throw(").appendInit(cons).append("());").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return " + array + ".data.length;").softNewLine();
     }

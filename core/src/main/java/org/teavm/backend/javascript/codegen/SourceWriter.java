@@ -31,11 +31,13 @@ public class SourceWriter implements Appendable, LocationProvider {
     private int column;
     private int line;
     private int offset;
+    private boolean classScoped;
 
-    SourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth) {
+    SourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth, boolean classScoped) {
         this.naming = naming;
         this.innerWriter = innerWriter;
         this.lineWidth = lineWidth;
+        this.classScoped = classScoped;
     }
 
     void setMinified(boolean minified) {
@@ -111,6 +113,7 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter appendStaticField(FieldReference field) throws IOException {
+        appendClassScopeIfNecessary(field.getClassName());
         return append(naming.getFullNameFor(field));
     }
 
@@ -123,19 +126,36 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter appendMethodBody(MethodReference method) throws IOException {
+        appendClassScopeIfNecessary(method.getClassName());
         return append(naming.getFullNameFor(method));
     }
 
     public SourceWriter appendMethodBody(String className, String name, ValueType... params) throws IOException {
-        return append(naming.getFullNameFor(new MethodReference(className, new MethodDescriptor(name, params))));
+        return appendMethodBody(new MethodReference(className, new MethodDescriptor(name, params)));
     }
 
     public SourceWriter appendMethodBody(Class<?> cls, String name, Class<?>... params) throws IOException {
-        return append(naming.getFullNameFor(new MethodReference(cls, name, params)));
+        return appendMethodBody(new MethodReference(cls, name, params));
     }
 
     public SourceWriter appendFunction(String name) throws IOException {
         return append(naming.getNameForFunction(name));
+    }
+
+    public SourceWriter appendInit(MethodReference method) throws IOException {
+        appendClassScopeIfNecessary(method.getClassName());
+        return append(naming.getNameForInit(method));
+    }
+
+    public SourceWriter appendClassInit(String className) throws IOException {
+        appendClassScopeIfNecessary(className);
+        return append(naming.getNameForClassInit(className));
+    }
+
+    private void appendClassScopeIfNecessary(String className) throws IOException {
+        if (classScoped) {
+            append(naming.getNameFor(className)).append(".");
+        }
     }
 
     private void appendIndent() throws IOException {

@@ -18,6 +18,7 @@ package org.teavm.backend.javascript.codegen;
 public class SourceWriterBuilder {
     private NamingStrategy naming;
     private boolean minified;
+    private boolean classScoped;
     private int lineWidth = 512;
 
     public SourceWriterBuilder(NamingStrategy naming) {
@@ -36,8 +37,12 @@ public class SourceWriterBuilder {
         this.lineWidth = lineWidth;
     }
 
+    public void setClassScoped(boolean classScoped) {
+        this.classScoped = classScoped;
+    }
+
     public SourceWriter build(Appendable innerWriter) {
-        SourceWriter writer = new SourceWriter(naming, innerWriter, lineWidth);
+        SourceWriter writer = new SourceWriter(naming, innerWriter, lineWidth, classScoped);
         writer.setMinified(minified);
         return writer;
     }

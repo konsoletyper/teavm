@@ -65,6 +65,7 @@ public class Renderer implements RenderingManager {
     private final ListableClassReaderSource classSource;
     private final ClassLoader classLoader;
     private boolean minifying;
+    private boolean classScoped;
     private final Properties properties = new Properties();
     private final ServiceRepository services;
     private DebugInformationEmitter debugEmitter = new DummyDebugInformationEmitter();
@@ -83,7 +84,7 @@ public class Renderer implements RenderingManager {
     private boolean threadLibraryUsed;
 
     public Renderer(SourceWriter writer, Set<MethodReference> asyncMethods, Set<MethodReference> asyncFamilyMethods,
-            Diagnostics diagnostics, RenderingContext context) {
+            Diagnostics diagnostics, RenderingContext context, boolean classScoped) {
         this.naming = context.getNaming();
         this.writer = writer;
         this.classSource = context.getClassSource();
@@ -93,6 +94,7 @@ public class Renderer implements RenderingManager {
         this.asyncFamilyMethods = new HashSet<>(asyncFamilyMethods);
         this.diagnostics = diagnostics;
         this.context = context;
+        this.classScoped = classScoped;
     }
 
     public boolean isLongLibraryUsed() {
@@ -294,7 +296,7 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderDeclaration(ClassNode cls) throws RenderingException {
-        String jsName = writer.getNaming().getNameFor(cls.getName());
+        String jsName = naming.getNameFor(cls.getName());
         debugEmitter.addClass(jsName, cls.getName(), cls.getParentName());
         try {
             writer.append("function " + jsName + "()").ws().append("{")
@@ -345,7 +347,12 @@ public class Renderer implements RenderingManager {
                     postponedFieldInitializers.add(new PostponedFieldInitializer(fieldRef, (String) value));
                     value = null;
                 }
-                writer.append("var ").appendStaticField(fieldRef).ws().append("=").ws()
+                if (classScoped) {
+                    writer.append(jsName).append(".");
+                } else {
+                    writer.append("var ");
+                }
+                writer.append(naming.getFullNameFor(fieldRef)).ws().append("=").ws()
                         .append(context.constantToString(value)).append(";").softNewLine();
             }
         } catch (IOException e) {
@@ -366,14 +373,14 @@ public class Renderer implements RenderingManager {
                 for (MethodNode method : cls.getMethods()) {
                     if (!method.getModifiers().contains(ElementModifier.STATIC)) {
                         if (method.getReference().getName().equals("<init>")) {
-                            renderInitializer(method);
+                            renderInitializer(cls.getName(), method);
                         }
                     }
                 }
             }
 
             for (MethodNode method : cls.getMethods()) {
-                renderBody(method);
+                renderBody(cls.getName(), method);
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
@@ -390,7 +397,8 @@ public class Renderer implements RenderingManager {
                     .append("false;").softNewLine();
         }
 
-        writer.append("function ").append(naming.getNameForClassInit(cls.getName())).append("()").ws()
+        renderFunctionDeclaration(cls.getName(), naming.getNameForClassInit(cls.getName()));
+        writer.append("()").ws()
                 .append("{").softNewLine().indent();
 
         if (isAsync) {
@@ -435,11 +443,15 @@ public class Renderer implements RenderingManager {
             writer.appendFunction("$rt_nativeThread").append("().push(" + context.pointerName() + ");").softNewLine();
         }
 
-        writer.outdent().append("}").newLine();
+        writer.outdent().append("}");
+        if (classScoped) {
+            writer.append(";");
+        }
+        writer.newLine();
     }
 
     private void renderEraseClinit(ClassNode cls) throws IOException {
-        writer.append(naming.getNameForClassInit(cls.getName())).ws().append("=").ws()
+        writer.appendClassInit(cls.getName()).ws().append("=").ws()
                 .appendFunction("$rt_eraseClinit").append("(")
                 .appendClass(cls.getName()).append(");").softNewLine();
     }
@@ -514,7 +526,7 @@ public class Renderer implements RenderingManager {
             MethodReader clinit = classSource.get(cls.getName()).getMethod(
                     new MethodDescriptor("<clinit>", ValueType.VOID));
             if (clinit != null) {
-                writer.append(naming.getNameForClassInit(cls.getName()));
+                writer.appendClassInit(cls.getName());
             } else {
                 writer.append('0');
             }
@@ -676,10 +688,11 @@ public class Renderer implements RenderingManager {
         return null;
     }
 
-    private void renderInitializer(MethodNode method) throws IOException {
+    private void renderInitializer(String className, MethodNode method) throws IOException {
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
-        writer.append("function ").append(naming.getNameForInit(ref)).append("(");
+        renderFunctionDeclaration(className, naming.getNameForInit(ref));
+        writer.append("(");
         for (int i = 0; i < ref.parameterCount(); ++i) {
             if (i > 0) {
                 writer.append(",").ws();
@@ -691,14 +704,18 @@ public class Renderer implements RenderingManager {
         String instanceName = variableNameForInitializer(ref.parameterCount());
         writer.append("var " + instanceName).ws().append("=").ws().append("new ").appendClass(
                 ref.getClassName()).append("();").softNewLine();
-        writer.append(naming.getFullNameFor(ref)).append("(" + instanceName);
+        writer.appendMethodBody(ref).append("(" + instanceName);
         for (int i = 0; i < ref.parameterCount(); ++i) {
             writer.append(",").ws();
             writer.append(variableNameForInitializer(i));
         }
         writer.append(");").softNewLine();
         writer.append("return " + instanceName + ";").softNewLine();
-        writer.outdent().append("}").newLine();
+        writer.outdent().append("}");
+        if (classScoped) {
+            writer.append(";");
+        }
+        writer.newLine();
         debugEmitter.emitMethod(null);
     }
 
@@ -755,7 +772,7 @@ public class Renderer implements RenderingManager {
         writer.append(");").ws().append("}");
     }
 
-    private void renderBody(MethodNode method) throws IOException {
+    private void renderBody(String className, MethodNode method) throws IOException {
         StatementRenderer statementRenderer = new StatementRenderer(context, writer);
         statementRenderer.setCurrentMethod(method);
 
@@ -763,7 +780,8 @@ public class Renderer implements RenderingManager {
         debugEmitter.emitMethod(ref.getDescriptor());
         String name = naming.getFullNameFor(ref);
 
-        writer.append("function ").append(name).append("(");
+        renderFunctionDeclaration(className, name);
+        writer.append("(");
         int startParam = 0;
         if (method.getModifiers().contains(ElementModifier.STATIC)) {
             startParam = 1;
@@ -778,11 +796,24 @@ public class Renderer implements RenderingManager {
 
         method.acceptVisitor(new MethodBodyRenderer(statementRenderer));
         writer.outdent().append("}");
+        if (classScoped) {
+            writer.append(";");
+        }
 
         writer.newLine();
         debugEmitter.emitMethod(null);
 
         longLibraryUsed |= statementRenderer.isLongLibraryUsed();
+    }
+
+    private void renderFunctionDeclaration(String className, String name) throws IOException {
+        if (classScoped) {
+            writer.appendClass(className).append(".").append(name).ws().append("=").ws();
+        }
+        writer.append("function");
+        if (!classScoped) {
+            writer.append(" ").append(name);
+        }
     }
 
     private void renderAsyncPrologue() throws IOException {

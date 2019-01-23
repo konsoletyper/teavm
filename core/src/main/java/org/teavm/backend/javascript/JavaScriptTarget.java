@@ -112,6 +112,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
     private ClassInitializerInsertionTransformer clinitInsertionTransformer;
     private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
+    private boolean classScoped;
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
@@ -188,6 +189,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     public void setDebugEmitter(DebugInformationEmitter debugEmitter) {
         this.debugEmitter = debugEmitter;
+    }
+
+    public void setClassScoped(boolean classScoped) {
+        this.classScoped = classScoped;
     }
 
     @Override
@@ -306,6 +311,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, controller.getUnprocessedClassSource());
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
+        builder.setClassScoped(classScoped);
         SourceWriter sourceWriter = builder.build(writer);
 
         DebugInformationEmitter debugEmitterToUse = debugEmitter;
@@ -320,7 +326,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 controller.getDependencyInfo(), m -> isVirtual(virtualMethodContributorContext, m));
         renderingContext.setMinifying(minifying);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
-                controller.getDiagnostics(), renderingContext);
+                controller.getDiagnostics(), renderingContext, classScoped);
         RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, naming, sourceWriter);
         renderer.setProperties(controller.getProperties());
         renderer.setMinifying(minifying);
@@ -373,7 +379,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                     : controller.getEntryPoints().entrySet()) {
                 sourceWriter.append("").append(entry.getKey()).ws().append("=").ws();
                 MethodReference ref = entry.getValue().getMethod();
-                sourceWriter.append("$rt_mainStarter(").append(naming.getFullNameFor(ref));
+                sourceWriter.append("$rt_mainStarter(").appendMethodBody(ref);
                 sourceWriter.append(");").newLine();
             }
 

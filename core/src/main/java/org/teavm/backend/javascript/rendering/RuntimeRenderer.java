@@ -124,7 +124,7 @@ public class RuntimeRenderer {
         writer.append("for (var i = 0; i < str.length; i = (i + 1) | 0) {").indent().softNewLine();
         writer.append("charsBuffer[i] = str.charCodeAt(i) & 0xFFFF;").softNewLine();
         writer.outdent().append("}").softNewLine();
-        writer.append("return ").append(naming.getNameForInit(stringCons)).append("(characters);").softNewLine();
+        writer.append("return ").appendInit(stringCons).append("(characters);").softNewLine();
         writer.outdent().append("}").newLine();
     }
 
@@ -147,7 +147,7 @@ public class RuntimeRenderer {
     private void renderRuntimeNullCheck() throws IOException {
         writer.append("function $rt_nullCheck(val) {").indent().softNewLine();
         writer.append("if (val === null) {").indent().softNewLine();
-        writer.append("$rt_throw(").append(naming.getNameForInit(NPE_INIT_METHOD)).append("());").softNewLine();
+        writer.append("$rt_throw(").appendInit(NPE_INIT_METHOD).append("());").softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.append("return val;").softNewLine();
         writer.outdent().append("}").newLine();
@@ -194,8 +194,7 @@ public class RuntimeRenderer {
     private void renderRuntimeCreateException() throws IOException {
         writer.append("function $rt_createException(message)").ws().append("{").indent().softNewLine();
         writer.append("return ");
-        writer.append(writer.getNaming().getNameForInit(new MethodReference(RuntimeException.class,
-                "<init>", String.class, void.class)));
+        writer.appendInit(new MethodReference(RuntimeException.class, "<init>", String.class, void.class));
         writer.append("(message);").softNewLine();
         writer.outdent().append("}").newLine();
     }
@@ -211,7 +210,7 @@ public class RuntimeRenderer {
                 .append("lineNumber)").ws().append("{").indent().softNewLine();
         writer.append("return ");
         if (supported) {
-            writer.append(writer.getNaming().getNameForInit(STACK_TRACE_ELEM_INIT));
+            writer.appendInit(STACK_TRACE_ELEM_INIT);
             writer.append("(className,").ws()
                     .append("methodName,").ws()
                     .append("fileName,").ws()

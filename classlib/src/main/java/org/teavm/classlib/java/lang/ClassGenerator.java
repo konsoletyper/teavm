@@ -292,7 +292,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
 
     private void initClass(SourceWriter writer, MemberReader member) throws IOException {
         if (member.hasModifier(ElementModifier.STATIC)) {
-            writer.append(writer.getNaming().getNameForClassInit(member.getOwnerName())).append("();").softNewLine();
+            writer.appendClassInit(member.getOwnerName()).append("();").softNewLine();
         }
     }
 

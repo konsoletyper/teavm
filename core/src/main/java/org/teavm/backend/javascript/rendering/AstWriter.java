@@ -419,7 +419,7 @@ public class AstWriter {
             }
             writer.outdent();
         }
-        writer.append('}');
+        writer.outdent().append('}');
     }
 
     private void print(TryStatement node) throws IOException {
