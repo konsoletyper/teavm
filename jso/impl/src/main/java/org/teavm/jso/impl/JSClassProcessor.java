@@ -77,7 +77,6 @@ class JSClassProcessor {
     private final List<Instruction> replacement = new ArrayList<>();
     private final JSTypeHelper typeHelper;
     private final Diagnostics diagnostics;
-    private int methodIndexGenerator;
     private final Map<MethodReference, MethodReader> overriddenMethodCache = new HashMap<>();
     private JSValueMarshaller marshaller;
     private IncrementalDependencyRegistration incrementalCache;
@@ -576,9 +575,12 @@ class JSClassProcessor {
                 ? ValueType.VOID
                 : ValueType.parse(JSObject.class);
 
+        ClassReader ownerClass = classSource.get(methodToProcess.getOwnerName());
+        int methodIndex = indexOfMethod(ownerClass, methodToProcess);
+
         // create proxy method
         MethodReference proxyMethod = new MethodReference(methodToProcess.getOwnerName(),
-                methodToProcess.getName() + "$js_body$_" + methodIndexGenerator++, proxyParamTypes);
+                methodToProcess.getName() + "$js_body$_" + methodIndex, proxyParamTypes);
         String script = bodyAnnot.getValue("script").getString();
         String[] parameterNames = paramsValue != null ? paramsValue.getList().stream()
                 .map(AnnotationValue::getString)
@@ -615,6 +617,17 @@ class JSClassProcessor {
             javaInvocationProcessor.process(location, expr);
             repository.emitters.put(proxyMethod, new JSBodyAstEmitter(isStatic, expr, parameterNames));
         }
+    }
+
+    private int indexOfMethod(ClassReader cls, MethodReader method) {
+        int index = 0;
+        for (MethodReader m : cls.getMethods()) {
+            if (m.getDescriptor().equals(method.getDescriptor())) {
+                return index;
+            }
+            ++index;
+        }
+        return -1;
     }
 
     void createJSMethods(ClassHolder cls) {
