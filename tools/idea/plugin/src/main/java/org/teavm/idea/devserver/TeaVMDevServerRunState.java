@@ -78,6 +78,7 @@ public class TeaVMDevServerRunState implements RunProfileState {
         config.fileName = configuration.getFileName();
         config.port = configuration.getPort();
         config.indicator = configuration.isIndicator();
+        config.deobfuscateStack = configuration.isDeobfuscateStack();
         config.autoReload = configuration.isAutomaticallyReloaded();
         config.mainClass = configuration.getMainClass();
         config.maxHeap = configuration.getMaxHeap();

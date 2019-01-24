@@ -79,6 +79,11 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setEntryPointName(String entryPointName) {
+        request.entryPointName = entryPointName;
+    }
+
+    @Override
     public void setTargetDirectory(String targetDirectory) {
         request.targetDirectory = targetDirectory;
     }
@@ -219,7 +224,7 @@ public class RemoteBuildStrategy implements BuildStrategy {
         private TeaVMProgressListener listener;
         private TeaVMToolLog log;
 
-        public CallbackImpl(TeaVMProgressListener listener, TeaVMToolLog log) throws RemoteException {
+        CallbackImpl(TeaVMProgressListener listener, TeaVMToolLog log) throws RemoteException {
             super();
             this.listener = listener;
             this.log = log;

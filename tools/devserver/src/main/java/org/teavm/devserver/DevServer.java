@@ -30,6 +30,7 @@ public class DevServer {
     private String fileName = "classes.js";
     private List<String> sourcePath = new ArrayList<>();
     private boolean indicator;
+    private boolean deobfuscateStack;
     private boolean reloadedAutomatically;
     private TeaVMToolLog log;
     private CodeServlet servlet;
@@ -79,6 +80,10 @@ public class DevServer {
         this.indicator = indicator;
     }
 
+    public void setDeobfuscateStack(boolean deobfuscateStack) {
+        this.deobfuscateStack = deobfuscateStack;
+    }
+
     public void setReloadedAutomatically(boolean reloadedAutomatically) {
         this.reloadedAutomatically = reloadedAutomatically;
     }
@@ -126,6 +131,7 @@ public class DevServer {
         servlet.setLog(log);
         servlet.getSourcePath().addAll(sourcePath);
         servlet.setIndicator(indicator);
+        servlet.setDeobfuscateStack(deobfuscateStack);
         servlet.setAutomaticallyReloaded(reloadedAutomatically);
         servlet.setPort(port);
         servlet.setDebugPort(debugPort);

@@ -97,9 +97,11 @@ public class CodeServlet extends HttpServlet {
     private String fileName = "classes.js";
     private String pathToFile = "/";
     private String indicatorWsPath;
+    private String deobfuscatorPath;
     private List<String> sourcePath = new ArrayList<>();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private boolean indicator;
+    private boolean deobfuscateStack;
     private boolean automaticallyReloaded;
     private int port;
     private int debugPort;
@@ -161,6 +163,10 @@ public class CodeServlet extends HttpServlet {
 
     public void setIndicator(boolean indicator) {
         this.indicator = indicator;
+    }
+
+    public void setDeobfuscateStack(boolean deobfuscateStack) {
+        this.deobfuscateStack = deobfuscateStack;
     }
 
     public void setPort(int port) {
@@ -263,6 +269,7 @@ public class CodeServlet extends HttpServlet {
         }
 
         indicatorWsPath = pathToFile + fileName + ".ws";
+        deobfuscatorPath = pathToFile + fileName + ".deobfuscator.js";
         WebSocketPolicy wsPolicy = new WebSocketPolicy(WebSocketBehavior.SERVER);
         wsFactory = WebSocketServletFactory.Loader.load(config.getServletContext(), wsPolicy);
         wsFactory.setCreator((req, resp) -> {
@@ -304,6 +311,9 @@ public class CodeServlet extends HttpServlet {
                             return;
                         }
                     }
+                } else if (path.equals(deobfuscatorPath)) {
+                    serveDeobfuscator(resp);
+                    return;
                 } else {
                     byte[] fileContent;
                     boolean firstTime;
@@ -338,6 +348,17 @@ public class CodeServlet extends HttpServlet {
 
         log.debug("File " + path + " not found");
         resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
+    }
+
+    private void serveDeobfuscator(HttpServletResponse resp) throws IOException {
+        ClassLoader loader = CodeServlet.class.getClassLoader();
+        resp.setStatus(HttpServletResponse.SC_OK);
+        resp.setCharacterEncoding("UTF-8");
+        resp.setContentType("text/plain");
+        try (InputStream input = loader.getResourceAsStream("teavm/devserver/deobfuscator.js")) {
+            IOUtils.copy(input, resp.getOutputStream());
+        }
+        resp.getOutputStream().flush();
     }
 
     private void proxy(HttpServletRequest req, HttpServletResponse resp, String path) throws IOException {
@@ -763,9 +784,11 @@ public class CodeServlet extends HttpServlet {
             script = script.replace("WS_PATH", "localhost:" + port + pathToFile + fileName + ".ws");
             script = script.replace("BOOT_FLAG", Boolean.toString(boot));
             script = script.replace("RELOAD_FLAG", Boolean.toString(automaticallyReloaded));
-            script = script.replace("FILE_NAME", "http://localhost:" + port + pathToFile + fileName);
             script = script.replace("INDICATOR_FLAG", Boolean.toString(indicator));
             script = script.replace("DEBUG_PORT", Integer.toString(debugPort));
+            script = script.replace("FILE_NAME", "\"" + fileName + "\"");
+            script = script.replace("PATH_TO_FILE", "\"http://localhost:" + port + pathToFile + "\"");
+            script = script.replace("DEOBFUSCATE_FLAG", String.valueOf(deobfuscateStack));
             return script;
         } catch (IOException e) {
             throw new RuntimeException("IO error occurred writing debug information", e);

@@ -141,6 +141,7 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
         }
         tool.setTargetType(request.targetType);
         tool.setMainClass(request.mainClass);
+        tool.setEntryPointName(request.entryPointName);
         tool.setTargetDirectory(new File(request.targetDirectory));
         tool.setTargetFileName(request.tagetFileName);
         tool.setClassLoader(buildClassLoader(request.classPath, incremental && request.incremental));

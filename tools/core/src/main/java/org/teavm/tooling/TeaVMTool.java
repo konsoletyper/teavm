@@ -70,6 +70,7 @@ public class TeaVMTool {
     private String targetFileName = "";
     private boolean minifying = true;
     private String mainClass;
+    private String entryPointName = "main";
     private Properties properties = new Properties();
     private boolean debugInformationGenerated;
     private boolean sourceMapsFileGenerated;
@@ -137,6 +138,10 @@ public class TeaVMTool {
 
     public void setMainClass(String mainClass) {
         this.mainClass = mainClass;
+    }
+
+    public void setEntryPointName(String entryPointName) {
+        this.entryPointName = entryPointName;
     }
 
     public boolean isDebugInformationGenerated() {
@@ -367,7 +372,7 @@ public class TeaVMTool {
                 vm.add(transformer);
             }
             if (mainClass != null) {
-                vm.entryPoint(mainClass);
+                vm.entryPoint(mainClass, entryPointName);
             }
             for (String className : classesToPreserve) {
                 vm.preserveType(className);

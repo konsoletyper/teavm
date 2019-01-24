@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,21 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.idea.devserver;
+package org.teavm.devserver.deobfuscate;
 
-public class DevServerConfiguration {
-    public String javaHome;
-    public int maxHeap;
-    public String mainClass;
-    public String[] classPath;
-    public String[] sourcePath;
-    public boolean indicator;
-    public boolean deobfuscateStack;
-    public boolean autoReload;
-    public int port;
-    public String pathToFile;
-    public String fileName;
-    public int debugPort;
-    public String proxyUrl;
-    public String proxyPath;
+import org.teavm.jso.JSFunctor;
+import org.teavm.jso.JSObject;
+
+@JSFunctor
+public interface DeobfuscateFunction extends JSObject {
+    Frame[] apply(String stack);
 }

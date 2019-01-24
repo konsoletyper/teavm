@@ -123,6 +123,12 @@ public final class TeaVMRunner {
                 .withDescription("WebAssembly binary version (currently, only 1 is supported)")
                 .create());
         options.addOption(OptionBuilder
+                .withLongOpt("entry-point")
+                .withArgName("name")
+                .hasArg()
+                .withDescription("Entry point name in target language (main by default)")
+                .create("e"));
+        options.addOption(OptionBuilder
                 .withLongOpt("min-heap")
                 .withArgName("size")
                 .hasArg()
@@ -165,6 +171,10 @@ public final class TeaVMRunner {
         parseJavaScriptOptions();
         parseWasmOptions();
         parseHeap();
+
+        if (commandLine.hasOption("e")) {
+            tool.setEntryPointName(commandLine.getOptionValue("e"));
+        }
 
         interactive = commandLine.hasOption('w');
 

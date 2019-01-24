@@ -31,6 +31,7 @@ public class RemoteBuildRequest implements Serializable {
     public String[] classesToPreserve;
     public TeaVMTargetType targetType;
     public String mainClass;
+    public String entryPointName;
     public String targetDirectory;
     public String tagetFileName = "";
     public boolean sourceMapsFileGenerated;

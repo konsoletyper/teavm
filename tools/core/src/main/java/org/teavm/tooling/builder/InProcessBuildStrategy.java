@@ -44,6 +44,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private List<String> classPathEntries = new ArrayList<>();
     private TeaVMTargetType targetType;
     private String mainClass;
+    private String entryPointName;
     private String targetDirectory;
     private String targetFileName = "";
     private boolean incremental;
@@ -96,6 +97,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     @Override
     public void setMainClass(String mainClass) {
         this.mainClass = mainClass;
+    }
+
+    @Override
+    public void setEntryPointName(String entryPointName) {
+        this.entryPointName = entryPointName;
     }
 
     @Override
@@ -191,6 +197,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setLog(log);
         tool.setTargetType(targetType);
         tool.setMainClass(mainClass);
+        tool.setEntryPointName(entryPointName);
         tool.setTargetDirectory(new File(targetDirectory));
         tool.setTargetFileName(targetFileName);
         tool.setClassLoader(buildClassLoader());

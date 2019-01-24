@@ -38,6 +38,8 @@ public interface BuildStrategy {
 
     void setMainClass(String mainClass);
 
+    void setEntryPointName(String entryPointName);
+
     void setTargetDirectory(String targetDirectory);
 
     void setSourceMapsFileGenerated(boolean sourceMapsFileGenerated);

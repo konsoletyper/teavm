@@ -63,6 +63,12 @@
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
+      <artifactId>teavm-jso-apis</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
       <artifactId>teavm-tooling</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -100,6 +106,41 @@
 
   <build>
     <plugins>
+      <plugin>
+        <groupId>org.teavm</groupId>
+        <artifactId>teavm-maven-plugin</artifactId>
+        <version>${project.version}</version>
+        <dependencies>
+          <dependency>
+            <groupId>org.teavm</groupId>
+            <artifactId>teavm-jso-impl</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+          <dependency>
+            <groupId>org.teavm</groupId>
+            <artifactId>teavm-classlib</artifactId>
+            <version>${project.version}</version>
+          </dependency>
+        </dependencies>
+        <executions>
+          <execution>
+            <id>compile-deobfuscator</id>
+            <goals>
+              <goal>compile</goal>
+            </goals>
+            <phase>process-classes</phase>
+            <configuration>
+              <targetDirectory>${build.directory}/classes/teavm/devserver</targetDirectory>
+              <targetFileName>deobfuscator.js</targetFileName>
+              <minifying>true</minifying>
+              <optimizationLevel>ADVANCED</optimizationLevel>
+              <mainClass>org.teavm.devserver.deobfuscate.Deobfuscator</mainClass>
+              <entryPointName>$teavm_deobfuscator</entryPointName>
+            </configuration>
+          </execution>
+        </executions>
+      </plugin>
+
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-checkstyle-plugin</artifactId>

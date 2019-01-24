@@ -490,6 +490,7 @@ public class Renderer implements RenderingManager {
                 writer.append(',').softNewLine();
             }
             first = false;
+            debugEmitter.emitClass(cls.getName());
             writer.appendClass(cls.getName()).append(",").ws();
 
             if (classesRequiringName.contains(cls.getName())) {
@@ -541,6 +542,7 @@ public class Renderer implements RenderingManager {
             collectMethodsToCopyFromInterfaces(classSource.get(cls.getName()), virtualMethods);
 
             renderVirtualDeclarations(virtualMethods);
+            debugEmitter.emitClass(null);
         }
         writer.append("]);").newLine();
     }

@@ -122,6 +122,9 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
                 case "-i":
                     server.setIndicator(true);
                     break;
+                case "-deobf":
+                    server.setDeobfuscateStack(true);
+                    break;
                 case "-a":
                     server.setReloadedAutomatically(true);
                     break;
@@ -177,6 +180,9 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
 
         if (options.indicator) {
             arguments.add("-i");
+        }
+        if (options.deobfuscateStack) {
+            arguments.add("-deobf");
         }
         if (options.autoReload) {
             arguments.add("-a");

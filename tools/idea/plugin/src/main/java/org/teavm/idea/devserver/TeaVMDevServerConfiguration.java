@@ -44,6 +44,7 @@ public class TeaVMDevServerConfiguration extends ModuleBasedConfiguration<RunCon
     private String pathToFile = "";
     private String fileName = "classes.js";
     private boolean indicator = true;
+    private boolean deobfuscateStack = true;
     private boolean automaticallyReloaded;
     private int maxHeap = 1024;
     private String proxyUrl = "";
@@ -153,6 +154,16 @@ public class TeaVMDevServerConfiguration extends ModuleBasedConfiguration<RunCon
 
     public void setIndicator(boolean indicator) {
         this.indicator = indicator;
+    }
+
+    @Property
+    @Tag
+    public boolean isDeobfuscateStack() {
+        return deobfuscateStack;
+    }
+
+    public void setDeobfuscateStack(boolean deobfuscateStack) {
+        this.deobfuscateStack = deobfuscateStack;
     }
 
     @Property

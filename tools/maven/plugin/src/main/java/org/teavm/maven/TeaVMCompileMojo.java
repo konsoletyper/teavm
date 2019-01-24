@@ -110,6 +110,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.mainClass")
     private String mainClass;
 
+    @Parameter(property = "teavm.entryPointName", defaultValue = "main")
+    private String entryPointName;
+
     @Parameter
     private String[] classesToPreserve;
 
@@ -258,6 +261,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
         builder.setLog(toolLog);
         try {
             builder.setMainClass(mainClass);
+            builder.setEntryPointName(entryPointName);
             if (!targetFileName.isEmpty()) {
                 builder.setTargetFileName(targetFileName);
             }

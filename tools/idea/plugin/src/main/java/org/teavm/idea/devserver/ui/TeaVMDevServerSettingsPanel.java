@@ -48,6 +48,7 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
     private JTextField pathToFileField;
     private JTextField fileNameField;
     private JCheckBox indicatorField;
+    private JCheckBox deobfuscateStackField;
     private JCheckBox autoReloadField;
     private JFormattedTextField maxHeapField;
     private JTextField proxyUrlField;
@@ -76,6 +77,7 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
         fileNameField = new JTextField();
         pathToFileField = new JTextField();
         indicatorField = new JCheckBox("Display indicator on a web page:");
+        deobfuscateStackField = new JCheckBox("Deobfuscate stack traces in exceptions");
         autoReloadField = new JCheckBox("Reload page automatically:");
         maxHeapField = new JFormattedTextField(new DecimalFormat("#0"));
 
@@ -118,6 +120,7 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
         add(pathToFileField, constraints);
 
         add(indicatorField, constraints);
+        add(deobfuscateStackField, constraints);
         add(autoReloadField, constraints);
 
         add(new JLabel("Server heap limit:"), labelConstraints);
@@ -137,6 +140,7 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
         fileNameField.setText(configuration.getFileName());
         pathToFileField.setText(configuration.getPathToFile());
         indicatorField.setSelected(configuration.isIndicator());
+        deobfuscateStackField.setSelected(configuration.isDeobfuscateStack());
         autoReloadField.setSelected(configuration.isAutomaticallyReloaded());
         maxHeapField.setText(Integer.toString(configuration.getMaxHeap()));
         portField.setText(Integer.toString(configuration.getPort()));
@@ -151,6 +155,7 @@ public class TeaVMDevServerSettingsPanel extends JPanel {
         configuration.setFileName(fileNameField.getText().trim());
         configuration.setPathToFile(pathToFileField.getText().trim());
         configuration.setIndicator(indicatorField.isSelected());
+        configuration.setDeobfuscateStack(deobfuscateStackField.isSelected());
         configuration.setAutomaticallyReloaded(autoReloadField.isSelected());
         if (!maxHeapField.getText().trim().isEmpty()) {
             configuration.setMaxHeap(Integer.parseInt(maxHeapField.getText()));

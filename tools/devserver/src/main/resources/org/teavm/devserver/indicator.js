@@ -13,11 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-(function () {
+(function (window) {
     var boot = BOOT_FLAG;
     var reload = RELOAD_FLAG;
     var indicatorVisible = INDICATOR_FLAG;
     var debugPort = DEBUG_PORT;
+    var deobfuscate = DEOBFUSCATE_FLAG;
+    var fileName = FILE_NAME;
+    var pathToFile = PATH_TO_FILE;
 
     function createWebSocket() {
         return new WebSocket("ws://WS_PATH");
@@ -128,10 +131,37 @@
         }
     }
 
+    function installDeobfuscator() {
+        if (!deobfuscate) {
+            return;
+        }
+
+        if (typeof main === 'function') {
+            var oldMain = main;
+            main = function() {
+                var args = arguments;
+                window.$teavm_deobfuscator_callback = function() {
+                    oldMain.apply(window, args);
+                };
+                var elem = document.createElement("script");
+                elem.src = pathToFile + fileName + ".deobfuscator.js";
+                elem.onload = function() {
+                    $teavm_deobfuscator([pathToFile + fileName + ".teavmdbg", pathToFile + fileName]);
+                };
+                document.head.append(elem);
+            };
+        }
+    }
+
+    if (!boot) {
+        installDeobfuscator();
+    }
+
     function startMain() {
         ws.close();
         window.removeEventListener("load", onLoad);
         document.body.removeChild(indicator.container);
+        installDeobfuscator();
         main();
     }
 
@@ -150,7 +180,7 @@
                         window.location.reload(true);
                     } else if (boot) {
                         var scriptElem = document.createElement("script");
-                        scriptElem.src = "FILE_NAME";
+                        scriptElem.src = pathToFile + fileName;
                         scriptElem.onload = startMain;
                         document.head.appendChild(scriptElem);
                     }
@@ -181,4 +211,4 @@
         window.addEventListener("message", connectDebugAgent);
         window.postMessage({teavmDebugger: {port: debugPort}}, "*");
     }
-})();
+})(this);

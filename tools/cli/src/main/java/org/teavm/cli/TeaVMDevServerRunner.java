@@ -72,6 +72,10 @@ public final class TeaVMDevServerRunner {
                 .withLongOpt("indicator")
                 .create('i'));
         options.addOption(OptionBuilder
+                .withDescription("deobfuscate stack traces")
+                .withLongOpt("deobfuscate-stack")
+                .create());
+        options.addOption(OptionBuilder
                 .withDescription("automatically reload page when compilation completes")
                 .withLongOpt("auto-reload")
                 .create());
@@ -123,6 +127,7 @@ public final class TeaVMDevServerRunner {
         parseOutputOptions();
 
         devServer.setIndicator(commandLine.hasOption("indicator"));
+        devServer.setDeobfuscateStack(commandLine.hasOption("deobfuscate-stack"));
         devServer.setReloadedAutomatically(commandLine.hasOption("auto-reload"));
         devServer.setLog(new ConsoleTeaVMToolLog(commandLine.hasOption('v')));
         if (commandLine.hasOption("port")) {
