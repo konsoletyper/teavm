@@ -257,7 +257,7 @@ public class CodeServlet extends HttpServlet {
             try {
                 URL url = new URL(proxyUrl);
                 proxyPort = url.getPort();
-                proxyHost = proxyPort != 80 ? url.getHost() + ":" + proxyPort : url.getHost();
+                proxyHost = proxyPort >= 0 ? url.getHost() + ":" + proxyPort : url.getHost();
                 proxyProtocol = url.getProtocol();
 
                 StringBuilder sb = new StringBuilder();
