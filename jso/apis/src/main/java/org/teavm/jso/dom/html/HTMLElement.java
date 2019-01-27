@@ -186,4 +186,8 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
 
     @Override
     NodeList<? extends HTMLElement> querySelectorAll(String selectors);
+
+    void requestPointerLock();
+
+    void exitPointerLock();
 }

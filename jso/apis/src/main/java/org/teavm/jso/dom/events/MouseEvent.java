@@ -59,6 +59,12 @@ public interface MouseEvent extends Event {
     @JSProperty
     EventTarget getRelatedTarget();
 
+    @JSProperty
+    double getMovementX();
+
+    @JSProperty
+    double getMovementY();
+
     void initMouseEvent(String type, boolean canBubble, boolean cancelable, JSObject view, int detail, int screenX,
             int screenY, int clientX, int clientY, boolean ctrlKey, boolean altKey, boolean shiftKey, boolean metaKey,
             short button, EventTarget relatedTarget);

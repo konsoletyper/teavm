@@ -30,4 +30,10 @@ public final class Navigator {
 
     @JSBody(script = "return (\"geolocation\" in navigator);")
     public static native boolean isGeolocationAvailable();
+
+    @JSBody(script = "return navigator.language;")
+    public static native String getLanguage();
+
+    @JSBody(script = "return navigator.languages;")
+    public static native String[] getLanguages();
 }

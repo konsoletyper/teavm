@@ -63,4 +63,10 @@ public interface HTMLAnchorElement extends HTMLElement {
 
     @JSProperty
     void setText(String value);
+
+    @JSProperty
+    String getDownload();
+
+    @JSProperty
+    void setDownload(String download);
 }
