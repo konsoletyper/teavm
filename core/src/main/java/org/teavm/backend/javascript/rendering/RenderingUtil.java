@@ -29,7 +29,7 @@ public final class RenderingUtil {
             "catch", "class", "const", "continue", "debugger", "default", "delete", "do", "else", "export",
             "extends", "finally", "for", "function", "if", "import", "in", "instanceof", "new", "return",
             "super", "switch", "this", "throw", "try", "typeof", "var", "void", "while", "with", "yield",
-            "NaN", "Map", "Set", "eval", "Math", "Date", "JSON", "Intl")));
+            "NaN", "Map", "Set", "eval", "Math", "Date", "JSON", "Intl", "URL")));
     public static final String VARIABLE_START_CHARS = "abcdefghijklmnopqrstuvwxyz";
     public static final String VARIABLE_PART_CHARS = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789$_";
 
