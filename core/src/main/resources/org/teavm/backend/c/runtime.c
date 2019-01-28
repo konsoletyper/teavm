@@ -29,8 +29,8 @@ typedef struct JavaArray JavaArray;
 typedef struct JavaClass JavaClass;
 typedef struct JavaString JavaString;
 
-#define PACK_CLASS(cls) ((int32_t) ((uintptr_t) ((char*) (cls) - (char*) &TeaVM_beforeClasses) >> 3))
-#define UNPACK_CLASS(cls) ((JavaClass*) ((char*) &TeaVM_beforeClasses + ((cls) << 3)))
+#define PACK_CLASS(cls) ((int32_t) ((uintptr_t) ((char*) (cls) - TeaVM_beforeClasses) >> 3))
+#define UNPACK_CLASS(cls) ((JavaClass*) (TeaVM_beforeClasses + ((cls) << 3)))
 #define CLASS_OF(obj) (UNPACK_CLASS(((JavaObject*) (obj))->header))
 #define AS(ptr, type) ((type*) (ptr))
 
@@ -106,7 +106,7 @@ static int32_t gc_regionSize = INT32_C(32768);
 static int32_t gc_regionMaxCount = INT32_C(0);
 static int64_t gc_availableBytes = INT64_C(0);
 
-static char TeaVM_beforeClasses[128] = "TEAVM";
+static char *TeaVM_beforeClasses;
 
 static double TeaVM_rand() {
     return rand() / ((double) RAND_MAX + 1);

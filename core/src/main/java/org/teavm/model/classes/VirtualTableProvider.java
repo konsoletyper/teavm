@@ -15,12 +15,14 @@
  */
 package org.teavm.model.classes;
 
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -40,7 +42,7 @@ public class VirtualTableProvider {
         interfaceMapping = new InterfaceToClassMapping(classSource);
 
         Set<String> classNames = new HashSet<>(classSource.getClassNames());
-        for (MethodReference virtualMethod : virtualMethods) {
+        for (MethodReference virtualMethod : resolveVirtualMethods(classSource, virtualMethods)) {
             String cls = interfaceMapping.mapClass(virtualMethod.getClassName());
             if (cls == null) {
                 cls = virtualMethod.getClassName();
@@ -52,6 +54,19 @@ public class VirtualTableProvider {
         for (String className : classNames) {
             fillClass(className);
         }
+    }
+
+    private Collection<MethodReference> resolveVirtualMethods(ClassReaderSource classSource,
+            Set<MethodReference> virtualMethods) {
+        return virtualMethods.stream()
+                .map(method -> resolveVirtualMethod(classSource, method))
+                .distinct()
+                .collect(Collectors.toList());
+    }
+
+    private MethodReference resolveVirtualMethod(ClassReaderSource classSource, MethodReference methodReference) {
+        MethodReader method = classSource.resolve(methodReference);
+        return method != null ? method.getReference() : methodReference;
     }
 
     private void fillClass(String className) {

@@ -22,6 +22,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +32,7 @@ import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.stream.Collectors;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.analyze.CDependencyListener;
 import org.teavm.backend.c.generate.BufferedCodeWriter;
@@ -262,10 +264,16 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         generateClasses(classes, classGenerator);
         generateSpecialFunctions(context, codeWriter);
         copyResource(codeWriter, "runtime-epilogue.c");
-        generateMain(context, codeWriter, classes, classGenerator.getTypes());
+
+        List<ValueType> types = classGenerator.getTypes().stream()
+                .filter(c -> ClassGenerator.needsVirtualTable(characteristics, c))
+                .collect(Collectors.toList());
+
+        generateArrayOfClassReferences(context, codeWriter, types);
+        generateMain(context, codeWriter, classes, types);
 
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(
-                buildTarget.createResource(outputName), "UTF-8"))) {
+                buildTarget.createResource(outputName), StandardCharsets.UTF_8))) {
             codeWriter.writeTo(writer);
         }
     }
@@ -383,8 +391,27 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         writer.outdent().println("}");
     }
 
+    private void generateArrayOfClassReferences(GenerationContext context, CodeWriter writer,
+            List<? extends ValueType> types) {
+        writer.print("static JavaClass* teavm_classReferences[" + types.size() + "] = {").indent();
+        boolean first = true;
+        for (ValueType type : types) {
+            if (!first) {
+                writer.print(", ");
+            }
+            writer.println();
+            first = false;
+            String typeName = context.getNames().forClassInstance(type);
+            writer.print("(JavaClass*) &" + typeName);
+        }
+        if (!first) {
+            writer.println();
+        }
+        writer.outdent().println("};");
+    }
+
     private void generateMain(GenerationContext context, CodeWriter writer, ListableClassHolderSource classes,
-            Set<? extends ValueType> types) {
+            List<? extends ValueType> types) {
         writer.println("int main(int argc, char** argv) {").indent();
 
         writer.println("TeaVM_beforeInit();");
@@ -420,20 +447,22 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     }
 
     private void generateVirtualTableHeaders(GenerationContext context, CodeWriter writer,
-            Set<? extends ValueType> types) {
+            List<? extends ValueType> types) {
+        writer.println("TeaVM_beforeClasses = (char*) teavm_classReferences[0];");
+        writer.println("for (int i = 1; i < " + types.size() + "; ++i) {").indent();
+        writer.println("char* c = (char*) teavm_classReferences[i];");
+        writer.println("if (c < TeaVM_beforeClasses) TeaVM_beforeClasses = c;");
+        writer.outdent().println("}");
+        writer.println("TeaVM_beforeClasses -= 4096;");
+
         String classClassName = context.getNames().forClassInstance(ValueType.object("java.lang.Class"));
         writer.print("int32_t classHeader = PACK_CLASS(&" + classClassName + ") | ");
         CodeGeneratorUtil.writeValue(writer, context, RuntimeObject.GC_MARKED);
         writer.println(";");
 
-        for (ValueType type : types) {
-            if (!ClassGenerator.needsVirtualTable(context.getCharacteristics(), type)) {
-                continue;
-            }
-
-            String typeName = context.getNames().forClassInstance(type);
-            writer.println("((JavaObject*) &" + typeName + ")->header = classHeader;");
-        }
+        writer.println("for (int i = 0; i < " + types.size() + "; ++i) {").indent();
+        writer.println("teavm_classReferences[i]->parent.header = classHeader;");
+        writer.outdent().println("}");
     }
 
     private void generateStringPoolHeaders(GenerationContext context, CodeWriter writer) {
