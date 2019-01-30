@@ -795,7 +795,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 dependencyAnalyzer.getClassHierarchy(), diagnostics);
         private Map<String, ClassHolder> cache = new HashMap<>();
         private Set<String> classNames = Collections.unmodifiableSet(new HashSet<>(
-                dependencyAnalyzer.getReachableClasses()));
+                dependencyAnalyzer.getReachableClasses().stream()
+                        .filter(className -> dependencyAnalyzer.getClassSource().get(className) != null)
+                        .collect(Collectors.toList())));
 
         @Override
         public ClassHolder get(String name) {
