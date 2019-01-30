@@ -228,27 +228,30 @@ function $rt_exception(ex) {
         }
         err.$javaException = ex;
         ex.$jsException = err;
-        if (typeof $rt_decodeStack === "function" && err.stack) {
-            var stack = $rt_decodeStack(err.stack);
-            var javaStack = $rt_createArray($rt_objcls(), stack.length);
-            var elem;
-            var noStack = false;
-            for (var i = 0; i < stack.length; ++i) {
-                var element = stack[i];
-                elem = $rt_createStackElement($rt_str(element.className),
-                        $rt_str(element.methodName), $rt_str(element.fileName), element.lineNumber);
-                if (elem == null) {
-                    noStack = true;
-                    break;
-                }
-                javaStack.data[i] = elem;
-            }
-            if (!noStack) {
-                $rt_setStack(ex, javaStack);
-            }
-        }
+        $rt_fillStack(err, ex);
     }
     return err;
+}
+function $rt_fillStack(err, ex) {
+    if (typeof $rt_decodeStack === "function" && err.stack) {
+        var stack = $rt_decodeStack(err.stack);
+        var javaStack = $rt_createArray($rt_objcls(), stack.length);
+        var elem;
+        var noStack = false;
+        for (var i = 0; i < stack.length; ++i) {
+            var element = stack[i];
+            elem = $rt_createStackElement($rt_str(element.className),
+                $rt_str(element.methodName), $rt_str(element.fileName), element.lineNumber);
+            if (elem == null) {
+                noStack = true;
+                break;
+            }
+            javaStack.data[i] = elem;
+        }
+        if (!noStack) {
+            $rt_setStack(ex, javaStack);
+        }
+    }
 }
 function $rt_createMultiArray(cls, dimensions) {
     var first = 0;
@@ -553,6 +556,7 @@ function $rt_wrapException(err) {
         ex = $rt_createException($rt_str("(JavaScript) " + err.toString()));
         err.$javaException = ex;
         ex.$jsException = err;
+        $rt_fillStack(err, ex);
     }
     return ex;
 }
