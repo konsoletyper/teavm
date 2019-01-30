@@ -16,7 +16,9 @@
 package org.teavm.backend.c.generate;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.Set;
 import org.teavm.backend.lowlevel.generate.LowLevelNameProvider;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReference;
@@ -25,6 +27,13 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
 public class NameProvider extends LowLevelNameProvider {
+    private static final Set<? extends String> keywords = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
+            "auto", "break", "case", "char", "const", "continue", "default", "do", "double", "else",
+            "enum", "extern", "float", "for", "goto", "if", "inline", "int", "long", "register", "restrict",
+            "return", "short", "signed", "sizeof", "static", "struct", "switch", "typedef", "union",
+            "unsigned", "void", "volatile", "while"
+    )));
+
     public NameProvider(ClassReaderSource classSource) {
         super(classSource);
 
@@ -45,5 +54,10 @@ public class NameProvider extends LowLevelNameProvider {
 
         occupiedClassNames.put(RuntimeObject.class.getName(), new HashSet<>(Arrays.asList("header")));
         occupiedClassNames.put(RuntimeArray.class.getName(), new HashSet<>(Arrays.asList("length")));
+    }
+
+    @Override
+    protected Set<? extends String> getKeywords() {
+        return keywords;
     }
 }

@@ -23,7 +23,6 @@ import org.teavm.model.MethodDescriptor;
 public class VirtualTable {
     private String className;
     Map<MethodDescriptor, VirtualTableEntry> entries = new LinkedHashMap<>();
-    Map<MethodDescriptor, VirtualTableEntry> allEntries = new LinkedHashMap<>();
     private Map<MethodDescriptor, VirtualTableEntry> readonlyEntries;
 
     VirtualTable(String className) {

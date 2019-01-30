@@ -49,7 +49,6 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
-import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -305,7 +304,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     /**
      * Gets a {@link ClassReaderSource} which is used by this TeaVM instance. It is exactly what was
-     * passed to {@link TeaVMBuilder#setClassSource(ClassHolderSource)}.
+     * passed to {@link TeaVMBuilder#setClassSource(ClassReaderSource)}.
      *
      * @return class source.
      */
@@ -426,7 +425,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
-    @SuppressWarnings("WeakerAccess")
     public ListableClassHolderSource link(DependencyAnalyzer dependency) {
         reportPhase(TeaVMPhase.LINKING, dependency.getReachableClasses().size());
         Linker linker = new Linker();
@@ -736,7 +734,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         @Override
         public boolean isVirtual(MethodReference method) {
-            return virtualMethods == null || virtualMethods.contains(method);
+            if (method.getName().equals("<init>") || method.getName().equals("<clinit>")) {
+                return false;
+            }
+            return virtualMethods == null || virtualMethods.contains(method)
+                    || additionalVirtualMethods.stream().anyMatch(p -> p.test(method));
         }
 
         @Override

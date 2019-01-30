@@ -16,6 +16,7 @@
 package org.teavm.backend.lowlevel.generate;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -58,7 +59,7 @@ public abstract class LowLevelNameProvider {
     public String forMethod(MethodReference method) {
         return methodNames.computeIfAbsent(method, k -> {
             String specialName = getSpecialName(k);
-            return specialName == null ? pickUnoccupied(suggestForMethod(k)) : specialName;
+            return specialName == null ? pickUnoccupied("meth_" + suggestForMethod(k)) : specialName;
         });
     }
 
@@ -66,7 +67,7 @@ public abstract class LowLevelNameProvider {
         return virtualMethodNames.computeIfAbsent(method, k -> {
             Set<String> occupied = occupiedVtableNames.computeIfAbsent(k.getClassName(),
                     c -> new HashSet<>(Arrays.asList("parent")));
-            return pickUnoccupied(k.getName(), occupied);
+            return pickUnoccupied("virt_" + k.getName(), occupied);
         });
     }
 
@@ -90,19 +91,19 @@ public abstract class LowLevelNameProvider {
     }
 
     public String forStaticField(FieldReference field) {
-        return staticFieldNames.computeIfAbsent(field, k -> pickUnoccupied(suggestForStaticField(k)));
+        return staticFieldNames.computeIfAbsent(field, k -> pickUnoccupied("sfld_" + suggestForStaticField(k)));
     }
 
     public String forMemberField(FieldReference field) {
         return memberFieldNames.computeIfAbsent(field, k -> {
             Set<String> occupied = occupiedClassNames.computeIfAbsent(k.getClassName(),
                     c -> new HashSet<>(Arrays.asList("parent")));
-            return pickUnoccupied(sanitize(field.getFieldName()), occupied);
+            return pickUnoccupied("fld_" + sanitize(field.getFieldName()), occupied);
         });
     }
 
     public String forClass(String className) {
-        return classNames.computeIfAbsent(className, k -> pickUnoccupied(suggestForClass(k)));
+        return classNames.computeIfAbsent(className, k -> pickUnoccupied("cls_" + suggestForClass(k)));
     }
 
     public String forClassInitializer(String className) {
@@ -206,7 +207,8 @@ public abstract class LowLevelNameProvider {
     private String pickUnoccupied(String name, Set<String> occupied) {
         String result = name;
         int index = 0;
-        while (!occupied.add(result)) {
+        Set<? extends String> keywords = getKeywords();
+        while (keywords.contains(result) || !occupied.add(result)) {
             result = name + "_" + index++;
         }
 
@@ -215,5 +217,9 @@ public abstract class LowLevelNameProvider {
 
     public Set<? extends ValueType> getTypes() {
         return types;
+    }
+
+    protected Set<? extends String> getKeywords() {
+        return Collections.emptySet();
     }
 }

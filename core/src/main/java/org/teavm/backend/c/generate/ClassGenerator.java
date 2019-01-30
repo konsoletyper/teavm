@@ -208,9 +208,11 @@ public class ClassGenerator {
         String classInstanceName = context.getNames().forClassInstance(ValueType.object(cls.getName()));
         String clinitName = context.getNames().forMethod(
                 new MethodReference(cls.getName(), "<clinit>", ValueType.VOID));
+        String flagsName = context.getNames().forMemberField(new FieldReference(RuntimeClass.class.getName(),
+                "flags"));
         codeWriter.print("JavaClass* cls = (JavaClass*) &").print(classInstanceName).println(";");
-        codeWriter.println("if (!(cls->flags & INT32_C(" + RuntimeClass.INITIALIZED + "))) {").indent();
-        codeWriter.println("cls->flags |= INT32_C(" + RuntimeClass.INITIALIZED + ");");
+        codeWriter.println("if (!(cls->" + flagsName + " & INT32_C(" + RuntimeClass.INITIALIZED + "))) {").indent();
+        codeWriter.println("cls->" + flagsName + " |= INT32_C(" + RuntimeClass.INITIALIZED + ");");
         codeWriter.print(clinitName).println("();");
         codeWriter.outdent().println("}");
 
