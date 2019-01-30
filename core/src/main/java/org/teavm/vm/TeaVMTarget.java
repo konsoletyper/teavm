@@ -21,7 +21,6 @@ import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ListableClassHolderSource;
-import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
 import org.teavm.vm.spi.TeaVMHostExtension;
@@ -39,9 +38,9 @@ public interface TeaVMTarget {
 
     void contributeDependencies(DependencyAnalyzer dependencyAnalyzer);
 
-    void beforeOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource);
+    void beforeOptimizations(Program program, MethodReader method);
 
-    void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource);
+    void afterOptimizations(Program program, MethodReader method);
 
     void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException;
 

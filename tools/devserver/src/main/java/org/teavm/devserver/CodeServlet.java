@@ -981,18 +981,10 @@ public class CodeServlet extends HttpServlet {
             switch (phase) {
                 case DEPENDENCY_ANALYSIS:
                     start = 0;
-                    end = 400;
-                    break;
-                case LINKING:
-                    start = 400;
                     end = 500;
                     break;
-                case OPTIMIZATION:
+                case COMPILING:
                     start = 500;
-                    end = 750;
-                    break;
-                case RENDERING:
-                    start = 750;
                     end = 1000;
                     break;
             }

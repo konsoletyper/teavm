@@ -17,19 +17,33 @@ package org.teavm.model.util;
 
 import java.util.ArrayList;
 import java.util.List;
-import org.teavm.model.*;
+import org.teavm.model.AnnotationContainer;
+import org.teavm.model.AnnotationContainerReader;
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassReader;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.FieldReader;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 
 public final class ModelUtils {
     private ModelUtils() {
     }
 
     public static ClassHolder copyClass(ClassReader original, ClassHolder target) {
+        return copyClass(original, target, true);
+    }
+
+    public static ClassHolder copyClass(ClassReader original, ClassHolder target, boolean withPrograms) {
         target.setLevel(original.getLevel());
         target.getModifiers().addAll(original.readModifiers());
         target.setParent(original.getParent());
         target.getInterfaces().addAll(original.getInterfaces());
         for (MethodReader method : original.getMethods()) {
-            target.addMethod(copyMethod(method));
+            target.addMethod(copyMethod(method, withPrograms));
         }
         for (FieldReader field : original.getFields()) {
             target.addField(copyField(field));
@@ -40,14 +54,22 @@ public final class ModelUtils {
     }
 
     public static ClassHolder copyClass(ClassReader original) {
-        return copyClass(original, new ClassHolder(original.getName()));
+        return copyClass(original, true);
+    }
+
+    public static ClassHolder copyClass(ClassReader original, boolean withPrograms) {
+        return copyClass(original, new ClassHolder(original.getName()), withPrograms);
     }
 
     public static MethodHolder copyMethod(MethodReader method) {
+        return copyMethod(method, true);
+    }
+
+    public static MethodHolder copyMethod(MethodReader method, boolean withProgram) {
         MethodHolder copy = new MethodHolder(method.getDescriptor());
         copy.setLevel(method.getLevel());
         copy.getModifiers().addAll(method.readModifiers());
-        if (method.getProgram() != null) {
+        if (method.getProgram() != null && withProgram) {
             copy.setProgram(ProgramUtils.copy(method.getProgram()));
         }
         copyAnnotations(method.getAnnotations(), copy.getAnnotations());

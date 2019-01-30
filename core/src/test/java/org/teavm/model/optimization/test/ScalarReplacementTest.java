@@ -21,7 +21,6 @@ import org.junit.Test;
 import org.junit.rules.TestName;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.ClassHolder;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListingParseUtils;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
@@ -109,11 +108,6 @@ public class ScalarReplacementTest {
 
             @Override
             public DependencyInfo getDependencyInfo() {
-                return null;
-            }
-
-            @Override
-            public ClassReaderSource getClassSource() {
                 return null;
             }
         };

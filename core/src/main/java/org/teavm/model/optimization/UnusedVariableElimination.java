@@ -56,9 +56,6 @@ public class UnusedVariableElimination implements MethodOptimization {
     }
 
     public boolean optimize(MethodReader method, Program program) {
-        if (method.getProgram() == null) {
-            return false;
-        }
         Graph graph = VariableUsageGraphBuilder.build(program);
         boolean[] escaping = VariableEscapeAnalyzer.findEscapingVariables(program);
         boolean[] used = new boolean[escaping.length];

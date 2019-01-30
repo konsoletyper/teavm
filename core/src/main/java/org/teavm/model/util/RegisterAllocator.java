@@ -26,7 +26,6 @@ import org.teavm.common.MutableGraphNode;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
-import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
@@ -36,7 +35,7 @@ import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 
 public class RegisterAllocator {
-    public void allocateRegisters(MethodReader method, Program program, boolean debuggerFriendly) {
+    public void allocateRegisters(MethodReference method, Program program, boolean debuggerFriendly) {
         insertPhiArgumentsCopies(program);
         InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
         LivenessAnalyzer liveness = new LivenessAnalyzer();
@@ -60,7 +59,7 @@ public class RegisterAllocator {
         for (int cls : classArray) {
             maxClass = Math.max(maxClass, cls + 1);
         }
-        int[] categories = getVariableCategories(program, method.getReference());
+        int[] categories = getVariableCategories(program, method);
         String[] names = getVariableNames(program, debuggerFriendly);
         colorer.colorize(MutableGraphNode.toGraph(interferenceGraph), colors, categories, names);
 

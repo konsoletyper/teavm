@@ -25,7 +25,6 @@ import org.teavm.dependency.ValueDependencyInfo;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
@@ -35,15 +34,13 @@ import org.teavm.model.instructions.InvokeInstruction;
 
 public class Devirtualization {
     private DependencyInfo dependency;
-    private ClassReaderSource classSource;
     private ClassHierarchy hierarchy;
     private Set<MethodReference> virtualMethods = new HashSet<>();
     private Set<? extends MethodReference> readonlyVirtualMethods = Collections.unmodifiableSet(virtualMethods);
 
-    public Devirtualization(DependencyInfo dependency, ClassReaderSource classSource) {
+    public Devirtualization(DependencyInfo dependency, ClassHierarchy hierarchy) {
         this.dependency = dependency;
-        this.classSource = classSource;
-        hierarchy = new ClassHierarchy(classSource);
+        this.hierarchy = hierarchy;
     }
 
     public void apply(MethodHolder method) {
@@ -82,7 +79,7 @@ public class Devirtualization {
             if (className.startsWith("[")) {
                 className = "java.lang.Object";
             }
-            ClassReader cls = classSource.get(className);
+            ClassReader cls = hierarchy.getClassSource().get(className);
             if (cls == null || !isSuperclass.test(cls.getName(), false)) {
                 continue;
             }

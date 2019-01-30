@@ -301,11 +301,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     }
 
     @Override
-    public void beforeOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
+    public void beforeOptimizations(Program program, MethodReader method) {
     }
 
     @Override
-    public void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classes) {
+    public void afterOptimizations(Program program, MethodReader method) {
         clinitInsertionTransformer.apply(method, program);
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);

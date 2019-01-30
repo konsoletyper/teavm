@@ -34,8 +34,13 @@ import org.teavm.model.instructions.PutFieldInstruction;
 
 public class Linker {
     private static final MethodDescriptor clinitDescriptor = new MethodDescriptor("<clinit>", void.class);
+    private DependencyInfo dependency;
 
-    public void link(DependencyInfo dependency, ClassHolder cls) {
+    public Linker(DependencyInfo dependency) {
+        this.dependency = dependency;
+    }
+
+    public void link(ClassHolder cls) {
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
             MethodReference methodRef = method.getReference();
             MethodDependencyInfo methodDep = dependency.getMethod(methodRef);
@@ -45,7 +50,7 @@ public class Linker {
                 method.getModifiers().add(ElementModifier.ABSTRACT);
                 method.setProgram(null);
             } else if (method.getProgram() != null) {
-                link(dependency, method);
+                link(method.getReference(), method.getProgram());
             }
         }
         for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
@@ -56,8 +61,7 @@ public class Linker {
         }
     }
 
-    private void link(DependencyInfo dependency, MethodHolder method) {
-        Program program = method.getProgram();
+    public void link(MethodReference method, Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
@@ -96,8 +100,8 @@ public class Linker {
         }
     }
 
-    private void insertClinit(DependencyInfo dependency, String className, MethodHolder method, Instruction insn) {
-        if (className.equals(method.getOwnerName())) {
+    private void insertClinit(DependencyInfo dependency, String className, MethodReference method, Instruction insn) {
+        if (className.equals(method.getClassName())) {
             return;
         }
         ClassReader cls = dependency.getClassSource().get(className);

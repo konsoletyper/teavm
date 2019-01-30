@@ -180,12 +180,8 @@ class TeaVMBuild {
         switch (phase) {
             case DEPENDENCY_ANALYSIS:
                 return "Discovering classes to compile";
-            case LINKING:
-                return "Resolving method invocations";
-            case OPTIMIZATION:
-                return "Optimizing code";
-            case RENDERING:
-                return "Building JS file";
+            case COMPILING:
+                return "Compiling";
             default:
                 throw new AssertionError();
         }

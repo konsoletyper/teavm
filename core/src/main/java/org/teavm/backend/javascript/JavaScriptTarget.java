@@ -70,7 +70,6 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassHolderSource;
-import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -293,11 +292,11 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     @Override
-    public void beforeOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
+    public void beforeOptimizations(Program program, MethodReader method) {
     }
 
     @Override
-    public void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
+    public void afterOptimizations(Program program, MethodReader method) {
         clinitInsertionTransformer.apply(method, program);
     }
 
@@ -628,5 +627,5 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         public ClassReaderSource getClassSource() {
             return classSource;
         }
-    };
+    }
 }

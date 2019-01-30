@@ -426,14 +426,8 @@ public final class TeaVMRunner {
                     case DEPENDENCY_ANALYSIS:
                         System.out.print("Analyzing classes...");
                         break;
-                    case LINKING:
-                        System.out.print("Linking methods...");
-                        break;
-                    case OPTIMIZATION:
-                        System.out.print("Optimizing code...");
-                        break;
-                    case RENDERING:
-                        System.out.print("Generating output...");
+                    case COMPILING:
+                        System.out.print("Compiling...");
                         break;
                 }
                 currentPhase = phase;

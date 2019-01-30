@@ -736,6 +736,15 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             node.transitions = null;
             node.transitionList = null;
             node.method = null;
+        }
+
+        allNodes.clear();
+        classSource.cleanup();
+        agent.cleanup();
+    }
+
+    public void cleanupTypes() {
+        for (DependencyNode node : allNodes) {
             if (node.typeSet != null) {
                 node.typeSet.cleanup();
             }
@@ -747,10 +756,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                 dependency.variableNodes[i] = null;
             }
         }
-
-        allNodes.clear();
-        classSource.cleanup();
-        agent.cleanup();
     }
 
     static class ReportEntry {

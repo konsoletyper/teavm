@@ -29,6 +29,7 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.ServiceLoader;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.teavm.cache.AlwaysStaleCacheStatus;
@@ -44,6 +45,7 @@ import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.Linker;
 import org.teavm.dependency.MethodDependency;
+import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.diagnostics.ProblemProvider;
@@ -52,6 +54,9 @@ import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
@@ -141,6 +146,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private ProgramDependencyExtractor programDependencyExtractor = new ProgramDependencyExtractor();
     private List<Predicate<MethodReference>> additionalVirtualMethods = new ArrayList<>();
     private int lastKnownClasses;
+    private int compileProgressReportStart;
+    private int compileProgressReportLimit;
+    private int compileProgressLimit;
+    private int compileProgressValue;
 
     TeaVM(TeaVMBuilder builder) {
         target = builder.target;
@@ -378,63 +387,97 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         cacheStatus.addSynthesizedClasses(dependencyAnalyzer::isSynthesizedClass);
         dependencyAnalyzer.setInterruptor(null);
 
-        // Link
-        if (wasCancelled()) {
-            return;
-        }
-        ListableClassHolderSource classSet = link(dependencyAnalyzer);
-        writtenClasses = classSet;
         if (wasCancelled()) {
             return;
         }
 
-        // Optimize and allocate registers
-        int maxOptimizationProgress = classSet.getClassNames().size();
-        if (optimizationLevel == TeaVMOptimizationLevel.ADVANCED) {
-            maxOptimizationProgress *= 2;
-        } else if (optimizationLevel == TeaVMOptimizationLevel.FULL) {
-            maxOptimizationProgress *= 3;
-        }
-        reportPhase(TeaVMPhase.OPTIMIZATION, maxOptimizationProgress);
-
-        int progress = 0;
-        if (optimizationLevel != TeaVMOptimizationLevel.SIMPLE) {
-            progress = devirtualize(progress, classSet, dependencyAnalyzer);
+        boolean isLazy = optimizationLevel == TeaVMOptimizationLevel.SIMPLE;
+        ListableClassHolderSource classSet;
+        if (isLazy) {
+            initCompileProgress(1000);
+            classSet = lazyPipeline();
+        } else {
+            initCompileProgress(500);
+            classSet = eagerPipeline();
             if (wasCancelled()) {
                 return;
             }
         }
 
-        dependencyAnalyzer.cleanup();
-        progress = inline(progress, classSet, dependencyAnalyzer);
-        if (wasCancelled()) {
-            return;
-        }
-
-        optimize(progress, classSet);
         if (wasCancelled()) {
             return;
         }
 
         // Render
         try {
-            reportPhase(TeaVMPhase.RENDERING, 1000);
+            if (!isLazy) {
+                compileProgressReportStart = 500;
+                compileProgressReportLimit = 1000;
+            }
             target.emit(classSet, buildTarget, outputName);
         } catch (IOException e) {
             throw new RuntimeException("Error generating output files", e);
         }
     }
 
+    private void initCompileProgress(int limit) {
+        reportPhase(TeaVMPhase.COMPILING, 1000);
+        compileProgressReportStart = 0;
+        compileProgressReportLimit = limit;
+    }
+
+    private ListableClassHolderSource eagerPipeline() {
+        compileProgressValue = 0;
+        compileProgressLimit = dependencyAnalyzer.getReachableClasses().size();
+        if (optimizationLevel == TeaVMOptimizationLevel.ADVANCED) {
+            compileProgressLimit *= 3;
+        } else if (optimizationLevel == TeaVMOptimizationLevel.FULL) {
+            compileProgressLimit *= 4;
+        } else {
+            compileProgressLimit *= 2;
+        }
+
+        ListableClassHolderSource classSet = link(dependencyAnalyzer);
+        writtenClasses = classSet;
+        if (wasCancelled()) {
+            return null;
+        }
+
+        if (optimizationLevel != TeaVMOptimizationLevel.SIMPLE) {
+            devirtualize(classSet);
+            if (wasCancelled()) {
+                return null;
+            }
+        }
+
+        dependencyAnalyzer.cleanupTypes();
+
+        inline(classSet);
+        if (wasCancelled()) {
+            return null;
+        }
+
+        // Optimize and allocate registers
+        optimize(classSet);
+        if (wasCancelled()) {
+            return null;
+        }
+
+        return classSet;
+    }
+
+    private ListableClassHolderSource lazyPipeline() {
+        return new PostProcessingClassHolderSource();
+    }
+
     public ListableClassHolderSource link(DependencyAnalyzer dependency) {
-        reportPhase(TeaVMPhase.LINKING, dependency.getReachableClasses().size());
-        Linker linker = new Linker();
+        Linker linker = new Linker(dependency);
         MutableClassHolderSource cutClasses = new MutableClassHolderSource();
         MissingItemsProcessor missingItemsProcessor = new MissingItemsProcessor(dependency,
                 dependency.getClassHierarchy(), diagnostics);
         if (wasCancelled()) {
             return cutClasses;
         }
-        int index = 0;
 
         if (wasCancelled()) {
             return cutClasses;
@@ -442,14 +485,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         for (String className : dependency.getReachableClasses()) {
             ClassReader clsReader = dependency.getClassSource().get(className);
-            if (clsReader == null) {
-                continue;
+            if (clsReader != null) {
+                ClassHolder cls = ModelUtils.copyClass(clsReader);
+                cutClasses.putClassHolder(cls);
+                missingItemsProcessor.processClass(cls);
+                linker.link(cls);
             }
-            ClassHolder cls = ModelUtils.copyClass(clsReader);
-            cutClasses.putClassHolder(cls);
-            missingItemsProcessor.processClass(cls);
-            linker.link(dependency, cls);
-            reportProgress(++index);
+            reportCompileProgress(++compileProgressValue);
             if (wasCancelled()) {
                 break;
             }
@@ -469,12 +511,17 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
     }
 
-    private int devirtualize(int progress, ListableClassHolderSource classes, DependencyInfo dependency) {
+    private void reportCompileProgress(int progress) {
+        reportProgress(compileProgressReportStart
+                + progress * (compileProgressReportLimit - compileProgressReportStart) / compileProgressLimit);
+    }
+
+    private void devirtualize(ListableClassHolderSource classes) {
         if (wasCancelled()) {
-            return progress;
+            return;
         }
-        Devirtualization devirtualization = new Devirtualization(dependency, classes);
-        int index = 0;
+        Devirtualization devirtualization = new Devirtualization(dependencyAnalyzer,
+                dependencyAnalyzer.getClassHierarchy());
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
             for (MethodHolder method : cls.getMethods()) {
@@ -482,34 +529,33 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     devirtualization.apply(method);
                 }
             }
-            reportProgress(++index);
+            reportCompileProgress(++compileProgressValue);
             if (wasCancelled()) {
                 break;
             }
         }
         virtualMethods = devirtualization.getVirtualMethods();
-        return progress;
     }
 
-    private int inline(int progress, ListableClassHolderSource classes, DependencyInfo dependencyInfo) {
+    private void inline(ListableClassHolderSource classes) {
         if (optimizationLevel != TeaVMOptimizationLevel.FULL) {
-            return progress;
+            return;
         }
 
         Map<MethodReference, Program> inlinedPrograms = new HashMap<>();
-        Inlining inlining = new Inlining(new ClassHierarchy(classes), dependencyInfo);
+        Inlining inlining = new Inlining(new ClassHierarchy(classes), dependencyAnalyzer);
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
             for (MethodHolder method : cls.getMethods()) {
                 if (method.getProgram() != null) {
                     Program program = ProgramUtils.copy(method.getProgram());
-                    MethodOptimizationContextImpl context = new MethodOptimizationContextImpl(method, classes);
+                    MethodOptimizationContextImpl context = new MethodOptimizationContextImpl(method);
                     inlining.apply(program, method.getReference());
                     new UnusedVariableElimination().optimize(context, program);
                     inlinedPrograms.put(method.getReference(), program);
                 }
             }
-            reportProgress(++progress);
+            reportCompileProgress(++compileProgressValue);
             if (wasCancelled()) {
                 break;
             }
@@ -523,25 +569,22 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 }
             }
         }
-
-        return progress;
     }
 
-    private int optimize(int progress, ListableClassHolderSource classSource) {
+    private void optimize(ListableClassHolderSource classSource) {
         for (String className : classSource.getClassNames()) {
             ClassHolder cls = classSource.get(className);
             for (MethodHolder method : cls.getMethods()) {
-                processMethod(method, classSource);
+                optimizeMethod(method);
             }
-            reportProgress(++progress);
+            reportCompileProgress(++compileProgressValue);
             if (wasCancelled()) {
                 break;
             }
         }
-        return progress;
     }
 
-    private void processMethod(MethodHolder method, ListableClassReaderSource classSource) {
+    private void optimizeMethod(MethodHolder method) {
         if (method.getProgram() == null) {
             return;
         }
@@ -549,36 +592,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         Program optimizedProgram = !cacheStatus.isStaleMethod(method.getReference())
                 ? programCache.get(method.getReference(), cacheStatus)
                 : null;
-        MethodOptimizationContextImpl context = new MethodOptimizationContextImpl(method, classSource);
         if (optimizedProgram == null) {
-            optimizedProgram = ProgramUtils.copy(method.getProgram());
-            target.beforeOptimizations(optimizedProgram, method, classSource);
-
-            if (optimizedProgram.basicBlockCount() > 0) {
-                boolean changed;
-                do {
-                    changed = false;
-                    for (MethodOptimization optimization : getOptimizations()) {
-                        try {
-                            changed |= optimization.optimize(context, optimizedProgram);
-                        } catch (Exception | AssertionError e) {
-                            ListingBuilder listingBuilder = new ListingBuilder();
-                            String listing = listingBuilder.buildListing(optimizedProgram, "");
-                            System.err.println("Error optimizing program for method " + method.getReference()
-                                    + ":\n" + listing);
-                            throw new RuntimeException(e);
-                        }
-                    }
-                } while (changed);
-
-                target.afterOptimizations(optimizedProgram, method, classSource);
-                if (target.requiresRegisterAllocation()) {
-                    RegisterAllocator allocator = new RegisterAllocator();
-                    allocator.allocateRegisters(method, optimizedProgram,
-                            optimizationLevel == TeaVMOptimizationLevel.SIMPLE);
-                }
-            }
-
+            optimizedProgram = optimizeMethodCacheMiss(method, ProgramUtils.copy(method.getProgram()));
             Program finalProgram = optimizedProgram;
             programCache.store(method.getReference(), finalProgram,
                     () -> programDependencyExtractor.extractDependencies(finalProgram));
@@ -586,13 +601,43 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         method.setProgram(optimizedProgram);
     }
 
+    private Program optimizeMethodCacheMiss(MethodHolder method, Program optimizedProgram) {
+        target.beforeOptimizations(optimizedProgram, method);
+
+        if (optimizedProgram.basicBlockCount() > 0) {
+            MethodOptimizationContextImpl context = new MethodOptimizationContextImpl(method);
+            boolean changed;
+            do {
+                changed = false;
+                for (MethodOptimization optimization : getOptimizations()) {
+                    try {
+                        changed |= optimization.optimize(context, optimizedProgram);
+                    } catch (Exception | AssertionError e) {
+                        ListingBuilder listingBuilder = new ListingBuilder();
+                        String listing = listingBuilder.buildListing(optimizedProgram, "");
+                        System.err.println("Error optimizing program for method " + method.getReference()
+                                + ":\n" + listing);
+                        throw new RuntimeException(e);
+                    }
+                }
+            } while (changed);
+
+            target.afterOptimizations(optimizedProgram, method);
+            if (target.requiresRegisterAllocation()) {
+                RegisterAllocator allocator = new RegisterAllocator();
+                allocator.allocateRegisters(method.getReference(), optimizedProgram,
+                        optimizationLevel == TeaVMOptimizationLevel.SIMPLE);
+            }
+        }
+
+        return optimizedProgram;
+    }
+
     class MethodOptimizationContextImpl implements MethodOptimizationContext {
         private MethodReader method;
-        private ClassReaderSource classSource;
 
-        MethodOptimizationContextImpl(MethodReader method, ClassReaderSource classSource) {
+        MethodOptimizationContextImpl(MethodReader method) {
             this.method = method;
-            this.classSource = classSource;
         }
 
         @Override
@@ -603,11 +648,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         @Override
         public DependencyInfo getDependencyInfo() {
             return dependencyAnalyzer;
-        }
-
-        @Override
-        public ClassReaderSource getClassSource() {
-            return classSource;
         }
     }
 
@@ -742,8 +782,72 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         @Override
-        public TeaVMProgressFeedback reportProgress(int progres) {
-            return progressListener.progressReached(progres);
+        public TeaVMProgressFeedback reportProgress(int progress) {
+            progress = progress * (compileProgressReportLimit - compileProgressReportStart) / 1000
+                    + compileProgressReportStart;
+            return progressListener.progressReached(progress);
         }
     };
+
+    class PostProcessingClassHolderSource implements ListableClassHolderSource {
+        private Linker linker = new Linker(dependencyAnalyzer);
+        private MissingItemsProcessor missingItemsProcessor = new MissingItemsProcessor(dependencyAnalyzer,
+                dependencyAnalyzer.getClassHierarchy(), diagnostics);
+        private Map<String, ClassHolder> cache = new HashMap<>();
+        private Set<String> classNames = Collections.unmodifiableSet(new HashSet<>(
+                dependencyAnalyzer.getReachableClasses()));
+
+        @Override
+        public ClassHolder get(String name) {
+            return cache.computeIfAbsent(name, className -> {
+                ClassReader classReader = dependencyAnalyzer.getClassSource().get(className);
+                if (classReader == null) {
+                    return null;
+                }
+                ClassHolder cls = ModelUtils.copyClass(classReader, false);
+
+                for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
+                    FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
+                    if (dependencyAnalyzer.getField(fieldRef) == null) {
+                        cls.removeField(field);
+                    }
+                }
+
+                Function<MethodHolder, Program> programSupplier = method -> {
+                    Program program = !cacheStatus.isStaleMethod(method.getReference())
+                            ? programCache.get(method.getReference(), cacheStatus)
+                            : null;
+                    if (program == null) {
+                        program = ProgramUtils.copy(classReader.getMethod(method.getDescriptor()).getProgram());
+                        missingItemsProcessor.processMethod(method.getReference(), program);
+                        linker.link(method.getReference(), program);
+                        program = optimizeMethodCacheMiss(method, program);
+                        Program finalProgram = program;
+                        programCache.store(method.getReference(), finalProgram,
+                                () -> programDependencyExtractor.extractDependencies(finalProgram));
+                    }
+                    return program;
+                };
+                for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
+                    MethodDependencyInfo methodDep = dependencyAnalyzer.getMethod(method.getReference());
+                    if (methodDep == null) {
+                        cls.removeMethod(method);
+                    } else if (!methodDep.isUsed()) {
+                        method.getModifiers().add(ElementModifier.ABSTRACT);
+                    } else {
+                        MethodReader methodReader = classReader.getMethod(method.getDescriptor());
+                        if (methodReader != null && methodReader.getProgram() != null) {
+                            method.setProgramSupplier(programSupplier);
+                        }
+                    }
+                }
+                return cls;
+            });
+        }
+
+        @Override
+        public Set<String> getClassNames() {
+            return classNames;
+        }
+    }
 }

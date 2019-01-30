@@ -30,7 +30,7 @@ public class MissingItemsProcessor {
     private ClassHierarchy hierarchy;
     private Diagnostics diagnostics;
     private List<Instruction> instructionsToAdd = new ArrayList<>();
-    private MethodHolder methodHolder;
+    private MethodReference methodRef;
     private Program program;
     private Collection<String> reachableClasses;
     private Collection<MethodReference> reachableMethods;
@@ -54,8 +54,12 @@ public class MissingItemsProcessor {
     }
 
     public void processMethod(MethodHolder method) {
-        this.methodHolder = method;
-        this.program = method.getProgram();
+        processMethod(method.getReference(), method.getProgram());
+    }
+
+    public void processMethod(MethodReference method, Program program) {
+        this.methodRef = method;
+        this.program = program;
         boolean wasModified = false;
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -131,7 +135,7 @@ public class MissingItemsProcessor {
         if (!reachableClasses.contains(className) || !dependencyInfo.getClass(className).isMissing()) {
             return true;
         }
-        diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Class {{c0}} was not found",
+        diagnostics.error(new CallLocation(methodRef, location), "Class {{c0}} was not found",
                 className);
         emitExceptionThrow(location, NoClassDefFoundError.class.getName(), "Class not found: " + className);
         return false;
@@ -159,7 +163,7 @@ public class MissingItemsProcessor {
             return true;
         }
 
-        diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Method {{m0}} was not found",
+        diagnostics.error(new CallLocation(methodRef, location), "Method {{m0}} was not found",
                 method);
         emitExceptionThrow(location, NoSuchMethodError.class.getName(), "Method not found: " + method);
         return true;
@@ -177,7 +181,7 @@ public class MissingItemsProcessor {
             return true;
         }
 
-        diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Method {{m0}} was not found",
+        diagnostics.error(new CallLocation(methodRef, location), "Method {{m0}} was not found",
                 method);
         emitExceptionThrow(location, NoSuchMethodError.class.getName(), "Method not found: " + method);
         return true;
@@ -190,7 +194,7 @@ public class MissingItemsProcessor {
         if (!reachableFields.contains(field) || !dependencyInfo.getField(field).isMissing()) {
             return true;
         }
-        diagnostics.error(new CallLocation(methodHolder.getReference(), location), "Field {{f0}} was not found",
+        diagnostics.error(new CallLocation(methodRef, location), "Field {{f0}} was not found",
                 field);
         emitExceptionThrow(location, NoSuchFieldError.class.getName(), "Field not found: " + field);
         return true;

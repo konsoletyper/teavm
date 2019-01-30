@@ -200,12 +200,12 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     }
 
     @Override
-    public void beforeOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
+    public void beforeOptimizations(Program program, MethodReader method) {
         nullCheckInsertion.transformProgram(program, method.getReference());
     }
 
     @Override
-    public void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource) {
+    public void afterOptimizations(Program program, MethodReader method) {
         clinitInsertionTransformer.apply(method, program);
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
