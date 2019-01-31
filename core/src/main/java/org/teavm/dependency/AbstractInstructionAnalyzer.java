@@ -191,10 +191,6 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
                     invokeVirtual(receiver, instance, method, arguments);
                     break;
             }
-            if (method.getName().equals("getClass") && method.parameterCount() == 0
-                    && method.getReturnType().isObject(Class.class) && receiver != null) {
-                getNode(instance).connect(getNode(receiver).getClassValueNode());
-            }
         }
     }
 

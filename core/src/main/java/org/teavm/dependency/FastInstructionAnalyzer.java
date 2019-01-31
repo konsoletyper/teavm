@@ -31,6 +31,9 @@ class FastInstructionAnalyzer extends AbstractInstructionAnalyzer {
     @Override
     protected void invokeSpecial(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments) {
+        if (instance != null) {
+            invokeGetClass(method);
+        }
         CallLocation callLocation = impreciseLocation;
         if (instance == null) {
             dependencyAnalyzer.linkClass(method.getClassName()).initClass(callLocation);
@@ -43,12 +46,19 @@ class FastInstructionAnalyzer extends AbstractInstructionAnalyzer {
     @Override
     protected void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments) {
+        invokeGetClass(method);
         dependencyAnalyzer.getVirtualCallConsumer(method).addLocation(impreciseLocation);
+    }
+
+    private void invokeGetClass(MethodReference method) {
+        if (method.getName().equals("getClass") && method.parameterCount() == 0
+                && method.getReturnType().isObject(Class.class)) {
+            dependencyAnalyzer.instancesNode.connect(dependencyAnalyzer.classesNode);
+        }
     }
 
     @Override
     public void cloneArray(VariableReader receiver, VariableReader array) {
-        DependencyNode arrayNode = getNode(array);
         MethodDependency cloneDep = getAnalyzer().linkMethod(CLONE_METHOD);
         cloneDep.addLocation(impreciseLocation);
         cloneDep.use();

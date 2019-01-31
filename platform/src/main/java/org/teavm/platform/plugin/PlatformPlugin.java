@@ -105,7 +105,6 @@ public class PlatformPlugin implements TeaVMPlugin {
         host.add(new NewInstanceDependencySupport());
         host.add(new ClassLookupDependencySupport());
         host.add(new EnumDependencySupport());
-        host.add(new AnnotationDependencySupport());
         host.add(new PlatformDependencyListener());
         host.add(new AsyncDependencyListener());
 

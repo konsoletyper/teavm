@@ -32,7 +32,6 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 public class DependencyNode implements ValueDependencyInfo {
-    private static final int SMALL_TYPES_THRESHOLD = 3;
     private static final int DEGREE_THRESHOLD = 2;
     DependencyAnalyzer dependencyAnalyzer;
     List<DependencyConsumer> followers;
@@ -380,12 +379,6 @@ public class DependencyNode implements ValueDependencyInfo {
     }
 
     private void propagateTypes(DependencyConsumer transition) {
-        if (typeSet != null) {
-            dependencyAnalyzer.schedulePropagation(transition, getTypesInternal());
-        }
-    }
-
-    private void propagateTypes(Transition transition) {
         if (typeSet != null) {
             dependencyAnalyzer.schedulePropagation(transition, getTypesInternal());
         }

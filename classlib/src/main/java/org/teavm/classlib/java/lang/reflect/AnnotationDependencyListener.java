@@ -39,10 +39,15 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
+import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformAnnotationProvider;
+import org.teavm.platform.PlatformClass;
 
 public class AnnotationDependencyListener extends AbstractDependencyListener {
     private Set<MethodReference> reachedMethods = new HashSet<>();
+    private static final MethodReference GET_ANNOTATIONS_METHOD = new MethodReference(
+            Platform.class, "getAnnotations", PlatformClass.class, Annotation[].class);
+    private static final String ANNOTATIONS_READER_SUFFIX = "$$__annotations__$$";
 
     private String getAnnotationImplementor(DependencyAgent agent, String annotationType) {
         String implementorName = annotationType + "$$_impl";
@@ -150,6 +155,9 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
     private void reachGetAnnotations(DependencyAgent agent, DependencyNode node) {
         node.getClassValueNode().addConsumer(type -> {
             String className = type.getName();
+            if (className.endsWith(ANNOTATIONS_READER_SUFFIX)) {
+                return;
+            }
 
             ClassReader cls = agent.getClassSource().get(className);
             if (cls == null) {
@@ -165,12 +173,12 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
     }
 
     private void createAnnotationClass(DependencyAgent agent, String className) {
-        String readerClassName = className + "$$__annotations__$$";
+        String readerClassName = className + ANNOTATIONS_READER_SUFFIX;
         if (agent.getClassSource().get(readerClassName) != null) {
             return;
         }
 
-        ClassHolder cls = new ClassHolder(className + "$$__annotations__$$");
+        ClassHolder cls = new ClassHolder(readerClassName);
         cls.setLevel(AccessLevel.PUBLIC);
         cls.setOwnerName("java.lang.Object");
         cls.getInterfaces().add(PlatformAnnotationProvider.class.getName());
@@ -183,9 +191,20 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
 
         ClassReader annotatedClass = agent.getClassSource().get(className);
         cls.addMethod(ctor);
-        cls.addMethod(addReader(agent, annotatedClass));
+        MethodHolder reader = addReader(agent, annotatedClass);
+        cls.addMethod(reader);
 
         agent.submitClass(cls);
+
+        MethodDependency ctorDep = agent.linkMethod(ctor.getReference());
+        ctorDep.getVariable(0).propagate(agent.getType(readerClassName));
+        ctorDep.use();
+
+        MethodDependency annotationsDep = agent.linkMethod(GET_ANNOTATIONS_METHOD);
+        MethodDependency readerDep = agent.linkMethod(reader.getReference());
+        readerDep.getVariable(0).propagate(agent.getType(readerClassName));
+        readerDep.getResult().getArrayItem().connect(annotationsDep.getResult().getArrayItem());
+        readerDep.use();
     }
 
     private MethodHolder addReader(DependencyAgent agent, ClassReader cls) {

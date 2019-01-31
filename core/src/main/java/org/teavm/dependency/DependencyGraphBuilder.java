@@ -30,6 +30,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.IncomingReader;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.PhiReader;
@@ -41,6 +42,7 @@ import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.text.ListingBuilder;
 
 class DependencyGraphBuilder {
+    private static final MethodDescriptor GET_CLASS = new MethodDescriptor("getClass", Class.class);
     private DependencyAnalyzer dependencyAnalyzer;
     private DependencyNode[] nodes;
     private DependencyNode resultNode;
@@ -323,6 +325,10 @@ class DependencyGraphBuilder {
         @Override
         protected void invokeSpecial(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
+            if (method.getDescriptor().equals(GET_CLASS)) {
+                invokeGetClass(receiver, instance);
+                return;
+            }
             CallLocation callLocation = getCallLocation();
             if (instance == null) {
                 dependencyAnalyzer.linkClass(method.getClassName()).initClass(callLocation);
@@ -359,6 +365,11 @@ class DependencyGraphBuilder {
         @Override
         protected void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments) {
+            if (method.getDescriptor().equals(GET_CLASS)) {
+                invokeGetClass(receiver, instance);
+                return;
+            }
+
             DependencyNode[] actualArgs = new DependencyNode[arguments.size() + 1];
             for (int i = 0; i < arguments.size(); ++i) {
                 actualArgs[i + 1] = nodes[arguments.get(i).getIndex()];
@@ -373,6 +384,21 @@ class DependencyGraphBuilder {
             dependencyAnalyzer.getClassSource().overriddenMethods(method).forEach(methodImpl -> {
                 dependencyAnalyzer.linkMethod(methodImpl.getReference()).addLocation(getCallLocation());
             });
+        }
+
+        private void invokeGetClass(VariableReader receiver, VariableReader instance) {
+            MethodDependency getClassDep = dependencyAnalyzer.linkMethod("java.lang.Object", GET_CLASS);
+            getClassDep.addLocation(getCallLocation());
+            getNode(instance).addConsumer(t -> {
+                getClassDep.getVariable(0).propagate(t);
+                if (receiver != null) {
+                    getNode(receiver).getClassValueNode().propagate(t);
+                }
+            });
+            if (receiver != null) {
+                getNode(receiver).propagate(dependencyAnalyzer.getType("java.lang.Class"));
+            }
+            getClassDep.use();
         }
 
         @Override
