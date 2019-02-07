@@ -402,7 +402,7 @@ public class Renderer implements RenderingManager {
             throws IOException {
         boolean isAsync = asyncMethods.contains(clinit.getReference());
 
-        String clinitCalled = naming.getNameFor(cls.getName() + "_$clinitCalled");
+        String clinitCalled = naming.getNameFor(cls.getName()) + "_$clinitCalled";
         if (isAsync) {
             writer.append("var ").append(clinitCalled).ws().append("=").ws().append("false;").softNewLine();
         }
@@ -419,7 +419,7 @@ public class Renderer implements RenderingManager {
             writer.append(context.pointerName()).ws().append("=").ws().appendFunction("$rt_nativeThread")
                     .append("().pop();").softNewLine();
             writer.outdent().append("}").ws();
-            writer.append("else if").ws().append("(").appendClass(cls.getName()).append("_$clinitCalled)").ws()
+            writer.append("else if").ws().append("(").append(clinitCalled).append(")").ws()
                     .append("{").indent().softNewLine();
             writer.append("return;").softNewLine();
             writer.outdent().append("}").softNewLine();
