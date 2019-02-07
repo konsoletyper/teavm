@@ -358,6 +358,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
             renderer.prepare(clsNodes);
             runtimeRenderer.renderRuntime();
+            if (classScoped) {
+                sourceWriter.append("var ").append(Renderer.CONTAINER_OBJECT).ws().append("=").ws()
+                        .append("Object.create(null);").newLine();
+            }
             if (!renderer.render(clsNodes)) {
                 return;
             }

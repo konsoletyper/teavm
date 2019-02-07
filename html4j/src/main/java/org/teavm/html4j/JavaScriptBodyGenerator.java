@@ -18,12 +18,13 @@ package org.teavm.html4j;
 import java.io.IOException;
 import java.util.List;
 import net.java.html.js.JavaScriptBody;
-import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
+import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
+import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
@@ -40,11 +41,6 @@ public class JavaScriptBodyGenerator implements Generator {
         String body = annot.getValue("body").getString();
         List<AnnotationValue> args = annot.getValue("args").getList();
         AnnotationValue javacall = annot.getValue("javacall");
-        if (javacall != null && javacall.getBoolean()) {
-            GeneratorJsCallback callbackGen = new GeneratorJsCallback(context, context.getClassSource(),
-                    writer.getNaming());
-            body = callbackGen.parse(body);
-        }
         writer.append("var result = (function(");
         for (int i = 0; i < args.size(); ++i) {
             if (i > 0) {
@@ -53,7 +49,14 @@ public class JavaScriptBodyGenerator implements Generator {
             writer.append(args.get(i).getString());
         }
         writer.append(")").ws().append("{").indent().softNewLine();
-        writer.append(body).softNewLine();
+        if (javacall != null && javacall.getBoolean()) {
+            GeneratorJsCallback callbackGen = new GeneratorJsCallback(writer, context, context.getClassSource(),
+                    context.getDiagnostics(), methodRef);
+            callbackGen.parse(body);
+        } else {
+            writer.append(body);
+        }
+        writer.softNewLine();
         writer.outdent().append("}).call(").append(!method.hasModifier(ElementModifier.STATIC)
                 ? context.getParameterName(0) : "null");
         for (int i = 0; i < args.size(); ++i) {
@@ -71,65 +74,88 @@ public class JavaScriptBodyGenerator implements Generator {
         writer.append("(").append(param).append(")");
     }
 
-    private void unwrapValue(GeneratorContext context, SourceWriter writer, ValueType type)
-            throws IOException {
+    private void unwrapValue(GeneratorContext context, SourceWriter writer, ValueType type) throws IOException {
         writer.appendMethodBody(JavaScriptConvGenerator.fromJsMethod);
-        writer.append("(").append("result").append(",").ws().append(context.typeToClassString(type))
-                .append(")");
+        writer.append("(").append("result").append(",").ws();
+        context.typeToClassString(writer, type);
+        writer.append(")");
     }
 
     private static class GeneratorJsCallback extends JsCallback {
+        private SourceWriter writer;
         private GeneratorContext context;
         private ClassReaderSource classSource;
-        private NamingStrategy naming;
+        private Diagnostics diagnostics;
+        private MethodReference methodReference;
 
-        GeneratorJsCallback(GeneratorContext context, ClassReaderSource classSource, NamingStrategy naming) {
+        GeneratorJsCallback(SourceWriter writer, GeneratorContext context, ClassReaderSource classSource,
+                Diagnostics diagnostics, MethodReference methodReference) {
+            this.writer = writer;
             this.context = context;
             this.classSource = classSource;
-            this.naming = naming;
+            this.diagnostics = diagnostics;
+            this.methodReference = methodReference;
         }
 
         @Override
-        protected CharSequence callMethod(String ident, String fqn, String method, String params) {
-            MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
-            MethodReader reader = JavaScriptBodyDependency.findMethod(classSource, fqn, desc);
-            if (reader == null) {
-                return "";
-            }
-            desc = reader.getDescriptor();
+        protected void callMethod(String ident, String fqn, String method, String params) {
+            try {
+                MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
+                MethodReader reader = JavaScriptBodyDependency.findMethod(classSource, fqn, desc);
+                if (reader == null) {
+                    return;
+                }
+                desc = reader.getDescriptor();
 
-            StringBuilder sb = new StringBuilder();
-            sb.append("(function(");
-            if (ident != null) {
-                sb.append("$this");
-            }
-            for (int i = 0; i < desc.parameterCount(); ++i) {
-                if (ident != null || i > 0) {
-                    sb.append(", ");
+                writer.append("(function(");
+                if (ident != null) {
+                    writer.append("$this");
                 }
-                sb.append("p").append(i);
-            }
-            sb.append(") { return ").append(naming.getFullNameFor(JavaScriptConvGenerator.toJsMethod)).append("(");
-            if (ident == null) {
-                sb.append(naming.getFullNameFor(reader.getReference()));
-            } else {
-                sb.append("$this.").append(naming.getNameFor(desc));
-            }
-            sb.append("(");
-            for (int i = 0; i < desc.parameterCount(); ++i) {
-                if (i > 0) {
-                    sb.append(", ");
+                for (int i = 0; i < desc.parameterCount(); ++i) {
+                    if (ident != null || i > 0) {
+                        writer.append(",").ws();
+                    }
+                    writer.append("p").append(i);
                 }
-                ValueType paramType = simplifyParamType(desc.parameterType(i));
-                sb.append(naming.getFullNameFor(JavaScriptConvGenerator.fromJsMethod)).append("(p").append(i)
-                        .append(", ")
-                        .append(context.typeToClassString(paramType)).append(")");
+                writer.append(")").ws().append("{").ws().append("return ")
+                        .appendMethodBody(JavaScriptConvGenerator.toJsMethod).append("(");
+                if (ident == null) {
+                    writer.appendMethodBody(reader.getReference());
+                } else {
+                    writer.append("$this.").appendMethod(desc);
+                }
+                writer.append("(");
+                for (int i = 0; i < desc.parameterCount(); ++i) {
+                    if (i > 0) {
+                        writer.append(",").ws();
+                    }
+                    ValueType paramType = simplifyParamType(desc.parameterType(i));
+                    writer.appendMethodBody(JavaScriptConvGenerator.fromJsMethod).append("(p").append(i)
+                            .append(",").ws();
+                    context.typeToClassString(writer, paramType);
+                    writer.append(")");
+                }
+                writer.append("));").ws().append("})(");
+                if (ident != null) {
+                    writer.append(ident);
+                }
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            sb.append(")); })(");
-            if (ident != null) {
-                sb.append(ident);
+        }
+
+        @Override
+        protected void append(String text) {
+            try {
+                writer.append(text);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
             }
-            return sb.toString();
+        }
+
+        @Override
+        protected void reportDiagnostic(String text) {
+            diagnostics.error(new CallLocation(methodReference), text);
         }
 
         private ValueType simplifyParamType(ValueType type) {

@@ -16,6 +16,7 @@
 package org.teavm.backend.javascript.codegen;
 
 import java.io.IOException;
+import org.teavm.backend.javascript.rendering.Renderer;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -101,11 +102,12 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter appendClass(String cls) throws IOException {
+        appendScopeIfNecessary();
         return append(naming.getNameFor(cls));
     }
 
     public SourceWriter appendClass(Class<?> cls) throws IOException {
-        return append(naming.getNameFor(cls.getName()));
+        return appendClass(cls.getName());
     }
 
     public SourceWriter appendField(FieldReference field) throws IOException {
@@ -113,7 +115,7 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter appendStaticField(FieldReference field) throws IOException {
-        appendClassScopeIfNecessary(field.getClassName());
+        appendScopeIfNecessary();
         return append(naming.getFullNameFor(field));
     }
 
@@ -126,7 +128,7 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter appendMethodBody(MethodReference method) throws IOException {
-        appendClassScopeIfNecessary(method.getClassName());
+        appendScopeIfNecessary();
         return append(naming.getFullNameFor(method));
     }
 
@@ -143,18 +145,18 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter appendInit(MethodReference method) throws IOException {
-        appendClassScopeIfNecessary(method.getClassName());
+        appendScopeIfNecessary();
         return append(naming.getNameForInit(method));
     }
 
     public SourceWriter appendClassInit(String className) throws IOException {
-        appendClassScopeIfNecessary(className);
+        appendScopeIfNecessary();
         return append(naming.getNameForClassInit(className));
     }
 
-    private void appendClassScopeIfNecessary(String className) throws IOException {
+    private void appendScopeIfNecessary() throws IOException {
         if (classScoped) {
-            append(naming.getNameFor(className)).append(".");
+            append(Renderer.CONTAINER_OBJECT).append(".");
         }
     }
 

@@ -60,6 +60,7 @@ import org.teavm.vm.RenderingException;
 import org.teavm.vm.TeaVMProgressFeedback;
 
 public class Renderer implements RenderingManager {
+    public static final String CONTAINER_OBJECT = "$java";
     private final NamingStrategy naming;
     private final SourceWriter writer;
     private final ListableClassReaderSource classSource;
@@ -198,8 +199,9 @@ public class Renderer implements RenderingManager {
         try {
             for (PostponedFieldInitializer initializer : postponedFieldInitializers) {
                 int start = writer.getOffset();
-                writer.appendStaticField(initializer.field).ws().append("=").ws()
-                        .append(context.constantToString(initializer.value)).append(";").softNewLine();
+                writer.appendStaticField(initializer.field).ws().append("=").ws();
+                context.constantToString(writer, initializer.value);
+                writer.append(";").softNewLine();
                 int sz = writer.getOffset() - start;
                 appendClassSize(initializer.field.getClassName(), sz);
             }
@@ -299,7 +301,8 @@ public class Renderer implements RenderingManager {
         String jsName = naming.getNameFor(cls.getName());
         debugEmitter.addClass(jsName, cls.getName(), cls.getParentName());
         try {
-            writer.append("function " + jsName + "()").ws().append("{")
+            renderFunctionDeclaration(jsName);
+            writer.append("()").ws().append("{")
                     .indent().softNewLine();
             boolean thisAliased = false;
             List<FieldNode> nonStaticFields = new ArrayList<>();
@@ -326,7 +329,9 @@ public class Renderer implements RenderingManager {
                 }
                 FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
                 writer.append(thisAliased ? "a" : "this").append(".").appendField(fieldRef).ws()
-                        .append("=").ws().append(context.constantToString(value)).append(";").softNewLine();
+                        .append("=").ws();
+                context.constantToString(writer, value);
+                writer.append(";").softNewLine();
                 debugEmitter.addField(field.getName(), naming.getNameFor(fieldRef));
             }
 
@@ -334,7 +339,11 @@ public class Renderer implements RenderingManager {
                 writer.append("this.$id$").ws().append('=').ws().append("0;").softNewLine();
             }
 
-            writer.outdent().append("}").newLine();
+            writer.outdent().append("}");
+            if (classScoped) {
+                writer.append(";");
+            }
+            writer.newLine();
 
             for (FieldNode field : staticFields) {
                 Object value = field.getInitialValue();
@@ -343,17 +352,18 @@ public class Renderer implements RenderingManager {
                 }
                 FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
                 if (value instanceof String) {
-                    context.constantToString(value);
+                    context.lookupString((String) value);
                     postponedFieldInitializers.add(new PostponedFieldInitializer(fieldRef, (String) value));
                     value = null;
                 }
                 if (classScoped) {
-                    writer.append(jsName).append(".");
+                    writer.append(CONTAINER_OBJECT).append(".");
                 } else {
                     writer.append("var ");
                 }
-                writer.append(naming.getFullNameFor(fieldRef)).ws().append("=").ws()
-                        .append(context.constantToString(value)).append(";").softNewLine();
+                writer.append(naming.getFullNameFor(fieldRef)).ws().append("=").ws();
+                context.constantToString(writer, value);
+                writer.append(";").softNewLine();
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
@@ -373,14 +383,14 @@ public class Renderer implements RenderingManager {
                 for (MethodNode method : cls.getMethods()) {
                     if (!method.getModifiers().contains(ElementModifier.STATIC)) {
                         if (method.getReference().getName().equals("<init>")) {
-                            renderInitializer(cls.getName(), method);
+                            renderInitializer(method);
                         }
                     }
                 }
             }
 
             for (MethodNode method : cls.getMethods()) {
-                renderBody(cls.getName(), method);
+                renderBody(method);
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
@@ -392,12 +402,12 @@ public class Renderer implements RenderingManager {
             throws IOException {
         boolean isAsync = asyncMethods.contains(clinit.getReference());
 
+        String clinitCalled = naming.getNameFor(cls.getName() + "_$clinitCalled");
         if (isAsync) {
-            writer.append("var ").appendClass(cls.getName()).append("_$clinitCalled").ws().append("=").ws()
-                    .append("false;").softNewLine();
+            writer.append("var ").append(clinitCalled).ws().append("=").ws().append("false;").softNewLine();
         }
 
-        renderFunctionDeclaration(cls.getName(), naming.getNameForClassInit(cls.getName()));
+        renderFunctionDeclaration(naming.getNameForClassInit(cls.getName()));
         writer.append("()").ws()
                 .append("{").softNewLine().indent();
 
@@ -417,8 +427,7 @@ public class Renderer implements RenderingManager {
             renderAsyncPrologue();
 
             writer.append("case 0:").indent().softNewLine();
-            writer.appendClass(cls.getName()).append("_$clinitCalled").ws().append('=').ws().append("true;")
-                    .softNewLine();
+            writer.append(clinitCalled).ws().append('=').ws().append("true;").softNewLine();
         } else {
             renderEraseClinit(cls);
         }
@@ -690,10 +699,10 @@ public class Renderer implements RenderingManager {
         return null;
     }
 
-    private void renderInitializer(String className, MethodNode method) throws IOException {
+    private void renderInitializer(MethodNode method) throws IOException {
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
-        renderFunctionDeclaration(className, naming.getNameForInit(ref));
+        renderFunctionDeclaration(naming.getNameForInit(ref));
         writer.append("(");
         for (int i = 0; i < ref.parameterCount(); ++i) {
             if (i > 0) {
@@ -774,7 +783,7 @@ public class Renderer implements RenderingManager {
         writer.append(");").ws().append("}");
     }
 
-    private void renderBody(String className, MethodNode method) throws IOException {
+    private void renderBody(MethodNode method) throws IOException {
         StatementRenderer statementRenderer = new StatementRenderer(context, writer);
         statementRenderer.setCurrentMethod(method);
 
@@ -782,7 +791,7 @@ public class Renderer implements RenderingManager {
         debugEmitter.emitMethod(ref.getDescriptor());
         String name = naming.getFullNameFor(ref);
 
-        renderFunctionDeclaration(className, name);
+        renderFunctionDeclaration(name);
         writer.append("(");
         int startParam = 0;
         if (method.getModifiers().contains(ElementModifier.STATIC)) {
@@ -808,9 +817,9 @@ public class Renderer implements RenderingManager {
         longLibraryUsed |= statementRenderer.isLongLibraryUsed();
     }
 
-    private void renderFunctionDeclaration(String className, String name) throws IOException {
+    private void renderFunctionDeclaration(String name) throws IOException {
         if (classScoped) {
-            writer.appendClass(className).append(".").append(name).ws().append("=").ws();
+            writer.append(CONTAINER_OBJECT).append(".").append(name).ws().append("=").ws();
         }
         writer.append("function");
         if (!classScoped) {
@@ -1074,8 +1083,12 @@ public class Renderer implements RenderingManager {
         }
 
         @Override
-        public String typeToClassString(ValueType type) {
-            return context.typeToClsString(type);
+        public void typeToClassString(SourceWriter writer, ValueType type) {
+            try {
+                context.typeToClsString(writer, type);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override

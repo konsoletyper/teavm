@@ -16,6 +16,7 @@
 package org.teavm.backend.javascript.spi;
 
 import java.util.Properties;
+import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
@@ -42,7 +43,7 @@ public interface GeneratorContext extends ServiceRepository {
 
     Diagnostics getDiagnostics();
 
-    String typeToClassString(ValueType type);
+    void typeToClassString(SourceWriter writer, ValueType type);
 
     void useLongLibrary();
 }

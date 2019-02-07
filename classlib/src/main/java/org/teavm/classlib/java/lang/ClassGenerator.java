@@ -147,7 +147,7 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
         writer.appendClass(className).append(".$meta.fields").ws().append('=').ws().append('[').indent();
 
         generateCreateMembers(writer, cls.getFields(), field -> {
-            appendProperty(writer, "type", false, () -> writer.append(context.typeToClassString(field.getType())));
+            appendProperty(writer, "type", false, () -> context.typeToClassString(writer, field.getType()));
 
             appendProperty(writer, "getter", false, () -> {
                 if (accessibleFields != null && accessibleFields.contains(field.getName())) {
@@ -188,13 +188,13 @@ public class ClassGenerator implements Generator, Injector, DependencyPlugin {
                     if (i > 0) {
                         writer.append(',').ws();
                     }
-                    writer.append(context.typeToClassString(method.parameterType(i)));
+                    context.typeToClassString(writer, method.parameterType(i));
                 }
                 writer.append(']');
             });
 
             appendProperty(writer, "returnType", false, () -> {
-                writer.append(context.typeToClassString(method.getResultType()));
+                context.typeToClassString(writer, method.getResultType());
             });
 
             appendProperty(writer, "callable", false, () -> {

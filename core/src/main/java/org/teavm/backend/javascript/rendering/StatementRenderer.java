@@ -1006,11 +1006,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            String str = context.constantToString(expr.getValue());
-            if (str.startsWith("-")) {
-                writer.append(' ');
-            }
-            writer.append(str);
+            context.constantToString(writer, expr.getValue());
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1198,7 +1194,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
             precedence = Precedence.FUNCTION_CALL;
 
-            writer.append("new ").append(naming.getNameFor(expr.getConstructedClass()));
+            writer.append("new ").appendClass(expr.getConstructedClass());
             if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
                 writer.append(')');
             }
@@ -1270,8 +1266,9 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                         break;
                 }
             } else {
-                writer.appendFunction("$rt_createArray").append("(").append(context.typeToClsString(expr.getType()))
-                        .append(",").ws();
+                writer.appendFunction("$rt_createArray").append("(");
+                context.typeToClsString(writer, expr.getType());
+                writer.append(",").ws();
                 precedence = Precedence.min();
                 expr.getLength().acceptVisitor(this);
                 writer.append(")");
@@ -1322,8 +1319,9 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                         break;
                 }
             } else {
-                writer.append("$rt_createMultiArray(").append(context.typeToClsString(expr.getType()))
-                        .append(",").ws();
+                writer.append("$rt_createMultiArray(");
+                context.typeToClsString(writer, expr.getType());
+                writer.append(",").ws();
             }
             writer.append("[");
             boolean first = true;
@@ -1375,7 +1373,9 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             writer.appendFunction("$rt_isInstance").append("(");
             precedence = Precedence.min();
             expr.getExpr().acceptVisitor(this);
-            writer.append(",").ws().append(context.typeToClsString(expr.getType())).append(")");
+            writer.append(",").ws();
+            context.typeToClsString(writer, expr.getType());
+            writer.append(")");
             if (expr.getLocation() != null) {
                 popLocation();
             }
@@ -1554,16 +1554,16 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
         @Override
         public void writeType(ValueType type) throws IOException {
-            writer.append(context.typeToClsString(type));
+            context.typeToClsString(writer, type);
         }
 
         @Override
-        public void writeExpr(Expr expr) throws IOException {
+        public void writeExpr(Expr expr) {
             writeExpr(expr, Precedence.GROUPING);
         }
 
         @Override
-        public void writeExpr(Expr expr, Precedence precedence) throws IOException {
+        public void writeExpr(Expr expr, Precedence precedence) {
             StatementRenderer.this.precedence = precedence;
             expr.acceptVisitor(StatementRenderer.this);
         }

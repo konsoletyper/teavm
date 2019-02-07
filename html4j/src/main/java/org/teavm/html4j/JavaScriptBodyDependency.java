@@ -149,7 +149,7 @@ public class JavaScriptBodyDependency extends AbstractDependencyListener {
         }
 
         @Override
-        protected CharSequence callMethod(String ident, String fqn, String method, String params) {
+        protected void callMethod(String ident, String fqn, String method, String params) {
             MethodDescriptor desc = MethodDescriptor.parse(method + params + "V");
             MethodReference methodRef = new MethodReference(fqn, desc);
 
@@ -170,8 +170,14 @@ public class JavaScriptBodyDependency extends AbstractDependencyListener {
             } else {
                 allClassesNode.addConsumer(new VirtualCallbackConsumer(agent, methodRef));
             }
+        }
 
-            return "";
+        @Override
+        protected void append(String text) {
+        }
+
+        @Override
+        protected void reportDiagnostic(String text) {
         }
     }
 
