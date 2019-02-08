@@ -48,4 +48,10 @@ public interface HTMLImageElement extends HTMLElement, CanvasImageSource {
 
     @JSProperty
     void setSrc(String src);
+
+    @JSProperty
+    String getCrossOrigin();
+
+    @JSProperty
+    void setCrossOrigin(String crossOrigin);
 }

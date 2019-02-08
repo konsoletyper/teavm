@@ -25,11 +25,17 @@ public final class JSObjects {
     @JSBody(params = "object", script = "return Object.getOwnPropertyNames(object);")
     public static native String[] getOwnPropertyNames(JSObject object);
 
-    @JSBody(script = "return Object.create(null);")
+    @JSBody(script = "return {};")
     public static native <T extends JSObject> T create();
+
+    @JSBody(script = "return Object.create(null);")
+    public static native <T extends JSObject> T createWithoutProto();
 
     @JSBody(params = "object", script = "return typeof object === 'undefined';")
     public static native boolean isUndefined(JSObject object);
+
+    @JSBody(script = "return void 0;")
+    public static native JSObject undefined();
 
     @JSBody(params = "object", script = "return typeof object;")
     public static native String typeOf(JSObject object);

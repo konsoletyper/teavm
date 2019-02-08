@@ -188,6 +188,4 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     NodeList<? extends HTMLElement> querySelectorAll(String selectors);
 
     void requestPointerLock();
-
-    void exitPointerLock();
 }

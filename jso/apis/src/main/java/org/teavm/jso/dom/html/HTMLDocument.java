@@ -88,4 +88,6 @@ public interface HTMLDocument extends Document, EventTarget {
 
     @JSProperty
     HTMLElement getPointerLockElement();
+
+    void exitPointerLock();
 }
