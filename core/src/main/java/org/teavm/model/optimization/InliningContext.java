@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,28 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.dependency;
+package org.teavm.model.optimization;
 
 import org.teavm.model.MethodReference;
 
-public interface MethodDependencyInfo {
-    ValueDependencyInfo[] getVariables();
+public interface InliningContext {
+    boolean isUsedOnce(MethodReference method);
 
-    int getVariableCount();
-
-    ValueDependencyInfo getVariable(int index);
-
-    int getParameterCount();
-
-    ValueDependencyInfo getResult();
-
-    ValueDependencyInfo getThrown();
-
-    MethodReference getReference();
-
-    boolean isUsed();
-
-    boolean isCalled();
-
-    boolean isMissing();
+    int getDepth();
 }

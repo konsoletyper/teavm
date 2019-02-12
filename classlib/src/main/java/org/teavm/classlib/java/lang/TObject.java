@@ -309,7 +309,7 @@ public class TObject {
     @Async
     private native void waitImpl(long timeout, int nanos) throws TInterruptedException;
 
-    public final void waitImpl(long timeout, int nanos, final AsyncCallback<Void> callback) {
+    public final void waitImpl(long timeout, int nanos, AsyncCallback<Void> callback) {
         final NotifyListenerImpl listener = new NotifyListenerImpl(this, callback, monitor.count);
         monitor.notifyListeners.add(listener);
         TThread.currentThread().interruptHandler = listener;

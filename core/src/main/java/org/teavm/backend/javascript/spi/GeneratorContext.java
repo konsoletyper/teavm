@@ -18,6 +18,7 @@ package org.teavm.backend.javascript.spi;
 import java.util.Properties;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.common.ServiceRepository;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ListableClassReaderSource;
@@ -42,6 +43,8 @@ public interface GeneratorContext extends ServiceRepository {
     boolean isAsyncFamily(MethodReference method);
 
     Diagnostics getDiagnostics();
+
+    DependencyInfo getDependency();
 
     void typeToClassString(SourceWriter writer, ValueType type);
 

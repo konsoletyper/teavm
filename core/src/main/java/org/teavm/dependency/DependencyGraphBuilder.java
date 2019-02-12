@@ -337,7 +337,7 @@ class DependencyGraphBuilder {
             }
             MethodDependency methodDep = dependencyAnalyzer.linkMethod(method);
             methodDep.addLocation(callLocation);
-            methodDep.use();
+            methodDep.use(false);
             if (methodDep.isMissing()) {
                 return;
             }

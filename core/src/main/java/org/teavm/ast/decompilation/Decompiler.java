@@ -239,6 +239,10 @@ public class Decompiler {
                     || methodsToSkip.contains(method.getReference())) {
                 continue;
             }
+            if (!method.hasModifier(ElementModifier.NATIVE) && method.getProgram() == null) {
+                continue;
+            }
+
             MethodNode methodNode = decompile(method);
             clsNode.getMethods().add(methodNode);
         }

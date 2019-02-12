@@ -60,6 +60,8 @@ import org.teavm.cache.MethodNodeCache;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.debugging.information.SourceLocation;
+import org.teavm.dependency.AbstractDependencyListener;
+import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.DependencyType;
@@ -100,6 +102,8 @@ import org.teavm.vm.spi.TeaVMHostExtension;
 public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private static final NumberFormat STATS_NUM_FORMAT = new DecimalFormat("#,##0");
     private static final NumberFormat STATS_PERCENT_FORMAT = new DecimalFormat("0.000 %");
+    private static final MethodReference CURRENT_THREAD = new MethodReference(Thread.class,
+            "currentThread", Thread.class);
 
     private TeaVMTargetController controller;
     private boolean minifying = true;
@@ -116,7 +120,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private ClassInitializerInsertionTransformer clinitInsertionTransformer;
     private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
     private boolean classScoped;
-
     @Override
     public List<ClassHolderTransformer> getTransformers() {
         return Collections.emptyList();
@@ -261,6 +264,17 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         if (stackTraceIncluded) {
             includeStackTraceMethods(dependencyAnalyzer);
         }
+
+        dependencyAnalyzer.addDependencyListener(new AbstractDependencyListener() {
+            @Override
+            public void methodReached(DependencyAgent agent, MethodDependency method) {
+                if (method.getReference().equals(CURRENT_THREAD)) {
+                    method.use();
+                }
+                agent.linkMethod(new MethodReference(Thread.class, "setCurrentThread", Thread.class, void.class))
+                        .use();
+            }
+        });
     }
 
     public static void includeStackTraceMethods(DependencyAnalyzer dependencyAnalyzer) {

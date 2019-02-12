@@ -45,6 +45,7 @@ import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReader;
@@ -845,6 +846,11 @@ public class Renderer implements RenderingManager {
 
         MethodBodyRenderer(StatementRenderer statementRenderer) {
             this.statementRenderer = statementRenderer;
+        }
+
+        @Override
+        public DependencyInfo getDependency() {
+            return context.getDependencyInfo();
         }
 
         @Override

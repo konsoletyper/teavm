@@ -35,6 +35,7 @@ public class MethodDependency implements MethodDependencyInfo {
     MethodHolder method;
     private MethodReference reference;
     boolean used;
+    boolean external;
     DependencyPlugin dependencyPlugin;
     boolean dependencyPluginAttached;
     private List<LocationListener> locationListeners;
@@ -151,11 +152,23 @@ public class MethodDependency implements MethodDependencyInfo {
     }
 
     public void use() {
+        use(true);
+    }
+
+    void use(boolean external) {
         if (!used) {
             used = true;
             if (!isMissing()) {
                 dependencyAnalyzer.scheduleMethodAnalysis(this);
             }
         }
+        if (external) {
+            this.external = true;
+        }
+    }
+
+    @Override
+    public boolean isCalled() {
+        return external;
     }
 }

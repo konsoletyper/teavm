@@ -26,16 +26,15 @@ import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.async.AsyncCallback;
 
 public class AsyncMethodGenerator implements Generator, DependencyPlugin, VirtualMethodContributor {
-    private static final MethodReference completeMethod = new MethodReference(AsyncCallback.class, "complete",
-            Object.class, void.class);
-    private static final MethodReference errorMethod = new MethodReference(AsyncCallback.class, "error",
-            Throwable.class, void.class);
+    private static final MethodDescriptor completeMethod = new MethodDescriptor("complete", Object.class, void.class);
+    private static final MethodDescriptor errorMethod = new MethodDescriptor("error", Throwable.class, void.class);
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
@@ -52,13 +51,13 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
         writer.outdent().append("}").softNewLine();
 
         writer.append("var callback").ws().append("=").ws().append("function()").ws().append("{};").softNewLine();
-        writer.append("callback.").appendMethod(completeMethod.getDescriptor()).ws().append("=").ws()
+        writer.append("callback.").appendMethod(completeMethod).ws().append("=").ws()
                 .append("function(val)").ws().append("{").indent().softNewLine();
         writer.append("thread.attribute").ws().append('=').ws().append("val;").softNewLine();
         writer.append("$rt_setThread(javaThread);").softNewLine();
         writer.append("thread.resume();").softNewLine();
         writer.outdent().append("};").softNewLine();
-        writer.append("callback.").appendMethod(errorMethod.getDescriptor()).ws().append("=").ws()
+        writer.append("callback.").appendMethod(errorMethod).ws().append("=").ws()
                 .append("function(e)").ws().append("{").indent().softNewLine();
         writer.append("thread.attribute").ws().append('=').ws().append("$rt_exception(e);").softNewLine();
         writer.append("$rt_setThread(javaThread);").softNewLine();
@@ -78,7 +77,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
         }
         writer.append("callback);").softNewLine();
         writer.outdent().append("}").ws().append("catch($e)").ws().append("{").indent().softNewLine();
-        writer.append("callback.").appendMethod(errorMethod.getDescriptor()).append("($rt_exception($e));")
+        writer.append("callback.").appendMethod(errorMethod).append("($rt_exception($e));")
                 .softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.outdent().append("});").softNewLine();
@@ -127,6 +126,13 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin, Virtua
 
     @Override
     public boolean isVirtual(VirtualMethodContributorContext context, MethodReference methodRef) {
-        return methodRef.equals(completeMethod) || methodRef.equals(errorMethod);
+        ClassReader cls = context.getClassSource().get(methodRef.getClassName());
+        if (cls == null) {
+            return false;
+        }
+        if (!cls.getInterfaces().contains(AsyncCallback.class.getName())) {
+            return false;
+        }
+        return methodRef.getDescriptor().equals(completeMethod) || methodRef.getDescriptor().equals(errorMethod);
     }
 }

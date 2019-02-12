@@ -40,7 +40,7 @@ class FastInstructionAnalyzer extends AbstractInstructionAnalyzer {
         }
         MethodDependency methodDep = dependencyAnalyzer.linkMethod(method);
         methodDep.addLocation(callLocation);
-        methodDep.use();
+        methodDep.use(false);
     }
 
     @Override

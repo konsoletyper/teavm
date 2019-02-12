@@ -70,9 +70,11 @@ import org.teavm.model.ValueType;
 import org.teavm.model.optimization.ArrayUnwrapMotion;
 import org.teavm.model.optimization.ClassInitElimination;
 import org.teavm.model.optimization.ConstantConditionElimination;
+import org.teavm.model.optimization.DefaultInliningStrategy;
 import org.teavm.model.optimization.Devirtualization;
 import org.teavm.model.optimization.GlobalValueNumbering;
 import org.teavm.model.optimization.Inlining;
+import org.teavm.model.optimization.InliningStrategy;
 import org.teavm.model.optimization.LoopInvariantMotion;
 import org.teavm.model.optimization.MethodOptimization;
 import org.teavm.model.optimization.MethodOptimizationContext;
@@ -430,8 +432,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         compileProgressValue = 0;
         compileProgressLimit = dependencyAnalyzer.getReachableClasses().size();
         if (optimizationLevel == TeaVMOptimizationLevel.ADVANCED) {
-            compileProgressLimit *= 3;
-        } else if (optimizationLevel == TeaVMOptimizationLevel.FULL) {
             compileProgressLimit *= 4;
         } else {
             compileProgressLimit *= 2;
@@ -538,34 +538,44 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private void inline(ListableClassHolderSource classes) {
-        if (optimizationLevel != TeaVMOptimizationLevel.FULL) {
+        if (optimizationLevel != TeaVMOptimizationLevel.ADVANCED) {
             return;
         }
 
-        Map<MethodReference, Program> inlinedPrograms = new HashMap<>();
-        Inlining inlining = new Inlining(new ClassHierarchy(classes), dependencyAnalyzer);
-        for (String className : classes.getClassNames()) {
-            ClassHolder cls = classes.get(className);
-            for (MethodHolder method : cls.getMethods()) {
-                if (method.getProgram() != null) {
-                    Program program = ProgramUtils.copy(method.getProgram());
+        InliningStrategy inliningStrategy;
+        if (optimizationLevel == TeaVMOptimizationLevel.FULL) {
+            inliningStrategy = new DefaultInliningStrategy(17, 7, false);
+        } else {
+            inliningStrategy = new DefaultInliningStrategy(100, 5, true);
+        }
+
+        Inlining inlining = new Inlining(new ClassHierarchy(classes), dependencyAnalyzer, inliningStrategy,
+                classes, this::isExternal);
+        List<MethodReference> methodReferences = inlining.getOrder();
+        int classCount = classes.getClassNames().size();
+        int initialValue = compileProgressValue;
+        for (int i = 0; i < methodReferences.size(); i++) {
+            MethodReference methodReference = methodReferences.get(i);
+            ClassHolder cls = classes.get(methodReference.getClassName());
+            MethodHolder method = cls.getMethod(methodReference.getDescriptor());
+
+            if (method.getProgram() != null) {
+                if (!inlining.hasUsages(methodReference)) {
+                    method.setProgram(null);
+                } else {
+                    Program program = method.getProgram();
                     MethodOptimizationContextImpl context = new MethodOptimizationContextImpl(method);
                     inlining.apply(program, method.getReference());
                     new UnusedVariableElimination().optimize(context, program);
-                    inlinedPrograms.put(method.getReference(), program);
                 }
             }
-            reportCompileProgress(++compileProgressValue);
-            if (wasCancelled()) {
-                break;
-            }
-        }
 
-        for (String className : classes.getClassNames()) {
-            ClassHolder cls = classes.get(className);
-            for (MethodHolder method : cls.getMethods()) {
-                if (method.getProgram() != null) {
-                    method.setProgram(inlinedPrograms.get(method.getReference()));
+            int newProgress = initialValue + classCount * i / methodReferences.size();
+            if (newProgress > compileProgressValue) {
+                compileProgressValue = newProgress;
+                reportCompileProgress(++compileProgressValue);
+                if (wasCancelled()) {
+                    break;
                 }
             }
         }
@@ -716,6 +726,22 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 .collect(Collectors.toSet());
     }
 
+    boolean isExternal(MethodReference method) {
+        MethodDependencyInfo dep = dependencyAnalyzer.getMethod(method);
+        if (dep != null && dep.isCalled()) {
+            return true;
+        }
+        return isVirtual(method);
+    }
+
+    boolean isVirtual(MethodReference method) {
+        if (method.getName().equals("<init>") || method.getName().equals("<clinit>")) {
+            return false;
+        }
+        return virtualMethods == null || virtualMethods.contains(method)
+                || additionalVirtualMethods.stream().anyMatch(p -> p.test(method));
+    }
+
     private TeaVMTargetController targetController = new TeaVMTargetController() {
         @Override
         public boolean wasCancelled() {
@@ -774,11 +800,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         @Override
         public boolean isVirtual(MethodReference method) {
-            if (method.getName().equals("<init>") || method.getName().equals("<clinit>")) {
-                return false;
-            }
-            return virtualMethods == null || virtualMethods.contains(method)
-                    || additionalVirtualMethods.stream().anyMatch(p -> p.test(method));
+            return TeaVM.this.isVirtual(method);
         }
 
         @Override
