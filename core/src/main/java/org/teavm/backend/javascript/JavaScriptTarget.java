@@ -35,6 +35,10 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
 import org.teavm.ast.ClassNode;
+import org.teavm.ast.MethodNode;
+import org.teavm.ast.RegularMethodNode;
+import org.teavm.ast.Statement;
+import org.teavm.ast.analysis.LocationGraphBuilder;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.javascript.codegen.AliasProvider;
 import org.teavm.backend.javascript.codegen.DefaultAliasProvider;
@@ -331,11 +335,16 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         renderer.setMinifying(minifying);
         renderer.setProgressConsumer(controller::reportProgress);
         if (debugEmitter != null) {
-            for (String className : classes.getClassNames()) {
-                ClassHolder cls = classes.get(className);
-                for (MethodHolder method : cls.getMethods()) {
-                    if (method.getProgram() != null) {
-                        emitCFG(debugEmitter, method.getProgram());
+            for (ClassNode classNode : clsNodes) {
+                ClassHolder cls = classes.get(classNode.getName());
+                for (MethodNode methodNode : classNode.getMethods()) {
+                    if (methodNode instanceof RegularMethodNode) {
+                        emitCFG(debugEmitter, ((RegularMethodNode) methodNode).getBody());
+                    } else {
+                        MethodHolder method = cls.getMethod(methodNode.getReference().getDescriptor());
+                        if (method != null && method.getProgram() != null) {
+                            emitCFG(debugEmitter, method.getProgram());
+                        }
                     }
                 }
                 if (controller.wasCancelled()) {
@@ -575,7 +584,14 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     private void emitCFG(DebugInformationEmitter emitter, Program program) {
-        Map<TextLocation, TextLocation[]> cfg = ProgramUtils.getLocationCFG(program);
+        emitCFG(emitter, ProgramUtils.getLocationCFG(program));
+    }
+
+    private void emitCFG(DebugInformationEmitter emitter, Statement program) {
+        emitCFG(emitter, LocationGraphBuilder.build(program));
+    }
+
+    private void emitCFG(DebugInformationEmitter emitter, Map<TextLocation, TextLocation[]> cfg) {
         for (Map.Entry<TextLocation, TextLocation[]> entry : cfg.entrySet()) {
             SourceLocation location = map(entry.getKey());
             SourceLocation[] successors = new SourceLocation[entry.getValue().length];

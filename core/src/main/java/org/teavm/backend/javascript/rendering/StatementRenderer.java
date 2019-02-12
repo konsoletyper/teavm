@@ -276,21 +276,16 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     public void visit(WhileStatement statement) {
         try {
             debugEmitter.emitStatementStart();
-            if (statement.getCondition() != null && statement.getCondition().getLocation() != null) {
-                pushLocation(statement.getCondition().getLocation());
-            }
             if (statement.getId() != null) {
                 writer.append(mapBlockId(statement.getId())).append(":").ws();
             }
-            writer.append("while").ws().append("(");
+            writer.append("while");
+            writer.ws().append("(");
             if (statement.getCondition() != null) {
                 prevCallSite = debugEmitter.emitCallSite();
                 precedence = Precedence.min();
                 statement.getCondition().acceptVisitor(this);
                 debugEmitter.emitCallSite();
-                if (statement.getCondition().getLocation() != null) {
-                    popLocation();
-                }
             } else {
                 writer.append("true");
             }

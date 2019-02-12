@@ -18,15 +18,25 @@ package org.teavm.ast;
 import java.util.List;
 
 public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
+    protected void beforeVisit(Expr expr) {
+    }
+
+    protected void afterVisit(Expr expr) {
+    }
+
     @Override
     public void visit(BinaryExpr expr) {
+        beforeVisit(expr);
         expr.getFirstOperand().acceptVisitor(this);
         expr.getSecondOperand().acceptVisitor(this);
+        afterVisit(expr);
     }
 
     @Override
     public void visit(UnaryExpr expr) {
+        beforeVisit(expr);
         expr.getOperand().acceptVisitor(this);
+        afterVisit(expr);
     }
 
     @Override
@@ -39,9 +49,11 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ConditionalExpr expr) {
+        beforeVisit(expr);
         expr.getCondition().acceptVisitor(this);
         expr.getConsequent().acceptVisitor(this);
         expr.getAlternative().acceptVisitor(this);
+        afterVisit(expr);
     }
 
     public void visit(List<Statement> statements) {
@@ -57,6 +69,8 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ConstantExpr expr) {
+        beforeVisit(expr);
+        afterVisit(expr);
     }
 
     @Override
@@ -68,12 +82,16 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(VariableExpr expr) {
+        beforeVisit(expr);
+        afterVisit(expr);
     }
 
     @Override
     public void visit(SubscriptExpr expr) {
+        beforeVisit(expr);
         expr.getArray().acceptVisitor(this);
         expr.getIndex().acceptVisitor(this);
+        afterVisit(expr);
     }
 
     @Override
@@ -87,7 +105,9 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(UnwrapArrayExpr expr) {
+        beforeVisit(expr);
         expr.getArray().acceptVisitor(this);
+        afterVisit(expr);
     }
 
     @Override
@@ -100,9 +120,11 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(InvocationExpr expr) {
+        beforeVisit(expr);
         for (Expr argument : expr.getArguments()) {
             argument.acceptVisitor(this);
         }
+        afterVisit(expr);
     }
 
     @Override
@@ -112,9 +134,11 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(QualificationExpr expr) {
+        beforeVisit(expr);
         if (expr.getQualified() != null) {
             expr.getQualified().acceptVisitor(this);
         }
+        afterVisit(expr);
     }
 
     @Override
@@ -123,6 +147,8 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(NewExpr expr) {
+        beforeVisit(expr);
+        afterVisit(expr);
     }
 
     @Override
@@ -131,14 +157,18 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(NewArrayExpr expr) {
+        beforeVisit(expr);
         expr.getLength().acceptVisitor(this);
+        afterVisit(expr);
     }
 
     @Override
     public void visit(NewMultiArrayExpr expr) {
+        beforeVisit(expr);
         for (Expr dimension : expr.getDimensions()) {
             dimension.acceptVisitor(this);
         }
+        afterVisit(expr);
     }
 
     @Override
@@ -150,7 +180,9 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(InstanceOfExpr expr) {
+        beforeVisit(expr);
         expr.getExpr().acceptVisitor(this);
+        afterVisit(expr);
     }
 
     @Override
@@ -160,7 +192,9 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(CastExpr expr) {
+        beforeVisit(expr);
         expr.getValue().acceptVisitor(this);
+        afterVisit(expr);
     }
 
     @Override
@@ -169,7 +203,9 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(PrimitiveCastExpr expr) {
+        beforeVisit(expr);
         expr.getValue().acceptVisitor(this);
+        afterVisit(expr);
     }
 
     @Override

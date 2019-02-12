@@ -209,6 +209,10 @@ class DebugInformationWriter {
     }
 
     private void writeCFG(RecordArray mapping) throws IOException {
+        if (mapping == null) {
+            writeUnsignedNumber(0);
+            return;
+        }
         writeUnsignedNumber(mapping.size());
         writeRle(mapping.cut(0));
         IntegerArray sizes = new IntegerArray(1);
