@@ -334,6 +334,7 @@ public class ChromeRDPDebugger implements JavaScriptDebugger, ChromeRDPExchangeC
         RDPNativeBreakpoint nativeBreakpoint = breakpoint.nativeBreakpoint;
         breakpoint.nativeBreakpoint = null;
         nativeBreakpoint.breakpoints.remove(breakpoint);
+        breakpoints.remove(breakpoint);
         return releaseNativeBreakpoint(nativeBreakpoint, breakpoint);
     }
 
