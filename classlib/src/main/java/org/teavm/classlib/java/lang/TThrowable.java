@@ -134,8 +134,11 @@ public class TThrowable extends RuntimeException {
     @Remove
     public native Class<?> getClass0();
 
-    @Remove
-    public native String toString0();
+    @Rename("toString")
+    public String toString0() {
+        String message = getLocalizedMessage();
+        return getClass().getName() + (message != null ? ": " + message : "");
+    }
 
     public TThrowable initCause(TThrowable cause) {
         if (this.cause != this && this.cause != null) {
@@ -155,9 +158,9 @@ public class TThrowable extends RuntimeException {
 
     public void printStackTrace(PrintStream stream) {
         stream.print(getClass().getName());
-        String message = getMessage();
+        String message = getLocalizedMessage();
         if (message != null) {
-            stream.print(": " + getMessage());
+            stream.print(": " + message);
         }
         stream.println();
         if (stackTrace != null) {
@@ -173,7 +176,12 @@ public class TThrowable extends RuntimeException {
     }
 
     public void printStackTrace(PrintWriter stream) {
-        stream.println(getClass().getName() + ": " + getMessage());
+        stream.print(getClass().getName());
+        String message = getLocalizedMessage();
+        if (message != null) {
+            stream.print(": " + message);
+        }
+        stream.println();
         if (stackTrace != null) {
             for (TStackTraceElement element : stackTrace) {
                 stream.print("  at ");
