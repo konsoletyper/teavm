@@ -40,6 +40,7 @@ public class RemoteBuildRequest implements Serializable {
     public boolean incremental;
     public String cacheDirectory;
     public boolean minifying;
+    public int maxTopLevelNames;
     public Properties properties;
     public TeaVMOptimizationLevel optimizationLevel;
     public boolean fastDependencyAnalysis;

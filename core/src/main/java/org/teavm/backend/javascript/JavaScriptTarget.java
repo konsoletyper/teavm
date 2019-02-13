@@ -119,7 +119,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
     private ClassInitializerInsertionTransformer clinitInsertionTransformer;
     private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
-    private boolean classScoped;
+    private int topLevelNameLimit = 10000;
+
     @Override
     public List<ClassHolderTransformer> getTransformers() {
         return Collections.emptyList();
@@ -197,8 +198,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         this.debugEmitter = debugEmitter;
     }
 
-    public void setClassScoped(boolean classScoped) {
-        this.classScoped = classScoped;
+    public void setTopLevelNameLimit(int topLevelNameLimit) {
+        this.topLevelNameLimit = topLevelNameLimit;
     }
 
     @Override
@@ -324,11 +325,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             return;
         }
 
-        AliasProvider aliasProvider = minifying ? new MinifyingAliasProvider() : new DefaultAliasProvider();
+        AliasProvider aliasProvider = minifying
+                ? new MinifyingAliasProvider(topLevelNameLimit)
+                : new DefaultAliasProvider(topLevelNameLimit);
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, controller.getUnprocessedClassSource());
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
         builder.setMinified(minifying);
-        builder.setClassScoped(classScoped);
         SourceWriter sourceWriter = builder.build(writer);
 
         DebugInformationEmitter debugEmitterToUse = debugEmitter;
@@ -343,8 +345,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 controller.getDependencyInfo(), m -> isVirtual(virtualMethodContributorContext, m));
         renderingContext.setMinifying(minifying);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
-                controller.getDiagnostics(), renderingContext, classScoped);
-        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, naming, sourceWriter);
+                controller.getDiagnostics(), renderingContext);
+        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes,  sourceWriter);
         renderer.setProperties(controller.getProperties());
         renderer.setMinifying(minifying);
         renderer.setProgressConsumer(controller::reportProgress);
@@ -381,10 +383,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
             renderer.prepare(clsNodes);
             runtimeRenderer.renderRuntime();
-            if (classScoped) {
-                sourceWriter.append("var ").append(Renderer.CONTAINER_OBJECT).ws().append("=").ws()
-                        .append("Object.create(null);").newLine();
-            }
+            sourceWriter.append("var ").append(renderer.getNaming().getScopeName()).ws().append("=").ws()
+                    .append("Object.create(null);").newLine();
             if (!renderer.render(clsNodes)) {
                 return;
             }
@@ -418,7 +418,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             int totalSize = sourceWriter.getOffset() - start;
             printStats(renderer, totalSize);
         } catch (IOException e) {
-            throw new RenderingException("IO Error occured", e);
+            throw new RenderingException("IO Error occurred", e);
         }
     }
 

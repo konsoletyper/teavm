@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,26 +15,12 @@
  */
 package org.teavm.backend.javascript.codegen;
 
-import org.teavm.model.FieldReference;
-import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodReference;
+public class ScopedName {
+    public final boolean scoped;
+    public final String value;
 
-public interface NamingStrategy {
-    ScopedName getNameFor(String cls);
-
-    String getNameFor(MethodDescriptor method);
-
-    ScopedName getNameForInit(MethodReference method);
-
-    ScopedName getFullNameFor(MethodReference method);
-
-    String getNameFor(FieldReference field);
-
-    ScopedName getFullNameFor(FieldReference method);
-
-    String getNameForFunction(String name);
-
-    ScopedName getNameForClassInit(String className);
-
-    String getScopeName();
+    public ScopedName(boolean scoped, String value) {
+        this.scoped = scoped;
+        this.value = value;
+    }
 }

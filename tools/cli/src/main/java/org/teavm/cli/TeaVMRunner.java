@@ -134,6 +134,13 @@ public final class TeaVMRunner {
                 .hasArg()
                 .withDescription("Minimum heap size in bytes (for C and WebAssembly)")
                 .create());
+        options.addOption(OptionBuilder
+                .withLongOpt("max-toplevel-names")
+                .withArgName("number")
+                .hasArg()
+                .withDescription("Maximum number of names kept in top-level scope ("
+                        + "other will be put in a separate object. 10000 by default.")
+                .create());
     }
 
     private TeaVMRunner(CommandLine commandLine) {
@@ -215,10 +222,15 @@ public final class TeaVMRunner {
     }
 
     private void parseJavaScriptOptions() {
-        if (commandLine.hasOption("m")) {
-            tool.setMinifying(true);
-        } else {
-            tool.setMinifying(false);
+        tool.setMinifying(commandLine.hasOption("m"));
+
+        if (commandLine.hasOption("max-toplevel-names")) {
+            try {
+                tool.setMaxTopLevelNames(Integer.parseInt(commandLine.getOptionValue("max-toplevel-names")));
+            } catch (NumberFormatException e) {
+                System.err.println("'--max-toplevel-names' must be integer number");
+                printUsage();
+            }
         }
     }
 

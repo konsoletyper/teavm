@@ -23,37 +23,37 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class MinifyingAliasProvider implements AliasProvider {
+    private int topLevelAliasLimit;
     private static final String startLetters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private static final String startVirtualLetters = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
     private int lastSuffix;
+    private int lastScopedSuffix;
     private int lastVirtual;
     private final Set<String> usedAliases = new HashSet<>();
+    private final Set<String> usedVirtualAliases = new HashSet<>();
+    private final Set<String> usedScopedAliases = new HashSet<>();
+
+    public MinifyingAliasProvider(int topLevelAliasLimit) {
+        this.topLevelAliasLimit = topLevelAliasLimit;
+    }
 
     @Override
     public String getFieldAlias(FieldReference field) {
         String result;
         do {
             result = RenderingUtil.indexToId(lastVirtual++, startVirtualLetters);
-        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
+        } while (!usedVirtualAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
         return result;
     }
 
     @Override
-    public String getStaticFieldAlias(FieldReference field) {
-        String result;
-        do {
-            result = RenderingUtil.indexToId(lastSuffix++, startLetters);
-        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
-        return result;
+    public ScopedName getStaticFieldAlias(FieldReference field) {
+        return createTopLevelName();
     }
 
     @Override
-    public String getStaticMethodAlias(MethodReference method) {
-        String result;
-        do {
-            result =  RenderingUtil.indexToId(lastSuffix++, startLetters);
-        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
-        return result;
+    public ScopedName getStaticMethodAlias(MethodReference method) {
+        return createTopLevelName();
     }
 
     @Override
@@ -61,17 +61,13 @@ public class MinifyingAliasProvider implements AliasProvider {
         String result;
         do {
             result = RenderingUtil.indexToId(lastVirtual++, startVirtualLetters);
-        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
+        } while (!usedVirtualAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
         return result;
     }
 
     @Override
-    public String getClassAlias(String className) {
-        String result;
-        do {
-            result =  RenderingUtil.indexToId(lastSuffix++, startLetters);
-        } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
-        return result;
+    public ScopedName getClassAlias(String className) {
+        return createTopLevelName();
     }
 
     @Override
@@ -80,11 +76,32 @@ public class MinifyingAliasProvider implements AliasProvider {
     }
 
     @Override
-    public String getClassInitAlias(String className) {
+    public ScopedName getClassInitAlias(String className) {
+        return createTopLevelName();
+    }
+
+    @Override
+    public String getScopeAlias() {
         String result;
         do {
             result = RenderingUtil.indexToId(lastSuffix++, startLetters);
         } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
         return result;
+    }
+
+    private ScopedName createTopLevelName() {
+        if (usedAliases.size() < topLevelAliasLimit) {
+            String result;
+            do {
+                result = RenderingUtil.indexToId(lastSuffix++, startLetters);
+            } while (!usedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
+            return new ScopedName(false, result);
+        } else {
+            String result;
+            do {
+                result = RenderingUtil.indexToId(lastScopedSuffix++, startLetters);
+            } while (!usedScopedAliases.add(result) || RenderingUtil.KEYWORDS.contains(result));
+            return new ScopedName(true, result);
+        }
     }
 }

@@ -700,7 +700,7 @@ public class AstWriter {
         writer.append("let").ws().append('(');
         printList(node.getVariables().getVariables());
         writer.append(')');
-        writer.append(node.getBody());
+        print(node.getBody());
     }
 
     private void print(ParenthesizedExpression node, int precedence) throws IOException {

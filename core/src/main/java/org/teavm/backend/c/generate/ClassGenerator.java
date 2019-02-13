@@ -179,6 +179,8 @@ public class ClassGenerator {
                     tryUsingGenerator(method);
                 }
                 continue;
+            } else if (method.getProgram() == null) {
+                continue;
             }
 
             generateMethodForwardDeclaration(method);

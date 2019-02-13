@@ -40,6 +40,7 @@ import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
 import org.teavm.backend.javascript.codegen.NamingOrderer;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
+import org.teavm.backend.javascript.codegen.ScopedName;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.common.ServiceRepository;
@@ -61,13 +62,11 @@ import org.teavm.vm.RenderingException;
 import org.teavm.vm.TeaVMProgressFeedback;
 
 public class Renderer implements RenderingManager {
-    public static final String CONTAINER_OBJECT = "$java";
     private final NamingStrategy naming;
     private final SourceWriter writer;
     private final ListableClassReaderSource classSource;
     private final ClassLoader classLoader;
     private boolean minifying;
-    private boolean classScoped;
     private final Properties properties = new Properties();
     private final ServiceRepository services;
     private DebugInformationEmitter debugEmitter = new DummyDebugInformationEmitter();
@@ -86,7 +85,7 @@ public class Renderer implements RenderingManager {
     private boolean threadLibraryUsed;
 
     public Renderer(SourceWriter writer, Set<MethodReference> asyncMethods, Set<MethodReference> asyncFamilyMethods,
-            Diagnostics diagnostics, RenderingContext context, boolean classScoped) {
+            Diagnostics diagnostics, RenderingContext context) {
         this.naming = context.getNaming();
         this.writer = writer;
         this.classSource = context.getClassSource();
@@ -96,7 +95,6 @@ public class Renderer implements RenderingManager {
         this.asyncFamilyMethods = new HashSet<>(asyncFamilyMethods);
         this.diagnostics = diagnostics;
         this.context = context;
-        this.classScoped = classScoped;
     }
 
     public boolean isLongLibraryUsed() {
@@ -272,6 +270,7 @@ public class Renderer implements RenderingManager {
             for (ClassNode cls : classes) {
                 estimator.estimate(cls);
             }
+            naming.getScopeName();
             orderer.apply(naming);
         }
     }
@@ -299,8 +298,8 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderDeclaration(ClassNode cls) throws RenderingException {
-        String jsName = naming.getNameFor(cls.getName());
-        debugEmitter.addClass(jsName, cls.getName(), cls.getParentName());
+        ScopedName jsName = naming.getNameFor(cls.getName());
+        debugEmitter.addClass(jsName.value, cls.getName(), cls.getParentName());
         try {
             renderFunctionDeclaration(jsName);
             writer.append("()").ws().append("{")
@@ -341,7 +340,7 @@ public class Renderer implements RenderingManager {
             }
 
             writer.outdent().append("}");
-            if (classScoped) {
+            if (jsName.scoped) {
                 writer.append(";");
             }
             writer.newLine();
@@ -357,12 +356,14 @@ public class Renderer implements RenderingManager {
                     postponedFieldInitializers.add(new PostponedFieldInitializer(fieldRef, (String) value));
                     value = null;
                 }
-                if (classScoped) {
-                    writer.append(CONTAINER_OBJECT).append(".");
+
+                ScopedName fieldName = naming.getFullNameFor(fieldRef);
+                if (fieldName.scoped) {
+                    writer.append(naming.getScopeName()).append(".");
                 } else {
                     writer.append("var ");
                 }
-                writer.append(naming.getFullNameFor(fieldRef)).ws().append("=").ws();
+                writer.append(fieldName.value).ws().append("=").ws();
                 context.constantToString(writer, value);
                 writer.append(";").softNewLine();
             }
@@ -403,12 +404,15 @@ public class Renderer implements RenderingManager {
             throws IOException {
         boolean isAsync = asyncMethods.contains(clinit.getReference());
 
-        String clinitCalled = naming.getNameFor(cls.getName()) + "_$clinitCalled";
+        ScopedName className = naming.getNameFor(cls.getName());
+        String clinitCalled = (className.scoped ? naming.getScopeName() + "_" : "") + className.value
+                + "_$clinitCalled";
         if (isAsync) {
             writer.append("var ").append(clinitCalled).ws().append("=").ws().append("false;").softNewLine();
         }
 
-        renderFunctionDeclaration(naming.getNameForClassInit(cls.getName()));
+        ScopedName name = naming.getNameForClassInit(cls.getName());
+        renderFunctionDeclaration(name);
         writer.append("()").ws()
                 .append("{").softNewLine().indent();
 
@@ -454,7 +458,7 @@ public class Renderer implements RenderingManager {
         }
 
         writer.outdent().append("}");
-        if (classScoped) {
+        if (name.scoped) {
             writer.append(";");
         }
         writer.newLine();
@@ -703,7 +707,8 @@ public class Renderer implements RenderingManager {
     private void renderInitializer(MethodNode method) throws IOException {
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
-        renderFunctionDeclaration(naming.getNameForInit(ref));
+        ScopedName name = naming.getNameForInit(ref);
+        renderFunctionDeclaration(name);
         writer.append("(");
         for (int i = 0; i < ref.parameterCount(); ++i) {
             if (i > 0) {
@@ -724,7 +729,7 @@ public class Renderer implements RenderingManager {
         writer.append(");").softNewLine();
         writer.append("return " + instanceName + ";").softNewLine();
         writer.outdent().append("}");
-        if (classScoped) {
+        if (name.scoped) {
             writer.append(";");
         }
         writer.newLine();
@@ -790,7 +795,7 @@ public class Renderer implements RenderingManager {
 
         MethodReference ref = method.getReference();
         debugEmitter.emitMethod(ref.getDescriptor());
-        String name = naming.getFullNameFor(ref);
+        ScopedName name = naming.getFullNameFor(ref);
 
         renderFunctionDeclaration(name);
         writer.append("(");
@@ -808,7 +813,7 @@ public class Renderer implements RenderingManager {
 
         method.acceptVisitor(new MethodBodyRenderer(statementRenderer));
         writer.outdent().append("}");
-        if (classScoped) {
+        if (name.scoped) {
             writer.append(";");
         }
 
@@ -818,13 +823,13 @@ public class Renderer implements RenderingManager {
         longLibraryUsed |= statementRenderer.isLongLibraryUsed();
     }
 
-    private void renderFunctionDeclaration(String name) throws IOException {
-        if (classScoped) {
-            writer.append(CONTAINER_OBJECT).append(".").append(name).ws().append("=").ws();
+    private void renderFunctionDeclaration(ScopedName name) throws IOException {
+        if (name.scoped) {
+            writer.append(naming.getScopeName()).append(".").append(name.value).ws().append("=").ws();
         }
         writer.append("function");
-        if (!classScoped) {
-            writer.append(" ").append(name);
+        if (!name.scoped) {
+            writer.append(" ").append(name.value);
         }
     }
 

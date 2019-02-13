@@ -52,6 +52,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.ADVANCED;
     private boolean fastDependencyAnalysis;
     private boolean minifying;
+    private int maxTopLevelNames;
     private boolean sourceMapsFileGenerated;
     private boolean debugInformationGenerated;
     private boolean sourceFilesCopied;
@@ -151,6 +152,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setMaxTopLevelNames(int maxTopLevelNames) {
+        this.maxTopLevelNames = maxTopLevelNames;
+    }
+
+    @Override
     public void setTransformers(String[] transformers) {
         this.transformers = transformers.clone();
     }
@@ -209,6 +215,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setSourceFilesCopied(sourceFilesCopied);
 
         tool.setMinifying(minifying);
+        tool.setMaxTopLevelNames(maxTopLevelNames);
         tool.setIncremental(incremental);
         tool.getTransformers().addAll(Arrays.asList(transformers));
         tool.getClassesToPreserve().addAll(Arrays.asList(classesToPreserve));

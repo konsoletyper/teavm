@@ -30,7 +30,7 @@ final class ResourceWriterHelper {
             if (resource instanceof ResourceWriter) {
                 ((ResourceWriter) resource).write(writer);
             } else if (resource instanceof Number) {
-                writer.append(resource);
+                writer.append(resource.toString());
             } else if (resource instanceof Boolean) {
                 writer.append(resource == Boolean.TRUE ? "true" : "false");
             } else if (resource instanceof String) {

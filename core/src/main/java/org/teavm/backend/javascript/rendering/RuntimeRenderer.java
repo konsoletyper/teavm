@@ -23,7 +23,6 @@ import java.nio.charset.StandardCharsets;
 import org.mozilla.javascript.CompilerEnvirons;
 import org.mozilla.javascript.Context;
 import org.mozilla.javascript.ast.AstRoot;
-import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -48,12 +47,10 @@ public class RuntimeRenderer {
             "setStackTrace", StackTraceElement[].class, void.class);
 
     private final ClassReaderSource classSource;
-    private final NamingStrategy naming;
     private final SourceWriter writer;
 
-    public RuntimeRenderer(ClassReaderSource classSource, NamingStrategy naming, SourceWriter writer) {
+    public RuntimeRenderer(ClassReaderSource classSource, SourceWriter writer) {
         this.classSource = classSource;
-        this.naming = naming;
         this.writer = writer;
     }
 

@@ -69,6 +69,7 @@ public class TeaVMTool {
     private TeaVMTargetType targetType = TeaVMTargetType.JAVASCRIPT;
     private String targetFileName = "";
     private boolean minifying = true;
+    private int maxTopLevelNames = 10000;
     private String mainClass;
     private String entryPointName = "main";
     private Properties properties = new Properties();
@@ -122,6 +123,10 @@ public class TeaVMTool {
 
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
+    }
+
+    public void setMaxTopLevelNames(int maxTopLevelNames) {
+        this.maxTopLevelNames = maxTopLevelNames;
     }
 
     public boolean isIncremental() {
@@ -291,6 +296,7 @@ public class TeaVMTool {
     private TeaVMTarget prepareJavaScriptTarget() {
         javaScriptTarget = new JavaScriptTarget();
         javaScriptTarget.setMinifying(minifying);
+        javaScriptTarget.setTopLevelNameLimit(maxTopLevelNames);
 
         debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
                 ? new DebugInformationBuilder() : null;

@@ -550,7 +550,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         Inlining inlining = new Inlining(new ClassHierarchy(classes), dependencyAnalyzer, inliningStrategy,
-                classes, this::isExternal);
+                classes, this::isExternal, optimizationLevel == TeaVMOptimizationLevel.FULL);
         List<MethodReference> methodReferences = inlining.getOrder();
         int classCount = classes.getClassNames().size();
         int initialValue = compileProgressValue;

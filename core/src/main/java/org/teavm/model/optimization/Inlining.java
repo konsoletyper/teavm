@@ -68,13 +68,16 @@ public class Inlining {
     private InliningStrategy strategy;
     private MethodUsageCounter usageCounter;
     private Set<MethodReference> methodsUsedOnce = new HashSet<>();
+    private boolean devirtualization;
 
     public Inlining(ClassHierarchy hierarchy, DependencyInfo dependencyInfo, InliningStrategy strategy,
-            ListableClassReaderSource classes, Predicate<MethodReference> externalMethods) {
+            ListableClassReaderSource classes, Predicate<MethodReference> externalMethods,
+            boolean devirtualization) {
         this.hierarchy = hierarchy;
         this.classes = classes;
         this.dependencyInfo = dependencyInfo;
         this.strategy = strategy;
+        this.devirtualization = devirtualization;
         usageCounter = new MethodUsageCounter(externalMethods);
 
         for (String className : classes.getClassNames()) {
@@ -156,8 +159,12 @@ public class Inlining {
         }
         instructionsToSkip = new HashSet<>();
 
-        while (applyOnce(program, method)) {
-            devirtualize(program, method, dependencyInfo);
+        if (devirtualization) {
+            while (applyOnce(program, method)) {
+                devirtualize(program, method, dependencyInfo);
+            }
+        } else {
+            applyOnce(program, method);
         }
         depthsByBlock = null;
         instructionsToSkip = null;

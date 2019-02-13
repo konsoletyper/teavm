@@ -16,7 +16,6 @@
 package org.teavm.backend.javascript.codegen;
 
 import java.io.IOException;
-import org.teavm.backend.javascript.rendering.Renderer;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -32,13 +31,11 @@ public class SourceWriter implements Appendable, LocationProvider {
     private int column;
     private int line;
     private int offset;
-    private boolean classScoped;
 
-    SourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth, boolean classScoped) {
+    SourceWriter(NamingStrategy naming, Appendable innerWriter, int lineWidth) {
         this.naming = naming;
         this.innerWriter = innerWriter;
         this.lineWidth = lineWidth;
-        this.classScoped = classScoped;
     }
 
     void setMinified(boolean minified) {
@@ -48,10 +45,6 @@ public class SourceWriter implements Appendable, LocationProvider {
     public SourceWriter append(String value) throws IOException {
         append((CharSequence) value);
         return this;
-    }
-
-    public SourceWriter append(Object value) throws IOException {
-        return append(String.valueOf(value));
     }
 
     public SourceWriter append(int value) throws IOException {
@@ -102,8 +95,7 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter appendClass(String cls) throws IOException {
-        appendScopeIfNecessary();
-        return append(naming.getNameFor(cls));
+        return appendName(naming.getNameFor(cls));
     }
 
     public SourceWriter appendClass(Class<?> cls) throws IOException {
@@ -115,8 +107,7 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter appendStaticField(FieldReference field) throws IOException {
-        appendScopeIfNecessary();
-        return append(naming.getFullNameFor(field));
+        return appendName(naming.getFullNameFor(field));
     }
 
     public SourceWriter appendMethod(MethodDescriptor method) throws IOException {
@@ -128,8 +119,7 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter appendMethodBody(MethodReference method) throws IOException {
-        appendScopeIfNecessary();
-        return append(naming.getFullNameFor(method));
+        return appendName(naming.getFullNameFor(method));
     }
 
     public SourceWriter appendMethodBody(String className, String name, ValueType... params) throws IOException {
@@ -145,19 +135,19 @@ public class SourceWriter implements Appendable, LocationProvider {
     }
 
     public SourceWriter appendInit(MethodReference method) throws IOException {
-        appendScopeIfNecessary();
-        return append(naming.getNameForInit(method));
+        return appendName(naming.getNameForInit(method));
     }
 
     public SourceWriter appendClassInit(String className) throws IOException {
-        appendScopeIfNecessary();
-        return append(naming.getNameForClassInit(className));
+        return appendName(naming.getNameForClassInit(className));
     }
 
-    private void appendScopeIfNecessary() throws IOException {
-        if (classScoped) {
-            append(Renderer.CONTAINER_OBJECT).append(".");
+    private SourceWriter appendName(ScopedName name) throws IOException {
+        if (name.scoped) {
+            append(naming.getScopeName()).append(".");
         }
+        append(name.value);
+        return this;
     }
 
     private void appendIndent() throws IOException {
