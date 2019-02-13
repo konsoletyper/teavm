@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.io;
 
-import org.teavm.classlib.java.lang.TString;
+import java.io.IOException;
 import org.teavm.classlib.java.nio.TByteBuffer;
 import org.teavm.classlib.java.nio.TCharBuffer;
 import org.teavm.classlib.java.nio.charset.TCharset;
@@ -34,7 +34,7 @@ public class TInputStreamReader extends TReader {
     private boolean streamEof;
     private boolean eof;
 
-    public TInputStreamReader(TInputStream in, TString charsetName) throws TUnsupportedEncodingException {
+    public TInputStreamReader(TInputStream in, String charsetName) throws TUnsupportedEncodingException {
         this(in, getCharset(charsetName));
     }
 
@@ -55,7 +55,7 @@ public class TInputStreamReader extends TReader {
         inBuffer.position(inBuffer.limit());
     }
 
-    private static TCharset getCharset(TString charsetName) throws TUnsupportedEncodingException  {
+    private static TCharset getCharset(String charsetName) throws TUnsupportedEncodingException  {
         try {
             return TCharset.forName(charsetName.toString());
         } catch (TUnsupportedCharsetException e) {
@@ -63,17 +63,17 @@ public class TInputStreamReader extends TReader {
         }
     }
 
-    public TString getEncoding() {
-        return TString.wrap(decoder.charset().name());
+    public String getEncoding() {
+        return decoder.charset().name();
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() throws IOException {
         stream.close();
     }
 
     @Override
-    public int read() throws TIOException {
+    public int read() throws IOException {
         if (eof && !outBuffer.hasRemaining()) {
             return -1;
         }
@@ -84,7 +84,7 @@ public class TInputStreamReader extends TReader {
     }
 
     @Override
-    public int read(char[] cbuf, int off, int len) throws TIOException {
+    public int read(char[] cbuf, int off, int len) throws IOException {
         if (eof && !outBuffer.hasRemaining()) {
             return -1;
         }
@@ -101,7 +101,7 @@ public class TInputStreamReader extends TReader {
         return bytesRead;
     }
 
-    private boolean fillBuffer() throws TIOException {
+    private boolean fillBuffer() throws IOException {
         if (eof) {
             return false;
         }
@@ -121,7 +121,7 @@ public class TInputStreamReader extends TReader {
         return true;
     }
 
-    private boolean fillReadBuffer() throws TIOException {
+    private boolean fillReadBuffer() throws IOException {
         if (streamEof) {
             return false;
         }
@@ -143,7 +143,7 @@ public class TInputStreamReader extends TReader {
     }
 
     @Override
-    public boolean ready() throws TIOException {
+    public boolean ready() throws IOException {
         return outBuffer.hasRemaining() || inBuffer.hasRemaining();
     }
 }

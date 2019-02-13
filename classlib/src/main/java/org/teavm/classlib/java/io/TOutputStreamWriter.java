@@ -15,10 +15,14 @@
  */
 package org.teavm.classlib.java.io;
 
-import org.teavm.classlib.java.lang.TString;
+import java.io.IOException;
 import org.teavm.classlib.java.nio.TByteBuffer;
 import org.teavm.classlib.java.nio.TCharBuffer;
-import org.teavm.classlib.java.nio.charset.*;
+import org.teavm.classlib.java.nio.charset.TCharset;
+import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
+import org.teavm.classlib.java.nio.charset.TCodingErrorAction;
+import org.teavm.classlib.java.nio.charset.TIllegalCharsetNameException;
+import org.teavm.classlib.java.nio.charset.TUnsupportedCharsetException;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 public class TOutputStreamWriter extends TWriter {
@@ -61,12 +65,12 @@ public class TOutputStreamWriter extends TWriter {
         try {
             return TCharset.forName(charsetName);
         } catch (TUnsupportedCharsetException | TIllegalCharsetNameException e) {
-            throw new TUnsupportedEncodingException(TString.wrap(charsetName));
+            throw new TUnsupportedEncodingException(charsetName);
         }
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() throws IOException {
         if (!closed) {
             flush();
             closed = true;
@@ -76,7 +80,7 @@ public class TOutputStreamWriter extends TWriter {
     }
 
     @Override
-    public void flush() throws TIOException {
+    public void flush() throws IOException {
         checkStatus();
         if (buffer.position() > 0) {
             out.write(bufferData, 0, buffer.position());
@@ -85,9 +89,9 @@ public class TOutputStreamWriter extends TWriter {
         out.flush();
     }
 
-    private void checkStatus() throws TIOException {
+    private void checkStatus() throws IOException {
         if (closed) {
-            throw new TIOException(TString.wrap("Writer already closed"));
+            throw new IOException("Writer already closed");
         }
     }
 
@@ -96,7 +100,7 @@ public class TOutputStreamWriter extends TWriter {
     }
 
     @Override
-    public void write(char[] buf, int offset, int count) throws TIOException {
+    public void write(char[] buf, int offset, int count) throws IOException {
         synchronized (lock) {
             checkStatus();
             if (buf == null) {
@@ -116,13 +120,13 @@ public class TOutputStreamWriter extends TWriter {
     }
 
     @Override
-    public void write(int oneChar) throws TIOException {
+    public void write(int oneChar) throws IOException {
         char[] array = { (char) oneChar };
         write(array, 0, array.length);
     }
 
     @Override
-    public void write(String str, int offset, int count) throws TIOException {
+    public void write(String str, int offset, int count) throws IOException {
         if (str == null) {
             throw new NullPointerException();
         }

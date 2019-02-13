@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
 import org.teavm.classlib.java.lang.*;
 
 public class TDataInputStream extends TFilterInputStream implements TDataInput {
@@ -26,17 +27,17 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
     }
 
     @Override
-    public final int read(byte[] buffer) throws TIOException {
+    public final int read(byte[] buffer) throws IOException {
         return in.read(buffer, 0, buffer.length);
     }
 
     @Override
-    public final int read(byte[] buffer, int offset, int length) throws TIOException {
+    public final int read(byte[] buffer, int offset, int length) throws IOException {
         return in.read(buffer, offset, length);
     }
 
     @Override
-    public final boolean readBoolean() throws TIOException {
+    public final boolean readBoolean() throws IOException {
         int temp = in.read();
         if (temp < 0) {
             throw new TEOFException();
@@ -45,7 +46,7 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
     }
 
     @Override
-    public final byte readByte() throws TIOException {
+    public final byte readByte() throws IOException {
         int temp = in.read();
         if (temp < 0) {
             throw new TEOFException();
@@ -53,7 +54,7 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
         return (byte) temp;
     }
 
-    private int readToBuff(int count) throws TIOException {
+    private int readToBuff(int count) throws IOException {
         int offset = 0;
         while (offset < count) {
             int bytesRead = in.read(buff, offset, count - offset);
@@ -66,7 +67,7 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
     }
 
     @Override
-    public final char readChar() throws TIOException {
+    public final char readChar() throws IOException {
         if (readToBuff(2) < 0) {
             throw new TEOFException();
         }
@@ -74,22 +75,22 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
     }
 
     @Override
-    public final double readDouble() throws TIOException {
+    public final double readDouble() throws IOException {
         return TDouble.longBitsToDouble(readLong());
     }
 
     @Override
-    public final float readFloat() throws TIOException {
+    public final float readFloat() throws IOException {
         return TFloat.intBitsToFloat(readInt());
     }
 
     @Override
-    public final void readFully(byte[] buffer) throws TIOException {
+    public final void readFully(byte[] buffer) throws IOException {
         readFully(buffer, 0, buffer.length);
     }
 
     @Override
-    public final void readFully(byte[] buffer, int offset, int length) throws TIOException {
+    public final void readFully(byte[] buffer, int offset, int length) throws IOException {
         if (length < 0) {
             throw new TIndexOutOfBoundsException();
         }
@@ -116,7 +117,7 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
     }
 
     @Override
-    public final int readInt() throws TIOException {
+    public final int readInt() throws IOException {
         if (readToBuff(4) < 0) {
             throw new TEOFException();
         }
@@ -125,7 +126,7 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
 
     @Override
     @Deprecated
-    public final TString readLine() throws TIOException {
+    public final String readLine() throws IOException {
         TStringBuilder line = new TStringBuilder(80);
         boolean foundTerminator = false;
         while (true) {
@@ -135,11 +136,11 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
                     if (line.length() == 0 && !foundTerminator) {
                         return null;
                     }
-                    return TString.wrap(line.toString());
+                    return line.toString();
                 case (byte) '\r':
                     if (foundTerminator) {
                         ((TPushbackInputStream) in).unread(nextByte);
-                        return TString.wrap(line.toString());
+                        return line.toString();
                     }
                     foundTerminator = true;
                     /* Have to be able to peek ahead one byte */
@@ -148,11 +149,11 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
                     }
                     break;
                 case (byte) '\n':
-                    return TString.wrap(line.toString());
+                    return line.toString();
                 default:
                     if (foundTerminator) {
                         ((TPushbackInputStream) in).unread(nextByte);
-                        return TString.wrap(line.toString());
+                        return line.toString();
                     }
                     line.append((char) nextByte);
             }
@@ -160,7 +161,7 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
     }
 
     @Override
-    public final long readLong() throws TIOException {
+    public final long readLong() throws IOException {
         if (readToBuff(8) < 0) {
             throw new TEOFException();
         }
@@ -172,7 +173,7 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
     }
 
     @Override
-    public final short readShort() throws TIOException {
+    public final short readShort() throws IOException {
         if (readToBuff(2) < 0) {
             throw new TEOFException();
         }
@@ -180,7 +181,7 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
     }
 
     @Override
-    public final int readUnsignedByte() throws TIOException {
+    public final int readUnsignedByte() throws IOException {
         int temp = in.read();
         if (temp < 0) {
             throw new TEOFException();
@@ -189,7 +190,7 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
     }
 
     @Override
-    public final int readUnsignedShort() throws TIOException {
+    public final int readUnsignedShort() throws IOException {
         if (readToBuff(2) < 0) {
             throw new TEOFException();
         }
@@ -197,15 +198,15 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
     }
 
     @Override
-    public final TString readUTF() throws TIOException {
+    public final String readUTF() throws IOException {
         return decodeUTF(readUnsignedShort());
     }
 
-    TString decodeUTF(int utfSize) throws TIOException {
+    String decodeUTF(int utfSize) throws IOException {
         return decodeUTF(utfSize, this);
     }
 
-    private static TString decodeUTF(int utfSize, TDataInput in) throws TIOException {
+    private static String decodeUTF(int utfSize, TDataInput in) throws IOException {
         byte[] buf = new byte[utfSize];
         char[] out = new char[utfSize];
         in.readFully(buf, 0, utfSize);
@@ -213,12 +214,12 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
         return convertUTF8WithBuf(buf, out, 0, utfSize);
     }
 
-    public static final TString readUTF(TDataInput in) throws TIOException {
+    public static String readUTF(TDataInput in) throws IOException {
         return decodeUTF(in.readUnsignedShort(), in);
     }
 
     @Override
-    public final int skipBytes(int count) throws TIOException {
+    public final int skipBytes(int count) throws IOException {
         int skipped = 0;
 
         while (skipped < count) {
@@ -234,7 +235,7 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
         return skipped;
     }
 
-    private static TString convertUTF8WithBuf(byte[] buf, char[] out, int offset, int utfSize)
+    private static String convertUTF8WithBuf(byte[] buf, char[] out, int offset, int utfSize)
             throws TUTFDataFormatException {
         int count = 0;
         int s = 0;
@@ -247,27 +248,27 @@ public class TDataInputStream extends TFilterInputStream implements TDataInput {
                 s++;
             } else if ((a & 0xe0) == 0xc0) {
                 if (count >= utfSize) {
-                    throw new TUTFDataFormatException(TString.wrap("End of stream reached"));
+                    throw new TUTFDataFormatException("End of stream reached");
                 }
                 int b = buf[offset + count++];
                 if ((b & 0xC0) != 0x80) {
-                    throw new TUTFDataFormatException(TString.wrap("Malformed UTF-8 sequence"));
+                    throw new TUTFDataFormatException("Malformed UTF-8 sequence");
                 }
                 out[s++] = (char) (((a & 0x1F) << 6) | (b & 0x3F));
             } else if ((a & 0xf0) == 0xe0) {
                 if (count + 1 >= utfSize) {
-                    throw new TUTFDataFormatException(TString.wrap("Malformed UTF-8 sequence"));
+                    throw new TUTFDataFormatException("Malformed UTF-8 sequence");
                 }
                 int b = buf[offset + count++];
                 int c = buf[offset + count++];
                 if (((b & 0xC0) != 0x80) || ((c & 0xC0) != 0x80)) {
-                    throw new TUTFDataFormatException(TString.wrap("Malformed UTF-8 sequence"));
+                    throw new TUTFDataFormatException("Malformed UTF-8 sequence");
                 }
                 out[s++] = (char) (((a & 0x0F) << 12) | ((b & 0x3F) << 6) | (c & 0x3F));
             } else {
-                throw new TUTFDataFormatException(TString.wrap("Malformed UTF-8 sequence"));
+                throw new TUTFDataFormatException("Malformed UTF-8 sequence");
             }
         }
-        return new TString(out, 0, s);
+        return new String(out, 0, s);
     }
 }

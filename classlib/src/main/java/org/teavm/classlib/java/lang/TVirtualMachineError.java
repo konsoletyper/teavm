@@ -22,7 +22,7 @@ public class TVirtualMachineError extends TError {
         super();
     }
 
-    public TVirtualMachineError(TString message) {
+    public TVirtualMachineError(String message) {
         super(message);
     }
 
@@ -30,7 +30,7 @@ public class TVirtualMachineError extends TError {
         super(cause);
     }
 
-    public TVirtualMachineError(TString message, TThrowable cause) {
+    public TVirtualMachineError(String message, TThrowable cause) {
         super(message, cause);
     }
 }

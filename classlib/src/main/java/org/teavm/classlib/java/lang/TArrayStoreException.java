@@ -22,7 +22,7 @@ public class TArrayStoreException extends TRuntimeException {
         super();
     }
 
-    public TArrayStoreException(TString message) {
+    public TArrayStoreException(String message) {
         super(message);
     }
 }

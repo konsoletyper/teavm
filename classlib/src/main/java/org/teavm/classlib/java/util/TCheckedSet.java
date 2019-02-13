@@ -15,10 +15,8 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TClass;
-
 class TCheckedSet<E> extends TCheckedCollection<E> implements TSet<E> {
-    public TCheckedSet(TCollection<E> innerCollection, TClass<E> type) {
+    public TCheckedSet(TCollection<E> innerCollection, Class<E> type) {
         super(innerCollection, type);
     }
 }

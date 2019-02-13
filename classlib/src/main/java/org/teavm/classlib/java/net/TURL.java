@@ -22,7 +22,6 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
-import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.net.impl.TDummyStreamHandler;
 import org.teavm.classlib.java.net.impl.TXHRStreamHandler;
 
@@ -316,7 +315,7 @@ public final class TURL implements Serializable {
     }
 
     public TURI toURI() throws TURISyntaxException {
-        return new TURI((TString) (Object) toExternalForm());
+        return new TURI(toExternalForm());
     }
 
     @Override

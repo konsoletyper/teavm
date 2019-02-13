@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.lang.TRuntimeException;
-import org.teavm.classlib.java.lang.TString;
 
 public class TNoSuchElementException extends TRuntimeException {
     private static final long serialVersionUID = -4890604137042866919L;
@@ -25,7 +24,7 @@ public class TNoSuchElementException extends TRuntimeException {
         super();
     }
 
-    public TNoSuchElementException(TString message) {
+    public TNoSuchElementException(String message) {
         super(message);
     }
 }

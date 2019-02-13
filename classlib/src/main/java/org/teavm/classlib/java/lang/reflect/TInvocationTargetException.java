@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.lang.reflect;
 
 import org.teavm.classlib.java.lang.TReflectiveOperationException;
-import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TThrowable;
 
 public class TInvocationTargetException extends TReflectiveOperationException {
@@ -27,7 +26,7 @@ public class TInvocationTargetException extends TReflectiveOperationException {
         super(null, target);
     }
 
-    public TInvocationTargetException(TThrowable target, TString s) {
+    public TInvocationTargetException(TThrowable target, String s) {
         super(s, target);
     }
 

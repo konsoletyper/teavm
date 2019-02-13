@@ -33,7 +33,7 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
     }
 
     @Override
-    public TStringBuilder append(TString string) {
+    public TStringBuilder append(String string) {
         super.append(string);
         return this;
     }
@@ -201,7 +201,7 @@ public class TStringBuilder extends TAbstractStringBuilder implements TAppendabl
     }
 
     @Override
-    public TStringBuilder insert(int index, TString string) {
+    public TStringBuilder insert(int index, String string) {
         super.insert(index, string);
         return this;
     }

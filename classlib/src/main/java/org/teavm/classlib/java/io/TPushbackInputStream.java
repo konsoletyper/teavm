@@ -15,8 +15,8 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
 import org.teavm.classlib.java.lang.TArrayIndexOutOfBoundsException;
-import org.teavm.classlib.java.lang.TString;
 
 public class TPushbackInputStream extends TFilterInputStream {
     protected byte[] buf;
@@ -38,15 +38,15 @@ public class TPushbackInputStream extends TFilterInputStream {
     }
 
     @Override
-    public int available() throws TIOException {
+    public int available() throws IOException {
         if (buf == null) {
-            throw new TIOException();
+            throw new IOException();
         }
         return buf.length - pos + in.available();
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() throws IOException {
         if (in != null) {
             in.close();
             in = null;
@@ -60,9 +60,9 @@ public class TPushbackInputStream extends TFilterInputStream {
     }
 
     @Override
-    public int read() throws TIOException {
+    public int read() throws IOException {
         if (buf == null) {
-            throw new TIOException();
+            throw new IOException();
         }
         // Is there a pushback byte available?
         if (pos < buf.length) {
@@ -74,16 +74,16 @@ public class TPushbackInputStream extends TFilterInputStream {
     }
 
     @Override
-    public int read(byte[] buffer, int offset, int length) throws TIOException {
+    public int read(byte[] buffer, int offset, int length) throws IOException {
         if (buf == null) {
-            throw new TIOException(TString.wrap("Stream is closed"));
+            throw new IOException("Stream is closed");
         }
         // Force buffer null check first!
         if (offset > buffer.length || offset < 0) {
-            throw new TArrayIndexOutOfBoundsException(TString.wrap("Offset out of bounds: " + offset));
+            throw new TArrayIndexOutOfBoundsException("Offset out of bounds: " + offset);
         }
         if (length < 0 || length > buffer.length - offset) {
-            throw new TArrayIndexOutOfBoundsException(TString.wrap("Length out of bounds: " + length));
+            throw new TArrayIndexOutOfBoundsException("Length out of bounds: " + length);
         }
 
         int copiedBytes = 0;
@@ -113,9 +113,9 @@ public class TPushbackInputStream extends TFilterInputStream {
     }
 
     @Override
-    public long skip(long count) throws TIOException {
+    public long skip(long count) throws IOException {
         if (in == null) {
-            throw new TIOException();
+            throw new IOException();
         }
         if (count <= 0) {
             return 0;
@@ -131,44 +131,43 @@ public class TPushbackInputStream extends TFilterInputStream {
         return numSkipped;
     }
 
-    public void unread(byte[] buffer) throws TIOException {
+    public void unread(byte[] buffer) throws IOException {
         unread(buffer, 0, buffer.length);
     }
 
-    public void unread(byte[] buffer, int offset, int length) throws TIOException {
+    public void unread(byte[] buffer, int offset, int length) throws IOException {
         if (length > pos) {
-            throw new TIOException(TString.wrap("Pushback buffer full"));
+            throw new IOException("Pushback buffer full");
         }
         if (offset > buffer.length || offset < 0) {
-            throw new TArrayIndexOutOfBoundsException(TString.wrap("Offset out of bounds: " + offset));
+            throw new TArrayIndexOutOfBoundsException("Offset out of bounds: " + offset);
         }
         if (length < 0 || length > buffer.length - offset) {
-            throw new TArrayIndexOutOfBoundsException(TString.wrap("Length out of bounds: " + length));
+            throw new TArrayIndexOutOfBoundsException("Length out of bounds: " + length);
         }
         if (buf == null) {
-            throw new TIOException(TString.wrap("Stream is closed"));
+            throw new IOException("Stream is closed");
         }
         System.arraycopy(buffer, offset, buf, pos - length, length);
         pos = pos - length;
     }
 
-    public void unread(int oneByte) throws TIOException {
+    public void unread(int oneByte) throws IOException {
         if (buf == null) {
-            throw new TIOException();
+            throw new IOException();
         }
         if (pos == 0) {
-            throw new TIOException();
+            throw new IOException();
         }
         buf[--pos] = (byte) oneByte;
     }
 
     @Override
     public void mark(int readlimit) {
-        return;
     }
 
     @Override
-    public void reset() throws TIOException {
-        throw new TIOException();
+    public void reset() throws IOException {
+        throw new IOException();
     }
 }

@@ -572,19 +572,19 @@ public class TCollections extends TObject {
         return list;
     }
 
-    public static <E> TCollection<E> checkedCollection(TCollection<E> c, TClass<E> type) {
+    public static <E> TCollection<E> checkedCollection(TCollection<E> c, Class<E> type) {
         return new TCheckedCollection<>(c, type);
     }
 
-    public static <E> TSet<E> checkedSet(TSet<E> s, TClass<E> type) {
+    public static <E> TSet<E> checkedSet(TSet<E> s, Class<E> type) {
         return new TCheckedSet<>(s, type);
     }
 
-    public static <E> TList<E> checkedList(TList<E> list, TClass<E> type) {
+    public static <E> TList<E> checkedList(TList<E> list, Class<E> type) {
         return new TCheckedList<>(list, type);
     }
 
-    public static <K, V> TMap<K, V> checkedMap(TMap<K, V> m, TClass<K> keyType, TClass<V> valueType) {
+    public static <K, V> TMap<K, V> checkedMap(TMap<K, V> m, Class<K> keyType, Class<V> valueType) {
         return new TCheckedMap<>(m, keyType, valueType);
     }
 

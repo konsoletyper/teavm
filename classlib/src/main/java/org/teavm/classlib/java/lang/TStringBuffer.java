@@ -33,7 +33,7 @@ public class TStringBuffer extends TAbstractStringBuilder implements TAppendable
     }
 
     @Override
-    public TStringBuffer append(TString string) {
+    public TStringBuffer append(String string) {
         super.append(string);
         return this;
     }
@@ -201,7 +201,7 @@ public class TStringBuffer extends TAbstractStringBuilder implements TAppendable
     }
 
     @Override
-    public TStringBuffer insert(int index, TString string) {
+    public TStringBuffer insert(int index, String string) {
         super.insert(index, string);
         return this;
     }

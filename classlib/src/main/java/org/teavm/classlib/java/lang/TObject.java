@@ -23,7 +23,6 @@ import org.teavm.interop.Rename;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Superclass;
 import org.teavm.interop.Sync;
-import org.teavm.interop.Unmanaged;
 import org.teavm.jso.browser.TimerHandler;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformObject;
@@ -391,10 +390,5 @@ public class TObject {
 
     @Override
     protected void finalize() throws TThrowable {
-    }
-
-    @Unmanaged
-    public static TObject wrap(Object obj) {
-        return (TObject) obj;
     }
 }

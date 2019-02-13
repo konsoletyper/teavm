@@ -29,7 +29,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
         this.value = value;
     }
 
-    public TLong(TString value) throws TNumberFormatException {
+    public TLong(String value) throws TNumberFormatException {
         this(parseLong(value));
     }
 
@@ -37,12 +37,12 @@ public class TLong extends TNumber implements TComparable<TLong> {
         return new TLong(value);
     }
 
-    public static long parseLong(TString s, int radix) throws TNumberFormatException {
+    public static long parseLong(String s, int radix) throws TNumberFormatException {
         if (radix < TCharacter.MIN_RADIX || radix > TCharacter.MAX_RADIX) {
-            throw new TNumberFormatException(TString.wrap("Illegal radix: " + radix));
+            throw new TNumberFormatException("Illegal radix: " + radix);
         }
         if (s == null || s.isEmpty()) {
-            throw new TNumberFormatException(TString.wrap("String is null or empty"));
+            throw new TNumberFormatException("String is null or empty");
         }
         boolean negative = false;
         int index = 0;
@@ -59,38 +59,38 @@ public class TLong extends TNumber implements TComparable<TLong> {
         while (index < s.length()) {
             int digit = TCharacter.getNumericValue(s.charAt(index++));
             if (digit < 0) {
-                throw new TNumberFormatException(TString.wrap("String contains invalid digits: " + s));
+                throw new TNumberFormatException("String contains invalid digits: " + s);
             }
             if (digit >= radix) {
-                throw new TNumberFormatException(TString.wrap("String contains digits out of radix " + radix
-                        + ": " + s));
+                throw new TNumberFormatException("String contains digits out of radix " + radix
+                        + ": " + s);
             }
             value = radix * value + digit;
             if (value < 0) {
                 if (index == s.length() && value == MIN_VALUE && negative) {
                     return MIN_VALUE;
                 }
-                throw new TNumberFormatException(TString.wrap("The value is too big for int type: " + s));
+                throw new TNumberFormatException("The value is too big for int type: " + s);
             }
         }
         return negative ? -value : value;
     }
 
-    public static long parseLong(TString s) throws TNumberFormatException {
+    public static long parseLong(String s) throws TNumberFormatException {
         return parseLong(s, 10);
     }
 
-    public static TLong valueOf(TString s, int radix) throws TNumberFormatException {
+    public static TLong valueOf(String s, int radix) throws TNumberFormatException {
         return valueOf(parseLong(s, radix));
     }
 
-    public static TLong valueOf(TString s) throws TNumberFormatException {
+    public static TLong valueOf(String s) throws TNumberFormatException {
         return valueOf(parseLong(s));
     }
 
     public static TLong decode(TString nm) throws TNumberFormatException {
         if (nm == null || nm.isEmpty()) {
-            throw new TNumberFormatException(TString.wrap("Can't parse empty or null string"));
+            throw new TNumberFormatException("Can't parse empty or null string");
         }
         int index = 0;
         boolean negaive = false;
@@ -101,7 +101,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
             negaive = true;
         }
         if (index >= nm.length()) {
-            throw new TNumberFormatException(TString.wrap("The string does not represent a number"));
+            throw new TNumberFormatException("The string does not represent a number");
         }
         int radix = 10;
         if (nm.charAt(index) == '#') {
@@ -120,20 +120,20 @@ public class TLong extends TNumber implements TComparable<TLong> {
             }
         }
         if (index >= nm.length()) {
-            throw new TNumberFormatException(TString.wrap("The string does not represent a number"));
+            throw new TNumberFormatException("The string does not represent a number");
         }
         long value = 0;
         while (index < nm.length()) {
             int digit = decodeDigit(nm.charAt(index++));
             if (digit >= radix) {
-                throw new TNumberFormatException(TString.wrap("The string does not represent a number"));
+                throw new TNumberFormatException("The string does not represent a number");
             }
             value = value * radix + digit;
             if (value < 0) {
                 if (negaive && value == MIN_VALUE && index == nm.length()) {
                     return TLong.valueOf(MIN_VALUE);
                 }
-                throw new TNumberFormatException(TString.wrap("The string represents a too big number"));
+                throw new TNumberFormatException("The string represents a too big number");
             }
         }
         return TLong.valueOf(negaive ? -value : value);
@@ -219,16 +219,16 @@ public class TLong extends TNumber implements TComparable<TLong> {
         return compare(value, other.value);
     }
 
-    public static TLong getLong(TString nm) {
+    public static TLong getLong(String nm) {
         return getLong(nm, null);
     }
 
-    public static TLong getLong(TString nm, long val) {
+    public static TLong getLong(String nm, long val) {
         return getLong(nm, TLong.valueOf(val));
     }
 
-    public static TLong getLong(TString nm, TLong val) {
-        TString result = nm != null ? TString.wrap(TSystem.getProperty(nm.toString())) : null;
+    public static TLong getLong(String nm, TLong val) {
+        String result = nm != null ? TSystem.getProperty(nm) : null;
         try {
             return result != null ? TLong.valueOf(result) : val;
         } catch (NumberFormatException e) {

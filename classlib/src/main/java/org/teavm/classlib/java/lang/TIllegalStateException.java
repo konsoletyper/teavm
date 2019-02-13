@@ -22,11 +22,11 @@ public class TIllegalStateException extends TException {
         super();
     }
 
-    public TIllegalStateException(TString message, TThrowable cause) {
+    public TIllegalStateException(String message, TThrowable cause) {
         super(message, cause);
     }
 
-    public TIllegalStateException(TString message) {
+    public TIllegalStateException(String message) {
         super(message);
     }
 

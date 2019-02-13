@@ -22,7 +22,6 @@ import java.util.function.IntFunction;
 import java.util.function.IntToDoubleFunction;
 import java.util.function.IntToLongFunction;
 import java.util.function.IntUnaryOperator;
-import org.teavm.classlib.java.lang.TClass;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TDouble;
 import org.teavm.classlib.java.lang.TFloat;
@@ -30,9 +29,7 @@ import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TInteger;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TStringBuilder;
-import org.teavm.classlib.java.lang.reflect.TArray;
 import org.teavm.classlib.java.util.stream.TDoubleStream;
 import org.teavm.classlib.java.util.stream.TIntStream;
 import org.teavm.classlib.java.util.stream.TLongStream;
@@ -126,12 +123,12 @@ public class TArrays extends TObject {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T, U> T[] copyOf(U[] original, int newLength, TClass<? extends T[]> cls) {
-        TClass<?> componentType = cls.getComponentType();
-        T[] result = (T[]) (Object) TArray.newInstance(componentType, newLength);
+    public static <T, U> T[] copyOf(U[] original, int newLength, Class<? extends T[]> cls) {
+        Class<?> componentType = cls.getComponentType();
+        T[] result = (T[]) Array.newInstance(componentType, newLength);
         int sz = TMath.min(newLength, original.length);
         for (int i = 0; i < sz; ++i) {
-            result[i] = (T) componentType.cast(TObject.wrap(original[i]));
+            result[i] = (T) componentType.cast(original[i]);
         }
         return result;
     }
@@ -210,130 +207,130 @@ public class TArrays extends TObject {
     }
 
     @SuppressWarnings("unchecked")
-    public static <T, U> T[] copyOfRange(U[] original, int from, int to, TClass<? extends T[]> newType) {
-        TClass<?> componentType = newType.getComponentType();
-        T[] result = (T[]) (Object) TArray.newInstance(componentType, to - from);
+    public static <T, U> T[] copyOfRange(U[] original, int from, int to, Class<? extends T[]> newType) {
+        Class<?> componentType = newType.getComponentType();
+        T[] result = (T[]) (Object) Array.newInstance(componentType, to - from);
         for (int i = from; i < to; ++i) {
-            result[i - from] = (T) newType.getComponentType().cast(TObject.wrap(original[i]));
+            result[i - from] = (T) newType.getComponentType().cast(original[i]);
         }
         return result;
     }
 
-    public static TString toString(TObject[] a) {
+    public static String toString(TObject[] a) {
         TStringBuilder sb = new TStringBuilder();
-        sb.append(TString.wrap("["));
+        sb.append("[");
         for (int i = 0; i < a.length; ++i) {
             if (i > 0) {
-                sb.append(TString.wrap(", "));
+                sb.append(", ");
             }
             sb.append(a[i]);
         }
-        sb.append(TString.wrap("]"));
-        return TString.wrap(sb.toString());
+        sb.append("]");
+        return sb.toString();
     }
 
-    public static TString toString(boolean[] a) {
+    public static String toString(boolean[] a) {
         TStringBuilder sb = new TStringBuilder();
-        sb.append(TString.wrap("["));
+        sb.append("[");
         for (int i = 0; i < a.length; ++i) {
             if (i > 0) {
-                sb.append(TString.wrap(", "));
+                sb.append(", ");
             }
             sb.append(a[i]);
         }
-        sb.append(TString.wrap("]"));
-        return TString.wrap(sb.toString());
+        sb.append("]");
+        return sb.toString();
     }
 
-    public static TString toString(byte[] a) {
+    public static String toString(byte[] a) {
         TStringBuilder sb = new TStringBuilder();
-        sb.append(TString.wrap("["));
+        sb.append("[");
         for (int i = 0; i < a.length; ++i) {
             if (i > 0) {
-                sb.append(TString.wrap(", "));
+                sb.append(", ");
             }
             sb.append(a[i]);
         }
-        sb.append(TString.wrap("]"));
-        return TString.wrap(sb.toString());
+        sb.append("]");
+        return sb.toString();
     }
 
-    public static TString toString(short[] a) {
+    public static String toString(short[] a) {
         TStringBuilder sb = new TStringBuilder();
-        sb.append(TString.wrap("["));
+        sb.append("[");
         for (int i = 0; i < a.length; ++i) {
             if (i > 0) {
-                sb.append(TString.wrap(", "));
+                sb.append(", ");
             }
             sb.append(a[i]);
         }
-        sb.append(TString.wrap("]"));
-        return TString.wrap(sb.toString());
+        sb.append("]");
+        return sb.toString();
     }
 
-    public static TString toString(char[] a) {
+    public static String toString(char[] a) {
         TStringBuilder sb = new TStringBuilder();
-        sb.append(TString.wrap("["));
+        sb.append("[");
         for (int i = 0; i < a.length; ++i) {
             if (i > 0) {
-                sb.append(TString.wrap(", "));
+                sb.append(", ");
             }
             sb.append(a[i]);
         }
-        sb.append(TString.wrap("]"));
-        return TString.wrap(sb.toString());
+        sb.append("]");
+        return sb.toString();
     }
 
-    public static TString toString(int[] a) {
+    public static String toString(int[] a) {
         TStringBuilder sb = new TStringBuilder();
-        sb.append(TString.wrap("["));
+        sb.append("[");
         for (int i = 0; i < a.length; ++i) {
             if (i > 0) {
-                sb.append(TString.wrap(", "));
+                sb.append(", ");
             }
             sb.append(a[i]);
         }
-        sb.append(TString.wrap("]"));
-        return TString.wrap(sb.toString());
+        sb.append("]");
+        return sb.toString();
     }
 
-    public static TString toString(long[] a) {
+    public static String toString(long[] a) {
         TStringBuilder sb = new TStringBuilder();
-        sb.append(TString.wrap("["));
+        sb.append("[");
         for (int i = 0; i < a.length; ++i) {
             if (i > 0) {
-                sb.append(TString.wrap(", "));
+                sb.append(", ");
             }
             sb.append(a[i]);
         }
-        sb.append(TString.wrap("]"));
-        return TString.wrap(sb.toString());
+        sb.append("]");
+        return sb.toString();
     }
 
-    public static TString toString(float[] a) {
+    public static String toString(float[] a) {
         TStringBuilder sb = new TStringBuilder();
-        sb.append(TString.wrap("["));
+        sb.append("[");
         for (int i = 0; i < a.length; ++i) {
             if (i > 0) {
-                sb.append(TString.wrap(", "));
+                sb.append(", ");
             }
             sb.append(a[i]);
         }
-        sb.append(TString.wrap("]"));
-        return TString.wrap(sb.toString());
+        sb.append("]");
+        return sb.toString();
     }
 
-    public static TString toString(double[] a) {
+    public static String toString(double[] a) {
         TStringBuilder sb = new TStringBuilder();
-        sb.append(TString.wrap("["));
+        sb.append("[");
         for (int i = 0; i < a.length; ++i) {
             if (i > 0) {
-                sb.append(TString.wrap(", "));
+                sb.append(", ");
             }
             sb.append(a[i]);
         }
-        sb.append(TString.wrap("]"));
-        return TString.wrap(sb.toString());
+        sb.append("]");
+        return sb.toString();
     }
 
     public static void fill(long[] a, int fromIndex, int toIndex, long val) {
@@ -1529,22 +1526,22 @@ public class TArrays extends TObject {
         }
     }
 
-    public static TString deepToString(Object[] a) {
-        TStringBuilder sb = new TStringBuilder();
+    public static String deepToString(Object[] a) {
+        StringBuilder sb = new StringBuilder();
         deepToString(a, sb, new TArrayList<>());
-        return TString.wrap(sb.toString());
+        return sb.toString();
     }
 
-    private static void deepToString(Object[] a, TStringBuilder out, TList<Object[]> visited) {
+    private static void deepToString(Object[] a, StringBuilder out, TList<Object[]> visited) {
         out.append('[');
         if (visited.contains(a)) {
-            out.append(TString.wrap("..."));
+            out.append("...");
         } else {
             visited.add(a);
             if (a.length > 0) {
                 deepToString(a[0], out, visited);
                 for (int i = 1; i < a.length; ++i) {
-                    out.append(TString.wrap(", "));
+                    out.append(", ");
                     deepToString(a[i], out, visited);
                 }
             }
@@ -1553,11 +1550,11 @@ public class TArrays extends TObject {
         out.append(']');
     }
 
-    private static void deepToString(Object a, TStringBuilder out, TList<Object[]> visited) {
+    private static void deepToString(Object a, StringBuilder out, TList<Object[]> visited) {
         if (a instanceof Object[]) {
             deepToString((Object[]) a, out, visited);
         } else {
-            out.append(TObject.wrap(a));
+            out.append(a);
         }
     }
 

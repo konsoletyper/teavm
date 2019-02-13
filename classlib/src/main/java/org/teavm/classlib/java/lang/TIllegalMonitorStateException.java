@@ -22,7 +22,7 @@ public class TIllegalMonitorStateException extends TRuntimeException {
         super();
     }
 
-    public TIllegalMonitorStateException(TString message) {
+    public TIllegalMonitorStateException(String message) {
         super(message);
     }
 }

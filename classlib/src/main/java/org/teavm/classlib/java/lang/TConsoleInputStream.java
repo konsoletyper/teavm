@@ -15,18 +15,18 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.io.IOException;
 import org.teavm.classlib.java.io.TEOFException;
-import org.teavm.classlib.java.io.TIOException;
 import org.teavm.classlib.java.io.TInputStream;
 
 class TConsoleInputStream extends TInputStream {
     @Override
-    public int read(byte[] b) throws TIOException {
+    public int read(byte[] b) throws IOException {
         throw new TEOFException();
     }
 
     @Override
-    public int read() throws TIOException {
+    public int read() throws IOException {
         throw new TEOFException();
     }
 }

@@ -15,12 +15,12 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.java.io.TIOException;
+import java.io.IOException;
 
 public interface TAppendable {
-    TAppendable append(TCharSequence csq) throws TIOException;
+    TAppendable append(TCharSequence csq) throws IOException;
 
-    TAppendable append(TCharSequence csq, int start, int end) throws TIOException;
+    TAppendable append(TCharSequence csq, int start, int end) throws IOException;
 
-    TAppendable append(char c) throws TIOException;
+    TAppendable append(char c) throws IOException;
 }

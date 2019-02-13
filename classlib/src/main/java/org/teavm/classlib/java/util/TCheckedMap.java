@@ -15,15 +15,12 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TClass;
-import org.teavm.classlib.java.lang.TObject;
-
 class TCheckedMap<K, V> implements TMap<K, V> {
     private TMap<K, V> innerMap;
-    private TClass<K> keyType;
-    private TClass<V> valueType;
+    private Class<K> keyType;
+    private Class<V> valueType;
 
-    public TCheckedMap(TMap<K, V> innerMap, TClass<K> keyType, TClass<V> valueType) {
+    public TCheckedMap(TMap<K, V> innerMap, Class<K> keyType, Class<V> valueType) {
         this.innerMap = innerMap;
         this.keyType = keyType;
         this.valueType = valueType;
@@ -56,7 +53,7 @@ class TCheckedMap<K, V> implements TMap<K, V> {
 
     @Override
     public V put(K key, V value) {
-        return innerMap.put(keyType.cast(TObject.wrap(key)), valueType.cast(TObject.wrap(value)));
+        return innerMap.put(keyType.cast(key), valueType.cast(value));
     }
 
     @Override
@@ -69,8 +66,8 @@ class TCheckedMap<K, V> implements TMap<K, V> {
         m = new THashMap<>(m);
         for (TIterator<? extends Entry<? extends K, ? extends V>> iter = m.entrySet().iterator(); iter.hasNext();) {
             Entry<? extends K, ? extends V> entry = iter.next();
-            keyType.cast(TObject.wrap(entry.getKey()));
-            valueType.cast(TObject.wrap(entry.getValue()));
+            keyType.cast(entry.getKey());
+            valueType.cast(entry.getValue());
         }
         innerMap.putAll(m);
     }

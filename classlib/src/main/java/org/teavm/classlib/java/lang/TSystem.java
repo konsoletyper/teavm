@@ -68,7 +68,7 @@ public final class TSystem extends TObject {
 
     public static void arraycopy(TObject src, int srcPos, TObject dest, int destPos, int length) {
         if (src == null || dest == null) {
-            throw new TNullPointerException(TString.wrap("Either src or dest is null"));
+            throw new TNullPointerException("Either src or dest is null");
         }
         if (srcPos < 0 || destPos < 0 || length < 0 || srcPos + length > TArray.getLength(src)
                 || destPos + length > TArray.getLength(dest)) {

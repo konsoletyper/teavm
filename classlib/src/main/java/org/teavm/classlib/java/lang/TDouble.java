@@ -251,11 +251,11 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     @Import(name = "teavm_reinterpretLongToDouble")
     public static native double longBitsToDouble(long bits);
 
-    public static TString toHexString(double d) {
+    public static String toHexString(double d) {
         if (isNaN(d)) {
-            return TString.wrap("NaN");
+            return "NaN";
         } else if (isInfinite(d)) {
-            return d > 0 ? TString.wrap("Infinity") : TString.wrap("-Infinity");
+            return d > 0 ? "Infinity" : "-Infinity";
         }
         char[] buffer = new char[30];
         int sz = 0;
@@ -312,6 +312,6 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
             buffer[sz++] = '0';
         }
 
-        return new TString(buffer, 0, sz);
+        return new String(buffer, 0, sz);
     }
 }

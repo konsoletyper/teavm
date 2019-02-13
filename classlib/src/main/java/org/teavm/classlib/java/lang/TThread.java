@@ -21,7 +21,7 @@ import org.teavm.platform.PlatformRunnable;
 import org.teavm.platform.async.AsyncCallback;
 
 public class TThread extends TObject implements TRunnable {
-    private static TThread mainThread = new TThread(TString.wrap("main"));
+    private static TThread mainThread = new TThread("main");
     private static TThread currentThread = mainThread;
     private static long nextId = 1;
     private static int activeCount = 1;
@@ -33,7 +33,7 @@ public class TThread extends TObject implements TRunnable {
     private boolean interruptedFlag;
     public TThreadInterruptHandler interruptHandler;
 
-    private TString name;
+    private String name;
     private boolean alive = true;
     TRunnable target;
 
@@ -41,7 +41,7 @@ public class TThread extends TObject implements TRunnable {
         this(null, null);
     }
 
-    public TThread(TString name) {
+    public TThread(String name) {
         this(null, name);
     }
 
@@ -49,7 +49,7 @@ public class TThread extends TObject implements TRunnable {
         this(target, null);
     }
 
-    public TThread(TRunnable target, TString name) {
+    public TThread(TRunnable target, String name) {
         this.name = name;
         this.target = target;
         id = nextId++;
@@ -94,7 +94,7 @@ public class TThread extends TObject implements TRunnable {
         return currentThread;
     }
 
-    public TString getName() {
+    public String getName() {
         return name;
     }
 

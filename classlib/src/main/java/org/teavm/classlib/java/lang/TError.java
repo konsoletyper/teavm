@@ -21,11 +21,11 @@ public class TError extends TThrowable {
     public TError() {
     }
 
-    public TError(TString message, TThrowable cause) {
+    public TError(String message, TThrowable cause) {
         super(message, cause);
     }
 
-    public TError(TString message) {
+    public TError(String message) {
         super(message);
     }
 

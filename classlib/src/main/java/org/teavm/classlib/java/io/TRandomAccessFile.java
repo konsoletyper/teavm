@@ -456,7 +456,7 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
         return new String(out, 0, s);
     }
 
-    static int writeShortToBuffer(int val, byte[] buffer, int offset) throws TIOException {
+    static int writeShortToBuffer(int val, byte[] buffer, int offset) throws IOException {
         buffer[offset++] = (byte) (val >> 8);
         buffer[offset++] = (byte) val;
         return offset;

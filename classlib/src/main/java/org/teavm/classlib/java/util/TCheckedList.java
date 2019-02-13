@@ -15,13 +15,10 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TClass;
-import org.teavm.classlib.java.lang.TObject;
-
 class TCheckedList<E> extends TCheckedCollection<E> implements TList<E> {
     private TList<E> innerList;
 
-    public TCheckedList(TList<E> innerList, TClass<E> type) {
+    public TCheckedList(TList<E> innerList, Class<E> type) {
         super(innerList, type);
         this.innerList = innerList;
     }
@@ -31,7 +28,7 @@ class TCheckedList<E> extends TCheckedCollection<E> implements TList<E> {
     public boolean addAll(int index, TCollection<? extends E> c) {
         Object[] items = c.toArray();
         for (int i = 0; i < items.length; ++i) {
-            items[i] = type.cast(TObject.wrap(items[i]));
+            items[i] = type.cast(items[i]);
         }
         return innerList.addAll(index, TArrays.asList((E[]) items));
     }
@@ -43,12 +40,12 @@ class TCheckedList<E> extends TCheckedCollection<E> implements TList<E> {
 
     @Override
     public E set(int index, E element) {
-        return innerList.set(index, type.cast(TObject.wrap(element)));
+        return innerList.set(index, type.cast(element));
     }
 
     @Override
     public void add(int index, E element) {
-        innerList.add(index, type.cast(TObject.wrap(element)));
+        innerList.add(index, type.cast(element));
     }
 
     @Override

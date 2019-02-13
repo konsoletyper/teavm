@@ -22,7 +22,7 @@ public class TIncompatibleClassChangeError extends TLinkageError {
         super();
     }
 
-    public TIncompatibleClassChangeError(TString message) {
+    public TIncompatibleClassChangeError(String message) {
         super(message);
     }
 }

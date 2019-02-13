@@ -22,7 +22,7 @@ public class TOutOfMemoryError extends TVirtualMachineError {
         super();
     }
 
-    public TOutOfMemoryError(TString message) {
+    public TOutOfMemoryError(String message) {
         super(message);
     }
 }

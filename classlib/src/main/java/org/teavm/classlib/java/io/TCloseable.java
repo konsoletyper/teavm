@@ -15,9 +15,10 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
 import org.teavm.classlib.java.lang.TAutoCloseable;
 
 public interface TCloseable extends TAutoCloseable {
     @Override
-    void close() throws TIOException;
+    void close() throws IOException;
 }

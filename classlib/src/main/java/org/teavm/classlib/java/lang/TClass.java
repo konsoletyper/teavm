@@ -53,8 +53,8 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
 public class TClass<T> extends TObject implements TAnnotatedElement {
-    TString name;
-    TString simpleName;
+    String name;
+    String simpleName;
     private PlatformClass platformClass;
     private TAnnotation[] annotationsCache;
     private Map<TClass<?>, TAnnotation> annotationsByType;
@@ -105,22 +105,22 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     @Unmanaged
-    public TString getName() {
+    public String getName() {
         if (PlatformDetector.isLowLevel()) {
-            return TString.wrap(Platform.getName(platformClass));
+            return Platform.getName(platformClass);
         } else {
             if (name == null) {
-                name = TString.wrap(Platform.getName(platformClass));
+                name = Platform.getName(platformClass);
             }
             return name;
         }
     }
 
-    public TString getSimpleName() {
-        TString simpleName = getSimpleNameCache();
+    public String getSimpleName() {
+        String simpleName = getSimpleNameCache();
         if (simpleName == null) {
             if (isArray()) {
-                simpleName = getComponentType().getSimpleName().concat(TString.wrap("[]"));
+                simpleName = getComponentType().getSimpleName() + "[]";
                 setSimpleNameCache(simpleName);
                 return simpleName;
             }
@@ -137,14 +137,14 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
                     name = name.substring(lastDot + 1);
                 }
             }
-            simpleName = TString.wrap(name);
+            simpleName = name;
             setSimpleNameCache(simpleName);
         }
         return simpleName;
     }
 
     @DelegateTo("getSimpleNameCacheLowLevel")
-    private TString getSimpleNameCache() {
+    private String getSimpleNameCache() {
         return simpleName;
     }
 
@@ -154,7 +154,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return Address.ofObject(this).<RuntimeClass>toStructure().simpleName;
     }
 
-    private void setSimpleNameCache(TString value) {
+    private void setSimpleNameCache(String value) {
         simpleName = value;
     }
 
@@ -559,8 +559,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     @SuppressWarnings("unchecked")
     public T cast(TObject obj) {
         if (obj != null && !isAssignableFrom((TClass<?>) (Object) obj.getClass())) {
-            throw new TClassCastException(TString.wrap(obj.getClass().getName()
-                    + " is not subtype of " + name));
+            throw new TClassCastException(obj.getClass().getName() + " is not subtype of " + name);
         }
         return (T) obj;
     }

@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
-import org.teavm.classlib.java.io.TIOException;
+import java.io.IOException;
 import org.teavm.classlib.java.io.TOutputStream;
 import org.teavm.interop.DelegateTo;
 import org.teavm.jso.JSBody;
@@ -23,7 +23,7 @@ import org.teavm.jso.JSBody;
 class TConsoleOutputStreamStdout extends TOutputStream {
     @Override
     @DelegateTo("writeLowLevel")
-    public void write(int b) throws TIOException {
+    public void write(int b) throws IOException {
         writeJs(b);
     }
 

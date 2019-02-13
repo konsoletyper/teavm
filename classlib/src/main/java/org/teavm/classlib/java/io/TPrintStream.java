@@ -15,13 +15,17 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TStringBuilder;
 import org.teavm.classlib.java.nio.TByteBuffer;
 import org.teavm.classlib.java.nio.TCharBuffer;
-import org.teavm.classlib.java.nio.charset.*;
+import org.teavm.classlib.java.nio.charset.TCharset;
+import org.teavm.classlib.java.nio.charset.TCharsetEncoder;
+import org.teavm.classlib.java.nio.charset.TCodingErrorAction;
+import org.teavm.classlib.java.nio.charset.TIllegalCharsetNameException;
+import org.teavm.classlib.java.nio.charset.TUnsupportedCharsetException;
 import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 
 public class TPrintStream extends TFilterOutputStream {
@@ -31,7 +35,7 @@ public class TPrintStream extends TFilterOutputStream {
     private char[] buffer = new char[32];
     private TCharset charset;
 
-    public TPrintStream(TOutputStream out, boolean autoFlush, TString encoding) throws TUnsupportedEncodingException {
+    public TPrintStream(TOutputStream out, boolean autoFlush, String encoding) throws TUnsupportedEncodingException {
         super(out);
         this.autoFlush = autoFlush;
         try {
@@ -71,7 +75,7 @@ public class TPrintStream extends TFilterOutputStream {
         }
         try {
             out.write(b);
-        } catch (TIOException e) {
+        } catch (IOException e) {
             errorState = true;
         }
         if (autoFlush && !errorState) {
@@ -86,19 +90,19 @@ public class TPrintStream extends TFilterOutputStream {
         }
         try {
             out.write(b, off, len);
-        } catch (TIOException e) {
+        } catch (IOException e) {
             errorState = true;
         }
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() {
         if (!checkError()) {
             return;
         }
         try {
             out.close();
-        } catch (TIOException e) {
+        } catch (IOException e) {
             errorState = true;
         } finally {
             out = null;
@@ -106,13 +110,13 @@ public class TPrintStream extends TFilterOutputStream {
     }
 
     @Override
-    public void flush() throws TIOException {
+    public void flush() {
         if (!check()) {
             return;
         }
         try {
             out.flush();
-        } catch (TIOException e) {
+        } catch (IOException e) {
             errorState = true;
         }
     }
@@ -173,7 +177,7 @@ public class TPrintStream extends TFilterOutputStream {
         printSB();
     }
 
-    public void print(TString s) {
+    public void print(String s) {
         sb.append(s);
         printSB();
     }
@@ -198,7 +202,7 @@ public class TPrintStream extends TFilterOutputStream {
         printSB();
     }
 
-    public void println(TString s) {
+    public void println(String s) {
         sb.append(s).append('\n');
         printSB();
     }

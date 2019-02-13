@@ -22,11 +22,11 @@ public class TSecurityException extends TRuntimeException {
         super();
     }
 
-    public TSecurityException(TString message, TThrowable cause) {
+    public TSecurityException(String message, TThrowable cause) {
         super(message, cause);
     }
 
-    public TSecurityException(TString message) {
+    public TSecurityException(String message) {
         super(message);
     }
 

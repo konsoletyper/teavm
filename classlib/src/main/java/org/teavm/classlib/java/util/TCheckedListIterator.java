@@ -15,14 +15,11 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TClass;
-import org.teavm.classlib.java.lang.TObject;
-
 class TCheckedListIterator<E> implements TListIterator<E> {
     private TListIterator<E> innerIterator;
-    private TClass<E> type;
+    private Class<E> type;
 
-    public TCheckedListIterator(TListIterator<E> innerIterator, TClass<E> type) {
+    TCheckedListIterator(TListIterator<E> innerIterator, Class<E> type) {
         this.innerIterator = innerIterator;
         this.type = type;
     }
@@ -64,11 +61,11 @@ class TCheckedListIterator<E> implements TListIterator<E> {
 
     @Override
     public void set(E e) {
-        innerIterator.set(type.cast(TObject.wrap(e)));
+        innerIterator.set(type.cast(e));
     }
 
     @Override
     public void add(E e) {
-        innerIterator.add(type.cast(TObject.wrap(e)));
+        innerIterator.add(type.cast(e));
     }
 }

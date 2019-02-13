@@ -22,11 +22,11 @@ public class TIllegalArgumentException extends TRuntimeException {
         super();
     }
 
-    public TIllegalArgumentException(TString message, TThrowable cause) {
+    public TIllegalArgumentException(String message, TThrowable cause) {
         super(message, cause);
     }
 
-    public TIllegalArgumentException(TString message) {
+    public TIllegalArgumentException(String message) {
         super(message);
     }
 

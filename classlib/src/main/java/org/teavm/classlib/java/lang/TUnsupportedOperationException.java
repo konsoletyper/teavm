@@ -22,11 +22,11 @@ public class TUnsupportedOperationException extends TRuntimeException {
         super();
     }
 
-    public TUnsupportedOperationException(TString message, TThrowable cause) {
+    public TUnsupportedOperationException(String message, TThrowable cause) {
         super(message, cause);
     }
 
-    public TUnsupportedOperationException(TString message) {
+    public TUnsupportedOperationException(String message) {
         super(message);
     }
 

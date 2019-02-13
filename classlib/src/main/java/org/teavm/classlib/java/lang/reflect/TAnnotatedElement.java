@@ -32,7 +32,7 @@ public interface TAnnotatedElement {
 
     TAnnotation[] getDeclaredAnnotations();
 
-    default <T extends TAnnotation> T[] getAnnotationsByType(TClass<T> annotationClass) {
+    default <T extends TAnnotation> T[] getAnnotationsByType(Class<T> annotationClass) {
         List<T> result = new ArrayList<>();
         Object classAsObject = annotationClass;
         for (TAnnotation annot : getAnnotations()) {
@@ -55,7 +55,7 @@ public interface TAnnotatedElement {
         return null;
     }
 
-    default <T extends TAnnotation> T[] getDeclaredAnnotationsByType(TClass<T> annotationClass) {
+    default <T extends TAnnotation> T[] getDeclaredAnnotationsByType(Class<T> annotationClass) {
         List<T> result = new ArrayList<>();
         Object classAsObject = annotationClass;
         for (TAnnotation annot : getDeclaredAnnotations()) {

@@ -48,17 +48,17 @@ public final class TArray extends TObject {
     }
 
     @PluggableDependency(ArrayNativeGenerator.class)
-    public static TObject newInstance(TClass<?> componentType, int length) throws TNegativeArraySizeException {
+    public static TObject newInstance(Class<?> componentType, int length) throws TNegativeArraySizeException {
         if (componentType == null) {
             throw new TNullPointerException();
         }
-        if (componentType == TClass.wrap(void.class)) {
+        if (componentType == void.class) {
             throw new TIllegalArgumentException();
         }
         if (length < 0) {
             throw new TNegativeArraySizeException();
         }
-        return newInstanceImpl(componentType.getPlatformClass(), length);
+        return newInstanceImpl(((TClass<?>) (Object) componentType).getPlatformClass(), length);
     }
 
     @GeneratedBy(ArrayNativeGenerator.class)

@@ -22,7 +22,7 @@ public class TNumberFormatException extends TIllegalArgumentException {
         super();
     }
 
-    public TNumberFormatException(TString message) {
+    public TNumberFormatException(String message) {
         super(message);
     }
 }

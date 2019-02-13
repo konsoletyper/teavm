@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.net;
 
+import java.util.Objects;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.*;
 
@@ -22,22 +23,22 @@ import org.teavm.classlib.java.lang.*;
  * This class represents an instance of a URI as defined by RFC 2396.
  */
 public final class TURI implements TComparable<TURI>, TSerializable {
-    static final TString unreserved = TString.wrap("_-!.~\'()*");
-    static final TString punct = TString.wrap(",;:$&+=");
-    static final TString reserved = TString.wrap(punct.toString() + "?/[]@");
-    static final TString someLegal = TString.wrap(unreserved.toString() + punct.toString());
-    static final TString queryLegal = TString.wrap(unreserved.toString() + reserved.toString() + "\\\"");
-    static final TString allLegal = TString.wrap(unreserved.toString() + reserved.toString());
-    private TString string;
-    private transient TString scheme;
-    private transient TString schemespecificpart;
-    private transient TString authority;
-    private transient TString userinfo;
-    private transient TString host;
+    static final String unreserved = "_-!.~\'()*";
+    static final String punct = ",;:$&+=";
+    static final String reserved = punct + "?/[]@";
+    static final String someLegal = unreserved + punct;
+    static final String queryLegal = unreserved + reserved + "\\\"";
+    static final String allLegal = unreserved + reserved;
+    private String string;
+    private transient String scheme;
+    private transient String schemespecificpart;
+    private transient String authority;
+    private transient String userinfo;
+    private transient String host;
     private transient int port = -1;
-    private transient TString path;
-    private transient TString query;
-    private transient TString fragment;
+    private transient String path;
+    private transient String query;
+    private transient String fragment;
     private transient boolean opaque;
     private transient boolean absolute;
     private transient boolean serverAuthority;
@@ -46,38 +47,12 @@ public final class TURI implements TComparable<TURI>, TSerializable {
     private TURI() {
     }
 
-    /**
-     * Creates a new URI instance according to the given string {@code uri}.
-     *
-     * @param uri
-     *            the textual URI representation to be parsed into a URI object.
-     * @throws TURISyntaxException
-     *             if the given string {@code uri} doesn't fit to the
-     *             specification RFC2396 or could not be parsed correctly.
-     */
-    public TURI(TString uri) throws TURISyntaxException {
+    public TURI(String uri) throws TURISyntaxException {
         new Helper().parseURI(uri, false);
     }
 
-    /**
-     * Creates a new URI instance using the given arguments. This constructor
-     * first creates a temporary URI string from the given components. This
-     * string will be parsed later on to create the URI instance.
-     * <p>
-     * {@code [scheme:]scheme-specific-part[#fragment]}
-     *
-     * @param scheme
-     *            the scheme part of the URI.
-     * @param ssp
-     *            the scheme-specific-part of the URI.
-     * @param frag
-     *            the fragment part of the URI.
-     * @throws TURISyntaxException
-     *             if the temporary created string doesn't fit to the
-     *             specification RFC2396 or could not be parsed correctly.
-     */
-    public TURI(TString scheme, TString ssp, TString frag) throws TURISyntaxException {
-        TStringBuilder uri = new TStringBuilder();
+    public TURI(String scheme, String ssp, String frag) throws TURISyntaxException {
+        StringBuilder uri = new StringBuilder();
         if (scheme != null) {
             uri.append(scheme);
             uri.append(':');
@@ -92,46 +67,19 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             uri.append(quoteComponent(frag, allLegal));
         }
 
-        new Helper().parseURI(TString.wrap(uri.toString()), false);
+        new Helper().parseURI(uri.toString(), false);
     }
 
-    /**
-     * Creates a new URI instance using the given arguments. This constructor
-     * first creates a temporary URI string from the given components. This
-     * string will be parsed later on to create the URI instance.
-     * <p>
-     * {@code [scheme:][user-info@]host[:port][path][?query][#fragment]}
-     *
-     * @param scheme
-     *            the scheme part of the URI.
-     * @param userinfo
-     *            the user information of the URI for authentication and
-     *            authorization.
-     * @param host
-     *            the host name of the URI.
-     * @param port
-     *            the port number of the URI.
-     * @param path
-     *            the path to the resource on the host.
-     * @param query
-     *            the query part of the URI to specify parameters for the
-     *            resource.
-     * @param fragment
-     *            the fragment part of the URI.
-     * @throws TURISyntaxException
-     *             if the temporary created string doesn't fit to the
-     *             specification RFC2396 or could not be parsed correctly.
-     */
-    public TURI(TString scheme, TString userinfo, TString host, int port, TString path, TString query,
-            TString fragment) throws TURISyntaxException {
+    public TURI(String scheme, String userinfo, String host, int port, String path, String query,
+            String fragment) throws TURISyntaxException {
 
         if (scheme == null && userinfo == null && host == null && path == null && query == null && fragment == null) {
-            this.path = TString.wrap("");
+            this.path = "";
             return;
         }
 
         if (scheme != null && path != null && path.length() > 0 && path.charAt(0) != '/') {
-            throw new TURISyntaxException(path, TString.wrap(""));
+            throw new TURISyntaxException(path, "");
         }
 
         TStringBuilder uri = new TStringBuilder();
@@ -141,7 +89,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         }
 
         if (userinfo != null || host != null || port != -1) {
-            uri.append(TString.wrap("//"));
+            uri.append("//");
         }
 
         if (userinfo != null) {
@@ -154,7 +102,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             // check for ipv6 addresses that hasn't been enclosed
             // in square brackets
             if (host.indexOf(':') != -1 && host.indexOf(']') == -1 && host.indexOf('[') == -1) {
-                host = TString.wrap("[" + host.toString() + "]"); //$NON-NLS-1$ //$NON-NLS-2$
+                host = "[" + host + "]";
             }
             uri.append(host);
         }
@@ -166,7 +114,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
 
         if (path != null) {
             // QUOTE ILLEGAL CHARS
-            uri.append(quoteComponent(path, TString.wrap("/@" + someLegal.toString()))); //$NON-NLS-1$
+            uri.append(quoteComponent(path, "/@" + someLegal));
         }
 
         if (query != null) {
@@ -181,58 +129,17 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             uri.append(quoteComponent(fragment, allLegal));
         }
 
-        new Helper().parseURI(TString.wrap(uri.toString()), true);
+        new Helper().parseURI(uri.toString(), true);
     }
 
-    /**
-     * Creates a new URI instance using the given arguments. This constructor
-     * first creates a temporary URI string from the given components. This
-     * string will be parsed later on to create the URI instance.
-     * <p>
-     * {@code [scheme:]host[path][#fragment]}
-     *
-     * @param scheme
-     *            the scheme part of the URI.
-     * @param host
-     *            the host name of the URI.
-     * @param path
-     *            the path to the resource on the host.
-     * @param fragment
-     *            the fragment part of the URI.
-     * @throws TURISyntaxException
-     *             if the temporary created string doesn't fit to the
-     *             specification RFC2396 or could not be parsed correctly.
-     */
-    public TURI(TString scheme, TString host, TString path, TString fragment) throws TURISyntaxException {
+    public TURI(String scheme, String host, String path, String fragment) throws TURISyntaxException {
         this(scheme, null, host, -1, path, null, fragment);
     }
 
-    /**
-     * Creates a new URI instance using the given arguments. This constructor
-     * first creates a temporary URI string from the given components. This
-     * string will be parsed later on to create the URI instance.
-     * <p>
-     * {@code [scheme:][//authority][path][?query][#fragment]}
-     *
-     * @param scheme
-     *            the scheme part of the URI.
-     * @param authority
-     *            the authority part of the URI.
-     * @param path
-     *            the path to the resource on the host.
-     * @param query
-     *            the query part of the URI to specify parameters for the
-     *            resource.
-     * @param fragment
-     *            the fragment part of the URI.
-     * @throws TURISyntaxException
-     *             if the temporary created string doesn't fit to the
-     *             specification RFC2396 or could not be parsed correctly.
-     */
-    public TURI(TString scheme, TString authority, TString path, TString query, TString fragment)
+    public TURI(String scheme, String authority, String path, String query, String fragment)
             throws TURISyntaxException {
         if (scheme != null && path != null && path.length() > 0 && path.charAt(0) != '/') {
-            throw new TURISyntaxException(path, TString.wrap(""));
+            throw new TURISyntaxException(path, "");
         }
 
         TStringBuilder uri = new TStringBuilder();
@@ -241,14 +148,14 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             uri.append(':');
         }
         if (authority != null) {
-            uri.append(TString.wrap("//")); //$NON-NLS-1$
+            uri.append("//");
             // QUOTE ILLEGAL CHARS
-            uri.append(quoteComponent(authority, TString.wrap("@[]" + someLegal.toString()))); //$NON-NLS-1$
+            uri.append(quoteComponent(authority, "@[]" + someLegal));
         }
 
         if (path != null) {
             // QUOTE ILLEGAL CHARS
-            uri.append(quoteComponent(path, TString.wrap("/@" + someLegal.toString()))); //$NON-NLS-1$
+            uri.append(quoteComponent(path, "/@" + someLegal));
         }
         if (query != null) {
             // QUOTE ILLEGAL CHARS
@@ -261,14 +168,14 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             uri.append(quoteComponent(fragment, allLegal));
         }
 
-        new Helper().parseURI(TString.wrap(uri.toString()), false);
+        new Helper().parseURI(uri.toString(), false);
     }
 
     private class Helper {
 
-        private void parseURI(TString uri, boolean forceServer)
+        private void parseURI(String uri, boolean forceServer)
                 throws TURISyntaxException {
-            TString temp = uri;
+            String temp = uri;
             // assign uri string to the input value per spec
             string = uri;
             int index;
@@ -300,12 +207,12 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 absolute = true;
                 scheme = temp.substring(0, index);
                 if (scheme.length() == 0) {
-                    throw new TURISyntaxException(uri, TString.wrap(""));
+                    throw new TURISyntaxException(uri, "");
                 }
                 validateScheme(uri, scheme, 0);
                 schemespecificpart = temp.substring(index + 1);
                 if (schemespecificpart.length() == 0) {
-                    throw new TURISyntaxException(uri, TString.wrap(""));
+                    throw new TURISyntaxException(uri, "");
                 }
             } else {
                 absolute = false;
@@ -327,7 +234,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 }
 
                 // Authority and Path
-                if (temp.startsWith(TString.wrap("//"))) {
+                if (temp.startsWith("//")) {
                     index = temp.indexOf('/', 2);
                     if (index != -1) {
                         authority = temp.substring(2, index);
@@ -336,10 +243,10 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                         authority = temp.substring(2);
                         if (authority.length() == 0 && query == null
                                 && fragment == null) {
-                            throw new TURISyntaxException(uri, TString.wrap(""));
+                            throw new TURISyntaxException(uri, "");
                         }
 
-                        path = TString.wrap("");
+                        path = "";
                         // nothing left, so path is empty (not null, path should
                         // never be null)
                     }
@@ -369,63 +276,63 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             parseAuthority(forceServer);
         }
 
-        private void validateScheme(TString uri, TString scheme, int index) throws TURISyntaxException {
+        private void validateScheme(String uri, String scheme, int index) throws TURISyntaxException {
             // first char needs to be an alpha char
             char ch = scheme.charAt(0);
             if (!((ch >= 'a' && ch <= 'z') || (ch >= 'A' && ch <= 'Z'))) {
-                throw new TURISyntaxException(uri, TString.wrap(""), 0);
+                throw new TURISyntaxException(uri, "", 0);
             }
 
             try {
-                TURIEncoderDecoder.validateSimple(scheme, TString.wrap("+-."));
+                TURIEncoderDecoder.validateSimple(scheme, "+-.");
             } catch (TURISyntaxException e) {
-                throw new TURISyntaxException(uri, TString.wrap(""), index + e.getIndex());
+                throw new TURISyntaxException(uri, "", index + e.getIndex());
             }
         }
 
-        private void validateSsp(TString uri, TString ssp, int index)
+        private void validateSsp(String uri, String ssp, int index)
                 throws TURISyntaxException {
             try {
                 TURIEncoderDecoder.validate(ssp, allLegal);
             } catch (TURISyntaxException e) {
-                throw new TURISyntaxException(uri, TString.wrap(""), index + e.getIndex());
+                throw new TURISyntaxException(uri, "", index + e.getIndex());
             }
         }
 
-        private void validateAuthority(TString uri, TString authority, int index)
+        private void validateAuthority(String uri, String authority, int index)
                 throws TURISyntaxException {
             try {
-                TURIEncoderDecoder.validate(authority, TString.wrap("@[]" + someLegal.toString()));
+                TURIEncoderDecoder.validate(authority, "@[]" + someLegal);
             } catch (TURISyntaxException e) {
-                throw new TURISyntaxException(uri, TString.wrap(""), index + e.getIndex());
+                throw new TURISyntaxException(uri, "", index + e.getIndex());
             }
         }
 
-        private void validatePath(TString uri, TString path, int index)
+        private void validatePath(String uri, String path, int index)
                 throws TURISyntaxException {
             try {
-                TURIEncoderDecoder.validate(path, TString.wrap("/@" + someLegal.toString())); //$NON-NLS-1$
+                TURIEncoderDecoder.validate(path, "/@" + someLegal);
             } catch (TURISyntaxException e) {
-                throw new TURISyntaxException(uri, TString.wrap(""), index + e.getIndex());
+                throw new TURISyntaxException(uri, "", index + e.getIndex());
             }
         }
 
-        private void validateQuery(TString uri, TString query, int index)
+        private void validateQuery(String uri, String query, int index)
                 throws TURISyntaxException {
             try {
                 TURIEncoderDecoder.validate(query, queryLegal);
             } catch (TURISyntaxException e) {
-                throw new TURISyntaxException(uri, TString.wrap(""), index + e.getIndex());
+                throw new TURISyntaxException(uri, "", index + e.getIndex());
 
             }
         }
 
-        private void validateFragment(TString uri, TString fragment, int index)
+        private void validateFragment(String uri, String fragment, int index)
                 throws TURISyntaxException {
             try {
                 TURIEncoderDecoder.validate(fragment, allLegal);
             } catch (TURISyntaxException e) {
-                throw new TURISyntaxException(uri, TString.wrap(""), index + e.getIndex());
+                throw new TURISyntaxException(uri, "", index + e.getIndex());
             }
         }
 
@@ -446,9 +353,9 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 return;
             }
 
-            TString temp;
-            TString tempUserinfo = null;
-            TString tempHost = null;
+            String temp;
+            String tempUserinfo = null;
+            String tempHost;
             int index;
             int hostindex = 0;
             int tempPort = -1;
@@ -475,13 +382,13 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                         tempPort = TInteger.parseInt(temp.substring(index + 1));
                         if (tempPort < 0) {
                             if (forceServer) {
-                                throw new TURISyntaxException(authority, TString.wrap(""), hostindex + index + 1);
+                                throw new TURISyntaxException(authority, "", hostindex + index + 1);
                             }
                             return;
                         }
                     } catch (TNumberFormatException e) {
                         if (forceServer) {
-                            throw new TURISyntaxException(authority, TString.wrap(""), hostindex + index + 1);
+                            throw new TURISyntaxException(authority, "", hostindex + index + 1);
                         }
                         return;
                     }
@@ -490,9 +397,9 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 tempHost = temp;
             }
 
-            if (tempHost.equals(TString.wrap(""))) {
+            if (tempHost.equals("")) {
                 if (forceServer) {
-                    throw new TURISyntaxException(authority, TString.wrap(""), hostindex);
+                    throw new TURISyntaxException(authority, "", hostindex);
                 }
                 return;
             }
@@ -509,12 +416,12 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             serverAuthority = true;
         }
 
-        private void validateUserinfo(TString uri, TString userinfo, int index)
+        private void validateUserinfo(String uri, String userinfo, int index)
                 throws TURISyntaxException {
             for (int i = 0; i < userinfo.length(); i++) {
                 char ch = userinfo.charAt(i);
                 if (ch == ']' || ch == '[') {
-                    throw new TURISyntaxException(uri, TString.wrap(""), index + i);
+                    throw new TURISyntaxException(uri, "", index + i);
                 }
             }
         }
@@ -523,15 +430,15 @@ public final class TURI implements TComparable<TURI>, TSerializable {
          * distinguish between IPv4, IPv6, domain name and validate it based on
          * its type
          */
-        private boolean isValidHost(boolean forceServer, TString host)
+        private boolean isValidHost(boolean forceServer, String host)
                 throws TURISyntaxException {
             if (host.charAt(0) == '[') {
                 // ipv6 address
                 if (host.charAt(host.length() - 1) != ']') {
-                    throw new TURISyntaxException(host, TString.wrap(""), 0);
+                    throw new TURISyntaxException(host, "", 0);
                 }
                 if (!isValidIP6Address(host)) {
-                    throw new TURISyntaxException(host, TString.wrap(""));
+                    throw new TURISyntaxException(host, "");
                 }
                 return true;
             }
@@ -539,7 +446,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             // '[' and ']' can only be the first char and last char
             // of the host name
             if (host.indexOf('[') != -1 || host.indexOf(']') != -1) {
-                throw new TURISyntaxException(host, TString.wrap(""), 0);
+                throw new TURISyntaxException(host, "", 0);
             }
 
             int index = host.lastIndexOf('.');
@@ -550,7 +457,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                     return true;
                 }
                 if (forceServer) {
-                    throw new TURISyntaxException(host, TString.wrap(""), 0);
+                    throw new TURISyntaxException(host, "", 0);
                 }
                 return false;
             }
@@ -560,14 +467,14 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 return true;
             }
             if (forceServer) {
-                throw new TURISyntaxException(host, TString.wrap(""), 0);
+                throw new TURISyntaxException(host, "", 0);
             }
             return false;
         }
 
-        private boolean isValidDomainName(TString host) {
+        private boolean isValidDomainName(String host) {
             try {
-                TURIEncoderDecoder.validateSimple(host, TString.wrap("-."));
+                TURIEncoderDecoder.validateSimple(host, "-.");
             } catch (TURISyntaxException e) {
                 return false;
             }
@@ -588,17 +495,15 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 return false;
             }
 
-            TString label = host.substring(index);
+            String label = host.substring(index);
             if (!label.equals(host)) {
                 char ch = label.charAt(0);
-                if (ch >= '0' && ch <= '9') {
-                    return false;
-                }
+                return ch < '0' || ch > '9';
             }
             return true;
         }
 
-        private boolean isValidIPv4Address(TString host) {
+        private boolean isValidIPv4Address(String host) {
             int index;
             int index2;
             try {
@@ -628,12 +533,12 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             return true;
         }
 
-        private boolean isValidIP6Address(TString ipAddress) {
+        private boolean isValidIP6Address(String ipAddress) {
             int length = ipAddress.length();
             boolean doubleColon = false;
             int numberOfColons = 0;
             int numberOfPeriods = 0;
-            TString word = TString.wrap("");
+            String word = "";
             char c = 0;
             char prevChar = 0;
             int offset = 0; // offset for [] ip addresses
@@ -696,7 +601,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                                 && ipAddress.charAt(1 + offset) != ':') {
                             return false;
                         }
-                        word = TString.wrap("");
+                        word = "";
                         break;
 
                     case ':':
@@ -713,7 +618,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                             }
                             doubleColon = true;
                         }
-                        word = TString.wrap("");
+                        word = "";
                         break;
 
                     default:
@@ -729,9 +634,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
 
             // Check if we have an IPv4 ending
             if (numberOfPeriods > 0) {
-                if (numberOfPeriods != 3 || !isValidIP4Word(word)) {
-                    return false;
-                }
+                return numberOfPeriods == 3 && isValidIP4Word(word);
             } else {
                 // If we're at then end and we haven't had 7 colons then there
                 // is a problem unless we encountered a doubleColon
@@ -742,16 +645,12 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 // If we have an empty word at the end, it means we ended in
                 // either a : or a .
                 // If we did not end in :: then this is invalid
-                if (word.isEmpty() && ipAddress.charAt(length - 1 - offset) != ':'
-                        && ipAddress.charAt(length - 2 - offset) != ':') {
-                    return false;
-                }
+                return !word.isEmpty() || ipAddress.charAt(length - 1 - offset) == ':'
+                        || ipAddress.charAt(length - 2 - offset) == ':';
             }
-
-            return true;
         }
 
-        private boolean isValidIP4Word(TString word) {
+        private boolean isValidIP4Word(String word) {
             char c;
             if (word.length() < 1 || word.length() > 3) {
                 return false;
@@ -762,10 +661,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                     return false;
                 }
             }
-            if (TInteger.parseInt(word) > 255) {
-                return false;
-            }
-            return true;
+            return TInteger.parseInt(word) <= 255;
         }
 
         private boolean isValidHexChar(char c) {
@@ -775,14 +671,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         }
     }
 
-    /*
-     * Quote illegal chars for each component, but not the others
-     *
-     * @param component java.lang.String the component to be converted @param
-     * legalset java.lang.String the legal character set allowed in the
-     * component s @return java.lang.String the converted string
-     */
-    private TString quoteComponent(TString component, TString legalset) {
+    private String quoteComponent(String component, String legalset) {
         /*
          * Use a different encoder than URLEncoder since: 1. chars like "/",
          * "#", "@" etc needs to be preserved instead of being encoded, 2.
@@ -792,21 +681,6 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         return TURIEncoderDecoder.quoteIllegal(component, legalset);
     }
 
-    /**
-     * Compares this URI with the given argument {@code uri}. This method will
-     * return a negative value if this URI instance is less than the given
-     * argument and a positive value if this URI instance is greater than the
-     * given argument. The return value {@code 0} indicates that the two
-     * instances represent the same URI. To define the order the single parts of
-     * the URI are compared with each other. String components will be orderer
-     * in the natural case-sensitive way. A hierarchical URI is less than an
-     * opaque URI and if one part is {@code null} the URI with the undefined
-     * part is less than the other one.
-     *
-     * @param uri
-     *            the URI this instance has to compare with.
-     * @return the value representing the order of the two instances.
-     */
     @Override
     public int compareTo(TURI uri) {
         int ret = 0;
@@ -920,8 +794,8 @@ public final class TURI implements TComparable<TURI>, TSerializable {
      *            the string which has to be parsed to create the URI instance.
      * @return the created instance representing the given URI.
      */
-    public static TURI create(TString uri) {
-        TURI result = null;
+    public static TURI create(String uri) {
+        TURI result;
         try {
             result = new TURI(uri);
         } catch (TURISyntaxException e) {
@@ -951,7 +825,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
      * Takes a string that may contain hex sequences like %F1 or %2b and
      * converts the hex values following the '%' to lowercase
      */
-    private TString convertHexToLowerCase(TString s) {
+    private String convertHexToLowerCase(String s) {
         TStringBuilder result = new TStringBuilder();
         if (s.indexOf('%') == -1) {
             return s;
@@ -959,13 +833,17 @@ public final class TURI implements TComparable<TURI>, TSerializable {
 
         int index = 0;
         int previndex = 0;
-        while ((index = s.indexOf('%', previndex)) != -1) {
+        while (true) {
+            index = s.indexOf('%', previndex);
+            if (index == -1) {
+                break;
+            }
             result.append(s.substring(previndex, index + 1));
             result.append(s.substring(index + 1, index + 3).toLowerCase());
             index += 3;
             previndex = index;
         }
-        return  TString.wrap(result.toString());
+        return result.toString();
     }
 
     /*
@@ -973,7 +851,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
      * compares them, ignoring case for the hex values. Hex values must always
      * occur in pairs as above
      */
-    private boolean equalsHexCaseInsensitive(TString first, TString second) {
+    private boolean equalsHexCaseInsensitive(String first, String second) {
         if (first.indexOf('%') != second.indexOf('%')) {
             return first.equals(second);
         }
@@ -1005,16 +883,6 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         return first.substring(previndex).equals(second.substring(previndex));
     }
 
-    /**
-     * Compares this URI instance with the given argument {@code o} and
-     * determines if both are equal. Two URI instances are equal if all single
-     * parts are identical in their meaning.
-     *
-     * @param o
-     *            the URI this instance has to be compared with.
-     * @return {@code true} if both URI instances point to the same resource,
-     *         {@code false} otherwise.
-     */
     @Override
     public boolean equals(Object o) {
         if (!(o instanceof TURI)) {
@@ -1096,146 +964,66 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         }
     }
 
-    /**
-     * Gets the decoded authority part of this URI.
-     *
-     * @return the decoded authority part or {@code null} if undefined.
-     */
-    public TString getAuthority() {
+    public String getAuthority() {
         return decode(authority);
     }
 
-    /**
-     * Gets the decoded fragment part of this URI.
-     *
-     * @return the decoded fragment part or {@code null} if undefined.
-     */
-    public TString getFragment() {
+    public String getFragment() {
         return decode(fragment);
     }
 
-    /**
-     * Gets the host part of this URI.
-     *
-     * @return the host part or {@code null} if undefined.
-     */
-    public TString getHost() {
+    public String getHost() {
         return host;
     }
 
-    /**
-     * Gets the decoded path part of this URI.
-     *
-     * @return the decoded path part or {@code null} if undefined.
-     */
-    public TString getPath() {
+    public String getPath() {
         return decode(path);
     }
 
-    /**
-     * Gets the port number of this URI.
-     *
-     * @return the port number or {@code -1} if undefined.
-     */
     public int getPort() {
         return port;
     }
 
-    /**
-     * Gets the decoded query part of this URI.
-     *
-     * @return the decoded query part or {@code null} if undefined.
-     */
-    public TString getQuery() {
+    public String getQuery() {
         return decode(query);
     }
 
-    /**
-     * Gets the authority part of this URI in raw form.
-     *
-     * @return the encoded authority part or {@code null} if undefined.
-     */
-    public TString getRawAuthority() {
+    public String getRawAuthority() {
         return authority;
     }
 
-    /**
-     * Gets the fragment part of this URI in raw form.
-     *
-     * @return the encoded fragment part or {@code null} if undefined.
-     */
-    public TString getRawFragment() {
+    public String getRawFragment() {
         return fragment;
     }
 
-    /**
-     * Gets the path part of this URI in raw form.
-     *
-     * @return the encoded path part or {@code null} if undefined.
-     */
-    public TString getRawPath() {
+    public String getRawPath() {
         return path;
     }
 
-    /**
-     * Gets the query part of this URI in raw form.
-     *
-     * @return the encoded query part or {@code null} if undefined.
-     */
-    public TString getRawQuery() {
+    public String getRawQuery() {
         return query;
     }
 
-    /**
-     * Gets the scheme-specific part of this URI in raw form.
-     *
-     * @return the encoded scheme-specific part or {@code null} if undefined.
-     */
-    public TString getRawSchemeSpecificPart() {
+    public String getRawSchemeSpecificPart() {
         return schemespecificpart;
     }
 
-    /**
-     * Gets the user-info part of this URI in raw form.
-     *
-     * @return the encoded user-info part or {@code null} if undefined.
-     */
-    public TString getRawUserInfo() {
+    public String getRawUserInfo() {
         return userinfo;
     }
 
-    /**
-     * Gets the scheme part of this URI.
-     *
-     * @return the scheme part or {@code null} if undefined.
-     */
-    public TString getScheme() {
+    public String getScheme() {
         return scheme;
     }
 
-    /**
-     * Gets the decoded scheme-specific part of this URI.
-     *
-     * @return the decoded scheme-specific part or {@code null} if undefined.
-     */
-    public TString getSchemeSpecificPart() {
+    public String getSchemeSpecificPart() {
         return decode(schemespecificpart);
     }
 
-    /**
-     * Gets the decoded user-info part of this URI.
-     *
-     * @return the decoded user-info part or {@code null} if undefined.
-     */
-    public TString getUserInfo() {
+    public String getUserInfo() {
         return decode(userinfo);
     }
 
-    /**
-     * Gets the hashcode value of this URI instance.
-     *
-     * @return the appropriate hashcode value.
-     */
     @Override
     public int hashCode() {
         if (hash == -1) {
@@ -1269,7 +1057,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
     /*
      * normalize path, and return the resulting string
      */
-    private TString normalize(TString path) {
+    private String normalize(String path) {
         // count the number of '/'s, to determine number of segments
         int index = -1;
         int pathlen = path.length();
@@ -1277,20 +1065,28 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         if (pathlen > 0 && path.charAt(0) != '/') {
             size++;
         }
-        while ((index = path.indexOf('/', index + 1)) != -1) {
+        while (true) {
+            index = path.indexOf('/', index + 1);
+            if (index == -1) {
+                break;
+            }
             if (index + 1 < pathlen && path.charAt(index + 1) != '/') {
                 size++;
             }
         }
 
-        TString[] seglist = new TString[size];
+        String[] seglist = new String[size];
         boolean[] include = new boolean[size];
 
         // break the path into segments and store in the list
         int current = 0;
         int index2 = 0;
         index = (pathlen > 0 && path.charAt(0) == '/') ? 1 : 0;
-        while ((index2 = path.indexOf('/', index + 1)) != -1) {
+        while (index2 != -1) {
+            index2 = path.indexOf('/', index + 1);
+            if (index2 == -1) {
+                break;
+            }
             seglist[current++] = path.substring(index, index2);
             index = index2 + 1;
         }
@@ -1304,7 +1100,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         // determine which segments get included in the normalized path
         for (int i = 0; i < size; i++) {
             include[i] = true;
-            if (seglist[i].equals(TString.wrap(".."))) { //$NON-NLS-1$
+            if (seglist[i].equals("..")) {
                 int remove = i - 1;
                 // search back to find a segment to remove, if possible
                 while (remove > -1 && !include[remove]) {
@@ -1312,18 +1108,18 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 }
                 // if we find a segment to remove, remove it and the ".."
                 // segment
-                if (remove > -1 && !seglist[remove].equals(TString.wrap(".."))) { //$NON-NLS-1$
+                if (remove > -1 && !seglist[remove].equals("..")) {
                     include[remove] = false;
                     include[i] = false;
                 }
-            } else if (seglist[i].equals(TString.wrap("."))) { //$NON-NLS-1$
+            } else if (seglist[i].equals(".")) {
                 include[i] = false;
             }
         }
 
         // put the path back together
         TStringBuilder newpath = new TStringBuilder();
-        if (path.startsWith(TString.wrap("/"))) {
+        if (path.startsWith("/")) {
             newpath.append('/');
         }
 
@@ -1337,34 +1133,28 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         // if we used at least one segment and the path previously ended with
         // a slash and the last segment is still used, then delete the extra
         // trailing '/'
-        if (!path.endsWith(TString.wrap("/")) && seglist.length > 0 && include[seglist.length - 1]) {
+        if (!path.endsWith("/") && seglist.length > 0 && include[seglist.length - 1]) {
             newpath.deleteCharAt(newpath.length() - 1);
         }
 
-        TString result = TString.wrap(newpath.toString());
+        String result = newpath.toString();
 
         // check for a ':' in the first segment if one exists,
         // prepend "./" to normalize
         index = result.indexOf(':');
         index2 = result.indexOf('/');
         if (index != -1 && (index < index2 || index2 == -1)) {
-            newpath.insert(0, TString.wrap("./"));
-            result = TString.wrap(newpath.toString());
+            newpath.insert(0, "./");
+            result = newpath.toString();
         }
         return result;
     }
 
-    /**
-     * Normalizes the path part of this URI.
-     *
-     * @return an URI object which represents this instance with a normalized
-     *         path.
-     */
     public TURI normalize() {
         if (opaque) {
             return this;
         }
-        TString normalizedPath = normalize(path);
+        String normalizedPath = normalize(path);
         // if the path is already normalized, return this
         if (path.equals(normalizedPath)) {
             return this;
@@ -1377,16 +1167,6 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         return result;
     }
 
-    /**
-     * Tries to parse the authority component of this URI to divide it into the
-     * host, port, and user-info. If this URI is already determined as a
-     * ServerAuthority this instance will be returned without changes.
-     *
-     * @return this instance with the components of the parsed server authority.
-     * @throws TURISyntaxException
-     *             if the authority part could not be parsed as a server-based
-     *             authority.
-     */
     public TURI parseServerAuthority() throws TURISyntaxException {
         if (!serverAuthority) {
             new Helper().parseAuthority(true);
@@ -1394,32 +1174,22 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         return this;
     }
 
-    /**
-     * Makes the given URI {@code relative} to a relative URI against the URI
-     * represented by this instance.
-     *
-     * @param relative
-     *            the URI which has to be relativized against this URI.
-     * @return the relative URI.
-     */
     public TURI relativize(TURI relative) {
         if (relative.opaque || opaque) {
             return relative;
         }
 
-        if (scheme == null ? relative.scheme != null : !scheme
-                .equals(relative.scheme)) {
+        if (!Objects.equals(scheme, relative.scheme)) {
             return relative;
         }
 
-        if (authority == null ? relative.authority != null : !authority
-                .equals(relative.authority)) {
+        if (!Objects.equals(authority, relative.authority)) {
             return relative;
         }
 
         // normalize both paths
-        TString thisPath = normalize(path);
-        TString relativePath = normalize(relative.path);
+        String thisPath = normalize(path);
+        String relativePath = normalize(relative.path);
 
         /*
          * if the paths aren't equal, then we need to determine if this URI's
@@ -1427,8 +1197,8 @@ public final class TURI implements TComparable<TURI>, TSerializable {
          */
         if (!thisPath.equals(relativePath)) {
             // if this URI's path doesn't end in a '/', add one
-            if (!thisPath.endsWith(TString.wrap("/"))) { //$NON-NLS-1$
-                thisPath = TString.wrap(thisPath.toString()).concat(TString.valueOf('/'));
+            if (!thisPath.endsWith("/")) {
+                thisPath = thisPath + '/';
             }
             /*
              * if the relative URI's path doesn't start with this URI's path,
@@ -1449,21 +1219,13 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         return result;
     }
 
-    /**
-     * Resolves the given URI {@code relative} against the URI represented by
-     * this instance.
-     *
-     * @param relative
-     *            the URI which has to be resolved against this URI.
-     * @return the resolved URI.
-     */
     public TURI resolve(TURI relative) {
         if (relative.absolute || opaque) {
             return relative;
         }
 
         TURI result;
-        if (relative.path.equals(TString.wrap("")) && relative.scheme == null //$NON-NLS-1$
+        if (relative.path.equals("") && relative.scheme == null //$NON-NLS-1$
                 && relative.authority == null && relative.query == null
                 && relative.fragment != null) {
             // if the relative URI only consists of fragment,
@@ -1491,7 +1253,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             result = duplicate();
             result.fragment = relative.fragment;
             result.query = relative.query;
-            if (relative.path.startsWith(TString.wrap("/"))) {
+            if (relative.path.startsWith("/")) {
                 result.path = relative.path;
             } else {
                 // resolve a relative reference
@@ -1505,52 +1267,28 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         return result;
     }
 
-    /**
-     * Helper method used to re-calculate the scheme specific part of the
-     * resolved or normalized URIs
-     */
     private void setSchemeSpecificPart() {
         // ssp = [//authority][path][?query]
         TStringBuilder ssp = new TStringBuilder();
         if (authority != null) {
-            ssp.append(TString.wrap("//")).append(authority);
+            ssp.append("//").append(authority);
         }
         if (path != null) {
             ssp.append(path);
         }
         if (query != null) {
-            ssp.append(TString.wrap("?")).append(query);
+            ssp.append("?").append(query);
         }
-        schemespecificpart = TString.wrap(ssp.toString());
+        schemespecificpart = ssp.toString();
         // reset string, so that it can be re-calculated correctly when asked.
         string = null;
     }
 
-    /**
-     * Creates a new URI instance by parsing the given string {@code relative}
-     * and resolves the created URI against the URI represented by this
-     * instance.
-     *
-     * @param relative
-     *            the given string to create the new URI instance which has to
-     *            be resolved later on.
-     * @return the created and resolved URI.
-     */
-    public TURI resolve(TString relative) {
+    public TURI resolve(String relative) {
         return resolve(create(relative));
     }
 
-    /*
-     * Encode unicode chars that are not part of US-ASCII char set into the
-     * escaped form
-     *
-     * i.e. The Euro currency symbol is encoded as "%E2%82%AC".
-     *
-     * @param component java.lang.String the component to be converted @param
-     * legalset java.lang.String the legal character set allowed in the
-     * component s @return java.lang.String the converted string
-     */
-    private TString encodeOthers(TString s) {
+    private String encodeOthers(String s) {
         /*
          * Use a different encoder than URLEncoder since: 1. chars like "/",
          * "#", "@" etc needs to be preserved instead of being encoded, 2.
@@ -1560,7 +1298,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         return TURIEncoderDecoder.encodeOthers(s);
     }
 
-    private TString decode(TString s) {
+    private String decode(String s) {
         if (s == null) {
             return s;
         }
@@ -1568,21 +1306,10 @@ public final class TURI implements TComparable<TURI>, TSerializable {
         return TURIEncoderDecoder.decode(s);
     }
 
-    /**
-     * Returns the textual string representation of this URI instance using the
-     * US-ASCII encoding.
-     *
-     * @return the US-ASCII string representation of this URI.
-     */
-    public TString toASCIIString() {
-        return encodeOthers(TString.wrap(toString()));
+    public String toASCIIString() {
+        return encodeOthers(toString());
     }
 
-    /**
-     * Returns the textual string representation of this URI instance.
-     *
-     * @return the textual string representation of this URI.
-     */
     @Override
     public String toString() {
         if (string == null) {
@@ -1595,7 +1322,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 result.append(schemespecificpart);
             } else {
                 if (authority != null) {
-                    result.append(TString.wrap("//"));
+                    result.append("//");
                     result.append(authority);
                 }
 
@@ -1614,9 +1341,9 @@ public final class TURI implements TComparable<TURI>, TSerializable {
                 result.append(fragment);
             }
 
-            string = TString.wrap(result.toString());
+            string = result.toString();
         }
-        return string.toString();
+        return string;
     }
 
     /*
@@ -1624,7 +1351,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
      * toString() method. But this method converts scheme and host to lowercase,
      * and converts escaped octets to lowercase.
      */
-    private TString getHashString() {
+    private String getHashString() {
         TStringBuilder result = new TStringBuilder();
         if (scheme != null) {
             result.append(scheme.toLowerCase());
@@ -1634,12 +1361,12 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             result.append(schemespecificpart);
         } else {
             if (authority != null) {
-                result.append(TString.wrap("//"));
+                result.append("//");
                 if (host == null) {
                     result.append(authority);
                 } else {
                     if (userinfo != null) {
-                        result.append(userinfo).append(TString.wrap("@"));
+                        result.append(userinfo).append("@");
                     }
                     result.append(host.toLowerCase());
                     if (port != -1) {
@@ -1662,7 +1389,7 @@ public final class TURI implements TComparable<TURI>, TSerializable {
             result.append(fragment);
         }
 
-        return convertHexToLowerCase(TString.wrap(result.toString()));
+        return convertHexToLowerCase(result.toString());
     }
 
     public TURL toURL() throws TMalformedURLException {

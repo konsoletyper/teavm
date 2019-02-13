@@ -15,36 +15,36 @@
  */
 package org.teavm.classlib.java.io;
 
-import org.teavm.classlib.java.lang.TString;
+import java.io.IOException;
 
 public interface TDataInput {
-    void readFully(byte[] b) throws TIOException;
+    void readFully(byte[] b) throws IOException;
 
-    void readFully(byte[] b, int off, int len) throws TIOException;
+    void readFully(byte[] b, int off, int len) throws IOException;
 
-    int skipBytes(int n) throws TIOException;
+    int skipBytes(int n) throws IOException;
 
-    boolean readBoolean() throws TIOException;
+    boolean readBoolean() throws IOException;
 
-    byte readByte() throws TIOException;
+    byte readByte() throws IOException;
 
-    int readUnsignedByte() throws TIOException;
+    int readUnsignedByte() throws IOException;
 
-    short readShort() throws TIOException;
+    short readShort() throws IOException;
 
-    int readUnsignedShort() throws TIOException;
+    int readUnsignedShort() throws IOException;
 
-    char readChar() throws TIOException;
+    char readChar() throws IOException;
 
-    int readInt() throws TIOException;
+    int readInt() throws IOException;
 
-    long readLong() throws TIOException;
+    long readLong() throws IOException;
 
-    float readFloat() throws TIOException;
+    float readFloat() throws IOException;
 
-    double readDouble() throws TIOException;
+    double readDouble() throws IOException;
 
-    TString readLine() throws TIOException;
+    String readLine() throws IOException;
 
-    TString readUTF() throws TIOException;
+    String readUTF() throws IOException;
 }

@@ -26,7 +26,7 @@ public class TShort extends TNumber implements TComparable<TShort> {
         this.value = value;
     }
 
-    public TShort(TString s) throws TNumberFormatException {
+    public TShort(String s) throws TNumberFormatException {
         this(parseShort(s));
     }
 
@@ -87,7 +87,7 @@ public class TShort extends TNumber implements TComparable<TShort> {
         return compare(value, other.value);
     }
 
-    public static short parseShort(TString s, int radix) throws TNumberFormatException {
+    public static short parseShort(String s, int radix) throws TNumberFormatException {
         int value = TInteger.parseInt(s, radix);
         if (value < MIN_VALUE || value > MAX_VALUE) {
             throw new TNumberFormatException();
@@ -95,19 +95,19 @@ public class TShort extends TNumber implements TComparable<TShort> {
         return (short) value;
     }
 
-    public static short parseShort(TString s) throws TNumberFormatException {
+    public static short parseShort(String s) throws TNumberFormatException {
         return parseShort(s, 10);
     }
 
-    public static TShort valueOf(TString s, int radix) throws TNumberFormatException {
+    public static TShort valueOf(String s, int radix) throws TNumberFormatException {
         return valueOf(parseShort(s, radix));
     }
 
-    public static TShort valueOf(TString s) throws TNumberFormatException {
+    public static TShort valueOf(String s) throws TNumberFormatException {
         return valueOf(parseShort(s));
     }
 
-    public static TShort decode(TString s) throws TNumberFormatException {
+    public static TShort decode(String s) throws TNumberFormatException {
         int value = TInteger.decode(s).intValue();
         if (value < MIN_VALUE || value > MAX_VALUE) {
             throw new TNumberFormatException();

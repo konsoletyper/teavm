@@ -25,11 +25,11 @@ public class TRuntimeException extends TException {
         super();
     }
 
-    public TRuntimeException(TString message, TThrowable cause) {
+    public TRuntimeException(String message, TThrowable cause) {
         super(message, cause);
     }
 
-    public TRuntimeException(TString message) {
+    public TRuntimeException(String message) {
         super(message);
     }
 

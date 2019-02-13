@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
 import org.teavm.classlib.java.lang.TInteger;
 import org.teavm.classlib.java.lang.TObject;
 
@@ -22,13 +23,13 @@ public abstract class TInputStream extends TObject implements TCloseable {
     public TInputStream() {
     }
 
-    public abstract int read() throws TIOException;
+    public abstract int read() throws IOException;
 
-    public int read(byte[] b) throws TIOException {
+    public int read(byte[] b) throws IOException {
         return read(b, 0, b.length);
     }
 
-    public int read(byte[] b, int off, int len) throws TIOException {
+    public int read(byte[] b, int off, int len) throws IOException {
         for (int i = 0; i < len; ++i) {
             int bt = read();
             if (bt < 0) {
@@ -39,7 +40,7 @@ public abstract class TInputStream extends TObject implements TCloseable {
         return len > 0 ? len : -1;
     }
 
-    public long skip(long n) throws TIOException {
+    public long skip(long n) throws IOException {
         if (n < TInteger.MAX_VALUE) {
             return skip((int) n);
         } else {
@@ -52,7 +53,7 @@ public abstract class TInputStream extends TObject implements TCloseable {
         }
     }
 
-    private int skip(int n) throws TIOException {
+    private int skip(int n) throws IOException {
         for (int i = 0; i < n; ++i) {
             if (read() < 0) {
                 return i;
@@ -61,19 +62,19 @@ public abstract class TInputStream extends TObject implements TCloseable {
         return n;
     }
 
-    public int available() throws TIOException {
+    public int available() throws IOException {
         return 0;
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() throws IOException {
     }
 
     public void mark(@SuppressWarnings("unused") int readlimit) {
     }
 
-    public void reset() throws TIOException {
-        throw new TIOException();
+    public void reset() throws IOException {
+        throw new IOException();
     }
 
     public boolean markSupported() {

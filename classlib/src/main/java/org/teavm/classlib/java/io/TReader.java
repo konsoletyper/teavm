@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
 
@@ -29,18 +30,18 @@ public abstract class TReader implements TCloseable {
         this.lock = lock;
     }
 
-    public int read() throws TIOException {
+    public int read() throws IOException {
         char[] buf = new char[1];
         return read(buf) >= 0 ? buf[0] : -1;
     }
 
-    public int read(char[] cbuf) throws TIOException {
+    public int read(char[] cbuf) throws IOException {
         return read(cbuf, 0, cbuf.length);
     }
 
-    public abstract int read(char[] cbuf, int off, int len) throws TIOException;
+    public abstract int read(char[] cbuf, int off, int len) throws IOException;
 
-    public long skip(long n) throws TIOException {
+    public long skip(long n) throws IOException {
         char[] buffer = new char[1024];
         long skipped = 0;
         while (skipped < n) {
@@ -53,7 +54,7 @@ public abstract class TReader implements TCloseable {
         return skipped;
     }
 
-    public boolean ready() throws TIOException {
+    public boolean ready() throws IOException {
         return true;
     }
 
@@ -61,11 +62,11 @@ public abstract class TReader implements TCloseable {
         return false;
     }
 
-    public void mark(@SuppressWarnings("unused") int readAheadLimit) throws TIOException {
-        throw new TIOException();
+    public void mark(@SuppressWarnings("unused") int readAheadLimit) throws IOException {
+        throw new IOException();
     }
 
-    public void reset() throws TIOException {
-        throw new TIOException();
+    public void reset() throws IOException {
+        throw new IOException();
     }
 }

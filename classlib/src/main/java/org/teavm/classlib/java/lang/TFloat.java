@@ -256,11 +256,11 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     @Import(name = "teavm_reinterpretIntToFloat")
     public static native float intBitsToFloat(int bits);
 
-    public static TString toHexString(float f) {
+    public static String toHexString(float f) {
         if (isNaN(f)) {
-            return TString.wrap("NaN");
+            return "NaN";
         } else if (isInfinite(f)) {
-            return f > 0 ? TString.wrap("Infinity") : TString.wrap("-Infinity");
+            return f > 0 ? "Infinity" : "-Infinity";
         }
         char[] buffer = new char[18];
         int sz = 0;
@@ -317,6 +317,6 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
             buffer[sz++] = '0';
         }
 
-        return new TString(buffer, 0, sz);
+        return new String(buffer, 0, sz);
     }
 }

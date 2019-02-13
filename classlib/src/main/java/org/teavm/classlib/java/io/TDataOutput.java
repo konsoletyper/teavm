@@ -15,34 +15,35 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
 import org.teavm.classlib.java.lang.TString;
 
 public interface TDataOutput {
-    void write(int b) throws TIOException;
+    void write(int b) throws IOException;
 
-    void write(byte[] b) throws TIOException;
+    void write(byte[] b) throws IOException;
 
-    void write(byte[] b, int off, int len) throws TIOException;
+    void write(byte[] b, int off, int len) throws IOException;
 
-    void writeBoolean(boolean v) throws TIOException;
+    void writeBoolean(boolean v) throws IOException;
 
-    void writeByte(int v) throws TIOException;
+    void writeByte(int v) throws IOException;
 
-    void writeShort(int v) throws TIOException;
+    void writeShort(int v) throws IOException;
 
-    void writeChar(int v) throws TIOException;
+    void writeChar(int v) throws IOException;
 
-    void writeInt(int v) throws TIOException;
+    void writeInt(int v) throws IOException;
 
-    void writeLong(long v) throws TIOException;
+    void writeLong(long v) throws IOException;
 
-    void writeFloat(float v) throws TIOException;
+    void writeFloat(float v) throws IOException;
 
-    void writeDouble(double v) throws TIOException;
+    void writeDouble(double v) throws IOException;
 
-    void writeBytes(TString s) throws TIOException;
+    void writeBytes(TString s) throws IOException;
 
-    void writeChars(TString s) throws TIOException;
+    void writeChars(TString s) throws IOException;
 
-    void writeUTF(TString s) throws TIOException;
+    void writeUTF(TString s) throws IOException;
 }
