@@ -538,15 +538,15 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private void inline(ListableClassHolderSource classes) {
-        if (optimizationLevel != TeaVMOptimizationLevel.ADVANCED) {
+        if (optimizationLevel != TeaVMOptimizationLevel.ADVANCED && optimizationLevel != TeaVMOptimizationLevel.FULL) {
             return;
         }
 
         InliningStrategy inliningStrategy;
         if (optimizationLevel == TeaVMOptimizationLevel.FULL) {
-            inliningStrategy = new DefaultInliningStrategy(17, 7, false);
+            inliningStrategy = new DefaultInliningStrategy(17, 7, 300, false);
         } else {
-            inliningStrategy = new DefaultInliningStrategy(100, 5, true);
+            inliningStrategy = new DefaultInliningStrategy(100, 7, 300, true);
         }
 
         Inlining inlining = new Inlining(new ClassHierarchy(classes), dependencyAnalyzer, inliningStrategy,
@@ -561,6 +561,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
             if (method.getProgram() != null) {
                 if (!inlining.hasUsages(methodReference)) {
+                    inlining.removeUsages(method.getProgram());
                     method.setProgram(null);
                 } else {
                     Program program = method.getProgram();

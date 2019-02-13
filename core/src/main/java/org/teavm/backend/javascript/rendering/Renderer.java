@@ -319,7 +319,7 @@ public class Renderer implements RenderingManager {
                 thisAliased = true;
                 writer.append("var a").ws().append("=").ws().append("this;").ws();
             }
-            if (cls.getParentName() != null) {
+            if (!cls.getModifiers().contains(ElementModifier.INTERFACE) && cls.getParentName() != null) {
                 writer.appendClass(cls.getParentName()).append(".call(").append(thisAliased ? "a" : "this")
                         .append(");").softNewLine();
             }

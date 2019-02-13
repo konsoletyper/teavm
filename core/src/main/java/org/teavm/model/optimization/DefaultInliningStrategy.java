@@ -29,36 +29,42 @@ import org.teavm.model.instructions.SwitchTableEntryReader;
 public class DefaultInliningStrategy implements InliningStrategy {
     private final int complexityThreshold;
     private final int depthThreshold;
+    private final int totalComplexityThreshold;
     private final boolean onceUsedOnly;
 
-    public DefaultInliningStrategy(int complexityThreshold, int depthThreshold, boolean onceUsedOnly) {
+    public DefaultInliningStrategy(int complexityThreshold, int depthThreshold, int totalComplexityThreshold,
+            boolean onceUsedOnly) {
         this.complexityThreshold = complexityThreshold;
         this.depthThreshold = depthThreshold;
+        this.totalComplexityThreshold = totalComplexityThreshold;
         this.onceUsedOnly = onceUsedOnly;
     }
 
     @Override
     public InliningStep start(MethodReference method, ProgramReader program) {
-        int complexity = getComplexity(program);
-        if (complexity > complexityThreshold) {
+        Complexity complexity = getComplexity(program, null);
+        if (complexity.score > complexityThreshold) {
             return null;
         }
 
         ComplexityHolder complexityHolder = new ComplexityHolder();
-        complexityHolder.complexity = complexity;
+        complexityHolder.complexity = complexity.score;
         return new InliningStepImpl(complexityHolder);
     }
 
-    static int getComplexity(ProgramReader program) {
+    private static Complexity getComplexity(ProgramReader program, InliningContext context) {
         int complexity = 0;
-        ComplexityCounter counter = new ComplexityCounter();
+        ComplexityCounter counter = new ComplexityCounter(context);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlockReader block = program.basicBlockAt(i);
             counter.complexity = 0;
             block.readAllInstructions(counter);
             complexity += block.instructionCount() + counter.complexity;
         }
-        return complexity;
+        Complexity result = new Complexity();
+        result.score = complexity;
+        result.callsToUsedOnceMethods = counter.callsToUsedOnceMethods;
+        return result;
     }
 
     class InliningStepImpl implements InliningStep {
@@ -70,16 +76,23 @@ public class DefaultInliningStrategy implements InliningStrategy {
 
         @Override
         public InliningStep tryInline(MethodReference method, ProgramReader program, InliningContext context) {
-            if (context.getDepth() > depthThreshold || (onceUsedOnly && !context.isUsedOnce(method))) {
+            if (context.getDepth() > depthThreshold) {
                 return null;
             }
 
-            int complexity = getComplexity(program);
-            if (complexityHolder.complexity + complexity > complexityThreshold) {
+            Complexity complexity = getComplexity(program, context);
+            if (onceUsedOnly && !context.isUsedOnce(method)) {
+                if (complexity.callsToUsedOnceMethods || complexity.score > 1) {
+                    return null;
+                }
+            }
+
+            if (complexity.score > complexityThreshold
+                    || complexityHolder.complexity + complexity.score > totalComplexityThreshold) {
                 return null;
             }
 
-            complexityHolder.complexity += complexity;
+            complexityHolder.complexity += complexity.score;
             return new InliningStepImpl(complexityHolder);
         }
     }
@@ -89,7 +102,13 @@ public class DefaultInliningStrategy implements InliningStrategy {
     }
 
     static class ComplexityCounter extends AbstractInstructionReader {
+        InliningContext context;
         int complexity;
+        boolean callsToUsedOnceMethods;
+
+        ComplexityCounter(InliningContext context) {
+            this.context = context;
+        }
 
         @Override
         public void nop() {
@@ -99,9 +118,8 @@ public class DefaultInliningStrategy implements InliningStrategy {
         @Override
         public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments, InvocationType type) {
-            complexity++;
-            if (instance != null) {
-                complexity++;
+            if (type == InvocationType.SPECIAL && context != null && context.isUsedOnce(method)) {
+                callsToUsedOnceMethods = true;
             }
         }
 
@@ -132,5 +150,10 @@ public class DefaultInliningStrategy implements InliningStrategy {
         public void exit(VariableReader valueToReturn) {
             complexity--;
         }
+    }
+
+    static class Complexity {
+        int score;
+        boolean callsToUsedOnceMethods;
     }
 }

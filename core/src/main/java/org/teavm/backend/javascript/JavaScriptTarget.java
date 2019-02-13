@@ -270,9 +270,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             public void methodReached(DependencyAgent agent, MethodDependency method) {
                 if (method.getReference().equals(CURRENT_THREAD)) {
                     method.use();
+                    agent.linkMethod(new MethodReference(Thread.class, "setCurrentThread", Thread.class, void.class))
+                            .use();
                 }
-                agent.linkMethod(new MethodReference(Thread.class, "setCurrentThread", Thread.class, void.class))
-                        .use();
             }
         });
     }

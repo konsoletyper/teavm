@@ -129,6 +129,26 @@ public class Inlining {
         return usageCounter.methodUsageCount.getOrDefault(method, -1) != 0;
     }
 
+    public void removeUsages(Program program) {
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction instruction : block) {
+                if (!(instruction instanceof InvokeInstruction)) {
+                    continue;
+                }
+
+                InvokeInstruction invoke = (InvokeInstruction) instruction;
+                if (invoke.getType() != InvocationType.SPECIAL) {
+                    continue;
+                }
+
+                int usageCount = usageCounter.methodUsageCount.getOrDefault(invoke.getMethod(), -1);
+                if (usageCount > 0) {
+                    usageCounter.methodUsageCount.put(invoke.getMethod(), usageCount - 1);
+                }
+            }
+        }
+    }
+
     public void apply(Program program, MethodReference method) {
         depthsByBlock = new IntArrayList(program.basicBlockCount());
         for (int i = 0; i < program.basicBlockCount(); ++i) {
@@ -195,7 +215,7 @@ public class Inlining {
         splitBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
 
         invoke.delete();
-        if (invoke.getInstance() == null || invoke.getMethod().getName().equals("<init>")) {
+        if (invoke.getMethod().getName().equals("<init>") || invoke.getInstance() == null) {
             InitClassInstruction clinit = new InitClassInstruction();
             clinit.setClassName(invoke.getMethod().getClassName());
             block.add(clinit);
@@ -211,6 +231,16 @@ public class Inlining {
                 Instruction insn = blockToInline.getFirstInstruction();
                 insn.delete();
                 inlineBlock.add(insn);
+
+                if (insn instanceof InvokeInstruction) {
+                    InvokeInstruction invokeInsn = (InvokeInstruction) insn;
+                    if (invokeInsn.getType() == InvocationType.SPECIAL) {
+                        usageCount = usageCounter.methodUsageCount.getOrDefault(invokeInsn.getMethod(), -1);
+                        if (usageCount >= 0) {
+                            usageCounter.methodUsageCount.put(invokeInsn.getMethod(), usageCount + 1);
+                        }
+                    }
+                }
             }
 
             List<Phi> phis = new ArrayList<>(blockToInline.getPhis());
