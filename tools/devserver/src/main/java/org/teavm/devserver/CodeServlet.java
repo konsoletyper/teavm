@@ -324,6 +324,7 @@ public class CodeServlet extends HttpServlet {
                     if (fileContent != null) {
                         resp.setStatus(HttpServletResponse.SC_OK);
                         resp.setCharacterEncoding("UTF-8");
+                        resp.setHeader("Access-Control-Allow-Origin", "*");
                         resp.setContentType("text/plain");
                         resp.getOutputStream().write(fileContent);
                         resp.getOutputStream().flush();

@@ -212,7 +212,7 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
             arguments.add("-proxy-url");
             arguments.add(options.proxyUrl);
         }
-        if (options.proxyPath != null) {
+        if (options.proxyPath != null && !options.proxyPath.isEmpty()) {
             arguments.add("-proxy-path");
             arguments.add(options.proxyPath);
         }
