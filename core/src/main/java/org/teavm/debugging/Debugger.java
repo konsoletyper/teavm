@@ -108,6 +108,7 @@ public class Debugger {
             return jsStep(enterMethod);
         }
         Set<JavaScriptLocation> successors = new HashSet<>();
+        boolean first = true;
         for (CallFrame frame : callStack) {
             boolean exits;
             String script = frame.getOriginalLocation().getScript();
@@ -129,7 +130,13 @@ public class Debugger {
             if (!exits) {
                 break;
             }
-            enterMethod = true;
+            enterMethod = false;
+            if (!first && frame.getLocation() != null) {
+                for (GeneratedLocation location : debugInfo.getGeneratedLocations(frame.getLocation())) {
+                    successors.add(new JavaScriptLocation(script, location.getLine(), location.getColumn()));
+                }
+            }
+            first = false;
         }
 
         List<Promise<Void>> jsBreakpointPromises = new ArrayList<>();

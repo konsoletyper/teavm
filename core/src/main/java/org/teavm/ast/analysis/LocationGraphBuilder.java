@@ -23,6 +23,7 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.BitSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -59,7 +60,11 @@ public final class LocationGraphBuilder {
         Visitor visitor = new Visitor();
         node.acceptVisitor(visitor);
         Graph graph = visitor.builder.build();
-        TextLocation[][] locations = propagate(visitor.locations.toArray(new TextLocation[0]), graph);
+        for (int terminal : visitor.nodes) {
+            visitor.terminalNodes.set(terminal);
+        }
+        TextLocation[][] locations = propagate(visitor.locations.toArray(new TextLocation[0]), graph,
+                visitor.terminalNodes);
 
         Map<TextLocation, Set<TextLocation>> builder = new LinkedHashMap<>();
         for (int i = 0; i < graph.size(); ++i) {
@@ -68,6 +73,11 @@ public final class LocationGraphBuilder {
                     for (TextLocation to : locations[j]) {
                         builder.computeIfAbsent(from, k -> new LinkedHashSet<>()).add(to);
                     }
+                }
+            }
+            if (visitor.terminalNodes.get(i)) {
+                for (TextLocation loc : locations[i]) {
+                    builder.computeIfAbsent(loc, k -> new LinkedHashSet<>()).add(null);
                 }
             }
         }
@@ -79,7 +89,7 @@ public final class LocationGraphBuilder {
         return result;
     }
 
-    private static TextLocation[][] propagate(TextLocation[] locations, Graph graph) {
+    private static TextLocation[][] propagate(TextLocation[] locations, Graph graph, BitSet terminal) {
         List<Set<TextLocation>> result = new ArrayList<>();
         boolean[] stop = new boolean[graph.size()];
         IntDeque queue = new IntArrayDeque();
@@ -117,6 +127,7 @@ public final class LocationGraphBuilder {
         IdentifiedStatement defaultContinueTarget;
         GraphBuilder builder = new GraphBuilder();
         List<TextLocation> locations = new ArrayList<>();
+        BitSet terminalNodes = new BitSet();
 
         @Override
         protected void afterVisit(Expr expr) {
@@ -265,6 +276,9 @@ public final class LocationGraphBuilder {
         public void visit(ReturnStatement statement) {
             super.visit(statement);
             setLocation(statement.getLocation());
+            for (int node : nodes) {
+                terminalNodes.set(node);
+            }
             nodes = EMPTY;
         }
 
