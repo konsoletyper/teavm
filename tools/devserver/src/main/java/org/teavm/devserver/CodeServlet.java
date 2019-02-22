@@ -292,7 +292,7 @@ public class CodeServlet extends HttpServlet {
 
     @Override
     protected void service(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        String path = req.getPathInfo();
+        String path = req.getRequestURI();
         if (path != null) {
             log.debug("Serving " + path);
             if (!path.startsWith("/")) {
