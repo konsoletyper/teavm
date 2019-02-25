@@ -21,6 +21,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -35,7 +36,8 @@ public class VirtualTableProvider {
     private Map<String, VirtualTable> virtualTables = new LinkedHashMap<>();
     private InterfaceToClassMapping interfaceMapping;
 
-    public VirtualTableProvider(ListableClassReaderSource classSource, Set<MethodReference> virtualMethods) {
+    public VirtualTableProvider(ListableClassReaderSource classSource, Set<MethodReference> virtualMethods,
+            Predicate<MethodReference> methodCalledVirtually) {
         this.classSource = classSource;
         interfaceMapping = new InterfaceToClassMapping(classSource);
 
@@ -50,11 +52,11 @@ public class VirtualTableProvider {
         }
 
         for (String className : classNames) {
-            fillClass(className);
+            fillClass(className, methodCalledVirtually);
         }
     }
 
-    private void fillClass(String className) {
+    private void fillClass(String className, Predicate<MethodReference> methodCalledVirtually) {
         if (virtualTables.containsKey(className)) {
             return;
         }
@@ -66,7 +68,7 @@ public class VirtualTableProvider {
             return;
         }
         if (cls.getParent() != null) {
-            fillClass(cls.getParent());
+            fillClass(cls.getParent(), methodCalledVirtually);
             VirtualTable parentTable = virtualTables.get(cls.getParent());
             for (VirtualTableEntry parentEntry : parentTable.entries.values()) {
                 VirtualTableEntry entry = new VirtualTableEntry(table, parentEntry.getMethod(),
@@ -84,6 +86,9 @@ public class VirtualTableProvider {
                     MethodReference implementationRef = implementation != null
                             ? implementation.getReference()
                             : null;
+                    if (implementationRef != null && !methodCalledVirtually.test(implementationRef)) {
+                        implementationRef = null;
+                    }
                     table.entries.put(method, new VirtualTableEntry(table, method, implementationRef,
                             table.entries.size()));
                 }
@@ -95,7 +100,7 @@ public class VirtualTableProvider {
                 continue;
             }
             VirtualTableEntry entry = table.entries.get(method.getDescriptor());
-            if (entry != null) {
+            if (entry != null && methodCalledVirtually.test(method.getReference())) {
                 entry.implementor = method.getReference();
             }
         }

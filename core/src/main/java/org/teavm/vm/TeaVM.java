@@ -812,6 +812,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     + compileProgressReportStart;
             return progressListener.progressReached(progress);
         }
+
+        @Override
+        public void addVirtualMethods(Predicate<MethodReference> methods) {
+            TeaVM.this.addVirtualMethods(methods);
+        }
     };
 
     class PostProcessingClassHolderSource implements ListableClassHolderSource {

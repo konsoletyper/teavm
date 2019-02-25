@@ -16,6 +16,7 @@
 package org.teavm.backend.c.generators;
 
 import org.teavm.backend.c.generate.NameProvider;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 
@@ -25,6 +26,8 @@ public interface GeneratorContext {
     Diagnostics getDiagnotics();
 
     ClassReaderSource getClassSource();
+
+    DependencyInfo getDependencies();
 
     String getParameterName(int index);
 }

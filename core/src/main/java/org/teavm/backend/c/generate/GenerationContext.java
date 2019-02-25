@@ -21,6 +21,7 @@ import java.util.List;
 import java.util.Map;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.intrinsic.Intrinsic;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
@@ -30,6 +31,7 @@ import org.teavm.model.lowlevel.Characteristics;
 public class GenerationContext {
     private VirtualTableProvider virtualTableProvider;
     private Characteristics characteristics;
+    private DependencyInfo dependencies;
     private StringPool stringPool;
     private NameProvider names;
     private Diagnostics diagnostics;
@@ -39,10 +41,11 @@ public class GenerationContext {
     private Map<MethodReference, Intrinsic> intrinsicCache = new HashMap<>();
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
-            StringPool stringPool, NameProvider names, Diagnostics diagnostics, ClassReaderSource classSource,
-            List<Intrinsic> intrinsics, List<Generator> generators) {
+            DependencyInfo dependencies, StringPool stringPool, NameProvider names, Diagnostics diagnostics,
+            ClassReaderSource classSource, List<Intrinsic> intrinsics, List<Generator> generators) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
+        this.dependencies = dependencies;
         this.stringPool = stringPool;
         this.names = names;
         this.diagnostics = diagnostics;
@@ -61,6 +64,10 @@ public class GenerationContext {
 
     public Characteristics getCharacteristics() {
         return characteristics;
+    }
+
+    public DependencyInfo getDependencies() {
+        return dependencies;
     }
 
     public StringPool getStringPool() {

@@ -108,6 +108,9 @@ import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
 public class CTarget implements TeaVMTarget, TeaVMCHost {
+    private static final Set<MethodReference> VIRTUAL_METHODS = new HashSet<>(Arrays.asList(
+            new MethodReference(Object.class, "clone", Object.class)
+    ));
     private TeaVMTargetController controller;
     private ClassInitializerInsertionTransformer clinitInsertionTransformer;
     private ClassInitializerEliminator classInitializerEliminator;
@@ -146,6 +149,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource());
         nullCheckInsertion = new NullCheckInsertion(characteristics);
         nullCheckTransformation = new NullCheckTransformation();
+
+        controller.addVirtualMethods(VIRTUAL_METHODS::contains);
     }
 
     @Override
@@ -243,8 +248,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         List<Generator> generators = new ArrayList<>();
         generators.add(new ArrayGenerator());
 
-        GenerationContext context = new GenerationContext(vtableProvider, characteristics, stringPool, nameProvider,
-                controller.getDiagnostics(), classes, intrinsics, generators);
+        GenerationContext context = new GenerationContext(vtableProvider, characteristics,
+                controller.getDependencyInfo(), stringPool, nameProvider, controller.getDiagnostics(), classes,
+                intrinsics, generators);
 
         BufferedCodeWriter codeWriter = new BufferedCodeWriter();
         copyResource(codeWriter, "runtime.c");
@@ -362,7 +368,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             }
         }
 
-        return new VirtualTableProvider(classes, virtualMethods);
+        return new VirtualTableProvider(classes, virtualMethods, controller::isVirtual);
     }
 
     private void generateSpecialFunctions(GenerationContext context, CodeWriter writer) {

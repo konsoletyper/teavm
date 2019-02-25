@@ -794,7 +794,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             }
         }
 
-        return new VirtualTableProvider(classes, virtualMethods);
+        return new VirtualTableProvider(classes, virtualMethods, controller::isVirtual);
     }
 
     @Override

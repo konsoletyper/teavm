@@ -226,6 +226,7 @@ public final class Platform {
     }
 
     @Unmanaged
+    @PluggableDependency(PlatformGenerator.class)
     public static String getName(PlatformClass cls) {
         return cls.getMetadata().getName();
     }

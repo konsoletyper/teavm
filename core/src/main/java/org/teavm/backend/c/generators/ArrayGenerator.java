@@ -16,8 +16,12 @@
 package org.teavm.backend.c.generators;
 
 import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.Set;
 import org.teavm.backend.c.generate.CodeWriter;
-import org.teavm.model.ClassReader;
+import org.teavm.dependency.MethodDependencyInfo;
+import org.teavm.dependency.ValueDependencyInfo;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
@@ -69,14 +73,19 @@ public class ArrayGenerator implements Generator {
 
         writer.println("switch ((flags >> " + RuntimeClass.PRIMITIVE_SHIFT + ") & "
                 + RuntimeClass.PRIMITIVE_MASK + ") {").indent();
+        MethodDependencyInfo dependency = context.getDependencies().getMethod(new MethodReference(Array.class,
+                "getImpl", Object.class, int.class, Object.class));
+        ValueDependencyInfo arrayDependency = dependency.getVariable(1);
+        Set<String> types = new HashSet<>(Arrays.asList(arrayDependency.getTypes()));
         for (int i = 0; i < primitiveWrappers.length; ++i) {
+            String typeName = ValueType.arrayOf(primitiveTypes[i]).toString();
+            if (!types.contains(typeName)) {
+                continue;
+            }
+
             String wrapper = "java.lang." + primitiveWrappers[i];
             MethodReference methodRef = new MethodReference(wrapper, "valueOf",
                     primitiveTypes[i], ValueType.object(wrapper));
-            ClassReader cls = context.getClassSource().get(methodRef.getClassName());
-            if (cls == null || cls.getMethod(methodRef.getDescriptor()) == null) {
-                continue;
-            }
 
             String type = CodeWriter.strictTypeAsString(primitiveTypes[i]);
             writer.println("case " + primitives[i] + ":").indent();

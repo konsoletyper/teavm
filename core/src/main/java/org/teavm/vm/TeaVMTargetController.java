@@ -18,6 +18,7 @@ package org.teavm.vm;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import java.util.function.Predicate;
 import org.teavm.cache.CacheStatus;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.DependencyInfo;
@@ -51,4 +52,6 @@ public interface TeaVMTargetController {
     boolean isVirtual(MethodReference method);
 
     TeaVMProgressFeedback reportProgress(int progress);
+
+    void addVirtualMethods(Predicate<MethodReference> methods);
 }

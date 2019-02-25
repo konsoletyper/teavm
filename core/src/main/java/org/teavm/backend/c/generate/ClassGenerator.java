@@ -28,6 +28,7 @@ import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.generators.GeneratorContext;
 import org.teavm.backend.lowlevel.generate.ClassGeneratorUtil;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
@@ -670,6 +671,11 @@ public class ClassGenerator {
             @Override
             public ClassReaderSource getClassSource() {
                 return context.getClassSource();
+            }
+
+            @Override
+            public DependencyInfo getDependencies() {
+                return context.getDependencies();
             }
 
             @Override
