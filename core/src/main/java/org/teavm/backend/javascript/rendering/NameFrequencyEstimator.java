@@ -171,6 +171,7 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         if (statement.getExceptionType() != null) {
             consumer.consume(statement.getExceptionType());
         }
+        consumer.consumeFunction("$rt_wrapException");
     }
 
     @Override

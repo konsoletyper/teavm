@@ -250,7 +250,7 @@ public class Renderer implements RenderingManager {
     private void renderRuntimeAliases() throws IOException {
         String[] names = { "$rt_throw", "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray",
                 "$rt_isInstance", "$rt_nativeThread", "$rt_suspending", "$rt_resuming", "$rt_invalidPointer",
-                "$rt_s", "$rt_eraseClinit", "$rt_imul" };
+                "$rt_s", "$rt_eraseClinit", "$rt_imul", "$rt_wrapException" };
         boolean first = true;
         for (String name : names) {
             if (!first) {

@@ -190,6 +190,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(ConditionalStatement statement) {
         try {
+            boolean needClosingBracket;
             while (true) {
                 debugEmitter.emitStatementStart();
                 if (statement.getCondition().getLocation() != null) {
@@ -203,25 +204,58 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     popLocation();
                 }
                 debugEmitter.emitCallSite();
-                writer.append(")").ws().append("{").softNewLine().indent();
+                writer.append(")");
+                if (isSimpleIfContent(statement.getConsequent())) {
+                    needClosingBracket = false;
+                } else {
+                    writer.ws().append("{");
+                    needClosingBracket = true;
+                }
+                writer.softNewLine().indent();
                 visitStatements(statement.getConsequent());
+
                 if (!statement.getAlternative().isEmpty()) {
-                    writer.outdent().append("}").ws();
+                    writer.outdent();
+                    if (needClosingBracket) {
+                        writer.append("}").ws();
+                    }
                     if (statement.getAlternative().size() == 1
                             && statement.getAlternative().get(0) instanceof ConditionalStatement) {
                         statement = (ConditionalStatement) statement.getAlternative().get(0);
                         writer.append("else ");
                         continue;
                     }
-                    writer.append("else").ws().append("{").indent().softNewLine();
+                    writer.append("else");
+                    if (isSimpleIfContent(statement.getAlternative())) {
+                        if (minifying) {
+                            writer.append(" ");
+                        }
+                        needClosingBracket = false;
+                    } else {
+                        writer.ws().append("{");
+                        needClosingBracket = true;
+                    }
+                    writer.indent().softNewLine();
                     visitStatements(statement.getAlternative());
                 }
                 break;
             }
-            writer.outdent().append("}").softNewLine();
+            writer.outdent();
+            if (needClosingBracket) {
+                writer.append("}").softNewLine();
+            }
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
         }
+    }
+
+    private boolean isSimpleIfContent(List<Statement> statements) {
+        if (statements.size() != 1) {
+            return false;
+        }
+
+        Statement statement = statements.get(0);
+        return !(statement instanceof ConditionalStatement);
     }
 
     @Override
@@ -1408,7 +1442,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             visitStatements(protectedBody);
             writer.outdent().append("}").ws().append("catch").ws().append("($$e)")
                     .ws().append("{").indent().softNewLine();
-            writer.append("$$je").ws().append("=").ws().append("$rt_wrapException($$e);").softNewLine();
+            writer.append("$$je").ws().append("=").ws().appendFunction("$rt_wrapException").append("($$e);")
+                    .softNewLine();
             boolean first = true;
             boolean defaultHandlerOccurred = false;
             for (TryCatchStatement catchClause : sequence) {
