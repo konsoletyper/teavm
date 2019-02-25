@@ -11,6 +11,7 @@
       <option name="REPORT_METHODS" value="false" />
       <option name="REPORT_FIELDS" value="true" />
     </inspection_tool>
+    <inspection_tool class="CatchMayIgnoreException" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="CheckStyle" enabled="true" level="ERROR" enabled_by_default="true">
       <scope name="classlib" level="WEAK WARNING" enabled="true" />
     </inspection_tool>
@@ -90,7 +91,7 @@
     <inspection_tool class="MultipleDeclaration" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="ignoreForLoopDeclarations" value="true" />
     </inspection_tool>
-    <inspection_tool class="NestedAssignment" enabled="true" level="ERROR" enabled_by_default="true" />
+    <inspection_tool class="NestedAssignment" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="NonOsgiMavenDependency" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="NullableProblems" enabled="false" level="WEAK WARNING" enabled_by_default="false">
       <option name="REPORT_NULLABLE_METHOD_OVERRIDES_NOTNULL" value="true" />
