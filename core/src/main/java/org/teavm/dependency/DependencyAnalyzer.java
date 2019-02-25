@@ -738,18 +738,18 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             node.method = null;
         }
 
-        allNodes.clear();
-        classSource.cleanup();
-        agent.cleanup();
-    }
-
-    public void cleanupTypes() {
         for (DependencyNode node : allNodes) {
             if (node.typeSet != null) {
                 node.typeSet.cleanup();
             }
         }
 
+        allNodes.clear();
+        classSource.cleanup();
+        agent.cleanup();
+    }
+
+    public void cleanupTypes() {
         for (MethodReference reachableMethod : getReachableMethods()) {
             MethodDependency dependency = getMethod(reachableMethod);
             for (int i = dependency.getParameterCount() + 1; i < dependency.getVariableCount(); ++i) {

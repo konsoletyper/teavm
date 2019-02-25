@@ -388,6 +388,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 dependencyAnalyzer.getClassSource());
         cacheStatus.addSynthesizedClasses(dependencyAnalyzer::isSynthesizedClass);
         dependencyAnalyzer.setInterruptor(null);
+        dependencyAnalyzer.cleanup();
 
         if (wasCancelled()) {
             return;
@@ -462,8 +463,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (wasCancelled()) {
             return null;
         }
-
-        dependencyAnalyzer.cleanup();
 
         return classSet;
     }

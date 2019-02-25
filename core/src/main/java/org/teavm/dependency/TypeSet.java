@@ -66,7 +66,6 @@ class TypeSet {
         }
         types.set(type.index);
         typesCount++;
-        return;
     }
 
     DependencyType[] getTypes() {
