@@ -31,17 +31,16 @@ import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
-import org.teavm.ast.ClassNode;
-import org.teavm.ast.FieldNode;
 import org.teavm.ast.MethodNode;
 import org.teavm.ast.MethodNodeVisitor;
-import org.teavm.ast.NativeMethodNode;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
 import org.teavm.backend.javascript.codegen.NamingOrderer;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
 import org.teavm.backend.javascript.codegen.ScopedName;
 import org.teavm.backend.javascript.codegen.SourceWriter;
+import org.teavm.backend.javascript.decompile.PreparedClass;
+import org.teavm.backend.javascript.decompile.PreparedMethod;
 import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
@@ -52,6 +51,7 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
@@ -262,12 +262,12 @@ public class Renderer implements RenderingManager {
         writer.newLine();
     }
 
-    public void prepare(List<ClassNode> classes) {
+    public void prepare(List<PreparedClass> classes) {
         if (minifying) {
             NamingOrderer orderer = new NamingOrderer();
             NameFrequencyEstimator estimator = new NameFrequencyEstimator(orderer, classSource, asyncMethods,
                     asyncFamilyMethods);
-            for (ClassNode cls : classes) {
+            for (PreparedClass cls : classes) {
                 estimator.estimate(cls);
             }
             naming.getScopeName();
@@ -275,7 +275,7 @@ public class Renderer implements RenderingManager {
         }
     }
 
-    public boolean render(List<ClassNode> classes) throws RenderingException {
+    public boolean render(List<PreparedClass> classes) throws RenderingException {
         if (minifying) {
             try {
                 renderRuntimeAliases();
@@ -284,7 +284,7 @@ public class Renderer implements RenderingManager {
             }
         }
         int index = 0;
-        for (ClassNode cls : classes) {
+        for (PreparedClass cls : classes) {
             int start = writer.getOffset();
             renderDeclaration(cls);
             renderMethodBodies(cls);
@@ -297,7 +297,7 @@ public class Renderer implements RenderingManager {
         return true;
     }
 
-    private void renderDeclaration(ClassNode cls) throws RenderingException {
+    private void renderDeclaration(PreparedClass cls) throws RenderingException {
         ScopedName jsName = naming.getNameFor(cls.getName());
         debugEmitter.addClass(jsName.value, cls.getName(), cls.getParentName());
         try {
@@ -305,9 +305,9 @@ public class Renderer implements RenderingManager {
             writer.append("()").ws().append("{")
                     .indent().softNewLine();
             boolean thisAliased = false;
-            List<FieldNode> nonStaticFields = new ArrayList<>();
-            List<FieldNode> staticFields = new ArrayList<>();
-            for (FieldNode field : cls.getFields()) {
+            List<FieldHolder> nonStaticFields = new ArrayList<>();
+            List<FieldHolder> staticFields = new ArrayList<>();
+            for (FieldHolder field : cls.getClassHolder().getFields()) {
                 if (field.getModifiers().contains(ElementModifier.STATIC)) {
                     staticFields.add(field);
                 } else {
@@ -318,11 +318,12 @@ public class Renderer implements RenderingManager {
                 thisAliased = true;
                 writer.append("var a").ws().append("=").ws().append("this;").ws();
             }
-            if (!cls.getModifiers().contains(ElementModifier.INTERFACE) && cls.getParentName() != null) {
+            if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)
+                    && cls.getParentName() != null) {
                 writer.appendClass(cls.getParentName()).append(".call(").append(thisAliased ? "a" : "this")
                         .append(");").softNewLine();
             }
-            for (FieldNode field : nonStaticFields) {
+            for (FieldHolder field : nonStaticFields) {
                 Object value = field.getInitialValue();
                 if (value == null) {
                     value = getDefaultValue(field.getType());
@@ -345,7 +346,7 @@ public class Renderer implements RenderingManager {
             }
             writer.newLine();
 
-            for (FieldNode field : staticFields) {
+            for (FieldHolder field : staticFields) {
                 Object value = field.getInitialValue();
                 if (value == null) {
                     value = getDefaultValue(field.getType());
@@ -372,7 +373,7 @@ public class Renderer implements RenderingManager {
         }
     }
 
-    private void renderMethodBodies(ClassNode cls) throws RenderingException {
+    private void renderMethodBodies(PreparedClass cls) throws RenderingException {
         debugEmitter.emitClass(cls.getName());
         try {
             MethodReader clinit = classSource.get(cls.getName()).getMethod(
@@ -381,17 +382,17 @@ public class Renderer implements RenderingManager {
             if (clinit != null) {
                 renderCallClinit(clinit, cls);
             }
-            if (!cls.getModifiers().contains(ElementModifier.INTERFACE)) {
-                for (MethodNode method : cls.getMethods()) {
-                    if (!method.getModifiers().contains(ElementModifier.STATIC)) {
-                        if (method.getReference().getName().equals("<init>")) {
+            if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)) {
+                for (PreparedMethod method : cls.getMethods()) {
+                    if (!method.methodHolder.getModifiers().contains(ElementModifier.STATIC)) {
+                        if (method.reference.getName().equals("<init>")) {
                             renderInitializer(method);
                         }
                     }
                 }
             }
 
-            for (MethodNode method : cls.getMethods()) {
+            for (PreparedMethod method : cls.getMethods()) {
                 renderBody(method);
             }
         } catch (IOException e) {
@@ -400,7 +401,7 @@ public class Renderer implements RenderingManager {
         debugEmitter.emitClass(null);
     }
 
-    private void renderCallClinit(MethodReader clinit, ClassNode cls)
+    private void renderCallClinit(MethodReader clinit, PreparedClass cls)
             throws IOException {
         boolean isAsync = asyncMethods.contains(clinit.getReference());
 
@@ -464,13 +465,13 @@ public class Renderer implements RenderingManager {
         writer.newLine();
     }
 
-    private void renderEraseClinit(ClassNode cls) throws IOException {
+    private void renderEraseClinit(PreparedClass cls) throws IOException {
         writer.appendClassInit(cls.getName()).ws().append("=").ws()
                 .appendFunction("$rt_eraseClinit").append("(")
                 .appendClass(cls.getName()).append(");").softNewLine();
     }
 
-    private void renderClassMetadata(List<ClassNode> classes) {
+    private void renderClassMetadata(List<PreparedClass> classes) {
         if (classes.isEmpty()) {
             return;
         }
@@ -495,11 +496,11 @@ public class Renderer implements RenderingManager {
         metadataSize = writer.getOffset() - start;
     }
 
-    private void renderClassMetadataPortion(List<ClassNode> classes, ObjectIntMap<String> packageIndexes,
+    private void renderClassMetadataPortion(List<PreparedClass> classes, ObjectIntMap<String> packageIndexes,
             Set<String> classesRequiringName) throws IOException {
         writer.append("$rt_metadata([");
         boolean first = true;
-        for (ClassNode cls : classes) {
+        for (PreparedClass cls : classes) {
             if (!first) {
                 writer.append(',').softNewLine();
             }
@@ -526,8 +527,9 @@ public class Renderer implements RenderingManager {
             }
             writer.append(',').ws();
             writer.append("[");
-            for (int i = 0; i < cls.getInterfaces().size(); ++i) {
-                String iface = cls.getInterfaces().get(i);
+            List<String> interfaces = new ArrayList<>(cls.getClassHolder().getInterfaces());
+            for (int i = 0; i < interfaces.size(); ++i) {
+                String iface = interfaces.get(i);
                 if (i > 0) {
                     writer.append(",").ws();
                 }
@@ -535,8 +537,8 @@ public class Renderer implements RenderingManager {
             }
             writer.append("],").ws();
 
-            writer.append(ElementModifier.pack(cls.getModifiers())).append(',').ws();
-            writer.append(cls.getAccessLevel().ordinal()).append(',').ws();
+            writer.append(ElementModifier.pack(cls.getClassHolder().getModifiers())).append(',').ws();
+            writer.append(cls.getClassHolder().getLevel().ordinal()).append(',').ws();
 
             MethodReader clinit = classSource.get(cls.getName()).getMethod(
                     new MethodDescriptor("<clinit>", ValueType.VOID));
@@ -548,9 +550,9 @@ public class Renderer implements RenderingManager {
             writer.append(',').ws();
 
             List<MethodReference> virtualMethods = new ArrayList<>();
-            for (MethodNode method : cls.getMethods()) {
-                if (!method.getModifiers().contains(ElementModifier.STATIC)) {
-                    virtualMethods.add(method.getReference());
+            for (PreparedMethod method : cls.getMethods()) {
+                if (!method.methodHolder.getModifiers().contains(ElementModifier.STATIC)) {
+                    virtualMethods.add(method.reference);
                 }
             }
             collectMethodsToCopyFromInterfaces(classSource.get(cls.getName()), virtualMethods);
@@ -561,11 +563,11 @@ public class Renderer implements RenderingManager {
         writer.append("]);").newLine();
     }
 
-    private ObjectIntMap<String> generatePackageMetadata(List<ClassNode> classes, Set<String> classesRequiringName)
+    private ObjectIntMap<String> generatePackageMetadata(List<PreparedClass> classes, Set<String> classesRequiringName)
             throws IOException {
         PackageNode root = new PackageNode(null);
 
-        for (ClassNode classNode : classes) {
+        for (PreparedClass classNode : classes) {
             String className = classNode.getName();
             if (!classesRequiringName.contains(className)) {
                 continue;
@@ -704,8 +706,8 @@ public class Renderer implements RenderingManager {
         return null;
     }
 
-    private void renderInitializer(MethodNode method) throws IOException {
-        MethodReference ref = method.getReference();
+    private void renderInitializer(PreparedMethod method) throws IOException {
+        MethodReference ref = method.reference;
         debugEmitter.emitMethod(ref.getDescriptor());
         ScopedName name = naming.getNameForInit(ref);
         renderFunctionDeclaration(name);
@@ -789,18 +791,17 @@ public class Renderer implements RenderingManager {
         writer.append(");").ws().append("}");
     }
 
-    private void renderBody(MethodNode method) throws IOException {
+    private void renderBody(PreparedMethod method) throws IOException {
         StatementRenderer statementRenderer = new StatementRenderer(context, writer);
-        statementRenderer.setCurrentMethod(method);
 
-        MethodReference ref = method.getReference();
+        MethodReference ref = method.reference;
         debugEmitter.emitMethod(ref.getDescriptor());
         ScopedName name = naming.getFullNameFor(ref);
 
         renderFunctionDeclaration(name);
         writer.append("(");
         int startParam = 0;
-        if (method.getModifiers().contains(ElementModifier.STATIC)) {
+        if (method.methodHolder.getModifiers().contains(ElementModifier.STATIC)) {
             startParam = 1;
         }
         for (int i = startParam; i <= ref.parameterCount(); ++i) {
@@ -811,7 +812,14 @@ public class Renderer implements RenderingManager {
         }
         writer.append(")").ws().append("{").softNewLine().indent();
 
-        method.acceptVisitor(new MethodBodyRenderer(statementRenderer));
+        MethodBodyRenderer renderer = new MethodBodyRenderer(statementRenderer);
+        statementRenderer.setCurrentMethod(method.node);
+        if (method.node != null) {
+            method.node.acceptVisitor(renderer);
+        } else {
+            renderer.renderNative(method);
+        }
+
         writer.outdent().append("}");
         if (name.scoped) {
             writer.append(";");
@@ -858,12 +866,11 @@ public class Renderer implements RenderingManager {
             return context.getDependencyInfo();
         }
 
-        @Override
-        public void visit(NativeMethodNode methodNode) {
+        public void renderNative(PreparedMethod method) {
             try {
-                this.async = methodNode.isAsync();
-                statementRenderer.setAsync(methodNode.isAsync());
-                methodNode.getGenerator().generate(this, writer, methodNode.getReference());
+                this.async = method.async;
+                statementRenderer.setAsync(method.async);
+                method.generator.generate(this, writer, method.reference);
             } catch (IOException e) {
                 throw new RenderingException("IO error occurred", e);
             }

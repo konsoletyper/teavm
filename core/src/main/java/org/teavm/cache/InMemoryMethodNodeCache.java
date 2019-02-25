@@ -20,7 +20,6 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.teavm.ast.AsyncMethodNode;
-import org.teavm.ast.RegularMethodNode;
 import org.teavm.model.MethodReference;
 
 public class InMemoryMethodNodeCache implements MethodNodeCache {
@@ -30,7 +29,7 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
     private Map<MethodReference, AsyncItem> newAsyncItems = new HashMap<>();
 
     @Override
-    public RegularMethodNode get(MethodReference methodReference, CacheStatus cacheStatus) {
+    public AstCacheEntry get(MethodReference methodReference, CacheStatus cacheStatus) {
         RegularItem item = cache.get(methodReference);
         if (item == null) {
             return null;
@@ -40,12 +39,12 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
             return null;
         }
 
-        return item.node;
+        return item.entry;
     }
 
     @Override
-    public void store(MethodReference methodReference, RegularMethodNode node, Supplier<String[]> dependencies) {
-        newItems.put(methodReference, new RegularItem(node, dependencies.get().clone()));
+    public void store(MethodReference methodReference, AstCacheEntry entry, Supplier<String[]> dependencies) {
+        newItems.put(methodReference, new RegularItem(entry, dependencies.get().clone()));
     }
 
     @Override
@@ -87,11 +86,11 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
     }
 
     static final class RegularItem {
-        final RegularMethodNode node;
+        final AstCacheEntry entry;
         final String[] dependencies;
 
-        RegularItem(RegularMethodNode node, String[] dependencies) {
-            this.node = node;
+        RegularItem(AstCacheEntry entry, String[] dependencies) {
+            this.entry = entry;
             this.dependencies = dependencies;
         }
     }

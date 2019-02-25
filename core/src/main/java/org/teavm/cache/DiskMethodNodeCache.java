@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
 import org.teavm.ast.AsyncMethodNode;
+import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.model.MethodReference;
 
@@ -48,7 +49,7 @@ public class DiskMethodNodeCache implements MethodNodeCache {
     }
 
     @Override
-    public RegularMethodNode get(MethodReference methodReference, CacheStatus cacheStatus) {
+    public AstCacheEntry get(MethodReference methodReference, CacheStatus cacheStatus) {
         Item item = cache.get(methodReference);
         if (item == null) {
             item = new Item();
@@ -58,20 +59,22 @@ public class DiskMethodNodeCache implements MethodNodeCache {
                 try (InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
                     DataInput input = new DataInputStream(stream);
                     if (!checkIfDependenciesChanged(input, cacheStatus)) {
-                        item.node = astIO.read(input, methodReference);
+                        RegularMethodNode node = astIO.read(input, methodReference);
+                        ControlFlowEntry[] cfg = astIO.readControlFlow(input);
+                        item.entry = new AstCacheEntry(node, cfg);
                     }
                 } catch (IOException e) {
                     // we could not read program, just leave it empty
                 }
             }
         }
-        return item.node;
+        return item.entry;
     }
 
     @Override
-    public void store(MethodReference methodReference, RegularMethodNode node, Supplier<String[]> dependencies) {
+    public void store(MethodReference methodReference, AstCacheEntry entry, Supplier<String[]> dependencies) {
         Item item = new Item();
-        item.node = node;
+        item.entry = entry;
         item.dependencies = dependencies.get().clone();
         cache.put(methodReference, item);
         newMethods.add(methodReference);
@@ -127,7 +130,8 @@ public class DiskMethodNodeCache implements MethodNodeCache {
                 for (String dependency : item.dependencies) {
                     output.writeUTF(dependency);
                 }
-                astIO.write(output, item.node);
+                astIO.write(output, item.entry.method);
+                astIO.write(output, item.entry.cfg);
             }
         }
         for (MethodReference method : newAsyncMethods) {
@@ -150,7 +154,7 @@ public class DiskMethodNodeCache implements MethodNodeCache {
     }
 
     private static class Item {
-        RegularMethodNode node;
+        AstCacheEntry entry;
         String[] dependencies;
     }
 

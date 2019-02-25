@@ -35,6 +35,7 @@ import org.teavm.ast.BreakStatement;
 import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ContinueStatement;
+import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.Expr;
 import org.teavm.ast.IdentifiedStatement;
 import org.teavm.ast.InitClassStatement;
@@ -56,7 +57,7 @@ public final class LocationGraphBuilder {
     private LocationGraphBuilder() {
     }
 
-    public static Map<TextLocation, TextLocation[]> build(Statement node) {
+    public static ControlFlowEntry[] build(Statement node) {
         Visitor visitor = new Visitor();
         node.acceptVisitor(visitor);
         Graph graph = visitor.builder.build();
@@ -82,9 +83,10 @@ public final class LocationGraphBuilder {
             }
         }
 
-        Map<TextLocation, TextLocation[]> result = new LinkedHashMap<>();
+        ControlFlowEntry[] result = new ControlFlowEntry[builder.size()];
+        int index = 0;
         for (Map.Entry<TextLocation, Set<TextLocation>> entry : builder.entrySet()) {
-            result.put(entry.getKey(), entry.getValue().toArray(new TextLocation[0]));
+            result[index++] = new ControlFlowEntry(entry.getKey(), entry.getValue().toArray(new TextLocation[0]));
         }
         return result;
     }

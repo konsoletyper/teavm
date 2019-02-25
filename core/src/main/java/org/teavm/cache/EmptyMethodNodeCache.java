@@ -17,7 +17,6 @@ package org.teavm.cache;
 
 import java.util.function.Supplier;
 import org.teavm.ast.AsyncMethodNode;
-import org.teavm.ast.RegularMethodNode;
 import org.teavm.model.MethodReference;
 
 public class EmptyMethodNodeCache implements MethodNodeCache {
@@ -27,12 +26,12 @@ public class EmptyMethodNodeCache implements MethodNodeCache {
     }
 
     @Override
-    public RegularMethodNode get(MethodReference methodReference, CacheStatus cacheStatus) {
+    public AstCacheEntry get(MethodReference methodReference, CacheStatus cacheStatus) {
         return null;
     }
 
     @Override
-    public void store(MethodReference methodReference, RegularMethodNode node, Supplier<String[]> dependencies) {
+    public void store(MethodReference methodReference, AstCacheEntry node, Supplier<String[]> dependencies) {
     }
 
     @Override

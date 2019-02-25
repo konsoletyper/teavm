@@ -34,11 +34,11 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import org.teavm.ast.ClassNode;
-import org.teavm.ast.MethodNode;
+import org.teavm.ast.AsyncMethodNode;
+import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.RegularMethodNode;
-import org.teavm.ast.Statement;
 import org.teavm.ast.analysis.LocationGraphBuilder;
+import org.teavm.ast.decompilation.DecompilationException;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.javascript.codegen.AliasProvider;
 import org.teavm.backend.javascript.codegen.DefaultAliasProvider;
@@ -46,6 +46,8 @@ import org.teavm.backend.javascript.codegen.DefaultNamingStrategy;
 import org.teavm.backend.javascript.codegen.MinifyingAliasProvider;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.codegen.SourceWriterBuilder;
+import org.teavm.backend.javascript.decompile.PreparedClass;
+import org.teavm.backend.javascript.decompile.PreparedMethod;
 import org.teavm.backend.javascript.rendering.Renderer;
 import org.teavm.backend.javascript.rendering.RenderingContext;
 import org.teavm.backend.javascript.rendering.RuntimeRenderer;
@@ -55,6 +57,9 @@ import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.backend.javascript.spi.VirtualMethodContributor;
 import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
+import org.teavm.cache.AstCacheEntry;
+import org.teavm.cache.AstDependencyExtractor;
+import org.teavm.cache.CacheStatus;
 import org.teavm.cache.EmptyMethodNodeCache;
 import org.teavm.cache.MethodNodeCache;
 import org.teavm.debugging.information.DebugInformationEmitter;
@@ -68,9 +73,11 @@ import org.teavm.dependency.DependencyType;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.interop.PlatformMarkers;
+import org.teavm.model.AnnotationHolder;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -120,6 +127,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private ClassInitializerInsertionTransformer clinitInsertionTransformer;
     private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
     private int topLevelNameLimit = 10000;
+    private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
@@ -320,7 +328,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     private void emit(ListableClassHolderSource classes, Writer writer, BuildTarget target) {
-        List<ClassNode> clsNodes = modelToAst(classes);
+        List<PreparedClass> clsNodes = modelToAst(classes);
         if (controller.wasCancelled()) {
             return;
         }
@@ -351,16 +359,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         renderer.setMinifying(minifying);
         renderer.setProgressConsumer(controller::reportProgress);
         if (debugEmitter != null) {
-            for (ClassNode classNode : clsNodes) {
-                ClassHolder cls = classes.get(classNode.getName());
-                for (MethodNode methodNode : classNode.getMethods()) {
-                    if (methodNode instanceof RegularMethodNode) {
-                        emitCFG(debugEmitter, ((RegularMethodNode) methodNode).getBody());
-                    } else {
-                        MethodHolder method = cls.getMethod(methodNode.getReference().getDescriptor());
-                        if (method != null && method.getProgram() != null) {
-                            emitCFG(debugEmitter, method.getProgram());
-                        }
+            for (PreparedClass preparedClass : clsNodes) {
+                for (PreparedMethod preparedMethod : preparedClass.getMethods()) {
+                    if (preparedMethod.cfg != null) {
+                        emitCFG(debugEmitter, preparedMethod.cfg);
                     }
                 }
                 if (controller.wasCancelled()) {
@@ -462,44 +464,155 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         return STATS_NUM_FORMAT.format(size) + " (" + STATS_PERCENT_FORMAT.format((double) size / totalSize) + ")";
     }
 
-    static class PackageNode {
-        String name;
-        Map<String, PackageNode> children = new HashMap<>();
-    }
-
-    private List<ClassNode> modelToAst(ListableClassHolderSource classes) {
+    private List<PreparedClass> modelToAst(ListableClassHolderSource classes) {
         AsyncMethodFinder asyncFinder = new AsyncMethodFinder(controller.getDependencyInfo().getCallGraph(),
                 controller.getDiagnostics());
         asyncFinder.find(classes);
         asyncMethods.addAll(asyncFinder.getAsyncMethods());
         asyncFamilyMethods.addAll(asyncFinder.getAsyncFamilyMethods());
+        Set<MethodReference> splitMethods = new HashSet<>(asyncMethods);
+        splitMethods.addAll(asyncFamilyMethods);
 
-        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(), controller.getCacheStatus(),
-                asyncMethods, asyncFamilyMethods, controller.isFriendlyToDebugger(), false);
-        decompiler.setRegularMethodCache(astCache);
+        Decompiler decompiler = new Decompiler(classes, splitMethods, controller.isFriendlyToDebugger(), false);
 
-        for (Map.Entry<MethodReference, Generator> entry : methodGenerators.entrySet()) {
-            decompiler.addGenerator(entry.getKey(), entry.getValue());
-        }
-        for (MethodReference injectedMethod : methodInjectors.keySet()) {
-            decompiler.addMethodToSkip(injectedMethod);
-        }
-        List<String> classOrder = decompiler.getClassOrdering(classes.getClassNames());
-        List<ClassNode> classNodes = new ArrayList<>();
-        for (String className : classOrder) {
+        List<PreparedClass> classNodes = new ArrayList<>();
+        for (String className : getClassOrdering(classes)) {
             ClassHolder cls = classes.get(className);
             for (MethodHolder method : cls.getMethods()) {
-                preprocessNativeMethod(method, decompiler);
+                preprocessNativeMethod(method);
                 if (controller.wasCancelled()) {
                     break;
                 }
             }
-            classNodes.add(decompiler.decompile(cls));
+            classNodes.add(decompile(decompiler, cls));
         }
         return classNodes;
     }
 
-    private void preprocessNativeMethod(MethodHolder method, Decompiler decompiler) {
+    private List<String> getClassOrdering(ListableClassHolderSource classes) {
+        List<String> sequence = new ArrayList<>();
+        Set<String> visited = new HashSet<>();
+        for (String className : classes.getClassNames()) {
+            orderClasses(classes, className, visited, sequence);
+        }
+        return sequence;
+    }
+
+    private void orderClasses(ClassHolderSource classes, String className, Set<String> visited, List<String> order) {
+        if (!visited.add(className)) {
+            return;
+        }
+        ClassHolder cls = classes.get(className);
+        if (cls == null) {
+            return;
+        }
+        if (cls.getParent() != null) {
+            orderClasses(classes, cls.getParent(), visited, order);
+        }
+        for (String iface : cls.getInterfaces()) {
+            orderClasses(classes, iface, visited, order);
+        }
+        order.add(className);
+    }
+
+    private PreparedClass decompile(Decompiler decompiler, ClassHolder cls) {
+        PreparedClass clsNode = new PreparedClass(cls);
+        for (MethodHolder method : cls.getMethods()) {
+            if (method.getModifiers().contains(ElementModifier.ABSTRACT)) {
+                continue;
+            }
+            if ((!isBootstrap() && method.getAnnotations().get(InjectedBy.class.getName()) != null)
+                    || methodInjectors.containsKey(method.getReference())) {
+                continue;
+            }
+            if (!method.hasModifier(ElementModifier.NATIVE) && method.getProgram() == null) {
+                continue;
+            }
+
+            PreparedMethod preparedMethod = method.hasModifier(ElementModifier.NATIVE)
+                    ? decompileNative(method)
+                    : decompile(decompiler, method);
+            clsNode.getMethods().add(preparedMethod);
+        }
+        return clsNode;
+    }
+
+    private PreparedMethod decompileNative(MethodHolder method) {
+        MethodReference reference = method.getReference();
+        Generator generator = methodGenerators.get(reference);
+        if (generator == null && !isBootstrap()) {
+            AnnotationHolder annotHolder = method.getAnnotations().get(GeneratedBy.class.getName());
+            if (annotHolder == null) {
+                throw new DecompilationException("Method " + method.getOwnerName() + "." + method.getDescriptor()
+                        + " is native, but no " + GeneratedBy.class.getName() + " annotation found");
+            }
+            ValueType annotValue = annotHolder.getValues().get("value").getJavaClass();
+            String generatorClassName = ((ValueType.Object) annotValue).getClassName();
+            try {
+                Class<?> generatorClass = Class.forName(generatorClassName, true, controller.getClassLoader());
+                generator = (Generator) generatorClass.newInstance();
+            } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+                throw new DecompilationException("Error instantiating generator " + generatorClassName
+                        + " for native method " + method.getOwnerName() + "." + method.getDescriptor());
+            }
+        }
+
+        return new PreparedMethod(method, null, generator, asyncMethods.contains(reference), null);
+    }
+
+    private PreparedMethod decompile(Decompiler decompiler, MethodHolder method) {
+        MethodReference reference = method.getReference();
+        if (asyncMethods.contains(reference)) {
+            AsyncMethodNode node = decompileAsync(decompiler, method);
+            ControlFlowEntry[] cfg = ProgramUtils.getLocationCFG(method.getProgram());
+            return new PreparedMethod(method, node, null, false, cfg);
+        } else {
+            AstCacheEntry entry = decompileRegular(decompiler, method);
+            return new PreparedMethod(method, entry.method, null, false, entry.cfg);
+        }
+    }
+
+    private AstCacheEntry decompileRegular(Decompiler decompiler, MethodHolder method) {
+        if (astCache == null) {
+            return decompileRegularCacheMiss(decompiler, method);
+        }
+
+        CacheStatus cacheStatus = controller.getCacheStatus();
+        AstCacheEntry entry = !cacheStatus.isStaleMethod(method.getReference())
+                ? astCache.get(method.getReference(), cacheStatus)
+                : null;
+        if (entry == null) {
+            entry = decompileRegularCacheMiss(decompiler, method);
+            RegularMethodNode finalNode = entry.method;
+            astCache.store(method.getReference(), entry, () -> dependencyExtractor.extract(finalNode));
+        }
+        return entry;
+    }
+
+    private AstCacheEntry decompileRegularCacheMiss(Decompiler decompiler, MethodHolder method) {
+        RegularMethodNode node = decompiler.decompileRegular(method);
+        ControlFlowEntry[] cfg = LocationGraphBuilder.build(node.getBody());
+        return new AstCacheEntry(node, cfg);
+    }
+
+    private AsyncMethodNode decompileAsync(Decompiler decompiler, MethodHolder method) {
+        if (astCache == null) {
+            return decompiler.decompileAsync(method);
+        }
+
+        CacheStatus cacheStatus = controller.getCacheStatus();
+        AsyncMethodNode node = !cacheStatus.isStaleMethod(method.getReference())
+                ? astCache.getAsync(method.getReference(), cacheStatus)
+                : null;
+        if (node == null) {
+            node = decompiler.decompileAsync(method);
+            AsyncMethodNode finalNode = node;
+            astCache.storeAsync(method.getReference(), node, () -> dependencyExtractor.extract(finalNode));
+        }
+        return node;
+    }
+
+    private void preprocessNativeMethod(MethodHolder method) {
         if (!method.getModifiers().contains(ElementModifier.NATIVE)
                 || methodGenerators.get(method.getReference()) != null
                 || methodInjectors.get(method.getReference()) != null) {
@@ -512,7 +625,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             Generator generator = provider.apply(context);
             if (generator != null) {
                 methodGenerators.put(method.getReference(), generator);
-                decompiler.addGenerator(method.getReference(), generator);
                 found = true;
                 break;
             }
@@ -521,7 +633,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             Injector injector = provider.apply(context);
             if (injector != null) {
                 methodInjectors.put(method.getReference(), injector);
-                decompiler.addMethodToSkip(method.getReference());
                 found = true;
                 break;
             }
@@ -597,20 +708,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         return false;
     }
 
-    private void emitCFG(DebugInformationEmitter emitter, Program program) {
-        emitCFG(emitter, ProgramUtils.getLocationCFG(program));
-    }
-
-    private void emitCFG(DebugInformationEmitter emitter, Statement program) {
-        emitCFG(emitter, LocationGraphBuilder.build(program));
-    }
-
-    private void emitCFG(DebugInformationEmitter emitter, Map<TextLocation, TextLocation[]> cfg) {
-        for (Map.Entry<TextLocation, TextLocation[]> entry : cfg.entrySet()) {
-            SourceLocation location = map(entry.getKey());
-            SourceLocation[] successors = new SourceLocation[entry.getValue().length];
-            for (int i = 0; i < entry.getValue().length; ++i) {
-                successors[i] = map(entry.getValue()[i]);
+    private void emitCFG(DebugInformationEmitter emitter, ControlFlowEntry[] cfg) {
+        for (ControlFlowEntry entry : cfg) {
+            SourceLocation location = map(entry.from);
+            SourceLocation[] successors = new SourceLocation[entry.to.length];
+            for (int i = 0; i < entry.to.length; ++i) {
+                successors[i] = map(entry.to[i]);
             }
             emitter.addSuccessors(location, successors);
         }

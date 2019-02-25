@@ -19,8 +19,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import org.teavm.ast.ControlFlowEntry;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.model.BasicBlock;
@@ -72,7 +72,7 @@ public final class ProgramUtils {
         return graphBuilder.build();
     }
 
-    public static Map<TextLocation, TextLocation[]> getLocationCFG(Program program) {
+    public static ControlFlowEntry[] getLocationCFG(Program program) {
         return new LocationGraphBuilder().build(program);
     }
 

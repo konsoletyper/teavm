@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,16 +15,15 @@
  */
 package org.teavm.cache;
 
-import java.util.function.Supplier;
-import org.teavm.ast.AsyncMethodNode;
-import org.teavm.model.MethodReference;
+import org.teavm.ast.ControlFlowEntry;
+import org.teavm.ast.RegularMethodNode;
 
-public interface MethodNodeCache {
-    AstCacheEntry get(MethodReference methodReference, CacheStatus cacheStatus);
+public class AstCacheEntry {
+    public RegularMethodNode method;
+    public ControlFlowEntry[] cfg;
 
-    void store(MethodReference methodReference, AstCacheEntry entry, Supplier<String[]> dependencies);
-
-    AsyncMethodNode getAsync(MethodReference methodReference, CacheStatus cacheStatus);
-
-    void storeAsync(MethodReference methodReference, AsyncMethodNode node, Supplier<String[]> dependencies);
+    public AstCacheEntry(RegularMethodNode method, ControlFlowEntry[] cfg) {
+        this.method = method;
+        this.cfg = cfg;
+    }
 }

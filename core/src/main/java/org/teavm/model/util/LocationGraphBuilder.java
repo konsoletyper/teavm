@@ -25,6 +25,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.teavm.ast.ControlFlowEntry;
 import org.teavm.common.Graph;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
@@ -38,7 +39,7 @@ class LocationGraphBuilder {
     private List<Set<TextLocation>> startLocations;
     private List<AdditionalConnection> additionalConnections;
 
-    public Map<TextLocation, TextLocation[]> build(Program program) {
+    public ControlFlowEntry[] build(Program program) {
         graphBuilder = new HashMap<>();
         Graph graph = ProgramUtils.buildControlFlowGraph(program);
         dfs(graph, program);
@@ -100,13 +101,14 @@ class LocationGraphBuilder {
         }
     }
 
-    private Map<TextLocation, TextLocation[]> assemble() {
+    private ControlFlowEntry[] assemble() {
         for (AdditionalConnection additionalConn : additionalConnections) {
             for (TextLocation succ : additionalConn.successors) {
                 addEdge(additionalConn.location, succ);
             }
         }
-        Map<TextLocation, TextLocation[]> locationGraph = new HashMap<>();
+        ControlFlowEntry[] locationGraph = new ControlFlowEntry[graphBuilder.size()];
+        int index = 0;
         for (Map.Entry<TextLocation, Set<TextLocation>> entry : graphBuilder.entrySet()) {
             TextLocation[] successors = entry.getValue().toArray(new TextLocation[0]);
             for (int i = 0; i < successors.length; ++i) {
@@ -114,7 +116,7 @@ class LocationGraphBuilder {
                     successors[i] = null;
                 }
             }
-            locationGraph.put(entry.getKey(), successors);
+            locationGraph[index++] = new ControlFlowEntry(entry.getKey(), successors);
         }
         return locationGraph;
     }
@@ -132,7 +134,7 @@ class LocationGraphBuilder {
         TextLocation location;
         Set<TextLocation> startLocations;
         int block;
-        public Step(TextLocation location, Set<TextLocation> startLocations, int block) {
+        Step(TextLocation location, Set<TextLocation> startLocations, int block) {
             this.location = location;
             this.startLocations = startLocations;
             this.block = block;
@@ -142,7 +144,7 @@ class LocationGraphBuilder {
     static class AdditionalConnection {
         TextLocation location;
         Set<TextLocation> successors;
-        public AdditionalConnection(TextLocation location, Set<TextLocation> successors) {
+        AdditionalConnection(TextLocation location, Set<TextLocation> successors) {
             this.location = location;
             this.successors = successors;
         }

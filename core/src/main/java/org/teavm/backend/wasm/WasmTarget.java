@@ -91,7 +91,6 @@ import org.teavm.backend.wasm.render.WasmCRenderer;
 import org.teavm.backend.wasm.render.WasmRenderer;
 import org.teavm.backend.wasm.transformation.IndirectCallTraceTransformation;
 import org.teavm.backend.wasm.transformation.MemoryAccessTraceTransformation;
-import org.teavm.cache.AlwaysStaleCacheStatus;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
@@ -325,8 +324,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         WasmClassGenerator classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),
                 vtableProvider, tagRegistry, binaryWriter, names);
 
-        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(),
-                AlwaysStaleCacheStatus.INSTANCE, new HashSet<>(), new HashSet<>(), false, true);
+        Decompiler decompiler = new Decompiler(classes, new HashSet<>(), false, true);
         WasmStringPool stringPool = classGenerator.getStringPool();
         WasmGenerationContext context = new WasmGenerationContext(classes, module, controller.getDiagnostics(),
                 vtableProvider, tagRegistry, stringPool, names);

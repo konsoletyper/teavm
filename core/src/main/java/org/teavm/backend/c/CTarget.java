@@ -61,7 +61,6 @@ import org.teavm.backend.c.intrinsic.PlatformObjectIntrinsic;
 import org.teavm.backend.c.intrinsic.RuntimeClassIntrinsic;
 import org.teavm.backend.c.intrinsic.ShadowStackIntrinsic;
 import org.teavm.backend.c.intrinsic.StructureIntrinsic;
-import org.teavm.cache.AlwaysStaleCacheStatus;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
@@ -219,8 +218,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         TagRegistry tagRegistry = new TagRegistry(classes);
         StringPool stringPool = new StringPool();
 
-        Decompiler decompiler = new Decompiler(classes, controller.getClassLoader(),
-                AlwaysStaleCacheStatus.INSTANCE, new HashSet<>(), new HashSet<>(), false, true);
+        Decompiler decompiler = new Decompiler(classes, new HashSet<>(), false, true);
         Characteristics characteristics = new Characteristics(controller.getUnprocessedClassSource());
 
         NameProvider nameProvider = new NameProvider(controller.getUnprocessedClassSource());

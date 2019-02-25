@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,8 +15,14 @@
  */
 package org.teavm.ast;
 
-public interface MethodNodeVisitor {
-    void visit(RegularMethodNode methodNode);
+import org.teavm.model.TextLocation;
 
-    void visit(AsyncMethodNode methodNode);
+public class ControlFlowEntry {
+    public final TextLocation from;
+    public final TextLocation[] to;
+
+    public ControlFlowEntry(TextLocation from, TextLocation[] to) {
+        this.from = from;
+        this.to = to.clone();
+    }
 }

@@ -497,7 +497,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     private String generateVariableName(int index) {
         if (!minifying) {
-            VariableNode variable = index < currentMethod.getVariables().size()
+            VariableNode variable = currentMethod != null && index < currentMethod.getVariables().size()
                     ? currentMethod.getVariables().get(index)
                     : null;
             if (variable != null && variable.getName() != null) {

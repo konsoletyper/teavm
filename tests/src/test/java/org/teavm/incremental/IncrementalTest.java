@@ -42,9 +42,9 @@ import org.mozilla.javascript.ScriptableObject;
 import org.mozilla.javascript.Undefined;
 import org.mozilla.javascript.typedarrays.NativeUint16Array;
 import org.teavm.ast.AsyncMethodNode;
-import org.teavm.ast.RegularMethodNode;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.cache.AlwaysStaleCacheStatus;
+import org.teavm.cache.AstCacheEntry;
 import org.teavm.cache.CacheStatus;
 import org.teavm.cache.InMemoryMethodNodeCache;
 import org.teavm.cache.InMemoryProgramCache;
@@ -237,7 +237,7 @@ public class IncrementalTest {
         boolean capturing;
 
         @Override
-        public void store(MethodReference methodReference, RegularMethodNode node, Supplier<String[]> dependencies) {
+        public void store(MethodReference methodReference, AstCacheEntry node, Supplier<String[]> dependencies) {
             super.store(methodReference, node, dependencies);
             if (capturing) {
                 updatedMethods.add(methodReference);

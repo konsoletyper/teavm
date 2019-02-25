@@ -36,6 +36,7 @@ import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.ContinueStatement;
+import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.Expr;
 import org.teavm.ast.ExprVisitor;
 import org.teavm.ast.GotoPartStatement;
@@ -91,6 +92,23 @@ public class AstIO {
         this.fileTable = fileTable;
     }
 
+    public void write(DataOutput output, ControlFlowEntry[] cfg) throws IOException {
+        output.writeShort(cfg.length);
+        for (ControlFlowEntry entry : cfg) {
+            writeLocation(output, entry.from);
+            output.writeShort(entry.to.length);
+            for (TextLocation loc : entry.to) {
+                if (loc != null) {
+                    output.writeByte(1);
+                    writeLocation(output, loc);
+                } else {
+                    output.writeByte(0);
+                }
+
+            }
+        }
+    }
+
     public void write(DataOutput output, RegularMethodNode method) throws IOException {
         output.writeInt(ElementModifier.pack(method.getModifiers()));
         output.writeShort(method.getVariables().size());
@@ -108,6 +126,23 @@ public class AstIO {
         output.writeShort(variable.getIndex());
         output.writeByte(variable.getType().ordinal());
         output.writeUTF(variable.getName() != null ? variable.getName() : "");
+    }
+
+    public ControlFlowEntry[] readControlFlow(DataInput input) throws IOException {
+        short size = input.readShort();
+        ControlFlowEntry[] result = new ControlFlowEntry[size];
+        for (int i = 0; i < size; ++i) {
+            TextLocation from = readLocation(input);
+            int toSize = input.readShort();
+            TextLocation[] to = new TextLocation[toSize];
+            for (int j = 0; j < toSize; ++j) {
+                if (input.readByte() != 0) {
+                    to[j] = readLocation(input);
+                }
+            }
+            result[i] = new ControlFlowEntry(from, to);
+        }
+        return result;
     }
 
     public RegularMethodNode read(DataInput input, MethodReference method) throws IOException {
@@ -177,6 +212,15 @@ public class AstIO {
         return modifiers;
     }
 
+    private void writeLocation(DataOutput output, TextLocation location) throws IOException {
+        if (location == null || location.getFileName() == null) {
+            output.writeShort(-1);
+        } else {
+            output.writeShort(fileTable.lookup(location.getFileName()));
+            output.writeShort(location.getLine());
+        }
+    }
+
     private class NodeWriter implements ExprVisitor, StatementVisitor {
         private final DataOutput output;
 
@@ -191,12 +235,7 @@ public class AstIO {
         }
 
         private void writeLocation(TextLocation location) throws IOException {
-            if (location == null || location.getFileName() == null) {
-                output.writeShort(-1);
-            } else {
-                output.writeShort(fileTable.lookup(location.getFileName()));
-                output.writeShort(location.getLine());
-            }
+            AstIO.this.writeLocation(output, location);
         }
 
         private void writeSequence(List<Statement> sequence) throws IOException {
