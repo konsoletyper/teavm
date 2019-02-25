@@ -28,9 +28,11 @@ import org.teavm.model.TextLocation;
 public class DefaultCallGraphNode implements CallGraphNode {
     private DefaultCallGraph graph;
     private MethodReference method;
-    private Set<DefaultCallSite> callSites = new LinkedHashSet<>(10, 0.5f);
+    private Set<DefaultCallSite> callSites;
+    private DefaultCallSite singleCallSite;
     private Set<DefaultCallSite> safeCallSites;
-    private List<DefaultCallSite> callerCallSites = new ArrayList<>();
+    private DefaultCallSite singleCaller;
+    private List<DefaultCallSite> callerCallSites;
     private List<DefaultCallSite> safeCallersCallSites;
     private Set<DefaultFieldAccessSite> fieldAccessSites = new LinkedHashSet<>();
     private Set<DefaultFieldAccessSite> safeFieldAccessSites;
@@ -52,6 +54,12 @@ public class DefaultCallGraphNode implements CallGraphNode {
 
     @Override
     public Collection<DefaultCallSite> getCallSites() {
+        if (callSites == null) {
+            if (singleCallSite != null) {
+                return Collections.singletonList(singleCallSite);
+            }
+            return Collections.emptyList();
+        }
         if (safeCallSites == null) {
             safeCallSites = Collections.unmodifiableSet(callSites);
         }
@@ -60,6 +68,12 @@ public class DefaultCallGraphNode implements CallGraphNode {
 
     @Override
     public Collection<DefaultCallSite> getCallerCallSites() {
+        if (callerCallSites == null) {
+            if (singleCaller != null) {
+                return Collections.singletonList(singleCaller);
+            }
+            return Collections.emptyList();
+        }
         if (safeCallersCallSites == null) {
             safeCallersCallSites = Collections.unmodifiableList(callerCallSites);
         }
@@ -69,12 +83,35 @@ public class DefaultCallGraphNode implements CallGraphNode {
     public boolean addCallSite(MethodReference method, TextLocation location) {
         DefaultCallGraphNode callee = graph.getNode(method);
         DefaultCallSite callSite = new DefaultCallSite(location, callee, this);
+        if (callSites == null) {
+            if (singleCallSite == null) {
+                singleCallSite = callSite;
+                callee.addCaller(callSite);
+                return true;
+            }
+            callSites = new LinkedHashSet<>();
+            callSites.add(singleCallSite);
+            singleCallSite = null;
+        }
         if (callSites.add(callSite)) {
-            callee.callerCallSites.add(callSite);
+            callee.addCaller(callSite);
             return true;
         } else {
             return false;
         }
+    }
+
+    private void addCaller(DefaultCallSite caller) {
+        if (callerCallSites == null) {
+            if (singleCaller == null) {
+                singleCaller = caller;
+                return;
+            }
+            callerCallSites = new ArrayList<>();
+            callerCallSites.add(singleCaller);
+            singleCaller = null;
+        }
+        callerCallSites.add(caller);
     }
 
     public boolean addCallSite(MethodReference method) {

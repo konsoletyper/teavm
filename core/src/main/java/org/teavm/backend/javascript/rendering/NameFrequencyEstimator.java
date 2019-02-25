@@ -59,6 +59,7 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
             "monitorExit", Object.class, void.class);
     static final MethodReference MONITOR_EXIT_SYNC_METHOD = new MethodReference(Object.class,
             "monitorExitSync", Object.class, void.class);
+    private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     private final NameFrequencyConsumer consumer;
     private final ClassReaderSource classSource;
@@ -88,8 +89,7 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         }
 
         // Methods
-        MethodReader clinit = classSource.get(cls.getName()).getMethod(
-                new MethodDescriptor("<clinit>", ValueType.VOID));
+        MethodReader clinit = classSource.get(cls.getName()).getMethod(CLINIT_METHOD);
         for (PreparedMethod method : cls.getMethods()) {
             consumer.consume(method.reference);
             if (asyncFamilyMethods.contains(method.reference)) {

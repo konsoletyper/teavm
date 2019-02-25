@@ -17,8 +17,11 @@ package org.teavm.model.emit;
 
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.PrimitiveType;
@@ -467,7 +470,11 @@ public class ValueEmitter {
         }
         signature[arguments.length] = resultType;
 
-        MethodReference method = new MethodReference(className, name, signature);
+        ClassReader cls = pe.classSource.get(className);
+        MethodReader methodReader = cls != null ? cls.getMethod(new MethodDescriptor(name, signature)) : null;
+        MethodReference method = methodReader != null
+                ? methodReader.getReference()
+                : new MethodReference(className, name, signature);
         if (method.getReturnType() != ValueType.VOID) {
             result = pe.getProgram().createVariable();
         }

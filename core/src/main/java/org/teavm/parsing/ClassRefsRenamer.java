@@ -33,7 +33,6 @@ import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
 import org.teavm.model.MethodHolder;
-import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.RuntimeConstant;
@@ -108,7 +107,8 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         for (int i = 0; i < signature.length; ++i) {
             signature[i] = rename(signature[i]);
         }
-        MethodHolder renamedMethod = new MethodHolder(methodName, signature);
+        MethodHolder renamedMethod = new MethodHolder(referenceCache.getCached(
+                new MethodDescriptor(methodName, signature)));
         renamedMethod.getModifiers().addAll(method.getModifiers());
         renamedMethod.setLevel(method.getLevel());
         renamedMethod.setProgram(method.getProgram());
@@ -274,8 +274,8 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
             signature[i] = newType;
         }
         if (changed) {
-            insn.setMethod(referenceCache.getCached(new MethodReference(className,
-                    new MethodDescriptor(insn.getMethod().getName(), signature))));
+            insn.setMethod(referenceCache.getCached(className,
+                    new MethodDescriptor(insn.getMethod().getName(), signature)));
         }
     }
 

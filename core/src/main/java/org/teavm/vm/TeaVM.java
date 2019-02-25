@@ -463,6 +463,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return null;
         }
 
+        dependencyAnalyzer.cleanup();
+
         return classSet;
     }
 

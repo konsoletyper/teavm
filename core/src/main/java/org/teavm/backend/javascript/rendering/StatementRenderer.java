@@ -103,6 +103,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
     private List<String> blockIds = new ArrayList<>();
     private IntIndexedContainer blockIndexMap = new IntArrayList();
     private boolean longLibraryUsed;
+    private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     public StatementRenderer(RenderingContext context, SourceWriter writer) {
         this.context = context;
@@ -462,7 +463,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         if (cls == null) {
             return;
         }
-        MethodReader method = cls.getMethod(new MethodDescriptor("<clinit>", void.class));
+        MethodReader method = cls.getMethod(CLINIT_METHOD);
         if (method == null) {
             return;
         }

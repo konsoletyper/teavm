@@ -51,6 +51,7 @@ public class AsyncProgramSplitter {
     private ClassReaderSource classSource;
     private Set<MethodReference> asyncMethods;
     private Program program;
+    private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     public AsyncProgramSplitter(ClassReaderSource classSource, Set<MethodReference> asyncMethods) {
         this.classSource = classSource;
@@ -211,7 +212,7 @@ public class AsyncProgramSplitter {
             return false;
         }
 
-        MethodReader method = cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID));
+        MethodReader method = cls.getMethod(CLINIT_METHOD);
         return method != null && asyncMethods.contains(method.getReference());
     }
 

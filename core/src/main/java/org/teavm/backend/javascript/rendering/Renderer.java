@@ -76,6 +76,7 @@ public class Renderer implements RenderingManager {
     private RenderingContext context;
     private List<PostponedFieldInitializer> postponedFieldInitializers = new ArrayList<>();
     private IntFunction<TeaVMProgressFeedback> progressConsumer = p -> TeaVMProgressFeedback.CONTINUE;
+    private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     private ObjectIntMap<String> sizeByClass = new ObjectIntHashMap<>();
     private int stringPoolSize;
@@ -376,8 +377,7 @@ public class Renderer implements RenderingManager {
     private void renderMethodBodies(PreparedClass cls) throws RenderingException {
         debugEmitter.emitClass(cls.getName());
         try {
-            MethodReader clinit = classSource.get(cls.getName()).getMethod(
-                    new MethodDescriptor("<clinit>", ValueType.VOID));
+            MethodReader clinit = classSource.get(cls.getName()).getMethod(CLINIT_METHOD);
 
             if (clinit != null) {
                 renderCallClinit(clinit, cls);
@@ -540,8 +540,7 @@ public class Renderer implements RenderingManager {
             writer.append(ElementModifier.pack(cls.getClassHolder().getModifiers())).append(',').ws();
             writer.append(cls.getClassHolder().getLevel().ordinal()).append(',').ws();
 
-            MethodReader clinit = classSource.get(cls.getName()).getMethod(
-                    new MethodDescriptor("<clinit>", ValueType.VOID));
+            MethodReader clinit = classSource.get(cls.getName()).getMethod(CLINIT_METHOD);
             if (clinit != null) {
                 writer.appendClassInit(cls.getName());
             } else {

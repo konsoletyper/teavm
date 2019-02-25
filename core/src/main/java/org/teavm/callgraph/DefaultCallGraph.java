@@ -24,6 +24,7 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -33,8 +34,8 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
 public class DefaultCallGraph implements CallGraph, Serializable {
-    Map<MethodReference, DefaultCallGraphNode> nodes = new LinkedHashMap<>();
-    Map<FieldReference, Set<DefaultFieldAccessSite>> fieldAccessSites = new LinkedHashMap<>();
+    public Map<MethodReference, DefaultCallGraphNode> nodes = new HashMap<>();
+    Map<FieldReference, Set<DefaultFieldAccessSite>> fieldAccessSites = new HashMap<>();
 
     @Override
     public DefaultCallGraphNode getNode(MethodReference method) {

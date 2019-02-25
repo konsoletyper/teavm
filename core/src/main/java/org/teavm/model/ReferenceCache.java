@@ -35,7 +35,7 @@ public class ReferenceCache {
     public MethodReference getCached(String className, MethodDescriptor descriptor) {
         return referenceCache
                 .computeIfAbsent(className, key -> new HashMap<>())
-                .computeIfAbsent(descriptor, key -> new MethodReference(className, descriptor));
+                .computeIfAbsent(getCached(descriptor), key -> new MethodReference(className, key));
     }
 
     public MethodDescriptor getCached(MethodDescriptor descriptor) {

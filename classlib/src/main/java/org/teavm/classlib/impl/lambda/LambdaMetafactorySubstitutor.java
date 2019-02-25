@@ -17,6 +17,7 @@ package org.teavm.classlib.impl.lambda;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +30,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
 import org.teavm.model.MethodHandleType;
 import org.teavm.model.MethodHolder;
@@ -46,6 +48,8 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
     private static final int FLAG_MARKERS = 2;
     private static final int FLAG_BRIDGES = 4;
     private Map<MethodReference, Integer> lambdaIdsByMethod = new HashMap<>();
+    private Map<MethodDescriptor, MethodDescriptor> descriptorCache = new HashMap<>();
+    private List<String> fieldNameCache = new ArrayList<>();
 
     @Override
     public ValueEmitter substitute(DynamicCallSite callSite, ProgramEmitter callerPe) {
@@ -100,7 +104,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         ValueType[] implementorSignature = getSignature(implMethod);
         ValueEmitter[] passedArguments = new ValueEmitter[implementorSignature.length - 1];
         for (int i = 0; i < capturedVarCount; ++i) {
-            passedArguments[i] = thisVar.getField("_" + i, invokedType[i]);
+            passedArguments[i] = thisVar.getField(fieldName(i), invokedType[i]);
         }
         for (int i = 0; i < instantiatedMethodType.length - 1; ++i) {
             passedArguments[i + capturedVarCount] = tryConvertArgument(arguments[i], instantiatedMethodType[i],
@@ -298,7 +302,9 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
             TextLocation location) {
         ValueType[] signature = Arrays.copyOf(types, types.length + 1);
         signature[types.length] = ValueType.VOID;
-        MethodHolder ctor = new MethodHolder("<init>", signature);
+        MethodDescriptor descriptor = descriptorCache.computeIfAbsent(new MethodDescriptor("<init>", signature),
+                k -> k);
+        MethodHolder ctor = new MethodHolder(descriptor);
         ctor.setLevel(AccessLevel.PUBLIC);
 
         ProgramEmitter pe = ProgramEmitter.create(ctor, hierarchy);
@@ -307,7 +313,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         thisVar.invokeSpecial(implementor.getParent(), "<init>");
 
         for (int i = 0; i < types.length; ++i) {
-            FieldHolder field = new FieldHolder("_" + i);
+            FieldHolder field = new FieldHolder(fieldName(i));
             field.setLevel(AccessLevel.PRIVATE);
             field.setType(types[i]);
             implementor.addField(field);
@@ -317,6 +323,18 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         pe.exit();
         implementor.addMethod(ctor);
         return ctor;
+    }
+
+    private String fieldName(int index) {
+        if (index >= fieldNameCache.size()) {
+            fieldNameCache.addAll(Collections.nCopies(index - fieldNameCache.size() + 1, null));
+        }
+        String result = fieldNameCache.get(index);
+        if (result == null) {
+            result = "_" + index;
+            fieldNameCache.set(index, result);
+        }
+        return result;
     }
 
     private void createBridge(ClassHierarchy hierarchy, ClassHolder implementor, String name, ValueType[] types,

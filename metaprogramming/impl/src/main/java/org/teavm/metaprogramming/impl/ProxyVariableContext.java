@@ -24,6 +24,7 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.FieldHolder;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
@@ -43,6 +44,7 @@ public class ProxyVariableContext extends VariableContext {
     private int suffixGenerator;
     private Map<Variable, CapturedValue> capturedValueMap = new HashMap<>();
     private List<CapturedValue> capturedValues = new ArrayList<>();
+    private static final MethodDescriptor INIT_METHOD = new MethodDescriptor("<init>", ValueType.VOID);
 
     public ProxyVariableContext(VariableContext parent, ClassHolder proxyClass) {
         super(parent);
@@ -103,7 +105,7 @@ public class ProxyVariableContext extends VariableContext {
 
         InvokeInstruction invokeSuper = new InvokeInstruction();
         invokeSuper.setInstance(ctorProgram.createVariable());
-        invokeSuper.setMethod(new MethodReference(proxyClass.getParent(), "<init>", ValueType.VOID));
+        invokeSuper.setMethod(new MethodReference(proxyClass.getParent(), INIT_METHOD));
         invokeSuper.setType(InvocationType.SPECIAL);
         ctorBlock.add(invokeSuper);
 
