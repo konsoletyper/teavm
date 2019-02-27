@@ -875,7 +875,7 @@ public class CodeServlet extends HttpServlet {
         List<String> result = new ArrayList<>();
 
         for (File file : changedFiles) {
-            String path = file.getPath();
+            String path = file.getPath().replace('\\', '/');
             if (!path.endsWith(".class")) {
                 continue;
             }
