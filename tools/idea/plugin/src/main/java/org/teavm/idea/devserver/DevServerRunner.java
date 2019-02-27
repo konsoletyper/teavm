@@ -327,7 +327,6 @@ public class DevServerRunner extends UnicastRemoteObject implements DevServerMan
         @Override
         public void compilationComplete(BuildResult buildResult) {
             DevServerBuildResult result = new DevServerBuildResult();
-            result.callGraph = buildResult.getCallGraph();
             result.problems.addAll(buildResult.getProblems().getProblems());
             for (DevServerManagerListener listener : getListeners()) {
                 try {

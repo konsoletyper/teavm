@@ -18,10 +18,8 @@ package org.teavm.idea.devserver;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
-import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.Problem;
 
 public class DevServerBuildResult implements Serializable {
-    public CallGraph callGraph;
     public final List<Problem> problems = new ArrayList<>();
 }
