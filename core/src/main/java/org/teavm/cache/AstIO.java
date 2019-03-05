@@ -83,9 +83,10 @@ public class AstIO {
     private final SymbolTable symbolTable;
     private final SymbolTable fileTable;
     private final Map<String, IdentifiedStatement> statementMap = new HashMap<>();
-    private ReferenceCache referenceCache = new ReferenceCache();
+    private ReferenceCache referenceCache;
 
-    public AstIO(SymbolTable symbolTable, SymbolTable fileTable) {
+    public AstIO(ReferenceCache referenceCache, SymbolTable symbolTable, SymbolTable fileTable) {
+        this.referenceCache = referenceCache;
         this.symbolTable = symbolTable;
         this.fileTable = fileTable;
     }

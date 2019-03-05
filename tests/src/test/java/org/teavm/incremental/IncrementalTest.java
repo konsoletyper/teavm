@@ -58,6 +58,7 @@ import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.tooling.TeaVMProblemRenderer;
@@ -71,7 +72,7 @@ public class IncrementalTest {
     private static final String NEW_FILE = "classes-new.js";
     private static final String REFRESHED_FILE = "classes-refreshed.js";
     private static ClassHolderSource oldClassSource = new ClasspathClassHolderSource(
-            IncrementalTest.class.getClassLoader());
+            IncrementalTest.class.getClassLoader(), new ReferenceCache());
     private static Context rhinoContext;
     private static ScriptableObject rhinoRootScope;
     private String[] updatedMethods;
@@ -238,7 +239,7 @@ public class IncrementalTest {
         boolean capturing;
 
         CapturingMethodNodeCache() {
-            super(new InMemorySymbolTable(), new InMemorySymbolTable());
+            super(new ReferenceCache(), new InMemorySymbolTable(), new InMemorySymbolTable());
         }
 
         @Override
@@ -263,7 +264,7 @@ public class IncrementalTest {
         boolean capturing;
 
         CapturingProgramCache() {
-            super(new InMemorySymbolTable(), new InMemorySymbolTable());
+            super(new ReferenceCache(), new InMemorySymbolTable(), new InMemorySymbolTable());
         }
 
         @Override

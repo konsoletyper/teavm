@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.model.instructions.*;
 
@@ -157,7 +158,7 @@ public class ProgramIOTest {
     private Program inputOutput(Program program) {
         InMemorySymbolTable symbolTable = new InMemorySymbolTable();
         InMemorySymbolTable fileTable = new InMemorySymbolTable();
-        ProgramIO programIO = new ProgramIO(symbolTable, fileTable);
+        ProgramIO programIO = new ProgramIO(new ReferenceCache(), symbolTable, fileTable);
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             programIO.write(program, output);
             try (ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray())) {

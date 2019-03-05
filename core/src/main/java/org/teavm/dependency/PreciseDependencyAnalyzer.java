@@ -20,12 +20,13 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 
 public class PreciseDependencyAnalyzer extends DependencyAnalyzer {
     public PreciseDependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader,
-            ServiceRepository services, Diagnostics diagnostics) {
-        super(classSource, classLoader, services, diagnostics);
+            ServiceRepository services, Diagnostics diagnostics, ReferenceCache referenceCache) {
+        super(classSource, classLoader, services, diagnostics, referenceCache);
     }
 
     @Override

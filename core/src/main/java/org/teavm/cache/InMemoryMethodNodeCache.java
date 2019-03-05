@@ -26,6 +26,7 @@ import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ReferenceCache;
 
 public class InMemoryMethodNodeCache implements MethodNodeCache {
     private Map<MethodReference, RegularItem> cache = new HashMap<>();
@@ -34,8 +35,9 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
     private Map<MethodReference, AsyncItem> newAsyncItems = new HashMap<>();
     private AstIO io;
 
-    public InMemoryMethodNodeCache(InMemorySymbolTable symbolTable, InMemorySymbolTable fileSymbolTable) {
-        io = new AstIO(symbolTable, fileSymbolTable);
+    public InMemoryMethodNodeCache(ReferenceCache referenceCache, InMemorySymbolTable symbolTable,
+            InMemorySymbolTable fileSymbolTable) {
+        io = new AstIO(referenceCache, symbolTable, fileSymbolTable);
     }
 
     @Override

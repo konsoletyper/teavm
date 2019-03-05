@@ -24,6 +24,7 @@ import java.util.jar.JarInputStream;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
+import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 
 public class JCLComparisonBuilder {
@@ -119,7 +120,7 @@ public class JCLComparisonBuilder {
         if (!path.startsWith(JAR_PREFIX) || !path.endsWith(JAR_SUFFIX)) {
             throw new RuntimeException("Can't find JCL classes");
         }
-        ClasspathClassHolderSource classSource = new ClasspathClassHolderSource(classLoader);
+        ClasspathClassHolderSource classSource = new ClasspathClassHolderSource(classLoader, new ReferenceCache());
         path = path.substring(JAR_PREFIX.length(), path.length() - JAR_SUFFIX.length());
         File outDir = new File(outputDirectory).getParentFile();
         if (!outDir.exists()) {

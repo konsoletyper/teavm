@@ -51,7 +51,11 @@ public class DebugInformation {
     Map<String, ClassMetadata> classMetadataByJsName;
     RecordArray methodEntrances;
     MethodTree methodTree;
-    ReferenceCache referenceCache = new ReferenceCache();
+    ReferenceCache referenceCache;
+
+    public DebugInformation(ReferenceCache referenceCache) {
+        this.referenceCache = referenceCache;
+    }
 
     public String[] getFilesNames() {
         return fileNames.clone();
@@ -410,7 +414,11 @@ public class DebugInformation {
     }
 
     public static DebugInformation read(InputStream input) throws IOException {
-        DebugInformationReader reader = new DebugInformationReader(input);
+        return read(input, new ReferenceCache());
+    }
+
+    public static DebugInformation read(InputStream input, ReferenceCache referenceCache) throws IOException {
+        DebugInformationReader reader = new DebugInformationReader(input, referenceCache);
         return reader.read();
     }
 

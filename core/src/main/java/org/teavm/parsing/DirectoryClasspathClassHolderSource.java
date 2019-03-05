@@ -29,16 +29,15 @@ public class DirectoryClasspathClassHolderSource implements ClassHolderSource {
     private MapperClassHolderSource innerClassSource;
     private ClasspathResourceMapper classPathMapper;
 
-    public DirectoryClasspathClassHolderSource(File baseDir, Properties properties) {
-        ReferenceCache referenceCache = new ReferenceCache();
+    public DirectoryClasspathClassHolderSource(File baseDir, Properties properties, ReferenceCache referenceCache) {
         DirectoryResourceReader reader = new DirectoryResourceReader(baseDir);
         ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader, referenceCache);
         classPathMapper = new ClasspathResourceMapper(properties, referenceCache, rawMapper);
         innerClassSource = new MapperClassHolderSource(classPathMapper);
     }
 
-    public DirectoryClasspathClassHolderSource(File baseDir) {
-        this(baseDir, new Properties());
+    public DirectoryClasspathClassHolderSource(File baseDir, ReferenceCache referenceCache) {
+        this(baseDir, new Properties(), referenceCache);
     }
 
     @Override

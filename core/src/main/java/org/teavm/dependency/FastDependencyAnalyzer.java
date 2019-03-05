@@ -31,6 +31,7 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ProgramReader;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.TryCatchBlockReader;
 import org.teavm.model.ValueType;
 
@@ -41,8 +42,8 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
     private Map<String, DependencyNode> subtypeNodes = new HashMap<>();
 
     public FastDependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader,
-            ServiceRepository services, Diagnostics diagnostics) {
-        super(classSource, classLoader, services, diagnostics);
+            ServiceRepository services, Diagnostics diagnostics, ReferenceCache referenceCache) {
+        super(classSource, classLoader, services, diagnostics, referenceCache);
 
         instancesNode = new DependencyNode(this, null);
         classesNode = new DependencyNode(this, null);

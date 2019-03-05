@@ -158,7 +158,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         classSource = builder.classSource;
         classLoader = builder.classLoader;
         dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(this.classSource, classLoader,
-                this, diagnostics);
+                this, diagnostics, builder.referenceCache);
         progressListener = new TeaVMProgressListener() {
             @Override public TeaVMProgressFeedback progressReached(int progress) {
                 return TeaVMProgressFeedback.CONTINUE;

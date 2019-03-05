@@ -23,17 +23,20 @@ import java.util.ArrayList;
 import java.util.List;
 import org.teavm.common.RecordArray;
 import org.teavm.common.RecordArrayBuilder;
+import org.teavm.model.ReferenceCache;
 
 class DebugInformationReader {
     private InputStream input;
     private int lastNumber;
+    private ReferenceCache referenceCache;
 
-    public DebugInformationReader(InputStream input) {
+    DebugInformationReader(InputStream input, ReferenceCache referenceCache) {
         this.input = input;
+        this.referenceCache = referenceCache;
     }
 
     public DebugInformation read() throws IOException {
-        DebugInformation debugInfo = new DebugInformation();
+        DebugInformation debugInfo = new DebugInformation(referenceCache);
         debugInfo.fileNames = readStrings();
         debugInfo.classNames = readStrings();
         debugInfo.fields = readStrings();

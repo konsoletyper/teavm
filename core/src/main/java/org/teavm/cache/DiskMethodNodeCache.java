@@ -31,6 +31,7 @@ import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ReferenceCache;
 
 public class DiskMethodNodeCache implements MethodNodeCache {
     private final File directory;
@@ -40,9 +41,10 @@ public class DiskMethodNodeCache implements MethodNodeCache {
     private final Set<MethodReference> newMethods = new HashSet<>();
     private final Set<MethodReference> newAsyncMethods = new HashSet<>();
 
-    public DiskMethodNodeCache(File directory, SymbolTable symbolTable, SymbolTable fileTable) {
+    public DiskMethodNodeCache(File directory, ReferenceCache referenceCache, SymbolTable symbolTable,
+            SymbolTable fileTable) {
         this.directory = directory;
-        astIO = new AstIO(symbolTable, fileTable);
+        astIO = new AstIO(referenceCache, symbolTable, fileTable);
     }
 
     @Override

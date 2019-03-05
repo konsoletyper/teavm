@@ -113,11 +113,13 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private ClassHierarchy classHierarchy;
     IncrementalCache incrementalCache = new IncrementalCache();
     boolean asyncSupported;
+    private ReferenceCache referenceCache;
 
     DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
-            Diagnostics diagnostics) {
+            Diagnostics diagnostics, ReferenceCache referenceCache) {
         unprocessedClassSource = classSource;
         this.diagnostics = diagnostics;
+        this.referenceCache = referenceCache;
         this.classSource = new DependencyClassSource(classSource, diagnostics, incrementalCache);
         classHierarchy = new ClassHierarchy(this.classSource);
         this.classLoader = classLoader;
@@ -231,7 +233,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         ClassNode node = new ClassNode();
         org.objectweb.asm.ClassReader reader = new org.objectweb.asm.ClassReader(data);
         reader.accept(node, 0);
-        submitClass(new Parser(new ReferenceCache()).parseClass(node));
+        submitClass(new Parser(referenceCache).parseClass(node));
         return node.name;
     }
 

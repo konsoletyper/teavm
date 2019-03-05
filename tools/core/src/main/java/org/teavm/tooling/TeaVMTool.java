@@ -53,6 +53,7 @@ import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.PreOptimizingClassHolderSource;
+import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.tooling.sources.SourceFilesCopier;
@@ -100,6 +101,7 @@ public class TeaVMTool {
     private CTarget cTarget;
     private Set<File> generatedFiles = new HashSet<>();
     private int minHeapSize = 32 * (1 << 20);
+    private ReferenceCache referenceCache;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -299,7 +301,7 @@ public class TeaVMTool {
         javaScriptTarget.setTopLevelNameLimit(maxTopLevelNames);
 
         debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
-                ? new DebugInformationBuilder() : null;
+                ? new DebugInformationBuilder(referenceCache) : null;
         javaScriptTarget.setDebugEmitter(debugEmitter);
 
         return javaScriptTarget;
@@ -327,17 +329,20 @@ public class TeaVMTool {
             log.info("Running TeaVM");
             TeaVMBuilder vmBuilder = new TeaVMBuilder(prepareTarget());
             CacheStatus cacheStatus;
+            referenceCache = new ReferenceCache();
+            vmBuilder.setReferenceCache(referenceCache);
             if (incremental) {
                 cacheDirectory.mkdirs();
                 symbolTable = new FileSymbolTable(new File(cacheDirectory, "symbols"));
                 fileTable = new FileSymbolTable(new File(cacheDirectory, "files"));
-                ClasspathClassHolderSource innerClassSource = new ClasspathClassHolderSource(classLoader);
+                ClasspathClassHolderSource innerClassSource = new ClasspathClassHolderSource(classLoader,
+                        referenceCache);
                 ClassHolderSource classSource = new PreOptimizingClassHolderSource(innerClassSource);
-                cachedClassSource = new DiskCachedClassHolderSource(cacheDirectory, symbolTable, fileTable,
-                        classSource, innerClassSource);
-                programCache = new DiskProgramCache(cacheDirectory, symbolTable, fileTable);
+                cachedClassSource = new DiskCachedClassHolderSource(cacheDirectory, referenceCache, symbolTable,
+                        fileTable, classSource, innerClassSource);
+                programCache = new DiskProgramCache(cacheDirectory, referenceCache, symbolTable, fileTable);
                 if (incremental && targetType == TeaVMTargetType.JAVASCRIPT) {
-                    astCache = new DiskMethodNodeCache(cacheDirectory, symbolTable, fileTable);
+                    astCache = new DiskMethodNodeCache(cacheDirectory, referenceCache, symbolTable, fileTable);
                     javaScriptTarget.setAstCache(astCache);
                 }
                 try {
@@ -350,7 +355,7 @@ public class TeaVMTool {
                 cacheStatus = cachedClassSource;
             } else {
                 vmBuilder.setClassLoader(classLoader).setClassSource(new PreOptimizingClassHolderSource(
-                        new ClasspathClassHolderSource(classLoader)));
+                        new ClasspathClassHolderSource(classLoader, referenceCache)));
                 cacheStatus = AlwaysStaleCacheStatus.INSTANCE;
             }
 

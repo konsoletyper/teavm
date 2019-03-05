@@ -27,16 +27,15 @@ public class ClasspathClassHolderSource implements ClassHolderSource, ClassDateP
     private MapperClassHolderSource innerClassSource;
     private ClasspathResourceMapper classPathMapper;
 
-    public ClasspathClassHolderSource(ClassLoader classLoader) {
-        ReferenceCache referenceCache = new ReferenceCache();
+    public ClasspathClassHolderSource(ClassLoader classLoader, ReferenceCache referenceCache) {
         ClasspathResourceReader reader = new ClasspathResourceReader(classLoader);
         ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader, referenceCache);
         classPathMapper = new ClasspathResourceMapper(classLoader, referenceCache, rawMapper);
         innerClassSource = new MapperClassHolderSource(classPathMapper);
     }
 
-    public ClasspathClassHolderSource() {
-        this(ClasspathClassHolderSource.class.getClassLoader());
+    public ClasspathClassHolderSource(ReferenceCache referenceCache) {
+        this(ClasspathClassHolderSource.class.getClassLoader(), referenceCache);
     }
 
     @Override

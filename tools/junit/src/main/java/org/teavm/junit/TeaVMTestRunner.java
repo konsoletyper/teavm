@@ -76,6 +76,7 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.PreOptimizingClassHolderSource;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.tooling.TeaVMProblemRenderer;
@@ -116,6 +117,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1);
     private CountDownLatch latch;
     private List<Method> filteredChildren;
+    private ReferenceCache referenceCache = new ReferenceCache();
 
     static class RunnerKindInfo {
         volatile TestRunner runner;
@@ -559,7 +561,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private CompileResult compileToJs(Method method, TeaVMTestConfiguration<JavaScriptTarget> configuration,
             File path) {
         boolean decodeStack = Boolean.parseBoolean(System.getProperty(JS_DECODE_STACK, "true"));
-        DebugInformationBuilder debugEmitter = new DebugInformationBuilder();
+        DebugInformationBuilder debugEmitter = new DebugInformationBuilder(new ReferenceCache());
         Supplier<JavaScriptTarget> targetSupplier = () -> {
             JavaScriptTarget target = new JavaScriptTarget();
             if (decodeStack) {
@@ -639,6 +641,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         TeaVM vm = new TeaVMBuilder(target)
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
+                .setReferenceCache(referenceCache)
                 .setDependencyAnalyzerFactory(dependencyAnalyzerFactory)
                 .build();
 
@@ -751,9 +754,9 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         }
     }
 
-    private static ClassHolderSource getClassSource(ClassLoader classLoader) {
+    private ClassHolderSource getClassSource(ClassLoader classLoader) {
         return classSources.computeIfAbsent(classLoader, cl -> new PreOptimizingClassHolderSource(
-                new ClasspathClassHolderSource(classLoader)));
+                new ClasspathClassHolderSource(classLoader, referenceCache)));
     }
 
     @Override

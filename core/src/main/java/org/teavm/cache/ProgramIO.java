@@ -85,7 +85,7 @@ import org.teavm.model.instructions.UnwrapArrayInstruction;
 public class ProgramIO {
     private SymbolTable symbolTable;
     private SymbolTable fileTable;
-    private ReferenceCache referenceCache = new ReferenceCache();
+    private ReferenceCache referenceCache;
     private static BinaryOperation[] binaryOperations = BinaryOperation.values();
     private static NumericOperandType[] numericOperandTypes = NumericOperandType.values();
     private static IntegerSubtype[] integerSubtypes = IntegerSubtype.values();
@@ -94,7 +94,8 @@ public class ProgramIO {
     private static BinaryBranchingCondition[] binaryBranchingConditions = BinaryBranchingCondition.values();
     private static ArrayElementType[] arrayElementTypes = ArrayElementType.values();
 
-    public ProgramIO(SymbolTable symbolTable, SymbolTable fileTable) {
+    public ProgramIO(ReferenceCache referenceCache, SymbolTable symbolTable, SymbolTable fileTable) {
+        this.referenceCache = referenceCache;
         this.symbolTable = symbolTable;
         this.fileTable = fileTable;
     }

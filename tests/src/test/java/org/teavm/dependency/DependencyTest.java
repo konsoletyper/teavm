@@ -39,6 +39,7 @@ import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInference;
@@ -63,7 +64,8 @@ public class DependencyTest {
 
     @BeforeClass
     public static void prepare() {
-        classSource = new ClasspathClassHolderSource(DependencyTest.class.getClassLoader());
+        classSource = new ClasspathClassHolderSource(DependencyTest.class.getClassLoader(),
+                new ReferenceCache());
     }
 
     @AfterClass

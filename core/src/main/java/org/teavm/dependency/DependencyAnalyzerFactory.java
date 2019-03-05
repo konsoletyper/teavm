@@ -18,8 +18,9 @@ package org.teavm.dependency;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ReferenceCache;
 
 public interface DependencyAnalyzerFactory {
     DependencyAnalyzer create(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
-            Diagnostics diagnostics);
+            Diagnostics diagnostics, ReferenceCache referenceCache);
 }

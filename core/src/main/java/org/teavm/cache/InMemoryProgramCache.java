@@ -25,14 +25,16 @@ import java.util.function.Supplier;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ProgramCache;
+import org.teavm.model.ReferenceCache;
 
 public class InMemoryProgramCache implements ProgramCache {
     private Map<MethodReference, Item> cache = new HashMap<>();
     private Map<MethodReference, Item> newItems = new HashMap<>();
     private ProgramIO io;
 
-    public InMemoryProgramCache(InMemorySymbolTable symbolTable, InMemorySymbolTable fileSymbolTable) {
-        io = new ProgramIO(symbolTable, fileSymbolTable);
+    public InMemoryProgramCache(ReferenceCache referenceCache, InMemorySymbolTable symbolTable,
+            InMemorySymbolTable fileSymbolTable) {
+        io = new ProgramIO(referenceCache, symbolTable, fileSymbolTable);
     }
 
     @Override

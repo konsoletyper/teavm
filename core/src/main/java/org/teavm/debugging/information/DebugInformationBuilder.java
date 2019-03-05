@@ -21,6 +21,7 @@ import org.teavm.common.RecordArray;
 import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ReferenceCache;
 
 public class DebugInformationBuilder implements DebugInformationEmitter {
     private LocationProvider locationProvider;
@@ -46,6 +47,11 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private List<ClassMetadata> classesMetadata = new ArrayList<>();
     private List<RecordArrayBuilder> cfgs = new ArrayList<>();
     private int currentLine;
+    private ReferenceCache referenceCache;
+
+    public DebugInformationBuilder(ReferenceCache referenceCache) {
+        this.referenceCache = referenceCache;
+    }
 
     public LocationProvider getLocationProvider() {
         return locationProvider;
@@ -263,7 +269,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
 
     public DebugInformation getDebugInformation() {
         if (debugInformation == null) {
-            debugInformation = new DebugInformation();
+            debugInformation = new DebugInformation(referenceCache);
 
             debugInformation.fileNames = files.getItems();
             debugInformation.classNames = classes.getItems();

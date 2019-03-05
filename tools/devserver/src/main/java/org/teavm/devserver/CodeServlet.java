@@ -76,6 +76,7 @@ import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.FastDependencyAnalyzer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.PreOptimizingClassHolderSource;
+import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMProblemRenderer;
@@ -139,6 +140,7 @@ public class CodeServlet extends HttpServlet {
     private WebSocketClient wsClient = new WebSocketClient();
     private InMemorySymbolTable symbolTable = new InMemorySymbolTable();
     private InMemorySymbolTable fileSymbolTable = new InMemorySymbolTable();
+    private ReferenceCache referenceCache = new ReferenceCache();
 
     public CodeServlet(String mainClass, String[] classPath) {
         this.mainClass = mainClass;
@@ -707,8 +709,8 @@ public class CodeServlet extends HttpServlet {
         watcher = new FileSystemWatcher(classPath);
 
         classSource = new MemoryCachedClassReaderSource();
-        astCache = new InMemoryMethodNodeCache(symbolTable, fileSymbolTable);
-        programCache = new InMemoryProgramCache(symbolTable, fileSymbolTable);
+        astCache = new InMemoryMethodNodeCache(referenceCache, symbolTable, fileSymbolTable);
+        programCache = new InMemoryProgramCache(referenceCache, symbolTable, fileSymbolTable);
     }
 
     private void shutdownBuilder() {
@@ -733,15 +735,16 @@ public class CodeServlet extends HttpServlet {
         fireBuildStarted();
         reportProgress(0);
 
-        DebugInformationBuilder debugInformationBuilder = new DebugInformationBuilder();
+        DebugInformationBuilder debugInformationBuilder = new DebugInformationBuilder(referenceCache);
         ClassLoader classLoader = initClassLoader();
         classSource.setUnderlyingSource(new PreOptimizingClassHolderSource(
-                new ClasspathClassHolderSource(classLoader)));
+                new ClasspathClassHolderSource(classLoader, referenceCache)));
 
         long startTime = System.currentTimeMillis();
         JavaScriptTarget jsTarget = new JavaScriptTarget();
 
         TeaVM vm = new TeaVMBuilder(jsTarget)
+                .setReferenceCache(referenceCache)
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
                 .setDependencyAnalyzerFactory(FastDependencyAnalyzer::new)

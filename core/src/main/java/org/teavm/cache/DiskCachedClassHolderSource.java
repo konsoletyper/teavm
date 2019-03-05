@@ -48,6 +48,7 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.parsing.ClassDateProvider;
 
@@ -62,13 +63,13 @@ public class DiskCachedClassHolderSource implements ClassHolderSource, CacheStat
     private Set<String> newClasses = new HashSet<>();
     private ProgramIO programIO;
 
-    public DiskCachedClassHolderSource(File directory, SymbolTable symbolTable, SymbolTable fileTable,
-            ClassHolderSource innerSource, ClassDateProvider classDateProvider) {
+    public DiskCachedClassHolderSource(File directory, ReferenceCache referenceCache, SymbolTable symbolTable,
+            SymbolTable fileTable, ClassHolderSource innerSource, ClassDateProvider classDateProvider) {
         this.directory = directory;
         this.symbolTable = symbolTable;
         this.innerSource = innerSource;
         this.classDateProvider = classDateProvider;
-        programIO = new ProgramIO(symbolTable, fileTable);
+        programIO = new ProgramIO(referenceCache, symbolTable, fileTable);
     }
 
     @Override

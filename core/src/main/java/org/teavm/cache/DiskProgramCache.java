@@ -37,6 +37,7 @@ import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ProgramCache;
+import org.teavm.model.ReferenceCache;
 
 public class DiskProgramCache implements ProgramCache {
     private File directory;
@@ -44,9 +45,10 @@ public class DiskProgramCache implements ProgramCache {
     private Map<MethodReference, Item> cache = new HashMap<>();
     private Set<MethodReference> newMethods = new HashSet<>();
 
-    public DiskProgramCache(File directory, SymbolTable symbolTable, SymbolTable fileTable) {
+    public DiskProgramCache(File directory, ReferenceCache referenceCache, SymbolTable symbolTable,
+            SymbolTable fileTable) {
         this.directory = directory;
-        programIO = new ProgramIO(symbolTable, fileTable);
+        programIO = new ProgramIO(referenceCache, symbolTable, fileTable);
     }
 
     @Override
