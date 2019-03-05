@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-class InMemorySymbolTable implements SymbolTable {
+public class InMemorySymbolTable implements SymbolTable {
     private List<String> symbols = new ArrayList<>();
     private Map<String, Integer> indexes = new HashMap<>();
 

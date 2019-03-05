@@ -48,6 +48,7 @@ import org.teavm.cache.AstCacheEntry;
 import org.teavm.cache.CacheStatus;
 import org.teavm.cache.InMemoryMethodNodeCache;
 import org.teavm.cache.InMemoryProgramCache;
+import org.teavm.cache.InMemorySymbolTable;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.dependency.FastDependencyAnalyzer;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
@@ -236,6 +237,10 @@ public class IncrementalTest {
         final Set<MethodReference> updatedMethods = new HashSet<>();
         boolean capturing;
 
+        CapturingMethodNodeCache() {
+            super(new InMemorySymbolTable(), new InMemorySymbolTable());
+        }
+
         @Override
         public void store(MethodReference methodReference, AstCacheEntry node, Supplier<String[]> dependencies) {
             super.store(methodReference, node, dependencies);
@@ -256,6 +261,10 @@ public class IncrementalTest {
     static class CapturingProgramCache extends InMemoryProgramCache {
         final Set<MethodReference> updatedMethods = new HashSet<>();
         boolean capturing;
+
+        CapturingProgramCache() {
+            super(new InMemorySymbolTable(), new InMemorySymbolTable());
+        }
 
         @Override
         public void store(MethodReference method, Program program, Supplier<String[]> dependencies) {

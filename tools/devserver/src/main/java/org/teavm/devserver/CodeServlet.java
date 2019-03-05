@@ -69,6 +69,7 @@ import org.eclipse.jetty.websocket.servlet.WebSocketServletFactory;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.cache.InMemoryMethodNodeCache;
 import org.teavm.cache.InMemoryProgramCache;
+import org.teavm.cache.InMemorySymbolTable;
 import org.teavm.cache.MemoryCachedClassReaderSource;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
@@ -136,6 +137,8 @@ public class CodeServlet extends HttpServlet {
     private List<DevServerListener> listeners = new ArrayList<>();
     private HttpClient httpClient;
     private WebSocketClient wsClient = new WebSocketClient();
+    private InMemorySymbolTable symbolTable = new InMemorySymbolTable();
+    private InMemorySymbolTable fileSymbolTable = new InMemorySymbolTable();
 
     public CodeServlet(String mainClass, String[] classPath) {
         this.mainClass = mainClass;
@@ -223,6 +226,8 @@ public class CodeServlet extends HttpServlet {
             astCache.invalidate();
             programCache.invalidate();
             classSource.invalidate();
+            symbolTable.invalidate();
+            fileSymbolTable.invalidate();
         }
     }
 
@@ -702,8 +707,8 @@ public class CodeServlet extends HttpServlet {
         watcher = new FileSystemWatcher(classPath);
 
         classSource = new MemoryCachedClassReaderSource();
-        astCache = new InMemoryMethodNodeCache();
-        programCache = new InMemoryProgramCache();
+        astCache = new InMemoryMethodNodeCache(symbolTable, fileSymbolTable);
+        programCache = new InMemoryProgramCache(symbolTable, fileSymbolTable);
     }
 
     private void shutdownBuilder() {

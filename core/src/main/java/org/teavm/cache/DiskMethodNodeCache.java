@@ -17,9 +17,6 @@ package org.teavm.cache;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -57,7 +54,7 @@ public class DiskMethodNodeCache implements MethodNodeCache {
             File file = getMethodFile(methodReference, false);
             if (file.exists()) {
                 try (InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
-                    DataInput input = new DataInputStream(stream);
+                    VarDataInput input = new VarDataInput(stream);
                     if (!checkIfDependenciesChanged(input, cacheStatus)) {
                         RegularMethodNode node = astIO.read(input, methodReference);
                         ControlFlowEntry[] cfg = astIO.readControlFlow(input);
@@ -89,7 +86,7 @@ public class DiskMethodNodeCache implements MethodNodeCache {
             File file = getMethodFile(methodReference, true);
             if (file.exists()) {
                 try (InputStream stream = new BufferedInputStream(new FileInputStream(file))) {
-                    DataInput input = new DataInputStream(stream);
+                    VarDataInput input = new VarDataInput(stream);
                     if (!checkIfDependenciesChanged(input, cacheStatus)) {
                         item.node = astIO.readAsync(input, methodReference);
                     }
@@ -101,10 +98,10 @@ public class DiskMethodNodeCache implements MethodNodeCache {
         return item.node;
     }
 
-    private boolean checkIfDependenciesChanged(DataInput input, CacheStatus cacheStatus) throws IOException {
-        int depCount = input.readShort();
+    private boolean checkIfDependenciesChanged(VarDataInput input, CacheStatus cacheStatus) throws IOException {
+        int depCount = input.readUnsigned();
         for (int i = 0; i < depCount; ++i) {
-            String depClass = input.readUTF();
+            String depClass = input.read();
             if (cacheStatus.isStaleClass(depClass)) {
                 return true;
             }
@@ -125,10 +122,10 @@ public class DiskMethodNodeCache implements MethodNodeCache {
         for (MethodReference method : newMethods) {
             File file = getMethodFile(method, true);
             Item item = cache.get(method);
-            try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
-                output.writeShort(item.dependencies.length);
+            try (VarDataOutput output = new VarDataOutput(new BufferedOutputStream(new FileOutputStream(file)))) {
+                output.writeUnsigned(item.dependencies.length);
                 for (String dependency : item.dependencies) {
-                    output.writeUTF(dependency);
+                    output.write(dependency);
                 }
                 astIO.write(output, item.entry.method);
                 astIO.write(output, item.entry.cfg);
@@ -137,10 +134,10 @@ public class DiskMethodNodeCache implements MethodNodeCache {
         for (MethodReference method : newAsyncMethods) {
             File file = getMethodFile(method, true);
             AsyncItem item = asyncCache.get(method);
-            try (DataOutputStream output = new DataOutputStream(new BufferedOutputStream(new FileOutputStream(file)))) {
-                output.writeShort(item.dependencies.length);
+            try (VarDataOutput output = new VarDataOutput(new BufferedOutputStream(new FileOutputStream(file)))) {
+                output.writeUnsigned(item.dependencies.length);
                 for (String dependency : item.dependencies) {
-                    output.writeUTF(dependency);
+                    output.write(dependency);
                 }
                 astIO.writeAsync(output, item.node);
             }

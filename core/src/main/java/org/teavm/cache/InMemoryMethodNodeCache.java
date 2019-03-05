@@ -15,11 +15,16 @@
  */
 package org.teavm.cache;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Supplier;
 import org.teavm.ast.AsyncMethodNode;
+import org.teavm.ast.ControlFlowEntry;
+import org.teavm.ast.RegularMethodNode;
 import org.teavm.model.MethodReference;
 
 public class InMemoryMethodNodeCache implements MethodNodeCache {
@@ -27,6 +32,11 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
     private Map<MethodReference, RegularItem> newItems = new HashMap<>();
     private Map<MethodReference, AsyncItem> asyncCache = new HashMap<>();
     private Map<MethodReference, AsyncItem> newAsyncItems = new HashMap<>();
+    private AstIO io;
+
+    public InMemoryMethodNodeCache(InMemorySymbolTable symbolTable, InMemorySymbolTable fileSymbolTable) {
+        io = new AstIO(symbolTable, fileSymbolTable);
+    }
 
     @Override
     public AstCacheEntry get(MethodReference methodReference, CacheStatus cacheStatus) {
@@ -39,7 +49,14 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
             return null;
         }
 
-        return item.entry;
+        VarDataInput input = new VarDataInput(new ByteArrayInputStream(item.entry));
+        try {
+            ControlFlowEntry[] cfg = io.readControlFlow(input);
+            RegularMethodNode ast = io.read(input, methodReference);
+            return new AstCacheEntry(ast, cfg);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -58,7 +75,12 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
             return null;
         }
 
-        return item.node;
+        VarDataInput input = new VarDataInput(new ByteArrayInputStream(item.node));
+        try {
+            return io.readAsync(input, methodReference);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
@@ -85,22 +107,37 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
         newAsyncItems.clear();
     }
 
-    static final class RegularItem {
-        final AstCacheEntry entry;
+    final class RegularItem {
+        final byte[] entry;
         final String[] dependencies;
 
         RegularItem(AstCacheEntry entry, String[] dependencies) {
-            this.entry = entry;
+            try {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                VarDataOutput data = new VarDataOutput(output);
+                io.write(data, entry.cfg);
+                io.write(data, entry.method);
+                this.entry = output.toByteArray();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             this.dependencies = dependencies;
         }
     }
 
-    static final class AsyncItem {
-        final AsyncMethodNode node;
+    final class AsyncItem {
+        final byte[] node;
         final String[] dependencies;
 
         AsyncItem(AsyncMethodNode node, String[] dependencies) {
-            this.node = node;
+            try {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                VarDataOutput data = new VarDataOutput(output);
+                io.writeAsync(data, node);
+                this.node = output.toByteArray();
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
             this.dependencies = dependencies;
         }
     }

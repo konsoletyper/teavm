@@ -15,6 +15,7 @@
  */
 package org.teavm.cache;
 
+import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 
@@ -33,6 +34,9 @@ public class VarDataInput {
         int b;
         do {
             b = input.read();
+            if (b < 0) {
+                throw new EOFException();
+            }
             value |= (b & DATA) << pos;
             pos += 7;
         } while ((b & NEXT) != 0);
@@ -41,7 +45,7 @@ public class VarDataInput {
 
     public int readSigned() throws IOException {
         int value = readUnsigned();
-        return (value & 1) == 0 ? (value >> 1) : -(value >> 1);
+        return (value & 1) == 0 ? (value >>> 1) : -(value >>> 1);
     }
 
     public long readUnsignedLong() throws IOException {
@@ -50,6 +54,9 @@ public class VarDataInput {
         int b;
         do {
             b = input.read();
+            if (b < 0) {
+                throw new EOFException();
+            }
             value |= ((long) b & DATA) << pos;
             pos += 7;
         } while ((b & NEXT) != 0);
@@ -91,6 +98,10 @@ public class VarDataInput {
 
     public String read() throws IOException {
         int sz = readUnsigned();
+        if (sz == 0) {
+            return null;
+        }
+        sz--;
         char[] chars = new char[sz];
         for (int i = 0; i < sz; ++i) {
             chars[i] = (char) readUnsigned();

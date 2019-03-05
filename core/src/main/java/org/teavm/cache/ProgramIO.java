@@ -106,7 +106,7 @@ public class ProgramIO {
         for (int i = 0; i < program.variableCount(); ++i) {
             Variable var = program.variableAt(i);
             data.writeUnsigned(var.getRegister());
-            data.write(var.getDebugName() != null ? var.getDebugName() : "");
+            data.write(var.getDebugName());
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock basicBlock = program.basicBlockAt(i);
@@ -159,9 +159,6 @@ public class ProgramIO {
             Variable var = program.createVariable();
             var.setRegister(data.readUnsigned());
             var.setDebugName(referenceCache.getCached(data.read()));
-            if (var.getDebugName().isEmpty()) {
-                var.setDebugName(null);
-            }
         }
         for (int i = 0; i < basicBlockCount; ++i) {
             program.createBasicBlock();

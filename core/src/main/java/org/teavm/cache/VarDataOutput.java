@@ -15,10 +15,11 @@
  */
 package org.teavm.cache;
 
+import java.io.Closeable;
 import java.io.IOException;
 import java.io.OutputStream;
 
-public class VarDataOutput {
+public class VarDataOutput implements Closeable {
     private static final int DATA = 0x7F;
     private static final int NEXT = 0x80;
     private OutputStream output;
@@ -76,9 +77,18 @@ public class VarDataOutput {
     }
 
     public void write(String s) throws IOException {
-        writeUnsigned(s.length());
+        if (s == null) {
+            writeUnsigned(0);
+            return;
+        }
+        writeUnsigned(s.length() + 1);
         for (int i = 0; i < s.length(); ++i) {
             writeUnsigned(s.charAt(i));
         }
+    }
+
+    @Override
+    public void close() throws IOException {
+        output.close();
     }
 }

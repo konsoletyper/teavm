@@ -29,9 +29,11 @@ import org.teavm.model.ProgramCache;
 public class InMemoryProgramCache implements ProgramCache {
     private Map<MethodReference, Item> cache = new HashMap<>();
     private Map<MethodReference, Item> newItems = new HashMap<>();
-    private InMemorySymbolTable symbolTable = new InMemorySymbolTable();
-    private InMemorySymbolTable fileSymbolTable = new InMemorySymbolTable();
-    private ProgramIO io = new ProgramIO(new InMemorySymbolTable(), new InMemorySymbolTable());
+    private ProgramIO io;
+
+    public InMemoryProgramCache(InMemorySymbolTable symbolTable, InMemorySymbolTable fileSymbolTable) {
+        io = new ProgramIO(symbolTable, fileSymbolTable);
+    }
 
     @Override
     public Program get(MethodReference method, CacheStatus cacheStatus) {
@@ -78,8 +80,6 @@ public class InMemoryProgramCache implements ProgramCache {
     public void invalidate() {
         cache.clear();
         newItems.clear();
-        symbolTable.invalidate();
-        fileSymbolTable.invalidate();
     }
 
     static final class Item {
