@@ -525,7 +525,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                     || methodInjectors.containsKey(method.getReference())) {
                 continue;
             }
-            if (!method.hasModifier(ElementModifier.NATIVE) && method.getProgram() == null) {
+            if (!method.hasModifier(ElementModifier.NATIVE) && !method.hasProgram()) {
                 continue;
             }
 

@@ -21,7 +21,6 @@ import java.util.List;
 public class Program implements ProgramReader {
     private List<BasicBlock> basicBlocks = new ArrayList<>(2);
     private List<Variable> variables = new ArrayList<>();
-    private MethodHolder method;
     private boolean packed;
     private int lastUsedRegister;
 
@@ -149,18 +148,5 @@ public class Program implements ProgramReader {
             throw new IllegalArgumentException("Index " + index + " is out of range");
         }
         return variables.get(index);
-    }
-
-    @Override
-    public MethodReference getMethodReference() {
-        return method != null ? method.getReference() : null;
-    }
-
-    MethodHolder getMethod() {
-        return method;
-    }
-
-    void setMethod(MethodHolder method) {
-        this.method = method;
     }
 }

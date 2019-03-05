@@ -15,6 +15,9 @@
  */
 package org.teavm.cache;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -26,6 +29,9 @@ import org.teavm.model.ProgramCache;
 public class InMemoryProgramCache implements ProgramCache {
     private Map<MethodReference, Item> cache = new HashMap<>();
     private Map<MethodReference, Item> newItems = new HashMap<>();
+    private InMemorySymbolTable symbolTable = new InMemorySymbolTable();
+    private InMemorySymbolTable fileSymbolTable = new InMemorySymbolTable();
+    private ProgramIO io = new ProgramIO(new InMemorySymbolTable(), new InMemorySymbolTable());
 
     @Override
     public Program get(MethodReference method, CacheStatus cacheStatus) {
@@ -37,13 +43,23 @@ public class InMemoryProgramCache implements ProgramCache {
         if (Arrays.stream(item.dependencies).anyMatch(cacheStatus::isStaleClass)) {
             return null;
         }
-
-        return item.program;
+        try {
+            ByteArrayInputStream input = new ByteArrayInputStream(item.program);
+            return io.read(input);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     @Override
     public void store(MethodReference method, Program program, Supplier<String[]> dependencies) {
-        newItems.put(method, new Item(program, dependencies.get().clone()));
+        try {
+            ByteArrayOutputStream output = new ByteArrayOutputStream();
+            io.write(program, output);
+            newItems.put(method, new Item(output.toByteArray(), dependencies.get().clone()));
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     public void commit() {
@@ -62,13 +78,15 @@ public class InMemoryProgramCache implements ProgramCache {
     public void invalidate() {
         cache.clear();
         newItems.clear();
+        symbolTable.invalidate();
+        fileSymbolTable.invalidate();
     }
 
     static final class Item {
-        final Program program;
+        final byte[] program;
         final String[] dependencies;
 
-        Item(Program program, String[] dependencies) {
+        Item(byte[] program, String[] dependencies) {
             this.program = program;
             this.dependencies = dependencies;
         }

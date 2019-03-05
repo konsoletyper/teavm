@@ -25,6 +25,4 @@ public interface ProgramReader {
     int variableCount();
 
     VariableReader variableAt(int index);
-
-    MethodReference getMethodReference();
 }

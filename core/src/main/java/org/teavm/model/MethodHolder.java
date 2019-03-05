@@ -115,29 +115,21 @@ public class MethodHolder extends MemberHolder implements MethodReader {
     public Program getProgram() {
         if (program == null && programSupplier != null) {
             program = programSupplier.apply(this);
-            if (program != null) {
-                program.setMethod(this);
-            }
             programSupplier = null;
         }
         return program;
     }
 
     public void setProgram(Program program) {
-        if (this.program != null) {
-            this.program.setMethod(null);
-        }
         this.program = program;
         this.programSupplier = null;
-        if (this.program != null) {
-            this.program.setMethod(this);
-        }
+    }
+
+    public boolean hasProgram() {
+        return program != null || programSupplier != null;
     }
 
     public void setProgramSupplier(Function<MethodHolder, Program> programSupplier) {
-        if (this.program != null) {
-            this.program.setMethod(null);
-        }
         this.program = null;
         this.programSupplier = programSupplier;
     }

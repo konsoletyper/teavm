@@ -21,10 +21,6 @@ import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.junit.Test;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
@@ -169,27 +165,6 @@ public class ProgramIOTest {
             }
         } catch (IOException e) {
             throw new AssertionError("This exception should not be thrown", e);
-        }
-    }
-
-    private static class InMemorySymbolTable implements SymbolTable {
-        private List<String> symbols = new ArrayList<>();
-        private Map<String, Integer> indexes = new HashMap<>();
-
-        @Override
-        public String at(int index) {
-            return symbols.get(index);
-        }
-
-        @Override
-        public int lookup(String symbol) {
-            Integer index = indexes.get(symbol);
-            if (index == null) {
-                index = symbols.size();
-                symbols.add(symbol);
-                indexes.put(symbol, index);
-            }
-            return index;
         }
     }
 }

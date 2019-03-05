@@ -15,10 +15,6 @@
  */
 package org.teavm.cache;
 
-import java.io.DataInput;
-import java.io.DataInputStream;
-import java.io.DataOutput;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -104,32 +100,32 @@ public class ProgramIO {
     }
 
     public void write(Program program, OutputStream output) throws IOException {
-        DataOutput data = new DataOutputStream(output);
-        data.writeShort(program.variableCount());
-        data.writeShort(program.basicBlockCount());
+        VarDataOutput data = new VarDataOutput(output);
+        data.writeUnsigned(program.variableCount());
+        data.writeUnsigned(program.basicBlockCount());
         for (int i = 0; i < program.variableCount(); ++i) {
             Variable var = program.variableAt(i);
-            data.writeShort(var.getRegister());
-            data.writeUTF(var.getDebugName() != null ? var.getDebugName() : "");
+            data.writeUnsigned(var.getRegister());
+            data.write(var.getDebugName() != null ? var.getDebugName() : "");
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock basicBlock = program.basicBlockAt(i);
-            data.writeShort(basicBlock.getExceptionVariable() != null
-                    ? basicBlock.getExceptionVariable().getIndex() : -1);
-            data.writeShort(basicBlock.getPhis().size());
-            data.writeShort(basicBlock.getTryCatchBlocks().size());
+            data.writeUnsigned(basicBlock.getExceptionVariable() != null
+                    ? basicBlock.getExceptionVariable().getIndex() + 1 : 0);
+            data.writeUnsigned(basicBlock.getPhis().size());
+            data.writeUnsigned(basicBlock.getTryCatchBlocks().size());
             for (Phi phi : basicBlock.getPhis()) {
-                data.writeShort(phi.getReceiver().getIndex());
-                data.writeShort(phi.getIncomings().size());
+                data.writeUnsigned(phi.getReceiver().getIndex());
+                data.writeUnsigned(phi.getIncomings().size());
                 for (Incoming incoming : phi.getIncomings()) {
-                    data.writeShort(incoming.getSource().getIndex());
-                    data.writeShort(incoming.getValue().getIndex());
+                    data.writeUnsigned(incoming.getSource().getIndex());
+                    data.writeUnsigned(incoming.getValue().getIndex());
                 }
             }
             for (TryCatchBlock tryCatch : basicBlock.getTryCatchBlocks()) {
-                data.writeInt(tryCatch.getExceptionType() != null ? symbolTable.lookup(
-                        tryCatch.getExceptionType()) : -1);
-                data.writeShort(tryCatch.getHandler().getIndex());
+                data.writeUnsigned(tryCatch.getExceptionType() != null ? symbolTable.lookup(
+                        tryCatch.getExceptionType()) + 1 : 0);
+                data.writeUnsigned(tryCatch.getHandler().getIndex());
             }
             TextLocation location = null;
             InstructionWriter insnWriter = new InstructionWriter(data);
@@ -138,11 +134,11 @@ public class ProgramIO {
                     if (!Objects.equals(location, insn.getLocation())) {
                         location = insn.getLocation();
                         if (location == null || location.getFileName() == null || location.getLine() < 0) {
-                            data.writeByte(-2);
+                            data.writeUnsigned(1);
                         } else {
-                            data.writeByte(-3);
-                            data.writeShort(fileTable.lookup(location.getFileName()));
-                            data.writeShort(location.getLine());
+                            data.writeUnsigned(2);
+                            data.writeUnsigned(fileTable.lookup(location.getFileName()));
+                            data.writeUnsigned(location.getLine());
                         }
                     }
                     insn.acceptVisitor(insnWriter);
@@ -150,19 +146,19 @@ public class ProgramIO {
                     throw (IOException) e.getCause();
                 }
             }
-            data.writeByte(-1);
+            data.writeUnsigned(0);
         }
     }
 
     public Program read(InputStream input) throws IOException {
-        DataInput data = new DataInputStream(input);
+        VarDataInput data = new VarDataInput(input);
         Program program = new Program();
-        int varCount = data.readShort();
-        int basicBlockCount = data.readShort();
+        int varCount = data.readUnsigned();
+        int basicBlockCount = data.readUnsigned();
         for (int i = 0; i < varCount; ++i) {
             Variable var = program.createVariable();
-            var.setRegister(data.readShort());
-            var.setDebugName(referenceCache.getCached(data.readUTF()));
+            var.setRegister(data.readUnsigned());
+            var.setDebugName(referenceCache.getCached(data.read()));
             if (var.getDebugName().isEmpty()) {
                 var.setDebugName(null);
             }
@@ -173,48 +169,48 @@ public class ProgramIO {
         for (int i = 0; i < basicBlockCount; ++i) {
             BasicBlock block = program.basicBlockAt(i);
 
-            short varIndex = data.readShort();
-            if (varIndex >= 0) {
-                block.setExceptionVariable(program.variableAt(varIndex));
+            int varIndex = data.readUnsigned();
+            if (varIndex > 0) {
+                block.setExceptionVariable(program.variableAt(varIndex - 1));
             }
 
-            int phiCount = data.readShort();
-            int tryCatchCount = data.readShort();
+            int phiCount = data.readUnsigned();
+            int tryCatchCount = data.readUnsigned();
             for (int j = 0; j < phiCount; ++j) {
                 Phi phi = new Phi();
-                phi.setReceiver(program.variableAt(data.readShort()));
-                int incomingCount = data.readShort();
+                phi.setReceiver(program.variableAt(data.readUnsigned()));
+                int incomingCount = data.readUnsigned();
                 for (int k = 0; k < incomingCount; ++k) {
                     Incoming incoming = new Incoming();
-                    incoming.setSource(program.basicBlockAt(data.readShort()));
-                    incoming.setValue(program.variableAt(data.readShort()));
+                    incoming.setSource(program.basicBlockAt(data.readUnsigned()));
+                    incoming.setValue(program.variableAt(data.readUnsigned()));
                     phi.getIncomings().add(incoming);
                 }
                 block.getPhis().add(phi);
             }
             for (int j = 0; j < tryCatchCount; ++j) {
                 TryCatchBlock tryCatch = new TryCatchBlock();
-                int typeIndex = data.readInt();
+                int typeIndex = data.readUnsigned();
                 if (typeIndex >= 0) {
                     tryCatch.setExceptionType(symbolTable.at(typeIndex));
                 }
-                tryCatch.setHandler(program.basicBlockAt(data.readShort()));
+                tryCatch.setHandler(program.basicBlockAt(data.readUnsigned()));
 
                 block.getTryCatchBlocks().add(tryCatch);
             }
 
             TextLocation location = null;
             insnLoop: while (true) {
-                byte insnType = data.readByte();
+                int insnType = data.readUnsigned();
                 switch (insnType) {
-                    case -1:
+                    case 0:
                         break insnLoop;
-                    case -2:
+                    case 1:
                         location = null;
                         break;
-                    case -3: {
-                        String file = fileTable.at(data.readShort());
-                        short line = data.readShort();
+                    case 2: {
+                        String file = fileTable.at(data.readUnsigned());
+                        int line = data.readUnsigned();
                         location = new TextLocation(file, line);
                         break;
                     }
@@ -231,16 +227,16 @@ public class ProgramIO {
     }
 
     private class InstructionWriter implements InstructionVisitor {
-        private DataOutput output;
+        private VarDataOutput output;
 
-        public InstructionWriter(DataOutput output) {
+        InstructionWriter(VarDataOutput output) {
             this.output = output;
         }
 
         @Override
         public void visit(EmptyInstruction insn) {
             try {
-                output.writeByte(0);
+                output.writeUnsigned(3);
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -249,9 +245,9 @@ public class ProgramIO {
         @Override
         public void visit(ClassConstantInstruction insn) {
             try {
-                output.writeByte(1);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(symbolTable.lookup(insn.getConstant().toString()));
+                output.writeUnsigned(4);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(symbolTable.lookup(insn.getConstant().toString()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -260,8 +256,8 @@ public class ProgramIO {
         @Override
         public void visit(NullConstantInstruction insn) {
             try {
-                output.writeByte(2);
-                output.writeShort(insn.getReceiver().getIndex());
+                output.writeUnsigned(5);
+                output.writeUnsigned(insn.getReceiver().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -270,9 +266,9 @@ public class ProgramIO {
         @Override
         public void visit(IntegerConstantInstruction insn) {
             try {
-                output.writeByte(3);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(insn.getConstant());
+                output.writeUnsigned(6);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeSigned(insn.getConstant());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -281,9 +277,9 @@ public class ProgramIO {
         @Override
         public void visit(LongConstantInstruction insn) {
             try {
-                output.writeByte(4);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeLong(insn.getConstant());
+                output.writeUnsigned(7);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeSigned(insn.getConstant());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -292,8 +288,8 @@ public class ProgramIO {
         @Override
         public void visit(FloatConstantInstruction insn) {
             try {
-                output.writeByte(5);
-                output.writeShort(insn.getReceiver().getIndex());
+                output.writeUnsigned(8);
+                output.writeUnsigned(insn.getReceiver().getIndex());
                 output.writeFloat(insn.getConstant());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -303,8 +299,8 @@ public class ProgramIO {
         @Override
         public void visit(DoubleConstantInstruction insn) {
             try {
-                output.writeByte(6);
-                output.writeShort(insn.getReceiver().getIndex());
+                output.writeUnsigned(9);
+                output.writeUnsigned(insn.getReceiver().getIndex());
                 output.writeDouble(insn.getConstant());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -314,9 +310,9 @@ public class ProgramIO {
         @Override
         public void visit(StringConstantInstruction insn) {
             try {
-                output.writeByte(7);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeUTF(insn.getConstant());
+                output.writeUnsigned(10);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.write(insn.getConstant());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -325,12 +321,11 @@ public class ProgramIO {
         @Override
         public void visit(BinaryInstruction insn) {
             try {
-                output.writeByte(8);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeByte(insn.getOperation().ordinal());
-                output.writeByte(insn.getOperandType().ordinal());
-                output.writeShort(insn.getFirstOperand().getIndex());
-                output.writeShort(insn.getSecondOperand().getIndex());
+                output.writeUnsigned(11 + insn.getOperation().ordinal());
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getOperandType().ordinal());
+                output.writeUnsigned(insn.getFirstOperand().getIndex());
+                output.writeUnsigned(insn.getSecondOperand().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -339,10 +334,10 @@ public class ProgramIO {
         @Override
         public void visit(NegateInstruction insn) {
             try {
-                output.writeByte(9);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeByte(insn.getOperandType().ordinal());
-                output.writeShort(insn.getOperand().getIndex());
+                output.writeUnsigned(23);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getOperandType().ordinal());
+                output.writeUnsigned(insn.getOperand().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -351,9 +346,9 @@ public class ProgramIO {
         @Override
         public void visit(AssignInstruction insn) {
             try {
-                output.writeByte(10);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeShort(insn.getAssignee().getIndex());
+                output.writeUnsigned(24);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getAssignee().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -362,10 +357,10 @@ public class ProgramIO {
         @Override
         public void visit(CastInstruction insn) {
             try {
-                output.writeByte(11);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(symbolTable.lookup(insn.getTargetType().toString()));
-                output.writeShort(insn.getValue().getIndex());
+                output.writeUnsigned(25);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(symbolTable.lookup(insn.getTargetType().toString()));
+                output.writeUnsigned(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -374,11 +369,10 @@ public class ProgramIO {
         @Override
         public void visit(CastNumberInstruction insn) {
             try {
-                output.writeByte(12);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeByte(insn.getSourceType().ordinal());
-                output.writeByte(insn.getTargetType().ordinal());
-                output.writeShort(insn.getValue().getIndex());
+                output.writeUnsigned(26);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getSourceType().ordinal() | (insn.getTargetType().ordinal() << 2));
+                output.writeUnsigned(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -387,11 +381,10 @@ public class ProgramIO {
         @Override
         public void visit(CastIntegerInstruction insn) {
             try {
-                output.writeByte(13);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeByte(insn.getTargetType().ordinal());
-                output.writeByte(insn.getDirection().ordinal());
-                output.writeShort(insn.getValue().getIndex());
+                output.writeUnsigned(27);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getDirection().ordinal() | (insn.getTargetType().ordinal() << 1));
+                output.writeUnsigned(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -400,11 +393,10 @@ public class ProgramIO {
         @Override
         public void visit(BranchingInstruction insn) {
             try {
-                output.writeByte(14);
-                output.writeByte(insn.getCondition().ordinal());
-                output.writeShort(insn.getOperand().getIndex());
-                output.writeShort(insn.getConsequent().getIndex());
-                output.writeShort(insn.getAlternative().getIndex());
+                output.writeUnsigned(28 + insn.getCondition().ordinal());
+                output.writeUnsigned(insn.getOperand().getIndex());
+                output.writeUnsigned(insn.getConsequent().getIndex());
+                output.writeUnsigned(insn.getAlternative().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -413,12 +405,11 @@ public class ProgramIO {
         @Override
         public void visit(BinaryBranchingInstruction insn) {
             try {
-                output.writeByte(15);
-                output.writeByte(insn.getCondition().ordinal());
-                output.writeShort(insn.getFirstOperand().getIndex());
-                output.writeShort(insn.getSecondOperand().getIndex());
-                output.writeShort(insn.getConsequent().getIndex());
-                output.writeShort(insn.getAlternative().getIndex());
+                output.writeUnsigned(36 + insn.getCondition().ordinal());
+                output.writeUnsigned(insn.getFirstOperand().getIndex());
+                output.writeUnsigned(insn.getSecondOperand().getIndex());
+                output.writeUnsigned(insn.getConsequent().getIndex());
+                output.writeUnsigned(insn.getAlternative().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -427,8 +418,8 @@ public class ProgramIO {
         @Override
         public void visit(JumpInstruction insn) {
             try {
-                output.writeByte(16);
-                output.writeShort(insn.getTarget().getIndex());
+                output.writeUnsigned(40);
+                output.writeUnsigned(insn.getTarget().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -437,13 +428,13 @@ public class ProgramIO {
         @Override
         public void visit(SwitchInstruction insn) {
             try {
-                output.writeByte(17);
-                output.writeShort(insn.getCondition().getIndex());
-                output.writeShort(insn.getDefaultTarget().getIndex());
-                output.writeShort(insn.getEntries().size());
+                output.writeUnsigned(41);
+                output.writeUnsigned(insn.getCondition().getIndex());
+                output.writeUnsigned(insn.getDefaultTarget().getIndex());
+                output.writeUnsigned(insn.getEntries().size());
                 for (SwitchTableEntry entry : insn.getEntries()) {
-                    output.writeInt(entry.getCondition());
-                    output.writeShort(entry.getTarget().getIndex());
+                    output.writeSigned(entry.getCondition());
+                    output.writeUnsigned(entry.getTarget().getIndex());
                 }
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -454,10 +445,10 @@ public class ProgramIO {
         public void visit(ExitInstruction insn) {
             try {
                 if (insn.getValueToReturn() != null) {
-                    output.writeByte(18);
-                    output.writeShort(insn.getValueToReturn() != null ? insn.getValueToReturn().getIndex() : -1);
+                    output.writeUnsigned(42);
+                    output.writeUnsigned(insn.getValueToReturn().getIndex());
                 } else {
-                    output.writeByte(19);
+                    output.writeUnsigned(43);
                 }
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -467,8 +458,8 @@ public class ProgramIO {
         @Override
         public void visit(RaiseInstruction insn) {
             try {
-                output.writeByte(20);
-                output.writeShort(insn.getException().getIndex());
+                output.writeUnsigned(44);
+                output.writeUnsigned(insn.getException().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -477,10 +468,10 @@ public class ProgramIO {
         @Override
         public void visit(ConstructArrayInstruction insn) {
             try {
-                output.writeByte(21);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(symbolTable.lookup(insn.getItemType().toString()));
-                output.writeShort(insn.getSize().getIndex());
+                output.writeUnsigned(45);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(symbolTable.lookup(insn.getItemType().toString()));
+                output.writeUnsigned(insn.getSize().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -489,9 +480,9 @@ public class ProgramIO {
         @Override
         public void visit(ConstructInstruction insn) {
             try {
-                output.writeByte(22);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(symbolTable.lookup(insn.getType()));
+                output.writeUnsigned(46);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(symbolTable.lookup(insn.getType()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -500,12 +491,12 @@ public class ProgramIO {
         @Override
         public void visit(ConstructMultiArrayInstruction insn) {
             try {
-                output.writeByte(23);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(symbolTable.lookup(insn.getItemType().toString()));
-                output.writeByte(insn.getDimensions().size());
+                output.writeUnsigned(47);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(symbolTable.lookup(insn.getItemType().toString()));
+                output.writeUnsigned(insn.getDimensions().size());
                 for (Variable dimension : insn.getDimensions()) {
-                    output.writeShort(dimension.getIndex());
+                    output.writeUnsigned(dimension.getIndex());
                 }
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -515,14 +506,14 @@ public class ProgramIO {
         @Override
         public void visit(GetFieldInstruction insn) {
             try {
-                output.writeByte(insn.getInstance() != null ? 24 : 25);
-                output.writeShort(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getInstance() != null ? 48 : 49);
+                output.writeUnsigned(insn.getReceiver().getIndex());
                 if (insn.getInstance() != null) {
-                    output.writeShort(insn.getInstance().getIndex());
+                    output.writeUnsigned(insn.getInstance().getIndex());
                 }
-                output.writeInt(symbolTable.lookup(insn.getField().getClassName()));
-                output.writeInt(symbolTable.lookup(insn.getField().getFieldName()));
-                output.writeInt(symbolTable.lookup(insn.getFieldType().toString()));
+                output.writeUnsigned(symbolTable.lookup(insn.getField().getClassName()));
+                output.writeUnsigned(symbolTable.lookup(insn.getField().getFieldName()));
+                output.writeUnsigned(symbolTable.lookup(insn.getFieldType().toString()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -531,14 +522,14 @@ public class ProgramIO {
         @Override
         public void visit(PutFieldInstruction insn) {
             try {
-                output.writeByte(insn.getInstance() != null ? 26 : 27);
+                output.writeUnsigned(insn.getInstance() != null ? 50 : 51);
                 if (insn.getInstance() != null) {
-                    output.writeShort(insn.getInstance().getIndex());
+                    output.writeUnsigned(insn.getInstance().getIndex());
                 }
-                output.writeInt(symbolTable.lookup(insn.getField().getClassName()));
-                output.writeInt(symbolTable.lookup(insn.getField().getFieldName()));
-                output.writeInt(symbolTable.lookup(insn.getFieldType().toString()));
-                output.writeShort(insn.getValue().getIndex());
+                output.writeUnsigned(symbolTable.lookup(insn.getField().getClassName()));
+                output.writeUnsigned(symbolTable.lookup(insn.getField().getFieldName()));
+                output.writeUnsigned(symbolTable.lookup(insn.getFieldType().toString()));
+                output.writeUnsigned(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -547,9 +538,9 @@ public class ProgramIO {
         @Override
         public void visit(ArrayLengthInstruction insn) {
             try {
-                output.writeByte(28);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeShort(insn.getArray().getIndex());
+                output.writeUnsigned(52);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getArray().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -558,9 +549,9 @@ public class ProgramIO {
         @Override
         public void visit(CloneArrayInstruction insn) {
             try {
-                output.writeByte(29);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeShort(insn.getArray().getIndex());
+                output.writeUnsigned(53);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getArray().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -569,10 +560,9 @@ public class ProgramIO {
         @Override
         public void visit(UnwrapArrayInstruction insn) {
             try {
-                output.writeByte(30);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeByte(insn.getElementType().ordinal());
-                output.writeShort(insn.getArray().getIndex());
+                output.writeUnsigned(54 + insn.getElementType().ordinal());
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getArray().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -581,11 +571,10 @@ public class ProgramIO {
         @Override
         public void visit(GetElementInstruction insn) {
             try {
-                output.writeByte(31);
-                output.writeByte(insn.getType().ordinal());
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeShort(insn.getArray().getIndex());
-                output.writeShort(insn.getIndex().getIndex());
+                output.writeUnsigned(62 + insn.getType().ordinal());
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getArray().getIndex());
+                output.writeUnsigned(insn.getIndex().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -594,11 +583,10 @@ public class ProgramIO {
         @Override
         public void visit(PutElementInstruction insn) {
             try {
-                output.writeByte(32);
-                output.writeByte(insn.getType().ordinal());
-                output.writeShort(insn.getArray().getIndex());
-                output.writeShort(insn.getIndex().getIndex());
-                output.writeShort(insn.getValue().getIndex());
+                output.writeUnsigned(70 + insn.getType().ordinal());
+                output.writeUnsigned(insn.getArray().getIndex());
+                output.writeUnsigned(insn.getIndex().getIndex());
+                output.writeUnsigned(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -609,20 +597,20 @@ public class ProgramIO {
             try {
                 switch (insn.getType()) {
                     case SPECIAL:
-                        output.write(insn.getInstance() == null ? 33 : 34);
+                        output.writeUnsigned(insn.getInstance() == null ? 78 : 79);
                         break;
                     case VIRTUAL:
-                        output.write(35);
+                        output.writeUnsigned(80);
                         break;
                 }
-                output.writeShort(insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1);
+                output.writeUnsigned(insn.getReceiver() != null ? insn.getReceiver().getIndex() + 1 : 0);
                 if (insn.getInstance() != null) {
-                    output.writeShort(insn.getInstance().getIndex());
+                    output.writeUnsigned(insn.getInstance().getIndex());
                 }
-                output.writeInt(symbolTable.lookup(insn.getMethod().getClassName()));
-                output.writeInt(symbolTable.lookup(insn.getMethod().getDescriptor().toString()));
+                output.writeUnsigned(symbolTable.lookup(insn.getMethod().getClassName()));
+                output.writeUnsigned(symbolTable.lookup(insn.getMethod().getDescriptor().toString()));
                 for (int i = 0; i < insn.getArguments().size(); ++i) {
-                    output.writeShort(insn.getArguments().get(i).getIndex());
+                    output.writeUnsigned(insn.getArguments().get(i).getIndex());
                 }
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -632,15 +620,15 @@ public class ProgramIO {
         @Override
         public void visit(InvokeDynamicInstruction insn) {
             try {
-                output.writeByte(41);
-                output.writeShort(insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1);
-                output.writeShort(insn.getInstance() != null ? insn.getInstance().getIndex() : -1);
-                output.writeInt(symbolTable.lookup(insn.getMethod().toString()));
+                output.writeUnsigned(81);
+                output.writeUnsigned(insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1);
+                output.writeUnsigned(insn.getInstance() != null ? insn.getInstance().getIndex() : -1);
+                output.writeUnsigned(symbolTable.lookup(insn.getMethod().toString()));
                 for (int i = 0; i < insn.getArguments().size(); ++i) {
-                    output.writeShort(insn.getArguments().get(i).getIndex());
+                    output.writeUnsigned(insn.getArguments().get(i).getIndex());
                 }
                 write(insn.getBootstrapMethod());
-                output.writeByte(insn.getBootstrapArguments().size());
+                output.writeUnsigned(insn.getBootstrapArguments().size());
                 for (int i = 0; i < insn.getBootstrapArguments().size(); ++i) {
                     write(insn.getBootstrapArguments().get(i));
                 }
@@ -652,10 +640,10 @@ public class ProgramIO {
         @Override
         public void visit(IsInstanceInstruction insn) {
             try {
-                output.writeByte(36);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeInt(symbolTable.lookup(insn.getType().toString()));
-                output.writeShort(insn.getValue().getIndex());
+                output.writeUnsigned(82);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(symbolTable.lookup(insn.getType().toString()));
+                output.writeUnsigned(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -664,8 +652,8 @@ public class ProgramIO {
         @Override
         public void visit(InitClassInstruction insn) {
             try {
-                output.writeByte(37);
-                output.writeInt(symbolTable.lookup(insn.getClassName()));
+                output.writeUnsigned(83);
+                output.writeUnsigned(symbolTable.lookup(insn.getClassName()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -674,9 +662,9 @@ public class ProgramIO {
         @Override
         public void visit(NullCheckInstruction insn) {
             try {
-                output.writeByte(38);
-                output.writeShort(insn.getReceiver().getIndex());
-                output.writeShort(insn.getValue().getIndex());
+                output.writeUnsigned(84);
+                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(insn.getValue().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -685,8 +673,8 @@ public class ProgramIO {
         @Override
         public void visit(MonitorEnterInstruction insn) {
             try {
-                output.writeByte(39);
-                output.writeShort(insn.getObjectRef().getIndex());
+                output.writeUnsigned(85);
+                output.writeUnsigned(insn.getObjectRef().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -695,8 +683,8 @@ public class ProgramIO {
         @Override
         public void visit(MonitorExitInstruction insn) {
             try {
-                output.writeByte(40);
-                output.writeShort(insn.getObjectRef().getIndex());
+                output.writeUnsigned(86);
+                output.writeUnsigned(insn.getObjectRef().getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
@@ -705,44 +693,44 @@ public class ProgramIO {
         private void write(MethodHandle handle) throws IOException {
             switch (handle.getKind()) {
                 case GET_FIELD:
-                    output.writeByte(0);
+                    output.writeUnsigned(0);
                     break;
                 case GET_STATIC_FIELD:
-                    output.writeByte(1);
+                    output.writeUnsigned(1);
                     break;
                 case PUT_FIELD:
-                    output.writeByte(2);
+                    output.writeUnsigned(2);
                     break;
                 case PUT_STATIC_FIELD:
-                    output.writeByte(3);
+                    output.writeUnsigned(3);
                     break;
                 case INVOKE_VIRTUAL:
-                    output.writeByte(4);
+                    output.writeUnsigned(4);
                     break;
                 case INVOKE_STATIC:
-                    output.writeByte(5);
+                    output.writeUnsigned(5);
                     break;
                 case INVOKE_SPECIAL:
-                    output.writeByte(6);
+                    output.writeUnsigned(6);
                     break;
                 case INVOKE_CONSTRUCTOR:
-                    output.writeByte(7);
+                    output.writeUnsigned(7);
                     break;
                 case INVOKE_INTERFACE:
-                    output.writeByte(8);
+                    output.writeUnsigned(8);
                     break;
             }
-            output.writeInt(symbolTable.lookup(handle.getClassName()));
+            output.writeUnsigned(symbolTable.lookup(handle.getClassName()));
             switch (handle.getKind()) {
                 case GET_FIELD:
                 case GET_STATIC_FIELD:
                 case PUT_FIELD:
                 case PUT_STATIC_FIELD:
-                    output.writeInt(symbolTable.lookup(handle.getName()));
-                    output.writeInt(symbolTable.lookup(handle.getValueType().toString()));
+                    output.writeUnsigned(symbolTable.lookup(handle.getName()));
+                    output.writeUnsigned(symbolTable.lookup(handle.getValueType().toString()));
                     break;
                 default:
-                    output.writeInt(symbolTable.lookup(new MethodDescriptor(handle.getName(),
+                    output.writeUnsigned(symbolTable.lookup(new MethodDescriptor(handle.getName(),
                             handle.signature()).toString()));
                     break;
             }
@@ -751,376 +739,419 @@ public class ProgramIO {
         private void write(RuntimeConstant cst) throws IOException {
             switch (cst.getKind()) {
                 case RuntimeConstant.INT:
-                    output.writeByte(0);
-                    output.writeInt(cst.getInt());
+                    output.writeUnsigned(0);
+                    output.writeSigned(cst.getInt());
                     break;
                 case RuntimeConstant.LONG:
-                    output.writeByte(1);
-                    output.writeLong(cst.getLong());
+                    output.writeUnsigned(1);
+                    output.writeSigned(cst.getLong());
                     break;
                 case RuntimeConstant.FLOAT:
-                    output.writeByte(2);
+                    output.writeUnsigned(2);
                     output.writeFloat(cst.getFloat());
                     break;
                 case RuntimeConstant.DOUBLE:
-                    output.writeByte(3);
+                    output.writeUnsigned(3);
                     output.writeDouble(cst.getDouble());
                     break;
                 case RuntimeConstant.STRING:
-                    output.writeByte(4);
-                    output.writeUTF(cst.getString());
+                    output.writeUnsigned(4);
+                    output.write(cst.getString());
                     break;
                 case RuntimeConstant.TYPE:
-                    output.writeByte(5);
-                    output.writeInt(symbolTable.lookup(cst.getValueType().toString()));
+                    output.writeUnsigned(5);
+                    output.writeUnsigned(symbolTable.lookup(cst.getValueType().toString()));
                     break;
                 case RuntimeConstant.METHOD:
-                    output.writeByte(6);
-                    output.writeInt(symbolTable.lookup(ValueType.methodTypeToString(cst.getMethodType())));
+                    output.writeUnsigned(6);
+                    output.writeUnsigned(symbolTable.lookup(ValueType.methodTypeToString(cst.getMethodType())));
                     break;
                 case RuntimeConstant.METHOD_HANDLE:
-                    output.writeByte(7);
+                    output.writeUnsigned(7);
                     write(cst.getMethodHandle());
                     break;
             }
         }
     }
 
-    private static class IOExceptionWrapper extends RuntimeException {
+    static class IOExceptionWrapper extends RuntimeException {
         private static final long serialVersionUID = -1765050162629001951L;
-        public IOExceptionWrapper(Throwable cause) {
+        IOExceptionWrapper(Throwable cause) {
             super(cause);
         }
     }
 
-    private Instruction readInstruction(byte insnType, Program program, DataInput input) throws IOException {
+    private Instruction readInstruction(int insnType, Program program, VarDataInput input) throws IOException {
         switch (insnType) {
-            case 0:
+            case 3:
                 return new EmptyInstruction();
-            case 1: {
-                ClassConstantInstruction insn = new ClassConstantInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setConstant(parseValueType(symbolTable.at(input.readInt())));
-                return insn;
-            }
-            case 2: {
-                NullConstantInstruction insn = new NullConstantInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                return insn;
-            }
-            case 3: {
-                IntegerConstantInstruction insn = new IntegerConstantInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setConstant(input.readInt());
-                return insn;
-            }
             case 4: {
-                LongConstantInstruction insn = new LongConstantInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setConstant(input.readLong());
+                ClassConstantInstruction insn = new ClassConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setConstant(parseValueType(symbolTable.at(input.readUnsigned())));
                 return insn;
             }
             case 5: {
-                FloatConstantInstruction insn = new FloatConstantInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setConstant(input.readFloat());
+                NullConstantInstruction insn = new NullConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
                 return insn;
             }
             case 6: {
-                DoubleConstantInstruction insn = new DoubleConstantInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setConstant(input.readDouble());
+                IntegerConstantInstruction insn = new IntegerConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setConstant(input.readSigned());
                 return insn;
             }
             case 7: {
-                StringConstantInstruction insn = new StringConstantInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setConstant(input.readUTF());
+                LongConstantInstruction insn = new LongConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setConstant(input.readSignedLong());
                 return insn;
             }
             case 8: {
-                Variable receiver = program.variableAt(input.readShort());
-                BinaryOperation operation = binaryOperations[input.readByte()];
-                NumericOperandType operandType = numericOperandTypes[input.readByte()];
-                BinaryInstruction insn = new BinaryInstruction(operation, operandType);
-                insn.setReceiver(receiver);
-                insn.setFirstOperand(program.variableAt(input.readShort()));
-                insn.setSecondOperand(program.variableAt(input.readShort()));
+                FloatConstantInstruction insn = new FloatConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setConstant(input.readFloat());
                 return insn;
             }
             case 9: {
-                Variable receiver = program.variableAt(input.readShort());
-                NumericOperandType operandType = numericOperandTypes[input.readByte()];
-                NegateInstruction insn = new NegateInstruction(operandType);
-                insn.setReceiver(receiver);
-                insn.setOperand(program.variableAt(input.readShort()));
+                DoubleConstantInstruction insn = new DoubleConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setConstant(input.readDouble());
                 return insn;
             }
             case 10: {
+                StringConstantInstruction insn = new StringConstantInstruction();
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setConstant(input.read());
+                return insn;
+            }
+            case 11:
+            case 12:
+            case 13:
+            case 14:
+            case 15:
+            case 16:
+            case 17:
+            case 18:
+            case 19:
+            case 20:
+            case 21:
+            case 22: {
+                Variable receiver = program.variableAt(input.readUnsigned());
+                BinaryOperation operation = binaryOperations[insnType - 11];
+                NumericOperandType operandType = numericOperandTypes[input.readUnsigned()];
+                BinaryInstruction insn = new BinaryInstruction(operation, operandType);
+                insn.setReceiver(receiver);
+                insn.setFirstOperand(program.variableAt(input.readUnsigned()));
+                insn.setSecondOperand(program.variableAt(input.readUnsigned()));
+                return insn;
+            }
+            case 23: {
+                Variable receiver = program.variableAt(input.readUnsigned());
+                NumericOperandType operandType = numericOperandTypes[input.readUnsigned()];
+                NegateInstruction insn = new NegateInstruction(operandType);
+                insn.setReceiver(receiver);
+                insn.setOperand(program.variableAt(input.readUnsigned()));
+                return insn;
+            }
+            case 24: {
                 AssignInstruction insn = new AssignInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setAssignee(program.variableAt(input.readShort()));
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setAssignee(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 11: {
+            case 25: {
                 CastInstruction insn = new CastInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setTargetType(parseValueType(symbolTable.at(input.readInt())));
-                insn.setValue(program.variableAt(input.readShort()));
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setTargetType(parseValueType(symbolTable.at(input.readUnsigned())));
+                insn.setValue(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 12: {
-                Variable receiver = program.variableAt(input.readShort());
-                NumericOperandType sourceType = numericOperandTypes[input.readByte()];
-                NumericOperandType targetType = numericOperandTypes[input.readByte()];
+            case 26: {
+                Variable receiver = program.variableAt(input.readUnsigned());
+                int types = input.readUnsigned();
+                NumericOperandType sourceType = numericOperandTypes[types & 3];
+                NumericOperandType targetType = numericOperandTypes[types >> 2];
                 CastNumberInstruction insn = new CastNumberInstruction(sourceType, targetType);
                 insn.setReceiver(receiver);
-                insn.setValue(program.variableAt(input.readShort()));
+                insn.setValue(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 13: {
-                Variable receiver = program.variableAt(input.readShort());
-                IntegerSubtype targetType = integerSubtypes[input.readByte()];
-                CastIntegerDirection direction = castIntegerDirections[input.readByte()];
+            case 27: {
+                Variable receiver = program.variableAt(input.readUnsigned());
+                int types = input.readUnsigned();
+                CastIntegerDirection direction = castIntegerDirections[types & 1];
+                IntegerSubtype targetType = integerSubtypes[types >> 1];
                 CastIntegerInstruction insn = new CastIntegerInstruction(targetType, direction);
                 insn.setReceiver(receiver);
-                insn.setValue(program.variableAt(input.readShort()));
+                insn.setValue(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 14: {
-                BranchingInstruction insn = new BranchingInstruction(branchingConditions[input.readByte()]);
-                insn.setOperand(program.variableAt(input.readShort()));
-                insn.setConsequent(program.basicBlockAt(input.readShort()));
-                insn.setAlternative(program.basicBlockAt(input.readShort()));
+            case 28:
+            case 29:
+            case 30:
+            case 31:
+            case 32:
+            case 33:
+            case 34:
+            case 35: {
+                BranchingInstruction insn = new BranchingInstruction(branchingConditions[insnType - 28]);
+                insn.setOperand(program.variableAt(input.readUnsigned()));
+                insn.setConsequent(program.basicBlockAt(input.readUnsigned()));
+                insn.setAlternative(program.basicBlockAt(input.readUnsigned()));
                 return insn;
             }
-            case 15: {
-                BinaryBranchingCondition cond = binaryBranchingConditions[input.readByte()];
+            case 36:
+            case 37:
+            case 38:
+            case 39: {
+                BinaryBranchingCondition cond = binaryBranchingConditions[insnType - 36];
                 BinaryBranchingInstruction insn = new BinaryBranchingInstruction(cond);
-                insn.setFirstOperand(program.variableAt(input.readShort()));
-                insn.setSecondOperand(program.variableAt(input.readShort()));
-                insn.setConsequent(program.basicBlockAt(input.readShort()));
-                insn.setAlternative(program.basicBlockAt(input.readShort()));
+                insn.setFirstOperand(program.variableAt(input.readUnsigned()));
+                insn.setSecondOperand(program.variableAt(input.readUnsigned()));
+                insn.setConsequent(program.basicBlockAt(input.readUnsigned()));
+                insn.setAlternative(program.basicBlockAt(input.readUnsigned()));
                 return insn;
             }
-            case 16: {
+            case 40: {
                 JumpInstruction insn = new JumpInstruction();
-                insn.setTarget(program.basicBlockAt(input.readShort()));
+                insn.setTarget(program.basicBlockAt(input.readUnsigned()));
                 return insn;
             }
-            case 17: {
+            case 41: {
                 SwitchInstruction insn = new SwitchInstruction();
-                insn.setCondition(program.variableAt(input.readShort()));
-                insn.setDefaultTarget(program.basicBlockAt(input.readShort()));
-                int entryCount = input.readShort();
+                insn.setCondition(program.variableAt(input.readUnsigned()));
+                insn.setDefaultTarget(program.basicBlockAt(input.readUnsigned()));
+                int entryCount = input.readUnsigned();
                 for (int i = 0; i < entryCount; ++i) {
                     SwitchTableEntry entry = new SwitchTableEntry();
-                    entry.setCondition(input.readInt());
-                    entry.setTarget(program.basicBlockAt(input.readShort()));
+                    entry.setCondition(input.readSigned());
+                    entry.setTarget(program.basicBlockAt(input.readUnsigned()));
                     insn.getEntries().add(entry);
                 }
                 return insn;
             }
-            case 18: {
+            case 42: {
                 ExitInstruction insn = new ExitInstruction();
-                insn.setValueToReturn(program.variableAt(input.readShort()));
+                insn.setValueToReturn(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 19: {
+            case 43: {
                 return new ExitInstruction();
             }
-            case 20: {
+            case 44: {
                 RaiseInstruction insn = new RaiseInstruction();
-                insn.setException(program.variableAt(input.readShort()));
+                insn.setException(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 21: {
+            case 45: {
                 ConstructArrayInstruction insn = new ConstructArrayInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setItemType(parseValueType(symbolTable.at(input.readInt())));
-                insn.setSize(program.variableAt(input.readShort()));
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setItemType(parseValueType(symbolTable.at(input.readUnsigned())));
+                insn.setSize(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 22: {
+            case 46: {
                 ConstructInstruction insn = new ConstructInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setType(symbolTable.at(input.readInt()));
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setType(symbolTable.at(input.readUnsigned()));
                 return insn;
             }
-            case 23: {
+            case 47: {
                 ConstructMultiArrayInstruction insn = new ConstructMultiArrayInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setItemType(parseValueType(symbolTable.at(input.readInt())));
-                int dimensionCount = input.readByte();
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setItemType(parseValueType(symbolTable.at(input.readUnsigned())));
+                int dimensionCount = input.readUnsigned();
                 for (int i = 0; i < dimensionCount; ++i) {
-                    insn.getDimensions().add(program.variableAt(input.readShort()));
+                    insn.getDimensions().add(program.variableAt(input.readUnsigned()));
                 }
                 return insn;
             }
-            case 24: {
+            case 48: {
                 GetFieldInstruction insn = new GetFieldInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setInstance(program.variableAt(input.readShort()));
-                String className = symbolTable.at(input.readInt());
-                String fieldName = symbolTable.at(input.readInt());
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setInstance(program.variableAt(input.readUnsigned()));
+                String className = symbolTable.at(input.readUnsigned());
+                String fieldName = symbolTable.at(input.readUnsigned());
                 insn.setField(new FieldReference(className, fieldName));
-                insn.setFieldType(parseValueType(symbolTable.at(input.readInt())));
+                insn.setFieldType(parseValueType(symbolTable.at(input.readUnsigned())));
                 return insn;
             }
-            case 25: {
+            case 49: {
                 GetFieldInstruction insn = new GetFieldInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                String className = symbolTable.at(input.readInt());
-                String fieldName = symbolTable.at(input.readInt());
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                String className = symbolTable.at(input.readUnsigned());
+                String fieldName = symbolTable.at(input.readUnsigned());
                 insn.setField(new FieldReference(className, fieldName));
-                insn.setFieldType(parseValueType(symbolTable.at(input.readInt())));
+                insn.setFieldType(parseValueType(symbolTable.at(input.readUnsigned())));
                 return insn;
             }
-            case 26: {
+            case 50: {
                 PutFieldInstruction insn = new PutFieldInstruction();
-                insn.setInstance(program.variableAt(input.readShort()));
-                String className = symbolTable.at(input.readInt());
-                String fieldName = symbolTable.at(input.readInt());
-                ValueType type = parseValueType(symbolTable.at(input.readInt()));
+                insn.setInstance(program.variableAt(input.readUnsigned()));
+                String className = symbolTable.at(input.readUnsigned());
+                String fieldName = symbolTable.at(input.readUnsigned());
+                ValueType type = parseValueType(symbolTable.at(input.readUnsigned()));
                 insn.setField(new FieldReference(className, fieldName));
-                insn.setValue(program.variableAt(input.readShort()));
+                insn.setValue(program.variableAt(input.readUnsigned()));
                 insn.setFieldType(type);
                 return insn;
             }
-            case 27: {
+            case 51: {
                 PutFieldInstruction insn = new PutFieldInstruction();
-                String className = symbolTable.at(input.readInt());
-                String fieldName = symbolTable.at(input.readInt());
-                ValueType type = parseValueType(symbolTable.at(input.readInt()));
+                String className = symbolTable.at(input.readUnsigned());
+                String fieldName = symbolTable.at(input.readUnsigned());
+                ValueType type = parseValueType(symbolTable.at(input.readUnsigned()));
                 insn.setField(new FieldReference(className, fieldName));
-                insn.setValue(program.variableAt(input.readShort()));
+                insn.setValue(program.variableAt(input.readUnsigned()));
                 insn.setFieldType(type);
                 return insn;
             }
-            case 28: {
+            case 52: {
                 ArrayLengthInstruction insn = new ArrayLengthInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setArray(program.variableAt(input.readShort()));
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setArray(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 29: {
+            case 53: {
                 CloneArrayInstruction insn = new CloneArrayInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setArray(program.variableAt(input.readShort()));
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setArray(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 30: {
-                Variable receiver = program.variableAt(input.readShort());
-                UnwrapArrayInstruction insn = new UnwrapArrayInstruction(arrayElementTypes[input.readByte()]);
-                insn.setReceiver(receiver);
-                insn.setArray(program.variableAt(input.readShort()));
+            case 54:
+            case 55:
+            case 56:
+            case 57:
+            case 58:
+            case 59:
+            case 60:
+            case 61: {
+                UnwrapArrayInstruction insn = new UnwrapArrayInstruction(arrayElementTypes[insnType - 54]);
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setArray(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 31: {
-                GetElementInstruction insn = new GetElementInstruction(arrayElementTypes[input.readByte()]);
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setArray(program.variableAt(input.readShort()));
-                insn.setIndex(program.variableAt(input.readShort()));
+            case 62:
+            case 63:
+            case 64:
+            case 65:
+            case 66:
+            case 67:
+            case 68:
+            case 69: {
+                GetElementInstruction insn = new GetElementInstruction(arrayElementTypes[insnType - 62]);
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setArray(program.variableAt(input.readUnsigned()));
+                insn.setIndex(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 32: {
-                PutElementInstruction insn = new PutElementInstruction(arrayElementTypes[input.readByte()]);
-                insn.setArray(program.variableAt(input.readShort()));
-                insn.setIndex(program.variableAt(input.readShort()));
-                insn.setValue(program.variableAt(input.readShort()));
+            case 70:
+            case 71:
+            case 72:
+            case 73:
+            case 74:
+            case 75:
+            case 76:
+            case 77: {
+                PutElementInstruction insn = new PutElementInstruction(arrayElementTypes[insnType - 70]);
+                insn.setArray(program.variableAt(input.readUnsigned()));
+                insn.setIndex(program.variableAt(input.readUnsigned()));
+                insn.setValue(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 33: {
+            case 78: {
                 InvokeInstruction insn = new InvokeInstruction();
                 insn.setType(InvocationType.SPECIAL);
-                int receiverIndex = input.readShort();
-                insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
-                String className = symbolTable.at(input.readInt());
-                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readInt()));
+                int receiverIndex = input.readUnsigned();
+                insn.setReceiver(receiverIndex > 0 ? program.variableAt(receiverIndex - 1) : null);
+                String className = symbolTable.at(input.readUnsigned());
+                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readUnsigned()));
                 insn.setMethod(createMethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
                 Variable[] arguments = new Variable[paramCount];
                 for (int i = 0; i < paramCount; ++i) {
-                    arguments[i] = program.variableAt(input.readShort());
+                    arguments[i] = program.variableAt(input.readUnsigned());
                 }
                 insn.setArguments(arguments);
                 return insn;
             }
-            case 34: {
+            case 79: {
                 InvokeInstruction insn = new InvokeInstruction();
                 insn.setType(InvocationType.SPECIAL);
-                int receiverIndex = input.readShort();
-                insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
-                insn.setInstance(program.variableAt(input.readShort()));
-                String className = symbolTable.at(input.readInt());
-                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readInt()));
+                int receiverIndex = input.readUnsigned();
+                insn.setReceiver(receiverIndex > 0 ? program.variableAt(receiverIndex - 1) : null);
+                insn.setInstance(program.variableAt(input.readUnsigned()));
+                String className = symbolTable.at(input.readUnsigned());
+                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readUnsigned()));
                 insn.setMethod(createMethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
                 Variable[] arguments = new Variable[paramCount];
                 for (int i = 0; i < paramCount; ++i) {
-                    arguments[i] = program.variableAt(input.readShort());
+                    arguments[i] = program.variableAt(input.readUnsigned());
                 }
                 insn.setArguments(arguments);
                 return insn;
             }
-            case 35: {
+            case 80: {
                 InvokeInstruction insn = new InvokeInstruction();
                 insn.setType(InvocationType.VIRTUAL);
-                int receiverIndex = input.readShort();
-                insn.setReceiver(receiverIndex >= 0 ? program.variableAt(receiverIndex) : null);
-                insn.setInstance(program.variableAt(input.readShort()));
-                String className = symbolTable.at(input.readInt());
-                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readInt()));
+                int receiverIndex = input.readUnsigned();
+                insn.setReceiver(receiverIndex > 0 ? program.variableAt(receiverIndex - 1) : null);
+                insn.setInstance(program.variableAt(input.readUnsigned()));
+                String className = symbolTable.at(input.readUnsigned());
+                MethodDescriptor methodDesc = parseMethodDescriptor(symbolTable.at(input.readUnsigned()));
                 insn.setMethod(createMethodReference(className, methodDesc));
                 int paramCount = insn.getMethod().getDescriptor().parameterCount();
                 Variable[] arguments = new Variable[paramCount];
                 for (int i = 0; i < paramCount; ++i) {
-                    arguments[i] = program.variableAt(input.readShort());
+                    arguments[i] = program.variableAt(input.readUnsigned());
                 }
                 insn.setArguments(arguments);
                 return insn;
             }
-            case 36: {
+            case 82: {
                 IsInstanceInstruction insn = new IsInstanceInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setType(parseValueType(symbolTable.at(input.readInt())));
-                insn.setValue(program.variableAt(input.readShort()));
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setType(parseValueType(symbolTable.at(input.readUnsigned())));
+                insn.setValue(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 37: {
+            case 83: {
                 InitClassInstruction insn = new InitClassInstruction();
-                insn.setClassName(symbolTable.at(input.readInt()));
+                insn.setClassName(symbolTable.at(input.readUnsigned()));
                 return insn;
             }
-            case 38: {
+            case 84: {
                 NullCheckInstruction insn = new NullCheckInstruction();
-                insn.setReceiver(program.variableAt(input.readShort()));
-                insn.setValue(program.variableAt(input.readShort()));
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setValue(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 39: {
+            case 85: {
                 MonitorEnterInstruction insn = new MonitorEnterInstruction();
-                insn.setObjectRef(program.variableAt(input.readShort()));
+                insn.setObjectRef(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 40: {
+            case 86: {
                 MonitorExitInstruction insn = new MonitorExitInstruction();
-                insn.setObjectRef(program.variableAt(input.readShort()));
+                insn.setObjectRef(program.variableAt(input.readUnsigned()));
                 return insn;
             }
-            case 41: {
+            case 81: {
                 InvokeDynamicInstruction insn = new InvokeDynamicInstruction();
-                short receiver = input.readShort();
-                short instance = input.readShort();
-                insn.setReceiver(receiver >= 0 ? program.variableAt(receiver) : null);
-                insn.setInstance(instance >= 0 ? program.variableAt(instance) : null);
-                insn.setMethod(parseMethodDescriptor(symbolTable.at(input.readInt())));
+                int receiver = input.readUnsigned();
+                int instance = input.readUnsigned();
+                insn.setReceiver(receiver > 0 ? program.variableAt(receiver - 1) : null);
+                insn.setInstance(instance > 0 ? program.variableAt(instance - 1) : null);
+                insn.setMethod(parseMethodDescriptor(symbolTable.at(input.readUnsigned())));
                 int argsCount = insn.getMethod().parameterCount();
                 for (int i = 0; i < argsCount; ++i) {
-                    insn.getArguments().add(program.variableAt(input.readShort()));
+                    insn.getArguments().add(program.variableAt(input.readUnsigned()));
                 }
                 insn.setBootstrapMethod(readMethodHandle(input));
-                int bootstrapArgsCount = input.readByte();
+                int bootstrapArgsCount = input.readUnsigned();
                 for (int i = 0; i < bootstrapArgsCount; ++i) {
                     insn.getBootstrapArguments().add(readRuntimeConstant(input));
                 }
@@ -1131,58 +1162,62 @@ public class ProgramIO {
         }
     }
 
-    private MethodHandle readMethodHandle(DataInput input) throws IOException {
-        byte kind = input.readByte();
+    private MethodHandle readMethodHandle(VarDataInput input) throws IOException {
+        int kind = input.readUnsigned();
         switch (kind) {
             case 0:
-                return MethodHandle.fieldGetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        parseValueType(symbolTable.at(input.readInt())));
+                return MethodHandle.fieldGetter(symbolTable.at(input.readUnsigned()),
+                        symbolTable.at(input.readUnsigned()),
+                        parseValueType(symbolTable.at(input.readUnsigned())));
             case 1:
-                return MethodHandle.staticFieldGetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        parseValueType(symbolTable.at(input.readInt())));
+                return MethodHandle.staticFieldGetter(symbolTable.at(input.readUnsigned()),
+                        symbolTable.at(input.readUnsigned()),
+                        parseValueType(symbolTable.at(input.readUnsigned())));
             case 2:
-                return MethodHandle.fieldSetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        parseValueType(symbolTable.at(input.readInt())));
+                return MethodHandle.fieldSetter(symbolTable.at(input.readUnsigned()),
+                        symbolTable.at(input.readUnsigned()),
+                        parseValueType(symbolTable.at(input.readUnsigned())));
             case 3:
-                return MethodHandle.staticFieldSetter(symbolTable.at(input.readInt()), symbolTable.at(input.readInt()),
-                        parseValueType(symbolTable.at(input.readInt())));
+                return MethodHandle.staticFieldSetter(symbolTable.at(input.readUnsigned()),
+                        symbolTable.at(input.readUnsigned()),
+                        parseValueType(symbolTable.at(input.readUnsigned())));
             case 4:
-                return MethodHandle.virtualCaller(symbolTable.at(input.readInt()),
-                        parseMethodDescriptor(symbolTable.at(input.readInt())));
+                return MethodHandle.virtualCaller(symbolTable.at(input.readUnsigned()),
+                        parseMethodDescriptor(symbolTable.at(input.readUnsigned())));
             case 5:
-                return MethodHandle.staticCaller(symbolTable.at(input.readInt()),
-                        parseMethodDescriptor(symbolTable.at(input.readInt())));
+                return MethodHandle.staticCaller(symbolTable.at(input.readUnsigned()),
+                        parseMethodDescriptor(symbolTable.at(input.readUnsigned())));
             case 6:
-                return MethodHandle.specialCaller(symbolTable.at(input.readInt()),
-                        parseMethodDescriptor(symbolTable.at(input.readInt())));
+                return MethodHandle.specialCaller(symbolTable.at(input.readUnsigned()),
+                        parseMethodDescriptor(symbolTable.at(input.readUnsigned())));
             case 7:
-                return MethodHandle.constructorCaller(symbolTable.at(input.readInt()),
-                        parseMethodDescriptor(symbolTable.at(input.readInt())));
+                return MethodHandle.constructorCaller(symbolTable.at(input.readUnsigned()),
+                        parseMethodDescriptor(symbolTable.at(input.readUnsigned())));
             case 8:
-                return MethodHandle.interfaceCaller(symbolTable.at(input.readInt()),
-                        parseMethodDescriptor(symbolTable.at(input.readInt())));
+                return MethodHandle.interfaceCaller(symbolTable.at(input.readUnsigned()),
+                        parseMethodDescriptor(symbolTable.at(input.readUnsigned())));
             default:
                 throw new IllegalArgumentException("Unexpected method handle type: " + kind);
         }
     }
 
-    private RuntimeConstant readRuntimeConstant(DataInput input) throws IOException {
-        byte kind = input.readByte();
+    private RuntimeConstant readRuntimeConstant(VarDataInput input) throws IOException {
+        int kind = input.readUnsigned();
         switch (kind) {
             case 0:
-                return new RuntimeConstant(input.readInt());
+                return new RuntimeConstant(input.readSigned());
             case 1:
-                return new RuntimeConstant(input.readLong());
+                return new RuntimeConstant(input.readSignedLong());
             case 2:
                 return new RuntimeConstant(input.readFloat());
             case 3:
                 return new RuntimeConstant(input.readDouble());
             case 4:
-                return new RuntimeConstant(input.readUTF());
+                return new RuntimeConstant(input.read());
             case 5:
-                return new RuntimeConstant(parseValueType(symbolTable.at(input.readInt())));
+                return new RuntimeConstant(parseValueType(symbolTable.at(input.readUnsigned())));
             case 6:
-                return new RuntimeConstant(MethodDescriptor.parseSignature(symbolTable.at(input.readInt())));
+                return new RuntimeConstant(MethodDescriptor.parseSignature(symbolTable.at(input.readUnsigned())));
             case 7:
                 return new RuntimeConstant(readMethodHandle(input));
             default:
