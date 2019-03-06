@@ -20,6 +20,7 @@ import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
@@ -82,16 +83,22 @@ public class AstIO {
     private static final UnaryOperation[] unaryOperations = UnaryOperation.values();
     private final SymbolTable symbolTable;
     private final SymbolTable fileTable;
+    private final SymbolTable variableTable;
     private final Map<String, IdentifiedStatement> statementMap = new HashMap<>();
     private ReferenceCache referenceCache;
+    private TextLocation lastWrittenLocation;
+    private TextLocation lastReadLocation;
 
-    public AstIO(ReferenceCache referenceCache, SymbolTable symbolTable, SymbolTable fileTable) {
+    public AstIO(ReferenceCache referenceCache, SymbolTable symbolTable, SymbolTable fileTable,
+            SymbolTable variableTable) {
         this.referenceCache = referenceCache;
         this.symbolTable = symbolTable;
         this.fileTable = fileTable;
+        this.variableTable = variableTable;
     }
 
     public void write(VarDataOutput output, ControlFlowEntry[] cfg) throws IOException {
+        lastWrittenLocation = null;
         output.writeUnsigned(cfg.length);
         for (ControlFlowEntry entry : cfg) {
             writeLocation(output, entry.from);
@@ -118,10 +125,11 @@ public class AstIO {
     private void write(VarDataOutput output, VariableNode variable) throws IOException {
         output.writeUnsigned(variable.getIndex());
         output.writeUnsigned(variable.getType().ordinal());
-        output.write(variable.getName());
+        output.writeUnsigned(variable.getName() != null ? variableTable.lookup(variable.getName()) + 1 : 0);
     }
 
     public ControlFlowEntry[] readControlFlow(VarDataInput input) throws IOException {
+        lastReadLocation = null;
         int size = input.readUnsigned();
         ControlFlowEntry[] result = new ControlFlowEntry[size];
         for (int i = 0; i < size; ++i) {
@@ -143,6 +151,7 @@ public class AstIO {
         for (int i = 0; i < varCount; ++i) {
             node.getVariables().add(readVariable(input));
         }
+        lastReadLocation = null;
         node.setBody(readStatement(input));
         return node;
     }
@@ -151,7 +160,8 @@ public class AstIO {
         int index = input.readUnsigned();
         VariableType type = VariableType.values()[input.readUnsigned()];
         VariableNode variable = new VariableNode(index, type);
-        variable.setName(input.read());
+        int nameIndex = input.readUnsigned();
+        variable.setName(nameIndex != 0 ? variableTable.at(nameIndex - 1) : null);
         return variable;
     }
 
@@ -162,10 +172,11 @@ public class AstIO {
             write(output, var);
         }
         try {
-             output.writeUnsigned(method.getBody().size());
-             for (int i = 0; i < method.getBody().size(); ++i) {
-                 method.getBody().get(i).getStatement().acceptVisitor(new NodeWriter(output));
-             }
+            output.writeUnsigned(method.getBody().size());
+            NodeWriter writer = new NodeWriter(output);
+            for (int i = 0; i < method.getBody().size(); ++i) {
+                method.getBody().get(i).getStatement().acceptVisitor(writer);
+            }
         } catch (IOExceptionWrapper e) {
             throw new IOException("Error writing method body", e.getCause());
         }
@@ -179,6 +190,7 @@ public class AstIO {
             node.getVariables().add(readVariable(input));
         }
         int partCount = input.readUnsigned();
+        lastReadLocation = null;
         for (int i = 0; i < partCount; ++i) {
             AsyncMethodPart part = new AsyncMethodPart();
             part.setStatement(readStatement(input));
@@ -200,14 +212,21 @@ public class AstIO {
     private void writeLocation(VarDataOutput output, TextLocation location) throws IOException {
         if (location == null || location.getFileName() == null) {
             output.writeUnsigned(0);
+            lastWrittenLocation = null;
+        } else if (lastWrittenLocation != null && lastWrittenLocation.getFileName().equals(location.getFileName())) {
+            output.writeUnsigned(1);
+            output.writeSigned(location.getLine() - lastWrittenLocation.getLine());
+            lastWrittenLocation = location;
         } else {
-            output.writeUnsigned(fileTable.lookup(location.getFileName()) + 1);
+            output.writeUnsigned(fileTable.lookup(location.getFileName()) + 2);
             output.writeUnsigned(location.getLine());
+            lastWrittenLocation = location;
         }
     }
 
     private class NodeWriter implements ExprVisitor, StatementVisitor {
         private final VarDataOutput output;
+        private TextLocation lastLocation;
 
         NodeWriter(VarDataOutput output) {
             super();
@@ -220,7 +239,22 @@ public class AstIO {
         }
 
         private void writeLocation(TextLocation location) throws IOException {
-            AstIO.this.writeLocation(output, location);
+            if (Objects.equals(location, lastLocation)) {
+                return;
+            }
+            if (location == null || location.getFileName() == null) {
+                output.writeUnsigned(127);
+                lastLocation = null;
+            } else if (lastLocation != null && lastLocation.getFileName().equals(location.getFileName())) {
+                output.writeUnsigned(126);
+                output.writeSigned(location.getLine() - lastLocation.getLine());
+                lastLocation = location;
+            } else {
+                output.writeUnsigned(125);
+                output.writeUnsigned(fileTable.lookup(location.getFileName()));
+                output.writeUnsigned(location.getLine());
+                lastLocation = location;
+            }
         }
 
         private void writeSequence(List<Statement> sequence) throws IOException {
@@ -233,8 +267,8 @@ public class AstIO {
         @Override
         public void visit(AssignmentStatement statement) {
             try {
-                output.writeUnsigned(statement.getLeftValue() != null ? 0 : 1);
                 writeLocation(statement.getLocation());
+                output.writeUnsigned(statement.getLeftValue() != null ? 0 : 1);
                 if (statement.getLeftValue() != null) {
                     writeExpr(statement.getLeftValue());
                 }
@@ -316,8 +350,8 @@ public class AstIO {
         @Override
         public void visit(BreakStatement statement) {
             try {
-                output.writeUnsigned(statement.getTarget() != null && statement.getTarget().getId() != null ? 8 : 9);
                 writeLocation(statement.getLocation());
+                output.writeUnsigned(statement.getTarget() != null && statement.getTarget().getId() != null ? 8 : 9);
                 if (statement.getTarget() != null && statement.getTarget().getId() != null) {
                     output.write(statement.getTarget().getId());
                 }
@@ -329,8 +363,8 @@ public class AstIO {
         @Override
         public void visit(ContinueStatement statement) {
             try {
-                output.writeUnsigned(statement.getTarget() != null && statement.getTarget().getId() != null ? 10 : 11);
                 writeLocation(statement.getLocation());
+                output.writeUnsigned(statement.getTarget() != null && statement.getTarget().getId() != null ? 10 : 11);
                 if (statement.getTarget() != null && statement.getTarget().getId() != null) {
                     output.write(statement.getTarget().getId());
                 }
@@ -342,8 +376,8 @@ public class AstIO {
         @Override
         public void visit(ReturnStatement statement) {
             try {
-                output.writeUnsigned(statement.getResult() != null ? 12 : 13);
                 writeLocation(statement.getLocation());
+                output.writeUnsigned(statement.getResult() != null ? 12 : 13);
                 if (statement.getResult() != null) {
                     writeExpr(statement.getResult());
                 }
@@ -355,8 +389,8 @@ public class AstIO {
         @Override
         public void visit(ThrowStatement statement) {
             try {
-                output.writeUnsigned(14);
                 writeLocation(statement.getLocation());
+                output.writeUnsigned(14);
                 writeExpr(statement.getException());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -366,8 +400,8 @@ public class AstIO {
         @Override
         public void visit(InitClassStatement statement) {
             try {
-                output.writeUnsigned(15);
                 writeLocation(statement.getLocation());
+                output.writeUnsigned(15);
                 output.writeUnsigned(symbolTable.lookup(statement.getClassName()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -402,8 +436,8 @@ public class AstIO {
         @Override
         public void visit(MonitorEnterStatement statement) {
             try {
-                output.writeUnsigned(18);
                 writeLocation(statement.getLocation());
+                output.writeUnsigned(18);
                 writeExpr(statement.getObjectRef());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -413,8 +447,8 @@ public class AstIO {
         @Override
         public void visit(MonitorExitStatement statement) {
             try {
-                output.writeUnsigned(19);
                 writeLocation(statement.getLocation());
+                output.writeUnsigned(19);
                 writeExpr(statement.getObjectRef());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -636,18 +670,41 @@ public class AstIO {
     private TextLocation readLocation(VarDataInput input) throws IOException {
         int fileIndex = input.readUnsigned();
         if (fileIndex == 0) {
-            return null;
+            lastReadLocation = null;
+        } else if (fileIndex == 1) {
+            lastReadLocation = new TextLocation(lastReadLocation.getFileName(),
+                    lastReadLocation.getLine() + input.readSigned());
         } else {
-            return new TextLocation(fileTable.at(fileIndex - 1), input.readUnsigned());
+            lastReadLocation = new TextLocation(fileTable.at(fileIndex - 2), input.readUnsigned());
+            return lastReadLocation;
         }
+        return lastReadLocation;
+    }
+
+    private int readNodeLocation(int type, VarDataInput input) throws IOException {
+        switch (type) {
+            case 127:
+                lastReadLocation = null;
+                break;
+            case 126:
+                lastReadLocation = new TextLocation(lastReadLocation.getFileName(),
+                        lastReadLocation.getLine() + input.readSigned());
+                break;
+            case 125:
+                lastReadLocation = new TextLocation(fileTable.at(input.readUnsigned()), input.readUnsigned());
+                break;
+            default:
+                return type;
+        }
+        return input.readUnsigned();
     }
 
     private Statement readStatement(VarDataInput input) throws IOException {
-        int type = input.readUnsigned();
+        int type = readNodeLocation(input.readUnsigned(), input);
         switch (type) {
             case 0: {
                 AssignmentStatement stmt = new AssignmentStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 stmt.setLeftValue(readExpr(input));
                 stmt.setRightValue(readExpr(input));
                 stmt.setAsync(input.readUnsigned() != 0);
@@ -655,7 +712,7 @@ public class AstIO {
             }
             case 1: {
                 AssignmentStatement stmt = new AssignmentStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 stmt.setRightValue(readExpr(input));
                 stmt.setAsync(input.readUnsigned() != 0);
                 return stmt;
@@ -721,46 +778,46 @@ public class AstIO {
             }
             case 8: {
                 BreakStatement stmt = new BreakStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 stmt.setTarget(statementMap.get(input.read()));
                 return stmt;
             }
             case 9: {
                 BreakStatement stmt = new BreakStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 return stmt;
             }
             case 10: {
                 ContinueStatement stmt = new ContinueStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 stmt.setTarget(statementMap.get(input.read()));
                 return stmt;
             }
             case 11: {
                 ContinueStatement stmt = new ContinueStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 return stmt;
             }
             case 12: {
                 ReturnStatement stmt = new ReturnStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 stmt.setResult(readExpr(input));
                 return stmt;
             }
             case 13: {
                 ReturnStatement stmt = new ReturnStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 return stmt;
             }
             case 14: {
                 ThrowStatement stmt = new ThrowStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 stmt.setException(readExpr(input));
                 return stmt;
             }
             case 15: {
                 InitClassStatement stmt = new InitClassStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 stmt.setClassName(symbolTable.at(input.readUnsigned()));
                 return stmt;
             }
@@ -785,13 +842,13 @@ public class AstIO {
             }
             case 18: {
                 MonitorEnterStatement stmt = new MonitorEnterStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 stmt.setObjectRef(readExpr(input));
                 return stmt;
             }
             case 19: {
                 MonitorExitStatement stmt = new MonitorExitStatement();
-                stmt.setLocation(readLocation(input));
+                stmt.setLocation(lastReadLocation);
                 stmt.setObjectRef(readExpr(input));
                 return stmt;
             }
@@ -808,17 +865,11 @@ public class AstIO {
     }
 
     private Expr readExpr(VarDataInput input) throws IOException {
-        TextLocation location = readLocation(input);
-        Expr expr = readExprWithoutLocation(input);
-        expr.setLocation(location);
-        return expr;
-    }
-
-    private Expr readExprWithoutLocation(VarDataInput input) throws IOException {
-        int type = input.readUnsigned();
+        int type = readNodeLocation(input.readUnsigned(), input);
         switch (type) {
             case 0: {
                 BinaryExpr expr = new BinaryExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setOperation(binaryOperations[input.readUnsigned()]);
                 int valueType = input.readUnsigned();
                 expr.setType(valueType > 0 ? OperationType.values()[valueType - 1] : null);
@@ -828,6 +879,7 @@ public class AstIO {
             }
             case 1: {
                 UnaryExpr expr = new UnaryExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setOperation(unaryOperations[input.readUnsigned()]);
                 int valueType = input.readUnsigned();
                 expr.setType(valueType > 0 ? OperationType.values()[valueType - 1] : null);
@@ -836,16 +888,20 @@ public class AstIO {
             }
             case 2: {
                 ConditionalExpr expr = new ConditionalExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setCondition(readExpr(input));
                 expr.setConsequent(readExpr(input));
                 expr.setAlternative(readExpr(input));
                 return expr;
             }
             case 3: {
-                return new ConstantExpr();
+                ConstantExpr expr = new ConstantExpr();
+                expr.setLocation(lastReadLocation);
+                return expr;
             }
             case 4: {
                 ConstantExpr expr = new ConstantExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setValue(input.readSigned());
                 return expr;
             }
@@ -856,31 +912,37 @@ public class AstIO {
             }
             case 6: {
                 ConstantExpr expr = new ConstantExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setValue(input.readFloat());
                 return expr;
             }
             case 7: {
                 ConstantExpr expr = new ConstantExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setValue(input.readDouble());
                 return expr;
             }
             case 8: {
                 ConstantExpr expr = new ConstantExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setValue(input.read());
                 return expr;
             }
             case 9: {
                 ConstantExpr expr = new ConstantExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setValue(ValueType.parse(symbolTable.at(input.readUnsigned())));
                 return expr;
             }
             case 10: {
                 VariableExpr expr = new VariableExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setIndex(input.readUnsigned());
                 return expr;
             }
             case 11: {
                 SubscriptExpr expr = new SubscriptExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setArray(readExpr(input));
                 expr.setIndex(readExpr(input));
                 expr.setType(ArrayType.values()[input.readUnsigned()]);
@@ -888,6 +950,7 @@ public class AstIO {
             }
             case 12: {
                 UnwrapArrayExpr expr = new UnwrapArrayExpr(ArrayType.values()[input.readUnsigned()]);
+                expr.setLocation(lastReadLocation);
                 expr.setArray(readExpr(input));
                 return expr;
             }
@@ -901,6 +964,7 @@ public class AstIO {
                 return parseInvocationExpr(InvocationType.DYNAMIC, input);
             case 17: {
                 QualificationExpr expr = new QualificationExpr();
+                expr.setLocation(lastReadLocation);
                 String className = symbolTable.at(input.readUnsigned());
                 String fieldName = symbolTable.at(input.readUnsigned());
                 expr.setField(new FieldReference(className, fieldName));
@@ -908,6 +972,7 @@ public class AstIO {
             }
             case 18: {
                 QualificationExpr expr = new QualificationExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setQualified(readExpr(input));
                 String className = symbolTable.at(input.readUnsigned());
                 String fieldName = symbolTable.at(input.readUnsigned());
@@ -916,17 +981,20 @@ public class AstIO {
             }
             case 19: {
                 NewExpr expr = new NewExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setConstructedClass(symbolTable.at(input.readUnsigned()));
                 return expr;
             }
             case 20: {
                 NewArrayExpr expr = new NewArrayExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setLength(readExpr(input));
                 expr.setType(ValueType.parse(symbolTable.at(input.readUnsigned())));
                 return expr;
             }
             case 21: {
                 NewMultiArrayExpr expr = new NewMultiArrayExpr();
+                expr.setLocation(lastReadLocation);
                 int dimensionCount = input.readUnsigned();
                 for (int i = 0; i < dimensionCount; ++i) {
                     expr.getDimensions().add(readExpr(input));
@@ -936,18 +1004,21 @@ public class AstIO {
             }
             case 22: {
                 InstanceOfExpr expr = new InstanceOfExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setExpr(readExpr(input));
                 expr.setType(ValueType.parse(symbolTable.at(input.readUnsigned())));
                 return expr;
             }
             case 23: {
                 CastExpr expr = new CastExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setTarget(ValueType.parse(symbolTable.at(input.readUnsigned())));
                 expr.setValue(readExpr(input));
                 return expr;
             }
             case 24: {
                 PrimitiveCastExpr expr = new PrimitiveCastExpr();
+                expr.setLocation(lastReadLocation);
                 expr.setSource(OperationType.values()[input.readUnsigned()]);
                 expr.setTarget(OperationType.values()[input.readUnsigned()]);
                 expr.setValue(readExpr(input));
@@ -960,6 +1031,7 @@ public class AstIO {
 
     private InvocationExpr parseInvocationExpr(InvocationType invocationType, VarDataInput input) throws IOException {
         InvocationExpr expr = new InvocationExpr();
+        expr.setLocation(lastReadLocation);
         expr.setType(invocationType);
         String className = symbolTable.at(input.readUnsigned());
         String signature = symbolTable.at(input.readUnsigned());

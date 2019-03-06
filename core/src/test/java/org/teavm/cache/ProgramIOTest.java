@@ -158,7 +158,8 @@ public class ProgramIOTest {
     private Program inputOutput(Program program) {
         InMemorySymbolTable symbolTable = new InMemorySymbolTable();
         InMemorySymbolTable fileTable = new InMemorySymbolTable();
-        ProgramIO programIO = new ProgramIO(new ReferenceCache(), symbolTable, fileTable);
+        InMemorySymbolTable variableTable = new InMemorySymbolTable();
+        ProgramIO programIO = new ProgramIO(new ReferenceCache(), symbolTable, fileTable, variableTable);
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             programIO.write(program, output);
             try (ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray())) {

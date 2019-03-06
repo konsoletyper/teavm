@@ -53,6 +53,10 @@ public class VarDataOutput implements Closeable {
     }
 
     public void writeFloat(float value) throws IOException {
+        if (value == 0) {
+            writeUnsigned(0);
+            return;
+        }
         int bits = Float.floatToRawIntBits(value);
         boolean sign = (bits & (1 << 31)) != 0;
         int exponent = (bits >> 23) & ((1 << 8) - 1);
@@ -60,11 +64,16 @@ public class VarDataOutput implements Closeable {
         if (sign) {
             mantissa |= 1 << 23;
         }
-        writeSigned(exponent - 127);
+        exponent -= 127;
+        writeUnsigned(1 + (exponent > 0 ? exponent << 1 : 1 | (-exponent << 1)));
         writeUnsigned(Integer.reverse(mantissa << 8));
     }
 
     public void writeDouble(double value) throws IOException {
+        if (value == 0) {
+            writeUnsigned(0);
+            return;
+        }
         long bits = Double.doubleToRawLongBits(value);
         boolean sign = (bits & (1L << 63)) != 0;
         int exponent = (int) (bits >> 52) & ((1 << 11) - 1);
@@ -72,7 +81,8 @@ public class VarDataOutput implements Closeable {
         if (sign) {
             mantissa |= 1L << 52;
         }
-        writeSigned(exponent - 1023);
+        exponent -= 1023;
+        writeUnsigned(1 + (exponent > 0 ? exponent << 1 : 1 | (-exponent << 1)));
         writeUnsigned(Long.reverse(mantissa << 11));
     }
 

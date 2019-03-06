@@ -140,6 +140,7 @@ public class CodeServlet extends HttpServlet {
     private WebSocketClient wsClient = new WebSocketClient();
     private InMemorySymbolTable symbolTable = new InMemorySymbolTable();
     private InMemorySymbolTable fileSymbolTable = new InMemorySymbolTable();
+    private InMemorySymbolTable variableSymbolTable = new InMemorySymbolTable();
     private ReferenceCache referenceCache = new ReferenceCache();
 
     public CodeServlet(String mainClass, String[] classPath) {
@@ -709,8 +710,8 @@ public class CodeServlet extends HttpServlet {
         watcher = new FileSystemWatcher(classPath);
 
         classSource = new MemoryCachedClassReaderSource();
-        astCache = new InMemoryMethodNodeCache(referenceCache, symbolTable, fileSymbolTable);
-        programCache = new InMemoryProgramCache(referenceCache, symbolTable, fileSymbolTable);
+        astCache = new InMemoryMethodNodeCache(referenceCache, symbolTable, fileSymbolTable, variableSymbolTable);
+        programCache = new InMemoryProgramCache(referenceCache, symbolTable, fileSymbolTable, variableSymbolTable);
     }
 
     private void shutdownBuilder() {

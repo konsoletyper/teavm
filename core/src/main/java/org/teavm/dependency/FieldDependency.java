@@ -28,8 +28,8 @@ public class FieldDependency implements FieldDependencyInfo {
     DependencyNode value;
     private FieldReader field;
     private FieldReference reference;
-    private List<LocationListener> locationListeners;
-    private Set<CallLocation> locations;
+    List<LocationListener> locationListeners;
+    Set<CallLocation> locations;
     boolean activated;
 
     FieldDependency(DependencyNode value, FieldReader field, FieldReference reference) {

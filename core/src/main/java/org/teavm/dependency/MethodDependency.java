@@ -38,8 +38,8 @@ public class MethodDependency implements MethodDependencyInfo {
     boolean external;
     DependencyPlugin dependencyPlugin;
     boolean dependencyPluginAttached;
-    private List<LocationListener> locationListeners;
-    private Set<CallLocation> locations;
+    List<LocationListener> locationListeners;
+    Set<CallLocation> locations;
     boolean activated;
 
     MethodDependency(DependencyAnalyzer dependencyAnalyzer, DependencyNode[] variableNodes, int parameterCount,

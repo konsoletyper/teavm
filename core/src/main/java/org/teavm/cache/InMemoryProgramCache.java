@@ -33,8 +33,8 @@ public class InMemoryProgramCache implements ProgramCache {
     private ProgramIO io;
 
     public InMemoryProgramCache(ReferenceCache referenceCache, InMemorySymbolTable symbolTable,
-            InMemorySymbolTable fileSymbolTable) {
-        io = new ProgramIO(referenceCache, symbolTable, fileSymbolTable);
+            InMemorySymbolTable fileSymbolTable, InMemorySymbolTable variableSymbolTable) {
+        io = new ProgramIO(referenceCache, symbolTable, fileSymbolTable, variableSymbolTable);
     }
 
     @Override

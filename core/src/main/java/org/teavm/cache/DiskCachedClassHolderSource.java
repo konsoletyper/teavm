@@ -64,12 +64,13 @@ public class DiskCachedClassHolderSource implements ClassHolderSource, CacheStat
     private ProgramIO programIO;
 
     public DiskCachedClassHolderSource(File directory, ReferenceCache referenceCache, SymbolTable symbolTable,
-            SymbolTable fileTable, ClassHolderSource innerSource, ClassDateProvider classDateProvider) {
+            SymbolTable fileTable, SymbolTable variableTable, ClassHolderSource innerSource,
+            ClassDateProvider classDateProvider) {
         this.directory = directory;
         this.symbolTable = symbolTable;
         this.innerSource = innerSource;
         this.classDateProvider = classDateProvider;
-        programIO = new ProgramIO(referenceCache, symbolTable, fileTable);
+        programIO = new ProgramIO(referenceCache, symbolTable, fileTable, variableTable);
     }
 
     @Override

@@ -85,6 +85,7 @@ import org.teavm.model.instructions.UnwrapArrayInstruction;
 public class ProgramIO {
     private SymbolTable symbolTable;
     private SymbolTable fileTable;
+    private SymbolTable variableTable;
     private ReferenceCache referenceCache;
     private static BinaryOperation[] binaryOperations = BinaryOperation.values();
     private static NumericOperandType[] numericOperandTypes = NumericOperandType.values();
@@ -94,10 +95,12 @@ public class ProgramIO {
     private static BinaryBranchingCondition[] binaryBranchingConditions = BinaryBranchingCondition.values();
     private static ArrayElementType[] arrayElementTypes = ArrayElementType.values();
 
-    public ProgramIO(ReferenceCache referenceCache, SymbolTable symbolTable, SymbolTable fileTable) {
+    public ProgramIO(ReferenceCache referenceCache, SymbolTable symbolTable, SymbolTable fileTable,
+            SymbolTable variableTable) {
         this.referenceCache = referenceCache;
         this.symbolTable = symbolTable;
         this.fileTable = fileTable;
+        this.variableTable = variableTable;
     }
 
     public void write(Program program, OutputStream output) throws IOException {
@@ -107,7 +110,7 @@ public class ProgramIO {
         for (int i = 0; i < program.variableCount(); ++i) {
             Variable var = program.variableAt(i);
             data.writeUnsigned(var.getRegister());
-            data.write(var.getDebugName());
+            data.writeUnsigned(var.getDebugName() != null ? variableTable.lookup(var.getDebugName()) + 1 : 0);
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock basicBlock = program.basicBlockAt(i);
@@ -133,13 +136,20 @@ public class ProgramIO {
             for (Instruction insn : basicBlock) {
                 try {
                     if (!Objects.equals(location, insn.getLocation())) {
-                        location = insn.getLocation();
-                        if (location == null || location.getFileName() == null || location.getLine() < 0) {
+                        TextLocation newLocation = insn.getLocation();
+                        if (newLocation == null || newLocation.getFileName() == null || newLocation.getLine() < 0) {
                             data.writeUnsigned(1);
+                            location = null;
                         } else {
-                            data.writeUnsigned(2);
-                            data.writeUnsigned(fileTable.lookup(location.getFileName()));
-                            data.writeUnsigned(location.getLine());
+                            if (location != null && location.getFileName().equals(newLocation.getFileName())) {
+                                data.writeUnsigned(127);
+                                data.writeSigned(newLocation.getLine() - location.getLine());
+                            } else {
+                                data.writeUnsigned(2);
+                                data.writeUnsigned(fileTable.lookup(newLocation.getFileName()));
+                                data.writeUnsigned(newLocation.getLine());
+                            }
+                            location = newLocation;
                         }
                     }
                     insn.acceptVisitor(insnWriter);
@@ -159,7 +169,8 @@ public class ProgramIO {
         for (int i = 0; i < varCount; ++i) {
             Variable var = program.createVariable();
             var.setRegister(data.readUnsigned());
-            var.setDebugName(referenceCache.getCached(data.read()));
+            int nameIndex = data.readUnsigned();
+            var.setDebugName(nameIndex != 0 ? referenceCache.getCached(variableTable.at(nameIndex - 1)) : null);
         }
         for (int i = 0; i < basicBlockCount; ++i) {
             program.createBasicBlock();
@@ -210,6 +221,11 @@ public class ProgramIO {
                         String file = fileTable.at(data.readUnsigned());
                         int line = data.readUnsigned();
                         location = new TextLocation(file, line);
+                        break;
+                    }
+                    case 127: {
+                        int line = location.getLine() + data.readSigned();
+                        location = new TextLocation(location.getFileName(), line);
                         break;
                     }
                     default: {

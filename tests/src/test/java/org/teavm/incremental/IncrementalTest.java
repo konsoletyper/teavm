@@ -239,7 +239,8 @@ public class IncrementalTest {
         boolean capturing;
 
         CapturingMethodNodeCache() {
-            super(new ReferenceCache(), new InMemorySymbolTable(), new InMemorySymbolTable());
+            super(new ReferenceCache(), new InMemorySymbolTable(), new InMemorySymbolTable(),
+                    new InMemorySymbolTable());
         }
 
         @Override
@@ -264,7 +265,8 @@ public class IncrementalTest {
         boolean capturing;
 
         CapturingProgramCache() {
-            super(new ReferenceCache(), new InMemorySymbolTable(), new InMemorySymbolTable());
+            super(new ReferenceCache(), new InMemorySymbolTable(), new InMemorySymbolTable(),
+                    new InMemorySymbolTable());
         }
 
         @Override

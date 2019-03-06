@@ -88,6 +88,7 @@ public class TeaVMTool {
     private DiskMethodNodeCache astCache;
     private FileSymbolTable symbolTable;
     private FileSymbolTable fileTable;
+    private FileSymbolTable variableTable;
     private boolean cancelled;
     private TeaVMProgressListener progressListener;
     private TeaVM vm;
@@ -327,27 +328,31 @@ public class TeaVMTool {
         try {
             cancelled = false;
             log.info("Running TeaVM");
+            referenceCache = new ReferenceCache();
             TeaVMBuilder vmBuilder = new TeaVMBuilder(prepareTarget());
             CacheStatus cacheStatus;
-            referenceCache = new ReferenceCache();
             vmBuilder.setReferenceCache(referenceCache);
             if (incremental) {
                 cacheDirectory.mkdirs();
                 symbolTable = new FileSymbolTable(new File(cacheDirectory, "symbols"));
                 fileTable = new FileSymbolTable(new File(cacheDirectory, "files"));
+                variableTable = new FileSymbolTable(new File(cacheDirectory, "variables"));
                 ClasspathClassHolderSource innerClassSource = new ClasspathClassHolderSource(classLoader,
                         referenceCache);
                 ClassHolderSource classSource = new PreOptimizingClassHolderSource(innerClassSource);
                 cachedClassSource = new DiskCachedClassHolderSource(cacheDirectory, referenceCache, symbolTable,
-                        fileTable, classSource, innerClassSource);
-                programCache = new DiskProgramCache(cacheDirectory, referenceCache, symbolTable, fileTable);
+                        fileTable, variableTable, classSource, innerClassSource);
+                programCache = new DiskProgramCache(cacheDirectory, referenceCache, symbolTable, fileTable,
+                        variableTable);
                 if (incremental && targetType == TeaVMTargetType.JAVASCRIPT) {
-                    astCache = new DiskMethodNodeCache(cacheDirectory, referenceCache, symbolTable, fileTable);
+                    astCache = new DiskMethodNodeCache(cacheDirectory, referenceCache, symbolTable, fileTable,
+                            variableTable);
                     javaScriptTarget.setAstCache(astCache);
                 }
                 try {
                     symbolTable.update();
                     fileTable.update();
+                    variableTable.update();
                 } catch (IOException e) {
                     log.info("Cache is missing");
                 }
@@ -420,13 +425,14 @@ public class TeaVMTool {
             }
 
             if (incremental) {
-                programCache.flush(vm.getDependencyClassSource());
+                programCache.flush();
                 if (astCache != null) {
                     astCache.flush();
                 }
                 cachedClassSource.flush();
                 symbolTable.flush();
                 fileTable.flush();
+                variableTable.flush();
                 log.info("Cache updated");
             }
 

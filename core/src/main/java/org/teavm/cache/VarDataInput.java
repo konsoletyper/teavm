@@ -69,7 +69,15 @@ public class VarDataInput {
     }
 
     public float readFloat() throws IOException {
-        int exponent = readSigned() + 127;
+        int exponent = readUnsigned();
+        if (exponent == 0) {
+            return 0;
+        }
+
+        exponent--;
+        exponent = (exponent & 1) == 0 ? exponent >>> 1 : -(exponent >>> 1);
+        exponent += 127;
+
         int mantissa = Integer.reverse(readUnsigned()) >>> 8;
         boolean sign = (mantissa & (1 << 23)) != 0;
 
@@ -83,7 +91,15 @@ public class VarDataInput {
     }
 
     public double readDouble() throws IOException {
-        int exponent = readSigned() + 1023;
+        int exponent = readUnsigned();
+        if (exponent == 0) {
+            return 0;
+        }
+
+        exponent--;
+        exponent = (exponent & 1) == 0 ? exponent >>> 1 : -(exponent >>> 1);
+        exponent += 1023;
+
         long mantissa = Long.reverse(readUnsignedLong()) >>> 11;
         boolean sign = (mantissa & (1L << 52)) != 0;
 

@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -37,7 +36,6 @@ import org.objectweb.asm.tree.ClassNode;
 import org.teavm.cache.IncrementalDependencyProvider;
 import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.callgraph.CallGraph;
-import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.DefaultCallGraph;
 import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
@@ -429,8 +427,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     private ClassDependency createClassDependency(String className) {
         ClassReader cls = classSource.get(className);
-        ClassDependency dependency = new ClassDependency(this, className, cls);
-        return dependency;
+        return new ClassDependency(this, className, cls);
     }
 
     public MethodDependency linkMethod(String className, MethodDescriptor descriptor) {
@@ -526,8 +523,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     public Collection<String> getReachableClasses() {
         return classCache.getCachedPreimages();
     }
-
-    private Set<FieldReference> fieldsAddedByRoot = new HashSet<>();
 
     public FieldDependency linkField(FieldReference fieldRef) {
         FieldDependency dep = fieldCache.map(fieldRef);
@@ -746,9 +741,25 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             }
         }
 
+        for (Map<?, MethodDependency> map : methodCache.values()) {
+            for (MethodDependency methodDependency : map.values()) {
+                methodDependency.locationListeners = null;
+                methodDependency.locations = null;
+            }
+        }
+
+        for (FieldReference fieldRef : fieldCache.getCachedPreimages()) {
+            FieldDependency field = fieldCache.getKnown(fieldRef);
+            if (field != null) {
+                field.locationListeners = null;
+                field.locations = null;
+            }
+        }
+
         allNodes.clear();
         classSource.cleanup();
         agent.cleanup();
+        listeners.clear();
     }
 
     public void cleanupTypes() {
@@ -857,10 +868,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             return;
         }
 
-        CallGraphNode caller = callGraph.getNode(methodDep.getReference());
-
         ProgramEmitter pe = ProgramEmitter.create(program, classHierarchy);
-        boolean hasIndy = false;
         BasicBlockSplitter splitter = new BasicBlockSplitter(program);
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
@@ -885,7 +893,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                     continue;
                 }
 
-                hasIndy = true;
                 BasicBlock splitBlock = splitter.split(block, insn);
 
                 pe.enter(block);
@@ -910,7 +917,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                     pe.addInstruction(assign);
                 }
                 pe.jump(splitBlock);
-                block = splitBlock;
             }
         }
         splitter.fixProgram();

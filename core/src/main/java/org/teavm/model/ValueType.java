@@ -20,7 +20,6 @@ import java.util.*;
 import java.util.stream.Collectors;
 
 public abstract class ValueType implements Serializable {
-    volatile String reprCache;
     private static final Map<Class<?>, ValueType> primitiveMap = new HashMap<>();
 
     private ValueType() {
@@ -28,6 +27,7 @@ public abstract class ValueType implements Serializable {
 
     public static class Object extends ValueType {
         private String className;
+        private int hash;
 
         public Object(String className) {
             this.className = className;
@@ -39,23 +39,45 @@ public abstract class ValueType implements Serializable {
 
         @Override
         public String toString() {
-            if (reprCache == null) {
-                reprCache = "L" + className.replace('.', '/') + ";";
-            }
-            return reprCache;
+            return "L" + className.replace('.', '/') + ";";
         }
 
         @Override
         public boolean isObject(String className) {
             return this.className.equals(className);
         }
+
+        @Override
+        public boolean equals(java.lang.Object obj) {
+            if (obj == this) {
+                return true;
+            }
+            if (!(obj instanceof Object)) {
+                return false;
+            }
+            Object that = (Object) obj;
+            return that.className.equals(className);
+        }
+
+        @Override
+        public int hashCode() {
+            if (hash == 0) {
+                hash = 85396296 ^ (className.hashCode() * 167);
+                if (hash == 0) {
+                    ++hash;
+                }
+            }
+            return hash;
+        }
     }
 
     public static class Primitive extends ValueType {
         private PrimitiveType kind;
+        private int hash;
 
-        Primitive(PrimitiveType kind) {
+        private Primitive(PrimitiveType kind) {
             this.kind = kind;
+            hash = 17988782 ^ (kind.ordinal() * 31);
         }
 
         public PrimitiveType getKind() {
@@ -64,13 +86,6 @@ public abstract class ValueType implements Serializable {
 
         @Override
         public String toString() {
-            if (reprCache == null) {
-                reprCache = createString();
-            }
-            return reprCache;
-        }
-
-        private String createString() {
             switch (kind) {
                 case BOOLEAN:
                     return "Z";
@@ -97,10 +112,21 @@ public abstract class ValueType implements Serializable {
         public boolean isObject(String cls) {
             return false;
         }
+
+        @Override
+        public boolean equals(java.lang.Object obj) {
+            return this == obj;
+        }
+
+        @Override
+        public int hashCode() {
+            return hash;
+        }
     }
 
     public static class Array extends ValueType {
         private ValueType itemType;
+        private int hash;
 
         public Array(ValueType itemType) {
             this.itemType = itemType;
@@ -112,19 +138,43 @@ public abstract class ValueType implements Serializable {
 
         @Override
         public String toString() {
-            if (reprCache == null) {
-                reprCache = "[" + itemType.toString();
-            }
-            return reprCache;
+            return "[" + itemType;
         }
 
         @Override
         public boolean isObject(String cls) {
             return false;
         }
+
+        @Override
+        public boolean equals(java.lang.Object obj) {
+            if (this == obj) {
+                return true;
+            }
+            if (!(obj instanceof Array)) {
+                return false;
+            }
+
+            Array that = (Array) obj;
+            return itemType.equals(that.itemType);
+        }
+
+        @Override
+        public int hashCode() {
+            if (hash == 0) {
+                hash = 27039876 ^ (itemType.hashCode() * 193);
+                if (hash == 0) {
+                    ++hash;
+                }
+            }
+            return hash;
+        }
     }
 
     public static class Void extends ValueType {
+        private Void() {
+        }
+
         @Override
         public String toString() {
             return "V";
@@ -134,12 +184,15 @@ public abstract class ValueType implements Serializable {
         public boolean isObject(String cls) {
             return false;
         }
-    }
 
-    public static class Null extends ValueType {
         @Override
-        public boolean isObject(String cls) {
-            return false;
+        public boolean equals(java.lang.Object obj) {
+            return this == obj;
+        }
+
+        @Override
+        public int hashCode() {
+            return 53604390;
         }
     }
 
@@ -160,9 +213,6 @@ public abstract class ValueType implements Serializable {
     public static final Primitive DOUBLE = new Primitive(PrimitiveType.DOUBLE);
 
     public static final Primitive CHARACTER = new Primitive(PrimitiveType.CHARACTER);
-
-    public static final Null NULL = new Null();
-
 
     static {
         primitiveMap.put(boolean.class, BOOLEAN);
@@ -227,7 +277,7 @@ public abstract class ValueType implements Serializable {
             types.add(type);
             index = nextIndex;
         }
-        return types.toArray(new ValueType[types.size()]);
+        return types.toArray(new ValueType[0]);
     }
 
     private static int cut(String text, int index) {
@@ -343,21 +393,5 @@ public abstract class ValueType implements Serializable {
         } else {
             return ValueType.object(cls.getName());
         }
-    }
-
-    @Override
-    public int hashCode() {
-        return toString().hashCode();
-    }
-
-    @Override
-    public boolean equals(java.lang.Object obj) {
-        if (this == obj) {
-           return true;
-        }
-        if (!(obj instanceof ValueType)) {
-            return false;
-        }
-        return toString().equals(obj.toString());
     }
 }

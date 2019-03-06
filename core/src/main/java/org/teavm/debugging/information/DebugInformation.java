@@ -53,6 +53,10 @@ public class DebugInformation {
     MethodTree methodTree;
     ReferenceCache referenceCache;
 
+    public DebugInformation() {
+        this(new ReferenceCache());
+    }
+
     public DebugInformation(ReferenceCache referenceCache) {
         this.referenceCache = referenceCache;
     }

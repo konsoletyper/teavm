@@ -17,13 +17,23 @@ package org.teavm.backend.javascript.codegen;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.teavm.model.*;
+import org.teavm.model.AccessLevel;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldReader;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 
 public class DefaultNamingStrategy implements NamingStrategy {
+    private static final byte NO_CLASSIFIER = 0;
+    private static final byte INIT_CLASSIFIER = 1;
+
     private final AliasProvider aliasProvider;
     private final ClassReaderSource classSource;
-    private final Map<String, String> aliases = new HashMap<>();
-    private final Map<String, ScopedName> privateAliases = new HashMap<>();
+    private final Map<MethodDescriptor, String> aliases = new HashMap<>();
+    private final Map<Key, ScopedName> privateAliases = new HashMap<>();
     private final Map<String, ScopedName> classAliases = new HashMap<>();
     private final Map<FieldReference, String> fieldAliases = new HashMap<>();
     private final Map<FieldReference, ScopedName> staticFieldAliases = new HashMap<>();
@@ -43,35 +53,33 @@ public class DefaultNamingStrategy implements NamingStrategy {
 
     @Override
     public String getNameFor(MethodDescriptor method) {
-        String key = method.toString();
-        String alias = aliases.get(key);
+        String alias = aliases.get(method);
         if (alias == null) {
             alias = aliasProvider.getMethodAlias(method);
-            aliases.put(key, alias);
+            aliases.put(method, alias);
         }
         return alias;
     }
 
     @Override
     public ScopedName getFullNameFor(MethodReference method) {
-        return getFullNameFor(method, 'M');
+        return getFullNameFor(method, NO_CLASSIFIER);
     }
 
     @Override
     public ScopedName getNameForInit(MethodReference method) {
-        return getFullNameFor(method, 'I');
+        return getFullNameFor(method, INIT_CLASSIFIER);
     }
 
-    private ScopedName getFullNameFor(MethodReference method, char classifier) {
+    private ScopedName getFullNameFor(MethodReference method, byte classifier) {
         MethodReference originalMethod = method;
         method = getRealMethod(method);
         if (method == null) {
             method = originalMethod;
         }
 
-        MethodReference resolvedMethod = method;
-        return privateAliases.computeIfAbsent(classifier + method.toString(),
-                key -> aliasProvider.getStaticMethodAlias(resolvedMethod));
+        return privateAliases.computeIfAbsent(new Key(classifier, method),
+                key -> aliasProvider.getStaticMethodAlias(key.data));
     }
 
     @Override
@@ -154,5 +162,39 @@ public class DefaultNamingStrategy implements NamingStrategy {
             cls = clsReader.getParent();
         }
         return fieldRef;
+    }
+
+    private final class Key {
+        final MethodReference data;
+        int hash;
+        final byte classifier;
+
+        Key(byte classifier, MethodReference data) {
+            this.classifier = classifier;
+            this.data = data;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Key)) {
+                return false;
+            }
+            Key key = (Key) o;
+            return classifier == key.classifier && data.equals(key.data);
+        }
+
+        @Override
+        public int hashCode() {
+            if (hash == 0) {
+                hash = (classifier * 31 + data.hashCode()) * 17;
+                if (hash == 0) {
+                    hash++;
+                }
+            }
+            return hash;
+        }
     }
 }

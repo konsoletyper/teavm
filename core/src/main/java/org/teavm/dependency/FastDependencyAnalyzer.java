@@ -189,4 +189,11 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
     boolean domainOptimizationEnabled() {
         return false;
     }
+
+    @Override
+    public void cleanup() {
+        virtualCallConsumers.clear();
+        subtypeNodes.clear();
+        super.cleanup();
+    }
 }

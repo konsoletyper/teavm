@@ -20,7 +20,7 @@ import java.util.Arrays;
 public class MethodDescriptor {
     private String name;
     private ValueType[] signature;
-    private volatile String reprCache;
+    private int hash;
 
     public MethodDescriptor(String name, ValueType... signature) {
         if (signature.length < 1) {
@@ -70,10 +70,7 @@ public class MethodDescriptor {
 
     @Override
     public String toString() {
-        if (reprCache == null) {
-            reprCache = name + signatureToString();
-        }
-        return reprCache;
+        return name + signatureToString();
     }
 
     public String signatureToString() {
@@ -140,17 +137,43 @@ public class MethodDescriptor {
 
     @Override
     public int hashCode() {
-        return toString().hashCode();
+        if (hash == 0) {
+            hash = name.hashCode();
+            for (ValueType param : signature) {
+                hash = 31 * hash + param.hashCode();
+            }
+            if (hash == 0) {
+                hash++;
+            }
+        }
+
+        return hash;
     }
 
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
             return true;
-         }
-         if (!(obj instanceof MethodDescriptor)) {
-             return false;
-         }
-         return toString().equals(obj.toString());
+        }
+        if (!(obj instanceof MethodDescriptor)) {
+            return false;
+        }
+        MethodDescriptor that = (MethodDescriptor) obj;
+
+        if (signature.length != that.signature.length) {
+            return false;
+        }
+
+        if (!name.equals(that.name)) {
+            return false;
+        }
+
+        for (int i = 0; i < signature.length; ++i) {
+            if (!signature[i].equals(that.signature[i])) {
+                return false;
+            }
+        }
+
+        return true;
     }
 }

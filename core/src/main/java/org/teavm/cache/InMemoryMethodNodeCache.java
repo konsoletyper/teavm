@@ -36,8 +36,8 @@ public class InMemoryMethodNodeCache implements MethodNodeCache {
     private AstIO io;
 
     public InMemoryMethodNodeCache(ReferenceCache referenceCache, InMemorySymbolTable symbolTable,
-            InMemorySymbolTable fileSymbolTable) {
-        io = new AstIO(referenceCache, symbolTable, fileSymbolTable);
+            InMemorySymbolTable fileSymbolTable, InMemorySymbolTable variableSymbolTable) {
+        io = new AstIO(referenceCache, symbolTable, fileSymbolTable, variableSymbolTable);
     }
 
     @Override

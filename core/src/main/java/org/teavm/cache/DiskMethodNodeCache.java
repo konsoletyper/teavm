@@ -42,9 +42,9 @@ public class DiskMethodNodeCache implements MethodNodeCache {
     private final Set<MethodReference> newAsyncMethods = new HashSet<>();
 
     public DiskMethodNodeCache(File directory, ReferenceCache referenceCache, SymbolTable symbolTable,
-            SymbolTable fileTable) {
+            SymbolTable fileTable, SymbolTable variableTable) {
         this.directory = directory;
-        astIO = new AstIO(referenceCache, symbolTable, fileTable);
+        astIO = new AstIO(referenceCache, symbolTable, fileTable, variableTable);
     }
 
     @Override
