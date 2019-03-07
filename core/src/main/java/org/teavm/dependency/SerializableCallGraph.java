@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.callgraph;
+package org.teavm.dependency;
 
 import java.io.Serializable;
 import org.teavm.model.FieldReference;
@@ -35,15 +35,22 @@ class SerializableCallGraph implements Serializable {
         int[] fieldAccessSites;
     }
 
-    static class CallSite implements Serializable  {
-        TextLocation location;
-        int callee;
-        int caller;
+    static class CallSite implements Serializable {
+        MethodReference method;
+        boolean virtual;
+        Location[] locations;
+        int[] calledMethods;
+        int[] callers;
     }
 
-    static class FieldAccess implements Serializable  {
+    static class FieldAccess implements Serializable {
         TextLocation location;
         int callee;
         FieldReference field;
+    }
+
+    static class Location {
+        TextLocation value;
+        int caller;
     }
 }

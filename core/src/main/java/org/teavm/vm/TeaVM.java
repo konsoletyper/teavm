@@ -125,7 +125,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private static final MethodDescriptor MAIN_METHOD_DESC = new MethodDescriptor("main",
             ValueType.arrayOf(ValueType.object("java.lang.String")), ValueType.VOID);
 
-    private final ClassReaderSource classSource;
     private final DependencyAnalyzer dependencyAnalyzer;
     private final AccumulationDiagnostics diagnostics = new AccumulationDiagnostics();
     private final ClassLoader classLoader;
@@ -155,9 +154,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     TeaVM(TeaVMBuilder builder) {
         target = builder.target;
-        classSource = builder.classSource;
         classLoader = builder.classLoader;
-        dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(this.classSource, classLoader,
+        dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(builder.classSource, classLoader,
                 this, diagnostics, builder.referenceCache);
         progressListener = new TeaVMProgressListener() {
             @Override public TeaVMProgressFeedback progressReached(int progress) {
@@ -313,21 +311,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         preservedClasses.add(className);
     }
 
-    /**
-     * Gets a {@link ClassReaderSource} which is used by this TeaVM instance. It is exactly what was
-     * passed to {@link TeaVMBuilder#setClassSource(ClassReaderSource)}.
-     *
-     * @return class source.
-     */
-    public ClassReaderSource getClassSource() {
-        return classSource;
-    }
-
-    /**
-     * Gets a {@link ClassReaderSource} which is similar to that of {@link #getClassSource()},
-     * except that it also contains classes with applied transformations together with
-     * classes, generated via {@link org.teavm.dependency.DependencyAgent#submitClass(ClassHolder)}.
-     */
     public ClassReaderSource getDependencyClassSource() {
         return dependencyAnalyzer.getClassSource();
     }

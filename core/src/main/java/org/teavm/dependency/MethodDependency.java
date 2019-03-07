@@ -20,7 +20,6 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import org.teavm.callgraph.DefaultCallGraphNode;
 import org.teavm.model.CallLocation;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
@@ -111,12 +110,21 @@ public class MethodDependency implements MethodDependencyInfo {
     }
 
     public MethodDependency addLocation(CallLocation location) {
+        return addLocation(location, true);
+    }
+
+    MethodDependency addLocation(CallLocation location, boolean addCallSite) {
         DefaultCallGraphNode node = dependencyAnalyzer.callGraph.getNode(location.getMethod());
         if (locations == null) {
             locations = new LinkedHashSet<>();
         }
         if (locations.add(location)) {
-            node.addCallSite(reference, location.getSourceLocation());
+            if (addCallSite) {
+                DefaultCallSite callSite = node.addCallSite(reference);
+                if (location.getSourceLocation() != null) {
+                    callSite.addLocation(node, location.getSourceLocation());
+                }
+            }
             if (locationListeners != null) {
                 for (LocationListener listener : locationListeners.toArray(new LocationListener[0])) {
                     listener.locationAdded(location);

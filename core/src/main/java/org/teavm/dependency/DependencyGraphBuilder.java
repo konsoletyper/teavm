@@ -22,7 +22,6 @@ import static org.teavm.dependency.AbstractInstructionAnalyzer.MONITOR_EXIT_SYNC
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.teavm.callgraph.DefaultCallGraphNode;
 import org.teavm.model.BasicBlockReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;

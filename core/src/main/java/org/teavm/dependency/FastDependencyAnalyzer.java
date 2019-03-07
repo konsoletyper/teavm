@@ -177,7 +177,7 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
 
     FastVirtualCallConsumer getVirtualCallConsumer(MethodReference method) {
         return virtualCallConsumers.computeIfAbsent(method, key -> {
-            FastVirtualCallConsumer consumer = new FastVirtualCallConsumer(instancesNode, key.getDescriptor(), this);
+            FastVirtualCallConsumer consumer = new FastVirtualCallConsumer(instancesNode, key, this);
             defer(() -> {
                 getSubtypeNode(method.getClassName()).addConsumer(consumer);
             });

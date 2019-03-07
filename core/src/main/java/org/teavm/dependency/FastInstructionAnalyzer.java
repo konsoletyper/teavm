@@ -47,7 +47,8 @@ class FastInstructionAnalyzer extends AbstractInstructionAnalyzer {
     protected void invokeVirtual(VariableReader receiver, VariableReader instance, MethodReference method,
             List<? extends VariableReader> arguments) {
         invokeGetClass(method);
-        dependencyAnalyzer.getVirtualCallConsumer(method).addLocation(impreciseLocation);
+        FastVirtualCallConsumer consumer = dependencyAnalyzer.getVirtualCallConsumer(method);
+        consumer.addLocation(impreciseLocation);
     }
 
     private void invokeGetClass(MethodReference method) {

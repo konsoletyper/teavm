@@ -15,6 +15,7 @@
  */
 package org.teavm.tooling;
 
+import java.util.Collection;
 import java.util.Iterator;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.CallGraphNode;
@@ -70,10 +71,31 @@ public final class TeaVMProblemRenderer {
                 }
                 CallSite callSite = callSites.next();
                 sb.append("\n    at ");
-                renderCallLocation(callSite.getCaller().getMethod(), callSite.getLocation(), sb);
-                node = callSite.getCaller();
+
+                CallGraphNode caller = getCaller(callSite);
+                renderCallLocation(caller.getMethod(), getLocation(callSite, caller), sb);
+                node = caller;
             }
         }
+    }
+
+    private static CallGraphNode getCaller(CallSite callSite) {
+        Collection<? extends CallGraphNode> callers = callSite.getCallers();
+        if (callers.isEmpty()) {
+            return null;
+        }
+        return callers.iterator().next();
+    }
+
+    private static TextLocation getLocation(CallSite callSite, CallGraphNode caller) {
+        if (caller == null) {
+            return null;
+        }
+        Collection<? extends TextLocation> locations = callSite.getLocations(caller);
+        if (locations.isEmpty()) {
+            return null;
+        }
+        return locations.iterator().next();
     }
 
     public static void renderCallLocation(MethodReference method, TextLocation location, StringBuilder sb) {

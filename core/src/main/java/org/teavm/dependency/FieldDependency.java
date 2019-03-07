@@ -19,7 +19,6 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
-import org.teavm.callgraph.DefaultCallGraphNode;
 import org.teavm.model.CallLocation;
 import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;

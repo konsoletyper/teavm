@@ -20,41 +20,45 @@ import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.model.CallLocation;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 class FastVirtualCallConsumer implements DependencyConsumer {
     private final DependencyNode node;
-    private final MethodDescriptor methodDesc;
+    private final MethodReference methodRef;
     private final DependencyAnalyzer analyzer;
     private final Map<MethodReference, CallLocation> callLocations = new LinkedHashMap<>();
     private final Set<MethodDependency> methods = new LinkedHashSet<>(100, 0.5f);
+    final DefaultCallSite callSite;
 
-    FastVirtualCallConsumer(DependencyNode node, MethodDescriptor methodDesc, DependencyAnalyzer analyzer) {
+    FastVirtualCallConsumer(DependencyNode node, MethodReference methodRef, DependencyAnalyzer analyzer) {
         this.node = node;
-        this.methodDesc = methodDesc;
+        this.methodRef = methodRef;
         this.analyzer = analyzer;
+        callSite = analyzer.callGraph.getNode(methodRef).getVirtualCallSite();
     }
 
     @Override
     public void consume(DependencyType type) {
         String className = type.getName();
         if (DependencyAnalyzer.shouldLog) {
-            System.out.println("Virtual call of " + methodDesc + " detected on " + node.getTag() + ". "
+            System.out.println("Virtual call of " + methodRef + " detected on " + node.getTag() + ". "
                     + "Target class is " + className);
         }
         if (className.startsWith("[")) {
             className = "java.lang.Object";
-            type = analyzer.getType(className);
         }
 
-        MethodDependency methodDep = analyzer.linkMethod(className, methodDesc);
+        MethodDependency methodDep = analyzer.linkMethod(className, methodRef.getDescriptor());
         if (!methods.add(methodDep)) {
             return;
         }
 
+        DefaultCallGraphNode calledMethodNode = analyzer.callGraph.getNode(methodDep.getReference());
+        callSite.calledMethods.add(calledMethodNode);
+        calledMethodNode.addCaller(callSite);
+
         for (CallLocation location : callLocations.values()) {
-            methodDep.addLocation(location);
+            methodDep.addLocation(location, false);
         }
 
         if (!methodDep.isMissing()) {
@@ -64,8 +68,13 @@ class FastVirtualCallConsumer implements DependencyConsumer {
 
     void addLocation(CallLocation location) {
         if (callLocations.putIfAbsent(location.getMethod(), location) == null) {
+            DefaultCallGraphNode caller = analyzer.callGraph.getNode(location.getMethod());
+            caller.addVirtualCallSite(callSite);
+            if (location.getSourceLocation() != null) {
+                callSite.addLocation(caller, location.getSourceLocation());
+            }
             for (MethodDependency method : methods) {
-                method.addLocation(location);
+                method.addLocation(location, false);
             }
         }
     }

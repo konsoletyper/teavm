@@ -46,7 +46,6 @@ public class AsyncMethodFinder {
     private Map<MethodReference, Boolean> asyncFamilyMethods = new HashMap<>();
     private Set<MethodReference> readonlyAsyncMethods = Collections.unmodifiableSet(asyncMethods);
     private Set<MethodReference> readonlyAsyncFamilyMethods = Collections.unmodifiableSet(asyncFamilyMethods.keySet());
-    private Map<MethodReference, Set<MethodReference>> overiddenMethodsCache = new HashMap<>();
     private CallGraph callGraph;
     private Diagnostics diagnostics;
     private ListableClassReaderSource classSource;
@@ -178,8 +177,9 @@ public class AsyncMethodFinder {
             return;
         }
         for (CallSite callSite : node.getCallerCallSites()) {
-            MethodReference nextMethod = callSite.getCaller().getMethod();
-            add(nextMethod, new CallStack(nextMethod, stack));
+            for (CallGraphNode caller : callSite.getCallers()) {
+                add(caller.getMethod(), new CallStack(caller.getMethod(), stack));
+            }
         }
     }
 

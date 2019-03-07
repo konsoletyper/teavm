@@ -62,7 +62,6 @@ class VirtualCallConsumer implements DependencyConsumer {
         }
         if (className.startsWith("[")) {
             className = "java.lang.Object";
-            type = analyzer.getType(className);
         }
 
         MethodDependency methodDep = analyzer.linkMethod(className, methodDesc);

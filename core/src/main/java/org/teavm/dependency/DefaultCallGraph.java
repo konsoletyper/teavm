@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.callgraph;
+package org.teavm.dependency;
 
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
@@ -30,10 +30,12 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.teavm.callgraph.CallGraph;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
+import org.teavm.model.TextLocation;
 
-public class DefaultCallGraph implements CallGraph, Serializable {
+class DefaultCallGraph implements CallGraph, Serializable {
     public Map<MethodReference, DefaultCallGraphNode> nodes = new HashMap<>();
     Map<FieldReference, Set<DefaultFieldAccessSite>> fieldAccessSites = new HashMap<>();
 
@@ -127,9 +129,19 @@ public class DefaultCallGraph implements CallGraph, Serializable {
             for (DefaultCallSite callSite : callSitesToProcess.toArray(new DefaultCallSite[0])) {
                 int index = callSiteToIndex.get(callSite);
                 SerializableCallGraph.CallSite scs = callSites.get(index);
-                scs.location = callSite.getLocation();
-                scs.caller = getNode(callSite.getCaller());
-                scs.callee = getNode(callSite.getCallee());
+                scs.virtual = callSite.callers != null;
+                List<SerializableCallGraph.Location> locations = new ArrayList<>();
+                for (DefaultCallGraphNode caller : callSite.getCallers()) {
+                    for (TextLocation textLocation : callSite.getLocations(caller)) {
+                        SerializableCallGraph.Location location = new SerializableCallGraph.Location();
+                        location.caller = getNode(caller);
+                        location.value = textLocation;
+                        locations.add(location);
+                    }
+                }
+                scs.locations = locations.toArray(new SerializableCallGraph.Location[0]);
+                scs.callers = getNodes(callSite.getCallers());
+                scs.calledMethods = getNodes(callSite.getCalledMethods());
                 hasAny = true;
             }
             callSitesToProcess.clear();
@@ -159,6 +171,15 @@ public class DefaultCallGraph implements CallGraph, Serializable {
                 nodesToProcess.add(node);
             }
             return index;
+        }
+
+        private int[] getNodes(Collection<? extends DefaultCallGraphNode> nodes) {
+            int[] result = new int[nodes.size()];
+            int index = 0;
+            for (DefaultCallGraphNode node : nodes) {
+                result[index++] = getNode(node);
+            }
+            return result;
         }
 
         private int getCallSite(DefaultCallSite callSite) {
@@ -194,7 +215,17 @@ public class DefaultCallGraph implements CallGraph, Serializable {
                 nodes.add(new DefaultCallGraphNode(cg, serializableNode.method));
             }
             for (SerializableCallGraph.CallSite scs : scg.callSites) {
-                callSites.add(new DefaultCallSite(scs.location, nodes.get(scs.callee), nodes.get(scs.caller)));
+                DefaultCallSite callSite;
+                if (scs.virtual) {
+                    callSite = new DefaultCallSite(scs.method, mapNodes(scs.callers));
+                    callSite.calledMethods.addAll(mapNodes(scs.calledMethods));
+                } else {
+                    callSite = new DefaultCallSite(nodes.get(scs.calledMethods[0]), nodes.get(scs.callers[0]));
+                }
+                for (SerializableCallGraph.Location location : scs.locations) {
+                    callSite.addLocation(nodes.get(location.caller), location.value);
+                }
+                callSites.add(callSite);
             }
             for (SerializableCallGraph.FieldAccess sfa : scg.fieldAccessList) {
                 fieldAccessList.add(new DefaultFieldAccessSite(sfa.location, nodes.get(sfa.callee), sfa.field));
@@ -207,6 +238,14 @@ public class DefaultCallGraph implements CallGraph, Serializable {
             for (int index : scg.fieldAccessIndexes) {
                 cg.addFieldAccess(fieldAccessList.get(index));
             }
+        }
+
+        private Set<DefaultCallGraphNode> mapNodes(int[] nodes) {
+            Set<DefaultCallGraphNode> result = new LinkedHashSet<>();
+            for (int i = 0; i < nodes.length; ++i) {
+                result.add(this.nodes.get(nodes[i]));
+            }
+            return result;
         }
     }
 }

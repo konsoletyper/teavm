@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,29 +13,34 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.callgraph;
+package org.teavm.dependency;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import org.teavm.callgraph.CallGraphNode;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 
-public class DefaultCallGraphNode implements CallGraphNode {
+class DefaultCallGraphNode implements CallGraphNode {
     private DefaultCallGraph graph;
     private MethodReference method;
-    private Set<DefaultCallSite> callSites;
+    private Map<MethodReference, DefaultCallSite> callSiteMap;
+    private List<DefaultCallSite> callSites;
     private DefaultCallSite singleCallSite;
-    private Set<DefaultCallSite> safeCallSites;
+    private Collection<DefaultCallSite> safeCallSites;
     private DefaultCallSite singleCaller;
     private List<DefaultCallSite> callerCallSites;
     private List<DefaultCallSite> safeCallersCallSites;
     private Set<DefaultFieldAccessSite> fieldAccessSites = new LinkedHashSet<>();
     private Set<DefaultFieldAccessSite> safeFieldAccessSites;
+    private DefaultCallSite virtualCallSite;
 
     DefaultCallGraphNode(DefaultCallGraph graph, MethodReference method) {
         this.graph = graph;
@@ -61,7 +66,7 @@ public class DefaultCallGraphNode implements CallGraphNode {
             return Collections.emptyList();
         }
         if (safeCallSites == null) {
-            safeCallSites = Collections.unmodifiableSet(callSites);
+            safeCallSites = Collections.unmodifiableCollection(callSites);
         }
         return safeCallSites;
     }
@@ -80,28 +85,64 @@ public class DefaultCallGraphNode implements CallGraphNode {
         return safeCallersCallSites;
     }
 
-    public boolean addCallSite(MethodReference method, TextLocation location) {
+    DefaultCallSite addCallSite(MethodReference method) {
         DefaultCallGraphNode callee = graph.getNode(method);
-        DefaultCallSite callSite = new DefaultCallSite(location, callee, this);
+
         if (callSites == null) {
             if (singleCallSite == null) {
-                singleCallSite = callSite;
-                callee.addCaller(callSite);
-                return true;
+                singleCallSite = new DefaultCallSite(callee, this);
+                callee.addCaller(singleCallSite);
+                return singleCallSite;
             }
-            callSites = new LinkedHashSet<>();
+            if (singleCallSite != null) {
+                if (singleCallSite.singleCalledMethod.getMethod().equals(method)) {
+                    return singleCallSite;
+                }
+            }
+            callSiteMap = new LinkedHashMap<>();
+            callSites = new ArrayList<>();
+            callSiteMap.put(singleCallSite.singleCalledMethod.getMethod(), singleCallSite);
             callSites.add(singleCallSite);
             singleCallSite = null;
         }
-        if (callSites.add(callSite)) {
+
+        DefaultCallSite callSite = callSiteMap.get(method);
+        if (callSite == null) {
+            callSite = new DefaultCallSite(callee, this);
             callee.addCaller(callSite);
-            return true;
-        } else {
-            return false;
+            callSiteMap.put(method, callSite);
+            callSites.add(callSite);
+        }
+
+        return callSite;
+    }
+
+    DefaultCallSite getVirtualCallSite() {
+        if (virtualCallSite == null) {
+            virtualCallSite = new DefaultCallSite(method, new LinkedHashSet<>());
+        }
+        return virtualCallSite;
+    }
+
+    void addVirtualCallSite(DefaultCallSite callSite) {
+        if (callSite.callers == null) {
+            throw new IllegalArgumentException("Call site is not virtual");
+        }
+        if (callSite.callers.add(this)) {
+            if (callSites == null) {
+                callSites = new ArrayList<>();
+                callSiteMap = new LinkedHashMap<>();
+                if (singleCallSite != null) {
+                    callSites.add(singleCallSite);
+                    callSiteMap.put(singleCallSite.method, singleCallSite);
+                    singleCallSite = null;
+                }
+            }
+            callSites.add(callSite);
         }
     }
 
-    private void addCaller(DefaultCallSite caller) {
+    void addCaller(DefaultCallSite caller) {
         if (callerCallSites == null) {
             if (singleCaller == null) {
                 singleCaller = caller;
@@ -114,10 +155,6 @@ public class DefaultCallGraphNode implements CallGraphNode {
         callerCallSites.add(caller);
     }
 
-    public boolean addCallSite(MethodReference method) {
-        return addCallSite(method, null);
-    }
-
     @Override
     public Collection<DefaultFieldAccessSite> getFieldAccessSites() {
         if (safeFieldAccessSites == null) {
@@ -126,7 +163,7 @@ public class DefaultCallGraphNode implements CallGraphNode {
         return safeFieldAccessSites;
     }
 
-    public boolean addFieldAccess(FieldReference field, TextLocation location) {
+    boolean addFieldAccess(FieldReference field, TextLocation location) {
         DefaultFieldAccessSite site = new DefaultFieldAccessSite(location, this, field);
         if (fieldAccessSites.add(site)) {
             graph.addFieldAccess(site);

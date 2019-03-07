@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,26 +13,28 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.callgraph;
+package org.teavm.dependency;
 
 import java.io.Serializable;
 import java.util.Objects;
+import org.teavm.callgraph.FieldAccessSite;
+import org.teavm.model.FieldReference;
 import org.teavm.model.TextLocation;
 
-public class DefaultCallSite implements CallSite, Serializable {
+class DefaultFieldAccessSite implements FieldAccessSite, Serializable {
     private TextLocation location;
     private DefaultCallGraphNode callee;
-    private DefaultCallGraphNode caller;
+    private FieldReference field;
 
-    DefaultCallSite(TextLocation location, DefaultCallGraphNode callee, DefaultCallGraphNode caller) {
+    DefaultFieldAccessSite(TextLocation location, DefaultCallGraphNode callee, FieldReference field) {
         this.location = location;
         this.callee = callee;
-        this.caller = caller;
+        this.field = field;
     }
 
     @Override
     public TextLocation getLocation() {
-        return location;
+        return null;
     }
 
     @Override
@@ -41,25 +43,24 @@ public class DefaultCallSite implements CallSite, Serializable {
     }
 
     @Override
-    public DefaultCallGraphNode getCaller() {
-        return caller;
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        if (obj == this) {
-            return true;
-        }
-        if (!(obj instanceof DefaultCallSite)) {
-            return false;
-        }
-        DefaultCallSite other = (DefaultCallSite) obj;
-        return Objects.equals(callee.getMethod(), other.callee.getMethod())
-                && Objects.equals(location, other.location);
+    public FieldReference getField() {
+        return null;
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(callee.getMethod(), location);
+        return Objects.hash(location, field);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+        if (this == obj) {
+            return true;
+        }
+        if (!(obj instanceof DefaultFieldAccessSite)) {
+            return false;
+        }
+        DefaultFieldAccessSite other = (DefaultFieldAccessSite) obj;
+        return Objects.equals(location, other.location) && Objects.equals(field, other.field);
     }
 }

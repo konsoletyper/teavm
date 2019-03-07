@@ -36,7 +36,6 @@ import org.objectweb.asm.tree.ClassNode;
 import org.teavm.cache.IncrementalDependencyProvider;
 import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.callgraph.CallGraph;
-import org.teavm.callgraph.DefaultCallGraph;
 import org.teavm.common.CachedMapper;
 import org.teavm.common.Mapper;
 import org.teavm.common.ServiceRepository;
