@@ -759,6 +759,8 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         classSource.cleanup();
         agent.cleanup();
         listeners.clear();
+        unprocessedClassSource = null;
+        classSource.innerHierarchy = null;
     }
 
     public void cleanupTypes() {

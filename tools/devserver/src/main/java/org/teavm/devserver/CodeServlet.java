@@ -71,13 +71,17 @@ import org.teavm.cache.InMemoryMethodNodeCache;
 import org.teavm.cache.InMemoryProgramCache;
 import org.teavm.cache.InMemorySymbolTable;
 import org.teavm.cache.MemoryCachedClassReaderSource;
+import org.teavm.common.Mapper;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.FastDependencyAnalyzer;
+import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
-import org.teavm.parsing.ClasspathClassHolderSource;
+import org.teavm.parsing.ClasspathResourceMapper;
+import org.teavm.parsing.resource.ClasspathResourceReader;
+import org.teavm.parsing.resource.ResourceClassHolderMapper;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMToolLog;
@@ -709,7 +713,8 @@ public class CodeServlet extends HttpServlet {
     private void initBuilder() throws IOException {
         watcher = new FileSystemWatcher(classPath);
 
-        classSource = new MemoryCachedClassReaderSource();
+        classSource = new MemoryCachedClassReaderSource(referenceCache, symbolTable, fileSymbolTable,
+                variableSymbolTable);
         astCache = new InMemoryMethodNodeCache(referenceCache, symbolTable, fileSymbolTable, variableSymbolTable);
         programCache = new InMemoryProgramCache(referenceCache, symbolTable, fileSymbolTable, variableSymbolTable);
     }
@@ -738,8 +743,11 @@ public class CodeServlet extends HttpServlet {
 
         DebugInformationBuilder debugInformationBuilder = new DebugInformationBuilder(referenceCache);
         ClassLoader classLoader = initClassLoader();
-        classSource.setUnderlyingSource(new PreOptimizingClassHolderSource(
-                new ClasspathClassHolderSource(classLoader, referenceCache)));
+        ClasspathResourceReader reader = new ClasspathResourceReader(classLoader);
+        ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader, referenceCache);
+        Mapper<String, ClassHolder> classPathMapper = new ClasspathResourceMapper(classLoader, referenceCache,
+                rawMapper);
+        classSource.setMapper(name -> PreOptimizingClassHolderSource.optimize(classPathMapper, name));
 
         long startTime = System.currentTimeMillis();
         JavaScriptTarget jsTarget = new JavaScriptTarget();

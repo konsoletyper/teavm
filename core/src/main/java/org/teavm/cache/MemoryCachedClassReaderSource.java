@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,23 +15,35 @@
  */
 package org.teavm.cache;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.Optional;
 import java.util.Set;
+import org.teavm.common.Mapper;
+import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ReferenceCache;
 
 public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheStatus {
-    private ClassReaderSource underlyingSource;
-    private final Map<String, Optional<ClassReader>> cache = new HashMap<>();
+    private Map<String, Entry> cache = new HashMap<>();
+    private Mapper<String, ClassHolder> mapper;
+    private ClassIO classIO;
     private final Set<String> freshClasses = new HashSet<>();
 
-    public void setUnderlyingSource(ClassReaderSource underlyingSource) {
-        this.underlyingSource = underlyingSource;
+    public MemoryCachedClassReaderSource(ReferenceCache referenceCache, SymbolTable symbolTable,
+            SymbolTable fileTable, SymbolTable varTable) {
+        classIO = new ClassIO(referenceCache, symbolTable, fileTable, varTable);
+    }
+
+    public void setMapper(Mapper<String, ClassHolder> mapper) {
+        this.mapper = mapper;
     }
 
     @Override
@@ -46,12 +58,37 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
 
     @Override
     public ClassReader get(String name) {
-        return cache.computeIfAbsent(name, key -> {
-            if (underlyingSource == null) {
-                return Optional.empty();
+        Entry entry = cache.computeIfAbsent(name, className -> {
+            ClassHolder cls = mapper.map(name);
+            Entry en = new Entry();
+            if (cls != null) {
+                ByteArrayOutputStream output = new ByteArrayOutputStream();
+                try {
+                    classIO.writeClass(output, cls);
+                } catch (IOException e) {
+                    throw new RuntimeException(e);
+                }
+                en.data = output.toByteArray();
+                en.reader = new WeakReference<>(cls);
             }
-            return Optional.ofNullable(underlyingSource.get(key));
-        }).orElse(null);
+            return en;
+        });
+
+        if (entry.data == null) {
+            return null;
+        }
+
+        ClassReader cls = entry.reader.get();
+        if (cls == null) {
+            ByteArrayInputStream input = new ByteArrayInputStream(entry.data);
+            try {
+                cls = classIO.readClass(input, name);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            entry.reader = new WeakReference<>(cls);
+        }
+        return cls;
     }
 
     public void commit() {
@@ -66,5 +103,10 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
     public void invalidate() {
         cache.clear();
         freshClasses.clear();
+    }
+
+    class Entry {
+        byte[] data;
+        WeakReference<ClassReader> reader;
     }
 }

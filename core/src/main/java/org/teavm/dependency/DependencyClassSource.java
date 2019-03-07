@@ -36,7 +36,7 @@ import org.teavm.model.util.ModelUtils;
 
 class DependencyClassSource implements ClassHolderSource {
     private ClassReaderSource innerSource;
-    private ClassHierarchy innerHierarchy;
+    ClassHierarchy innerHierarchy;
     private Diagnostics diagnostics;
     private IncrementalDependencyRegistration dependencyRegistration;
     private Map<String, ClassHolder> generatedClasses = new LinkedHashMap<>();

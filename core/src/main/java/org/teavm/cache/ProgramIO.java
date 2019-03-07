@@ -104,7 +104,10 @@ public class ProgramIO {
     }
 
     public void write(Program program, OutputStream output) throws IOException {
-        VarDataOutput data = new VarDataOutput(output);
+        write(program, new VarDataOutput(output));
+    }
+
+    public void write(Program program, VarDataOutput data) throws IOException {
         data.writeUnsigned(program.variableCount());
         data.writeUnsigned(program.basicBlockCount());
         for (int i = 0; i < program.variableCount(); ++i) {
@@ -162,7 +165,10 @@ public class ProgramIO {
     }
 
     public Program read(InputStream input) throws IOException {
-        VarDataInput data = new VarDataInput(input);
+        return read(new VarDataInput(input));
+    }
+
+    public Program read(VarDataInput data) throws IOException {
         Program program = new Program();
         int varCount = data.readUnsigned();
         int basicBlockCount = data.readUnsigned();
@@ -200,8 +206,8 @@ public class ProgramIO {
             for (int j = 0; j < tryCatchCount; ++j) {
                 TryCatchBlock tryCatch = new TryCatchBlock();
                 int typeIndex = data.readUnsigned();
-                if (typeIndex >= 0) {
-                    tryCatch.setExceptionType(symbolTable.at(typeIndex));
+                if (typeIndex > 0) {
+                    tryCatch.setExceptionType(symbolTable.at(typeIndex - 1));
                 }
                 tryCatch.setHandler(program.basicBlockAt(data.readUnsigned()));
 
@@ -635,8 +641,8 @@ public class ProgramIO {
         public void visit(InvokeDynamicInstruction insn) {
             try {
                 output.writeUnsigned(81);
-                output.writeUnsigned(insn.getReceiver() != null ? insn.getReceiver().getIndex() : -1);
-                output.writeUnsigned(insn.getInstance() != null ? insn.getInstance().getIndex() : -1);
+                output.writeUnsigned(insn.getReceiver() != null ? insn.getReceiver().getIndex() + 1 : 0);
+                output.writeUnsigned(insn.getInstance() != null ? insn.getInstance().getIndex() + 1 : 0);
                 output.writeUnsigned(symbolTable.lookup(insn.getMethod().toString()));
                 for (int i = 0; i < insn.getArguments().size(); ++i) {
                     output.writeUnsigned(insn.getArguments().get(i).getIndex());

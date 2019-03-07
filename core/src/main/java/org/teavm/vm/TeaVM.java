@@ -609,9 +609,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                         changed |= optimization.optimize(context, optimizedProgram);
                     } catch (Exception | AssertionError e) {
                         ListingBuilder listingBuilder = new ListingBuilder();
-                        String listing = listingBuilder.buildListing(optimizedProgram, "");
-                        System.err.println("Error optimizing program for method " + method.getReference()
-                                + ":\n" + listing);
+                        try {
+                            String listing = listingBuilder.buildListing(optimizedProgram, "");
+                            System.err.println("Error optimizing program for method " + method.getReference()
+                                    + ":\n" + listing);
+                        } catch (RuntimeException e2) {
+                            System.err.println("Error optimizing program for method " + method.getReference());
+                            // do nothing
+                        }
                         throw new RuntimeException(e);
                     }
                 }
