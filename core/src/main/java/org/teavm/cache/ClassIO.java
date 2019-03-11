@@ -118,7 +118,7 @@ public class ClassIO {
             output.writeUnsigned(0);
         } else if (value instanceof Integer) {
             output.writeUnsigned(1);
-            output.writeUnsigned((Integer) value);
+            output.writeSigned((Integer) value);
         } else if (value instanceof Long) {
             output.writeUnsigned(2);
             output.writeSigned((Long) value);

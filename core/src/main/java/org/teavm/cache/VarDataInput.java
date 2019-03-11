@@ -45,7 +45,7 @@ public class VarDataInput {
 
     public int readSigned() throws IOException {
         int value = readUnsigned();
-        return (value & 1) == 0 ? (value >>> 1) : -(value >>> 1);
+        return (value & 1) == 0 ? (value >>> 1) : ~(value >>> 1);
     }
 
     public long readUnsignedLong() throws IOException {
@@ -65,7 +65,7 @@ public class VarDataInput {
 
     public long readSignedLong() throws IOException {
         long value = readUnsignedLong();
-        return (value & 1) == 0 ? (value >> 1) : -(value >> 1);
+        return (value & 1) == 0 ? (value >> 1) : ~(value >> 1);
     }
 
     public float readFloat() throws IOException {
@@ -106,7 +106,7 @@ public class VarDataInput {
         long bits = mantissa & ((1L << 52) - 1);
         bits |= (long) exponent << 52;
         if (sign) {
-            bits |= 1L << 53;
+            bits |= 1L << 63;
         }
 
         return Double.longBitsToDouble(bits);

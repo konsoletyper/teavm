@@ -37,7 +37,7 @@ public class VarDataOutput implements Closeable {
     }
 
     public void writeSigned(int value) throws IOException {
-        writeUnsigned(value < 0 ? ((-value) << 1) | 1 : value << 1);
+        writeUnsigned(value < 0 ? ((~value) << 1) | 1 : value << 1);
     }
 
     public void writeUnsigned(long value) throws IOException {
@@ -49,7 +49,7 @@ public class VarDataOutput implements Closeable {
     }
 
     public void writeSigned(long value) throws IOException {
-        writeUnsigned(value < 0 ? ((-value) << 1) | 1 : value << 1);
+        writeUnsigned(value < 0 ? ((~value) << 1) | 1 : value << 1);
     }
 
     public void writeFloat(float value) throws IOException {
