@@ -15,10 +15,16 @@
  */
 package org.teavm.common;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.function.Function;
 
-public class CachedMapper<T, R> implements Mapper<T, R> {
-    private Mapper<T, R> innerMapper;
+public class CachedFunction<T, R> implements Function<T, R> {
+    private Function<T, R> innerFunction;
     private Map<T, Wrapper<R>> cache = new LinkedHashMap<>();
     private List<KeyListener<T>> keyListeners = new ArrayList<>();
 
@@ -27,8 +33,8 @@ public class CachedMapper<T, R> implements Mapper<T, R> {
         boolean computed;
     }
 
-    public CachedMapper(Mapper<T, R> innerMapper) {
-        this.innerMapper = innerMapper;
+    public CachedFunction(Function<T, R> innerFunction) {
+        this.innerFunction = innerFunction;
     }
 
     public R getKnown(T preimage) {
@@ -37,15 +43,15 @@ public class CachedMapper<T, R> implements Mapper<T, R> {
     }
 
     @Override
-    public R map(T preimage) {
-        Wrapper<R> wrapper = cache.get(preimage);
+    public R apply(T t) {
+        Wrapper<R> wrapper = cache.get(t);
         if (wrapper == null) {
             wrapper = new Wrapper<>();
-            cache.put(preimage, wrapper);
-            wrapper.value = innerMapper.map(preimage);
+            cache.put(t, wrapper);
+            wrapper.value = innerFunction.apply(t);
             wrapper.computed = true;
             for (KeyListener<T> listener : keyListeners) {
-                listener.keyAdded(preimage);
+                listener.keyAdded(t);
             }
         }
         if (!wrapper.computed) {

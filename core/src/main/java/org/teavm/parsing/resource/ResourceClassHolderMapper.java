@@ -17,14 +17,14 @@ package org.teavm.parsing.resource;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.function.Function;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.tree.ClassNode;
-import org.teavm.common.Mapper;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.Parser;
 
-public class ResourceClassHolderMapper implements Mapper<String, ClassHolder> {
+public class ResourceClassHolderMapper implements Function<String, ClassHolder> {
     private Parser parser;
     private ResourceReader resourceReader;
 
@@ -34,7 +34,7 @@ public class ResourceClassHolderMapper implements Mapper<String, ClassHolder> {
     }
 
     @Override
-    public ClassHolder map(String name) {
+    public ClassHolder apply(String name) {
         ClassNode clsNode = new ClassNode();
         String resourceName = name.replace('.', '/') + ".class";
         if (!resourceReader.hasResource(resourceName)) {

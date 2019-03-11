@@ -24,7 +24,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import org.teavm.common.Mapper;
+import java.util.function.Function;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -33,7 +33,7 @@ import org.teavm.model.ReferenceCache;
 
 public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheStatus {
     private Map<String, Entry> cache = new HashMap<>();
-    private Mapper<String, ClassHolder> mapper;
+    private Function<String, ClassHolder> provider;
     private ClassIO classIO;
     private final Set<String> freshClasses = new HashSet<>();
 
@@ -42,8 +42,8 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
         classIO = new ClassIO(referenceCache, symbolTable, fileTable, varTable);
     }
 
-    public void setMapper(Mapper<String, ClassHolder> mapper) {
-        this.mapper = mapper;
+    public void setProvider(Function<String, ClassHolder> provider) {
+        this.provider = provider;
     }
 
     @Override
@@ -59,7 +59,7 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
     @Override
     public ClassReader get(String name) {
         Entry entry = cache.computeIfAbsent(name, className -> {
-            ClassHolder cls = mapper.map(name);
+            ClassHolder cls = provider.apply(name);
             Entry en = new Entry();
             if (cls != null) {
                 ByteArrayOutputStream output = new ByteArrayOutputStream();

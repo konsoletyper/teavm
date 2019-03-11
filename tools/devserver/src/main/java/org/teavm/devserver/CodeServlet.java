@@ -42,6 +42,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.Supplier;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -71,7 +72,6 @@ import org.teavm.cache.InMemoryMethodNodeCache;
 import org.teavm.cache.InMemoryProgramCache;
 import org.teavm.cache.InMemorySymbolTable;
 import org.teavm.cache.MemoryCachedClassReaderSource;
-import org.teavm.common.Mapper;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.FastDependencyAnalyzer;
@@ -745,9 +745,9 @@ public class CodeServlet extends HttpServlet {
         ClassLoader classLoader = initClassLoader();
         ClasspathResourceReader reader = new ClasspathResourceReader(classLoader);
         ResourceClassHolderMapper rawMapper = new ResourceClassHolderMapper(reader, referenceCache);
-        Mapper<String, ClassHolder> classPathMapper = new ClasspathResourceMapper(classLoader, referenceCache,
+        Function<String, ClassHolder> classPathMapper = new ClasspathResourceMapper(classLoader, referenceCache,
                 rawMapper);
-        classSource.setMapper(name -> PreOptimizingClassHolderSource.optimize(classPathMapper, name));
+        classSource.setProvider(name -> PreOptimizingClassHolderSource.optimize(classPathMapper, name));
 
         long startTime = System.currentTimeMillis();
         JavaScriptTarget jsTarget = new JavaScriptTarget();

@@ -17,7 +17,7 @@ package org.teavm.model;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
-import org.teavm.common.Mapper;
+import java.util.function.Function;
 import org.teavm.model.optimization.GlobalValueNumbering;
 import org.teavm.model.optimization.UnusedVariableElimination;
 
@@ -43,8 +43,8 @@ public class PreOptimizingClassHolderSource implements ClassHolderSource {
         return cls;
     }
 
-    public static ClassHolder optimize(Mapper<String, ClassHolder> innerSource, String name) {
-        ClassHolder cls = innerSource.map(name);
+    public static ClassHolder optimize(Function<String, ClassHolder> innerSource, String name) {
+        ClassHolder cls = innerSource.apply(name);
         if (cls == null) {
             return cls;
         }

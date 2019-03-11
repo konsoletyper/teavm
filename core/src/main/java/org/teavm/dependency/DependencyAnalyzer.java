@@ -32,12 +32,12 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Queue;
 import java.util.Set;
+import java.util.function.Function;
 import org.objectweb.asm.tree.ClassNode;
 import org.teavm.cache.IncrementalDependencyProvider;
 import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.callgraph.CallGraph;
-import org.teavm.common.CachedMapper;
-import org.teavm.common.Mapper;
+import org.teavm.common.CachedFunction;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.PlatformMarker;
@@ -84,12 +84,12 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private DependencyClassSource classSource;
     private ClassLoader classLoader;
     private Map<String, Map<MethodDescriptor, Optional<MethodHolder>>> methodReaderCache = new HashMap<>(1000, 0.5f);
-    private Mapper<FieldReference, FieldHolder> fieldReaderCache;
+    private Function<FieldReference, FieldHolder> fieldReaderCache;
     private Map<String, Map<MethodDescriptor, MethodDependency>> methodCache = new HashMap<>();
     private Set<MethodReference> reachedMethods = new LinkedHashSet<>();
     private Set<MethodReference> readonlyReachedMethods = Collections.unmodifiableSet(reachedMethods);
-    private CachedMapper<FieldReference, FieldDependency> fieldCache;
-    private CachedMapper<String, ClassDependency> classCache;
+    private CachedFunction<FieldReference, FieldDependency> fieldCache;
+    private CachedFunction<String, ClassDependency> classCache;
     private List<DependencyListener> listeners = new ArrayList<>();
     private ServiceRepository services;
     private Deque<Transition> pendingTransitions = new ArrayDeque<>();
@@ -121,11 +121,11 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         classHierarchy = new ClassHierarchy(this.classSource);
         this.classLoader = classLoader;
         this.services = services;
-        fieldReaderCache = new CachedMapper<>(preimage -> this.classSource.resolveMutable(preimage));
-        fieldCache = new CachedMapper<>(preimage -> {
-            FieldReader field = fieldReaderCache.map(preimage);
+        fieldReaderCache = new CachedFunction<>(preimage -> this.classSource.resolveMutable(preimage));
+        fieldCache = new CachedFunction<>(preimage -> {
+            FieldReader field = fieldReaderCache.apply(preimage);
             if (field != null && !field.getReference().equals(preimage)) {
-                return fieldCache.map(field.getReference());
+                return fieldCache.apply(field.getReference());
             }
             FieldDependency node = createFieldNode(preimage, field);
             if (field != null && field.getInitialValue() instanceof String) {
@@ -134,7 +134,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             return node;
         });
 
-        classCache = new CachedMapper<>(this::createClassDependency);
+        classCache = new CachedFunction<>(this::createClassDependency);
 
         agent = new DependencyAgent(this);
     }
@@ -399,7 +399,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         if (completing && getClass(className) == null) {
             throw new IllegalStateException("Can't link class during completion phase");
         }
-        ClassDependency dep = classCache.map(className);
+        ClassDependency dep = classCache.apply(className);
         if (!dep.activated) {
             dep.activated = true;
             if (!dep.isMissing()) {
@@ -524,7 +524,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     }
 
     public FieldDependency linkField(FieldReference fieldRef) {
-        FieldDependency dep = fieldCache.map(fieldRef);
+        FieldDependency dep = fieldCache.apply(fieldRef);
         if (!dep.activated) {
             dep.activated = true;
             if (!dep.isMissing()) {

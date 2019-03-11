@@ -17,7 +17,7 @@ package org.teavm.parsing;
 
 import java.util.Arrays;
 import java.util.Map;
-import org.teavm.common.Mapper;
+import java.util.function.Function;
 import org.teavm.interop.Remove;
 import org.teavm.interop.Rename;
 import org.teavm.interop.Superclass;
@@ -52,15 +52,15 @@ import org.teavm.model.instructions.PutFieldInstruction;
 
 public class ClassRefsRenamer extends AbstractInstructionVisitor {
     private ReferenceCache referenceCache;
-    private Mapper<String, String> classNameMapper;
+    private Function<String, String> classNameMapper;
 
-    public ClassRefsRenamer(ReferenceCache referenceCache, Mapper<String, String> classNameMapper) {
+    public ClassRefsRenamer(ReferenceCache referenceCache, Function<String, String> classNameMapper) {
         this.referenceCache = referenceCache;
         this.classNameMapper = classNameMapper;
     }
 
     public ClassHolder rename(ClassHolder cls) {
-        ClassHolder renamedCls = new ClassHolder(classNameMapper.map(cls.getName()));
+        ClassHolder renamedCls = new ClassHolder(classNameMapper.apply(cls.getName()));
         renamedCls.getModifiers().addAll(cls.getModifiers());
         renamedCls.setLevel(cls.getLevel());
         String parent = cls.getParent();
@@ -71,7 +71,7 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
                 parent = null;
             }
         }
-        renamedCls.setParent(parent != null ? classNameMapper.map(parent) : null);
+        renamedCls.setParent(parent != null ? classNameMapper.apply(parent) : null);
         if (renamedCls.getName().equals(renamedCls.getParent())) {
             renamedCls.setParent(null);
         }
@@ -85,11 +85,11 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
             renamedCls.addField(rename(field));
         }
         if (cls.getOwnerName() != null) {
-            renamedCls.setOwnerName(classNameMapper.map(cls.getOwnerName()));
+            renamedCls.setOwnerName(classNameMapper.apply(cls.getOwnerName()));
         }
         rename(cls.getAnnotations(), renamedCls.getAnnotations());
         for (String iface : cls.getInterfaces()) {
-            String mappedIfaceName = classNameMapper.map(iface);
+            String mappedIfaceName = classNameMapper.apply(iface);
             if (!mappedIfaceName.equals(renamedCls.getName())) {
                 renamedCls.getInterfaces().add(mappedIfaceName);
             }
@@ -133,7 +133,7 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
             return referenceCache.getCached(ValueType.arrayOf(rename(itemType)));
         } else if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
-            return referenceCache.getCached(ValueType.object(classNameMapper.map(className)));
+            return referenceCache.getCached(ValueType.object(classNameMapper.apply(className)));
         } else {
             return type;
         }
@@ -159,31 +159,31 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
     private MethodHandle rename(MethodHandle handle) {
         switch (handle.getKind()) {
             case GET_FIELD:
-                return MethodHandle.fieldGetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.fieldGetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.getValueType()));
             case GET_STATIC_FIELD:
-                return MethodHandle.staticFieldGetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.staticFieldGetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.getValueType()));
             case PUT_FIELD:
-                return MethodHandle.fieldSetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.fieldSetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.getValueType()));
             case PUT_STATIC_FIELD:
-                return MethodHandle.staticFieldSetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.staticFieldSetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.getValueType()));
             case INVOKE_VIRTUAL:
-                return MethodHandle.virtualCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.virtualCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.signature()));
             case INVOKE_STATIC:
-                return MethodHandle.staticCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.staticCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.signature()));
             case INVOKE_SPECIAL:
-                return MethodHandle.specialCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.specialCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.signature()));
             case INVOKE_CONSTRUCTOR:
-                return MethodHandle.constructorCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.constructorCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.signature()));
             case INVOKE_INTERFACE:
-                return MethodHandle.interfaceCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.interfaceCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.signature()));
             default:
                 break;
@@ -201,7 +201,7 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
     }
 
     private AnnotationHolder rename(AnnotationHolder annot) {
-        AnnotationHolder renamedAnnot = new AnnotationHolder(classNameMapper.map(annot.getType()));
+        AnnotationHolder renamedAnnot = new AnnotationHolder(classNameMapper.apply(annot.getType()));
         for (Map.Entry<String, AnnotationValue> entry : annot.getValues().entrySet()) {
             renamedAnnot.getValues().put(entry.getKey(), entry.getValue());
         }
@@ -216,7 +216,7 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
             }
             for (TryCatchBlock tryCatch : basicBlock.getTryCatchBlocks()) {
                 if (tryCatch.getExceptionType() != null) {
-                    tryCatch.setExceptionType(classNameMapper.map(tryCatch.getExceptionType()));
+                    tryCatch.setExceptionType(classNameMapper.apply(tryCatch.getExceptionType()));
                 }
             }
         }
@@ -239,7 +239,7 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
 
     @Override
     public void visit(ConstructInstruction insn) {
-        insn.setType(classNameMapper.map(insn.getType()));
+        insn.setType(classNameMapper.apply(insn.getType()));
     }
 
     @Override
@@ -249,20 +249,20 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
 
     @Override
     public void visit(GetFieldInstruction insn) {
-        String className = classNameMapper.map(insn.getField().getClassName());
+        String className = classNameMapper.apply(insn.getField().getClassName());
         insn.setField(referenceCache.getCached(new FieldReference(className, insn.getField().getFieldName())));
     }
 
     @Override
     public void visit(PutFieldInstruction insn) {
-        String className = classNameMapper.map(insn.getField().getClassName());
+        String className = classNameMapper.apply(insn.getField().getClassName());
         if (className != insn.getField().getClassName()) {
             insn.setField(referenceCache.getCached(new FieldReference(className, insn.getField().getFieldName())));
         }
     }
     @Override
     public void visit(InvokeInstruction insn) {
-        String className = classNameMapper.map(insn.getMethod().getClassName());
+        String className = classNameMapper.apply(insn.getMethod().getClassName());
         ValueType[] signature = insn.getMethod().getSignature();
         boolean changed = true;
         for (int i = 0; i < signature.length; ++i) {
@@ -298,6 +298,6 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
 
     @Override
     public void visit(InitClassInstruction insn) {
-        insn.setClassName(classNameMapper.map(insn.getClassName()));
+        insn.setClassName(classNameMapper.apply(insn.getClassName()));
     }
 }
