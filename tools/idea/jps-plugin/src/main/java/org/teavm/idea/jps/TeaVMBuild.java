@@ -26,6 +26,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -267,14 +268,20 @@ class TeaVMBuild {
                 problemsToReport.add(result);
             } else {
                 for (CallSite callSite : node.getCallerCallSites()) {
-                    CallLocation nextLocation = new CallLocation(callSite.getCaller().getMethod(),
-                            callSite.getLocation());
-                    workList.add(new Step(new CallLocationList(step.location, step.locationList), nextLocation));
+                    for (CallGraphNode caller : callSite.getCallers()) {
+                        CallLocation nextLocation = new CallLocation(caller.getMethod(),
+                                getLocation(callSite.getLocations(caller)));
+                        workList.add(new Step(new CallLocationList(step.location, step.locationList), nextLocation));
+                    }
                 }
             }
         }
 
         return problemsToReport;
+    }
+
+    private TextLocation getLocation(Collection<? extends TextLocation> location) {
+        return location.isEmpty() ? null : location.iterator().next();
     }
 
     private boolean isValid(ProblemToReport problemToReport) {
