@@ -18,23 +18,29 @@ package org.teavm.cache;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
-import java.util.Objects;
+import java.util.List;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.BasicBlockReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
+import org.teavm.model.IncomingReader;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
+import org.teavm.model.PhiReader;
 import org.teavm.model.Program;
+import org.teavm.model.ProgramReader;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.RuntimeConstant;
 import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
+import org.teavm.model.TryCatchBlockReader;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
+import org.teavm.model.VariableReader;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
@@ -60,7 +66,7 @@ import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
-import org.teavm.model.instructions.InstructionVisitor;
+import org.teavm.model.instructions.InstructionReader;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.IntegerSubtype;
 import org.teavm.model.instructions.InvocationType;
@@ -80,6 +86,7 @@ import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.SwitchTableEntry;
+import org.teavm.model.instructions.SwitchTableEntryReader;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class ProgramIO {
@@ -103,62 +110,42 @@ public class ProgramIO {
         this.variableTable = variableTable;
     }
 
-    public void write(Program program, OutputStream output) throws IOException {
+    public void write(ProgramReader program, OutputStream output) throws IOException {
         write(program, new VarDataOutput(output));
     }
 
-    public void write(Program program, VarDataOutput data) throws IOException {
+    public void write(ProgramReader program, VarDataOutput data) throws IOException {
         data.writeUnsigned(program.variableCount());
         data.writeUnsigned(program.basicBlockCount());
         for (int i = 0; i < program.variableCount(); ++i) {
-            Variable var = program.variableAt(i);
+            VariableReader var = program.variableAt(i);
             data.writeUnsigned(var.getRegister());
             data.writeUnsigned(var.getDebugName() != null ? variableTable.lookup(var.getDebugName()) + 1 : 0);
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock basicBlock = program.basicBlockAt(i);
+            BasicBlockReader basicBlock = program.basicBlockAt(i);
             data.writeUnsigned(basicBlock.getExceptionVariable() != null
                     ? basicBlock.getExceptionVariable().getIndex() + 1 : 0);
-            data.writeUnsigned(basicBlock.getPhis().size());
-            data.writeUnsigned(basicBlock.getTryCatchBlocks().size());
-            for (Phi phi : basicBlock.getPhis()) {
+            data.writeUnsigned(basicBlock.readPhis().size());
+            data.writeUnsigned(basicBlock.readTryCatchBlocks().size());
+            for (PhiReader phi : basicBlock.readPhis()) {
                 data.writeUnsigned(phi.getReceiver().getIndex());
-                data.writeUnsigned(phi.getIncomings().size());
-                for (Incoming incoming : phi.getIncomings()) {
+                data.writeUnsigned(phi.readIncomings().size());
+                for (IncomingReader incoming : phi.readIncomings()) {
                     data.writeUnsigned(incoming.getSource().getIndex());
                     data.writeUnsigned(incoming.getValue().getIndex());
                 }
             }
-            for (TryCatchBlock tryCatch : basicBlock.getTryCatchBlocks()) {
+            for (TryCatchBlockReader tryCatch : basicBlock.readTryCatchBlocks()) {
                 data.writeUnsigned(tryCatch.getExceptionType() != null ? symbolTable.lookup(
                         tryCatch.getExceptionType()) + 1 : 0);
                 data.writeUnsigned(tryCatch.getHandler().getIndex());
             }
-            TextLocation location = null;
             InstructionWriter insnWriter = new InstructionWriter(data);
-            for (Instruction insn : basicBlock) {
-                try {
-                    if (!Objects.equals(location, insn.getLocation())) {
-                        TextLocation newLocation = insn.getLocation();
-                        if (newLocation == null || newLocation.getFileName() == null || newLocation.getLine() < 0) {
-                            data.writeUnsigned(1);
-                            location = null;
-                        } else {
-                            if (location != null && location.getFileName().equals(newLocation.getFileName())) {
-                                data.writeUnsigned(127);
-                                data.writeSigned(newLocation.getLine() - location.getLine());
-                            } else {
-                                data.writeUnsigned(2);
-                                data.writeUnsigned(fileTable.lookup(newLocation.getFileName()));
-                                data.writeUnsigned(newLocation.getLine());
-                            }
-                            location = newLocation;
-                        }
-                    }
-                    insn.acceptVisitor(insnWriter);
-                } catch (IOExceptionWrapper e) {
-                    throw (IOException) e.getCause();
-                }
+            try {
+                basicBlock.readAllInstructions(insnWriter);
+            } catch (IOExceptionWrapper e) {
+                throw (IOException) e.getCause();
             }
             data.writeUnsigned(0);
         }
@@ -246,15 +233,38 @@ public class ProgramIO {
         return program;
     }
 
-    private class InstructionWriter implements InstructionVisitor {
+    private class InstructionWriter implements InstructionReader {
         private VarDataOutput output;
+        TextLocation location;
 
         InstructionWriter(VarDataOutput output) {
             this.output = output;
         }
 
         @Override
-        public void visit(EmptyInstruction insn) {
+        public void location(TextLocation newLocation) {
+            try {
+                if (newLocation == null || newLocation.getFileName() == null || newLocation.getLine() < 0) {
+                    output.writeUnsigned(1);
+                    location = null;
+                } else {
+                    if (location != null && location.getFileName().equals(newLocation.getFileName())) {
+                        output.writeUnsigned(127);
+                        output.writeSigned(newLocation.getLine() - location.getLine());
+                    } else {
+                        output.writeUnsigned(2);
+                        output.writeUnsigned(fileTable.lookup(newLocation.getFileName()));
+                        output.writeUnsigned(newLocation.getLine());
+                    }
+                    location = newLocation;
+                }
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
+        public void nop() {
             try {
                 output.writeUnsigned(3);
             } catch (IOException e) {
@@ -263,196 +273,202 @@ public class ProgramIO {
         }
 
         @Override
-        public void visit(ClassConstantInstruction insn) {
+        public void classConstant(VariableReader receiver, ValueType cst) {
             try {
                 output.writeUnsigned(4);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(symbolTable.lookup(insn.getConstant().toString()));
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(symbolTable.lookup(cst.toString()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(NullConstantInstruction insn) {
+        public void nullConstant(VariableReader receiver) {
             try {
                 output.writeUnsigned(5);
-                output.writeUnsigned(insn.getReceiver().getIndex());
+                output.writeUnsigned(receiver.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(IntegerConstantInstruction insn) {
+        public void integerConstant(VariableReader receiver, int cst) {
             try {
                 output.writeUnsigned(6);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeSigned(insn.getConstant());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeSigned(cst);
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(LongConstantInstruction insn) {
+        public void longConstant(VariableReader receiver, long cst) {
             try {
                 output.writeUnsigned(7);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeSigned(insn.getConstant());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeSigned(cst);
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(FloatConstantInstruction insn) {
+        public void floatConstant(VariableReader receiver, float cst) {
             try {
                 output.writeUnsigned(8);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeFloat(insn.getConstant());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeFloat(cst);
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(DoubleConstantInstruction insn) {
+        public void doubleConstant(VariableReader receiver, double cst) {
             try {
                 output.writeUnsigned(9);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeDouble(insn.getConstant());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeDouble(cst);
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(StringConstantInstruction insn) {
+        public void stringConstant(VariableReader receiver, String cst) {
             try {
                 output.writeUnsigned(10);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.write(insn.getConstant());
+                output.writeUnsigned(receiver.getIndex());
+                output.write(cst);
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(BinaryInstruction insn) {
+        public void binary(BinaryOperation op, VariableReader receiver, VariableReader first, VariableReader second,
+                NumericOperandType type) {
             try {
-                output.writeUnsigned(11 + insn.getOperation().ordinal());
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(insn.getOperandType().ordinal());
-                output.writeUnsigned(insn.getFirstOperand().getIndex());
-                output.writeUnsigned(insn.getSecondOperand().getIndex());
+                output.writeUnsigned(11 + op.ordinal());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(type.ordinal());
+                output.writeUnsigned(first.getIndex());
+                output.writeUnsigned(second.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(NegateInstruction insn) {
+        public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
             try {
                 output.writeUnsigned(23);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(insn.getOperandType().ordinal());
-                output.writeUnsigned(insn.getOperand().getIndex());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(type.ordinal());
+                output.writeUnsigned(operand.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(AssignInstruction insn) {
+        public void assign(VariableReader receiver, VariableReader assignee) {
             try {
                 output.writeUnsigned(24);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(insn.getAssignee().getIndex());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(assignee.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(CastInstruction insn) {
+        public void cast(VariableReader receiver, VariableReader value, ValueType targetType) {
             try {
                 output.writeUnsigned(25);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(symbolTable.lookup(insn.getTargetType().toString()));
-                output.writeUnsigned(insn.getValue().getIndex());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(symbolTable.lookup(targetType.toString()));
+                output.writeUnsigned(value.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(CastNumberInstruction insn) {
+        public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
+                NumericOperandType targetType) {
             try {
                 output.writeUnsigned(26);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(insn.getSourceType().ordinal() | (insn.getTargetType().ordinal() << 2));
-                output.writeUnsigned(insn.getValue().getIndex());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(sourceType.ordinal() | (targetType.ordinal() << 2));
+                output.writeUnsigned(value.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(CastIntegerInstruction insn) {
+        public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
+                CastIntegerDirection direction) {
             try {
                 output.writeUnsigned(27);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(insn.getDirection().ordinal() | (insn.getTargetType().ordinal() << 1));
-                output.writeUnsigned(insn.getValue().getIndex());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(direction.ordinal() | (type.ordinal() << 1));
+                output.writeUnsigned(value.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(BranchingInstruction insn) {
+        public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
+                BasicBlockReader alternative) {
             try {
-                output.writeUnsigned(28 + insn.getCondition().ordinal());
-                output.writeUnsigned(insn.getOperand().getIndex());
-                output.writeUnsigned(insn.getConsequent().getIndex());
-                output.writeUnsigned(insn.getAlternative().getIndex());
+                output.writeUnsigned(28 + cond.ordinal());
+                output.writeUnsigned(operand.getIndex());
+                output.writeUnsigned(consequent.getIndex());
+                output.writeUnsigned(alternative.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(BinaryBranchingInstruction insn) {
+        public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
+                BasicBlockReader consequent, BasicBlockReader alternative) {
             try {
-                output.writeUnsigned(36 + insn.getCondition().ordinal());
-                output.writeUnsigned(insn.getFirstOperand().getIndex());
-                output.writeUnsigned(insn.getSecondOperand().getIndex());
-                output.writeUnsigned(insn.getConsequent().getIndex());
-                output.writeUnsigned(insn.getAlternative().getIndex());
+                output.writeUnsigned(36 + cond.ordinal());
+                output.writeUnsigned(first.getIndex());
+                output.writeUnsigned(second.getIndex());
+                output.writeUnsigned(consequent.getIndex());
+                output.writeUnsigned(alternative.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(JumpInstruction insn) {
+        public void jump(BasicBlockReader target) {
             try {
                 output.writeUnsigned(40);
-                output.writeUnsigned(insn.getTarget().getIndex());
+                output.writeUnsigned(target.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(SwitchInstruction insn) {
+        public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
+                BasicBlockReader defaultTarget) {
             try {
                 output.writeUnsigned(41);
-                output.writeUnsigned(insn.getCondition().getIndex());
-                output.writeUnsigned(insn.getDefaultTarget().getIndex());
-                output.writeUnsigned(insn.getEntries().size());
-                for (SwitchTableEntry entry : insn.getEntries()) {
+                output.writeUnsigned(condition.getIndex());
+                output.writeUnsigned(defaultTarget.getIndex());
+                output.writeUnsigned(table.size());
+                for (SwitchTableEntryReader entry : table) {
                     output.writeSigned(entry.getCondition());
                     output.writeUnsigned(entry.getTarget().getIndex());
                 }
@@ -462,11 +478,11 @@ public class ProgramIO {
         }
 
         @Override
-        public void visit(ExitInstruction insn) {
+        public void exit(VariableReader valueToReturn) {
             try {
-                if (insn.getValueToReturn() != null) {
+                if (valueToReturn != null) {
                     output.writeUnsigned(42);
-                    output.writeUnsigned(insn.getValueToReturn().getIndex());
+                    output.writeUnsigned(valueToReturn.getIndex());
                 } else {
                     output.writeUnsigned(43);
                 }
@@ -476,46 +492,36 @@ public class ProgramIO {
         }
 
         @Override
-        public void visit(RaiseInstruction insn) {
+        public void raise(VariableReader exception) {
             try {
                 output.writeUnsigned(44);
-                output.writeUnsigned(insn.getException().getIndex());
+                output.writeUnsigned(exception.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(ConstructArrayInstruction insn) {
+        public void createArray(VariableReader receiver, ValueType itemType, VariableReader size) {
             try {
                 output.writeUnsigned(45);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(symbolTable.lookup(insn.getItemType().toString()));
-                output.writeUnsigned(insn.getSize().getIndex());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(symbolTable.lookup(itemType.toString()));
+                output.writeUnsigned(size.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(ConstructInstruction insn) {
-            try {
-                output.writeUnsigned(46);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(symbolTable.lookup(insn.getType()));
-            } catch (IOException e) {
-                throw new IOExceptionWrapper(e);
-            }
-        }
-
-        @Override
-        public void visit(ConstructMultiArrayInstruction insn) {
+        public void createArray(VariableReader receiver, ValueType itemType,
+                List<? extends VariableReader> dimensions) {
             try {
                 output.writeUnsigned(47);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(symbolTable.lookup(insn.getItemType().toString()));
-                output.writeUnsigned(insn.getDimensions().size());
-                for (Variable dimension : insn.getDimensions()) {
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(symbolTable.lookup(itemType.toString()));
+                output.writeUnsigned(dimensions.size());
+                for (VariableReader dimension : dimensions) {
                     output.writeUnsigned(dimension.getIndex());
                 }
             } catch (IOException e) {
@@ -524,113 +530,128 @@ public class ProgramIO {
         }
 
         @Override
-        public void visit(GetFieldInstruction insn) {
+        public void create(VariableReader receiver, String type) {
             try {
-                output.writeUnsigned(insn.getInstance() != null ? 48 : 49);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                if (insn.getInstance() != null) {
-                    output.writeUnsigned(insn.getInstance().getIndex());
-                }
-                output.writeUnsigned(symbolTable.lookup(insn.getField().getClassName()));
-                output.writeUnsigned(symbolTable.lookup(insn.getField().getFieldName()));
-                output.writeUnsigned(symbolTable.lookup(insn.getFieldType().toString()));
+                output.writeUnsigned(46);
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(symbolTable.lookup(type));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(PutFieldInstruction insn) {
+        public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
+                ValueType fieldType) {
             try {
-                output.writeUnsigned(insn.getInstance() != null ? 50 : 51);
-                if (insn.getInstance() != null) {
-                    output.writeUnsigned(insn.getInstance().getIndex());
+                output.writeUnsigned(instance != null ? 48 : 49);
+                output.writeUnsigned(receiver.getIndex());
+                if (instance != null) {
+                    output.writeUnsigned(instance.getIndex());
                 }
-                output.writeUnsigned(symbolTable.lookup(insn.getField().getClassName()));
-                output.writeUnsigned(symbolTable.lookup(insn.getField().getFieldName()));
-                output.writeUnsigned(symbolTable.lookup(insn.getFieldType().toString()));
-                output.writeUnsigned(insn.getValue().getIndex());
+                output.writeUnsigned(symbolTable.lookup(field.getClassName()));
+                output.writeUnsigned(symbolTable.lookup(field.getFieldName()));
+                output.writeUnsigned(symbolTable.lookup(fieldType.toString()));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(ArrayLengthInstruction insn) {
+        public void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType) {
+            try {
+                output.writeUnsigned(instance != null ? 50 : 51);
+                if (instance != null) {
+                    output.writeUnsigned(instance.getIndex());
+                }
+                output.writeUnsigned(symbolTable.lookup(field.getClassName()));
+                output.writeUnsigned(symbolTable.lookup(field.getFieldName()));
+                output.writeUnsigned(symbolTable.lookup(fieldType.toString()));
+                output.writeUnsigned(value.getIndex());
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
+        public void arrayLength(VariableReader receiver, VariableReader array) {
             try {
                 output.writeUnsigned(52);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(insn.getArray().getIndex());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(array.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(CloneArrayInstruction insn) {
+        public void cloneArray(VariableReader receiver, VariableReader array) {
             try {
                 output.writeUnsigned(53);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(insn.getArray().getIndex());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(array.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(UnwrapArrayInstruction insn) {
+        public void unwrapArray(VariableReader receiver, VariableReader array, ArrayElementType elementType) {
             try {
-                output.writeUnsigned(54 + insn.getElementType().ordinal());
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(insn.getArray().getIndex());
+                output.writeUnsigned(54 + elementType.ordinal());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(array.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(GetElementInstruction insn) {
+        public void getElement(VariableReader receiver, VariableReader array, VariableReader index,
+                ArrayElementType elementType) {
             try {
-                output.writeUnsigned(62 + insn.getType().ordinal());
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(insn.getArray().getIndex());
-                output.writeUnsigned(insn.getIndex().getIndex());
+                output.writeUnsigned(62 + elementType.ordinal());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(array.getIndex());
+                output.writeUnsigned(index.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(PutElementInstruction insn) {
+        public void putElement(VariableReader array, VariableReader index, VariableReader value,
+                ArrayElementType elementType) {
             try {
-                output.writeUnsigned(70 + insn.getType().ordinal());
-                output.writeUnsigned(insn.getArray().getIndex());
-                output.writeUnsigned(insn.getIndex().getIndex());
-                output.writeUnsigned(insn.getValue().getIndex());
+                output.writeUnsigned(70 + elementType.ordinal());
+                output.writeUnsigned(array.getIndex());
+                output.writeUnsigned(index.getIndex());
+                output.writeUnsigned(value.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(InvokeInstruction insn) {
+        public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
+                List<? extends VariableReader> arguments, InvocationType type) {
             try {
-                switch (insn.getType()) {
+                switch (type) {
                     case SPECIAL:
-                        output.writeUnsigned(insn.getInstance() == null ? 78 : 79);
+                        output.writeUnsigned(instance == null ? 78 : 79);
                         break;
                     case VIRTUAL:
                         output.writeUnsigned(80);
                         break;
                 }
-                output.writeUnsigned(insn.getReceiver() != null ? insn.getReceiver().getIndex() + 1 : 0);
-                if (insn.getInstance() != null) {
-                    output.writeUnsigned(insn.getInstance().getIndex());
+                output.writeUnsigned(receiver != null ? receiver.getIndex() + 1 : 0);
+                if (instance != null) {
+                    output.writeUnsigned(instance.getIndex());
                 }
-                output.writeUnsigned(symbolTable.lookup(insn.getMethod().getClassName()));
-                output.writeUnsigned(symbolTable.lookup(insn.getMethod().getDescriptor().toString()));
-                for (int i = 0; i < insn.getArguments().size(); ++i) {
-                    output.writeUnsigned(insn.getArguments().get(i).getIndex());
+                output.writeUnsigned(symbolTable.lookup(method.getClassName()));
+                output.writeUnsigned(symbolTable.lookup(method.getDescriptor().toString()));
+                for (int i = 0; i < arguments.size(); ++i) {
+                    output.writeUnsigned(arguments.get(i).getIndex());
                 }
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -638,19 +659,21 @@ public class ProgramIO {
         }
 
         @Override
-        public void visit(InvokeDynamicInstruction insn) {
+        public void invokeDynamic(VariableReader receiver, VariableReader instance, MethodDescriptor method,
+                List<? extends VariableReader> arguments, MethodHandle bootstrapMethod,
+                List<RuntimeConstant> bootstrapArguments) {
             try {
                 output.writeUnsigned(81);
-                output.writeUnsigned(insn.getReceiver() != null ? insn.getReceiver().getIndex() + 1 : 0);
-                output.writeUnsigned(insn.getInstance() != null ? insn.getInstance().getIndex() + 1 : 0);
-                output.writeUnsigned(symbolTable.lookup(insn.getMethod().toString()));
-                for (int i = 0; i < insn.getArguments().size(); ++i) {
-                    output.writeUnsigned(insn.getArguments().get(i).getIndex());
+                output.writeUnsigned(receiver != null ? receiver.getIndex() + 1 : 0);
+                output.writeUnsigned(instance != null ? instance.getIndex() + 1 : 0);
+                output.writeUnsigned(symbolTable.lookup(method.toString()));
+                for (int i = 0; i < arguments.size(); ++i) {
+                    output.writeUnsigned(arguments.get(i).getIndex());
                 }
-                write(insn.getBootstrapMethod());
-                output.writeUnsigned(insn.getBootstrapArguments().size());
-                for (int i = 0; i < insn.getBootstrapArguments().size(); ++i) {
-                    write(insn.getBootstrapArguments().get(i));
+                write(bootstrapMethod);
+                output.writeUnsigned(bootstrapArguments.size());
+                for (int i = 0; i < bootstrapArguments.size(); ++i) {
+                    write(bootstrapArguments.get(i));
                 }
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
@@ -658,53 +681,53 @@ public class ProgramIO {
         }
 
         @Override
-        public void visit(IsInstanceInstruction insn) {
+        public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
             try {
                 output.writeUnsigned(82);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(symbolTable.lookup(insn.getType().toString()));
-                output.writeUnsigned(insn.getValue().getIndex());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(symbolTable.lookup(type.toString()));
+                output.writeUnsigned(value.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(InitClassInstruction insn) {
+        public void initClass(String className) {
             try {
                 output.writeUnsigned(83);
-                output.writeUnsigned(symbolTable.lookup(insn.getClassName()));
+                output.writeUnsigned(symbolTable.lookup(className));
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(NullCheckInstruction insn) {
+        public void nullCheck(VariableReader receiver, VariableReader value) {
             try {
                 output.writeUnsigned(84);
-                output.writeUnsigned(insn.getReceiver().getIndex());
-                output.writeUnsigned(insn.getValue().getIndex());
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(value.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(MonitorEnterInstruction insn) {
+        public void monitorEnter(VariableReader objectRef) {
             try {
                 output.writeUnsigned(85);
-                output.writeUnsigned(insn.getObjectRef().getIndex());
+                output.writeUnsigned(objectRef.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }
         }
 
         @Override
-        public void visit(MonitorExitInstruction insn) {
+        public void monitorExit(VariableReader objectRef) {
             try {
                 output.writeUnsigned(86);
-                output.writeUnsigned(insn.getObjectRef().getIndex());
+                output.writeUnsigned(objectRef.getIndex());
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }

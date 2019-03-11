@@ -28,13 +28,14 @@ import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Set;
-import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClassDateProvider;
 
-public class DiskCachedClassHolderSource implements ClassHolderSource, CacheStatus {
+public class DiskCachedClassReaderSource implements ClassReaderSource, CacheStatus {
     private File directory;
     private ClassHolderSource innerSource;
     private ClassDateProvider classDateProvider;
@@ -42,7 +43,7 @@ public class DiskCachedClassHolderSource implements ClassHolderSource, CacheStat
     private Set<String> newClasses = new HashSet<>();
     private ClassIO classIO;
 
-    public DiskCachedClassHolderSource(File directory, ReferenceCache referenceCache, SymbolTable symbolTable,
+    public DiskCachedClassReaderSource(File directory, ReferenceCache referenceCache, SymbolTable symbolTable,
             SymbolTable fileTable, SymbolTable variableTable, ClassHolderSource innerSource,
             ClassDateProvider classDateProvider) {
         this.directory = directory;
@@ -52,7 +53,7 @@ public class DiskCachedClassHolderSource implements ClassHolderSource, CacheStat
     }
 
     @Override
-    public ClassHolder get(String name) {
+    public ClassReader get(String name) {
         return getItemFromCache(name).cls;
     }
 
@@ -93,7 +94,7 @@ public class DiskCachedClassHolderSource implements ClassHolderSource, CacheStat
     }
 
     private static class Item {
-        ClassHolder cls;
+        ClassReader cls;
         boolean dirty;
     }
 

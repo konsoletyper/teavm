@@ -22,6 +22,7 @@ public class ClassDependency implements ClassDependencyInfo {
     private DependencyAnalyzer analyzer;
     private String className;
     private ClassReader classReader;
+    boolean present;
     boolean activated;
 
     ClassDependency(DependencyAnalyzer analyzer, String className, ClassReader classReader) {
@@ -37,7 +38,7 @@ public class ClassDependency implements ClassDependencyInfo {
 
     @Override
     public boolean isMissing() {
-        return classReader == null;
+        return classReader == null && !present;
     }
 
     public ClassReader getClassReader() {
@@ -47,6 +48,13 @@ public class ClassDependency implements ClassDependencyInfo {
     public void initClass(CallLocation location) {
         if (!isMissing()) {
             analyzer.initClass(this, location);
+        }
+    }
+
+    void cleanup() {
+        if (classReader != null) {
+            present = true;
+            classReader = null;
         }
     }
 }

@@ -292,7 +292,7 @@ public class IncrementalTest {
         public boolean isStaleClass(String className) {
             ClassReader cls = underlying.get(className);
             if (cls == null) {
-                return true;
+                return false;
             }
 
             return cls.getAnnotations().get(Update.class.getName()) != null;

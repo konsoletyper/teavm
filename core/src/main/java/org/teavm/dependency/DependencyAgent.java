@@ -80,7 +80,7 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
 
     @Override
     public ClassReaderSource getClassSource() {
-        return analyzer.getClassSource();
+        return analyzer.agentClassSource;
     }
 
     @Override

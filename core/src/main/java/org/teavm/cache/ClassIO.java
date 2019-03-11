@@ -15,43 +15,51 @@
  */
 package org.teavm.cache;
 
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.EnumSet;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.teavm.model.AccessLevel;
-import org.teavm.model.AnnotationContainer;
-import org.teavm.model.AnnotationHolder;
+import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
-import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
-import org.teavm.model.FieldHolder;
+import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 
 public class ClassIO {
     private static AccessLevel[] accessLevels = AccessLevel.values();
     private static ElementModifier[] elementModifiers = ElementModifier.values();
+    private ReferenceCache referenceCache;
     private SymbolTable symbolTable;
     private ProgramIO programIO;
 
     public ClassIO(ReferenceCache referenceCache, SymbolTable symbolTable, SymbolTable fileTable,
             SymbolTable varTable) {
+        this.referenceCache = referenceCache;
         this.symbolTable = symbolTable;
         programIO = new ProgramIO(referenceCache, symbolTable, fileTable, varTable);
     }
 
-    public void writeClass(OutputStream stream, ClassHolder cls) throws IOException {
+    public void writeClass(OutputStream stream, ClassReader cls) throws IOException {
         VarDataOutput output = new VarDataOutput(stream);
         output.writeUnsigned(cls.getLevel().ordinal());
-        output.writeUnsigned(packModifiers(cls.getModifiers()));
+        output.writeUnsigned(packModifiers(cls.readModifiers()));
         output.writeUnsigned(cls.getParent() != null ? symbolTable.lookup(cls.getParent()) + 1 : 0);
         output.writeUnsigned(cls.getOwnerName() != null ? symbolTable.lookup(cls.getOwnerName()) + 1 : 0);
         output.writeUnsigned(cls.getInterfaces().size());
@@ -60,56 +68,71 @@ public class ClassIO {
         }
         writeAnnotations(output, cls.getAnnotations());
         output.writeUnsigned(cls.getFields().size());
-        for (FieldHolder field : cls.getFields()) {
+        for (FieldReader field : cls.getFields()) {
             writeField(output, field);
         }
         output.writeUnsigned(cls.getMethods().size());
-        for (MethodHolder method : cls.getMethods()) {
+        for (MethodReader method : cls.getMethods()) {
             writeMethod(output, method);
         }
     }
 
-    public ClassHolder readClass(InputStream stream, String name) throws IOException {
+    public ClassReader readClass(InputStream stream, String name) throws IOException {
         VarDataInput input = new VarDataInput(stream);
-        ClassHolder cls = new ClassHolder(name);
-        cls.setLevel(accessLevels[input.readUnsigned()]);
-        cls.getModifiers().addAll(unpackModifiers(input.readUnsigned()));
+        CachedClassReader cls = new CachedClassReader();
+        cls.name = name;
+        cls.level = accessLevels[input.readUnsigned()];
+        cls.modifiers = unpackModifiers(input.readUnsigned());
         int parentIndex = input.readUnsigned();
-        cls.setParent(parentIndex > 0 ? symbolTable.at(parentIndex - 1) : null);
+        cls.parent = parentIndex > 0 ? referenceCache.getCached(symbolTable.at(parentIndex - 1)) : null;
         int ownerIndex = input.readUnsigned();
-        cls.setOwnerName(ownerIndex > 0 ? symbolTable.at(ownerIndex - 1) : null);
+        cls.owner = ownerIndex > 0 ? referenceCache.getCached(symbolTable.at(ownerIndex - 1)) : null;
         int ifaceCount = input.readUnsigned();
+        Set<String> interfaces = new LinkedHashSet<>();
         for (int i = 0; i < ifaceCount; ++i) {
-            cls.getInterfaces().add(symbolTable.at(input.readUnsigned()));
+            interfaces.add(referenceCache.getCached(symbolTable.at(input.readUnsigned())));
         }
-        readAnnotations(input, cls.getAnnotations());
+        cls.interfaces = Collections.unmodifiableSet(interfaces);
+        cls.annotations = readAnnotations(input);
+
+        Map<String, CachedField> fields = new LinkedHashMap<>();
         int fieldCount = input.readUnsigned();
         for (int i = 0; i < fieldCount; ++i) {
-            cls.addField(readField(input));
+            CachedField field = readField(name, input);
+            fields.put(field.name, field);
         }
+        cls.fields = fields;
+
+        Map<MethodDescriptor, CachedMethod> methods = new LinkedHashMap<>();
         int methodCount = input.readUnsigned();
         for (int i = 0; i < methodCount; ++i) {
-            cls.addMethod(readMethod(input));
+            CachedMethod method = readMethod(cls.name, input);
+            methods.put(method.reference.getDescriptor(), method);
         }
+        cls.methods = methods;
+
         return cls;
     }
 
-    private void writeField(VarDataOutput output, FieldHolder field) throws IOException {
+    private void writeField(VarDataOutput output, FieldReader field) throws IOException {
         output.writeUnsigned(symbolTable.lookup(field.getName()));
         output.writeUnsigned(symbolTable.lookup(field.getType().toString()));
         output.writeUnsigned(field.getLevel().ordinal());
-        output.writeUnsigned(packModifiers(field.getModifiers()));
+        output.writeUnsigned(packModifiers(field.readModifiers()));
         writeFieldValue(output, field.getInitialValue());
         writeAnnotations(output, field.getAnnotations());
     }
 
-    private FieldHolder readField(VarDataInput input) throws IOException {
-        FieldHolder field = new FieldHolder(symbolTable.at(input.readUnsigned()));
-        field.setType(ValueType.parse(symbolTable.at(input.readUnsigned())));
-        field.setLevel(accessLevels[input.readUnsigned()]);
-        field.getModifiers().addAll(unpackModifiers(input.readUnsigned()));
-        field.setInitialValue(readFieldValue(input));
-        readAnnotations(input, field.getAnnotations());
+    private CachedField readField(String className, VarDataInput input) throws IOException {
+        CachedField field = new CachedField();
+        field.name = referenceCache.getCached(symbolTable.at(input.readUnsigned()));
+        field.type = referenceCache.getCached(ValueType.parse(symbolTable.at(input.readUnsigned())));
+        field.level = accessLevels[input.readUnsigned()];
+        field.modifiers = unpackModifiers(input.readUnsigned());
+        field.initialValue = readFieldValue(input);
+        field.annotations = readAnnotations(input);
+        field.ownerName = className;
+        field.reference = referenceCache.getCached(new FieldReference(className, field.name));
         return field;
     }
 
@@ -154,13 +177,13 @@ public class ClassIO {
         }
     }
 
-    private void writeMethod(VarDataOutput output, MethodHolder method) throws IOException {
+    private void writeMethod(VarDataOutput output, MethodReader method) throws IOException {
         output.writeUnsigned(symbolTable.lookup(method.getDescriptor().toString()));
         output.writeUnsigned(method.getLevel().ordinal());
-        output.writeUnsigned(packModifiers(method.getModifiers()));
+        output.writeUnsigned(packModifiers(method.readModifiers()));
         writeAnnotations(output, method.getAnnotations());
 
-        for (AnnotationContainer parameterAnnotation : method.getParameterAnnotations()) {
+        for (AnnotationContainerReader parameterAnnotation : method.getParameterAnnotations()) {
             writeAnnotations(output, parameterAnnotation);
         }
 
@@ -173,49 +196,68 @@ public class ClassIO {
 
         if (method.getProgram() != null) {
             output.writeUnsigned(1);
-            programIO.write(method.getProgram(), output);
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            VarDataOutput programOutput = new VarDataOutput(buffer);
+            programIO.write(method.getProgram(), programOutput);
+            output.writeBytes(buffer.toByteArray());
         } else {
             output.writeUnsigned(0);
         }
     }
 
-    private MethodHolder readMethod(VarDataInput input) throws IOException {
-        MethodHolder method = new MethodHolder(MethodDescriptor.parse(symbolTable.at(input.readUnsigned())));
-        method.setLevel(accessLevels[input.readUnsigned()]);
-        method.getModifiers().addAll(unpackModifiers(input.readUnsigned()));
-        readAnnotations(input, method.getAnnotations());
+    private CachedMethod readMethod(String className, VarDataInput input) throws IOException {
+        CachedMethod method = new CachedMethod();
+        MethodDescriptor descriptor = referenceCache.getCached(
+                MethodDescriptor.parse(symbolTable.at(input.readUnsigned())));
+        method.reference = referenceCache.getCached(className, descriptor);
+        method.level = accessLevels[input.readUnsigned()];
+        method.modifiers = unpackModifiers(input.readUnsigned());
+        method.annotations = readAnnotations(input);
+        method.ownerName = className;
+        method.name = descriptor.getName();
 
+        method.parameterAnnotations = new CachedAnnotations[descriptor.parameterCount()];
         for (int i = 0; i < method.parameterCount(); ++i) {
-            readAnnotations(input, method.parameterAnnotation(i));
+            method.parameterAnnotations[i] = readAnnotations(input);
         }
 
         if (input.readUnsigned() != 0) {
-            method.setAnnotationDefault(readAnnotationValue(input));
+            method.annotationDefault = readAnnotationValue(input);
         }
 
         if (input.readUnsigned() != 0) {
-            method.setProgram(programIO.read(input));
+            byte[] programData = input.readBytes();
+            method.programSupplier = () -> {
+                VarDataInput programInput = new VarDataInput(new ByteArrayInputStream(programData));
+                try {
+                    return programIO.read(programInput);
+                } catch (IOException e) {
+                    throw new IllegalStateException(e);
+                }
+            };
         }
         return method;
     }
 
-    private void writeAnnotations(VarDataOutput output, AnnotationContainer annotations) throws IOException {
-        List<AnnotationHolder> annotationList = new ArrayList<>();
-        for (AnnotationHolder annot : annotations.all()) {
+    private void writeAnnotations(VarDataOutput output, AnnotationContainerReader annotations) throws IOException {
+        List<AnnotationReader> annotationList = new ArrayList<>();
+        for (AnnotationReader annot : annotations.all()) {
             annotationList.add(annot);
         }
         output.writeUnsigned(annotationList.size());
-        for (AnnotationHolder annot : annotationList) {
+        for (AnnotationReader annot : annotationList) {
             writeAnnotation(output, annot);
         }
     }
 
-    private void readAnnotations(VarDataInput input, AnnotationContainer annotations) throws IOException {
+    private CachedAnnotations readAnnotations(VarDataInput input) throws IOException {
+        Map<String, CachedAnnotation> annotations = new HashMap<>();
         int annotCount = input.readUnsigned();
         for (int i = 0; i < annotCount; ++i) {
-            AnnotationHolder annot = readAnnotation(input);
-            annotations.add(annot);
+            CachedAnnotation annot = readAnnotation(input);
+            annotations.put(annot.type, annot);
         }
+        return new CachedAnnotations(annotations);
     }
 
     private void writeAnnotation(VarDataOutput output, AnnotationReader annotation) throws IOException {
@@ -231,14 +273,17 @@ public class ClassIO {
         }
     }
 
-    private AnnotationHolder readAnnotation(VarDataInput input) throws IOException {
-        AnnotationHolder annotation = new AnnotationHolder(symbolTable.at(input.readUnsigned()));
+    private CachedAnnotation readAnnotation(VarDataInput input) throws IOException {
+        CachedAnnotation annotation = new CachedAnnotation();
+        annotation.type = referenceCache.getCached(symbolTable.at(input.readUnsigned()));
         int valueCount = input.readUnsigned();
+        Map<String, AnnotationValue> fields = new HashMap<>();
         for (int i = 0; i < valueCount; ++i) {
-            String name = symbolTable.at(input.readUnsigned());
+            String name = referenceCache.getCached(symbolTable.at(input.readUnsigned()));
             AnnotationValue value = readAnnotationValue(input);
-            annotation.getValues().put(name, value);
+            fields.put(name, value);
         }
+        annotation.fields = fields;
         return annotation;
     }
 
@@ -300,13 +345,14 @@ public class ClassIO {
             case AnnotationValue.BYTE:
                 return new AnnotationValue((byte) input.readSigned());
             case AnnotationValue.CLASS:
-                return new AnnotationValue(ValueType.parse(symbolTable.at(input.readUnsigned())));
+                return new AnnotationValue(referenceCache.getCached(ValueType.parse(
+                        symbolTable.at(input.readUnsigned()))));
             case AnnotationValue.DOUBLE:
                 return new AnnotationValue(input.readDouble());
             case AnnotationValue.ENUM: {
-                String className = symbolTable.at(input.readUnsigned());
-                String fieldName = symbolTable.at(input.readUnsigned());
-                return new AnnotationValue(new FieldReference(className, fieldName));
+                String className = referenceCache.getCached(symbolTable.at(input.readUnsigned()));
+                String fieldName = referenceCache.getCached(symbolTable.at(input.readUnsigned()));
+                return new AnnotationValue(referenceCache.getCached(new FieldReference(className, fieldName)));
             }
             case AnnotationValue.FLOAT:
                 return new AnnotationValue(input.readFloat());
@@ -339,8 +385,8 @@ public class ClassIO {
         return result;
     }
 
-    private Set<ElementModifier> unpackModifiers(int packed) {
-        Set<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
+    private EnumSet<ElementModifier> unpackModifiers(int packed) {
+        EnumSet<ElementModifier> modifiers = EnumSet.noneOf(ElementModifier.class);
         while (packed != 0) {
             int n = Integer.numberOfTrailingZeros(packed);
             packed ^= 1 << n;

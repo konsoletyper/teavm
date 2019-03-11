@@ -32,6 +32,7 @@ public class MethodDependency implements MethodDependencyInfo {
     DependencyNode resultNode;
     DependencyNode thrown;
     MethodHolder method;
+    boolean present;
     private MethodReference reference;
     boolean used;
     boolean external;
@@ -101,7 +102,7 @@ public class MethodDependency implements MethodDependencyInfo {
 
     @Override
     public boolean isMissing() {
-        return method == null;
+        return method == null && !present;
     }
 
     @Override
@@ -178,5 +179,13 @@ public class MethodDependency implements MethodDependencyInfo {
     @Override
     public boolean isCalled() {
         return external;
+    }
+
+
+    void cleanup() {
+        if (method != null) {
+            present = true;
+            method = null;
+        }
     }
 }

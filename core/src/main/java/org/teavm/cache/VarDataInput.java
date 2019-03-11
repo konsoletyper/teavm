@@ -124,4 +124,24 @@ public class VarDataInput {
         }
         return new String(chars);
     }
+
+    public byte[] readBytes() throws IOException {
+        byte[] buf = new byte[readUnsigned()];
+        int off = 0;
+        while (true) {
+            int toRead = buf.length - off;
+            if (toRead == 0) {
+                break;
+            }
+            int read = input.read(buf, off, toRead);
+            if (read < 0) {
+                throw new IllegalStateException();
+            }
+            if (read == toRead) {
+                break;
+            }
+            off += read;
+        }
+        return buf;
+    }
 }

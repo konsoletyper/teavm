@@ -26,6 +26,7 @@ import org.teavm.model.FieldReference;
 public class FieldDependency implements FieldDependencyInfo {
     DependencyNode value;
     private FieldReader field;
+    private boolean present;
     private FieldReference reference;
     List<LocationListener> locationListeners;
     Set<CallLocation> locations;
@@ -53,7 +54,7 @@ public class FieldDependency implements FieldDependencyInfo {
 
     @Override
     public boolean isMissing() {
-        return field == null;
+        return field == null && !present;
     }
 
     public FieldDependency addLocation(CallLocation location) {
@@ -81,6 +82,13 @@ public class FieldDependency implements FieldDependencyInfo {
                     listener.locationAdded(location);
                 }
             }
+        }
+    }
+
+    void cleanup() {
+        if (field != null) {
+            field = null;
+            present = true;
         }
     }
 }

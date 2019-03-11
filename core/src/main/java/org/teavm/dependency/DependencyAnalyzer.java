@@ -26,6 +26,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Deque;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -82,8 +83,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     private int classNameSuffix;
     private ClassReaderSource unprocessedClassSource;
     private DependencyClassSource classSource;
+    ClassReaderSource agentClassSource;
     private ClassLoader classLoader;
     private Map<String, Map<MethodDescriptor, Optional<MethodHolder>>> methodReaderCache = new HashMap<>(1000, 0.5f);
+    private Map<MethodReference, MethodDependency> implementationCache = new HashMap<>();
     private Function<FieldReference, FieldHolder> fieldReaderCache;
     private Map<String, Map<MethodDescriptor, MethodDependency>> methodCache = new HashMap<>();
     private Set<MethodReference> reachedMethods = new LinkedHashSet<>();
@@ -111,6 +114,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     IncrementalCache incrementalCache = new IncrementalCache();
     boolean asyncSupported;
     private ReferenceCache referenceCache;
+    private Set<String> generatedClassNames = new HashSet<>();
 
     DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics, ReferenceCache referenceCache) {
@@ -118,6 +122,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         this.diagnostics = diagnostics;
         this.referenceCache = referenceCache;
         this.classSource = new DependencyClassSource(classSource, diagnostics, incrementalCache);
+        agentClassSource = this.classSource;
         classHierarchy = new ClassHierarchy(this.classSource);
         this.classLoader = classLoader;
         this.services = services;
@@ -206,11 +211,11 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     @Override
     public ClassReaderSource getClassSource() {
-        return classSource;
+        return classSource != null ? classSource : agentClassSource;
     }
 
     public boolean isSynthesizedClass(String className) {
-        return classSource.isGeneratedClass(className);
+        return classSource != null ? classSource.isGeneratedClass(className) : generatedClassNames.contains(className);
     }
 
     public ClassHierarchy getClassHierarchy() {
@@ -608,8 +613,10 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     @Override
     public MethodDependency getMethodImplementation(MethodReference methodRef) {
-        MethodReader method = getMethodHolder(methodRef.getClassName(), methodRef.getDescriptor());
-        return method != null ? getMethod(method.getReference()) : null;
+        return implementationCache.computeIfAbsent(methodRef, m -> {
+            MethodReader resolved = agentClassSource.resolveImplementation(m);
+            return resolved != null ? getMethod(resolved.getReference()) : null;
+        });
     }
 
     private MethodHolder getMethodHolder(String className, MethodDescriptor descriptor) {
@@ -726,7 +733,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         System.out.println("Total domains: " + domainCount);
     }
 
-    public void cleanup() {
+    public void cleanup(ClassSourcePacker classSourcePacker) {
         for (DependencyNode node : allNodes) {
             node.followers = null;
             node.transitions = null;
@@ -744,6 +751,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             for (MethodDependency methodDependency : map.values()) {
                 methodDependency.locationListeners = null;
                 methodDependency.locations = null;
+                methodDependency.cleanup();
             }
         }
 
@@ -752,7 +760,13 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             if (field != null) {
                 field.locationListeners = null;
                 field.locations = null;
+                field.cleanup();
             }
+        }
+
+        for (String className : classCache.getCachedPreimages()) {
+            ClassDependency cls = classCache.getKnown(className);
+            cls.cleanup();
         }
 
         allNodes.clear();
@@ -761,6 +775,15 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         listeners.clear();
         unprocessedClassSource = null;
         classSource.innerHierarchy = null;
+
+        agentClassSource = classSourcePacker.pack(classSource, classSource.cache.keySet());
+        if (classSource != agentClassSource) {
+            classHierarchy = new ClassHierarchy(agentClassSource);
+            generatedClassNames.addAll(classSource.getGeneratedClassNames());
+        }
+        classSource = null;
+        methodReaderCache = null;
+        fieldReaderCache = null;
     }
 
     public void cleanupTypes() {

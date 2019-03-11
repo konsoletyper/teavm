@@ -18,14 +18,12 @@ package org.teavm.cache;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.lang.ref.WeakReference;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
@@ -33,7 +31,7 @@ import org.teavm.model.ReferenceCache;
 
 public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheStatus {
     private Map<String, Entry> cache = new HashMap<>();
-    private Function<String, ClassHolder> provider;
+    private Function<String, ClassReader> provider;
     private ClassIO classIO;
     private final Set<String> freshClasses = new HashSet<>();
 
@@ -42,7 +40,7 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
         classIO = new ClassIO(referenceCache, symbolTable, fileTable, varTable);
     }
 
-    public void setProvider(Function<String, ClassHolder> provider) {
+    public void setProvider(Function<String, ClassReader> provider) {
         this.provider = provider;
     }
 
@@ -56,10 +54,33 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
         return isStaleClass(method.getClassName());
     }
 
+    public void populate(String name) {
+        getEntry(name);
+    }
+
     @Override
     public ClassReader get(String name) {
-        Entry entry = cache.computeIfAbsent(name, className -> {
-            ClassHolder cls = provider.apply(name);
+        Entry entry = getEntry(name);
+        if (entry.data == null) {
+            return null;
+        }
+
+        ClassReader cls = entry.reader;
+        if (cls == null) {
+            ByteArrayInputStream input = new ByteArrayInputStream(entry.data);
+            try {
+                cls = classIO.readClass(input, name);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
+            entry.reader = cls;
+        }
+        return cls;
+    }
+
+    private Entry getEntry(String name) {
+        return cache.computeIfAbsent(name, className -> {
+            ClassReader cls = provider.apply(className);
             Entry en = new Entry();
             if (cls != null) {
                 ByteArrayOutputStream output = new ByteArrayOutputStream();
@@ -69,26 +90,9 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
                     throw new RuntimeException(e);
                 }
                 en.data = output.toByteArray();
-                en.reader = new WeakReference<>(cls);
             }
             return en;
         });
-
-        if (entry.data == null) {
-            return null;
-        }
-
-        ClassReader cls = entry.reader.get();
-        if (cls == null) {
-            ByteArrayInputStream input = new ByteArrayInputStream(entry.data);
-            try {
-                cls = classIO.readClass(input, name);
-            } catch (IOException e) {
-                throw new RuntimeException(e);
-            }
-            entry.reader = new WeakReference<>(cls);
-        }
-        return cls;
     }
 
     public void commit() {
@@ -107,6 +111,6 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
 
     class Entry {
         byte[] data;
-        WeakReference<ClassReader> reader;
+        ClassReader reader;
     }
 }

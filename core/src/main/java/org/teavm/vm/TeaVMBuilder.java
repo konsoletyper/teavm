@@ -15,6 +15,7 @@
  */
 package org.teavm.vm;
 
+import org.teavm.dependency.ClassSourcePacker;
 import org.teavm.dependency.DependencyAnalyzerFactory;
 import org.teavm.dependency.PreciseDependencyAnalyzer;
 import org.teavm.interop.PlatformMarker;
@@ -28,6 +29,7 @@ public class TeaVMBuilder {
     ClassLoader classLoader;
     ReferenceCache referenceCache = new ReferenceCache();
     DependencyAnalyzerFactory dependencyAnalyzerFactory = PreciseDependencyAnalyzer::new;
+    ClassSourcePacker classSourcePacker = (src, names) -> src;
 
     public TeaVMBuilder(TeaVMTarget target) {
         this.target = target;
@@ -64,6 +66,11 @@ public class TeaVMBuilder {
 
     public TeaVMBuilder setReferenceCache(ReferenceCache referenceCache) {
         this.referenceCache = referenceCache;
+        return this;
+    }
+
+    public TeaVMBuilder setClassSourcePacker(ClassSourcePacker classSourcePacker) {
+        this.classSourcePacker = classSourcePacker;
         return this;
     }
 

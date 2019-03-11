@@ -41,7 +41,7 @@ class DependencyClassSource implements ClassHolderSource {
     private IncrementalDependencyRegistration dependencyRegistration;
     private Map<String, ClassHolder> generatedClasses = new LinkedHashMap<>();
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
-    private Map<String, Optional<ClassHolder>> cache = new LinkedHashMap<>(1000, 0.5f);
+    Map<String, Optional<ClassHolder>> cache = new LinkedHashMap<>(1000, 0.5f);
 
     DependencyClassSource(ClassReaderSource innerSource, Diagnostics diagnostics,
             IncrementalDependencyRegistration dependencyRegistration) {
@@ -91,6 +91,10 @@ class DependencyClassSource implements ClassHolderSource {
             return ModelUtils.copyClass(cls);
         }
         return generatedClasses.get(name);
+    }
+
+    Collection<String> getGeneratedClassNames() {
+        return generatedClasses.keySet();
     }
 
     public Collection<ClassHolder> getGeneratedClasses() {

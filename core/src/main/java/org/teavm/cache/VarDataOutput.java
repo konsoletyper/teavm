@@ -97,6 +97,11 @@ public class VarDataOutput implements Closeable {
         }
     }
 
+    public void writeBytes(byte[] data) throws IOException {
+        writeUnsigned(data.length);
+        output.write(data);
+    }
+
     @Override
     public void close() throws IOException {
         output.close();

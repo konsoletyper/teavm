@@ -40,6 +40,7 @@ import org.teavm.cache.EmptyProgramCache;
 import org.teavm.cache.ProgramDependencyExtractor;
 import org.teavm.common.ServiceRepository;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
+import org.teavm.dependency.ClassSourcePacker;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.DependencyListener;
@@ -152,10 +153,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private int compileProgressReportLimit;
     private int compileProgressLimit;
     private int compileProgressValue;
+    private ClassSourcePacker classSourcePacker;
 
     TeaVM(TeaVMBuilder builder) {
         target = builder.target;
         classLoader = builder.classLoader;
+        classSourcePacker = builder.classSourcePacker;
         dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(builder.classSource, classLoader,
                 this, diagnostics, builder.referenceCache);
         progressListener = new TeaVMProgressListener() {
@@ -348,8 +351,6 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
      * @param outputName name of output file within buildTarget. Should not be null.
      */
     public void build(BuildTarget buildTarget, String outputName) {
-        target.setController(targetController);
-
         // Check dependencies
         reportPhase(TeaVMPhase.DEPENDENCY_ANALYSIS, lastKnownClasses > 0 ? lastKnownClasses : 1);
         if (wasCancelled()) {
@@ -368,11 +369,12 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             return;
         }
 
+        dependencyAnalyzer.setInterruptor(null);
+        dependencyAnalyzer.cleanup(classSourcePacker);
         cacheStatus = new AnnotationAwareCacheStatus(rawCacheStatus, dependencyAnalyzer.getIncrementalDependencies(),
                 dependencyAnalyzer.getClassSource());
         cacheStatus.addSynthesizedClasses(dependencyAnalyzer::isSynthesizedClass);
-        dependencyAnalyzer.setInterruptor(null);
-        dependencyAnalyzer.cleanup();
+        target.setController(targetController);
 
         if (wasCancelled()) {
             return;

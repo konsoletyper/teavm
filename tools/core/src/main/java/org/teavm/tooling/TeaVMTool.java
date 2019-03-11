@@ -38,7 +38,7 @@ import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
 import org.teavm.cache.AlwaysStaleCacheStatus;
 import org.teavm.cache.CacheStatus;
-import org.teavm.cache.DiskCachedClassHolderSource;
+import org.teavm.cache.DiskCachedClassReaderSource;
 import org.teavm.cache.DiskMethodNodeCache;
 import org.teavm.cache.DiskProgramCache;
 import org.teavm.cache.EmptyProgramCache;
@@ -83,7 +83,7 @@ public class TeaVMTool {
     private List<String> classesToPreserve = new ArrayList<>();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private ClassLoader classLoader = TeaVMTool.class.getClassLoader();
-    private DiskCachedClassHolderSource cachedClassSource;
+    private DiskCachedClassReaderSource cachedClassSource;
     private DiskProgramCache programCache;
     private DiskMethodNodeCache astCache;
     private FileSymbolTable symbolTable;
@@ -340,7 +340,7 @@ public class TeaVMTool {
                 ClasspathClassHolderSource innerClassSource = new ClasspathClassHolderSource(classLoader,
                         referenceCache);
                 ClassHolderSource classSource = new PreOptimizingClassHolderSource(innerClassSource);
-                cachedClassSource = new DiskCachedClassHolderSource(cacheDirectory, referenceCache, symbolTable,
+                cachedClassSource = new DiskCachedClassReaderSource(cacheDirectory, referenceCache, symbolTable,
                         fileTable, variableTable, classSource, innerClassSource);
                 programCache = new DiskProgramCache(cacheDirectory, referenceCache, symbolTable, fileTable,
                         variableTable);

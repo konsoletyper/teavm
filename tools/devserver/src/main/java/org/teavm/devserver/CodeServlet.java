@@ -77,6 +77,7 @@ import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.FastDependencyAnalyzer;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.PreOptimizingClassHolderSource;
 import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathResourceMapper;
@@ -713,10 +714,14 @@ public class CodeServlet extends HttpServlet {
     private void initBuilder() throws IOException {
         watcher = new FileSystemWatcher(classPath);
 
-        classSource = new MemoryCachedClassReaderSource(referenceCache, symbolTable, fileSymbolTable,
-                variableSymbolTable);
+        classSource = createCachedSource();
         astCache = new InMemoryMethodNodeCache(referenceCache, symbolTable, fileSymbolTable, variableSymbolTable);
         programCache = new InMemoryProgramCache(referenceCache, symbolTable, fileSymbolTable, variableSymbolTable);
+    }
+
+    private MemoryCachedClassReaderSource createCachedSource() {
+        return new MemoryCachedClassReaderSource(referenceCache, symbolTable, fileSymbolTable,
+                variableSymbolTable);
     }
 
     private void shutdownBuilder() {
@@ -757,6 +762,7 @@ public class CodeServlet extends HttpServlet {
                 .setClassLoader(classLoader)
                 .setClassSource(classSource)
                 .setDependencyAnalyzerFactory(FastDependencyAnalyzer::new)
+                .setClassSourcePacker(this::packClasses)
                 .build();
 
         jsTarget.setStackTraceIncluded(true);
@@ -782,6 +788,16 @@ public class CodeServlet extends HttpServlet {
         generateDebug(debugInformationBuilder);
 
         postBuild(vm, startTime);
+    }
+
+    private ClassReaderSource packClasses(ClassReaderSource source, Collection<? extends String> classNames) {
+        MemoryCachedClassReaderSource packedSource = createCachedSource();
+        packedSource.setProvider(source::get);
+        for (String className : classNames) {
+            packedSource.populate(className);
+        }
+        packedSource.setProvider(null);
+        return packedSource;
     }
 
     private void addIndicator() {

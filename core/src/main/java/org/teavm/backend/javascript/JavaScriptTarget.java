@@ -354,7 +354,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         renderingContext.setMinifying(minifying);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
                 controller.getDiagnostics(), renderingContext);
-        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes,  sourceWriter);
+        RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, sourceWriter);
         renderer.setProperties(controller.getProperties());
         renderer.setMinifying(minifying);
         renderer.setProgressConsumer(controller::reportProgress);

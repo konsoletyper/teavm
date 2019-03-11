@@ -191,9 +191,9 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
     }
 
     @Override
-    public void cleanup() {
+    public void cleanup(ClassSourcePacker classSourcePacker) {
         virtualCallConsumers.clear();
         subtypeNodes.clear();
-        super.cleanup();
+        super.cleanup(classSourcePacker);
     }
 }
