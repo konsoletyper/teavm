@@ -65,7 +65,7 @@ public class VarDataInput {
 
     public long readSignedLong() throws IOException {
         long value = readUnsignedLong();
-        return (value & 1) == 0 ? (value >> 1) : ~(value >> 1);
+        return (value & 1) == 0 ? (value >>> 1) : ~(value >>> 1);
     }
 
     public float readFloat() throws IOException {
