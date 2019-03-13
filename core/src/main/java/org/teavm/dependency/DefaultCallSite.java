@@ -80,7 +80,7 @@ public class DefaultCallSite implements CallSite, Serializable {
 
     @Override
     public Collection<? extends DefaultCallGraphNode> getCalledMethods() {
-        if (singleCalledMethod == null) {
+        if (singleCalledMethod != null) {
             return Collections.singletonList(singleCalledMethod);
         }
         if (readonlyCalledMethods == null) {

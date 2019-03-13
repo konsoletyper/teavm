@@ -49,7 +49,7 @@ class SerializableCallGraph implements Serializable {
         FieldReference field;
     }
 
-    static class Location {
+    static class Location implements Serializable {
         TextLocation value;
         int caller;
     }
