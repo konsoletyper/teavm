@@ -190,8 +190,8 @@ public class TThread extends TObject implements TRunnable {
     @Async
     public static native void sleep(long millis) throws TInterruptedException;
 
-    private static void sleep(long millis, final AsyncCallback<Void> callback) {
-        final TThread current = currentThread();
+    private static void sleep(long millis, AsyncCallback<Void> callback) {
+        TThread current = currentThread();
         SleepHandler handler = new SleepHandler(current, callback);
         if (PlatformDetector.isLowLevel()) {
             handler.scheduleId = EventQueue.offer(handler, System.currentTimeMillis() + millis);

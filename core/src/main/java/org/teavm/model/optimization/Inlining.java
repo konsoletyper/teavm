@@ -58,6 +58,7 @@ import org.teavm.model.util.BasicBlockMapper;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.TransitionExtractor;
+import org.teavm.runtime.Fiber;
 
 public class Inlining {
     private IntArrayList depthsByBlock;
@@ -177,7 +178,7 @@ public class Inlining {
         if (step == null) {
             return false;
         }
-        List<PlanEntry> plan = buildPlan(program, -1, step);
+        List<PlanEntry> plan = buildPlan(program, -1, step, method);
         if (plan.isEmpty()) {
             return false;
         }
@@ -328,7 +329,7 @@ public class Inlining {
         execPlan(program, planEntry.innerPlan, firstInlineBlock.getIndex());
     }
 
-    private List<PlanEntry> buildPlan(Program program, int depth, InliningStep step) {
+    private List<PlanEntry> buildPlan(Program program, int depth, InliningStep step, MethodReference method) {
         List<PlanEntry> plan = new ArrayList<>();
         int originalDepth = depth;
 
@@ -355,6 +356,11 @@ public class Inlining {
                     continue;
                 }
 
+                if (invoke.getMethod().getClassName().equals(Fiber.class.getName())
+                        != method.getClassName().equals(Fiber.class.getName())) {
+                    continue;
+                }
+
                 MethodReader invokedMethod = getMethod(invoke.getMethod());
                 if (invokedMethod == null || invokedMethod.getProgram() == null
                         || invokedMethod.getProgram().basicBlockCount() == 0
@@ -376,7 +382,7 @@ public class Inlining {
                 entry.targetBlock = block.getIndex();
                 entry.targetInstruction = insn;
                 entry.program = invokedProgram;
-                entry.innerPlan.addAll(buildPlan(invokedProgram, depth + 1, innerStep));
+                entry.innerPlan.addAll(buildPlan(invokedProgram, depth + 1, innerStep, invokedMethod.getReference()));
                 entry.depth = depth;
                 entry.method = invokedMethod.getReference();
                 plan.add(entry);

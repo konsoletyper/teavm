@@ -64,7 +64,7 @@ public final class EventQueue {
     }
 
     public static void process() {
-        while (!finished) {
+        while (size > 0 && !finished) {
             next();
         }
     }
@@ -86,7 +86,16 @@ public final class EventQueue {
     }
 
     private static void remove(int index) {
-        Node item = data[size - 1];
+        --size;
+        if (index < size) {
+            data[index] = data[size];
+            update(index);
+        }
+        data[size] = null;
+    }
+
+    private static void update(int index) {
+        Node item = data[index];
         while (true) {
             int left = index * 2 + 1;
             int right = left + 1;

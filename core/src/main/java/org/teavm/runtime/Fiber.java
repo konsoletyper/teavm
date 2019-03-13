@@ -211,12 +211,7 @@ public class Fiber {
     }
 
     static void startMain() {
-        start(() -> {
-            runMain();
-            if (!current().isSuspending()) {
-                EventQueue.stop();
-            }
-        });
+        start(Fiber::runMain);
     }
 
     static native void runMain();
@@ -228,7 +223,7 @@ public class Fiber {
         current = former;
     }
 
-    private void resume() {
+    void resume() {
         state = STATE_RESUMING;
         start();
     }
