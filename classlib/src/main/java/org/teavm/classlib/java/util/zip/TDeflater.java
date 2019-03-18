@@ -57,7 +57,7 @@ public class TDeflater {
         }
         compressLevel = level;
         try {
-            impl = new Deflater(compressLevel, strategy, noHeader);
+            impl = new Deflater(compressLevel, noHeader);
         } catch (GZIPException e) {
             // do nothing
         }
