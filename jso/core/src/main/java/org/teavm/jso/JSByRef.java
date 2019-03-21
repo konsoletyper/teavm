@@ -26,6 +26,6 @@ import java.lang.annotation.Target;
  * to: byte[], short[], char[], int[], float[], double[] or T[], where T is JSObject.</p>
  */
 @Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.PARAMETER)
+@Target({ ElementType.PARAMETER, ElementType.METHOD })
 public @interface JSByRef {
 }

@@ -23,7 +23,7 @@ import org.teavm.jso.core.JSArrayReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
-public final class JSMethods {
+final class JSMethods {
     public static final MethodReference GET = new MethodReference(JS.class, "get", JSObject.class,
             JSObject.class, JSObject.class);
     public static final MethodReference SET = new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
@@ -92,6 +92,21 @@ public final class JSMethods {
             "stringArrayUnwrapper", Function.class);
     public static final MethodReference ARRAY_UNWRAPPER = new MethodReference(JS.class,
             "arrayUnwrapper", Class.class, Function.class);
+
+    public static final MethodReference DATA_TO_BYTE_ARRAY = new MethodReference(JS.class,
+            "dataToByteArray", JSObject.class, byte[].class);
+    public static final MethodReference DATA_TO_SHORT_ARRAY = new MethodReference(JS.class,
+            "dataToShortArray", JSObject.class, short[].class);
+    public static final MethodReference DATA_TO_CHAR_ARRAY = new MethodReference(JS.class,
+            "dataToCharArray", JSObject.class, char[].class);
+    public static final MethodReference DATA_TO_INT_ARRAY = new MethodReference(JS.class,
+            "dataToIntArray", JSObject.class, int[].class);
+    public static final MethodReference DATA_TO_FLOAT_ARRAY = new MethodReference(JS.class,
+            "dataToFloatArray", JSObject.class, float[].class);
+    public static final MethodReference DATA_TO_DOUBLE_ARRAY = new MethodReference(JS.class,
+            "dataToDoubleArray", JSObject.class, double[].class);
+    public static final MethodReference DATA_TO_ARRAY = new MethodReference(JS.class,
+            "dataToArray", JSObject.class, JSObject[].class);
 
     public static final MethodReference FUNCTION_AS_OBJECT = new MethodReference(JS.class, "functionAsObject",
             JSObject.class, JSObject.class, JSObject.class);

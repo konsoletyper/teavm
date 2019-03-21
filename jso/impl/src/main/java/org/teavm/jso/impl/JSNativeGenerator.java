@@ -178,6 +178,43 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                     writer.append(")");
                 }
                 break;
+
+            case "dataToByteArray":
+                writer.append("$rt_wrapArray($rt_bytecls(),").ws();
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(")");
+                break;
+            case "dataToShortArray":
+                writer.append("$rt_wrapArray($rt_shortcls(),").ws();
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(")");
+                break;
+            case "dataToCharArray":
+                writer.append("$rt_wrapArray($rt_charcls(),").ws();
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(")");
+                break;
+            case "dataToIntArray":
+                writer.append("$rt_wrapArray($rt_intcls(),").ws();
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(")");
+                break;
+            case "dataToFloatArray":
+                writer.append("$rt_wrapArray($rt_floatcls(),").ws();
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(")");
+                break;
+            case "dataToDoubleArray":
+                writer.append("$rt_wrapArray($rt_doublecls(),").ws();
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(")");
+                break;
+            case "dataToArray":
+                writer.append("$rt_wrapArray($rt_objcls(),").ws();
+                context.writeExpr(context.getArgument(0), Precedence.min());
+                writer.append(")");
+                break;
+
             default:
                 if (methodRef.getName().startsWith("unwrap")) {
                     context.writeExpr(context.getArgument(0), context.getPrecedence());
@@ -208,6 +245,28 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                 break;
             case "unwrapString":
                 method.getResult().propagate(agent.getType("java.lang.String"));
+                break;
+
+            case "dataToByteArray":
+                method.getResult().propagate(agent.getType("[B"));
+                break;
+            case "dataToShortArray":
+                method.getResult().propagate(agent.getType("[S"));
+                break;
+            case "dataToCharArray":
+                method.getResult().propagate(agent.getType("[C"));
+                break;
+            case "dataToIntArray":
+                method.getResult().propagate(agent.getType("[I"));
+                break;
+            case "dataToFloatArray":
+                method.getResult().propagate(agent.getType("[F"));
+                break;
+            case "dataToDoubleArray":
+                method.getResult().propagate(agent.getType("[D"));
+                break;
+            case "dataToArray":
+                method.getResult().propagate(agent.getType("[Ljava/lang/Object;"));
                 break;
         }
     }

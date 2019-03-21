@@ -17,6 +17,7 @@ package org.teavm.jso.test;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -156,6 +157,15 @@ public class ConversionTest {
         createByRefMutator().mutate(array);
         assertEquals(25, array[0]);
         assertEquals(44, array[1]);
+    }
+
+    @Test
+    public void returnsArrayByRef() {
+        int[] first = { 23, 42 };
+        int[] second = rewrap(first);
+        assertNotSame(first, second);
+        second[0] = 99;
+        assertEquals(99, first[0]);
     }
 
     @JSBody(params = { "a", "b", "c", "d", "e", "f", "g", "h" }, script = ""
@@ -336,4 +346,8 @@ public class ConversionTest {
                 + "}"
             + "};")
     private static native ByRefMutator createByRefMutator();
+
+    @JSByRef
+    @JSBody(params = "array", script = "return array;")
+    private static native int[] rewrap(@JSByRef int[] array);
 }

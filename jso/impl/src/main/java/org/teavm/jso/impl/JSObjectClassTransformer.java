@@ -132,7 +132,7 @@ class JSObjectClassTransformer implements ClassHolderTransformer {
 
             for (int i = 0; i < method.parameterCount(); ++i) {
                 variablesToPass[i] = marshaller.unwrapReturnValue(callLocation, variablesToPass[i],
-                        method.parameterType(i));
+                        method.parameterType(i), false);
             }
 
             basicBlock.addAll(marshallInstructions);

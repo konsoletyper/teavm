@@ -218,7 +218,11 @@ class JSValueMarshaller {
         return JSMethods.ARRAY_WRAPPER;
     }
 
-    Variable unwrapReturnValue(CallLocation location, Variable var, ValueType type) {
+    Variable unwrapReturnValue(CallLocation location, Variable var, ValueType type, boolean byRef) {
+        if (byRef) {
+            return unwrapByRef(location, var, type);
+        }
+
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
             ClassReader cls = classSource.get(className);
@@ -227,6 +231,29 @@ class JSValueMarshaller {
             }
         }
         return unwrap(location, var, type);
+    }
+
+    private Variable unwrapByRef(CallLocation location, Variable var, ValueType type) {
+        type = ((ValueType.Array) type).getItemType();
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BYTE:
+                    return invokeMethod(location, JSMethods.DATA_TO_BYTE_ARRAY, var);
+                case SHORT:
+                    return invokeMethod(location, JSMethods.DATA_TO_SHORT_ARRAY, var);
+                case CHARACTER:
+                    return invokeMethod(location, JSMethods.DATA_TO_CHAR_ARRAY, var);
+                case INTEGER:
+                    return invokeMethod(location, JSMethods.DATA_TO_INT_ARRAY, var);
+                case FLOAT:
+                    return invokeMethod(location, JSMethods.DATA_TO_FLOAT_ARRAY, var);
+                case DOUBLE:
+                    return invokeMethod(location, JSMethods.DATA_TO_DOUBLE_ARRAY, var);
+                default:
+                    break;
+            }
+        }
+        return invokeMethod(location, JSMethods.DATA_TO_ARRAY, var);
     }
 
     Variable unwrap(CallLocation location, Variable var, ValueType type) {
@@ -300,6 +327,18 @@ class JSValueMarshaller {
                 : unwrapMultiDimensionArray(location, var, itemType, degree);
 
         return var;
+    }
+
+    private Variable invokeMethod(CallLocation location, MethodReference method, Variable var) {
+        InvokeInstruction invoke = new InvokeInstruction();
+        invoke.setArguments(var);
+        invoke.setMethod(method);
+        invoke.setReceiver(program.createVariable());
+        invoke.setType(InvocationType.SPECIAL);
+        invoke.setLocation(location.getSourceLocation());
+        replacement.add(invoke);
+
+        return invoke.getReceiver();
     }
 
     private Variable unwrapSingleDimensionArray(CallLocation location, Variable var, ValueType type) {
