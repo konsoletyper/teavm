@@ -28,7 +28,6 @@ import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 import org.teavm.interop.Import;
 import org.teavm.jso.JSBody;
-import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.ResourceMap;
 
 public final class DateTimeZoneProvider {
@@ -193,6 +192,5 @@ public final class DateTimeZoneProvider {
     @Import(module = "teavm", name = "getNativeOffset")
     private static native int getNativeOffset(double instant);
 
-    @MetadataProvider(TimeZoneGenerator.class)
     private static native ResourceMap<ResourceMap<TimeZoneResource>> getResource();
 }

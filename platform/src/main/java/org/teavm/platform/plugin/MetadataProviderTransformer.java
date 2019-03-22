@@ -15,13 +15,12 @@
  */
 package org.teavm.platform.plugin;
 
+import java.util.HashSet;
+import java.util.Set;
 import org.teavm.backend.javascript.spi.GeneratedBy;
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
-import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
-import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
@@ -29,46 +28,29 @@ import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.util.ModelUtils;
-import org.teavm.platform.PlatformClass;
-import org.teavm.platform.metadata.ClassScopedMetadataProvider;
-import org.teavm.platform.metadata.MetadataProvider;
 
 class MetadataProviderTransformer implements ClassHolderTransformer {
+    private Set<MethodReference> metadataMethods = new HashSet<>();
+
+    void addMetadataMethod(MethodReference method) {
+        metadataMethods.add(method);
+    }
+
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         int index = 0;
         for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
-            AnnotationReader providerAnnot = method.getAnnotations().get(MetadataProvider.class.getName());
-            if (providerAnnot != null) {
-                transformMetadataMethod(cls, method, context.getDiagnostics(), context.getHierarchy(), index++);
-            }
-            providerAnnot = method.getAnnotations().get(ClassScopedMetadataProvider.class.getName());
-            if (providerAnnot != null) {
-                ValueType[] params = method.getParameterTypes();
-                if (params.length != 1 && params[0].isObject(PlatformClass.class.getName())) {
-                    context.getDiagnostics().error(new CallLocation(method.getReference()),
-                            "Method {{m0}} marked with {{c1}} must take exactly one parameter of type {{c2}}",
-                            method.getReference(), ClassScopedMetadataProvider.class.getName(),
-                            PlatformClass.class.getName());
-                }
-
-                AnnotationHolder genAnnot = new AnnotationHolder(GeneratedBy.class.getName());
-                genAnnot.getValues().put("value", new AnnotationValue(ValueType.object(
-                        ClassScopedMetadataProviderNativeGenerator.class.getName())));
-                method.getAnnotations().add(genAnnot);
+            if (metadataMethods.contains(method.getReference())) {
+                transformMetadataMethod(cls, method, context.getHierarchy(), index++);
             }
         }
     }
 
-    private void transformMetadataMethod(ClassHolder cls, MethodHolder method, Diagnostics diagnostics,
-            ClassHierarchy hierarchy, int suffix) {
-        if (!validate(method, diagnostics)) {
-            return;
-        }
-
+    private void transformMetadataMethod(ClassHolder cls, MethodHolder method, ClassHierarchy hierarchy, int suffix) {
         FieldHolder field = new FieldHolder("$$metadata$$" + suffix);
         field.setType(method.getResultType());
         field.setLevel(AccessLevel.PRIVATE);
@@ -97,19 +79,5 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
                             createMethod.getReference().getName(), createMethod.getResultType())));
         pe.getField(field.getReference(), field.getType())
                 .returnValue();
-    }
-
-    private boolean validate(MethodHolder method, Diagnostics diagnostics) {
-        AnnotationReader providerAnnot = method.getAnnotations().get(MetadataProvider.class.getName());
-        if (providerAnnot == null) {
-            return false;
-        }
-        if (!method.hasModifier(ElementModifier.NATIVE)) {
-            diagnostics.error(new CallLocation(method.getReference()), "Method {{m0}} is marked with "
-                    + "{{c1}} annotation, but it is not native", method.getReference(),
-                    MetadataProvider.class.getName());
-            return false;
-        }
-        return true;
     }
 }

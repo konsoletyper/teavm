@@ -19,6 +19,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -26,8 +27,8 @@ import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
+@Ignore
 public class MetadataGeneratorTest {
-    @MetadataProvider(TestResourceGenerator.class)
     private native TestResource getNull();
 
     @Test
@@ -35,7 +36,6 @@ public class MetadataGeneratorTest {
         assertNull(getNull());
     }
 
-    @MetadataProvider(TestResourceGenerator.class)
     private native IntResource getInt();
 
     @Test
@@ -43,7 +43,6 @@ public class MetadataGeneratorTest {
         assertEquals(23, getInt().getValue());
     }
 
-    @MetadataProvider(TestResourceGenerator.class)
     private native TestResource getResource();
 
     @Test
@@ -66,7 +65,6 @@ public class MetadataGeneratorTest {
         assertNull(res.getArrayC());
     }
 
-    @MetadataProvider(TestResourceGenerator.class)
     private native TestResource getEmptyResource();
 
     @Test

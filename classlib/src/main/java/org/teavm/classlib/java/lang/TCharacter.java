@@ -19,7 +19,6 @@ import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
 import org.teavm.platform.Platform;
-import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.StringResource;
 
 public class TCharacter extends TObject implements TComparable<TCharacter> {
@@ -317,7 +316,6 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return digitMapping;
     }
 
-    @MetadataProvider(CharacterMetadataGenerator.class)
     private static native StringResource obtainDigitMapping();
 
     private static UnicodeHelper.Range[] getClasses() {
@@ -327,7 +325,6 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return classMapping;
     }
 
-    @MetadataProvider(CharacterMetadataGenerator.class)
     private static native StringResource obtainClasses();
 
     public static int toChars(int codePoint, char[] dst, int dstIndex) {

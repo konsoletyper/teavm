@@ -28,7 +28,6 @@ import java.util.Set;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.classlib.PlatformDetector;
-import org.teavm.classlib.impl.DeclaringClassMetadataGenerator;
 import org.teavm.classlib.impl.reflection.Flags;
 import org.teavm.classlib.impl.reflection.JSClass;
 import org.teavm.classlib.impl.reflection.JSField;
@@ -48,7 +47,6 @@ import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.PlatformSequence;
 import org.teavm.platform.metadata.ClassResource;
-import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
@@ -601,7 +599,6 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return res != null ? getClass(Platform.classFromResource(res)) : null;
     }
 
-    @ClassScopedMetadataProvider(DeclaringClassMetadataGenerator.class)
     private static native ClassResource getDeclaringClass(PlatformClass cls);
 
     @SuppressWarnings("unchecked")

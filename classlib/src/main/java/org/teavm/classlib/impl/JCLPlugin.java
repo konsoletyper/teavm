@@ -23,18 +23,44 @@ import org.teavm.backend.c.TeaVMCHost;
 import org.teavm.backend.javascript.TeaVMJavaScriptHost;
 import org.teavm.backend.wasm.TeaVMWasmHost;
 import org.teavm.classlib.ReflectionSupplier;
+import org.teavm.classlib.impl.currency.CountriesGenerator;
+import org.teavm.classlib.impl.currency.CurrenciesGenerator;
+import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
+import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 import org.teavm.classlib.impl.tz.DateTimeZoneProviderIntrinsic;
+import org.teavm.classlib.impl.tz.TimeZoneGenerator;
+import org.teavm.classlib.impl.unicode.AvailableLocalesMetadataGenerator;
+import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.impl.unicode.CLDRReader;
+import org.teavm.classlib.impl.unicode.CountryMetadataGenerator;
+import org.teavm.classlib.impl.unicode.CurrencyLocalizationMetadataGenerator;
+import org.teavm.classlib.impl.unicode.DateFormatMetadataGenerator;
+import org.teavm.classlib.impl.unicode.DateSymbolsMetadataGenerator;
+import org.teavm.classlib.impl.unicode.DecimalMetadataGenerator;
+import org.teavm.classlib.impl.unicode.DefaultLocaleMetadataGenerator;
+import org.teavm.classlib.impl.unicode.LanguageMetadataGenerator;
+import org.teavm.classlib.impl.unicode.LikelySubtagsMetadataGenerator;
+import org.teavm.classlib.impl.unicode.NumberFormatMetadataGenerator;
+import org.teavm.classlib.impl.unicode.TimeZoneLocalizationGenerator;
+import org.teavm.classlib.java.lang.CharacterMetadataGenerator;
 import org.teavm.classlib.java.lang.reflect.AnnotationDependencyListener;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.PlatformClass;
+import org.teavm.platform.metadata.ClassResource;
+import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.StringResource;
+import org.teavm.platform.plugin.MetadataRegistration;
+import org.teavm.platform.plugin.PlatformPlugin;
 import org.teavm.vm.TeaVMPluginUtil;
+import org.teavm.vm.spi.After;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
+@After(PlatformPlugin.class)
 public class JCLPlugin implements TeaVMPlugin {
     @Override
     public void install(TeaVMHost host) {
@@ -116,6 +142,74 @@ public class JCLPlugin implements TeaVMPlugin {
         TeaVMPluginUtil.handleNatives(host, System.class);
         TeaVMPluginUtil.handleNatives(host, Array.class);
         TeaVMPluginUtil.handleNatives(host, Math.class);
+
+        installMetadata(host.getService(MetadataRegistration.class));
+    }
+
+    private void installMetadata(MetadataRegistration reg) {
+        reg.register(new MethodReference(DateTimeZoneProvider.class, "getResource", ResourceMap.class),
+                new TimeZoneGenerator());
+        reg.register(new MethodReference(DateTimeZoneProvider.class, "getResource", ResourceMap.class),
+                new TimeZoneGenerator());
+
+        reg.register(new MethodReference(CurrencyHelper.class, "getCurrencies", ResourceArray.class),
+                new CurrenciesGenerator());
+        reg.register(new MethodReference(CurrencyHelper.class, "getCountryToCurrencyMap", ResourceMap.class),
+                new CountriesGenerator());
+
+        reg.register(new MethodReference(CLDRHelper.class, "getLikelySubtagsMap", ResourceMap.class),
+                new LikelySubtagsMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getErasMap", ResourceMap.class),
+                new DateSymbolsMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getAmPmMap", ResourceMap.class),
+                new DateSymbolsMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getMonthMap", ResourceMap.class),
+                new DateSymbolsMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getShortMonthMap", ResourceMap.class),
+                new DateSymbolsMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getWeekdayMap", ResourceMap.class),
+                new DateSymbolsMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getShortWeekdayMap", ResourceMap.class),
+                new DateSymbolsMetadataGenerator());
+
+        reg.register(new MethodReference(CLDRHelper.class, "getTimeZoneLocalizationMap", ResourceMap.class),
+                new TimeZoneLocalizationGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getLanguagesMap", ResourceMap.class),
+                new LanguageMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getCountriesMap", ResourceMap.class),
+                new CountryMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getDefaultLocale", StringResource.class),
+                new DefaultLocaleMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getAvailableLocales", ResourceArray.class),
+                new AvailableLocalesMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getMinimalDaysInFirstWeek", ResourceMap.class),
+                new MinimalDaysInFirstWeekMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getFirstDayOfWeek", ResourceMap.class),
+                new FirstDayOfWeekMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getDateFormatMap", ResourceMap.class),
+                new DateFormatMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getTimeFormatMap", ResourceMap.class),
+                new DateFormatMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getDateTimeFormatMap", ResourceMap.class),
+                new DateFormatMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getNumberFormatMap", ResourceMap.class),
+                new NumberFormatMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getPercentFormatMap", ResourceMap.class),
+                new NumberFormatMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getCurrencyFormatMap", ResourceMap.class),
+                new NumberFormatMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getDecimalDataMap", ResourceMap.class),
+                new DecimalMetadataGenerator());
+        reg.register(new MethodReference(CLDRHelper.class, "getCurrencyMap", ResourceMap.class),
+                new CurrencyLocalizationMetadataGenerator());
+
+        reg.register(new MethodReference(Character.class, "obtainDigitMapping", StringResource.class),
+                new CharacterMetadataGenerator());
+        reg.register(new MethodReference(Character.class, "obtainClasses", StringResource.class),
+                new CharacterMetadataGenerator());
+
+        reg.register(new MethodReference(Class.class, "getDeclaringClass", PlatformClass.class, ClassResource.class),
+                new DeclaringClassMetadataGenerator());
     }
 
     @PlatformMarker

@@ -19,34 +19,26 @@ import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
-import org.teavm.model.AnnotationReader;
-import org.teavm.model.CallLocation;
-import org.teavm.model.ClassReader;
-import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.platform.metadata.Resource;
 
-public class MetadataProviderNativeGenerator implements Generator {
+class MetadataProviderNativeGenerator implements Generator {
+    private MetadataGenerator generator;
+    private MethodReference forMethod;
+
+    MetadataProviderNativeGenerator(MetadataGenerator generator, MethodReference forMethod) {
+        this.generator = generator;
+        this.forMethod = forMethod;
+    }
+
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        ClassReader cls = context.getClassSource().get(methodRef.getClassName());
-        MethodReader method = cls.getMethod(methodRef.getDescriptor());
-
-        AnnotationReader refAnnot = method.getAnnotations().get(MetadataProviderRef.class.getName());
-        methodRef = MethodReference.parse(refAnnot.getValue("value").getString());
-
-        MetadataGenerator generator = MetadataUtils.createMetadataGenerator(context.getClassLoader(),
-                method, new CallLocation(methodRef), context.getDiagnostics());
-        if (generator == null) {
-            return;
-        }
-
         DefaultMetadataGeneratorContext metadataContext = new DefaultMetadataGeneratorContext(context.getClassSource(),
                 context.getClassLoader(), context.getProperties(), context);
 
         // Generate resource loader
-        Resource resource = generator.generateMetadata(metadataContext, methodRef);
+        Resource resource = generator.generateMetadata(metadataContext, forMethod);
         writer.append("return ");
         ResourceWriterHelper.write(writer, resource);
         writer.append(';').softNewLine();

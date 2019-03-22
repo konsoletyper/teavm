@@ -248,4 +248,8 @@ public class TThread extends TObject implements TRunnable {
     public TStackTraceElement[] getStackTrace() {
         return new TStackTraceElement[0];
     }
+
+    public TClassLoader getContextClassLoader() {
+        return TClassLoader.getSystemClassLoader();
+    }
 }

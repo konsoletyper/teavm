@@ -16,68 +16,24 @@
 package org.teavm.platform.plugin;
 
 import java.io.IOException;
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.rendering.RenderingUtil;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
-import org.teavm.model.AnnotationReader;
-import org.teavm.model.CallLocation;
-import org.teavm.model.ClassReader;
-import org.teavm.model.ElementModifier;
-import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
-import org.teavm.model.ValueType;
 import org.teavm.platform.metadata.ClassScopedMetadataGenerator;
-import org.teavm.platform.metadata.ClassScopedMetadataProvider;
 import org.teavm.platform.metadata.Resource;
 
-public class ClassScopedMetadataProviderNativeGenerator implements Generator {
+class ClassScopedMetadataProviderNativeGenerator implements Generator {
+    private ClassScopedMetadataGenerator generator;
+
+    ClassScopedMetadataProviderNativeGenerator(ClassScopedMetadataGenerator generator) {
+        this.generator = generator;
+    }
+
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        // Validate method
-        ClassReader cls = context.getClassSource().get(methodRef.getClassName());
-        MethodReader method = cls.getMethod(methodRef.getDescriptor());
-        AnnotationReader providerAnnot = method.getAnnotations().get(ClassScopedMetadataProvider.class.getName());
-        if (providerAnnot == null) {
-            return;
-        }
-        if (!method.hasModifier(ElementModifier.NATIVE)) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "Method {{m0}} is marked with "
-                    + "{{c1}} annotation, but it is not native", methodRef,
-                    ClassScopedMetadataProvider.class.getName());
-            return;
-        }
-
-        // Find and instantiate metadata generator
-        ValueType generatorType = providerAnnot.getValue("value").getJavaClass();
-        String generatorClassName = ((ValueType.Object) generatorType).getClassName();
-        Class<?> generatorClass;
-        try {
-            generatorClass = Class.forName(generatorClassName, true, context.getClassLoader());
-        } catch (ClassNotFoundException e) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "Can't find metadata provider class {{c0}}",
-                    generatorClassName);
-            return;
-        }
-        Constructor<?> cons;
-        try {
-            cons = generatorClass.getConstructor();
-        } catch (NoSuchMethodException e) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "Metadata generator {{c0}} does not have "
-                    + "a public no-arg constructor", generatorClassName);
-            return;
-        }
-        ClassScopedMetadataGenerator generator;
-        try {
-            generator = (ClassScopedMetadataGenerator) cons.newInstance();
-        } catch (IllegalAccessException | InstantiationException | InvocationTargetException e) {
-            context.getDiagnostics().error(new CallLocation(methodRef), "Error instantiating metadata "
-                    + "generator {{c0}}", generatorClassName);
-            return;
-        }
         DefaultMetadataGeneratorContext metadataContext = new DefaultMetadataGeneratorContext(context.getClassSource(),
                 context.getClassLoader(), context.getProperties(), context);
 

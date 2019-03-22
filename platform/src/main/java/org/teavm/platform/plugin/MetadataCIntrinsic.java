@@ -23,43 +23,38 @@ import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.common.ServiceRepository;
-import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReaderSource;
-import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
-import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 
-public class MetadataCIntrinsic implements Intrinsic {
-    private ClassReaderSource classSource;
-    private ClassLoader classLoader;
+class MetadataCIntrinsic implements Intrinsic {
     private Set<String> writtenStructures = new HashSet<>();
     private Set<MethodReference> writtenInitializers = new HashSet<>();
     private CodeWriter structuresWriter;
     private CodeWriter staticFieldInitWriter;
     private DefaultMetadataGeneratorContext metadataContext;
+    private MethodReference constructorMethod;
+    private MethodReference targetMethod;
+    private MetadataGenerator generator;
 
-    public MetadataCIntrinsic(ClassReaderSource classSource, ClassLoader classLoader,
+    MetadataCIntrinsic(ClassReaderSource classSource, ClassLoader classLoader,
             ServiceRepository services, Properties properties, CodeWriter structuresWriter,
-            CodeWriter staticFieldInitWriter) {
-        this.classSource = classSource;
-        this.classLoader = classLoader;
+            CodeWriter staticFieldInitWriter, MethodReference constructorMethod, MethodReference targetMethod,
+            MetadataGenerator generator) {
         this.structuresWriter = structuresWriter;
         this.staticFieldInitWriter = staticFieldInitWriter;
         metadataContext = new DefaultMetadataGeneratorContext(classSource, classLoader, properties, services);
+        this.constructorMethod = constructorMethod;
+        this.targetMethod = targetMethod;
+        this.generator = generator;
     }
 
     @Override
     public boolean canHandle(MethodReference methodReference) {
-        MethodReader method = classSource.resolve(methodReference);
-        if (method == null) {
-            return false;
-        }
-
-        return method.getAnnotations().get(MetadataProvider.class.getName()) != null;
+        return constructorMethod.equals(methodReference);
     }
 
     @Override
@@ -74,17 +69,13 @@ public class MetadataCIntrinsic implements Intrinsic {
             return;
         }
 
-        MethodReader method = classSource.resolve(methodReference);
-        MetadataGenerator generator = MetadataUtils.createMetadataGenerator(classLoader, method,
-                new CallLocation(invocation.getMethod()), context.getDiagnotics());
-
         String variableName = context.names().forMethod(methodReference);
-        staticFieldInitWriter.print("static ").printType(method.getResultType()).print(" ")
+        staticFieldInitWriter.print("static ").printType(methodReference.getReturnType()).print(" ")
                 .print(variableName).print(" = ");
         if (generator == null) {
             staticFieldInitWriter.print("NULL");
         } else {
-            Resource resource = generator.generateMetadata(metadataContext, invocation.getMethod());
+            Resource resource = generator.generateMetadata(metadataContext, targetMethod);
             writeValue(context, resource);
         }
         staticFieldInitWriter.println(";");

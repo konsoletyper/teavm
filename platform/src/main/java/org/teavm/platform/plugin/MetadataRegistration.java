@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,20 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform.metadata;
+package org.teavm.platform.plugin;
 
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
+import org.teavm.model.MethodReference;
+import org.teavm.platform.metadata.ClassScopedMetadataGenerator;
+import org.teavm.platform.metadata.MetadataGenerator;
 
-/**
- * <p>Binds a {@link MetadataGenerator} to a native method.</p>
- *
- * @author Alexey Andreev
- */
-@Retention(RetentionPolicy.RUNTIME)
-@Target(ElementType.METHOD)
-public @interface MetadataProvider {
-    Class<? extends MetadataGenerator> value();
+public interface MetadataRegistration {
+    void register(MethodReference method, MetadataGenerator generator);
+
+    void register(MethodReference method, ClassScopedMetadataGenerator generator);
 }

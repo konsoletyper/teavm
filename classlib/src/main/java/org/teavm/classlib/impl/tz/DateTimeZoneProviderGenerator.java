@@ -26,6 +26,6 @@ public class DateTimeZoneProviderGenerator implements Generator {
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
         boolean autodetect = Boolean.parseBoolean(
                 context.getProperties().getProperty("java.util.TimeZone.autodetect", "false"));
-        writer.append("return " + Boolean.toString(autodetect) + ";");
+        writer.append("return " + autodetect + ";");
     }
 }

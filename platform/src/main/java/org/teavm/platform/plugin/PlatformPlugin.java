@@ -15,6 +15,9 @@
  */
 package org.teavm.platform.plugin;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.BiConsumer;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.c.TeaVMCHost;
 import org.teavm.backend.c.intrinsic.Intrinsic;
@@ -31,15 +34,22 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformQueue;
+import org.teavm.platform.metadata.ClassScopedMetadataGenerator;
+import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.vm.TeaVMPluginUtil;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
-public class PlatformPlugin implements TeaVMPlugin {
+public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
+    private MetadataProviderTransformer metadataTransformer = new MetadataProviderTransformer();
+    private List<MetadataGeneratorConsumer> metadataGeneratorConsumers = new ArrayList<>();
+    private List<BiConsumer<MethodReference, ClassScopedMetadataGenerator>> scopedMetadataGeneratorConsumers
+            = new ArrayList<>();
+
     @Override
     public void install(TeaVMHost host) {
         if (host.getExtension(TeaVMJavaScriptHost.class) != null) {
-            host.add(new MetadataProviderTransformer());
+            host.add(metadataTransformer);
             host.add(new ResourceTransformer());
             host.add(new ResourceAccessorTransformer(host));
             host.add(new ResourceAccessorDependencyListener());
@@ -58,6 +68,11 @@ public class PlatformPlugin implements TeaVMPlugin {
             });
             host.add(new AsyncDependencyListener());
             jsHost.addVirtualMethods(new AsyncMethodGenerator());
+
+            metadataGeneratorConsumers.add((method, constructor, generator) -> jsHost.add(method,
+                    new MetadataProviderNativeGenerator(generator, constructor)));
+            scopedMetadataGeneratorConsumers.add((method, generator) -> jsHost.add(method,
+                    new ClassScopedMetadataProviderNativeGenerator(generator)));
         } else if (!isBootstrap()) {
             host.add(new StringAmplifierTransformer());
         }
@@ -65,8 +80,10 @@ public class PlatformPlugin implements TeaVMPlugin {
         if (!isBootstrap()) {
             TeaVMWasmHost wasmHost = host.getExtension(TeaVMWasmHost.class);
             if (wasmHost != null) {
-                wasmHost.add(ctx -> new MetadataIntrinsic(ctx.getClassSource(), ctx.getClassLoader(), ctx.getServices(),
-                        ctx.getProperties()));
+                metadataGeneratorConsumers.add((constructor, method, generator) -> {
+                    wasmHost.add(ctx -> new MetadataIntrinsic(ctx.getClassSource(), ctx.getClassLoader(),
+                            ctx.getServices(), ctx.getProperties(), constructor, method, generator));
+                });
                 wasmHost.add(ctx -> new ResourceReadIntrinsic(ctx.getClassSource(), ctx.getClassLoader()));
 
                 wasmHost.add(ctx -> new WasmIntrinsic() {
@@ -84,9 +101,11 @@ public class PlatformPlugin implements TeaVMPlugin {
 
             TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
             if (cHost != null) {
-                cHost.addIntrinsic(ctx -> new MetadataCIntrinsic(ctx.getClassSource(), ctx.getClassLoader(),
-                        ctx.getServices(), ctx.getProperties(), ctx.getStructureCodeWriter(),
-                        ctx.getStaticFieldsInitWriter()));
+                metadataGeneratorConsumers.add((constructor, method, generator) -> {
+                    cHost.addIntrinsic(ctx -> new MetadataCIntrinsic(ctx.getClassSource(), ctx.getClassLoader(),
+                            ctx.getServices(), ctx.getProperties(), ctx.getStructureCodeWriter(),
+                            ctx.getStaticFieldsInitWriter(), constructor, method, generator));
+                });
                 cHost.addIntrinsic(ctx -> new ResourceReadCIntrinsic(ctx.getClassSource()));
                 cHost.addIntrinsic(ctx -> new Intrinsic() {
                     @Override
@@ -114,6 +133,29 @@ public class PlatformPlugin implements TeaVMPlugin {
 
         TeaVMPluginUtil.handleNatives(host, Platform.class);
         TeaVMPluginUtil.handleNatives(host, PlatformQueue.class);
+
+        host.registerService(MetadataRegistration.class, this);
+    }
+
+    @Override
+    public void register(MethodReference method, MetadataGenerator generator) {
+        MethodReference constructor = new MethodReference(method.getClassName(), method.getName() + "$$create",
+                method.getSignature());
+        for (MetadataGeneratorConsumer consumer : metadataGeneratorConsumers) {
+            consumer.consume(constructor, method, generator);
+        }
+        metadataTransformer.addMetadataMethod(method);
+    }
+
+    @Override
+    public void register(MethodReference method, ClassScopedMetadataGenerator generator) {
+        for (BiConsumer<MethodReference, ClassScopedMetadataGenerator> consumer : scopedMetadataGeneratorConsumers) {
+            consumer.accept(method, generator);
+        }
+    }
+
+    interface MetadataGeneratorConsumer {
+        void consume(MethodReference constructor, MethodReference target, MetadataGenerator generator);
     }
 
     @PlatformMarker
