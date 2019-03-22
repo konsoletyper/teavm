@@ -43,6 +43,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
+import org.teavm.model.analysis.ClassInitializerInfo;
 
 public class RenderingContext {
     private final DebugInformationEmitter debugEmitter;
@@ -60,12 +61,13 @@ public class RenderingContext {
     private final List<String> readonlyStringPool = Collections.unmodifiableList(stringPool);
     private final Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
     private boolean minifying;
+    private ClassInitializerInfo classInitializerInfo;
 
     public RenderingContext(DebugInformationEmitter debugEmitter,
             ClassReaderSource initialClassSource, ListableClassReaderSource classSource,
             ClassLoader classLoader, ServiceRepository services, Properties properties,
             NamingStrategy naming, DependencyInfo dependencyInfo,
-            Predicate<MethodReference> virtualPredicate) {
+            Predicate<MethodReference> virtualPredicate, ClassInitializerInfo classInitializerInfo) {
         this.debugEmitter = debugEmitter;
         this.initialClassSource = initialClassSource;
         this.classSource = classSource;
@@ -75,6 +77,7 @@ public class RenderingContext {
         this.naming = naming;
         this.dependencyInfo = dependencyInfo;
         this.virtualPredicate = virtualPredicate;
+        this.classInitializerInfo = classInitializerInfo;
     }
 
     public ClassReaderSource getInitialClassSource() {
@@ -115,6 +118,10 @@ public class RenderingContext {
 
     public boolean isVirtual(MethodReference method) {
         return virtualPredicate.test(method);
+    }
+
+    public boolean isDynamicInitializer(String className) {
+        return classInitializerInfo.isDynamicInitializer(className);
     }
 
     public void pushLocation(TextLocation location) {

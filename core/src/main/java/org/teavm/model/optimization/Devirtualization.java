@@ -17,6 +17,7 @@ package org.teavm.model.optimization;
 
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.Set;
 import org.teavm.common.OptionalPredicate;
 import org.teavm.dependency.DependencyInfo;
@@ -73,8 +74,13 @@ public class Devirtualization {
     }
 
     private Set<MethodReference> getImplementations(String[] classNames, MethodReference ref) {
+        return implementations(hierarchy, dependency, classNames, ref);
+    }
+
+    public static Set<MethodReference> implementations(ClassHierarchy hierarchy, DependencyInfo dependency,
+            String[] classNames, MethodReference ref) {
         OptionalPredicate<String> isSuperclass = hierarchy.getSuperclassPredicate(ref.getClassName());
-        Set<MethodReference> methods = new HashSet<>();
+        Set<MethodReference> methods = new LinkedHashSet<>();
         for (String className : classNames) {
             if (className.startsWith("[")) {
                 className = "java.lang.Object";

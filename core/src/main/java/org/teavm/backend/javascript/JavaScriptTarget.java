@@ -142,7 +142,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     @Override
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
-        clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource());
+        clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource(),
+                controller.getClassInitializerInfo());
     }
 
     @Override
@@ -350,7 +351,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         RenderingContext renderingContext = new RenderingContext(debugEmitterToUse,
                 controller.getUnprocessedClassSource(), classes,
                 controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming,
-                controller.getDependencyInfo(), m -> isVirtual(virtualMethodContributorContext, m));
+                controller.getDependencyInfo(), m -> isVirtual(virtualMethodContributorContext, m),
+                controller.getClassInitializerInfo());
         renderingContext.setMinifying(minifying);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
                 controller.getDiagnostics(), renderingContext);

@@ -16,9 +16,11 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.interop.DoesNotModifyStaticFields;
 import org.teavm.interop.Import;
 import org.teavm.jso.JSBody;
 
+@DoesNotModifyStaticFields
 public class TDouble extends TNumber implements TComparable<TDouble> {
     public static final double POSITIVE_INFINITY = 1 / 0.0;
     public static final double NEGATIVE_INFINITY = -POSITIVE_INFINITY;
@@ -208,6 +210,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return (int) (h >>> 32) ^ (int) h;
     }
 
+    @DoesNotModifyStaticFields
     public static native int compare(double a, double b);
 
     @Override

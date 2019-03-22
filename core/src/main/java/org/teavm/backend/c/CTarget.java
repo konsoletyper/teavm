@@ -153,7 +153,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
         shadowStackTransformer = new ShadowStackTransformer(characteristics);
-        clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource());
+        clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource(),
+                controller.getClassInitializerInfo());
         nullCheckInsertion = new NullCheckInsertion(characteristics);
         nullCheckTransformation = new NullCheckTransformation();
 

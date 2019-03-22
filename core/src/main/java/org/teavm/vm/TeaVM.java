@@ -51,14 +51,17 @@ import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.diagnostics.AccumulationDiagnostics;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.diagnostics.ProblemProvider;
+import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReference;
+import org.teavm.model.Instruction;
 import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
@@ -69,6 +72,10 @@ import org.teavm.model.MutableClassHolderSource;
 import org.teavm.model.Program;
 import org.teavm.model.ProgramCache;
 import org.teavm.model.ValueType;
+import org.teavm.model.analysis.ClassInitializerAnalysis;
+import org.teavm.model.analysis.ClassInitializerInfo;
+import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.optimization.ArrayUnwrapMotion;
 import org.teavm.model.optimization.ClassInitElimination;
 import org.teavm.model.optimization.ConstantConditionElimination;
@@ -154,6 +161,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     private int compileProgressLimit;
     private int compileProgressValue;
     private ClassSourcePacker classSourcePacker;
+    private ClassInitializerInfo classInitializerInfo;
 
     TeaVM(TeaVMBuilder builder) {
         target = builder.target;
@@ -374,19 +382,19 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         cacheStatus = new AnnotationAwareCacheStatus(rawCacheStatus, dependencyAnalyzer.getIncrementalDependencies(),
                 dependencyAnalyzer.getClassSource());
         cacheStatus.addSynthesizedClasses(dependencyAnalyzer::isSynthesizedClass);
-        target.setController(targetController);
 
         if (wasCancelled()) {
             return;
         }
 
-        target.analyzeBeforeOptimizations(new ListableClassReaderSourceAdapter(
-                dependencyAnalyzer.getClassSource(),
-                new LinkedHashSet<>(dependencyAnalyzer.getReachableClasses())));
-
         boolean isLazy = optimizationLevel == TeaVMOptimizationLevel.SIMPLE;
         ListableClassHolderSource classSet;
         if (isLazy) {
+            classInitializerInfo = ClassInitializerInfo.EMPTY;
+            target.setController(targetController);
+            target.analyzeBeforeOptimizations(new ListableClassReaderSourceAdapter(
+                    dependencyAnalyzer.getClassSource(),
+                    new LinkedHashSet<>(dependencyAnalyzer.getReachableClasses())));
             initCompileProgress(1000);
             classSet = lazyPipeline();
         } else {
@@ -439,6 +447,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             if (wasCancelled()) {
                 return null;
             }
+
+            ClassInitializerAnalysis classInitializerAnalysis = new ClassInitializerAnalysis(classSet,
+                    dependencyAnalyzer.getClassHierarchy());
+            classInitializerAnalysis.analyze(dependencyAnalyzer);
+            classInitializerInfo = classInitializerAnalysis;
+            eliminateClassInit(classSet);
+        } else {
+            classInitializerInfo = ClassInitializerInfo.EMPTY;
         }
 
         dependencyAnalyzer.cleanupTypes();
@@ -447,6 +463,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         if (wasCancelled()) {
             return null;
         }
+
+        target.setController(targetController);
+        target.analyzeBeforeOptimizations(new ListableClassReaderSourceAdapter(
+                dependencyAnalyzer.getClassSource(),
+                new LinkedHashSet<>(dependencyAnalyzer.getReachableClasses())));
 
         // Optimize and allocate registers
         optimize(classSet);
@@ -459,6 +480,53 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     private ListableClassHolderSource lazyPipeline() {
         return new PostProcessingClassHolderSource();
+    }
+
+    private void eliminateClassInit(ListableClassHolderSource classes) {
+        for (String className : classes.getClassNames()) {
+            ClassHolder cls = classes.get(className);
+            for (MethodHolder method : cls.getMethods()) {
+                Program program = method.getProgram();
+                if (program == null) {
+                    continue;
+                }
+                for (BasicBlock block : program.getBasicBlocks()) {
+                    for (Instruction instruction : block) {
+                        if (instruction instanceof InitClassInstruction) {
+                            InitClassInstruction clinit = (InitClassInstruction) instruction;
+                            if (!classInitializerInfo.isDynamicInitializer(clinit.getClassName())) {
+                                clinit.delete();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        for (TeaVMEntryPoint entryPoint : entryPoints.values()) {
+            addInitializersToEntryPoint(classes, entryPoint.getMethod());
+        }
+    }
+
+    private void addInitializersToEntryPoint(ClassHolderSource classes, MethodReference methodRef) {
+        ClassHolder cls = classes.get(methodRef.getClassName());
+        if (cls == null) {
+            return;
+        }
+
+        MethodHolder method = cls.getMethod(methodRef.getDescriptor());
+        if (method == null) {
+            return;
+        }
+
+        Program program = method.getProgram();
+        BasicBlock block = program.basicBlockAt(0);
+        Instruction first = block.getFirstInstruction();
+        for (String className : classInitializerInfo.getInitializationOrder()) {
+            InvokeInstruction invoke = new InvokeInstruction();
+            invoke.setMethod(new MethodReference(className, "<clinit>", ValueType.VOID));
+            first.insertPrevious(invoke);
+        }
     }
 
     public ListableClassHolderSource link(DependencyAnalyzer dependency) {
@@ -529,7 +597,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     private void inline(ListableClassHolderSource classes) {
-        if (optimizationLevel != TeaVMOptimizationLevel.ADVANCED && optimizationLevel != TeaVMOptimizationLevel.FULL) {
+        if (optimizationLevel == TeaVMOptimizationLevel.SIMPLE) {
             return;
         }
 
@@ -541,7 +609,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         Inlining inlining = new Inlining(new ClassHierarchy(classes), dependencyAnalyzer, inliningStrategy,
-                classes, this::isExternal, optimizationLevel == TeaVMOptimizationLevel.FULL);
+                classes, this::isExternal, optimizationLevel == TeaVMOptimizationLevel.FULL, classInitializerInfo);
         List<MethodReference> methodReferences = inlining.getOrder();
         int classCount = classes.getClassNames().size();
         int initialValue = compileProgressValue;
@@ -810,6 +878,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         @Override
         public void addVirtualMethods(Predicate<MethodReference> methods) {
             TeaVM.this.addVirtualMethods(methods);
+        }
+
+        @Override
+        public ClassInitializerInfo getClassInitializerInfo() {
+            return classInitializerInfo;
         }
     };
 

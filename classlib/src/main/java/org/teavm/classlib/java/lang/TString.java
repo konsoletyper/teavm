@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import java.util.Iterator;
 import java.util.Locale;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.io.TUnsupportedEncodingException;
 import org.teavm.classlib.java.nio.TByteBuffer;
@@ -26,10 +27,10 @@ import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 import org.teavm.classlib.java.util.TArrays;
 import org.teavm.classlib.java.util.TComparator;
 import org.teavm.classlib.java.util.TFormatter;
-import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TLocale;
-import org.teavm.classlib.java.util.TMap;
 import org.teavm.classlib.java.util.regex.TPattern;
+import org.teavm.dependency.PluggableDependency;
+import org.teavm.interop.DoesNotModifyStaticFields;
 
 public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
     public static final TComparator<TString> CASE_INSENSITIVE_ORDER = (o1, o2) -> o1.compareToIgnoreCase(o2);
@@ -625,14 +626,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return toUpperCase();
     }
 
-    public TString intern() {
-        TString interned = PoolHolder.pool.get(this);
-        if (interned == null) {
-            interned = this;
-            PoolHolder.pool.put(interned, interned);
-        }
-        return interned;
-    }
+    @GeneratedBy(StringNativeGenerator.class)
+    @PluggableDependency(StringNativeGenerator.class)
+    @DoesNotModifyStaticFields
+    public native TString intern();
 
     public boolean matches(String regex) {
         return TPattern.matches(regex, this.toString());
@@ -704,9 +701,5 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             sb.append(iter.next());
         }
         return sb.toString();
-    }
-
-    static class PoolHolder {
-        static TMap<TString, TString> pool = new THashMap<>();
     }
 }

@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.interop.DoesNotModifyStaticFields;
 import org.teavm.interop.Import;
 import org.teavm.jso.JSBody;
 
@@ -237,6 +238,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
         return isInfinite(value);
     }
 
+    @DoesNotModifyStaticFields
     public static native int compare(float f1, float f2);
 
     @Override

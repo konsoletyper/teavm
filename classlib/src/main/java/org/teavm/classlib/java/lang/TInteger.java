@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import static org.teavm.classlib.impl.IntegerUtil.toUnsignedLogRadixString;
 import org.teavm.backend.javascript.spi.InjectedBy;
+import org.teavm.interop.DoesNotModifyStaticFields;
 
 public class TInteger extends TNumber implements TComparable<TInteger> {
     public static final int SIZE = 32;
@@ -251,6 +252,7 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
         return compare(value, other.value);
     }
 
+    @DoesNotModifyStaticFields
     public static native int compare(int x, int y);
 
     public static int numberOfLeadingZeros(int i) {
@@ -356,8 +358,10 @@ public class TInteger extends TNumber implements TComparable<TInteger> {
     }
 
     @InjectedBy(IntegerNativeGenerator.class)
+    @DoesNotModifyStaticFields
     public static native int divideUnsigned(int dividend, int divisor);
 
     @InjectedBy(IntegerNativeGenerator.class)
+    @DoesNotModifyStaticFields
     public static native int remainderUnsigned(int dividend, int divisor);
 }

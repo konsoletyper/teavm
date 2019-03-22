@@ -32,6 +32,7 @@ import org.mozilla.javascript.ast.FunctionNode;
 import org.teavm.backend.javascript.rendering.JSParser;
 import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.interop.DoesNotModifyStaticFields;
 import org.teavm.interop.Sync;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSByRef;
@@ -653,6 +654,7 @@ class JSClassProcessor {
             MethodHolder proxyMethod = new MethodHolder(proxyRef.getDescriptor());
             proxyMethod.getModifiers().add(ElementModifier.NATIVE);
             proxyMethod.getModifiers().add(ElementModifier.STATIC);
+            proxyMethod.getAnnotations().add(new AnnotationHolder(DoesNotModifyStaticFields.class.getName()));
             boolean inline = repository.inlineMethods.contains(methodRef);
             AnnotationHolder generatorAnnot = new AnnotationHolder(inline
                     ? DynamicInjector.class.getName() : DynamicGenerator.class.getName());

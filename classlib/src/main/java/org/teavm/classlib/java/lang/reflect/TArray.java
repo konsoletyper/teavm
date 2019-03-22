@@ -24,6 +24,7 @@ import org.teavm.classlib.java.lang.TNullPointerException;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.DoesNotModifyStaticFields;
 import org.teavm.interop.Unmanaged;
 import org.teavm.platform.PlatformClass;
 import org.teavm.runtime.Allocator;
@@ -35,6 +36,7 @@ public final class TArray extends TObject {
     @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayNativeGenerator.class)
     @DelegateTo("getLengthLowLevel")
+    @DoesNotModifyStaticFields
     public static native int getLength(TObject array) throws TIllegalArgumentException;
 
     @SuppressWarnings("unused")
@@ -63,6 +65,7 @@ public final class TArray extends TObject {
 
     @GeneratedBy(ArrayNativeGenerator.class)
     @DelegateTo("newInstanceLowLevel")
+    @DoesNotModifyStaticFields
     private static native TObject newInstanceImpl(PlatformClass componentType, int length);
 
     @SuppressWarnings("unused")
@@ -89,9 +92,11 @@ public final class TArray extends TObject {
 
     @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayNativeGenerator.class)
+    @DoesNotModifyStaticFields
     private static native TObject getImpl(TObject array, int index);
 
     @GeneratedBy(ArrayNativeGenerator.class)
     @PluggableDependency(ArrayNativeGenerator.class)
+    @DoesNotModifyStaticFields
     private static native void setImpl(TObject array, int index, TObject value);
 }

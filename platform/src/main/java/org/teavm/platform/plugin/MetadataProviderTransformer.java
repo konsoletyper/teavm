@@ -18,6 +18,7 @@ package org.teavm.platform.plugin;
 import java.util.HashSet;
 import java.util.Set;
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.interop.DoesNotModifyStaticFields;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationValue;
@@ -67,6 +68,9 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
                 MetadataProviderNativeGenerator.class.getName())));
         createMethod.getAnnotations().add(genAnnot);
         ModelUtils.copyAnnotations(method.getAnnotations(), createMethod.getAnnotations());
+        if (createMethod.getAnnotations().get(DoesNotModifyStaticFields.class.getName()) == null) {
+            createMethod.getAnnotations().add(new AnnotationHolder(DoesNotModifyStaticFields.class.getName()));
+        }
 
         AnnotationHolder refAnnot = new AnnotationHolder(MetadataProviderRef.class.getName());
         refAnnot.getValues().put("value", new AnnotationValue(method.getReference().toString()));

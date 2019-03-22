@@ -16,8 +16,10 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.interop.DoesNotModifyStaticFields;
 import org.teavm.interop.Import;
 
+@DoesNotModifyStaticFields
 public final class TMath extends TObject {
     public static final double E = 2.71828182845904523536;
     public static final double PI = 3.14159265358979323846;

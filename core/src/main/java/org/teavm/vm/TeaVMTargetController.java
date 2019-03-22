@@ -25,6 +25,7 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
+import org.teavm.model.analysis.ClassInitializerInfo;
 
 public interface TeaVMTargetController {
     boolean wasCancelled();
@@ -54,4 +55,6 @@ public interface TeaVMTargetController {
     TeaVMProgressFeedback reportProgress(int progress);
 
     void addVirtualMethods(Predicate<MethodReference> methods);
+
+    ClassInitializerInfo getClassInitializerInfo();
 }

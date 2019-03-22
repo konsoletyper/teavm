@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import static org.teavm.classlib.impl.IntegerUtil.toUnsignedLogRadixString;
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.interop.DoesNotModifyStaticFields;
 
 public class TLong extends TNumber implements TComparable<TLong> {
     public static final long MIN_VALUE = -0x8000000000000000L;
@@ -212,6 +213,7 @@ public class TLong extends TNumber implements TComparable<TLong> {
         return other instanceof TLong && ((TLong) other).value == value;
     }
 
+    @DoesNotModifyStaticFields
     public static native int compare(long a, long b);
 
     @Override
@@ -351,8 +353,10 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     @GeneratedBy(LongNativeGenerator.class)
+    @DoesNotModifyStaticFields
     public static native long divideUnsigned(long dividend, long divisor);
 
     @GeneratedBy(LongNativeGenerator.class)
+    @DoesNotModifyStaticFields
     public static native long remainderUnsigned(long dividend, long divisor);
 }

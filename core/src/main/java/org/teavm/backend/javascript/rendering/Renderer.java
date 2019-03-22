@@ -76,7 +76,7 @@ public class Renderer implements RenderingManager {
     private RenderingContext context;
     private List<PostponedFieldInitializer> postponedFieldInitializers = new ArrayList<>();
     private IntFunction<TeaVMProgressFeedback> progressConsumer = p -> TeaVMProgressFeedback.CONTINUE;
-    private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
+    public static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     private ObjectIntMap<String> sizeByClass = new ObjectIntHashMap<>();
     private int stringPoolSize;
@@ -379,7 +379,7 @@ public class Renderer implements RenderingManager {
         try {
             MethodReader clinit = classSource.get(cls.getName()).getMethod(CLINIT_METHOD);
 
-            if (clinit != null) {
+            if (clinit != null && context.isDynamicInitializer(cls.getName())) {
                 renderCallClinit(clinit, cls);
             }
             if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)) {
@@ -541,7 +541,7 @@ public class Renderer implements RenderingManager {
             writer.append(cls.getClassHolder().getLevel().ordinal()).append(',').ws();
 
             MethodReader clinit = classSource.get(cls.getName()).getMethod(CLINIT_METHOD);
-            if (clinit != null) {
+            if (clinit != null && context.isDynamicInitializer(cls.getName())) {
                 writer.appendClassInit(cls.getName());
             } else {
                 writer.append('0');
@@ -1112,6 +1112,11 @@ public class Renderer implements RenderingManager {
         public void useLongLibrary() {
             longLibraryUsed = true;
         }
+
+        @Override
+        public boolean isDynamicInitializer(String className) {
+            return context.isDynamicInitializer(className);
+        }
     }
 
     private void appendMonitor(StatementRenderer statementRenderer, MethodNode methodNode) throws IOException {
@@ -1132,7 +1137,7 @@ public class Renderer implements RenderingManager {
         FieldReference field;
         String value;
 
-        public PostponedFieldInitializer(FieldReference field, String value) {
+        PostponedFieldInitializer(FieldReference field, String value) {
             this.field = field;
             this.value = value;
         }

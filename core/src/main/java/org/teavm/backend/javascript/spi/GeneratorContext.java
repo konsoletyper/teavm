@@ -49,4 +49,6 @@ public interface GeneratorContext extends ServiceRepository {
     void typeToClassString(SourceWriter writer, ValueType type);
 
     void useLongLibrary();
+
+    boolean isDynamicInitializer(String className);
 }

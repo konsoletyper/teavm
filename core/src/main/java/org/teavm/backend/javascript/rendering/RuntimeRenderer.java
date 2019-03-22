@@ -151,16 +151,29 @@ public class RuntimeRenderer {
     }
 
     private void renderRuntimeIntern() throws IOException {
-        writer.append("function $rt_intern(str) {").indent().softNewLine();
-        ClassReader stringCls = classSource.get(STRING_CLASS);
-        if (stringCls != null && stringCls.getMethod(STRING_INTERN_METHOD) != null) {
-            writer.append("return ").appendMethodBody(new MethodReference(STRING_CLASS, STRING_INTERN_METHOD))
-                    .append("(str);").softNewLine();
-        } else {
+        if (!needInternMethod()) {
+            writer.append("function $rt_intern(str) {").indent().softNewLine();
             writer.append("return str;").softNewLine();
+            writer.outdent().append("}").softNewLine();
+        } else {
+            renderHandWrittenRuntime("intern.js");
+            writer.append("function $rt_stringHash(s)").ws().append("{").indent().softNewLine();
+            writer.append("return ").appendMethodBody(String.class, "hashCode", int.class)
+                    .append("(s);").softNewLine();
+            writer.outdent().append("}").softNewLine();
+            writer.append("function $rt_stringEquals(a,").ws().append("b)").ws().append("{").indent().softNewLine();
+            writer.append("return ").appendMethodBody(String.class, "equals", Object.class, boolean.class)
+                    .append("(a").ws().append(",b);").softNewLine();
+            writer.outdent().append("}").softNewLine();
         }
+    }
 
-        writer.outdent().append("}").newLine();
+    private boolean needInternMethod() {
+        ClassReader cls = classSource.get(STRING_CLASS);
+        if (cls == null) {
+            return false;
+        }
+        return cls.getMethod(STRING_INTERN_METHOD) != null;
     }
 
     private void renderRuntimeObjcls() throws IOException {
