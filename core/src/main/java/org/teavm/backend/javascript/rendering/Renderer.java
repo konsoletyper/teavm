@@ -379,7 +379,7 @@ public class Renderer implements RenderingManager {
         try {
             MethodReader clinit = classSource.get(cls.getName()).getMethod(CLINIT_METHOD);
 
-            if (clinit != null) {
+            if (clinit != null && context.isDynamicInitializer(cls.getName())) {
                 renderCallClinit(clinit, cls);
             }
             if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)) {
