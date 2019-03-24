@@ -27,7 +27,7 @@ import java.util.Set;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.dependency.ValueDependencyInfo;
-import org.teavm.interop.DoesNotModifyStaticFields;
+import org.teavm.interop.NoSideEffects;
 import org.teavm.model.BasicBlockReader;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
@@ -155,15 +155,7 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
             InstructionAnalyzer reader = new InstructionAnalyzer(currentClass, methodInfo);
             ProgramReader program = method.getProgram();
             if (program == null) {
-                methodInfo.anyFieldModified = true;
-                if (method.getAnnotations().get(DoesNotModifyStaticFields.class.getName()) != null) {
-                    methodInfo.anyFieldModified = false;
-                } else {
-                    ClassReader containingClass = classes.get(method.getOwnerName());
-                    if (containingClass.getAnnotations().get(DoesNotModifyStaticFields.class.getName()) != null) {
-                        methodInfo.anyFieldModified = false;
-                    }
-                }
+                methodInfo.anyFieldModified = hasSideEffects(method);
             } else {
                 for (BasicBlockReader block : program.getBasicBlocks()) {
                     block.readAllInstructions(reader);
@@ -178,6 +170,18 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
         }
 
         return methodInfo;
+    }
+
+    private boolean hasSideEffects(MethodReader method) {
+        if (method.getAnnotations().get(NoSideEffects.class.getName()) != null) {
+            return false;
+        }
+        ClassReader containingClass = classes.get(method.getOwnerName());
+        if (containingClass.getAnnotations().get(NoSideEffects.class.getName()) != null) {
+            return false;
+        }
+
+        return true;
     }
 
     class InstructionAnalyzer extends AbstractInstructionReader {

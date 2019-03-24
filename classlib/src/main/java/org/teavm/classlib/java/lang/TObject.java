@@ -21,7 +21,7 @@ import org.teavm.interop.Address;
 import org.teavm.interop.Async;
 import org.teavm.interop.AsyncCallback;
 import org.teavm.interop.DelegateTo;
-import org.teavm.interop.DoesNotModifyStaticFields;
+import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Rename;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Superclass;
@@ -273,7 +273,7 @@ public class TObject {
     }
 
     @DelegateTo("hashCodeLowLevelImpl")
-    @DoesNotModifyStaticFields
+    @NoSideEffects
     private static native int hashCodeLowLevel(TObject obj);
 
     @Unmanaged
@@ -282,7 +282,7 @@ public class TObject {
     }
 
     @DelegateTo("setHashCodeLowLevelImpl")
-    @DoesNotModifyStaticFields
+    @NoSideEffects
     private static native void setHashCodeLowLevel(TObject obj, int value);
 
     @Unmanaged
@@ -303,7 +303,7 @@ public class TObject {
     }
 
     @DelegateTo("identityOrMonitorLowLevel")
-    @DoesNotModifyStaticFields
+    @NoSideEffects
     private native int identityOrMonitor();
 
     private static int identityOrMonitorLowLevel(RuntimeObject object) {
@@ -311,7 +311,7 @@ public class TObject {
     }
 
     @DelegateTo("setIdentityLowLevel")
-    @DoesNotModifyStaticFields
+    @NoSideEffects
     native void setIdentity(int id);
 
     private static void setIdentityLowLevel(RuntimeObject object, int id) {

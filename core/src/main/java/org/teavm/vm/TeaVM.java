@@ -75,7 +75,6 @@ import org.teavm.model.ValueType;
 import org.teavm.model.analysis.ClassInitializerAnalysis;
 import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.instructions.InitClassInstruction;
-import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.optimization.ArrayUnwrapMotion;
 import org.teavm.model.optimization.ClassInitElimination;
 import org.teavm.model.optimization.ConstantConditionElimination;
@@ -523,9 +522,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         BasicBlock block = program.basicBlockAt(0);
         Instruction first = block.getFirstInstruction();
         for (String className : classInitializerInfo.getInitializationOrder()) {
-            InvokeInstruction invoke = new InvokeInstruction();
-            invoke.setMethod(new MethodReference(className, "<clinit>", ValueType.VOID));
-            first.insertPrevious(invoke);
+            InitClassInstruction clinit = new InitClassInstruction();
+            clinit.setClassName(className);
+            first.insertPrevious(clinit);
         }
     }
 

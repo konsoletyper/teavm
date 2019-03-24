@@ -16,11 +16,11 @@
 package org.teavm.classlib.java.lang;
 
 import org.teavm.backend.javascript.spi.InjectedBy;
-import org.teavm.interop.DoesNotModifyStaticFields;
 import org.teavm.interop.Import;
+import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 
-@DoesNotModifyStaticFields
+@NoSideEffects
 public class TDouble extends TNumber implements TComparable<TDouble> {
     public static final double POSITIVE_INFINITY = 1 / 0.0;
     public static final double NEGATIVE_INFINITY = -POSITIVE_INFINITY;
@@ -210,7 +210,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
         return (int) (h >>> 32) ^ (int) h;
     }
 
-    @DoesNotModifyStaticFields
+    @NoSideEffects
     public static native int compare(double a, double b);
 
     @Override
@@ -228,18 +228,22 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
 
     @JSBody(params = "v", script = "return isNaN(v);")
     @Import(module = "teavm", name = "isnan")
+    @NoSideEffects
     public static native boolean isNaN(double v);
 
     @JSBody(script = "return NaN;")
     @Import(module = "teavm", name = "TeaVM_getNaN")
+    @NoSideEffects
     private static native double getNaN();
 
     @JSBody(params = "v", script = "return !isFinite(v);")
     @Import(module = "teavm", name = "isinf")
+    @NoSideEffects
     public static native boolean isInfinite(double v);
 
     @JSBody(params = "v", script = "return isFinite(v);")
     @Import(module = "teavm", name = "isfinite")
+    @NoSideEffects
     public static native boolean isFinite(double v);
 
     public static long doubleToRawLongBits(double value) {
@@ -248,10 +252,12 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
 
     @InjectedBy(DoubleGenerator.class)
     @Import(name = "teavm_reinterpretDoubleToLong")
+    @NoSideEffects
     public static native long doubleToLongBits(double value);
 
     @InjectedBy(DoubleGenerator.class)
     @Import(name = "teavm_reinterpretLongToDouble")
+    @NoSideEffects
     public static native double longBitsToDouble(long bits);
 
     public static String toHexString(double d) {

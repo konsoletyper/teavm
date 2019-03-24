@@ -30,7 +30,7 @@ import org.teavm.classlib.java.util.TFormatter;
 import org.teavm.classlib.java.util.TLocale;
 import org.teavm.classlib.java.util.regex.TPattern;
 import org.teavm.dependency.PluggableDependency;
-import org.teavm.interop.DoesNotModifyStaticFields;
+import org.teavm.interop.NoSideEffects;
 
 public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
     public static final TComparator<TString> CASE_INSENSITIVE_ORDER = (o1, o2) -> o1.compareToIgnoreCase(o2);
@@ -628,7 +628,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     @GeneratedBy(StringNativeGenerator.class)
     @PluggableDependency(StringNativeGenerator.class)
-    @DoesNotModifyStaticFields
+    @NoSideEffects
     public native TString intern();
 
     public boolean matches(String regex) {

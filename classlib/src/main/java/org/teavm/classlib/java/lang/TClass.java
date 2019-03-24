@@ -41,7 +41,7 @@ import org.teavm.classlib.java.lang.reflect.TModifier;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
-import org.teavm.interop.DoesNotModifyStaticFields;
+import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.core.JSArray;
 import org.teavm.platform.Platform;
@@ -210,7 +210,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     @GeneratedBy(ClassGenerator.class)
-    @DoesNotModifyStaticFields
+    @NoSideEffects
     private static native void createMetadata();
 
     public TField[] getFields() throws TSecurityException {

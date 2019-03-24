@@ -25,8 +25,8 @@ import org.teavm.classlib.java.io.TPrintStream;
 import org.teavm.classlib.java.lang.reflect.TArray;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
-import org.teavm.interop.DoesNotModifyStaticFields;
 import org.teavm.interop.Import;
+import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.GC;
@@ -104,7 +104,7 @@ public final class TSystem extends TObject {
 
     @GeneratedBy(SystemNativeGenerator.class)
     @DelegateTo("doArrayCopyLowLevel")
-    @DoesNotModifyStaticFields
+    @NoSideEffects
     private static native void doArrayCopy(Object src, int srcPos, Object dest, int destPos, int length);
 
     @Unmanaged
@@ -126,7 +126,7 @@ public final class TSystem extends TObject {
 
     @DelegateTo("currentTimeMillisLowLevel")
     @GeneratedBy(SystemNativeGenerator.class)
-    @DoesNotModifyStaticFields
+    @NoSideEffects
     public static native long currentTimeMillis();
 
     private static long currentTimeMillisLowLevel() {

@@ -21,6 +21,7 @@ import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.interop.PlatformMarkers;
 import org.teavm.interop.Unmanaged;
@@ -42,10 +43,12 @@ public final class Platform {
 
     @InjectedBy(PlatformGenerator.class)
     @Unmanaged
+    @NoSideEffects
     public static native PlatformObject getPlatformObject(Object obj);
 
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
+    @NoSideEffects
     public static native Object clone(Object obj);
 
     @DelegateTo("isInstanceLowLevel")
@@ -61,6 +64,7 @@ public final class Platform {
     }
 
     @JSBody(params = "object", script = "return typeof object === 'undefined';")
+    @NoSideEffects
     private static native boolean isUndefined(JSObject object);
 
     @DelegateTo("isAssignableLowLevel")
@@ -86,9 +90,11 @@ public final class Platform {
     @InjectedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
     @Unmanaged
+    @NoSideEffects
     public static native Class<?> asJavaClass(PlatformObject obj);
 
     @JSBody(script = "return $rt_nextId();")
+    @NoSideEffects
     public static native int nextObjectId();
 
     public static <T> T newInstance(PlatformClass cls) {
@@ -100,6 +106,7 @@ public final class Platform {
     }
 
     @GeneratedBy(PlatformGenerator.class)
+    @NoSideEffects
     private static native void prepareNewInstance();
 
     @GeneratedBy(PlatformGenerator.class)
@@ -108,6 +115,7 @@ public final class Platform {
 
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
+    @NoSideEffects
     public static native PlatformClass lookupClass(String name);
 
     @PluggableDependency(PlatformGenerator.class)
@@ -133,6 +141,7 @@ public final class Platform {
     @GeneratedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)
     @DelegateTo("getEnumConstantsLowLevel")
+    @NoSideEffects
     public static native Enum<?>[] getEnumConstants(PlatformClass cls);
 
     private static Enum<?>[] getEnumConstantsLowLevel(PlatformClass cls) {
@@ -194,7 +203,6 @@ public final class Platform {
         Window.clearTimeout(id);
     }
 
-    @JSBody(script = "return [];")
     public static <T> PlatformQueue<T> createQueue() {
         if (isLowLevel()) {
             return new LowLevelQueue<>();
@@ -204,6 +212,7 @@ public final class Platform {
     }
 
     @JSBody(script = "return [];")
+    @NoSideEffects
     private static native  <T> PlatformQueue<T> createQueueJs();
 
     public static PlatformString stringFromCharCode(int charCode) {

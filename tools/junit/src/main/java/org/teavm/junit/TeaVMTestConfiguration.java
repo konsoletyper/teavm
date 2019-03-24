@@ -37,7 +37,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
 
         @Override
         public void apply(TeaVM vm) {
-            vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
+            vm.setOptimizationLevel(TeaVMOptimizationLevel.ADVANCED);
         }
 
         @Override
