@@ -42,6 +42,8 @@ import org.teavm.model.ElementHolder;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReference;
+import org.teavm.model.GenericTypeParameter;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
@@ -101,7 +103,47 @@ public class Parser {
                     node.visibleParameterAnnotations != null ? node.visibleParameterAnnotations[i] : null,
                     node.invisibleParameterAnnotations != null ? node.invisibleParameterAnnotations[i] : null);
         }
+
+        if (node.signature != null) {
+            parseMethodGenericSignature(node.signature, method);
+        }
+
         return method;
+    }
+
+    private void parseMethodGenericSignature(String signature, MethodHolder method) {
+        GenericValueType.ParsePosition position = new GenericValueType.ParsePosition();
+
+        List<GenericTypeParameter> typeParameters = new ArrayList<>();
+        String elementName = "method '" + method.getDescriptor() + "'";
+        if (signature.charAt(position.index) == '<') {
+            parseTypeParameters(signature, typeParameters, position, elementName);
+        }
+
+        List<GenericValueType> parameters = new ArrayList<>();
+        if (signature.charAt(position.index) != '(') {
+            throw couldNotParseSignature(elementName, signature);
+        }
+        position.index++;
+        while (signature.charAt(position.index) != ')') {
+            GenericValueType parameter = GenericValueType.parse(signature, position);
+            if (parameter == null) {
+                throw couldNotParseSignature(elementName, signature);
+            }
+            parameters.add(parameter);
+        }
+        position.index++;
+        GenericValueType returnType = GenericValueType.parse(signature, position);
+        if (returnType == null) {
+            throw couldNotParseSignature(elementName, signature);
+        }
+
+        if (position.index < signature.length() && signature.charAt(position.index) != '^') {
+            throw couldNotParseSignature(elementName, signature);
+        }
+
+        method.setTypeParameters(typeParameters.toArray(new GenericTypeParameter[0]));
+        method.setGenericSignature(returnType, parameters.toArray(new GenericValueType[0]));
     }
 
     private static void applyDebugNames(Program program, PhiUpdater phiUpdater, ProgramParser parser,
@@ -242,6 +284,11 @@ public class Parser {
                 cls.getInterfaces().add(referenceCache.getCached(iface.replace('/', '.')));
             }
         }
+
+        if (node.signature != null) {
+            parseSignature(cls, node.signature);
+        }
+
         for (Object obj : node.fields) {
             FieldNode fieldNode = (FieldNode) obj;
             FieldHolder field = parseField(fieldNode);
@@ -267,12 +314,97 @@ public class Parser {
         return cls;
     }
 
+    private void parseSignature(ClassHolder cls, String signature) {
+        GenericValueType.ParsePosition position = new GenericValueType.ParsePosition();
+        List<GenericTypeParameter> typeParameters = new ArrayList<>();
+
+        String elementName = "class '" + cls.getName() + "'";
+        if (signature.charAt(position.index) == '<') {
+            parseTypeParameters(signature, typeParameters, position, elementName);
+        }
+
+        cls.setGenericParameters(typeParameters.toArray(new GenericTypeParameter[0]));
+
+        GenericValueType.Object supertype = GenericValueType.parseObject(signature, position);
+        if (supertype == null) {
+            throw couldNotParseSignature(elementName, signature);
+        }
+        cls.setGenericParent(supertype);
+
+        List<GenericValueType.Object> interfaces = new ArrayList<>();
+        while (position.index < signature.length()) {
+            GenericValueType.Object itf = GenericValueType.parseObject(signature, position);
+            if (itf == null) {
+                throw couldNotParseSignature(elementName, signature);
+            }
+            interfaces.add(itf);
+        }
+
+        cls.getGenericInterfaces().addAll(interfaces);
+    }
+
+    private void parseTypeParameters(String signature, List<GenericTypeParameter> typeParameters,
+            GenericValueType.ParsePosition position, String elementName) {
+        position.index++;
+        do {
+            if (position.index >= signature.length()) {
+                throw couldNotParseSignature(elementName, signature);
+            }
+            int next = signature.indexOf(':', position.index);
+            if (next < 0 || next == position.index) {
+                throw couldNotParseSignature(elementName, signature);
+            }
+            String name = signature.substring(position.index, next);
+            position.index = next;
+
+            List<GenericValueType.Reference> bounds = new ArrayList<>();
+            while (true) {
+                if (position.index >= signature.length()) {
+                    throw couldNotParseSignature(elementName, signature);
+                }
+                char c = signature.charAt(position.index);
+                if (c != ':') {
+                    break;
+                }
+                position.index++;
+                if (bounds.isEmpty() && signature.charAt(position.index) == ':') {
+                    bounds.add(null);
+                } else {
+                    GenericValueType.Reference bound = GenericValueType.parseReference(signature, position);
+                    if (bound == null) {
+                        throw couldNotParseSignature(elementName, signature);
+                    }
+                    bounds.add(bound);
+                }
+            }
+
+            typeParameters.add(new GenericTypeParameter(name, bounds.get(0),
+                    bounds.subList(1, bounds.size()).toArray(new GenericValueType.Reference[0])));
+        } while (signature.charAt(position.index) != '>');
+
+        position.index++;
+    }
+
+    private IllegalArgumentException couldNotParseSignature(String forElement, String signature) {
+        return new IllegalArgumentException("Could not parse class signature '" + signature + "' for " + forElement);
+    }
+
     public FieldHolder parseField(FieldNode node) {
         FieldHolder field = new FieldHolder(referenceCache.getCached(node.name));
         field.setType(referenceCache.getCached(ValueType.parse(node.desc)));
         field.setInitialValue(node.value);
         parseModifiers(node.access, field, DECL_FIELD);
         parseAnnotations(field.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
+
+        if (node.signature != null) {
+            GenericValueType.ParsePosition position = new GenericValueType.ParsePosition();
+            GenericValueType type = GenericValueType.parse(node.signature, position);
+            if (type == null || position.index < node.signature.length()) {
+                throw couldNotParseSignature("field '" + field.getReference() + "'", node.signature);
+            }
+            field.setGenericType(type);
+        }
+
         return field;
     }
 

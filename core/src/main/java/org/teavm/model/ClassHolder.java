@@ -18,14 +18,26 @@ package org.teavm.model;
 import java.util.*;
 
 public class ClassHolder extends ElementHolder implements ClassReader {
+    private GenericTypeParameter[] genericParameters;
     private String parent = Object.class.getName();
+    private GenericValueType.Object genericParent;
     private Set<String> interfaces = new LinkedHashSet<>();
+    private Set<GenericValueType.Object> genericInterfaces = new LinkedHashSet<>();
     private Map<MethodDescriptor, MethodHolder> methods = new LinkedHashMap<>();
     private Map<String, FieldHolder> fields = new LinkedHashMap<>();
     private String ownerName;
 
     public ClassHolder(String name) {
         super(name);
+    }
+
+    @Override
+    public GenericTypeParameter[] getGenericParameters() {
+        return genericParameters != null ? genericParameters.clone() : null;
+    }
+
+    public void setGenericParameters(GenericTypeParameter[] genericParameters) {
+        this.genericParameters = genericParameters != null ? genericParameters.clone() : null;
     }
 
     @Override
@@ -38,8 +50,22 @@ public class ClassHolder extends ElementHolder implements ClassReader {
     }
 
     @Override
+    public GenericValueType.Object getGenericParent() {
+        return genericParent;
+    }
+
+    public void setGenericParent(GenericValueType.Object genericParent) {
+        this.genericParent = genericParent;
+    }
+
+    @Override
     public Set<String> getInterfaces() {
         return interfaces;
+    }
+
+    @Override
+    public Set<GenericValueType.Object> getGenericInterfaces() {
+        return genericInterfaces;
     }
 
     @Override

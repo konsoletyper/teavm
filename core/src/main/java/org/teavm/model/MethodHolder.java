@@ -15,10 +15,14 @@
  */
 package org.teavm.model;
 
+import java.util.Objects;
 import java.util.function.Function;
 
 public class MethodHolder extends MemberHolder implements MethodReader {
     private MethodDescriptor descriptor;
+    private GenericTypeParameter[] typeParameters;
+    private GenericValueType genericReturnType;
+    private GenericValueType[] genericParameterTypes;
     private ClassHolder owner;
     private Program program;
     private Function<MethodHolder, Program> programSupplier;
@@ -42,6 +46,40 @@ public class MethodHolder extends MemberHolder implements MethodReader {
     @Override
     public ValueType getResultType() {
         return descriptor.getResultType();
+    }
+
+    @Override
+    public GenericValueType getGenericResultType() {
+        return genericReturnType;
+    }
+
+    @Override
+    public int genericParameterCount() {
+        return genericParameterTypes != null ? genericParameterTypes.length : 0;
+    }
+
+    @Override
+    public GenericValueType genericParameterType(int index) {
+        return genericParameterTypes != null ? genericParameterTypes[index] : null;
+    }
+
+    public void setGenericSignature(GenericValueType returnType, GenericValueType[] parameterTypes) {
+        genericReturnType = Objects.requireNonNull(returnType);
+        genericParameterTypes = parameterTypes.clone();
+    }
+
+    public void removeGenericSignature() {
+        genericReturnType = null;
+        genericParameterTypes = null;
+    }
+
+    @Override
+    public GenericTypeParameter[] getTypeParameters() {
+        return typeParameters != null ? typeParameters.clone() : new GenericTypeParameter[0];
+    }
+
+    public void setTypeParameters(GenericTypeParameter[] typeParameters) {
+        this.typeParameters = typeParameters != null ? typeParameters.clone() : null;
     }
 
     @Override

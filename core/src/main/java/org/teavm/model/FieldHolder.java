@@ -17,6 +17,7 @@ package org.teavm.model;
 
 public class FieldHolder extends MemberHolder implements FieldReader {
     private ValueType type;
+    private GenericValueType genericType;
     private Object initialValue;
     private ClassHolder owner;
     private FieldReference reference;
@@ -28,6 +29,15 @@ public class FieldHolder extends MemberHolder implements FieldReader {
     @Override
     public ValueType getType() {
         return type;
+    }
+
+    @Override
+    public GenericValueType getGenericType() {
+        return genericType;
+    }
+
+    public void setGenericType(GenericValueType genericType) {
+        this.genericType = genericType;
     }
 
     public void setType(ValueType type) {

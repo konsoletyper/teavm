@@ -20,15 +20,25 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.model.ClassReader;
 import org.teavm.model.FieldReader;
+import org.teavm.model.GenericTypeParameter;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 
 class CachedClassReader extends CachedElement implements ClassReader {
     String parent;
+    GenericTypeParameter[] parameters;
+    GenericValueType.Object genericParent;
     String owner;
     Set<String> interfaces;
+    Set<GenericValueType.Object> genericInterfaces;
     Map<MethodDescriptor, CachedMethod> methods;
     Map<String, CachedField> fields;
+
+    @Override
+    public GenericTypeParameter[] getGenericParameters() {
+        return parameters != null ? parameters.clone() : new GenericTypeParameter[0];
+    }
 
     @Override
     public String getParent() {
@@ -36,8 +46,18 @@ class CachedClassReader extends CachedElement implements ClassReader {
     }
 
     @Override
+    public GenericValueType.Object getGenericParent() {
+        return genericParent;
+    }
+
+    @Override
     public Set<String> getInterfaces() {
         return interfaces;
+    }
+
+    @Override
+    public Set<GenericValueType.Object> getGenericInterfaces() {
+        return genericInterfaces;
     }
 
     @Override

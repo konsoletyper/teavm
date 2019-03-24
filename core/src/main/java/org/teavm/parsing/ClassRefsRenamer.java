@@ -28,6 +28,8 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReference;
+import org.teavm.model.GenericTypeParameter;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
@@ -94,6 +96,17 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
                 renamedCls.getInterfaces().add(mappedIfaceName);
             }
         }
+
+        GenericValueType.Object genericParent = cls.getGenericParent();
+        if (genericParent != null) {
+            renamedCls.setGenericParent((GenericValueType.Object) rename(genericParent));
+        }
+        for (GenericValueType.Object genericInterface : cls.getGenericInterfaces()) {
+            renamedCls.getGenericInterfaces().add((GenericValueType.Object) rename(genericInterface));
+        }
+
+        renamedCls.setGenericParameters(cls.getGenericParameters());
+
         return renamedCls;
     }
 
@@ -114,7 +127,40 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         renamedMethod.setProgram(method.getProgram());
         rename(method.getAnnotations(), renamedMethod.getAnnotations());
         rename(renamedMethod.getProgram());
+
+        renamedMethod.setTypeParameters(rename(method.getTypeParameters()));
+        GenericValueType genericResultType = method.getGenericResultType();
+        if (genericResultType != null) {
+            genericResultType = rename(method.getGenericResultType());
+        }
+        GenericValueType[] genericParameters = new GenericValueType[method.genericParameterCount()];
+        for (int i = 0; i < genericParameters.length; ++i) {
+            genericParameters[i] = rename(method.genericParameterType(i));
+        }
+        if (genericResultType != null) {
+            renamedMethod.setGenericSignature(genericResultType, genericParameters);
+        }
+
         return renamedMethod;
+    }
+
+    private GenericTypeParameter[] rename(GenericTypeParameter[] typeParameters) {
+        for (int i = 0; i < typeParameters.length; ++i) {
+            typeParameters[i] = rename(typeParameters[i]);
+        }
+        return typeParameters;
+    }
+
+    private GenericTypeParameter rename(GenericTypeParameter typeParameter) {
+        GenericValueType.Reference classBound = typeParameter.getClassBound();
+        if (classBound != null) {
+            classBound = (GenericValueType.Reference) rename(classBound);
+        }
+        GenericValueType.Reference[] interfaceBounds = typeParameter.getInterfaceBounds();
+        for (int j = 0; j < interfaceBounds.length; ++j) {
+            interfaceBounds[j] = (GenericValueType.Reference) rename(interfaceBounds[j]);
+        }
+        return new GenericTypeParameter(typeParameter.getName(), classBound, interfaceBounds);
     }
 
     public FieldHolder rename(FieldHolder field) {
@@ -124,6 +170,12 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         renamedField.setType(rename(field.getType()));
         renamedField.setInitialValue(field.getInitialValue());
         rename(field.getAnnotations(), renamedField.getAnnotations());
+
+        GenericValueType genericType = field.getGenericType();
+        if (genericType != null) {
+            renamedField.setGenericType(rename(genericType));
+        }
+
         return renamedField;
     }
 
@@ -134,6 +186,45 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         } else if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
             return referenceCache.getCached(ValueType.object(classNameMapper.apply(className)));
+        } else {
+            return type;
+        }
+    }
+
+    private GenericValueType rename(GenericValueType type) {
+        if (type instanceof GenericValueType.Array) {
+            GenericValueType itemType = ((GenericValueType.Array) type).getItemType();
+            return referenceCache.getCached(new GenericValueType.Array(rename(itemType)));
+        } else if (type instanceof GenericValueType.Object) {
+            GenericValueType.Object object = (GenericValueType.Object) type;
+            String className = classNameMapper.apply(object.getClassName());
+            GenericValueType.Object parent = object.getParent();
+            if (parent != null) {
+                parent = (GenericValueType.Object) rename(parent);
+            }
+            GenericValueType.Argument[] arguments = object.getArguments();
+            for (int i = 0; i < arguments.length; ++i) {
+                GenericValueType.Argument argument = arguments[i];
+                GenericValueType.Reference value = argument.getValue();
+                if (value != null) {
+                    value = (GenericValueType.Reference) rename(value);
+                }
+                switch (argument.getKind()) {
+                    case INVARIANT:
+                        arguments[i] = GenericValueType.Argument.invariant(value);
+                        break;
+                    case COVARIANT:
+                        arguments[i] = GenericValueType.Argument.covariant(value);
+                        break;
+                    case CONTRAVARIANT:
+                        arguments[i] = GenericValueType.Argument.contravariant(value);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return referenceCache.getCached(new GenericValueType.Object(parent, className, arguments));
         } else {
             return type;
         }

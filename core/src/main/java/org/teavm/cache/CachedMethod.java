@@ -19,6 +19,8 @@ import java.lang.ref.WeakReference;
 import java.util.function.Supplier;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationValue;
+import org.teavm.model.GenericTypeParameter;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -27,14 +29,27 @@ import org.teavm.model.ValueType;
 
 class CachedMethod extends CachedMember implements MethodReader {
     MethodReference reference;
+    GenericTypeParameter[] typeParameters;
+    GenericValueType genericReturnType;
+    GenericValueType[] genericParameterTypes;
     CachedAnnotations[] parameterAnnotations;
     AnnotationValue annotationDefault;
     WeakReference<ProgramReader> program;
     Supplier<ProgramReader> programSupplier;
 
     @Override
+    public GenericTypeParameter[] getTypeParameters() {
+        return typeParameters != null ? typeParameters.clone() : new GenericTypeParameter[0];
+    }
+
+    @Override
     public ValueType getResultType() {
         return reference.getReturnType();
+    }
+
+    @Override
+    public GenericValueType getGenericResultType() {
+        return genericReturnType;
     }
 
     @Override
@@ -50,6 +65,16 @@ class CachedMethod extends CachedMember implements MethodReader {
     @Override
     public ValueType parameterType(int index) {
         return reference.parameterType(index);
+    }
+
+    @Override
+    public int genericParameterCount() {
+        return genericParameterTypes != null ? genericParameterTypes.length : 0;
+    }
+
+    @Override
+    public GenericValueType genericParameterType(int index) {
+        return genericParameterTypes != null ? genericParameterTypes[index] : null;
     }
 
     @Override
