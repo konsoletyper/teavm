@@ -129,7 +129,6 @@ import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
-import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.ExceptionHandling;
@@ -148,7 +147,6 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private boolean wastEmitted;
     private boolean cEmitted;
     private boolean cLineNumbersEmitted = Boolean.parseBoolean(System.getProperty("wasm.c.lineNumbers", "false"));
-    private ClassInitializerInsertionTransformer clinitInsertionTransformer;
     private ClassInitializerEliminator classInitializerEliminator;
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
@@ -164,8 +162,6 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
         shadowStackTransformer = new ShadowStackTransformer(managedMethodRepository);
-        clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource(),
-                controller.getClassInitializerInfo());
     }
 
     @Override
@@ -306,7 +302,6 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     @Override
     public void afterOptimizations(Program program, MethodReader method) {
-        clinitInsertionTransformer.apply(method, program);
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
         shadowStackTransformer.apply(program, method);

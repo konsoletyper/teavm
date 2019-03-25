@@ -47,11 +47,9 @@ import org.teavm.model.ProgramReader;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.VariableReader;
 import org.teavm.model.analysis.ClassInference;
-import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.instructions.AbstractInstructionReader;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.ExitInstruction;
-import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
@@ -71,17 +69,15 @@ public class Inlining {
     private MethodUsageCounter usageCounter;
     private Set<MethodReference> methodsUsedOnce = new HashSet<>();
     private boolean devirtualization;
-    private ClassInitializerInfo classInitializerInfo;
 
     public Inlining(ClassHierarchy hierarchy, DependencyInfo dependencyInfo, InliningStrategy strategy,
             ListableClassReaderSource classes, Predicate<MethodReference> externalMethods,
-            boolean devirtualization, ClassInitializerInfo classInitializerInfo) {
+            boolean devirtualization) {
         this.hierarchy = hierarchy;
         this.classes = classes;
         this.dependencyInfo = dependencyInfo;
         this.strategy = strategy;
         this.devirtualization = devirtualization;
-        this.classInitializerInfo = classInitializerInfo;
         usageCounter = new MethodUsageCounter(externalMethods);
 
         for (String className : classes.getClassNames()) {
@@ -226,12 +222,6 @@ public class Inlining {
         splitBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
 
         invoke.delete();
-        if ((invoke.getMethod().getName().equals("<init>") || invoke.getInstance() == null)
-                && classInitializerInfo.isDynamicInitializer(invoke.getMethod().getClassName())) {
-            InitClassInstruction clinit = new InitClassInstruction();
-            clinit.setClassName(invoke.getMethod().getClassName());
-            block.add(clinit);
-        }
         JumpInstruction jumpToInlinedProgram = new JumpInstruction();
         jumpToInlinedProgram.setTarget(firstInlineBlock);
         block.add(jumpToInlinedProgram);

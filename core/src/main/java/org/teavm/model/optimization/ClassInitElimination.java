@@ -37,7 +37,6 @@ public class ClassInitElimination implements MethodOptimization {
         Graph domGraph = GraphUtils.buildDominatorGraph(dom, program.basicBlockCount());
 
         Step start = new Step(0);
-        start.initializedClasses.add(context.getMethod().getOwnerName());
         Deque<Step> stack = new ArrayDeque<>();
         stack.push(start);
 

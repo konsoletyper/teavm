@@ -93,6 +93,7 @@ import org.teavm.model.optimization.ScalarReplacement;
 import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 import org.teavm.model.optimization.UnusedVariableElimination;
 import org.teavm.model.text.ListingBuilder;
+import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
 import org.teavm.model.util.MissingItemsProcessor;
 import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
@@ -452,8 +453,10 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     dependencyAnalyzer.getClassHierarchy());
             classInitializerAnalysis.analyze(dependencyAnalyzer);
             classInitializerInfo = classInitializerAnalysis;
+            insertClassInit(classSet);
             eliminateClassInit(classSet);
         } else {
+            insertClassInit(classSet);
             classInitializerInfo = ClassInitializerInfo.EMPTY;
         }
 
@@ -480,6 +483,21 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
     private ListableClassHolderSource lazyPipeline() {
         return new PostProcessingClassHolderSource();
+    }
+
+    private void insertClassInit(ListableClassHolderSource classes) {
+        ClassInitializerInsertionTransformer clinitInsertion = new ClassInitializerInsertionTransformer(
+                dependencyAnalyzer.getClassSource(), classInitializerInfo);
+        for (String className : classes.getClassNames()) {
+            ClassHolder cls = classes.get(className);
+            for (MethodHolder method : cls.getMethods()) {
+                Program program = method.getProgram();
+                if (program == null) {
+                    continue;
+                }
+                clinitInsertion.apply(method, program);
+            }
+        }
     }
 
     private void eliminateClassInit(ListableClassHolderSource classes) {
@@ -609,7 +627,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         Inlining inlining = new Inlining(new ClassHierarchy(classes), dependencyAnalyzer, inliningStrategy,
-                classes, this::isExternal, optimizationLevel == TeaVMOptimizationLevel.FULL, classInitializerInfo);
+                classes, this::isExternal, optimizationLevel == TeaVMOptimizationLevel.FULL);
         List<MethodReference> methodReferences = inlining.getOrder();
         int classCount = classes.getClassNames().size();
         int initialValue = compileProgressValue;
@@ -895,6 +913,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                 dependencyAnalyzer.getReachableClasses().stream()
                         .filter(className -> dependencyAnalyzer.getClassSource().get(className) != null)
                         .collect(Collectors.toList())));
+        private ClassInitializerInsertionTransformer clinitInsertion = new ClassInitializerInsertionTransformer(
+                dependencyAnalyzer.getClassSource(), classInitializerInfo);
 
         @Override
         public ClassHolder get(String name) {
@@ -920,6 +940,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                         program = ProgramUtils.copy(classReader.getMethod(method.getDescriptor()).getProgram());
                         missingItemsProcessor.processMethod(method.getReference(), program);
                         linker.link(method.getReference(), program);
+                        clinitInsertion.apply(method, program);
                         program = optimizeMethodCacheMiss(method, program);
                         Program finalProgram = program;
                         programCache.store(method.getReference(), finalProgram,

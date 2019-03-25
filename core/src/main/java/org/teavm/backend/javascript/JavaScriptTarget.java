@@ -95,7 +95,6 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
-import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
 import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.vm.BuildTarget;
@@ -124,7 +123,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
     private final Set<MethodReference> asyncMethods = new HashSet<>();
     private final Set<MethodReference> asyncFamilyMethods = new HashSet<>();
-    private ClassInitializerInsertionTransformer clinitInsertionTransformer;
     private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
     private int topLevelNameLimit = 10000;
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
@@ -142,8 +140,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     @Override
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
-        clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource(),
-                controller.getClassInitializerInfo());
     }
 
     @Override
@@ -325,7 +321,6 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     @Override
     public void afterOptimizations(Program program, MethodReader method) {
-        clinitInsertionTransformer.apply(method, program);
     }
 
     private void emit(ListableClassHolderSource classes, Writer writer, BuildTarget target) {

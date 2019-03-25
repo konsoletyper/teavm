@@ -97,7 +97,6 @@ import org.teavm.model.lowlevel.ExportDependencyListener;
 import org.teavm.model.lowlevel.NullCheckInsertion;
 import org.teavm.model.lowlevel.NullCheckTransformation;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
-import org.teavm.model.transformation.ClassInitializerInsertionTransformer;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.runtime.Allocator;
@@ -118,7 +117,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             new MethodReference(Object.class, "clone", Object.class)
     ));
     private TeaVMTargetController controller;
-    private ClassInitializerInsertionTransformer clinitInsertionTransformer;
     private ClassInitializerEliminator classInitializerEliminator;
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
@@ -153,8 +151,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
         shadowStackTransformer = new ShadowStackTransformer(characteristics);
-        clinitInsertionTransformer = new ClassInitializerInsertionTransformer(controller.getUnprocessedClassSource(),
-                controller.getClassInitializerInfo());
         nullCheckInsertion = new NullCheckInsertion(characteristics);
         nullCheckTransformation = new NullCheckTransformation();
 
@@ -242,7 +238,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     @Override
     public void afterOptimizations(Program program, MethodReader method) {
-        clinitInsertionTransformer.apply(method, program);
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
         nullCheckTransformation.apply(program, method.getResultType());

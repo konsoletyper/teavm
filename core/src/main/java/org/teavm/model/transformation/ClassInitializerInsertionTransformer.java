@@ -36,6 +36,9 @@ public class ClassInitializerInsertionTransformer {
     }
 
     public void apply(MethodReader method, Program program) {
+        if (program.basicBlockCount() == 0) {
+            return;
+        }
         ClassReader cls = classes.get(method.getOwnerName());
         boolean hasClinit = cls.getMethod(clinitDescriptor) != null
                 && classInitializerInfo.isDynamicInitializer(cls.getName());
