@@ -1,12 +1,15 @@
 #!/bin/bash
 
+echo "${SSH_KEY}" | base64 --decode >/tmp/sftp_rsa
+chmod 0700 /tmp/sftp_rsa
+SCP=scp -o 'StrictHostKeyChecking no' -i /tmp/sftp_rsa -B -r -P $FTP_PORT
+SCP_TARGET=$FTP_USER@$FTP_HOST:~/$FTP_PATH
+scp -o 'StrictHostKeyChecking no' -i /tmp/sftp_rsa -B -r -P $FTP_PORT ./*
+
 #
 # Upload CLI
 #
-curl -v --ftp-create-dirs -T tools/cli/target/teavm-cli-$NEW_VERSION.jar \
-  -u $TEAVM_FTP_LOGIN:$TEAVM_FTP_PASSWORD \
-  ftp://$TEAVM_FTP_HOST/httpdocs/cli/dev/teavm-cli-$NEW_VERSION.jar
-
+$SCP tools/cli/target/teavm-cli-$NEW_VERSION.jar $SCP_TARGET/cli/dev/
 
 #
 # Update IDEA repository descriptor
@@ -21,10 +24,7 @@ cat <<EOF >.idea-repository.xml
 </plugins>
 EOF
 
-curl -v --ftp-create-dirs -T .idea-repository.xml \
-  -u $TEAVM_FTP_LOGIN:$TEAVM_FTP_PASSWORD \
-  ftp://$TEAVM_FTP_HOST/httpdocs/idea/dev/teavmRepository.xml
-
+$SCP .idea-repository.xml $SCP_TARGET/idea/dev/teavmRepository.xml
 
 #
 # Upload Eclipse plugin

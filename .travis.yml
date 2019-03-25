@@ -63,9 +63,11 @@ script:
 after_success: >
    if [[ "${TRAVIS_PULL_REQUEST:-unknown}" == "false" && $TRAVIS_BRANCH == dev-* ]] ; then
      export NEW_VERSION
-     export TEAVM_FTP_HOST
-     export TEAVM_FTP_LOGIN
-     export TEAVM_FTP_PASSWORD
+     export FTP_HOST
+     export FTP_PORT
+     export FTP_LOGIN
+     export FTP_PATH
+     export SSH_KEY
      mv -f $HOME/built_artifacts_backup $HOME/mvn_repo/org/teavm
      $MVN_CMD deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml \
        -P deploy-to-bintray -P with-idea -P !download-dependencies && \
