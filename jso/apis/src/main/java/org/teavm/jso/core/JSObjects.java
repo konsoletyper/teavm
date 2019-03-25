@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.core;
 
+import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 
@@ -23,26 +24,33 @@ public final class JSObjects {
     }
 
     @JSBody(params = "object", script = "return Object.getOwnPropertyNames(object);")
+    @NoSideEffects
     public static native String[] getOwnPropertyNames(JSObject object);
 
     @JSBody(script = "return {};")
+    @NoSideEffects
     public static native <T extends JSObject> T create();
 
     @JSBody(script = "return Object.create(null);")
+    @NoSideEffects
     public static native <T extends JSObject> T createWithoutProto();
 
     @JSBody(params = "object", script = "return typeof object === 'undefined';")
+    @NoSideEffects
     public static native boolean isUndefined(JSObject object);
 
     @JSBody(script = "return void 0;")
+    @NoSideEffects
     public static native JSObject undefined();
 
     @JSBody(params = "object", script = "return typeof object;")
+    @NoSideEffects
     public static native String typeOf(JSObject object);
 
     @JSBody(params = "object", script = "return object.toString();")
     public static native String toString(JSObject object);
 
     @JSBody(params = { "object", "name" }, script = "return name in object;")
+    @NoSideEffects
     public static native boolean hasProperty(JSObject object, String name);
 }

@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.core;
 
+import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
@@ -28,12 +29,15 @@ public abstract class JSString implements JSObject {
     }
 
     @JSBody(params = "str", script = "return str;")
+    @NoSideEffects
     private static native String stringValue(JSString str);
 
     @JSBody(params = "str", script = "return str;")
+    @NoSideEffects
     public static native JSString valueOf(String str);
 
     @JSBody(params = "code", script = "return String.fromCharCode(code)")
+    @NoSideEffects
     public static native JSString fromCharCode(int code);
 
     @JSProperty
@@ -96,5 +100,6 @@ public abstract class JSString implements JSObject {
     public abstract JSString trim();
 
     @JSBody(params = "obj", script = "return typeof obj === 'string';")
+    @NoSideEffects
     public static native boolean isInstance(JSObject obj);
 }

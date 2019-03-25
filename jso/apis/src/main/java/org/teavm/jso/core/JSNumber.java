@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.core;
 
+import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 
@@ -27,6 +28,7 @@ public abstract class JSNumber implements JSObject {
     }
 
     @JSBody(params = "number", script = "return number;")
+    @NoSideEffects
     private static native double doubleValue(JSNumber number);
 
     public final int intValue() {
@@ -34,6 +36,7 @@ public abstract class JSNumber implements JSObject {
     }
 
     @JSBody(params = "number", script = "return number;")
+    @NoSideEffects
     private static native int intValue(JSNumber number);
 
     public final char charValue() {
@@ -41,6 +44,7 @@ public abstract class JSNumber implements JSObject {
     }
 
     @JSBody(params = "number", script = "return number;")
+    @NoSideEffects
     private static native char charValue(JSNumber number);
 
     public final byte byteValue() {
@@ -48,6 +52,7 @@ public abstract class JSNumber implements JSObject {
     }
 
     @JSBody(params = "number", script = "return number;")
+    @NoSideEffects
     private static native byte byteValue(JSNumber number);
 
     public final short shortValue() {
@@ -55,6 +60,7 @@ public abstract class JSNumber implements JSObject {
     }
 
     @JSBody(params = "number", script = "return number;")
+    @NoSideEffects
     private static native short shortValue(JSNumber number);
 
     public final float floatValue() {
@@ -62,23 +68,30 @@ public abstract class JSNumber implements JSObject {
     }
 
     @JSBody(params = "number", script = "return number;")
+    @NoSideEffects
     private static native float floatValue(JSNumber number);
 
     @JSBody(params = "value", script = "return value;")
+    @NoSideEffects
     public static native JSNumber valueOf(byte value);
 
     @JSBody(params = "value", script = "return value;")
+    @NoSideEffects
     public static native JSNumber valueOf(short value);
 
     @JSBody(params = "value", script = "return value;")
+    @NoSideEffects
     public static native JSNumber valueOf(int value);
 
     @JSBody(params = "value", script = "return value;")
+    @NoSideEffects
     public static native JSNumber valueOf(char value);
 
     @JSBody(params = "value", script = "return value;")
+    @NoSideEffects
     public static native JSNumber valueOf(float value);
 
     @JSBody(params = "value", script = "return value;")
+    @NoSideEffects
     public static native JSNumber valueOf(double value);
 }

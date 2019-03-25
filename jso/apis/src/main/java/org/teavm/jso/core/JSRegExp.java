@@ -15,15 +15,18 @@
  */
 package org.teavm.jso.core;
 
+import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
 public abstract class JSRegExp implements JSObject {
     @JSBody(params = "pattern", script = "return new RegExp(pattern);")
+    @NoSideEffects
     public static native JSRegExp create(String pattern);
 
     @JSBody(params = { "pattern", "flags" }, script = "return new RegExp(pattern, flags);")
+    @NoSideEffects
     public static native JSRegExp create(String pattern, String flags);
 
     public static JSRegExp create(String pattern, JSRegExpFlag... flags) {
