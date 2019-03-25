@@ -2,7 +2,7 @@
 
 echo "${SSH_KEY}" | base64 --decode >/tmp/sftp_rsa
 chmod 0700 /tmp/sftp_rsa
-SCP="scp -o 'StrictHostKeyChecking no' -i /tmp/sftp_rsa -B -r -P $FTP_PORT"
+SCP="scp -o StrictHostKeyChecking=no -i /tmp/sftp_rsa -B -r -P $FTP_PORT"
 SCP_TARGET="$FTP_USER@$FTP_HOST:~/$FTP_PATH"
 
 #
