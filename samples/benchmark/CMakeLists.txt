@@ -20,4 +20,4 @@ link_directories(${GTK3_LIBRARY_DIRS})
 add_definitions(${GTK3_CFLAGS_OTHER})
 add_executable(teavm_benchmark target/generated/c/classes.c)
 
-target_link_libraries(teavm_benchmark ${GTK3_LIBRARIES} m)
+target_link_libraries(teavm_benchmark ${GTK3_LIBRARIES} m rt)

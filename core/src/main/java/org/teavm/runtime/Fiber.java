@@ -25,6 +25,7 @@ public class Fiber {
     public static final int STATE_RUNNING = 0;
     public static final int STATE_SUSPENDING = 1;
     public static final int STATE_RESUMING = 2;
+    private static int daemonCount = 1;
 
     private int[] intValues;
     private int intTop;
@@ -221,6 +222,9 @@ public class Fiber {
         current = this;
         runner.run();
         current = former;
+        if (!isSuspending() && Thread.currentThread().isDaemon() && --daemonCount == 0) {
+            EventQueue.stop();
+        }
     }
 
     void resume() {

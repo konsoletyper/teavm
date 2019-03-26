@@ -48,8 +48,8 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
 
     @Override
     public void install(TeaVMHost host) {
+        host.add(metadataTransformer);
         if (host.getExtension(TeaVMJavaScriptHost.class) != null) {
-            host.add(metadataTransformer);
             host.add(new ResourceTransformer());
             host.add(new ResourceAccessorTransformer(host));
             host.add(new ResourceAccessorDependencyListener());
@@ -101,11 +101,14 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
 
             TeaVMCHost cHost = host.getExtension(TeaVMCHost.class);
             if (cHost != null) {
-                metadataGeneratorConsumers.add((constructor, method, generator) -> {
-                    cHost.addIntrinsic(ctx -> new MetadataCIntrinsic(ctx.getClassSource(), ctx.getClassLoader(),
+                MetadataCIntrinsic metadataCIntrinsic = new MetadataCIntrinsic();
+                cHost.addIntrinsic(ctx -> {
+                    metadataCIntrinsic.init(ctx.getClassSource(), ctx.getClassLoader(),
                             ctx.getServices(), ctx.getProperties(), ctx.getStructureCodeWriter(),
-                            ctx.getStaticFieldsInitWriter(), constructor, method, generator));
+                            ctx.getStaticFieldsInitWriter());
+                    return metadataCIntrinsic;
                 });
+                metadataGeneratorConsumers.add(metadataCIntrinsic::addGenerator);
                 cHost.addIntrinsic(ctx -> new ResourceReadCIntrinsic(ctx.getClassSource()));
                 cHost.addIntrinsic(ctx -> new Intrinsic() {
                     @Override

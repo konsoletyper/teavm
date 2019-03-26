@@ -30,6 +30,7 @@ public class TThread extends TObject implements TRunnable {
     private static int activeCount = 1;
     private long id;
     private int priority;
+    private boolean daemon;
     private long timeSliceStart;
     private int yieldCount;
     private final Object finishedLock = new Object();
@@ -39,6 +40,10 @@ public class TThread extends TObject implements TRunnable {
     private String name;
     private boolean alive = true;
     TRunnable target;
+
+    static {
+        mainThread.setDaemon(true);
+    }
 
     public TThread() {
         this(null, null);
@@ -105,6 +110,14 @@ public class TThread extends TObject implements TRunnable {
 
     public String getName() {
         return name;
+    }
+
+    public final boolean isDaemon() {
+        return daemon;
+    }
+
+    public final void setDaemon(boolean daemon) {
+        this.daemon = daemon;
     }
 
     public final void join(long millis, int nanos) throws InterruptedException {

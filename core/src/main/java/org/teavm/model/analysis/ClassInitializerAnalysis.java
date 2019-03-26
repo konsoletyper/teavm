@@ -28,6 +28,7 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.dependency.ValueDependencyInfo;
 import org.teavm.interop.NoSideEffects;
+import org.teavm.interop.StaticInit;
 import org.teavm.model.BasicBlockReader;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
@@ -104,7 +105,7 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
 
         ClassReader cls = classes.get(className);
 
-        if (cls == null) {
+        if (cls == null || cls.getAnnotations().get(StaticInit.class.getName()) != null) {
             classStatuses.put(className, STATIC);
             return;
         }

@@ -15,7 +15,9 @@
  */
 package org.teavm.platform.plugin;
 
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import org.teavm.ast.InvocationExpr;
@@ -36,52 +38,32 @@ class MetadataCIntrinsic implements Intrinsic {
     private CodeWriter structuresWriter;
     private CodeWriter staticFieldInitWriter;
     private DefaultMetadataGeneratorContext metadataContext;
-    private MethodReference constructorMethod;
-    private MethodReference targetMethod;
-    private MetadataGenerator generator;
+    private Map<MethodReference, MethodGenerator> generatorMap = new HashMap<>();
 
-    MetadataCIntrinsic(ClassReaderSource classSource, ClassLoader classLoader,
+    void init(ClassReaderSource classSource, ClassLoader classLoader,
             ServiceRepository services, Properties properties, CodeWriter structuresWriter,
-            CodeWriter staticFieldInitWriter, MethodReference constructorMethod, MethodReference targetMethod,
-            MetadataGenerator generator) {
+            CodeWriter staticFieldInitWriter) {
         this.structuresWriter = structuresWriter;
         this.staticFieldInitWriter = staticFieldInitWriter;
         metadataContext = new DefaultMetadataGeneratorContext(classSource, classLoader, properties, services);
-        this.constructorMethod = constructorMethod;
-        this.targetMethod = targetMethod;
-        this.generator = generator;
+    }
+
+    public void addGenerator(MethodReference constructor, MethodReference method, MetadataGenerator generator) {
+        generatorMap.put(constructor, new MethodGenerator(method, generator));
     }
 
     @Override
     public boolean canHandle(MethodReference methodReference) {
-        return constructorMethod.equals(methodReference);
+        return generatorMap.containsKey(methodReference);
     }
 
     @Override
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
-        writeInitializer(context, invocation);
-        context.writer().print(context.names().forMethod(invocation.getMethod()));
+        MethodGenerator generator = generatorMap.get(invocation.getMethod());
+        generator.apply(context, invocation);
     }
 
-    private void writeInitializer(IntrinsicContext context, InvocationExpr invocation) {
-        MethodReference methodReference = invocation.getMethod();
-        if (!writtenInitializers.add(methodReference)) {
-            return;
-        }
-
-        String variableName = context.names().forMethod(methodReference);
-        staticFieldInitWriter.print("static ").printType(methodReference.getReturnType()).print(" ")
-                .print(variableName).print(" = ");
-        if (generator == null) {
-            staticFieldInitWriter.print("NULL");
-        } else {
-            Resource resource = generator.generateMetadata(metadataContext, targetMethod);
-            writeValue(context, resource);
-        }
-        staticFieldInitWriter.println(";");
-    }
-
-    private void writeValue(IntrinsicContext context, Object value) {
+    void writeValue(IntrinsicContext context, Object value) {
         if (value == null) {
             staticFieldInitWriter.print("NULL");
         } else if (value instanceof String) {
@@ -268,5 +250,38 @@ class MetadataCIntrinsic implements Intrinsic {
             a += b;
         }
         return a;
+    }
+
+    class MethodGenerator {
+        private MethodReference targetMethod;
+        private MetadataGenerator generator;
+
+        MethodGenerator(MethodReference targetMethod, MetadataGenerator generator) {
+            this.targetMethod = targetMethod;
+            this.generator = generator;
+        }
+
+        public void apply(IntrinsicContext context, InvocationExpr invocation) {
+            writeInitializer(context, invocation);
+            context.writer().print(context.names().forMethod(invocation.getMethod()));
+        }
+
+        private void writeInitializer(IntrinsicContext context, InvocationExpr invocation) {
+            MethodReference methodReference = invocation.getMethod();
+            if (!writtenInitializers.add(methodReference)) {
+                return;
+            }
+
+            String variableName = context.names().forMethod(methodReference);
+            staticFieldInitWriter.print("static ").printType(methodReference.getReturnType()).print(" ")
+                    .print(variableName).print(" = ");
+            if (generator == null) {
+                staticFieldInitWriter.print("NULL");
+            } else {
+                Resource resource = generator.generateMetadata(metadataContext, targetMethod);
+                writeValue(context, resource);
+            }
+            staticFieldInitWriter.println(";");
+        }
     }
 }

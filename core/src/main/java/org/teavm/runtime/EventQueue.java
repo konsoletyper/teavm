@@ -69,7 +69,7 @@ public final class EventQueue {
         }
     }
 
-    static void stop() {
+    public static void stop() {
         finished = true;
     }
 
