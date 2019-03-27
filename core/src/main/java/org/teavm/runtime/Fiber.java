@@ -25,7 +25,7 @@ public class Fiber {
     public static final int STATE_RUNNING = 0;
     public static final int STATE_SUSPENDING = 1;
     public static final int STATE_RESUMING = 2;
-    private static int daemonCount = 1;
+    public static int userThreadCount = 1;
 
     private int[] intValues;
     private int intTop;
@@ -41,11 +41,13 @@ public class Fiber {
     private FiberRunner runner;
     private Object result;
     private Throwable exception;
+    private boolean daemon;
 
     private static Fiber current;
 
-    private Fiber(FiberRunner runner) {
+    private Fiber(FiberRunner runner, boolean daemon) {
         this.runner = runner;
+        this.daemon = daemon;
     }
 
     public void push(int value) {
@@ -207,12 +209,12 @@ public class Fiber {
 
     static native void setCurrentThread(Thread thread);
 
-    public static void start(FiberRunner runner) {
-        new Fiber(runner).start();
+    public static void start(FiberRunner runner, boolean daemon) {
+        new Fiber(runner, daemon).start();
     }
 
     static void startMain() {
-        start(Fiber::runMain);
+        start(Fiber::runMain, false);
     }
 
     static native void runMain();
@@ -222,7 +224,7 @@ public class Fiber {
         current = this;
         runner.run();
         current = former;
-        if (!isSuspending() && Thread.currentThread().isDaemon() && --daemonCount == 0) {
+        if (!isSuspending() && !daemon && --userThreadCount == 0) {
             EventQueue.stop();
         }
     }

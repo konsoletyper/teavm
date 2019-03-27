@@ -41,10 +41,6 @@ public class TThread extends TObject implements TRunnable {
     private boolean alive = true;
     TRunnable target;
 
-    static {
-        mainThread.setDaemon(true);
-    }
-
     public TThread() {
         this(null, null);
     }
@@ -65,7 +61,11 @@ public class TThread extends TObject implements TRunnable {
 
     public void start() {
         if (PlatformDetector.isLowLevel()) {
-            EventQueue.offer(() -> Fiber.start(this::runThread));
+            boolean daemon = this.daemon;
+            if (!daemon) {
+                Fiber.userThreadCount++;
+            }
+            EventQueue.offer(() -> Fiber.start(this::runThread, daemon));
         } else {
             Platform.startThread(this::runThread);
         }
@@ -207,8 +207,12 @@ public class TThread extends TObject implements TRunnable {
         TThread current = currentThread();
         SleepHandler handler = new SleepHandler(current, callback);
         if (PlatformDetector.isLowLevel()) {
-            handler.scheduleId = EventQueue.offer(handler, System.currentTimeMillis() + millis);
-            current.interruptHandler = handler;
+            if (current.interruptedFlag) {
+                handler.interrupted();
+            } else {
+                handler.scheduleId = EventQueue.offer(handler, System.currentTimeMillis() + millis);
+                current.interruptHandler = handler;
+            }
         } else {
             int intMillis = millis < Integer.MAX_VALUE ? (int) millis : Integer.MAX_VALUE;
             handler.scheduleId = Platform.schedule(handler, intMillis);
