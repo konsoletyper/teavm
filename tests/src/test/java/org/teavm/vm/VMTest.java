@@ -303,6 +303,12 @@ public class VMTest {
         assertEquals("default,A;default,B;overridden,C;", sb.toString());
     }
 
+    @Test
+    public void clinitReadsState() {
+        initCount = 23;
+        assertEquals(23, ReadingStateInClinit.state);
+    }
+
     interface WithDefaultMethod {
         default String foo() {
             return "default";
@@ -341,6 +347,10 @@ public class VMTest {
     private static native int[] createArray();
 
     static int initCount;
+
+    private static class ReadingStateInClinit {
+        public static final int state = initCount;
+    }
 
     private static class AsyncClinitClass {
         static String state = "";

@@ -210,20 +210,24 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
         public void getField(VariableReader receiver, VariableReader instance, FieldReference field,
                 ValueType fieldType) {
             if (instance == null) {
-                analyzeInitializer(field.getClassName());
+                touchField(field);
             }
         }
 
         @Override
         public void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType) {
             if (instance == null) {
-                analyzeInitializer(field.getClassName());
-                if (!methodInfo.anyFieldModified && !field.getClassName().equals(currentClass)) {
-                    if (methodInfo.classesWithModifiedFields == null) {
-                        methodInfo.classesWithModifiedFields = new HashSet<>();
-                    }
-                    methodInfo.classesWithModifiedFields.add(field.getClassName());
+                touchField(field);
+            }
+        }
+
+        private void touchField(FieldReference field) {
+            analyzeInitializer(field.getClassName());
+            if (!methodInfo.anyFieldModified && !field.getClassName().equals(currentClass)) {
+                if (methodInfo.classesWithModifiedFields == null) {
+                    methodInfo.classesWithModifiedFields = new HashSet<>();
                 }
+                methodInfo.classesWithModifiedFields.add(field.getClassName());
             }
         }
 
