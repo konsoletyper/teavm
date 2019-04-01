@@ -22,6 +22,12 @@ import org.teavm.classlib.java.util.TSpliterator;
 public interface TIterable<T> {
     TIterator<T> iterator();
 
+    default void forEach(Consumer<? super T> action) {
+        for (TIterator<T> itr = iterator(); itr.hasNext();) {
+            action.accept(itr.next());
+        }
+    }
+    
     default TSpliterator<T> spliterator() {
         TIterator<T> iterator = iterator();
         return new TSpliterator<T>() {
