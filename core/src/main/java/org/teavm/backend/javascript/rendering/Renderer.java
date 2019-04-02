@@ -792,6 +792,7 @@ public class Renderer implements RenderingManager {
 
     private void renderBody(PreparedMethod method) throws IOException {
         StatementRenderer statementRenderer = new StatementRenderer(context, writer);
+        statementRenderer.setCurrentMethod(method.node);
 
         MethodReference ref = method.reference;
         debugEmitter.emitMethod(ref.getDescriptor());
@@ -812,7 +813,6 @@ public class Renderer implements RenderingManager {
         writer.append(")").ws().append("{").softNewLine().indent();
 
         MethodBodyRenderer renderer = new MethodBodyRenderer(statementRenderer);
-        statementRenderer.setCurrentMethod(method.node);
         if (method.node != null) {
             method.node.acceptVisitor(renderer);
         } else {

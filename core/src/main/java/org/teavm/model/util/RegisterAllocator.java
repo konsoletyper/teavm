@@ -33,9 +33,14 @@ import org.teavm.model.ProgramReader;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.text.ListingBuilder;
 
 public class RegisterAllocator {
     public void allocateRegisters(MethodReference method, Program program, boolean debuggerFriendly) {
+        if (method.getName().equals("importFromJs")) {
+            System.out.println(new ListingBuilder().buildListing(program, ""));
+        }
+
         insertPhiArgumentsCopies(program);
         InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
         LivenessAnalyzer liveness = new LivenessAnalyzer();
@@ -93,10 +98,27 @@ public class RegisterAllocator {
         inferer.inferTypes(program, method);
         int[] categories = new int[program.variableCount()];
         for (int i = 0; i < program.variableCount(); ++i) {
-            VariableType type = inferer.typeOf(i);
-            categories[i] = type != null ? type.ordinal() : 255;
+            categories[i] = getCategory(inferer.typeOf(i));
         }
         return categories;
+    }
+
+    private int getCategory(VariableType type) {
+        if (type == null) {
+            return 255;
+        }
+        switch (type) {
+            case INT:
+                return 0;
+            case LONG:
+                return 1;
+            case FLOAT:
+                return 2;
+            case DOUBLE:
+                return 2;
+            default:
+                return 3;
+        }
     }
 
     private String[] getVariableNames(ProgramReader program, boolean debuggerFriendly) {
