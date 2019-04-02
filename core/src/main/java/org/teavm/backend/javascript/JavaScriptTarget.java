@@ -387,6 +387,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             if (!renderer.render(clsNodes)) {
                 return;
             }
+            runtimeRenderer.renderHandWrittenRuntime("array.js");
             renderer.renderStringPool();
             renderer.renderStringConstants();
             renderer.renderCompatibilityStubs();

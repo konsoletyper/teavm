@@ -43,7 +43,7 @@ function $rt_isAssignable(from, to) {
 }
 function $rt_createArray(cls, sz) {
     var data = new Array(sz);
-    var arr = new ($rt_arraycls(cls))(data);
+    var arr = new $rt_array(cls, data);
     if (sz > 0) {
         var i = 0;
         do {
@@ -54,21 +54,21 @@ function $rt_createArray(cls, sz) {
     return arr;
 }
 function $rt_wrapArray(cls, data) {
-    return new ($rt_arraycls(cls))(data);
+    return new $rt_array(cls, data);
 }
 function $rt_createUnfilledArray(cls, sz) {
-    return new ($rt_arraycls(cls))(new Array(sz));
+    return new $rt_array(cls, new Array(sz));
 }
 function $rt_createLongArray(sz) {
     var data = new Array(sz);
-    var arr = new ($rt_arraycls($rt_longcls()))(data);
+    var arr = new $rt_array($rt_longcls(), data);
     for (var i = 0; i < sz; i = (i + 1) | 0) {
         data[i] = Long_ZERO;
     }
     return arr;
 }
 function $rt_createNumericArray(cls, nativeArray) {
-    return new ($rt_arraycls(cls))(nativeArray);
+    return new $rt_array(cls, nativeArray);
 }
 function $rt_createCharArray(sz) {
     return $rt_createNumericArray($rt_charcls(), new Uint16Array(sz));
@@ -95,35 +95,7 @@ function $rt_createDoubleArray(sz) {
 function $rt_arraycls(cls) {
     var result = cls.$array;
     if (result === null) {
-        var arraycls = function(data) {
-            this.data = data;
-            this.$id$ = 0;
-        };
-        arraycls.prototype = new ($rt_objcls())();
-        arraycls.prototype.constructor = arraycls;
-        arraycls.prototype.toString = function() {
-            var str = "[";
-            for (var i = 0; i < this.data.length; ++i) {
-                if (i > 0) {
-                    str += ", ";
-                }
-                str += this.data[i].toString();
-            }
-            str += "]";
-            return str;
-        };
-        $rt_setCloneMethod(arraycls.prototype, function () {
-            var dataCopy;
-            if ('slice' in this.data) {
-                dataCopy = this.data.slice();
-            } else {
-                dataCopy = new this.data.constructor(this.data.length);
-                for (var i = 0; i < dataCopy.length; ++i) {
-                    dataCopy[i] = this.data[i];
-                }
-            }
-            return new arraycls(dataCopy);
-        });
+        var arraycls = {};
         var name = "[" + cls.$meta.binaryName;
         arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls(),
                 name : name, binaryName : name, enum : false };
