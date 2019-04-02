@@ -256,7 +256,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         }
 
         Statement statement = statements.get(0);
-        return !(statement instanceof ConditionalStatement);
+        return !(statement instanceof ConditionalStatement) && !(statement instanceof GotoPartStatement);
     }
 
     @Override
