@@ -65,7 +65,7 @@ after_success: >
      export NEW_VERSION
      export FTP_HOST
      export FTP_PORT
-     export FTP_LOGIN
+     export FTP_USER
      export FTP_PATH
      export SSH_KEY
      mv -f $HOME/built_artifacts_backup $HOME/mvn_repo/org/teavm
