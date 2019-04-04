@@ -15,6 +15,7 @@
  */
 package org.teavm.samples.benchmark.teavm;
 
+import java.util.Arrays;
 import org.jbox2d.collision.shapes.CircleShape;
 import org.jbox2d.collision.shapes.PolygonShape;
 import org.jbox2d.collision.shapes.Shape;
@@ -42,6 +43,8 @@ public final class Gtk3BenchmarkStarter {
     }
 
     public static void main(String[] args) {
+        System.out.println(Arrays.asList(args));
+
         Gtk.init(null, null);
         Gtk.Window window = Gtk.windowNew(Gtk.WINDOW_TOPLEVEL);
         GLib.signalConnect(window, "delete-event",

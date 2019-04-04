@@ -115,9 +115,11 @@ public class RegisterAllocator {
             case FLOAT:
                 return 2;
             case DOUBLE:
-                return 2;
-            default:
                 return 3;
+            case OBJECT:
+                return 4;
+            default:
+                return 5;
         }
     }
 

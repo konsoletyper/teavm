@@ -206,7 +206,11 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
 
     @Override
     public int hashCode() {
-        long h = doubleToLongBits(value);
+        return hashCode(value);
+    }
+
+    public static int hashCode(double d) {
+        long h = doubleToLongBits(d);
         return (int) (h >>> 32) ^ (int) h;
     }
 

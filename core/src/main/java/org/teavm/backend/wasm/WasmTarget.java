@@ -104,6 +104,7 @@ import org.teavm.interop.StaticInit;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
@@ -314,7 +315,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         WasmFunction initFunction = new WasmFunction("__start__");
 
         VirtualTableProvider vtableProvider = createVirtualTableProvider(classes);
-        TagRegistry tagRegistry = new TagRegistry(classes);
+        ClassHierarchy hierarchy = new ClassHierarchy(classes);
+        TagRegistry tagRegistry = new TagRegistry(classes, hierarchy);
         BinaryWriter binaryWriter = new BinaryWriter(256);
         NameProvider names = new NameProvider(controller.getUnprocessedClassSource());
         WasmClassGenerator classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),

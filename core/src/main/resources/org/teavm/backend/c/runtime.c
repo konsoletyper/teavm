@@ -141,6 +141,8 @@ typedef struct {
 static int32_t teavm_hashCode(JavaString*);
 static int32_t teavm_equals(JavaString*, JavaString*);
 static JavaArray* teavm_allocateStringArray(int32_t size);
+static JavaArray* teavm_allocateCharArray(int32_t size);
+static JavaString* teavm_createString(JavaArray* chars);
 
 static TeaVM_ResourceMapEntry* teavm_lookupResource(TeaVM_ResourceMap *map, JavaString* string) {
     uint32_t hashCode = teavm_hashCode(string);

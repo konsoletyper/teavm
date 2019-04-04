@@ -213,11 +213,11 @@ public class Fiber {
         new Fiber(runner, daemon).start();
     }
 
-    static void startMain() {
-        start(Fiber::runMain, false);
+    static void startMain(String[] args) {
+        start(() -> runMain(args), false);
     }
 
-    static native void runMain();
+    static native void runMain(String[] args);
 
     private void start() {
         Fiber former = current;

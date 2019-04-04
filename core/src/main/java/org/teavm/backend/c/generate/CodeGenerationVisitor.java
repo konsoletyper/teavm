@@ -78,7 +78,7 @@ import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
 public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
-    private static final MethodReference ALLOC_METHOD = new MethodReference(Allocator.class,
+    public static final MethodReference ALLOC_METHOD = new MethodReference(Allocator.class,
             "allocate", RuntimeClass.class, Address.class);
     private static final MethodReference ALLOC_ARRAY_METHOD = new MethodReference(Allocator.class,
             "allocateArray", RuntimeClass.class, int.class, Address.class);

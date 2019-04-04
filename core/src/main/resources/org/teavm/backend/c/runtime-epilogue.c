@@ -52,35 +52,34 @@ static JavaArray* teavm_resourceMapKeys(TeaVM_ResourceMap *map) {
     return array;
 }
 
-static inline int teavm_isHighSurrogate(char16_t c) {
-    return (c & 0xFC00) == 0xD800;
-}
-
-static inline int teavm_isLowSurrogate(char16_t c) {
-    return (c & 0xFC00) == 0xDC00;
-}
-
-static inline int teavm_isSurrogatePair(char16_t* chars, int32_t index, int32_t limit) {
-    return index < limit - 1 && teavm_isHighSurrogate(chars[index]) && teavm_isLowSurrogate(chars[index + 1]);
-}
-
-static inline int teavm_getCodePoint(char16_t* chars, int32_t *index, int32_t limit) {
-    wchar_t codePoint;
-    if (teavm_isSurrogatePair(chars, *index, limit)) {
-        codePoint = (wchar_t) (((((chars[*index] & 0x03FF) << 10) | chars[*index + 1] & 0x03FF)) + 0x010000);
-        (*index)++;
-    } else {
-        codePoint = (wchar_t) chars[*index];
-    }
-    return codePoint;
-}
-
 static size_t teavm_mbSize(char16_t* javaChars, int32_t javaCharsCount) {
     size_t sz = 0;
-    char buffer[6];
+    char buffer[__STDC_UTF_16__];
+    mbstate_t state = {0};
     for (int32_t i = 0; i < javaCharsCount; ++i) {
-        sz += wctomb(buffer, teavm_getCodePoint(javaChars, &i, javaCharsCount));
+        size_t result = c16rtomb(buffer, javaChars[i], &state);
+        if (result < 0) {
+            break;
+        }
+        sz += result;
     }
+    return sz;
+}
+
+static int32_t teavm_c16Size(char* cstring, size_t count) {
+    mbstate_t state = {0};
+    int32_t sz = 0;
+    while (count > 0) {
+        size_t result = mbrtoc16(NULL, cstring, count, &state);
+        if (result == -1) {
+            break;
+        } else if (result >= 0) {
+            sz++;
+            count -= result;
+            cstring += result;
+        }
+    }
+
     return sz;
 }
 
@@ -98,15 +97,47 @@ static char* teavm_stringToC(void* obj) {
 
     int32_t j = 0;
     char* dst = result;
+    mbstate_t state = {0};
     for (int32_t i = 0; i < charArray->size; ++i) {
-        dst += wctomb(dst, teavm_getCodePoint(javaChars, &i, charArray->size));
+        dst += c16rtomb(dst, javaChars[i], &state);
     }
     *dst = '\0';
     return result;
+}
+
+static JavaString* teavm_cToString(char* cstring) {
+    if (cstring == NULL) {
+        return NULL;
+    }
+
+    size_t clen = strlen(cstring);
+    int32_t size = teavm_c16Size(cstring, clen);
+    JavaArray* charArray = teavm_allocateCharArray(size);
+    char16_t* javaChars = ARRAY_DATA(charArray, char16_t);
+    mbstate_t state = {0};
+    for (int32_t i = 0; i < size; ++i) {
+        int32_t result = mbrtoc16(javaChars++, cstring, clen, &state);
+        if (result == -1) {
+            break;
+        } else if (result >= 0) {
+            clen -= result;
+            cstring += result;
+        }
+    }
+    return teavm_createString(charArray);
 }
 
 static inline void teavm_free(void* s) {
     if (s != NULL) {
         free(s);
     }
+}
+
+static JavaArray* teavm_parseArguments(int argc, char** argv) {
+    JavaArray* array = teavm_allocateStringArray(argc - 1);
+    JavaString** arrayData = ARRAY_DATA(array, JavaString*);
+    for (int i = 1; i < argc; ++i) {
+        arrayData[i - 1] = teavm_cToString(argv[i]);
+    }
+    return array;
 }

@@ -118,6 +118,7 @@ public class ClassGenerator {
 
     public void generateClass(ClassHolder cls) {
         generateClassStructure(cls);
+        generateClassStaticFields(cls);
         generateClassMethods(cls);
         generateInitializer(cls);
     }
@@ -230,7 +231,6 @@ public class ClassGenerator {
         String name = context.getNames().forClass(cls.getName());
 
         CodeWriter structWriter = structuresWriter.fragment();
-        CodeWriter fieldsWriter = structuresWriter.fragment();
 
         structWriter.print("typedef struct ").print(name).println(" {").indent();
 
@@ -244,38 +244,19 @@ public class ClassGenerator {
 
         int layoutIndex = currentLayoutIndex;
 
-        FieldReference[] staticFields = new FieldReference[cls.getFields().size()];
-        int staticIndex = 0;
         FieldReference[] instanceFields = new FieldReference[cls.getFields().size()];
         int instanceIndex = 0;
         for (FieldHolder field : cls.getFields()) {
             if (field.hasModifier(ElementModifier.STATIC)) {
-                String fieldName = context.getNames().forStaticField(field.getReference());
-                fieldsWriter.print("static ").printStrictType(field.getType()).print(" ").print(fieldName)
-                        .println(";");
-                if (isReferenceType(field.getType())) {
-                    staticFields[staticIndex++] = field.getReference();
-                }
-
-                Object initialValue = field.getInitialValue();
-                if (initialValue == null) {
-                    initialValue = getDefaultValue(field.getType());
-                }
-                staticFieldInitWriter.print(fieldName + " = ");
-                CodeGeneratorUtil.writeValue(staticFieldInitWriter, context, initialValue);
-                staticFieldInitWriter.println(";");
-            } else {
-                String fieldName = context.getNames().forMemberField(field.getReference());
-                structWriter.printStrictType(field.getType()).print(" ").print(fieldName).println(";");
-                if (isReferenceType(field.getType())) {
-                    instanceFields[instanceIndex++] = field.getReference();
-                }
+                continue;
+            }
+            String fieldName = context.getNames().forMemberField(field.getReference());
+            structWriter.printStrictType(field.getType()).print(" ").print(fieldName).println(";");
+            if (isReferenceType(field.getType())) {
+                instanceFields[instanceIndex++] = field.getReference();
             }
         }
 
-        if (staticIndex > 0) {
-            staticGcRoots.add(Arrays.copyOf(staticFields, staticIndex));
-        }
         if (instanceIndex > 0) {
             classLayoutOffsets.put(cls.getName(), layoutIndex);
             layouts.add(Arrays.copyOf(instanceFields, instanceIndex));
@@ -283,6 +264,36 @@ public class ClassGenerator {
         }
 
         structWriter.outdent().print("} ").print(name).println(";");
+    }
+
+    private void generateClassStaticFields(ClassHolder cls) {
+        CodeWriter fieldsWriter = structuresWriter.fragment();
+
+        FieldReference[] staticFields = new FieldReference[cls.getFields().size()];
+        int staticIndex = 0;
+        for (FieldHolder field : cls.getFields()) {
+            if (!field.hasModifier(ElementModifier.STATIC)) {
+                continue;
+            }
+            String fieldName = context.getNames().forStaticField(field.getReference());
+            fieldsWriter.print("static ").printStrictType(field.getType()).print(" ").print(fieldName)
+                    .println(";");
+            if (isReferenceType(field.getType())) {
+                staticFields[staticIndex++] = field.getReference();
+            }
+
+            Object initialValue = field.getInitialValue();
+            if (initialValue == null) {
+                initialValue = getDefaultValue(field.getType());
+            }
+            staticFieldInitWriter.print(fieldName + " = ");
+            CodeGeneratorUtil.writeValue(staticFieldInitWriter, context, initialValue);
+            staticFieldInitWriter.println(";");
+        }
+
+        if (staticIndex > 0) {
+            staticGcRoots.add(Arrays.copyOf(staticFields, staticIndex));
+        }
     }
 
     private static Object getDefaultValue(ValueType type) {

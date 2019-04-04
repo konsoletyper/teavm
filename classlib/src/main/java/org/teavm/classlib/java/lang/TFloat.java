@@ -87,7 +87,11 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
 
     @Override
     public int hashCode() {
-        return floatToIntBits(value);
+        return hashCode(value);
+    }
+
+    public static int hashCode(float f) {
+        return floatToIntBits(f);
     }
 
     @JSBody(params = "v", script = "return isNaN(v);")
