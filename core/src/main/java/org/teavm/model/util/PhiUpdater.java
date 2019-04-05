@@ -100,6 +100,7 @@ public class PhiUpdater {
     private List<Phi> synthesizedPhis = new ArrayList<>();
     private Sigma[][] sigmas;
     private Predicate<Instruction> sigmaPredicate = instruction -> false;
+    private int[][][] frontierVariableCache;
 
     public int getSourceVariable(int var) {
         if (var >= variableToSourceMap.size()) {
@@ -133,6 +134,7 @@ public class PhiUpdater {
         if (program.basicBlockCount() == 0) {
             return;
         }
+        frontierVariableCache = new int[program.basicBlockCount()][][];
         this.program = program;
         phisByReceiver.clear();
         cfg = ProgramUtils.buildControlFlowGraph(program);
@@ -473,15 +475,49 @@ public class PhiUpdater {
         }
     }
 
+    private int[][] getIncomingVariablesForFrontier(int frontier) {
+        int[][] result = frontierVariableCache[frontier];
+        if (result == null) {
+            List<List<Variable>> builder = new ArrayList<>(Collections.nCopies(program.basicBlockCount(), null));
+            for (Phi phi : program.basicBlockAt(frontier).getPhis()) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    List<Variable> variables = builder.get(incoming.getSource().getIndex());
+                    if (variables == null) {
+                        variables = new ArrayList<>();
+                        builder.set(incoming.getSource().getIndex(), variables);
+                    }
+                    variables.add(incoming.getValue());
+                }
+            }
+
+            result = new int[program.basicBlockCount()][];
+            for (int i = 0; i < result.length; ++i) {
+                List<Variable> builderVariables = builder.get(i);
+                if (builderVariables == null) {
+                    continue;
+                }
+                int[] resultVariables = new int[builderVariables.size()];
+                for (int j = 0; j < resultVariables.length; ++j) {
+                    resultVariables[j] = builderVariables.get(j).getIndex();
+                }
+                result[i] = resultVariables;
+            }
+
+            frontierVariableCache[frontier] = result;
+        }
+        return result;
+    }
+
     private void placePhi(int frontier, Variable var, BasicBlock block, Deque<BasicBlock> worklist) {
         BasicBlock frontierBlock = program.basicBlockAt(frontier);
         if (frontierBlock.getExceptionVariable() == var) {
             return;
         }
 
-        for (Phi phi : frontierBlock.getPhis()) {
-            for (Incoming incoming : phi.getIncomings()) {
-                if (incoming.getSource() == block && incoming.getValue() == var) {
+        int[] frontierIncomingVariables = getIncomingVariablesForFrontier(frontier)[block.getIndex()];
+        if (frontierIncomingVariables != null) {
+            for (int incoming : frontierIncomingVariables) {
+                if (incoming == var.getIndex()) {
                     return;
                 }
             }
