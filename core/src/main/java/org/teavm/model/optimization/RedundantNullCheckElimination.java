@@ -50,7 +50,7 @@ public class RedundantNullCheckElimination implements MethodOptimization {
                 } else if (nullness.isNull(nullCheck.getValue())) {
                     block.detachSuccessors();
                     while (nullCheck.getNext() != null) {
-                        nullCheck.delete();
+                        nullCheck.getNext().delete();
                     }
 
                     nullCheck.insertPreviousAll(ProgramUtils.createThrowNPEInstructions(

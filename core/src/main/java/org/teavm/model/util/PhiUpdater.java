@@ -479,11 +479,12 @@ public class PhiUpdater {
             return;
         }
 
-        boolean exists = frontierBlock.getPhis().stream()
-                .flatMap(phi -> phi.getIncomings().stream())
-                .anyMatch(incoming -> incoming.getSource() == block && incoming.getValue() == var);
-        if (exists) {
-            return;
+        for (Phi phi : frontierBlock.getPhis()) {
+            for (Incoming incoming : phi.getIncomings()) {
+                if (incoming.getSource() == block && incoming.getValue() == var) {
+                    return;
+                }
+            }
         }
 
         Phi phi = phiMap[frontier][var.getIndex()];

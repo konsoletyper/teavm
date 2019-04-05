@@ -81,7 +81,7 @@ public class GCShadowStackContributor {
         int usedColors = 0;
         for (int var = 0; var < colors.length; ++var) {
             if (spilled[var]) {
-                usedColors = Math.max(usedColors, colors[var]);
+                usedColors = Math.max(usedColors, colors[var] + 1);
                 colors[var]--;
             }
         }

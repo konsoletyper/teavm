@@ -32,6 +32,7 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
+import org.teavm.interop.NoGcRoot;
 import org.teavm.interop.Structure;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.ClassHolder;
@@ -278,7 +279,7 @@ public class ClassGenerator {
             String fieldName = context.getNames().forStaticField(field.getReference());
             fieldsWriter.print("static ").printStrictType(field.getType()).print(" ").print(fieldName)
                     .println(";");
-            if (isReferenceType(field.getType())) {
+            if (isReferenceType(field.getType()) && field.getAnnotations().get(NoGcRoot.class.getName()) == null) {
                 staticFields[staticIndex++] = field.getReference();
             }
 

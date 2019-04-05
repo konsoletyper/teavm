@@ -977,7 +977,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         ListableClassReaderSourceAdapter(ClassReaderSource classSource, Set<String> classes) {
             this.classSource = classSource;
-            this.classes = Collections.unmodifiableSet(classes);
+            this.classes = Collections.unmodifiableSet(classes.stream()
+                    .filter(className -> classSource.get(className) != null)
+                    .collect(Collectors.toSet()));
         }
 
         @Override

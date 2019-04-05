@@ -592,7 +592,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             String mainMethod = names.forMethod(entryPoint.getMethod());
             context.writer().print(mainMethod + "(");
             context.emit(invocation.getArguments().get(0));
-            context.writer().println(");");
+            context.writer().print(")");
         }
     }
 

@@ -102,7 +102,6 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private int[] maxTemporaryVariableLevel = new int[5];
     private MethodReference callingMethod;
     private Set<? super String> includes;
-    private int currentPart;
     private boolean end;
     private boolean async;
 
@@ -384,7 +383,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 writer.print(", ");
 
                 MethodReader method = context.getClassSource().resolve(expr.getMethod());
-                writer.print(names.forMethod(method.getReference()));
+                MethodReference reference = expr.getMethod();
+                if (method != null) {
+                    reference = method.getReference();
+                }
+                writer.print(names.forMethod(reference));
 
                 writer.print("(" + receiver);
                 for (Expr arg : expr.getArguments()) {
@@ -400,10 +403,14 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             case SPECIAL:
             case STATIC: {
                 MethodReader method = context.getClassSource().resolve(expr.getMethod());
-                if (isWrappedNativeCall(method)) {
+                if (method != null && isWrappedNativeCall(method)) {
                     generateWrappedNativeCall(method, expr);
                 } else {
-                    writer.print(names.forMethod(method.getReference()));
+                    MethodReference reference = expr.getMethod();
+                    if (method != null) {
+                        reference = method.getReference();
+                    }
+                    writer.print(names.forMethod(reference));
 
                     writer.print("(");
                     if (!expr.getArguments().isEmpty()) {

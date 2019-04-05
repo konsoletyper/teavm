@@ -18,6 +18,7 @@ package org.teavm.platform.plugin;
 import java.util.HashSet;
 import java.util.Set;
 import org.teavm.backend.javascript.spi.GeneratedBy;
+import org.teavm.interop.NoGcRoot;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationHolder;
@@ -56,6 +57,7 @@ class MetadataProviderTransformer implements ClassHolderTransformer {
         field.setType(method.getResultType());
         field.setLevel(AccessLevel.PRIVATE);
         field.getModifiers().add(ElementModifier.STATIC);
+        field.getAnnotations().add(new AnnotationHolder(NoGcRoot.class.getName()));
         cls.addField(field);
 
         MethodHolder createMethod = new MethodHolder(method.getName() + "$$create", method.getSignature());
