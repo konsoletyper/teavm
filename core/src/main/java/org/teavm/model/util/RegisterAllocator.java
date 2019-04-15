@@ -33,14 +33,9 @@ import org.teavm.model.ProgramReader;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.JumpInstruction;
-import org.teavm.model.text.ListingBuilder;
 
 public class RegisterAllocator {
     public void allocateRegisters(MethodReference method, Program program, boolean debuggerFriendly) {
-        if (method.getName().equals("importFromJs")) {
-            System.out.println(new ListingBuilder().buildListing(program, ""));
-        }
-
         insertPhiArgumentsCopies(program);
         InterferenceGraphBuilder interferenceBuilder = new InterferenceGraphBuilder();
         LivenessAnalyzer liveness = new LivenessAnalyzer();
