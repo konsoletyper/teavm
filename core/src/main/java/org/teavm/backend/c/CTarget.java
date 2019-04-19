@@ -346,7 +346,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
         for (String className : classNames) {
             ClassHolder cls = classes.get(className);
-            classGenerator.generateClass(cls);
+            if (cls != null) {
+                classGenerator.generateClass(cls);
+            }
         }
 
         classGenerator.generateRemainingData(classNames, shadowStackTransformer);
@@ -369,8 +371,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                     if (parent == null) {
                         parent = RuntimeObject.class.getName();
                     }
-                    if (!parent.equals(Structure.class.getName())
-                            && stateMap.getOrDefault(cls.getParent(), (byte) 0) == 0) {
+                    if (!parent.equals(Structure.class.getName()) && stateMap.getOrDefault(parent, (byte) 0) == 0) {
                         stack.push(parent);
                     }
                     break;

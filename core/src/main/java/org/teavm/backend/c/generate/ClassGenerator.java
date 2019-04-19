@@ -491,6 +491,9 @@ public class ClassGenerator {
     }
 
     private void generateVirtualTableStructure(ClassReader cls) {
+        if (cls == null) {
+            return;
+        }
         String name = context.getNames().forClassClass(cls.getName());
 
         vtableStructuresWriter.print("typedef struct ").print(name).println(" {").indent();

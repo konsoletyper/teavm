@@ -60,9 +60,11 @@ import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
 import org.teavm.interop.c.Include;
+import org.teavm.interop.c.Variable;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
+import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
@@ -469,6 +471,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         for (int i = 0; i < expr.getArguments().size(); ++i) {
             temporaries.add(allocTemporaryVariable(CVariableType.PTR));
         }
+        boolean stringResult = method.getResultType().isObject(String.class);
 
         writer.print("(");
         for (int i = 0; i < expr.getArguments().size(); ++i) {
@@ -482,6 +485,10 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 expr.getArguments().get(i).acceptVisitor(this);
                 writer.print(")");
                 stringTemporaries.add(tmp);
+            } else if (isPrimitiveArray(type)) {
+                writer.print("ARRAY_DATA(");
+                expr.getArguments().get(i).acceptVisitor(this);
+                writer.print(", ").printStrictType(((ValueType.Array) type).getItemType()).print(")");
             } else {
                 expr.getArguments().get(i).acceptVisitor(this);
             }
@@ -492,26 +499,47 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         if (resultTmp != null) {
             writer.print(resultTmp + " = ");
         }
-        writer.print(names.forMethod(method.getReference())).print("(");
-        for (int i = 0; i < temporaries.size(); ++i) {
-            if (i > 0) {
-                writer.print(", ");
+        writer.print(names.forMethod(method.getReference()));
+        if (method.getAnnotations().get(Variable.class.getName()) == null) {
+            writer.print("(");
+            for (int i = 0; i < temporaries.size(); ++i) {
+                if (i > 0) {
+                    writer.print(", ");
+                }
+                writer.print(temporaries.get(i));
+                freeTemporaryVariable(CVariableType.PTR);
             }
-            writer.print(temporaries.get(i));
-            freeTemporaryVariable(CVariableType.PTR);
+            writer.print(")");
+        } else if (method.parameterCount() > 0 || method.getResultType() == ValueType.VOID) {
+            context.getDiagnostics().error(new CallLocation(method.getReference()),
+                    "'@Variable' annotation is not applicable to method {{m0}}", method.getReference());
         }
-        writer.print(")");
 
         for (String tmp : stringTemporaries) {
             writer.print(", teavm_free(" + tmp + ")");
         }
 
         if (resultTmp != null) {
-            writer.print(", " + resultTmp);
+            writer.print(", ");
+            if (stringResult) {
+                writer.print("teavm_cToString(");
+            }
+            writer.print(resultTmp);
+            if (stringResult) {
+                writer.print(")");
+            }
             freeTemporaryVariable(typeToCType(method.getResultType()));
         }
 
         writer.print(")");
+    }
+
+    private static boolean isPrimitiveArray(ValueType type) {
+        if (!(type instanceof ValueType.Array)) {
+            return false;
+        }
+
+        return ((ValueType.Array) type).getItemType() instanceof ValueType.Primitive;
     }
 
     private boolean isWrappedNativeCall(MethodReader method) {
