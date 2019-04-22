@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import java.util.TimeZone;
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TSystem;
 import org.teavm.jso.core.JSDate;
@@ -184,7 +185,11 @@ public class TDate implements TComparable<TDate> {
 
     @Override
     public String toString() {
-        return JSDate.create(value).stringValue();
+        if (PlatformDetector.isLowLevel()) {
+            return "";
+        } else {
+            return JSDate.create(value).stringValue();
+        }
     }
 
     @Deprecated

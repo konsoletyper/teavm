@@ -15,8 +15,17 @@
  */
 package org.teavm.backend.c.generate;
 
+import java.nio.ByteBuffer;
+import java.nio.CharBuffer;
+import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
+import java.nio.LongBuffer;
+import java.nio.ShortBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
@@ -97,6 +106,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private static final MethodReference MONITOR_EXIT_SYNC = new MethodReference(Object.class, "monitorExitSync",
             Object.class, void.class);
 
+    private static final Map<String, String> BUFFER_TYPES = new HashMap<>();
+
     private GenerationContext context;
     private NameProvider names;
     private CodeWriter writer;
@@ -106,6 +117,16 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private Set<? super String> includes;
     private boolean end;
     private boolean async;
+
+    static {
+        BUFFER_TYPES.put(ByteBuffer.class.getName(), "int8_t");
+        BUFFER_TYPES.put(ShortBuffer.class.getName(), "int16_t");
+        BUFFER_TYPES.put(CharBuffer.class.getName(), "char16_t");
+        BUFFER_TYPES.put(IntBuffer.class.getName(), "int32_t");
+        BUFFER_TYPES.put(LongBuffer.class.getName(), "int64_t");
+        BUFFER_TYPES.put(FloatBuffer.class.getName(), "float");
+        BUFFER_TYPES.put(DoubleBuffer.class.getName(), "double");
+    }
 
     public CodeGenerationVisitor(GenerationContext context, CodeWriter writer, Set<? super String> includes) {
         this.context = context;
@@ -469,7 +490,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
 
         for (int i = 0; i < expr.getArguments().size(); ++i) {
-            temporaries.add(allocTemporaryVariable(CVariableType.PTR));
+            temporaries.add(allocTemporaryVariable(parameterTypeForCall(method, i)));
         }
         boolean stringResult = method.getResultType().isObject(String.class);
 
@@ -489,6 +510,13 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 writer.print("ARRAY_DATA(");
                 expr.getArguments().get(i).acceptVisitor(this);
                 writer.print(", ").printStrictType(((ValueType.Array) type).getItemType()).print(")");
+            } else if (isPrimitiveBuffer(type)) {
+                writer.print("ARRAY_DATA(FIELD(");
+                String typeName = ((ValueType.Object) type).getClassName();
+                expr.getArguments().get(i).acceptVisitor(this);
+                writer.print(", ").print(names.forClass(typeName)).print(", ")
+                        .print(names.forMemberField(new FieldReference(typeName, "array"))).print(")");
+                writer.print(", ").print(BUFFER_TYPES.get(typeName)).print(")");
             } else {
                 expr.getArguments().get(i).acceptVisitor(this);
             }
@@ -507,7 +535,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                     writer.print(", ");
                 }
                 writer.print(temporaries.get(i));
-                freeTemporaryVariable(CVariableType.PTR);
+                freeTemporaryVariable(parameterTypeForCall(method, i));
             }
             writer.print(")");
         } else if (method.parameterCount() > 0 || method.getResultType() == ValueType.VOID) {
@@ -534,6 +562,14 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         writer.print(")");
     }
 
+    private CVariableType parameterTypeForCall(MethodReader method, int index) {
+        if (method.hasModifier(ElementModifier.STATIC)) {
+            return typeToCType(method.parameterType(index));
+        } else {
+            return index == 0 ? CVariableType.PTR : typeToCType(method.parameterType(index - 1));
+        }
+    }
+
     private static boolean isPrimitiveArray(ValueType type) {
         if (!(type instanceof ValueType.Array)) {
             return false;
@@ -542,14 +578,27 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         return ((ValueType.Array) type).getItemType() instanceof ValueType.Primitive;
     }
 
+    private static boolean isPrimitiveBuffer(ValueType type) {
+        if (!(type instanceof ValueType.Object)) {
+            return false;
+        }
+        return BUFFER_TYPES.containsKey(((ValueType.Object) type).getClassName());
+    }
+
     private boolean isWrappedNativeCall(MethodReader method) {
         if (!method.hasModifier(ElementModifier.NATIVE)) {
             return false;
         }
+        if (method.getAnnotations().get(Variable.class.getName()) != null) {
+            return true;
+        }
         for (ValueType type : method.getParameterTypes()) {
-            if (type.isObject(String.class)) {
+            if (type.isObject(String.class) || isPrimitiveArray(type) || isPrimitiveBuffer(type)) {
                 return true;
             }
+        }
+        if (method.getResultType().isObject(String.class)) {
+            return true;
         }
         return false;
     }

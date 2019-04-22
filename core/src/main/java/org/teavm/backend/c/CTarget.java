@@ -63,6 +63,7 @@ import org.teavm.backend.c.intrinsic.PlatformIntrinsic;
 import org.teavm.backend.c.intrinsic.PlatformObjectIntrinsic;
 import org.teavm.backend.c.intrinsic.RuntimeClassIntrinsic;
 import org.teavm.backend.c.intrinsic.ShadowStackIntrinsic;
+import org.teavm.backend.c.intrinsic.StringsIntrinsic;
 import org.teavm.backend.c.intrinsic.StructureIntrinsic;
 import org.teavm.backend.lowlevel.dependency.ExceptionHandlingDependencyListener;
 import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
@@ -195,6 +196,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwNullPointerException",
                 void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class))
+                .propagate(0, NullPointerException.class.getName())
+                .use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "catchException",
                 Throwable.class)).use();
@@ -287,6 +291,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         intrinsics.add(new FiberIntrinsic());
         intrinsics.add(new LongIntrinsic());
         intrinsics.add(new IntegerIntrinsic());
+        intrinsics.add(new StringsIntrinsic());
 
         List<Generator> generators = new ArrayList<>();
         generators.add(new ArrayGenerator());

@@ -305,6 +305,7 @@ static int32_t teavm_timeZoneOffset() {
 }
 
 static char* teavm_stringToC(void*);
+static JavaString* teavm_cToString(char*);
 static inline void teavm_free(void*);
 
 static inline int64_t teavm_reinterpretDoubleToLong(double v) {

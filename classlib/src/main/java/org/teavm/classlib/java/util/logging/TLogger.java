@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util.logging;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TInteger;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.classlib.java.lang.TThrowable;
@@ -58,12 +59,19 @@ public class TLogger {
 
     public void log(TLogRecord record) {
         String message = format(record.getMessage(), record.getParameters());
-        if (record.getLevel().intValue() >= TLevel.SEVERE.intValue()) {
-            error(message);
-        } else if (record.getLevel().intValue() >= TLevel.WARNING.intValue()) {
-            warn(message);
+        if (PlatformDetector.isLowLevel()) {
+            System.out.print("[");
+            System.out.print(record.getLevel().getName());
+            System.out.print("] ");
+            System.out.println(message);
         } else {
-            infoImpl(message);
+            if (record.getLevel().intValue() >= TLevel.SEVERE.intValue()) {
+                error(message);
+            } else if (record.getLevel().intValue() >= TLevel.WARNING.intValue()) {
+                warn(message);
+            } else {
+                infoImpl(message);
+            }
         }
     }
 
