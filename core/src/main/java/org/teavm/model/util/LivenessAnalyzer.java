@@ -30,6 +30,7 @@ import org.teavm.model.Variable;
 
 public class LivenessAnalyzer {
     private BitSet[] liveVars;
+    private BitSet[] liveOutVars;
 
     public boolean liveIn(int block, int var) {
         return liveVars[block].get(var);
@@ -39,11 +40,17 @@ public class LivenessAnalyzer {
         return (BitSet) liveVars[block].clone();
     }
 
+    public BitSet liveOut(int block) {
+        return (BitSet) liveOutVars[block].clone();
+    }
+
     public void analyze(Program program) {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         liveVars = new BitSet[cfg.size()];
+        liveOutVars = new BitSet[cfg.size()];
         for (int i = 0; i < liveVars.length; ++i) {
             liveVars[i] = new BitSet(program.basicBlockCount());
+            liveOutVars[i] = new BitSet(program.basicBlockCount());
         }
 
         UsageExtractor usageExtractor = new UsageExtractor();
@@ -97,6 +104,18 @@ public class LivenessAnalyzer {
                 nextTask.block = pred;
                 nextTask.var = task.var;
                 stack.push(nextTask);
+            }
+        }
+
+        for (int i = 0; i < liveVars.length; ++i) {
+            for (int j : cfg.incomingEdges(i)) {
+                liveOutVars[j].or(liveVars[i]);
+            }
+            BasicBlock block = program.basicBlockAt(i);
+            for (Phi phi : block.getPhis()) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    liveOutVars[incoming.getSource().getIndex()].set(incoming.getValue().getIndex());
+                }
             }
         }
     }

@@ -36,6 +36,7 @@ import java.util.stream.Collectors;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.analyze.CDependencyListener;
+import org.teavm.backend.c.analyze.InteropDependencyListener;
 import org.teavm.backend.c.generate.BufferedCodeWriter;
 import org.teavm.backend.c.generate.ClassGenerator;
 import org.teavm.backend.c.generate.CodeGenerationVisitor;
@@ -148,7 +149,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     @Override
     public List<DependencyListener> getDependencyListeners() {
-        return Arrays.asList(new CDependencyListener(), exportDependencyListener);
+        return Arrays.asList(new CDependencyListener(), exportDependencyListener, new InteropDependencyListener());
     }
 
     @Override

@@ -37,7 +37,6 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
-import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.BranchingCondition;
@@ -61,13 +60,15 @@ import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.LivenessAnalyzer;
 import org.teavm.model.util.PhiUpdater;
 import org.teavm.model.util.ProgramUtils;
-import org.teavm.model.util.TransitionExtractor;
 import org.teavm.model.util.TypeInferer;
 import org.teavm.model.util.UsageExtractor;
 import org.teavm.model.util.VariableType;
 import org.teavm.runtime.Fiber;
 
 public class CoroutineTransformation {
+    private static final MethodReference FIBER_SUSPEND = new MethodReference(Fiber.class, "suspend",
+            Fiber.AsyncCall.class, Object.class);
+    private static final String ASYNC_CALL = Fiber.class.getName() + "$AsyncCall";
     private ClassReaderSource classSource;
     private LivenessAnalyzer livenessAnalysis = new LivenessAnalyzer();
     private TypeInferer variableTypes = new TypeInferer();
@@ -86,6 +87,11 @@ public class CoroutineTransformation {
 
     public void apply(Program program, MethodReference methodReference) {
         if (methodReference.getClassName().equals(Fiber.class.getName())) {
+            return;
+        }
+
+        ClassReader cls = classSource.get(methodReference.getClassName());
+        if (cls != null && cls.getInterfaces().contains(ASYNC_CALL)) {
             return;
         }
 
@@ -176,15 +182,7 @@ public class CoroutineTransformation {
             return Collections.emptyMap();
         }
 
-        BitSet live = new BitSet();
-        TransitionExtractor transitionExtractor = new TransitionExtractor();
-        block.getLastInstruction().acceptVisitor(transitionExtractor);
-        for (BasicBlock successor : transitionExtractor.getTargets()) {
-            live.or(livenessAnalysis.liveIn(successor.getIndex()));
-        }
-        for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-            live.or(livenessAnalysis.liveIn(tryCatch.getHandler().getIndex()));
-        }
+        BitSet live = livenessAnalysis.liveOut(block.getIndex());
 
         Map<Instruction, BitSet> result = new LinkedHashMap<>();
         UsageExtractor use = new UsageExtractor();
@@ -224,6 +222,9 @@ public class CoroutineTransformation {
         if (instruction instanceof InvokeInstruction) {
             InvokeInstruction invoke = (InvokeInstruction) instruction;
             MethodReference method = findRealMethod(invoke.getMethod());
+            if (method.equals(FIBER_SUSPEND)) {
+                return true;
+            }
             if (method.getClassName().equals(Fiber.class.getName())) {
                 return false;
             }

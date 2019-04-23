@@ -34,13 +34,7 @@ class InterferenceGraphBuilder {
             BasicBlock block = program.basicBlockAt(i);
             block.getLastInstruction().acceptVisitor(succExtractor);
 
-            BitSet liveOut = new BitSet(program.variableCount());
-            for (BasicBlock succ : succExtractor.getTargets()) {
-                liveOut.or(liveness.liveIn(succ.getIndex()));
-            }
-            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                liveOut.or(liveness.liveIn(tryCatch.getHandler().getIndex()));
-            }
+            BitSet liveOut = liveness.liveOut(i);
             live.clear();
             for (int j = 0; j < liveOut.length(); ++j) {
                 if (liveOut.get(j)) {

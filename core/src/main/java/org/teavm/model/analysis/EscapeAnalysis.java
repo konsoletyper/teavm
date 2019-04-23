@@ -39,7 +39,6 @@ import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
-import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
@@ -65,7 +64,6 @@ import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.LivenessAnalyzer;
-import org.teavm.model.util.TransitionExtractor;
 import org.teavm.model.util.UsageExtractor;
 
 public class EscapeAnalysis {
@@ -189,17 +187,7 @@ public class EscapeAnalysis {
     }
 
     private BitSet getUsedVarsInBlock(LivenessAnalyzer liveness, BasicBlock block) {
-        BitSet usedVars = new BitSet();
-        TransitionExtractor transitionExtractor = new TransitionExtractor();
-        block.getLastInstruction().acceptVisitor(transitionExtractor);
-        for (BasicBlock successor : transitionExtractor.getTargets()) {
-            usedVars.or(liveness.liveIn(successor.getIndex()));
-        }
-        for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-            usedVars.or(liveness.liveIn(tryCatch.getHandler().getIndex()));
-        }
-
-        return usedVars;
+        return liveness.liveOut(block.getIndex());
     }
 
     private void propagateFields(Program program, List<Set<FieldReference>> fields) {

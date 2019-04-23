@@ -44,6 +44,7 @@ public class Fiber {
     private boolean daemon;
 
     private static Fiber current;
+    private static PendingCall lastPendingCall;
 
     private Fiber(FiberRunner runner, boolean daemon) {
         this.runner = runner;
@@ -187,24 +188,63 @@ public class Fiber {
             }
             return fiber.result;
         }
+        PendingCall pendingCall = new PendingCall(call, lastPendingCall);
+        if (lastPendingCall != null) {
+            lastPendingCall.next = pendingCall;
+        }
+        lastPendingCall = pendingCall;
 
         fiber.state = STATE_SUSPENDING;
-        call.run(new AsyncCallback<Object>() {
-            @Override
-            public void complete(Object result) {
-                setCurrentThread(javaThread);
-                fiber.result = result;
-                fiber.resume();
-            }
-
-            @Override
-            public void error(Throwable e) {
-                setCurrentThread(javaThread);
-                fiber.exception = e;
-                fiber.resume();
-            }
-        });
+        pendingCall.callback = new AsyncCallbackImpl(pendingCall, javaThread, fiber);
+        call.run(pendingCall.callback);
         return null;
+    }
+
+    static class AsyncCallbackImpl implements AsyncCallback<Object> {
+        PendingCall pendingCall;
+        Thread javaThread;
+        Fiber fiber;
+
+        AsyncCallbackImpl(PendingCall pendingCall, Thread javaThread, Fiber fiber) {
+            this.pendingCall = pendingCall;
+            this.javaThread = javaThread;
+            this.fiber = fiber;
+        }
+
+        @Override
+        public void complete(Object result) {
+            setCurrentThread(javaThread);
+            javaThread = null;
+            Fiber fiber = this.fiber;
+            this.fiber = null;
+            fiber.result = result;
+            removePendingCall();
+            fiber.resume();
+        }
+
+        @Override
+        public void error(Throwable e) {
+            setCurrentThread(javaThread);
+            javaThread = null;
+            Fiber fiber = this.fiber;
+            this.fiber = null;
+            fiber.exception = e;
+            removePendingCall();
+            fiber.resume();
+        }
+
+        private void removePendingCall() {
+            if (pendingCall.previous != null) {
+                pendingCall.previous.next = pendingCall.next;
+            }
+            if (pendingCall.next != null) {
+                pendingCall.next.previous = pendingCall.previous;
+            }
+            if (pendingCall == lastPendingCall) {
+                lastPendingCall = pendingCall.previous;
+            }
+            pendingCall = null;
+        }
     }
 
     static native void setCurrentThread(Thread thread);
@@ -240,5 +280,18 @@ public class Fiber {
 
     public interface AsyncCall {
         void run(AsyncCallback<?> callback);
+    }
+
+    static class PendingCall {
+        AsyncCall value;
+        PendingCall next;
+        PendingCall previous;
+        AsyncCallbackImpl callback;
+
+        PendingCall(AsyncCall value, PendingCall previous) {
+            this.value = value;
+            this.next = null;
+            this.previous = previous;
+        }
     }
 }

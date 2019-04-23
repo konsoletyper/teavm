@@ -72,8 +72,8 @@ public class GCShadowStackContributor {
     public int contribute(Program program, MethodReader method) {
         List<Map<Instruction, BitSet>> liveInInformation = findCallSiteLiveIns(program, method);
 
-        Graph interferenceGraph = buildInterferenceGraph(liveInInformation, program);
         boolean[] spilled = getAffectedVariables(liveInInformation, program);
+        Graph interferenceGraph = buildInterferenceGraph(liveInInformation, program, spilled);
         int[] colors = new int[interferenceGraph.size()];
         Arrays.fill(colors, -1);
         new GraphColorer().colorize(interferenceGraph, colors);
@@ -81,8 +81,10 @@ public class GCShadowStackContributor {
         int usedColors = 0;
         for (int var = 0; var < colors.length; ++var) {
             if (spilled[var]) {
-                usedColors = Math.max(usedColors, colors[var] + 1);
+                usedColors = Math.max(usedColors, colors[var]);
                 colors[var]--;
+            } else {
+                colors[var] = -1;
             }
         }
         if (usedColors == 0) {
@@ -182,7 +184,8 @@ public class GCShadowStackContributor {
         return liveInInformation;
     }
 
-    private Graph buildInterferenceGraph(List<Map<Instruction, BitSet>> liveInInformation, Program program) {
+    private Graph buildInterferenceGraph(List<Map<Instruction, BitSet>> liveInInformation, Program program,
+            boolean[] spilled) {
         GraphBuilder builder = new GraphBuilder(program.variableCount());
         for (Map<Instruction, BitSet> blockLiveIn : liveInInformation) {
             for (BitSet liveVarsSet : blockLiveIn.values()) {
@@ -193,8 +196,12 @@ public class GCShadowStackContributor {
                 int[] liveVarArray = liveVars.toArray();
                 for (int i = 0; i < liveVarArray.length - 1; ++i) {
                     for (int j = i + 1; j < liveVarArray.length; ++j) {
-                        builder.addEdge(liveVarArray[i], liveVarArray[j]);
-                        builder.addEdge(liveVarArray[j], liveVarArray[i]);
+                        int a = liveVarArray[i];
+                        int b = liveVarArray[j];
+                        if (spilled[a] && spilled[b]) {
+                            builder.addEdge(a, b);
+                            builder.addEdge(b, a);
+                        }
                     }
                 }
             }
@@ -270,7 +277,7 @@ public class GCShadowStackContributor {
         Step[] stack = new Step[program.basicBlockCount() * 2];
         int head = 0;
         Step start = new Step(0);
-        Arrays.fill(start.slotStates, usedColors);
+        Arrays.fill(start.slotStates, program.variableCount());
         stack[head++] = start;
 
         while (head > 0) {
