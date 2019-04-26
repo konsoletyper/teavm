@@ -66,6 +66,7 @@ static inline int32_t compare_double(double a, double b) {
 #define ALIGN(addr, alignment) ((void*) (((uintptr_t) (addr) + ((alignment) - 1)) / (alignment) * (alignment)))
 #define ARRAY_LENGTH(array) (((JavaArray*) (array))->size)
 #define ARRAY_DATA(array, type) ((type*) ALIGN((((JavaArray*) (array)) + 1), sizeof(type)))
+#define ARRAY_DATAN(array, type) (array != NULL ? ARRAY_DATA(array, type) : NULL)
 #define ARRAY_AT(array, type, index) (((type*) ARRAY_DATA(array, type))[index])
 
 static void* throwClassCastException();

@@ -507,7 +507,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 writer.print(")");
                 stringTemporaries.add(tmp);
             } else if (isPrimitiveArray(type)) {
-                writer.print("ARRAY_DATA(");
+                writer.print("ARRAY_DATAN(");
                 expr.getArguments().get(i).acceptVisitor(this);
                 writer.print(", ").printStrictType(((ValueType.Array) type).getItemType()).print(")");
             } else if (isPrimitiveBuffer(type)) {
