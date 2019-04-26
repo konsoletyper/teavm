@@ -81,7 +81,7 @@ public class Fiber {
     public void push(double value) {
         if (doubleValues == null) {
             doubleValues = new double[4];
-        } else if (doubleTop + 4 == doubleValues.length) {
+        } else if (doubleTop + 1 == doubleValues.length) {
             doubleValues = Arrays.copyOf(doubleValues, doubleValues.length * 3 / 2);
         }
         doubleValues[doubleTop++] = value;
@@ -90,7 +90,7 @@ public class Fiber {
     public void push(Object value) {
         if (objectValues == null) {
             objectValues = new Object[4];
-        } else if (objectTop + 4 == objectValues.length) {
+        } else if (objectTop + 1 == objectValues.length) {
             objectValues = Arrays.copyOf(objectValues, objectValues.length * 3 / 2);
         }
         objectValues[objectTop++] = value;
