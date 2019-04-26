@@ -16,6 +16,7 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Address;
+import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Unmanaged;
@@ -45,6 +46,9 @@ public final class GC {
     public static native long availableBytes();
 
     private static native int regionSize();
+
+    @Import(name = "teavm_outOfMemory")
+    private static native void outOfMemory();
 
     public static int getFreeMemory() {
         return freeMemory;
@@ -88,7 +92,10 @@ public final class GC {
             return;
         }
         collectGarbage(size);
-        getAvailableChunkIfPossible(size);
+        if (!getAvailableChunkIfPossible(size)) {
+            ExceptionHandling.printStack();
+            outOfMemory();
+        }
     }
 
     private static boolean getAvailableChunkIfPossible(int size) {

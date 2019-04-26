@@ -1,5 +1,6 @@
 #include <string.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -352,3 +353,16 @@ static void teavm_interrupt() {
 }
 
 #endif
+
+static void teavm_outOfMemory() {
+    fprintf(stderr, "Application crashed due to lack of free memory\n");
+    exit(1);
+}
+
+static void teavm_printString(char* s) {
+    fprintf(stderr, "%s", s);
+}
+
+static void teavm_printInt(int32_t i) {
+    fprintf(stderr, "%" PRId32, i);
+}

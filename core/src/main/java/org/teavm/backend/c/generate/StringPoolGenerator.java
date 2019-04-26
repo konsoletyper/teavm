@@ -34,7 +34,8 @@ public class StringPoolGenerator {
             if (codes) {
                 generateNumericStringLiteral(s);
             } else {
-                generateSimpleStringLiteral(s);
+                writer.print("u");
+                generateSimpleStringLiteral(writer, s);
             }
             writer.print(")");
 
@@ -55,9 +56,9 @@ public class StringPoolGenerator {
         return false;
     }
 
-    private void generateSimpleStringLiteral(String string) {
+    public static void generateSimpleStringLiteral(CodeWriter writer, String string) {
         if (string.isEmpty()) {
-            writer.print("u\"\"");
+            writer.print("\"\"");
             return;
         }
 
@@ -67,7 +68,7 @@ public class StringPoolGenerator {
                 writer.println();
             }
             int last = Math.min(i + chunkSize, string.length());
-            writer.print("u\"");
+            writer.print("\"");
 
             for (int j = i; j < last; ++j) {
                 char c = string.charAt(j);
