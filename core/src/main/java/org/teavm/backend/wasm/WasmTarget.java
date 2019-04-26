@@ -44,6 +44,7 @@ import org.teavm.backend.wasm.generators.WasmMethodGeneratorContext;
 import org.teavm.backend.wasm.intrinsics.AddressIntrinsic;
 import org.teavm.backend.wasm.intrinsics.AllocatorIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ClassIntrinsic;
+import org.teavm.backend.wasm.intrinsics.ConsoleIntrinsic;
 import org.teavm.backend.wasm.intrinsics.DoubleIntrinsic;
 import org.teavm.backend.wasm.intrinsics.ExceptionHandlingIntrinsic;
 import org.teavm.backend.wasm.intrinsics.FloatIntrinsic;
@@ -269,6 +270,12 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 String[].class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "lookupResource", Address.class,
                 String.class, Address.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printString",
+                String.class, void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printInt",
+                int.class, void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "printOutOfMemory",
+                void.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class)).use();
@@ -344,6 +351,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         context.addIntrinsic(new LongIntrinsic());
         context.addIntrinsic(new IntegerIntrinsic());
         context.addIntrinsic(new ObjectIntrinsic());
+        context.addIntrinsic(new ConsoleIntrinsic());
         context.addGenerator(new ArrayGenerator());
 
         IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext();

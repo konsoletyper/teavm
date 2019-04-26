@@ -18,13 +18,19 @@ package org.teavm.backend.wasm.intrinsics;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.WasmRuntime;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt64Constant;
+import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.MethodReference;
 import org.teavm.runtime.GC;
 
 public class GCIntrinsic implements WasmIntrinsic {
+    private static final MethodReference PRINT_OUT_OF_MEMORY = new MethodReference(
+            WasmRuntime.class, "printOutOfMemory", void.class);
     private List<WasmInt32Constant> heapAddressExpressions = new ArrayList<>();
     private List<WasmInt64Constant> availableBytesExpressions = new ArrayList<>();
     private List<WasmInt32Constant> gcStorageAddressExpressions = new ArrayList<>();
@@ -89,6 +95,7 @@ public class GCIntrinsic implements WasmIntrinsic {
             case "regionsAddress":
             case "regionMaxCount":
             case "regionSize":
+            case "outOfMemory":
                 return true;
             default:
                 return false;
@@ -121,6 +128,13 @@ public class GCIntrinsic implements WasmIntrinsic {
                 WasmInt64Constant constant = new WasmInt64Constant(0);
                 availableBytesExpressions.add(constant);
                 return constant;
+            }
+            case "outOfMemory": {
+                WasmBlock block = new WasmBlock(false);
+                WasmCall call = new WasmCall(manager.getNames().forMethod(PRINT_OUT_OF_MEMORY), true);
+                block.getBody().add(call);
+                block.getBody().add(new WasmUnreachable());
+                return block;
             }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());

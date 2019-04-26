@@ -83,6 +83,15 @@ public final class WasmRuntime {
     @Import(name = "print", module = "spectest")
     public static native void print(int a);
 
+    @Import(name = "logString", module = "teavm")
+    public static native void printString(String s);
+
+    @Import(name = "logInt", module = "teavm")
+    public static native void printInt(int i);
+
+    @Import(name = "logOutOfMemory", module = "teavm")
+    public static native void printOutOfMemory();
+
     public static void fillZero(Address address, int count) {
         int start = address.toInt();
 

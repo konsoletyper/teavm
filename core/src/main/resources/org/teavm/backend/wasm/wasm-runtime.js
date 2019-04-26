@@ -37,6 +37,17 @@ TeaVM.wasm = function() {
     function getNativeOffset(instant) {
         return new Date(instant).getTimezoneOffset();
     }
+    function logString(string) {
+        var memory = new DataView(logString.memory.buffer);
+        var arrayPtr = memory.getUint32(string + 8, true);
+        var length = memory.getUint32(arrayPtr + 8, true);
+        for (var i = 0; i < length; ++i) {
+            putwchar(memory.getUint16(i * 2 + arrayPtr + 12, true));
+        }
+    }
+    function logInt(i) {
+        lineBuffer += i.toString();
+    }
 
     function importDefaults(obj) {
         obj.teavm = {
@@ -48,7 +59,10 @@ TeaVM.wasm = function() {
             putwchar: putwchar,
             towlower: towlower,
             towupper: towupper,
-            getNativeOffset: getNativeOffset
+            getNativeOffset: getNativeOffset,
+            logString: logString,
+            logInt: logInt,
+            logOutOfMemory: function() { console.log("Out of memory") }
         };
 
         obj.teavmMath = Math;
@@ -79,6 +93,7 @@ TeaVM.wasm = function() {
             }
 
             WebAssembly.instantiate(response, importObj).then(function(resultObject) {
+                importObj.teavm.logString.memory = resultObject.instance.exports.memory;
                 resultObject.instance.exports.main();
                 callback(resultObject);
             }).catch(function(error) {

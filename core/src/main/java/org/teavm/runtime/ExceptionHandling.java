@@ -18,7 +18,6 @@ package org.teavm.runtime;
 import org.teavm.interop.Address;
 import org.teavm.interop.Export;
 import org.teavm.interop.StaticInit;
-import org.teavm.interop.Strings;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Unmanaged;
 
@@ -36,21 +35,21 @@ public final class ExceptionHandling {
             CallSite callSite = findCallSiteById(callSiteId);
             CallSiteLocation location = callSite.location;
 
-            Console.printString(Strings.toC("    at "));
+            Console.printString("    at ");
             if (location.className == null || location.methodName == null) {
-                Console.printString(Strings.toC("(Unknown method)"));
+                Console.printString("(Unknown method)");
             } else {
-                Console.printString(Strings.toC(location.className));
-                Console.printString(Strings.toC("."));
-                Console.printString(Strings.toC(location.methodName));
+                Console.printString(location.className);
+                Console.printString(".");
+                Console.printString(location.methodName);
             }
-            Console.printString(Strings.toC("("));
+            Console.printString("(");
             if (location.fileName != null && location.lineNumber >= 0) {
-                Console.printString(Strings.toC(location.fileName));
-                Console.printString(Strings.toC(":"));
+                Console.printString(location.fileName);
+                Console.printString(":");
                 Console.printInt(location.lineNumber);
             }
-            Console.printString(Strings.toC(")\n"));
+            Console.printString(")\n");
             stackFrame = ShadowStack.getNextStackFrame(stackFrame);
         }
     }

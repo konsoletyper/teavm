@@ -337,6 +337,9 @@ public class WasmBinaryRenderer {
         functionsSubsection.writeLEB(functions.size());
 
         for (WasmFunction function : functions) {
+            if (function.getImportName() != null) {
+                continue;
+            }
             functionsSubsection.writeLEB(functionIndexes.get(function.getName()));
             functionsSubsection.writeAsciiString(function.getName());
         }

@@ -15,7 +15,6 @@
  */
 package org.teavm.runtime;
 
-import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
@@ -26,8 +25,7 @@ public final class Console {
     private Console() {
     }
 
-    @Import(name = "teavm_printString")
-    public static native void printString(Address ptr);
+    public static native void printString(String s);
 
     @Import(name = "teavm_printInt")
     public static native void printInt(int n);
