@@ -153,6 +153,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return Address.ofObject(this).<RuntimeClass>toStructure().simpleName;
     }
 
+    @DelegateTo("setSimpleNameCacheLowLevel")
     private void setSimpleNameCache(String value) {
         simpleName = value;
     }

@@ -248,9 +248,10 @@ public class ClassGenerator {
         FieldReference[] instanceFields = new FieldReference[cls.getFields().size()];
         int instanceIndex = 0;
         for (FieldHolder field : cls.getFields()) {
-            if (field.hasModifier(ElementModifier.STATIC)) {
+            if (field.hasModifier(ElementModifier.STATIC) || isMonitorField(field.getReference())) {
                 continue;
             }
+
             String fieldName = context.getNames().forMemberField(field.getReference());
             structWriter.printStrictType(field.getType()).print(" ").print(fieldName).println(";");
             if (isReferenceType(field.getType())) {
@@ -265,6 +266,10 @@ public class ClassGenerator {
         }
 
         structWriter.outdent().print("} ").print(name).println(";");
+    }
+
+    private boolean isMonitorField(FieldReference field) {
+        return field.getClassName().equals("java.lang.Object") && field.getFieldName().equals("monitor");
     }
 
     private void generateClassStaticFields(ClassHolder cls) {
