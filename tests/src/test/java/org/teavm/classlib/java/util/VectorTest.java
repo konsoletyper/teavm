@@ -814,13 +814,6 @@ public class VectorTest {
         }
 
         try {
-            myVector.removeRange(1, 0);
-            fail("Should throw IndexOutOfBoundsException");
-        } catch (IndexOutOfBoundsException e) {
-            // Excepted
-        }
-
-        try {
             myVector.removeRange(2, 1);
             fail("Should throw IndexOutOfBoundsException");
         } catch (IndexOutOfBoundsException e) {
