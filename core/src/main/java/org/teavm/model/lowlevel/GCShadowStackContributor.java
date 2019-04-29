@@ -30,6 +30,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.teavm.common.DisjointSet;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
@@ -64,19 +65,26 @@ import org.teavm.runtime.ShadowStack;
 
 public class GCShadowStackContributor {
     private Characteristics characteristics;
+    private NativePointerFinder nativePointerFinder;
 
     public GCShadowStackContributor(Characteristics characteristics) {
         this.characteristics = characteristics;
+        nativePointerFinder = new NativePointerFinder(characteristics);
     }
 
     public int contribute(Program program, MethodReader method) {
         List<Map<Instruction, BitSet>> liveInInformation = findCallSiteLiveIns(program, method);
 
         boolean[] spilled = getAffectedVariables(liveInInformation, program);
-        Graph interferenceGraph = buildInterferenceGraph(liveInInformation, program, spilled);
+        int[] variableClasses = getVariableClasses(program);
+        Graph interferenceGraph = buildInterferenceGraph(liveInInformation, program, spilled, variableClasses);
+        int[] classColors = new int[interferenceGraph.size()];
+        Arrays.fill(classColors, -1);
+        new GraphColorer().colorize(interferenceGraph, classColors);
         int[] colors = new int[interferenceGraph.size()];
-        Arrays.fill(colors, -1);
-        new GraphColorer().colorize(interferenceGraph, colors);
+        for (int i = 0; i < colors.length; ++i) {
+            colors[i] = classColors[variableClasses[i]];
+        }
 
         int usedColors = 0;
         for (int var = 0; var < colors.length; ++var) {
@@ -91,7 +99,7 @@ public class GCShadowStackContributor {
             return 0;
         }
 
-        // If a variable is spilled to stack, then phi which input this variable also spilled to stack
+        // If a variable is spilled to stack, then phi which takes this variable as input also spilled to stack
         // If all of phi inputs are spilled to stack, then we don't need to insert spilling instruction
         // for this phi.
         List<Set<Phi>> destinationPhis = getDestinationPhis(program);
@@ -108,19 +116,35 @@ public class GCShadowStackContributor {
         return usedColors;
     }
 
+    private int[] getVariableClasses(Program program) {
+        DisjointSet variableClasses = new DisjointSet();
+        for (int i = 0; i < program.variableCount(); ++i) {
+            variableClasses.create();
+        }
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Phi phi : block.getPhis()) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    variableClasses.union(phi.getReceiver().getIndex(), incoming.getValue().getIndex());
+                }
+            }
+        }
+        return variableClasses.pack(program.variableCount());
+    }
+
     private void findAutoSpilledPhis(boolean[] spilled, List<Set<Phi>> destinationPhis, int[] inputCount,
             boolean[] autoSpilled, int i) {
-        if (spilled[i]) {
-            Set<Phi> phis = destinationPhis.get(i);
-            if (phis != null) {
-                for (Phi phi : destinationPhis.get(i)) {
-                    int destination = phi.getReceiver().getIndex();
-                    autoSpilled[destination] = --inputCount[destination] == 0;
-                    if (!spilled[destination]) {
-                        spilled[destination] = true;
-                        if (i > destination) {
-                            findAutoSpilledPhis(spilled, destinationPhis, inputCount, autoSpilled, destination);
-                        }
+        if (!spilled[i]) {
+            return;
+        }
+        Set<Phi> phis = destinationPhis.get(i);
+        if (phis != null) {
+            for (Phi phi : destinationPhis.get(i)) {
+                int destination = phi.getReceiver().getIndex();
+                autoSpilled[destination] = --inputCount[destination] == 0;
+                if (!spilled[destination]) {
+                    spilled[destination] = true;
+                    if (i > destination) {
+                        findAutoSpilledPhis(spilled, destinationPhis, inputCount, autoSpilled, destination);
                     }
                 }
             }
@@ -128,7 +152,8 @@ public class GCShadowStackContributor {
     }
 
     private List<Map<Instruction, BitSet>> findCallSiteLiveIns(Program program, MethodReader method) {
-        Graph cfg = ProgramUtils.buildControlFlowGraph(program);
+        boolean[] nativePointers = nativePointerFinder.findNativePointers(method.getReference(), program);
+
         TypeInferer typeInferer = new TypeInferer();
         typeInferer.inferTypes(program, method.getReference());
         List<Map<Instruction, BitSet>> liveInInformation = new ArrayList<>();
@@ -142,10 +167,7 @@ public class GCShadowStackContributor {
             BasicBlock block = program.basicBlockAt(i);
             Map<Instruction, BitSet> blockLiveIn = new HashMap<>();
             liveInInformation.add(blockLiveIn);
-            BitSet currentLiveOut = new BitSet();
-            for (int successor : cfg.outgoingEdges(i)) {
-                currentLiveOut.or(livenessAnalyzer.liveIn(successor));
-            }
+            BitSet currentLiveOut = livenessAnalyzer.liveOut(i);
 
             for (Instruction insn = block.getLastInstruction(); insn != null; insn = insn.getPrevious()) {
                 insn.acceptVisitor(defExtractor);
@@ -168,7 +190,7 @@ public class GCShadowStackContributor {
 
                     BitSet csLiveIn = (BitSet) currentLiveOut.clone();
                     for (int v = csLiveIn.nextSetBit(0); v >= 0; v = csLiveIn.nextSetBit(v + 1)) {
-                        if (!isReference(typeInferer, v)) {
+                        if (!isReference(typeInferer, v) || nativePointers[v]) {
                             csLiveIn.clear(v);
                         }
                     }
@@ -185,7 +207,7 @@ public class GCShadowStackContributor {
     }
 
     private Graph buildInterferenceGraph(List<Map<Instruction, BitSet>> liveInInformation, Program program,
-            boolean[] spilled) {
+            boolean[] spilled, int[] variableClasses) {
         GraphBuilder builder = new GraphBuilder(program.variableCount());
         for (Map<Instruction, BitSet> blockLiveIn : liveInInformation) {
             for (BitSet liveVarsSet : blockLiveIn.values()) {
@@ -199,8 +221,8 @@ public class GCShadowStackContributor {
                         int a = liveVarArray[i];
                         int b = liveVarArray[j];
                         if (spilled[a] && spilled[b]) {
-                            builder.addEdge(a, b);
-                            builder.addEdge(b, a);
+                            builder.addEdge(variableClasses[a], variableClasses[b]);
+                            builder.addEdge(variableClasses[b], variableClasses[a]);
                         }
                     }
                 }
