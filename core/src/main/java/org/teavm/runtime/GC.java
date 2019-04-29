@@ -305,13 +305,27 @@ public final class GC {
         int end = upper;
         int mid = (lower + upper) / 2;
 
-        FreeChunk midChunk = getFreeChunk(mid).value;
+        int midSize = getFreeChunk(mid).value.size;
+        int firstSize = getFreeChunk(lower).value.size;
+        int lastSize = getFreeChunk(upper).value.size;
+        if (midSize < firstSize) {
+            int tmp = firstSize;
+            firstSize = midSize;
+            midSize = tmp;
+        }
+        if (lastSize < firstSize) {
+            lastSize = firstSize;
+        }
+        if (midSize > lastSize) {
+            midSize = lastSize;
+        }
+
         outer: while (true) {
             while (true) {
                 if (lower == upper) {
                     break outer;
                 }
-                if (getFreeChunk(lower).value.size <= midChunk.size) {
+                if (getFreeChunk(lower).value.size <= midSize) {
                     break;
                 }
                 ++lower;
@@ -320,7 +334,7 @@ public final class GC {
                 if (lower == upper) {
                     break outer;
                 }
-                if (getFreeChunk(upper).value.size > midChunk.size) {
+                if (getFreeChunk(upper).value.size > midSize) {
                     break;
                 }
                 --upper;
@@ -330,6 +344,9 @@ public final class GC {
             getFreeChunk(upper).value = tmp;
         }
 
+        if (lower == end || upper == start) {
+            return;
+        }
         if (lower - start > 0) {
             sortFreeChunks(start, lower);
         }
