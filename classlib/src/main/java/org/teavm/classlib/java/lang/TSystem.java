@@ -28,6 +28,7 @@ import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
+import org.teavm.jso.browser.Performance;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.GC;
 import org.teavm.runtime.RuntimeArray;
@@ -222,8 +223,15 @@ public final class TSystem extends TObject {
     }
 
     public static long nanoTime() {
-        return currentTimeMillis() * 1000000;
+        if (PlatformDetector.isLowLevel()) {
+            return nanoTimeLowLevel();
+        } else {
+            return (long) (Performance.now() * 1000000);
+        }
     }
+
+    @Import(name = "currentTimeNano")
+    private static native long nanoTimeLowLevel();
 
     public static int identityHashCode(Object x) {
         return ((TObject) x).identity();

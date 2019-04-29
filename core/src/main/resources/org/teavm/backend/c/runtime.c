@@ -232,7 +232,13 @@ static int64_t currentTimeMillis() {
     struct timespec time;
     clock_gettime(CLOCK_REALTIME, &time);
 
-    return time.tv_sec * 1000 + (int64_t) round(time.tv_nsec / 1000000);
+    return time.tv_sec * INT64_C(1000) + (int64_t) round(time.tv_nsec / 1000000);
+}
+static int64_t currentTimeNano() {
+    struct timespec time;
+    clock_gettime(CLOCK_REALTIME, &time);
+
+    return time.tv_sec * INT64_C(1000000000) + (int64_t) round(time.tv_nsec);
 }
 #endif
 
