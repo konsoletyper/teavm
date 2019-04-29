@@ -43,7 +43,7 @@ public class DefaultInliningStrategy implements InliningStrategy {
     @Override
     public InliningStep start(MethodReference method, ProgramReader program) {
         Complexity complexity = getComplexity(program, null);
-        if (complexity.score > complexityThreshold) {
+        if (complexity.score > totalComplexityThreshold) {
             return null;
         }
 
