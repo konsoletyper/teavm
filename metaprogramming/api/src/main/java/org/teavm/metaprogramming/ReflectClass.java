@@ -15,11 +15,12 @@
  */
 package org.teavm.metaprogramming;
 
-import org.teavm.metaprogramming.reflect.ReflectAnnotatedElement;
 import org.teavm.metaprogramming.reflect.ReflectField;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
+import org.teavm.metaprogramming.reflect.ReflectParameterizedMember;
+import org.teavm.metaprogramming.reflect.ReflectType;
 
-public interface ReflectClass<T> extends ReflectAnnotatedElement {
+public interface ReflectClass<T> extends ReflectParameterizedMember {
     boolean isPrimitive();
 
     boolean isInterface();
@@ -30,17 +31,17 @@ public interface ReflectClass<T> extends ReflectAnnotatedElement {
 
     boolean isEnum();
 
-    T[] getEnumConstants();
-
-    int getModifiers();
+    String[] getEnumConstants();
 
     ReflectClass<?> getComponentType();
 
-    String getName();
-
     ReflectClass<? super T> getSuperclass();
 
+    ReflectType getGenericSuperclass();
+
     ReflectClass<? super T>[] getInterfaces();
+
+    ReflectType[] getGenericInterfaces();
 
     boolean isInstance(Object obj);
 

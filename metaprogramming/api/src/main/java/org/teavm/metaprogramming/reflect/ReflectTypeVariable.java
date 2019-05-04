@@ -1,5 +1,5 @@
 /*
- *  Copyright 2016 Alexey Andreev.
+ *  Copyright 2019 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,16 +15,10 @@
  */
 package org.teavm.metaprogramming.reflect;
 
-import org.teavm.metaprogramming.ReflectClass;
+public interface ReflectTypeVariable extends ReflectType {
+    String getName();
 
-public interface ReflectField extends ReflectMember {
-    boolean isEnumConstant();
+    ReflectType[] getBounds();
 
-    ReflectClass<?> getType();
-
-    ReflectType getGenericType();
-
-    Object get(Object target);
-
-    void set(Object target, Object value);
+    ReflectParameterizedMember getOwner();
 }

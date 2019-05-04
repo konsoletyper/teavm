@@ -17,12 +17,16 @@ package org.teavm.metaprogramming.reflect;
 
 import org.teavm.metaprogramming.ReflectClass;
 
-public interface ReflectMethod extends ReflectMember {
+public interface ReflectMethod extends ReflectParameterizedMember {
     boolean isConstructor();
 
     ReflectClass<?> getReturnType();
 
+    ReflectType getGenericReturnType();
+
     ReflectClass<?>[] getParameterTypes();
+
+    ReflectType[] getGenericParameterTypes();
 
     ReflectClass<?> getParameterType(int index);
 

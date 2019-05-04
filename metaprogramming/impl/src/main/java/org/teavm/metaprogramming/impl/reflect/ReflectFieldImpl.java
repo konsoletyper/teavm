@@ -18,8 +18,10 @@ package org.teavm.metaprogramming.impl.reflect;
 import java.lang.annotation.Annotation;
 import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.reflect.ReflectField;
+import org.teavm.metaprogramming.reflect.ReflectType;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
+import org.teavm.model.GenericValueType;
 
 public class ReflectFieldImpl implements ReflectField {
     private ReflectContext context;
@@ -55,11 +57,19 @@ public class ReflectFieldImpl implements ReflectField {
     }
 
     @Override
-    public ReflectClass<?> getType() {
+    public ReflectClassImpl<?> getType() {
         if (type == null) {
             type = context.getClass(field.getType());
         }
         return type;
+    }
+
+    @Override
+    public ReflectType getGenericType() {
+        GenericValueType type = field.getGenericType();
+        return type != null
+                ? context.getGenericType(type, declaringClass.getTypeVariableMap())
+                : context.getRawGenericType(getType());
     }
 
     @Override

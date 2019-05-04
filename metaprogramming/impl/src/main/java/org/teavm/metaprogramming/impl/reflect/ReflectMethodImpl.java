@@ -22,14 +22,17 @@ import java.util.stream.Collectors;
 import org.teavm.metaprogramming.ReflectClass;
 import org.teavm.metaprogramming.reflect.ReflectAnnotatedElement;
 import org.teavm.metaprogramming.reflect.ReflectMethod;
+import org.teavm.metaprogramming.reflect.ReflectType;
+import org.teavm.model.GenericTypeParameter;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.MethodReader;
 
-public class ReflectMethodImpl implements ReflectMethod {
+public class ReflectMethodImpl extends ReflectParameterizedMemberImpl implements ReflectMethod {
     private ReflectContext context;
     private ReflectClassImpl<?> declaringClass;
     public final MethodReader method;
     private ReflectClassImpl<?> returnType;
-    private ReflectClass<?>[] parameterTypes;
+    private ReflectClassImpl<?>[] parameterTypes;
     private ReflectAnnotatedElementImpl annotations;
     private ReflectAnnotatedElementImpl[] parameterAnnotations;
 
@@ -40,7 +43,22 @@ public class ReflectMethodImpl implements ReflectMethod {
     }
 
     @Override
-    public ReflectClass<?> getDeclaringClass() {
+    protected GenericTypeParameter[] getUnderlyingTypeParameters() {
+        return method.getTypeParameters();
+    }
+
+    @Override
+    ReflectContext getReflectContext() {
+        return context;
+    }
+
+    @Override
+    ReflectParameterizedMemberImpl getEnclosingMember() {
+        return getDeclaringClass();
+    }
+
+    @Override
+    public ReflectClassImpl<?> getDeclaringClass() {
         return declaringClass;
     }
 
@@ -60,11 +78,21 @@ public class ReflectMethodImpl implements ReflectMethod {
     }
 
     @Override
-    public ReflectClass<?> getReturnType() {
+    public ReflectClassImpl<?> getReturnType() {
         if (returnType == null) {
             returnType = context.getClass(method.getResultType());
         }
         return returnType;
+    }
+
+    @Override
+    public ReflectType getGenericReturnType() {
+        GenericValueType type = method.getGenericResultType();
+        if (type == null) {
+            return context.getRawGenericType(getReturnType());
+        }
+
+        return context.getGenericType(type, getTypeVariableMap());
     }
 
     @Override
@@ -74,7 +102,20 @@ public class ReflectMethodImpl implements ReflectMethod {
     }
 
     @Override
-    public ReflectClass<?> getParameterType(int index) {
+    public ReflectType[] getGenericParameterTypes() {
+        ensureParameterTypes();
+        ReflectType[] result = new ReflectType[parameterTypes.length];
+        for (int i = 0; i < result.length; ++i) {
+            GenericValueType type = method.genericParameterType(i);
+            result[i] = type != null
+                    ? context.getGenericType(type, getTypeVariableMap())
+                    : context.getRawGenericType(getParameterType(i));
+        }
+        return result;
+    }
+
+    @Override
+    public ReflectClassImpl<?> getParameterType(int index) {
         ensureParameterTypes();
         return parameterTypes[index];
     }
@@ -89,7 +130,7 @@ public class ReflectMethodImpl implements ReflectMethod {
         if (parameterTypes == null) {
             parameterTypes = Arrays.stream(method.getParameterTypes())
                     .map(type -> context.getClass(type))
-                    .toArray(sz -> new ReflectClass<?>[sz]);
+                    .toArray(sz -> new ReflectClassImpl<?>[sz]);
         }
     }
 
