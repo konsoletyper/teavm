@@ -37,20 +37,28 @@ public class NameProvider extends LowLevelNameProvider {
     public NameProvider(ClassReaderSource classSource) {
         super(classSource);
 
-        occupiedTopLevelNames.add("JavaObject");
-        occupiedTopLevelNames.add("JavaArray");
-        occupiedTopLevelNames.add("JavaString");
-        occupiedTopLevelNames.add("JavaClass");
+        occupiedTopLevelNames.add("TeaVM_Object");
+        occupiedTopLevelNames.add("TeaVM_Array");
+        occupiedTopLevelNames.add("TeaVM_String");
+        occupiedTopLevelNames.add("TeaVM_Class");
 
-        classNames.put(RuntimeObject.class.getName(), "JavaObject");
-        classNames.put(String.class.getName(), "JavaString");
-        classNames.put(RuntimeClass.class.getName(), "JavaClass");
-        classNames.put(RuntimeArray.class.getName(), "JavaArray");
+        classNames.put(RuntimeObject.class.getName(), "TeaVM_Object");
+        classNames.put(Object.class.getName(), "TeaVM_Object");
+        classNames.put(String.class.getName(), "TeaVM_String");
+        classNames.put(RuntimeClass.class.getName(), "TeaVM_Class");
+        classNames.put(RuntimeArray.class.getName(), "TeaVM_Array");
 
         memberFieldNames.put(new FieldReference(RuntimeObject.class.getName(), "classReference"), "header");
+        memberFieldNames.put(new FieldReference(RuntimeObject.class.getName(), "hashCode"), "hash");
         memberFieldNames.put(new FieldReference(RuntimeArray.class.getName(), "size"), "size");
         memberFieldNames.put(new FieldReference(String.class.getName(), "characters"), "characters");
         memberFieldNames.put(new FieldReference(String.class.getName(), "hashCode"), "hashCode");
+
+        for (String name : new String[] { "size", "flags", "tag", "canary", "name", "itemType", "arrayType",
+                "isSupertypeOf", "init", "enumValues", "layout", "simpleName" }) {
+            memberFieldNames.put(new FieldReference(RuntimeClass.class.getName(), name), name);
+        }
+        memberFieldNames.put(new FieldReference(RuntimeClass.class.getName(), "parent"), "superclass");
 
         occupiedClassNames.put(RuntimeObject.class.getName(), new HashSet<>(Arrays.asList("header")));
         occupiedClassNames.put(RuntimeArray.class.getName(), new HashSet<>(Arrays.asList("length")));

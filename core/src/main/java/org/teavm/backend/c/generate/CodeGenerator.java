@@ -15,7 +15,6 @@
  */
 package org.teavm.backend.c.generate;
 
-import java.util.Set;
 import org.teavm.ast.MethodNode;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
@@ -28,9 +27,9 @@ public class CodeGenerator {
     private CodeWriter writer;
     private CodeWriter localsWriter;
     private NameProvider names;
-    private Set<? super String> includes;
+    private IncludeManager includes;
 
-    public CodeGenerator(GenerationContext context, CodeWriter writer, Set<? super String> includes) {
+    public CodeGenerator(GenerationContext context, CodeWriter writer, IncludeManager includes) {
         this.context = context;
         this.writer = writer;
         this.names = context.getNames();
@@ -50,7 +49,6 @@ public class CodeGenerator {
         writer.outdent().println("}");
     }
 
-
     private CodeGenerationVisitor generateMethodBody(RegularMethodNode methodNode) {
         CodeGenerationVisitor visitor = new CodeGenerationVisitor(context, writer, includes);
         visitor.setAsync(context.isAsync(methodNode.getReference()));
@@ -61,7 +59,6 @@ public class CodeGenerator {
 
     public void generateMethodSignature(CodeWriter writer, MethodReference methodRef, boolean isStatic,
             boolean withNames) {
-        writer.print("static ");
         writer.printType(methodRef.getReturnType()).print(" ").print(names.forMethod(methodRef)).print("(");
 
         generateMethodParameters(writer, methodRef.getDescriptor(), isStatic, withNames);
@@ -79,12 +76,12 @@ public class CodeGenerator {
         if (!isStatic) {
             writer.print("void*");
             if (withNames) {
-                writer.print(" _this_");
+                writer.print(" teavm_this_");
             }
         } else {
             writer.printType(methodRef.parameterType(0));
             if (withNames) {
-                writer.print(" local_1");
+                writer.print(" teavm_local_1");
             }
             start++;
         }
@@ -92,7 +89,7 @@ public class CodeGenerator {
         for (int i = start; i < methodRef.parameterCount(); ++i) {
             writer.print(", ").printType(methodRef.parameterType(i));
             if (withNames) {
-                writer.print(" ").print("local_").print(String.valueOf(i + 1));
+                writer.print(" ").print("teavm_local_").print(String.valueOf(i + 1));
             }
         }
     }
@@ -104,12 +101,13 @@ public class CodeGenerator {
             if (variableNode.getType() == null) {
                 continue;
             }
-            localsWriter.printType(variableNode.getType()).print(" local_").print(String.valueOf(i)).println(";");
+            localsWriter.printType(variableNode.getType()).print(" teavm_local_").print(String.valueOf(i))
+                    .println(";");
         }
 
         for (CVariableType type : CVariableType.values()) {
             for (int i = 0; i < temporaryCount[type.ordinal()]; ++i) {
-                localsWriter.print(type.text + " tmp_" + type.name().toLowerCase() + "_" + i).println(";");
+                localsWriter.print(type.text + " teavm_tmp_" + type.name().toLowerCase() + "_" + i).println(";");
             }
         }
     }

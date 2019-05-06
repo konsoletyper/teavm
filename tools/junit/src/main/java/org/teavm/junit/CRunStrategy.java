@@ -40,20 +40,14 @@ class CRunStrategy implements TestRunStrategy {
     @Override
     public void runTest(TestRun run) throws IOException {
         try {
-            File inputFile = new File(run.getBaseDirectory(), run.getFileName());
-            String exeName = run.getFileName();
-            if (exeName.endsWith(".c")) {
-                exeName = exeName.substring(0, exeName.length() - 2);
-            }
+            String exeName = "run_test";
             if (System.getProperty("os.name").toLowerCase().contains("win")) {
                 exeName += ".exe";
-            } else {
-                exeName += ".out";
             }
 
             File outputFile = new File(run.getBaseDirectory(), exeName);
             List<String> compilerOutput = new ArrayList<>();
-            boolean compilerSuccess = runCompiler(inputFile, outputFile, compilerOutput);
+            boolean compilerSuccess = runCompiler(run.getBaseDirectory(), compilerOutput);
             if (!compilerSuccess) {
                 run.getCallback().error(new RuntimeException("C compiler error:\n" + mergeLines(compilerOutput)));
                 return;
@@ -88,13 +82,9 @@ class CRunStrategy implements TestRunStrategy {
         }
     }
 
-    private boolean runCompiler(File inputFile, File outputFile, List<String> output)
-            throws IOException, InterruptedException {
-        String[] parts = compilerCommand.split(" +");
-        for (int i = 0; i < parts.length; ++i) {
-            parts[i] = parts[i].replace("@IN", inputFile.getPath()).replace("@OUT", outputFile.getPath());
-        }
-        return runProcess(new ProcessBuilder(parts).start(), output);
+    private boolean runCompiler(File inputDir, List<String> output) throws IOException, InterruptedException {
+        String command = new File(compilerCommand).getAbsolutePath();
+        return runProcess(new ProcessBuilder(command).directory(inputDir).start(), output);
     }
 
     private boolean runProcess(Process process, List<String> output) throws IOException, InterruptedException {

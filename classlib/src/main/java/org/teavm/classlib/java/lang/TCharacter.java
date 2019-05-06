@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
+import org.teavm.interop.c.Include;
 import org.teavm.platform.Platform;
 import org.teavm.platform.metadata.StringResource;
 
@@ -242,6 +243,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     @Import(module = "teavm", name = "towlower")
+    @Include("wctype.h")
     private static native int toLowerCaseSystem(int codePoint);
 
     public static char toUpperCase(char ch) {
@@ -258,6 +260,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     }
 
     @Import(module = "teavm", name = "towupper")
+    @Include("wctype.h")
     private static native int toUpperCaseSystem(int codePoint);
 
     public static int digit(char ch, int radix) {

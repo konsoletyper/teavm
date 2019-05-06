@@ -90,7 +90,7 @@ public abstract class CodeWriter {
                     return "double";
             }
         } else if (type instanceof ValueType.Array) {
-            return "JavaArray*";
+            return "TeaVM_Array*";
         } else if (type == ValueType.VOID) {
             return "void";
         }
@@ -123,7 +123,7 @@ public abstract class CodeWriter {
             case FLOAT_ARRAY:
             case DOUBLE_ARRAY:
             case OBJECT_ARRAY:
-                print("JavaArray*");
+                print("TeaVM_Array*");
                 break;
         }
 

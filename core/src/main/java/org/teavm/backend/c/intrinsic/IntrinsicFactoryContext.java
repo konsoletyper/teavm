@@ -16,15 +16,10 @@
 package org.teavm.backend.c.intrinsic;
 
 import java.util.Properties;
-import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
 
 public interface IntrinsicFactoryContext {
-    CodeWriter getStructureCodeWriter();
-
-    CodeWriter getStaticFieldsInitWriter();
-
     ClassReaderSource getClassSource();
 
     ClassLoader getClassLoader();

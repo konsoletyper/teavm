@@ -236,7 +236,7 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     public static native boolean isNaN(double v);
 
     @JSBody(script = "return NaN;")
-    @Import(module = "teavm", name = "TeaVM_getNaN")
+    @Import(module = "teavm", name = "teavm_getNaN")
     @NoSideEffects
     private static native double getNaN();
 

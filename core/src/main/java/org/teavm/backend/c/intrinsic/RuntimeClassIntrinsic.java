@@ -39,12 +39,12 @@ public class RuntimeClassIntrinsic implements Intrinsic {
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
         switch (invocation.getMethod().getName()) {
             case "pack":
-                context.writer().print("PACK_CLASS(");
+                context.writer().print("TEAVM_PACK_CLASS(");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(")");
                 break;
             case "unpack":
-                context.writer().print("UNPACK_CLASS(");
+                context.writer().print("TEAVM_UNPACK_CLASS(");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(")");
                 break;

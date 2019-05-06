@@ -141,7 +141,7 @@ public final class TSystem extends TObject {
     @Import(name = "currentTimeMillis", module = "teavm")
     private static native double currentTimeMillisWasm();
 
-    @Import(name = "currentTimeMillis")
+    @Import(name = "teavm_currentTimeMillis")
     private static native long currentTimeMillisC();
 
     private static void initPropertiesIfNeeded() {
@@ -230,7 +230,7 @@ public final class TSystem extends TObject {
         }
     }
 
-    @Import(name = "currentTimeNano")
+    @Import(name = "teavm_currentTimeNano")
     private static native long nanoTimeLowLevel();
 
     public static int identityHashCode(Object x) {

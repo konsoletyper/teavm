@@ -16,38 +16,23 @@
 package org.teavm.backend.c;
 
 import java.util.Properties;
-import org.teavm.backend.c.generate.CodeWriter;
+import org.teavm.backend.c.generators.GeneratorFactoryContext;
 import org.teavm.backend.c.intrinsic.IntrinsicFactoryContext;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
 
-class IntrinsicFactoryContextImpl implements IntrinsicFactoryContext {
-    private CodeWriter structureCodeWriter;
-    private CodeWriter staticFieldsInitWriter;
+class IntrinsicFactoryContextImpl implements IntrinsicFactoryContext, GeneratorFactoryContext {
     private ClassReaderSource classSource;
     private ClassLoader classLoader;
     private ServiceRepository services;
     private Properties properties;
 
-    IntrinsicFactoryContextImpl(CodeWriter structureCodeWriter, CodeWriter staticFieldsInitWriter,
-            ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
+    IntrinsicFactoryContextImpl(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Properties properties) {
-        this.structureCodeWriter = structureCodeWriter;
-        this.staticFieldsInitWriter = staticFieldsInitWriter;
         this.classSource = classSource;
         this.classLoader = classLoader;
         this.services = services;
         this.properties = properties;
-    }
-
-    @Override
-    public CodeWriter getStructureCodeWriter() {
-        return structureCodeWriter;
-    }
-
-    @Override
-    public CodeWriter getStaticFieldsInitWriter() {
-        return staticFieldsInitWriter;
     }
 
     @Override

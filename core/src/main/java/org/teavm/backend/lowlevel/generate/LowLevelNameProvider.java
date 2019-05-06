@@ -19,7 +19,6 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 import org.teavm.interop.Export;
@@ -47,10 +46,10 @@ public abstract class LowLevelNameProvider {
     protected Map<String, String> classNames = new HashMap<>();
     protected Map<String, String> classInitializerNames = new HashMap<>();
     protected Map<String, String> classClassNames = new HashMap<>();
+    protected Map<String, String> classSystemInitializerNames = new HashMap<>();
     protected Map<ValueType, String> classInstanceNames = new HashMap<>();
     protected Map<ValueType, String> supertypeNames = new HashMap<>();
 
-    private Set<ValueType> types = new LinkedHashSet<>();
 
     public LowLevelNameProvider(ClassReaderSource classSource) {
         this.classSource = classSource;
@@ -110,13 +109,16 @@ public abstract class LowLevelNameProvider {
         return classInitializerNames.computeIfAbsent(className, k -> pickUnoccupied("initclass_" + suggestForClass(k)));
     }
 
+    public String forClassSystemInitializer(String className) {
+        return classSystemInitializerNames.computeIfAbsent(className, k -> pickUnoccupied("sysinitclass_"
+                + suggestForClass(k)));
+    }
+
     public String forClassClass(String className) {
-        types.add(ValueType.object(className));
         return classClassNames.computeIfAbsent(className, k -> pickUnoccupied(suggestForClass(k) + "_VT"));
     }
 
     public String forClassInstance(ValueType type) {
-        types.add(type);
         return classInstanceNames.computeIfAbsent(type, k -> pickUnoccupied(suggestForType(k) + "_Cls"));
     }
 
@@ -213,10 +215,6 @@ public abstract class LowLevelNameProvider {
         }
 
         return result;
-    }
-
-    public Set<? extends ValueType> getTypes() {
-        return types;
     }
 
     protected Set<? extends String> getKeywords() {

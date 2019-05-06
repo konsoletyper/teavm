@@ -36,6 +36,7 @@ public class ConsoleIntrinsic implements Intrinsic {
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
         switch (invocation.getMethod().getName()) {
             case "printString": {
+                context.includes().addInclude("<stdio.h>");
                 context.writer().print("fprintf(stderr, \"%s\", ");
                 Expr arg = invocation.getArguments().get(0);
                 String literal = extractStringConstant(arg);

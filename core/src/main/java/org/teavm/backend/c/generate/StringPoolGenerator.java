@@ -25,7 +25,7 @@ public class StringPoolGenerator {
     }
 
     public void generate(List<? extends String> strings) {
-        writer.println("static JavaString stringPool[" + strings.size() + "] = {").indent();
+        writer.println("TeaVM_String teavm_stringPool[" + strings.size() + "] = {").indent();
         for (int i = 0; i < strings.size(); ++i) {
             String s = strings.get(i);
             boolean codes = hasBadCharacters(s);

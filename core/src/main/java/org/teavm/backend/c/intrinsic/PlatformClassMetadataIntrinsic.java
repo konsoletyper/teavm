@@ -59,7 +59,7 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
     }
 
     private void printFieldAccess(IntrinsicContext context, InvocationExpr invocation, FieldReference field) {
-        context.writer().print("FIELD(");
+        context.writer().print("TEAVM_FIELD(");
         context.emit(invocation.getArguments().get(0));
         context.writer().print(",");
         context.writer().print(context.names().forClass(field.getClassName())).print(", ");

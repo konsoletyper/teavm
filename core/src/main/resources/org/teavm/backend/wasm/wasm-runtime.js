@@ -53,7 +53,7 @@ TeaVM.wasm = function() {
         obj.teavm = {
             currentTimeMillis: currentTimeMillis,
             isnan: isNaN,
-            TeaVM_getNaN: function() { return NaN; },
+            teavm_getNaN: function() { return NaN; },
             isinf: function(n) { return !isFinite(n) },
             isfinite: isFinite,
             putwchar: putwchar,

@@ -29,7 +29,7 @@ public final class ExceptionHandling {
     public static native CallSite findCallSiteById(int id);
 
     public static void printStack() {
-        Address stackFrame = ShadowStack.getNextStackFrame(ShadowStack.getStackTop());
+        Address stackFrame = ShadowStack.getStackTop();
         while (stackFrame != null) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
             CallSite callSite = findCallSiteById(callSiteId);
@@ -109,12 +109,12 @@ public final class ExceptionHandling {
             stackFrame = ShadowStack.getNextStackFrame(stackFrame);
             size++;
         }
-        return size;
+        return size + 1;
     }
 
     @Unmanaged
     public static void fillStackTrace(StackTraceElement[] target) {
-        Address stackFrame = ShadowStack.getNextStackFrame(ShadowStack.getStackTop());
+        Address stackFrame = ShadowStack.getStackTop();
         int index = 0;
         while (stackFrame != null && index < target.length) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);

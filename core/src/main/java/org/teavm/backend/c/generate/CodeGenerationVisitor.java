@@ -26,7 +26,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
@@ -114,7 +113,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private int[] temporaryVariableLevel = new int[5];
     private int[] maxTemporaryVariableLevel = new int[5];
     private MethodReference callingMethod;
-    private Set<? super String> includes;
+    private IncludeManager includes;
     private boolean end;
     private boolean async;
 
@@ -128,7 +127,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         BUFFER_TYPES.put(DoubleBuffer.class.getName(), "double");
     }
 
-    public CodeGenerationVisitor(GenerationContext context, CodeWriter writer, Set<? super String> includes) {
+    public CodeGenerationVisitor(GenerationContext context, CodeWriter writer, IncludeManager includes) {
         this.context = context;
         this.writer = writer;
         this.names = context.getNames();
@@ -151,7 +150,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     public void visit(BinaryExpr expr) {
         switch (expr.getOperation()) {
             case COMPARE:
-                writer.print("compare_");
+                writer.print("teavm_compare_");
                 switch (expr.getType()) {
                     case INT:
                         writer.print("i32");
@@ -294,7 +293,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 writer.print(")");
                 break;
             case LENGTH:
-                writer.print("ARRAY_LENGTH(");
+                writer.print("TEAVM_ARRAY_LENGTH(");
                 expr.getOperand().acceptVisitor(this);
                 writer.print(")");
                 break;
@@ -302,17 +301,17 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 expr.getOperand().acceptVisitor(this);
                 break;
             case INT_TO_BYTE:
-                writer.print("TO_BYTE(");
+                writer.print("TEAVM_TO_BYTE(");
                 expr.getOperand().acceptVisitor(this);
                 writer.print(")");
                 break;
             case INT_TO_SHORT:
-                writer.print("TO_SHORT(");
+                writer.print("TEAVM_TO_SHORT(");
                 expr.getOperand().acceptVisitor(this);
                 writer.print(")");
                 break;
             case INT_TO_CHAR:
-                writer.print("TO_CHAR(");
+                writer.print("TEAVM_TO_CHAR(");
                 expr.getOperand().acceptVisitor(this);
                 writer.print(")");
                 break;
@@ -332,21 +331,21 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ConstantExpr expr) {
-        CodeGeneratorUtil.writeValue(writer, context, expr.getValue());
+        CodeGeneratorUtil.writeValue(writer, context, includes, expr.getValue());
     }
 
     @Override
     public void visit(VariableExpr expr) {
         if (expr.getIndex() == 0) {
-            writer.print("_this_");
+            writer.print("teavm_this_");
         } else {
-            writer.print("local_" + expr.getIndex());
+            writer.print("teavm_local_" + expr.getIndex());
         }
     }
 
     @Override
     public void visit(SubscriptExpr expr) {
-        writer.print("ARRAY_AT(");
+        writer.print("TEAVM_ARRAY_AT(");
         expr.getArray().acceptVisitor(this);
         writer.print(", ").print(getArrayType(expr.getType())).print(", ");
         expr.getIndex().acceptVisitor(this);
@@ -410,6 +409,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 if (method != null) {
                     reference = method.getReference();
                 }
+
+                includes.includeClass(reference.getClassName());
                 writer.print(names.forMethod(reference));
 
                 writer.print("(" + receiver);
@@ -433,6 +434,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                     if (method != null) {
                         reference = method.getReference();
                     }
+                    includes.includeClass(reference.getClassName());
                     writer.print(names.forMethod(reference));
 
                     writer.print("(");
@@ -463,7 +465,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                     writer.print("((").print(receiver).print(" = ");
                     expr.getArguments().get(0).acceptVisitor(this);
 
-                    writer.print("), METHOD(")
+                    includes.includeClass(expr.getMethod().getClassName());
+                    writer.print("), TEAVM_METHOD(")
                             .print(receiver).print(", ")
                             .print(names.forClassClass(expr.getMethod().getClassName())).print(", ")
                             .print(names.forVirtualMethod(expr.getMethod()))
@@ -507,11 +510,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 writer.print(")");
                 stringTemporaries.add(tmp);
             } else if (isPrimitiveArray(type)) {
-                writer.print("ARRAY_DATAN(");
+                writer.print("TEAVM_ARRAY_DATAN(");
                 expr.getArguments().get(i).acceptVisitor(this);
                 writer.print(", ").printStrictType(((ValueType.Array) type).getItemType()).print(")");
             } else if (isPrimitiveBuffer(type)) {
-                writer.print("ARRAY_DATA(FIELD(");
+                writer.print("TEAVM_ARRAY_DATA(TEAVM_FIELD(");
                 String typeName = ((ValueType.Object) type).getClassName();
                 expr.getArguments().get(i).acceptVisitor(this);
                 writer.print(", ").print(names.forClass(typeName)).print(", ")
@@ -607,7 +610,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         int index = type.ordinal();
         int result = temporaryVariableLevel[index]++;
         maxTemporaryVariableLevel[index] = Math.max(maxTemporaryVariableLevel[index], temporaryVariableLevel[index]);
-        return "tmp_" + type.name().toLowerCase() + "_" + result;
+        return "teavm_tmp_" + type.name().toLowerCase() + "_" + result;
     }
 
     private void freeTemporaryVariable(CVariableType type) {
@@ -636,7 +639,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             includeString = "\"" + includeString + "\"";
         }
 
-        includes.add(includeString);
+        includes.addInclude(includeString);
     }
 
     @Override
@@ -644,17 +647,18 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         FieldReference field = expr.getField();
         if (isMonitorField(field)) {
             String tmp = allocTemporaryVariable(CVariableType.INT);
-            writer.print("(" + tmp + " = FIELD(");
+            writer.print("(" + tmp + " = TEAVM_FIELD(");
             expr.getQualified().acceptVisitor(this);
             field = new FieldReference(RuntimeObject.class.getName(), "hashCode");
             writer.print(", ").print(names.forClass(field.getClassName()) + ", "
                     + names.forMemberField(field) + ")");
-            writer.print(", UNPACK_MONITOR(" + tmp + "))");
+            writer.print(", TEAVM_UNPACK_MONITOR(" + tmp + "))");
             return;
         }
 
+        includes.includeClass(field.getClassName());
         if (expr.getQualified() != null) {
-            writer.print("FIELD(");
+            writer.print("TEAVM_FIELD(");
             expr.getQualified().acceptVisitor(this);
             writer.print(", ").print(names.forClass(field.getClassName()) + ", " + names.forMemberField(field) + ")");
         } else {
@@ -668,6 +672,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(NewExpr expr) {
+        includes.includeClass(expr.getConstructedClass());
+        includes.includeClass(ALLOC_METHOD.getClassName());
         allocObject(expr.getConstructedClass());
     }
 
@@ -679,8 +685,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(NewArrayExpr expr) {
+        ValueType type = ValueType.arrayOf(expr.getType());
         writer.print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(&")
-                .print(names.forClassInstance(ValueType.arrayOf(expr.getType()))).print(", ");
+                .print(names.forClassInstance(type)).print(", ");
+        includes.includeClass(ALLOC_ARRAY_METHOD.getClassName());
+        includes.includeType(type);
         expr.getLength().acceptVisitor(this);
         writer.print(")");
     }
@@ -689,6 +698,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     public void visit(NewMultiArrayExpr expr) {
         writer.print(names.forMethod(ALLOC_MULTI_ARRAY_METHOD)).print("(&")
                 .print(names.forClassInstance(expr.getType())).print(", ");
+        includes.includeClass(ALLOC_ARRAY_METHOD.getClassName());
+        includes.includeType(expr.getType());
 
         writer.print("(int32_t[]) {");
         expr.getDimensions().get(0).acceptVisitor(this);
@@ -702,8 +713,9 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(InstanceOfExpr expr) {
-        writer.print("instanceof(");
+        writer.print("teavm_instanceof(");
         expr.getExpr().acceptVisitor(this);
+        includes.includeType(expr.getType());
         writer.print(", ").print(names.forSupertypeFunction(expr.getType())).print(")");
     }
 
@@ -717,8 +729,9 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 return;
             }
         }
-        writer.print("checkcast(");
+        writer.print("teavm_checkcast(");
         expr.getValue().acceptVisitor(this);
+        includes.includeType(expr.getTarget());
         writer.print(", ").print(names.forSupertypeFunction(expr.getTarget())).print(")");
     }
 
@@ -751,11 +764,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 QualificationExpr qualification = (QualificationExpr) statement.getLeftValue();
                 FieldReference field = qualification.getField();
                 if (isMonitorField(field)) {
-                    writer.print("FIELD(");
+                    writer.print("TEAVM_FIELD(");
                     qualification.getQualified().acceptVisitor(this);
                     field = new FieldReference(RuntimeObject.class.getName(), "hashCode");
                     writer.print(", ").print(names.forClass(field.getClassName()) + ", "
-                            + names.forMemberField(field) + ") = PACK_MONITOR(");
+                            + names.forMemberField(field) + ") = TEAVM_PACK_MONITOR(");
                     statement.getRightValue().acceptVisitor(this);
                     writer.println(");");
                     return;
@@ -850,7 +863,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         writer.outdent().println("}");
 
         if (statement.getId() != null) {
-            writer.outdent().println("label_" + statement.getId() + ":;").indent();
+            writer.outdent().println("teavm_label_" + statement.getId() + ":;").indent();
         }
     }
 
@@ -872,12 +885,12 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         end = oldEnd;
 
         if (statement.getId() != null) {
-            writer.outdent().println("cnt_" + statement.getId() + ":;").indent();
+            writer.outdent().println("teavm_cnt_" + statement.getId() + ":;").indent();
         }
         writer.outdent().println("}");
 
         if (statement.getId() != null) {
-            writer.outdent().println("label_" + statement.getId() + ":;").indent();
+            writer.outdent().println("teavm_label_" + statement.getId() + ":;").indent();
         }
     }
 
@@ -886,7 +899,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         visitMany(statement.getBody());
 
         if (statement.getId() != null) {
-            writer.outdent().println("label_" + statement.getId() + ":;").indent();
+            writer.outdent().println("teavm_label_" + statement.getId() + ":;").indent();
         }
     }
 
@@ -895,7 +908,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         if (statement.getTarget() == null || statement.getTarget().getId() == null) {
             writer.println("break;");
         } else {
-            writer.println("goto label_" + statement.getTarget().getId() + ";");
+            writer.println("goto teavm_label_" + statement.getTarget().getId() + ";");
         }
     }
 
@@ -904,7 +917,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         if (statement.getTarget() == null || statement.getTarget().getId() == null) {
             writer.println("continue;");
         } else {
-            writer.println("goto cnt_" + statement.getTarget().getId() + ";");
+            writer.println("goto teavm_cnt_" + statement.getTarget().getId() + ";");
         }
     }
 
@@ -920,6 +933,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(ThrowStatement statement) {
+        includes.includeClass(THROW_EXCEPTION_METHOD.getClassName());
         writer.print(names.forMethod(THROW_EXCEPTION_METHOD)).print("(");
         statement.getException().acceptVisitor(this);
         writer.println(");");
@@ -927,6 +941,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(InitClassStatement statement) {
+        includes.includeClass(statement.getClassName());
         writer.println(names.forClassInitializer(statement.getClassName()) + "();");
     }
 
@@ -940,6 +955,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(MonitorEnterStatement statement) {
+        includes.includeClass("java.lang.Object");
         writer.print(names.forMethod(async ? MONITOR_ENTER : MONITOR_ENTER_SYNC)).print("(");
         statement.getObjectRef().acceptVisitor(this);
         writer.println(");");
@@ -947,6 +963,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(MonitorExitStatement statement) {
+        includes.includeClass("java.lang.Object");
         writer.print(names.forMethod(async ? MONITOR_EXIT : MONITOR_EXIT_SYNC)).print("(");
         statement.getObjectRef().acceptVisitor(this);
         writer.println(");");
@@ -954,7 +971,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     public void emitSuspendChecker() {
         String suspendingName = names.forMethod(new MethodReference(Fiber.class, "isSuspending", boolean.class));
-        writer.println("if (" + suspendingName + "(fiber)) goto exit_loop;");
+        writer.println("if (" + suspendingName + "(fiber)) goto teavm_exit_loop;");
     }
 
     private IntrinsicContext intrinsicContext = new IntrinsicContext() {
@@ -974,18 +991,30 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
 
         @Override
-        public Diagnostics getDiagnotics() {
+        public Diagnostics diagnotics() {
             return context.getDiagnostics();
         }
 
         @Override
-        public MethodReference getCallingMethod() {
+        public MethodReference callingMethod() {
             return callingMethod;
         }
 
         @Override
-        public StringPool getStringPool() {
+        public StringPool stringPool() {
             return context.getStringPool();
+        }
+
+        @Override
+        public IncludeManager includes() {
+            return includes;
+        }
+
+        @Override
+        public String escapeFileName(String name) {
+            StringBuilder sb = new StringBuilder();
+            ClassGenerator.escape(name, sb);
+            return sb.toString();
         }
     };
 

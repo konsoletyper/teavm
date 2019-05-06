@@ -38,7 +38,7 @@ public class MutatorIntrinsic implements Intrinsic {
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
         switch (invocation.getMethod().getName()) {
             case "getStaticGCRoots":
-                context.writer().print("gc_staticRoots");
+                context.writer().print("teavm_gc_staticRoots");
                 break;
         }
     }

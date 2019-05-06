@@ -8,7 +8,7 @@
 #include <wctype.h>
 #include <time.h>
 
-static inline float TeaVM_getNaN() {
+static inline float teavm_getNaN() {
     return NAN;
 }
 

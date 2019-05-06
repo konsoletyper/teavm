@@ -26,21 +26,23 @@ import org.teavm.model.lowlevel.CallSiteLocation;
 import org.teavm.model.lowlevel.ExceptionHandlerDescriptor;
 
 public class CallSiteGenerator {
-    private static final String CALL_SITE = "org.teavm.runtime.CallSite";
+    public static final String CALL_SITE = "org.teavm.runtime.CallSite";
     private static final String CALL_SITE_LOCATION = "org.teavm.runtime.CallSiteLocation";
     private static final String EXCEPTION_HANDLER = "org.teavm.runtime.ExceptionHandler";
 
     private GenerationContext context;
     private CodeWriter writer;
+    private IncludeManager includes;
     private ObjectIntMap<CallSiteLocation> locationMap = new ObjectIntHashMap<>();
     private List<CallSiteLocation> locations = new ArrayList<>();
     private List<ExceptionHandlerDescriptor> exceptionHandlers = new ArrayList<>();
     private String callSiteLocationName;
     private String exceptionHandlerName;
 
-    public CallSiteGenerator(GenerationContext context, CodeWriter writer) {
+    public CallSiteGenerator(GenerationContext context, CodeWriter writer, IncludeManager includes) {
         this.context = context;
         this.writer = writer;
+        this.includes = includes;
         callSiteLocationName = context.getNames().forClass(CALL_SITE_LOCATION);
         exceptionHandlerName = context.getNames().forClass(EXCEPTION_HANDLER);
     }
@@ -59,7 +61,9 @@ public class CallSiteGenerator {
     private void generateCallSites(List<CallSiteDescriptor> callSites) {
         String callSiteName = context.getNames().forClass(CALL_SITE);
 
-        writer.print("static ").print(callSiteName).print(" callSites[" + callSites.size() + "] = {").indent();
+        includes.includeClass(CALL_SITE);
+        includes.includePath("strings.h");
+        writer.print(callSiteName).print(" teavm_callSites[" + callSites.size() + "] = {").indent();
         String handlerCountName = fieldName(CALL_SITE, "handlerCount");
         String firstHandlerName = fieldName(CALL_SITE, "firstHandler");
         String locationName = fieldName(CALL_SITE, "location");
@@ -82,14 +86,14 @@ public class CallSiteGenerator {
             }
 
             String firstHandlerExpr = !callSite.getHandlers().isEmpty()
-                    ? "exceptionHandlers + " + exceptionHandlers.size()
+                    ? "teavm_exceptionHandlers + " + exceptionHandlers.size()
                     : "NULL";
             writer.println().print("{ ");
             writer.print(".").print(handlerCountName).print(" = ")
                     .print(String.valueOf(callSite.getHandlers().size())).print(", ");
             writer.print(".").print(firstHandlerName).print(" = ").print(firstHandlerExpr).print(", ");
             writer.print(".").print(locationName).print(" = ")
-                    .print(locationIndex >= 0 ? "callSiteLocations + " + locationIndex : "NULL");
+                    .print(locationIndex >= 0 ? "teavm_callSiteLocations + " + locationIndex : "NULL");
             writer.print(" }");
 
             exceptionHandlers.addAll(callSite.getHandlers());
@@ -99,8 +103,9 @@ public class CallSiteGenerator {
     }
 
     private void generateLocations() {
-        writer.print("static ").print(callSiteLocationName).print(" callSiteLocations[" + locations.size() + "] = {")
-                .indent();
+        includes.includeClass(CALL_SITE_LOCATION);
+        writer.print("static ").print(callSiteLocationName).print(" teavm_callSiteLocations[" + locations.size()
+                + "] = {").indent();
 
         String fileNameName = fieldName(CALL_SITE_LOCATION, "fileName");
         String classNameName = fieldName(CALL_SITE_LOCATION, "className");
@@ -131,8 +136,9 @@ public class CallSiteGenerator {
     }
 
     private void generateHandlers() {
-        writer.print("static ").print(exceptionHandlerName).print(" exceptionHandlers[" + exceptionHandlers.size()
-                + "] = {").indent();
+        includes.includeClass(EXCEPTION_HANDLER);
+        writer.print("static ").print(exceptionHandlerName).print(" teavm_exceptionHandlers["
+                + exceptionHandlers.size() + "] = {").indent();
 
         String idName = fieldName(EXCEPTION_HANDLER, "id");
         String exceptionClassName = fieldName(EXCEPTION_HANDLER, "exceptionClass");
@@ -146,6 +152,9 @@ public class CallSiteGenerator {
 
             writer.println().print("{ ");
 
+            if (handler.getClassName() != null) {
+                includes.includeClass(handler.getClassName());
+            }
             String classExpr = handler.getClassName() != null
                     ? "&" + context.getNames().forClassInstance(ValueType.object(handler.getClassName()))
                     : "NULL";
@@ -163,6 +172,6 @@ public class CallSiteGenerator {
     }
 
     private String getStringExpr(String s) {
-        return s != null ? "stringPool + " + context.getStringPool().getStringIndex(s) : "NULL";
+        return s != null ? "teavm_stringPool + " + context.getStringPool().getStringIndex(s) : "NULL";
     }
 }

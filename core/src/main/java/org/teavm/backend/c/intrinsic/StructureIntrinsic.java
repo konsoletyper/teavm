@@ -69,7 +69,8 @@ public class StructureIntrinsic implements Intrinsic {
             case "add": {
                 String className = ConstantUtil.getClassLiteral(context, invocation, invocation.getArguments().get(0));
                 if (className != null) {
-                    context.writer().print("STRUCTURE_ADD(").print(context.names().forClass(className)).print(", ");
+                    context.writer().print("TEAVM_STRUCTURE_ADD(").print(context.names().forClass(className))
+                            .print(", ");
                     context.emit(invocation.getArguments().get(1));
                     context.writer().print(", ");
                     context.emit(invocation.getArguments().get(2));

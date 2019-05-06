@@ -44,6 +44,7 @@ public class AllocatorIntrinsic implements Intrinsic {
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
         switch (invocation.getMethod().getName()) {
             case "fillZero":
+                context.includes().addInclude("<string.h>");
                 context.writer().print("memset(");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(", 0, ");
@@ -51,6 +52,7 @@ public class AllocatorIntrinsic implements Intrinsic {
                 context.writer().print(")");
                 break;
             case "moveMemoryBlock":
+                context.includes().addInclude("<string.h>");
                 context.writer().print("memmove(");
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print(", ");
@@ -60,7 +62,7 @@ public class AllocatorIntrinsic implements Intrinsic {
                 context.writer().print(")");
                 break;
             case "isInitialized":
-                context.writer().print("(((JavaClass *) ");
+                context.writer().print("(((TeaVM_Class *) ");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(")->").print(context.names().forMemberField(FLAGS_FIELD))
                         .print(" & INT32_C(" + RuntimeClass.INITIALIZED + "))");

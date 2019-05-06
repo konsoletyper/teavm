@@ -57,7 +57,9 @@ public class ResourceReadCIntrinsic implements Intrinsic {
 
         name = Character.toLowerCase(name.charAt(0)) + name.substring(1);
 
-        context.writer().print("FIELD(");
+        String resourceName = "resources/" + context.escapeFileName(invocation.getMethod().getClassName()) + ".h";
+        context.includes().includePath(resourceName);
+        context.writer().print("TEAVM_FIELD(");
         context.emit(invocation.getArguments().get(0));
         context.writer().print(", ").print(context.names().forClass(invocation.getMethod().getClassName()));
         context.writer().print(", ").print(name).print(")");
@@ -73,14 +75,14 @@ public class ResourceReadCIntrinsic implements Intrinsic {
             case "has":
                 context.writer().print("(teavm_lookupResource((TeaVM_ResourceMap*) ");
                 context.emit(invocation.getArguments().get(0));
-                context.writer().print(", (JavaString*) ");
+                context.writer().print(", (TeaVM_String*) ");
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print(") != NULL)");
                 break;
             case "get":
                 context.writer().print("teavm_lookupResourceValue((TeaVM_ResourceMap*) ");
                 context.emit(invocation.getArguments().get(0));
-                context.writer().print(", (JavaString*) ");
+                context.writer().print(", (TeaVM_String*) ");
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print(")");
                 break;

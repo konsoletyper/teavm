@@ -81,7 +81,7 @@ public class TRandom extends TObject implements TSerializable {
         }
     }
 
-    @Import(name = "TeaVM_rand")
+    @Import(name = "teavm_rand")
     private static native double crand();
 
     /**

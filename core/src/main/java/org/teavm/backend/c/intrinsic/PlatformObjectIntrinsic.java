@@ -34,7 +34,7 @@ public class PlatformObjectIntrinsic implements Intrinsic {
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
         switch (invocation.getMethod().getName()) {
             case "getPlatformClass":
-                context.writer().print("CLASS_OF(");
+                context.writer().print("TEAVM_CLASS_OF(");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(")");
                 break;

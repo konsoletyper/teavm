@@ -15,11 +15,10 @@
  */
 package org.teavm.backend.c.generators;
 
-import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.model.MethodReference;
 
 public interface Generator {
     boolean canHandle(MethodReference method);
 
-    void generate(GeneratorContext context, CodeWriter writer, MethodReference method);
+    void generate(GeneratorContext context, MethodReference method);
 }

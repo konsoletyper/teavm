@@ -20,10 +20,9 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
-import org.teavm.ast.InvocationExpr;
-import org.teavm.backend.c.generate.CodeWriter;
-import org.teavm.backend.c.intrinsic.Intrinsic;
-import org.teavm.backend.c.intrinsic.IntrinsicContext;
+import org.teavm.backend.c.generate.FileGenerator;
+import org.teavm.backend.c.generators.Generator;
+import org.teavm.backend.c.generators.GeneratorContext;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
@@ -32,19 +31,14 @@ import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 
-class MetadataCIntrinsic implements Intrinsic {
+class MetadataCIntrinsic implements Generator {
     private Set<String> writtenStructures = new HashSet<>();
     private Set<MethodReference> writtenInitializers = new HashSet<>();
-    private CodeWriter structuresWriter;
-    private CodeWriter staticFieldInitWriter;
     private DefaultMetadataGeneratorContext metadataContext;
     private Map<MethodReference, MethodGenerator> generatorMap = new HashMap<>();
 
     void init(ClassReaderSource classSource, ClassLoader classLoader,
-            ServiceRepository services, Properties properties, CodeWriter structuresWriter,
-            CodeWriter staticFieldInitWriter) {
-        this.structuresWriter = structuresWriter;
-        this.staticFieldInitWriter = staticFieldInitWriter;
+            ServiceRepository services, Properties properties) {
         metadataContext = new DefaultMetadataGeneratorContext(classSource, classLoader, properties, services);
     }
 
@@ -58,36 +52,39 @@ class MetadataCIntrinsic implements Intrinsic {
     }
 
     @Override
-    public void apply(IntrinsicContext context, InvocationExpr invocation) {
-        MethodGenerator generator = generatorMap.get(invocation.getMethod());
-        generator.apply(context, invocation);
+    public void generate(GeneratorContext context, MethodReference method) {
+        MethodGenerator generator = generatorMap.get(method);
+        context.writer().print("return ");
+        generator.apply(context, method);
+        context.writer().println(";");
     }
 
-    void writeValue(IntrinsicContext context, Object value) {
+    void writeValue(GeneratorContext context, Object value) {
         if (value == null) {
-            staticFieldInitWriter.print("NULL");
+            context.writerBefore().print("NULL");
         } else if (value instanceof String) {
-            int stringIndex = context.getStringPool().getStringIndex((String) value);
-            staticFieldInitWriter.print("(JavaObject*) (stringPool + " + stringIndex + ")");
+            int stringIndex = context.stringPool().getStringIndex((String) value);
+            context.includes().includePath("strings.h");
+            context.writerBefore().print("(TeaVM_Object*) (teavm_stringPool + " + stringIndex + ")");
         } else if (value instanceof Boolean) {
-            staticFieldInitWriter.print((Boolean) value ? "1" : "0");
+            context.writerBefore().print((Boolean) value ? "1" : "0");
         } else if (value instanceof Integer) {
             int n = (Integer) value;
             if (n < 0) {
-                staticFieldInitWriter.print("-");
+                context.writerBefore().print("-");
                 n = -n;
             }
-            staticFieldInitWriter.print("INT32_C(" + n + ")");
+            context.writerBefore().print("INT32_C(" + n + ")");
         } else if (value instanceof Long) {
             long n = (Long) value;
             if (n < 0) {
-                staticFieldInitWriter.print("-");
+                context.writerBefore().print("-");
                 n = -n;
             }
-            staticFieldInitWriter.print("INT64_C(" + n + ")");
+            context.writerBefore().print("INT64_C(" + n + ")");
         } else if (value instanceof Byte || value instanceof Short || value instanceof Float
                 || value instanceof Double) {
-            staticFieldInitWriter.print(value.toString());
+            context.writerBefore().print(value.toString());
         } else if (value instanceof ResourceTypeDescriptorProvider && value instanceof Resource) {
             writeResource(context, (ResourceTypeDescriptorProvider) value);
         } else if (value instanceof ResourceMap) {
@@ -99,28 +96,31 @@ class MetadataCIntrinsic implements Intrinsic {
         }
     }
 
-    private void writeResource(IntrinsicContext context, ResourceTypeDescriptorProvider resourceType) {
+    private void writeResource(GeneratorContext context, ResourceTypeDescriptorProvider resourceType) {
         writeResourceStructure(context, resourceType.getDescriptor());
 
         String structureName = context.names().forClass(resourceType.getDescriptor().getRootInterface().getName());
         Object[] propertyValues = resourceType.getValues();
-        staticFieldInitWriter.print("&(" + structureName + ") {").indent();
+        context.writerBefore().print("&(" + structureName + ") {").indent();
         boolean first = true;
         for (String propertyName : resourceType.getDescriptor().getPropertyTypes().keySet()) {
             if (!first) {
-                staticFieldInitWriter.print(",");
+                context.writerBefore().print(",");
             }
             first = false;
-            staticFieldInitWriter.println().print(".").print(propertyName).print(" = ");
+            context.writerBefore().println().print(".").print(propertyName).print(" = ");
             int index = resourceType.getPropertyIndex(propertyName);
             Object propertyValue = propertyValues[index];
             writeValue(context, propertyValue);
         }
-        staticFieldInitWriter.println().outdent().print("}");
+        context.writerBefore().println().outdent().print("}");
     }
 
-    private void writeResourceStructure(IntrinsicContext context, ResourceTypeDescriptor structure) {
+    private void writeResourceStructure(GeneratorContext context, ResourceTypeDescriptor structure) {
         String className = structure.getRootInterface().getName();
+        String fileName = "resources/" + context.escapeFileName(className) + ".h";
+        context.includes().includePath(fileName);
+
         if (!writtenStructures.add(className)) {
             return;
         }
@@ -134,15 +134,18 @@ class MetadataCIntrinsic implements Intrinsic {
             }
         }
 
+        FileGenerator file = context.createHeaderFile(fileName);
+
         String structureName = context.names().forClass(className);
-        structuresWriter.println("typedef struct " + structureName + " {").indent();
+        file.writer().println("typedef struct " + structureName + " {").indent();
+        file.includes().includePath("runtime.h");
 
         for (String propertyName : structure.getPropertyTypes().keySet()) {
             Class<?> propertyType = structure.getPropertyTypes().get(propertyName);
-            structuresWriter.println(typeToString(propertyType) + " " + propertyName + ";");
+            file.writer().println(typeToString(propertyType) + " " + propertyName + ";");
         }
 
-        structuresWriter.outdent().println("} " + structureName + ";");
+        file.writer().outdent().println("} " + structureName + ";");
     }
 
     private String typeToString(Class<?> cls) {
@@ -161,33 +164,33 @@ class MetadataCIntrinsic implements Intrinsic {
         } else if (Resource.class.isAssignableFrom(cls)) {
             return "void*";
         } else if (cls == String.class) {
-            return "JavaObject*";
+            return "TeaVM_Object*";
         } else {
             throw new IllegalArgumentException("Don't know how to write resource type " + cls);
         }
     }
 
-    private void writeResourceArray(IntrinsicContext context, ResourceArray<?> resourceArray) {
-        staticFieldInitWriter.println("&(struct { int32_t size; void* data[" + resourceArray.size() + "]; }) {")
+    private void writeResourceArray(GeneratorContext context, ResourceArray<?> resourceArray) {
+        context.writerBefore().println("&(struct { int32_t size; void* data[" + resourceArray.size() + "]; }) {")
                 .indent();
-        staticFieldInitWriter.println(".size = " + resourceArray.size() + ",");
-        staticFieldInitWriter.print(".data = {").indent();
+        context.writerBefore().println(".size = " + resourceArray.size() + ",");
+        context.writerBefore().print(".data = {").indent();
 
         boolean first = true;
         for (int i = 0; i < resourceArray.size(); ++i) {
             if (!first) {
-                staticFieldInitWriter.print(",");
+                context.writerBefore().print(",");
             }
-            staticFieldInitWriter.println();
+            context.writerBefore().println();
             first = false;
             writeValue(context, resourceArray.get(i));
         }
 
-        staticFieldInitWriter.println().outdent().println("}");
-        staticFieldInitWriter.outdent().print("}");
+        context.writerBefore().println().outdent().println("}");
+        context.writerBefore().outdent().print("}");
     }
 
-    private void writeResourceMap(IntrinsicContext context, ResourceMap<?> resourceMap) {
+    private void writeResourceMap(GeneratorContext context, ResourceMap<?> resourceMap) {
         String[] keys = resourceMap.keys();
         int tableSize = keys.length * 2;
         int maxTableSize = Math.min(keys.length * 5 / 2, tableSize + 10);
@@ -219,29 +222,30 @@ class MetadataCIntrinsic implements Intrinsic {
             tableSize++;
         }
 
-        staticFieldInitWriter.println("&(struct { int32_t size; TeaVM_ResourceMapEntry entries["
+        context.writerBefore().println("&(struct { int32_t size; TeaVM_ResourceMapEntry entries["
                 + bestTable.length + "]; }) {").indent();
-        staticFieldInitWriter.println(".size = " + bestTable.length + ",");
-        staticFieldInitWriter.print(".entries = {").indent();
+        context.writerBefore().println(".size = " + bestTable.length + ",");
+        context.writerBefore().print(".entries = {").indent();
 
         boolean first = true;
         for (String key : bestTable) {
             if (!first) {
-                staticFieldInitWriter.print(",");
+                context.writerBefore().print(",");
             }
-            staticFieldInitWriter.println();
+            context.writerBefore().println();
             first = false;
             if (key == null) {
-                staticFieldInitWriter.print("{ NULL, NULL }");
+                context.writerBefore().print("{ NULL, NULL }");
             } else {
-                staticFieldInitWriter.print("{ stringPool + " + context.getStringPool().getStringIndex(key) + ", ");
+                context.writerBefore().print("{ teavm_stringPool + "
+                        + context.stringPool().getStringIndex(key) + ", ");
                 writeValue(context, resourceMap.get(key));
-                staticFieldInitWriter.print("}");
+                context.writerBefore().print("}");
             }
         }
 
-        staticFieldInitWriter.println().outdent().println("}");
-        staticFieldInitWriter.outdent().print("}");
+        context.writerBefore().println().outdent().println("}");
+        context.writerBefore().outdent().print("}");
     }
 
     private static int mod(int a, int b) {
@@ -261,27 +265,26 @@ class MetadataCIntrinsic implements Intrinsic {
             this.generator = generator;
         }
 
-        public void apply(IntrinsicContext context, InvocationExpr invocation) {
-            writeInitializer(context, invocation);
-            context.writer().print(context.names().forMethod(invocation.getMethod()));
+        public void apply(GeneratorContext context, MethodReference methodReference) {
+            writeInitializer(context, methodReference);
+            context.writer().print("resource_" + context.names().forMethod(methodReference));
         }
 
-        private void writeInitializer(IntrinsicContext context, InvocationExpr invocation) {
-            MethodReference methodReference = invocation.getMethod();
+        private void writeInitializer(GeneratorContext context, MethodReference methodReference) {
             if (!writtenInitializers.add(methodReference)) {
                 return;
             }
 
-            String variableName = context.names().forMethod(methodReference);
-            staticFieldInitWriter.print("static ").printType(methodReference.getReturnType()).print(" ")
+            String variableName = "resource_" + context.names().forMethod(methodReference);
+            context.writerBefore().print("static ").printType(methodReference.getReturnType()).print(" ")
                     .print(variableName).print(" = ");
             if (generator == null) {
-                staticFieldInitWriter.print("NULL");
+                context.writerBefore().print("NULL");
             } else {
                 Resource resource = generator.generateMetadata(metadataContext, targetMethod);
                 writeValue(context, resource);
             }
-            staticFieldInitWriter.println(";");
+            context.writerBefore().println(";");
         }
     }
 }

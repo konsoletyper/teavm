@@ -58,22 +58,22 @@ public class ArrayGenerator implements Generator {
     }
 
     @Override
-    public void generate(GeneratorContext context, CodeWriter writer, MethodReference method) {
-        String array = context.getParameterName(1);
-        String index = context.getParameterName(2);
+    public void generate(GeneratorContext context, MethodReference method) {
+        String array = context.parameterName(1);
+        String index = context.parameterName(2);
         String componentTypeField = context.names().forMemberField(
                 new FieldReference(RuntimeClass.class.getName(), "itemType"));
         String flagsField = context.names().forMemberField(
                 new FieldReference(RuntimeClass.class.getName(), "flags"));
 
-        writer.println("JavaClass* componentType = (JavaClass*) CLASS_OF(" + array + ")"
+        context.writer().println("TeaVM_Class* componentType = (TeaVM_Class*) TEAVM_CLASS_OF(" + array + ")"
                 + "->" + componentTypeField + ";");
-        writer.println("int32_t flags = componentType->" + flagsField + ";");
-        writer.println("if (flags & " + RuntimeClass.PRIMITIVE + ") {").indent();
+        context.writer().println("int32_t flags = componentType->" + flagsField + ";");
+        context.writer().println("if (flags & " + RuntimeClass.PRIMITIVE + ") {").indent();
 
-        writer.println("switch ((flags >> " + RuntimeClass.PRIMITIVE_SHIFT + ") & "
+        context.writer().println("switch ((flags >> " + RuntimeClass.PRIMITIVE_SHIFT + ") & "
                 + RuntimeClass.PRIMITIVE_MASK + ") {").indent();
-        MethodDependencyInfo dependency = context.getDependencies().getMethod(new MethodReference(Array.class,
+        MethodDependencyInfo dependency = context.dependencies().getMethod(new MethodReference(Array.class,
                 "getImpl", Object.class, int.class, Object.class));
         ValueDependencyInfo arrayDependency = dependency.getVariable(1);
         Set<String> types = new HashSet<>(Arrays.asList(arrayDependency.getTypes()));
@@ -88,13 +88,14 @@ public class ArrayGenerator implements Generator {
                     primitiveTypes[i], ValueType.object(wrapper));
 
             String type = CodeWriter.strictTypeAsString(primitiveTypes[i]);
-            writer.println("case " + primitives[i] + ":").indent();
-            writer.println("return " + context.names().forMethod(methodRef) + "(ARRAY_AT(" + array + ", "
-                    + type + ", " + index + "));");
-            writer.outdent();
+            context.writer().println("case " + primitives[i] + ":").indent();
+            context.includes().includeClass(methodRef.getClassName());
+            context.writer().println("return " + context.names().forMethod(methodRef) + "(TEAVM_ARRAY_AT(" + array
+                    + ", " + type + ", " + index + "));");
+            context.writer().outdent();
         }
-        writer.outdent().println("}").outdent().println("}");
+        context.writer().outdent().println("}").outdent().println("}");
 
-        writer.println("return ARRAY_AT(" + array + ", void*, " + index + ");");
+        context.writer().println("return TEAVM_ARRAY_AT(" + array + ", void*, " + index + ");");
     }
 }

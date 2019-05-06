@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,14 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.c;
+package org.teavm.backend.c.generators;
 
-import org.teavm.backend.c.generators.GeneratorFactory;
-import org.teavm.backend.c.intrinsic.IntrinsicFactory;
-import org.teavm.vm.spi.TeaVMHostExtension;
-
-public interface TeaVMCHost extends TeaVMHostExtension {
-    void addIntrinsic(IntrinsicFactory intrinsicFactory);
-
-    void addGenerator(GeneratorFactory generatorFactory);
+public interface GeneratorFactory {
+    Generator createGenerator(GeneratorFactoryContext context);
 }

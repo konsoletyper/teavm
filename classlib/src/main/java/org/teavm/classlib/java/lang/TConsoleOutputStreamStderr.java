@@ -19,6 +19,7 @@ import java.io.IOException;
 import org.teavm.classlib.java.io.TOutputStream;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
+import org.teavm.interop.c.Include;
 import org.teavm.jso.JSBody;
 
 class TConsoleOutputStreamStderr extends TOutputStream {
@@ -35,6 +36,7 @@ class TConsoleOutputStreamStderr extends TOutputStream {
         writeImpl(b);
     }
 
+    @Include("wchar.h")
     @Import(name = "putwchar", module = "teavm")
     static native void writeImpl(int b);
 }

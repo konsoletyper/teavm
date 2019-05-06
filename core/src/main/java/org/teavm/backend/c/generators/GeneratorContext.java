@@ -15,19 +15,39 @@
  */
 package org.teavm.backend.c.generators;
 
+import org.teavm.backend.c.generate.CodeWriter;
+import org.teavm.backend.c.generate.FileGenerator;
+import org.teavm.backend.c.generate.IncludeManager;
 import org.teavm.backend.c.generate.NameProvider;
+import org.teavm.backend.c.generate.StringPool;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 
 public interface GeneratorContext {
+    CodeWriter writer();
+
     NameProvider names();
 
-    Diagnostics getDiagnotics();
+    Diagnostics diagnotics();
 
-    ClassReaderSource getClassSource();
+    ClassReaderSource classSource();
 
-    DependencyInfo getDependencies();
+    DependencyInfo dependencies();
 
-    String getParameterName(int index);
+    String parameterName(int index);
+
+    StringPool stringPool();
+
+    CodeWriter writerBefore();
+
+    CodeWriter writerAfter();
+
+    IncludeManager includes();
+
+    FileGenerator createSourceFile(String path);
+
+    FileGenerator createHeaderFile(String path);
+
+    String escapeFileName(String name);
 }

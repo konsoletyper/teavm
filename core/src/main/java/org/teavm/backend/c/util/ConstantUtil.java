@@ -33,8 +33,8 @@ public final class ConstantUtil {
                 return ((ValueType.Object) cst).getClassName();
             }
         }
-        context.getDiagnotics().error(
-                new CallLocation(context.getCallingMethod(), invocation.getLocation()),
+        context.diagnotics().error(
+                new CallLocation(context.callingMethod(), invocation.getLocation()),
                 "This method should take class literal");
         return "java.lang.Object";
     }
@@ -46,8 +46,8 @@ public final class ConstantUtil {
                 return (String) cst;
             }
         }
-        context.getDiagnotics().error(
-                new CallLocation(context.getCallingMethod(), invocation.getLocation()),
+        context.diagnotics().error(
+                new CallLocation(context.callingMethod(), invocation.getLocation()),
                 "This method should take string literal");
         return "";
     }

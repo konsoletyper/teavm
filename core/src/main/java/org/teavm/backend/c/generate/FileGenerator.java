@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,30 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.backend.c.intrinsic;
+package org.teavm.backend.c.generate;
 
-import org.teavm.ast.Expr;
-import org.teavm.backend.c.generate.CodeWriter;
-import org.teavm.backend.c.generate.IncludeManager;
-import org.teavm.backend.c.generate.NameProvider;
-import org.teavm.backend.c.generate.StringPool;
-import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.MethodReference;
-
-public interface IntrinsicContext {
+public interface FileGenerator {
     CodeWriter writer();
 
-    NameProvider names();
-
-    void emit(Expr expr);
-
-    Diagnostics diagnotics();
-
-    MethodReference callingMethod();
-
-    StringPool stringPool();
-
     IncludeManager includes();
-
-    String escapeFileName(String name);
 }
