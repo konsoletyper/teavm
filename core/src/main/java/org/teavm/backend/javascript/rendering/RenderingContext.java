@@ -231,10 +231,10 @@ public class RenderingContext {
             float value = (Float) cst;
             if (value < 0) {
                 writer.append("(");
-                writer.append(Float.toString(value));
+                writer.append(Double.toString((double) value));
                 writer.append(")");
             } else {
-                writer.append(Float.toString(value));
+                writer.append(Double.toString((double) value));
             }
         }
     }

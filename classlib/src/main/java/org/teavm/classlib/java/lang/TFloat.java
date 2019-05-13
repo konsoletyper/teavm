@@ -216,14 +216,14 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
     }
 
     private static float decimalExponent(int n) {
-        float d;
+        double d;
         if (n < 0) {
-            d = 0.1f;
+            d = 0.1;
             n = -n;
         } else {
             d = 10;
         }
-        float result = 1;
+        double result = 1;
         while (n != 0) {
             if (n % 2 != 0) {
                 result *= d;
@@ -231,7 +231,7 @@ public class TFloat extends TNumber implements TComparable<TFloat> {
             d *= d;
             n /= 2;
         }
-        return result;
+        return (float) result;
     }
 
     public static TFloat valueOf(TString s) throws TNumberFormatException {
