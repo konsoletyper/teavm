@@ -39,7 +39,7 @@ public abstract class IncludeManager {
         while (true) {
             int next = fileName.indexOf('/', commonIndex);
             if (next < 0 || next > currentFileName.length()
-                    || !currentFileName.regionMatches(commonIndex, fileName, commonIndex, next - commonIndex)) {
+                    || !currentFileName.regionMatches(commonIndex, fileName, commonIndex, next - commonIndex + 1)) {
                 break;
             }
             commonIndex = next + 1;
