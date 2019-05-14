@@ -80,7 +80,7 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
 
     private Entry getEntry(String name) {
         return cache.computeIfAbsent(name, className -> {
-            ClassReader cls = provider.apply(className);
+            ClassReader cls = provider != null ? provider.apply(className) : null;
             Entry en = new Entry();
             if (cls != null) {
                 ByteArrayOutputStream output = new ByteArrayOutputStream();

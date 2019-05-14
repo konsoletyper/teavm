@@ -517,6 +517,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 writer.print("TEAVM_ARRAY_DATA(TEAVM_FIELD(");
                 String typeName = ((ValueType.Object) type).getClassName();
                 expr.getArguments().get(i).acceptVisitor(this);
+                includes.includeClass(typeName);
                 writer.print(", ").print(names.forClass(typeName)).print(", ")
                         .print(names.forMemberField(new FieldReference(typeName, "array"))).print(")");
                 writer.print(", ").print(BUFFER_TYPES.get(typeName)).print(")");
@@ -1015,6 +1016,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             StringBuilder sb = new StringBuilder();
             ClassGenerator.escape(name, sb);
             return sb.toString();
+        }
+
+        @Override
+        public boolean isIncremental() {
+            return context.isIncremental();
         }
     };
 

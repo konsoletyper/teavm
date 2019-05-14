@@ -38,16 +38,24 @@ public class CallSiteGenerator {
     private List<ExceptionHandlerDescriptor> exceptionHandlers = new ArrayList<>();
     private String callSiteLocationName;
     private String exceptionHandlerName;
+    private String callSitesName;
+    private boolean isStatic;
 
-    public CallSiteGenerator(GenerationContext context, CodeWriter writer, IncludeManager includes) {
+    public CallSiteGenerator(GenerationContext context, CodeWriter writer, IncludeManager includes,
+            String callSitesName) {
         this.context = context;
         this.writer = writer;
         this.includes = includes;
         callSiteLocationName = context.getNames().forClass(CALL_SITE_LOCATION);
         exceptionHandlerName = context.getNames().forClass(EXCEPTION_HANDLER);
+        this.callSitesName = callSitesName;
     }
 
-    public void generate(List<CallSiteDescriptor> callSites) {
+    public void setStatic(boolean isStatic) {
+        this.isStatic = isStatic;
+    }
+
+    public void generate(List<? extends CallSiteDescriptor> callSites) {
         CodeWriter writerForLocations = writer.fragment();
         generateCallSites(callSites);
 
@@ -58,12 +66,15 @@ public class CallSiteGenerator {
         writer = oldWriter;
     }
 
-    private void generateCallSites(List<CallSiteDescriptor> callSites) {
+    private void generateCallSites(List<? extends CallSiteDescriptor> callSites) {
         String callSiteName = context.getNames().forClass(CALL_SITE);
 
         includes.includeClass(CALL_SITE);
         includes.includePath("strings.h");
-        writer.print(callSiteName).print(" teavm_callSites[" + callSites.size() + "] = {").indent();
+        if (isStatic) {
+            writer.print("static ");
+        }
+        writer.print(callSiteName).print(" " + callSitesName + "[" + callSites.size() + "] = {").indent();
         String handlerCountName = fieldName(CALL_SITE, "handlerCount");
         String firstHandlerName = fieldName(CALL_SITE, "firstHandler");
         String locationName = fieldName(CALL_SITE, "location");
@@ -86,14 +97,14 @@ public class CallSiteGenerator {
             }
 
             String firstHandlerExpr = !callSite.getHandlers().isEmpty()
-                    ? "teavm_exceptionHandlers + " + exceptionHandlers.size()
+                    ? "exceptionHandlers_" + callSitesName + " + " + exceptionHandlers.size()
                     : "NULL";
             writer.println().print("{ ");
             writer.print(".").print(handlerCountName).print(" = ")
                     .print(String.valueOf(callSite.getHandlers().size())).print(", ");
             writer.print(".").print(firstHandlerName).print(" = ").print(firstHandlerExpr).print(", ");
             writer.print(".").print(locationName).print(" = ")
-                    .print(locationIndex >= 0 ? "teavm_callSiteLocations + " + locationIndex : "NULL");
+                    .print(locationIndex >= 0 ? "callSiteLocations_" + callSitesName + " + " + locationIndex : "NULL");
             writer.print(" }");
 
             exceptionHandlers.addAll(callSite.getHandlers());
@@ -104,8 +115,8 @@ public class CallSiteGenerator {
 
     private void generateLocations() {
         includes.includeClass(CALL_SITE_LOCATION);
-        writer.print("static ").print(callSiteLocationName).print(" teavm_callSiteLocations[" + locations.size()
-                + "] = {").indent();
+        writer.print("static ").print(callSiteLocationName).print(" callSiteLocations_" + callSitesName
+                + "[" + locations.size() + "] = {").indent();
 
         String fileNameName = fieldName(CALL_SITE_LOCATION, "fileName");
         String classNameName = fieldName(CALL_SITE_LOCATION, "className");
@@ -137,7 +148,7 @@ public class CallSiteGenerator {
 
     private void generateHandlers() {
         includes.includeClass(EXCEPTION_HANDLER);
-        writer.print("static ").print(exceptionHandlerName).print(" teavm_exceptionHandlers["
+        writer.print("static ").print(exceptionHandlerName).print(" exceptionHandlers_" + callSitesName + "["
                 + exceptionHandlers.size() + "] = {").indent();
 
         String idName = fieldName(EXCEPTION_HANDLER, "id");

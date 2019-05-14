@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,28 +15,10 @@
  */
 package org.teavm.backend.c.generate;
 
-import com.carrotsearch.hppc.ObjectIntHashMap;
-import com.carrotsearch.hppc.ObjectIntMap;
-import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 
-public class StringPool {
-    private final ObjectIntMap<String> stringIndexes = new ObjectIntHashMap<>();
-    private final List<String> strings = new ArrayList<>();
-    private final List<String> readonlyStrings = Collections.unmodifiableList(strings);
+public interface StringPool {
+    int getStringIndex(String string);
 
-    public int getStringIndex(String string) {
-        int index = stringIndexes.getOrDefault(string, -1);
-        if (index < 0) {
-            index = strings.size();
-            stringIndexes.put(string, index);
-            strings.add(string);
-        }
-        return index;
-    }
-
-    public List<String> getStrings() {
-        return readonlyStrings;
-    }
+    List<String> getStrings();
 }

@@ -62,7 +62,7 @@ public class CallSiteBinaryGenerator {
         this.stringPool = stringPool;
     }
 
-    public int writeCallSites(List<CallSiteDescriptor> callSites) {
+    public int writeCallSites(List<? extends CallSiteDescriptor> callSites) {
         if (callSites.isEmpty()) {
             return 0;
         }

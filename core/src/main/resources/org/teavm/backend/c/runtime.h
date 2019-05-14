@@ -1,4 +1,3 @@
-#pragma once
 #include <stdint.h>
 #include <uchar.h>
 #include <stdlib.h>
@@ -36,6 +35,8 @@ typedef struct TeaVM_Class {
     int32_t (*isSupertypeOf)(struct TeaVM_Class*);
     void (*init)();
     struct TeaVM_Class* superclass;
+    int32_t superinterfaceCount;
+    struct TeaVM_Class** superinterfaces;
     void* enumValues;
     void* layout;
     TeaVM_Object* simpleName;
@@ -97,21 +98,46 @@ static inline void* teavm_checkcast(void* obj, int32_t (*cls)(TeaVM_Class*)) {
     return obj == NULL || cls(TEAVM_CLASS_OF(obj)) ? obj : teavm_throwClassCastException();
 }
 
-#define TEAVM_ALLOC_STACK(size) \
-    void* teavm__shadowStack__[(size) + 3]; \
-    teavm__shadowStack__[0] = teavm_stackTop; \
-    teavm__shadowStack__[2] = (void*) size; \
-    teavm_stackTop = teavm__shadowStack__
+#ifdef TEAVM_INCREMENTAL
+
+    #define TEAVM_ALLOC_STACK_DEF(size, callSites) \
+        void* teavm__shadowStack__[(size) + 4]; \
+        teavm__shadowStack__[0] = teavm_stackTop; \
+        teavm__shadowStack__[2] = (void*) size; \
+        teavm__shadowStack__[3] = (void*) (callSites); \
+        teavm_stackTop = teavm__shadowStack__
+
+    #define TEAVM_STACK_HEADER_ADD_SIZE 1
+
+#else
+
+    #define TEAVM_ALLOC_STACK(size) \
+        void* teavm__shadowStack__[(size) + 3]; \
+        teavm__shadowStack__[0] = teavm_stackTop; \
+        teavm__shadowStack__[2] = (void*) size; \
+        teavm_stackTop = teavm__shadowStack__
+
+    #define TEAVM_STACK_HEADER_ADD_SIZE 0
+
+#endif
+
 
 #define TEAVM_RELEASE_STACK teavm_stackTop = teavm__shadowStack__[0]
-#define TEAVM_GC_ROOT(index, ptr) teavm__shadowStack__[3 + (index)] = ptr
-#define TEAVM_GC_ROOT_RELEASE(index) teavm__shadowStack__[3 + (index)] = NULL
+#define TEAVM_GC_ROOT(index, ptr) teavm__shadowStack__[3 + TEAVM_STACK_HEADER_ADD_SIZE + (index)] = ptr
+#define TEAVM_GC_ROOT_RELEASE(index) teavm__shadowStack__[3 + TEAVM_STACK_HEADER_ADD_SIZE + (index)] = NULL
+#define TEAVM_GC_ROOTS_COUNT(ptr) ((int32_t) (intptr_t) ((void**) (ptr))[2])
+#define TEAVM_GET_GC_ROOTS(ptr) (((void**) (ptr)) + 3 + TEAVM_STACK_HEADER_ADD_SIZE)
 #define TEAVM_CALL_SITE(id) (teavm__shadowStack__[1] = (void*) (id))
 #define TEAVM_EXCEPTION_HANDLER ((int32_t) (intptr_t) (teavm__shadowStack__[1]))
 #define TEAVM_SET_EXCEPTION_HANDLER(frame, id) (((void**) (frame))[1] = (void*) (intptr_t) (id))
 
 #define TEAVM_ADDRESS_ADD(address, offset) ((char *) (address) + (offset))
 #define TEAVM_STRUCTURE_ADD(structure, address, offset) (((structure*) (address)) + offset)
+
+#define TEAVM_NULL_STRING { \
+    .characters = NULL, \
+    .hashCode = 0 \
+}
 
 #define TEAVM_STRING(length, hash, s) { \
     .characters = (TeaVM_Array*) & (struct { TeaVM_Array hdr; char16_t data[(length) + 1]; }) { \

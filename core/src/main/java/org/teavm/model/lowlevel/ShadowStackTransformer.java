@@ -33,27 +33,26 @@ import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.runtime.ShadowStack;
 
 public class ShadowStackTransformer {
-    private Characteristics managedMethodRepository;
+    private Characteristics characteristics;
     private GCShadowStackContributor gcContributor;
     private List<CallSiteDescriptor> callSites = new ArrayList<>();
 
-    public ShadowStackTransformer(Characteristics managedMethodRepository) {
-        gcContributor = new GCShadowStackContributor(managedMethodRepository);
-        this.managedMethodRepository = managedMethodRepository;
-    }
-
-    public List<CallSiteDescriptor> getCallSites() {
-        return callSites;
+    public ShadowStackTransformer(Characteristics characteristics) {
+        gcContributor = new GCShadowStackContributor(characteristics);
+        this.characteristics = characteristics;
     }
 
     public void apply(Program program, MethodReader method) {
-        if (!managedMethodRepository.isManaged(method.getReference())) {
+        if (!characteristics.isManaged(method.getReference())) {
             return;
         }
 
         int shadowStackSize = gcContributor.contribute(program, method);
-        boolean exceptions = new ExceptionHandlingShadowStackContributor(managedMethodRepository, callSites,
+        int callSiteStartIndex = callSites.size();
+        boolean exceptions = new ExceptionHandlingShadowStackContributor(characteristics, callSites,
                 method.getReference(), program).contribute();
+        List<CallSiteDescriptor> programCallSites = callSites.subList(callSiteStartIndex, callSites.size());
+        CallSiteDescriptor.save(programCallSites, program.getAnnotations());
 
         if (shadowStackSize > 0 || exceptions) {
             addStackAllocation(program, shadowStackSize);

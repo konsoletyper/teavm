@@ -34,7 +34,7 @@ public class ExceptionHandlingDependencyListener extends AbstractDependencyListe
     public void methodReached(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().equals(FILL_IN_STACK_TRACE)) {
             DependencyNode node = agent.linkField(STACK_TRACE).getValue();
-            node.propagate(agent.getType("[java/lang.StackTraceElement;"));
+            node.propagate(agent.getType("[Ljava/lang/StackTraceElement;"));
             node.getArrayItem().propagate(agent.getType("java.lang.StackTraceElement"));
 
             MethodDependency initElem = agent.linkMethod(STACK_TRACE_ELEMENT_INIT);

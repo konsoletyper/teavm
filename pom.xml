@@ -89,6 +89,7 @@
     <module>jso/impl</module>
     <module>html4j</module>
     <module>platform</module>
+    <module>tools/c-incremental</module>
     <module>tools/core</module>
     <module>tools/maven</module>
     <module>tools/chrome-rdp</module>

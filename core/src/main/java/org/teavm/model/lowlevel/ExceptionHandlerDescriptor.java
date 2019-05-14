@@ -15,6 +15,10 @@
  */
 package org.teavm.model.lowlevel;
 
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+
 public class ExceptionHandlerDescriptor {
     private int id;
     private String className;
@@ -30,5 +34,18 @@ public class ExceptionHandlerDescriptor {
 
     public String getClassName() {
         return className;
+    }
+
+    public AnnotationReader save() {
+        AnnotationHolder annot = new AnnotationHolder(ExceptionHandlerDescriptorAnnot.class.getName());
+        annot.getValues().put("id", new AnnotationValue(id));
+        annot.getValues().put("className", CallSiteDescriptor.saveNullableString(className));
+        return annot;
+    }
+
+    public static ExceptionHandlerDescriptor load(AnnotationReader annot) {
+        return new ExceptionHandlerDescriptor(
+                annot.getValue("id").getInt(),
+                CallSiteDescriptor.loadNullableString(annot.getValue("className")));
     }
 }

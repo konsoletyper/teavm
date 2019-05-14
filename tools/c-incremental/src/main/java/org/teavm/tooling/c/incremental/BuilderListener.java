@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model;
+package org.teavm.tooling.c.incremental;
 
-public interface ProgramReader {
-    int basicBlockCount();
+import org.teavm.tooling.builder.BuildResult;
 
-    BasicBlockReader basicBlockAt(int index);
+public interface BuilderListener {
+    void compilationStarted();
 
-    Iterable<? extends BasicBlockReader> getBasicBlocks();
+    void compilationProgress(double progress);
 
-    int variableCount();
+    void compilationComplete(BuildResult result);
 
-    VariableReader variableAt(int index);
-
-    AnnotationContainerReader getAnnotations();
+    void compilationCancelled();
 }

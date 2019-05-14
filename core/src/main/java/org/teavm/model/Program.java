@@ -23,6 +23,7 @@ public class Program implements ProgramReader {
     private List<Variable> variables = new ArrayList<>();
     private boolean packed;
     private int lastUsedRegister;
+    private AnnotationContainer annotations = new AnnotationContainer();
 
     public BasicBlock createBasicBlock() {
         BasicBlock block = new BasicBlock(this, basicBlocks.size());
@@ -148,5 +149,10 @@ public class Program implements ProgramReader {
             throw new IllegalArgumentException("Index " + index + " is out of range");
         }
         return variables.get(index);
+    }
+
+    @Override
+    public AnnotationContainer getAnnotations() {
+        return annotations;
     }
 }

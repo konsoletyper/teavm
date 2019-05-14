@@ -88,12 +88,14 @@ import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.SwitchTableEntry;
 import org.teavm.model.instructions.SwitchTableEntryReader;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
+import org.teavm.model.util.ModelUtils;
 
 public class ProgramIO {
     private SymbolTable symbolTable;
     private SymbolTable fileTable;
     private SymbolTable variableTable;
     private ReferenceCache referenceCache;
+    private AnnotationIO annotationIO;
     private static BinaryOperation[] binaryOperations = BinaryOperation.values();
     private static NumericOperandType[] numericOperandTypes = NumericOperandType.values();
     private static IntegerSubtype[] integerSubtypes = IntegerSubtype.values();
@@ -108,6 +110,7 @@ public class ProgramIO {
         this.symbolTable = symbolTable;
         this.fileTable = fileTable;
         this.variableTable = variableTable;
+        annotationIO = new AnnotationIO(referenceCache, symbolTable);
     }
 
     public void write(ProgramReader program, OutputStream output) throws IOException {
@@ -149,6 +152,7 @@ public class ProgramIO {
             }
             data.writeUnsigned(0);
         }
+        annotationIO.writeAnnotations(data, program.getAnnotations());
     }
 
     public Program read(InputStream input) throws IOException {
@@ -230,6 +234,7 @@ public class ProgramIO {
                 }
             }
         }
+        ModelUtils.copyAnnotations(annotationIO.readAnnotations(data), program.getAnnotations());
         return program;
     }
 

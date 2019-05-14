@@ -39,4 +39,6 @@ public interface IntrinsicContext {
     IncludeManager includes();
 
     String escapeFileName(String name);
+
+    boolean isIncremental();
 }

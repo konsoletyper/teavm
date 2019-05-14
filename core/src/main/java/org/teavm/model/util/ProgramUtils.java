@@ -91,6 +91,7 @@ public final class ProgramUtils {
             BasicBlock blockCopy = copy.basicBlockAt(i);
             copyBasicBlock(block, blockCopy);
         }
+        ModelUtils.copyAnnotations(program.getAnnotations(), copy.getAnnotations());
         return copy;
     }
 

@@ -342,6 +342,7 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
     public void visit(GetFieldInstruction insn) {
         String className = classNameMapper.apply(insn.getField().getClassName());
         insn.setField(referenceCache.getCached(new FieldReference(className, insn.getField().getFieldName())));
+        insn.setFieldType(rename(insn.getFieldType()));
     }
 
     @Override
@@ -350,6 +351,7 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         if (className != insn.getField().getClassName()) {
             insn.setField(referenceCache.getCached(new FieldReference(className, insn.getField().getFieldName())));
         }
+        insn.setFieldType(rename(insn.getFieldType()));
     }
     @Override
     public void visit(InvokeInstruction insn) {

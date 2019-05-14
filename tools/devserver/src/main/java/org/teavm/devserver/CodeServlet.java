@@ -86,6 +86,7 @@ import org.teavm.parsing.resource.ResourceClassHolderMapper;
 import org.teavm.tooling.EmptyTeaVMToolLog;
 import org.teavm.tooling.TeaVMProblemRenderer;
 import org.teavm.tooling.TeaVMToolLog;
+import org.teavm.tooling.builder.SimpleBuildResult;
 import org.teavm.tooling.util.FileSystemWatcher;
 import org.teavm.vm.MemoryBuildTarget;
 import org.teavm.vm.TeaVM;
@@ -995,7 +996,7 @@ public class CodeServlet extends HttpServlet {
     }
 
     private void fireBuildComplete(TeaVM vm) {
-        CodeServletBuildResult result = new CodeServletBuildResult(vm, new ArrayList<>(buildTarget.getNames()));
+        SimpleBuildResult result = new SimpleBuildResult(vm, new ArrayList<>(buildTarget.getNames()));
         for (DevServerListener listener : listeners) {
             listener.compilationComplete(result);
         }

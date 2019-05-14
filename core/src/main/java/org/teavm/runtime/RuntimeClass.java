@@ -45,6 +45,8 @@ public class RuntimeClass extends RuntimeObject {
     public IsSupertypeFunction isSupertypeOf;
     public InitFunction init;
     public RuntimeClass parent;
+    public int superinterfaceCount;
+    public RuntimeClassPointer superinterfaces;
     public Address enumValues;
     public Address layout;
     public RuntimeObject simpleName;

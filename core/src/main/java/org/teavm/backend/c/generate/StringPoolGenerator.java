@@ -28,16 +28,20 @@ public class StringPoolGenerator {
         writer.println("TeaVM_String teavm_stringPool[" + strings.size() + "] = {").indent();
         for (int i = 0; i < strings.size(); ++i) {
             String s = strings.get(i);
-            boolean codes = hasBadCharacters(s);
-            String macroName = codes ? "TEAVM_STRING_FROM_CODES" : "TEAVM_STRING";
-            writer.print(macroName + "(" + s.length() + ", " + s.hashCode() + ",");
-            if (codes) {
-                generateNumericStringLiteral(s);
+            if (s == null) {
+                writer.println("TEAVM_NULL_STRING");
             } else {
-                writer.print("u");
-                generateSimpleStringLiteral(writer, s);
+                boolean codes = hasBadCharacters(s);
+                String macroName = codes ? "TEAVM_STRING_FROM_CODES" : "TEAVM_STRING";
+                writer.print(macroName + "(" + s.length() + ", " + s.hashCode() + ",");
+                if (codes) {
+                    generateNumericStringLiteral(s);
+                } else {
+                    writer.print("u");
+                    generateSimpleStringLiteral(writer, s);
+                }
+                writer.print(")");
             }
-            writer.print(")");
 
             writer.print(i < strings.size() - 1 ? "," : " ");
             writer.print(" // string #" + i);

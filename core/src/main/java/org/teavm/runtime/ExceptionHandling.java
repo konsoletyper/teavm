@@ -26,13 +26,13 @@ public final class ExceptionHandling {
     private ExceptionHandling() {
     }
 
-    public static native CallSite findCallSiteById(int id);
+    public static native CallSite findCallSiteById(int id, Address frame);
 
     public static void printStack() {
         Address stackFrame = ShadowStack.getStackTop();
         while (stackFrame != null) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
-            CallSite callSite = findCallSiteById(callSiteId);
+            CallSite callSite = findCallSiteById(callSiteId, stackFrame);
             CallSiteLocation location = callSite.location;
 
             Console.printString("    at ");
@@ -74,7 +74,7 @@ public final class ExceptionHandling {
         Address stackFrame = ShadowStack.getStackTop();
         stackLoop: while (stackFrame != null) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
-            CallSite callSite = findCallSiteById(callSiteId);
+            CallSite callSite = findCallSiteById(callSiteId, stackFrame);
             ExceptionHandler handler = callSite.firstHandler;
 
             for (int i = 0; i < callSite.handlerCount; ++i) {
@@ -118,7 +118,7 @@ public final class ExceptionHandling {
         int index = 0;
         while (stackFrame != null && index < target.length) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
-            CallSite callSite = findCallSiteById(callSiteId);
+            CallSite callSite = findCallSiteById(callSiteId, stackFrame);
             CallSiteLocation location = callSite.location;
             StackTraceElement element = createElement(location != null ? location.className : "",
                     location != null ? location.methodName : "", location != null ? location.fileName : null,

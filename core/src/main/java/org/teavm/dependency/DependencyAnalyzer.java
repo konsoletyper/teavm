@@ -776,7 +776,8 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         unprocessedClassSource = null;
         classSource.innerHierarchy = null;
 
-        agentClassSource = classSourcePacker.pack(classSource, classSource.cache.keySet());
+        agentClassSource = classSourcePacker.pack(classSource,
+                ClassClosureAnalyzer.build(classSource, new ArrayList<>(classSource.cache.keySet())));
         if (classSource != agentClassSource) {
             classHierarchy = new ClassHierarchy(agentClassSource);
             generatedClassNames.addAll(classSource.getGeneratedClassNames());

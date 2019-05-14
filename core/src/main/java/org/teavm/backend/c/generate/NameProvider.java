@@ -55,7 +55,8 @@ public class NameProvider extends LowLevelNameProvider {
         memberFieldNames.put(new FieldReference(String.class.getName(), "hashCode"), "hashCode");
 
         for (String name : new String[] { "size", "flags", "tag", "canary", "name", "itemType", "arrayType",
-                "isSupertypeOf", "init", "enumValues", "layout", "simpleName" }) {
+                "isSupertypeOf", "init", "enumValues", "layout", "simpleName", "superinterfaceCount",
+                "superinterfaces" }) {
             memberFieldNames.put(new FieldReference(RuntimeClass.class.getName(), name), name);
         }
         memberFieldNames.put(new FieldReference(RuntimeClass.class.getName(), "parent"), "superclass");

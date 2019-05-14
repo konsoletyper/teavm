@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,18 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model;
+package org.teavm.model.lowlevel;
 
-public interface ProgramReader {
-    int basicBlockCount();
-
-    BasicBlockReader basicBlockAt(int index);
-
-    Iterable<? extends BasicBlockReader> getBasicBlocks();
-
-    int variableCount();
-
-    VariableReader variableAt(int index);
-
-    AnnotationContainerReader getAnnotations();
+@interface CallSiteDescriptorsAnnot {
+    CallSiteDescriptorAnnot[] value();
 }

@@ -78,15 +78,16 @@ public class ShadowStackIntrinsic implements Intrinsic {
                 context.writer().print(")[0]");
                 return;
             case "getStackRootCount":
-                context.writer().print("((int32_t) (intptr_t) ((void**) ");
+                context.writer().print("TEAVM_GC_ROOTS_COUNT(");
                 context.emit(invocation.getArguments().get(0));
-                context.writer().print(")[2])");
+                context.writer().print(")");
                 return;
-            case "getStackRootPointer":
-                context.writer().print("&((void**) ");
+            case "getStackRootPointer": {
+                context.writer().print("TEAVM_GET_GC_ROOTS(");
                 context.emit(invocation.getArguments().get(0));
-                context.writer().print(")[3]");
+                context.writer().print(")");
                 return;
+            }
             case "getCallSiteId":
                 context.writer().print("((int32_t) (intptr_t) ((void**) ");
                 context.emit(invocation.getArguments().get(0));

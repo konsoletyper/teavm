@@ -39,8 +39,10 @@ public class ExceptionHandlingIntrinsic implements Intrinsic {
         switch (invocation.getMethod().getName()) {
             case "findCallSiteById":
                 context.includes().includePath("callsites.h");
-                context.writer().print("(teavm_callSites + ");
+                context.writer().print("TEAVM_FIND_CALLSITE(");
                 context.emit(invocation.getArguments().get(0));
+                context.writer().print(", ");
+                context.emit(invocation.getArguments().get(1));
                 context.writer().print(")");
                 break;
         }

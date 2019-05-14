@@ -55,7 +55,7 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
         return false;
     }
 
-    public void postProcess(List<CallSiteDescriptor> callSites) {
+    public void postProcess(List<? extends CallSiteDescriptor> callSites) {
         int address = callSiteBinaryGenerator.writeCallSites(callSites);
         for (WasmInt32Constant constant : constants) {
             constant.setValue(address);

@@ -127,6 +127,7 @@ import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
@@ -374,7 +375,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         int pages = (minHeapSize + pageSize - 1) / pageSize;
         module.setMemorySize(pages);
         generateMethods(classes, context, generator, classGenerator, binaryWriter, module);
-        exceptionHandlingIntrinsic.postProcess(shadowStackTransformer.getCallSites());
+        exceptionHandlingIntrinsic.postProcess(CallSiteDescriptor.extract(classes, classes.getClassNames()));
         generateIsSupertypeFunctions(tagRegistry, module, classGenerator);
         classGenerator.postProcess();
         mutatorIntrinsic.setStaticGcRootsAddress(classGenerator.getStaticGcRootsAddress());

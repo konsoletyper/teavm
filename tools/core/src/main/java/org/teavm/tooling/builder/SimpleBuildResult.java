@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,22 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.devserver;
+package org.teavm.tooling.builder;
 
 import java.util.Collection;
 import java.util.List;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.tooling.InstructionLocationReader;
-import org.teavm.tooling.builder.BuildResult;
 import org.teavm.vm.TeaVM;
 
-class CodeServletBuildResult implements BuildResult {
+public class SimpleBuildResult implements BuildResult {
     private TeaVM vm;
     private List<String> generatedFiles;
     private Collection<String> usedResources;
 
-    public CodeServletBuildResult(TeaVM vm, List<String> generatedFiles) {
+    public SimpleBuildResult(TeaVM vm, List<String> generatedFiles) {
         this.vm = vm;
         this.generatedFiles = generatedFiles;
     }
