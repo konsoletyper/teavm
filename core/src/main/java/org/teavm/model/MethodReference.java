@@ -35,8 +35,8 @@ import java.util.stream.Stream;
  */
 public class MethodReference implements Serializable {
     private String className;
-    private transient MethodDescriptor descriptor;
-    private int hash;
+    private MethodDescriptor descriptor;
+    private transient int hash;
 
     public MethodReference(String className, MethodDescriptor descriptor) {
         this.className = className;

@@ -27,7 +27,7 @@ public abstract class ValueType implements Serializable {
 
     public static class Object extends ValueType {
         private String className;
-        private int hash;
+        private transient int hash;
 
         public Object(String className) {
             this.className = className;
@@ -126,7 +126,7 @@ public abstract class ValueType implements Serializable {
 
     public static class Array extends ValueType {
         private ValueType itemType;
-        private int hash;
+        private transient int hash;
 
         public Array(ValueType itemType) {
             this.itemType = itemType;

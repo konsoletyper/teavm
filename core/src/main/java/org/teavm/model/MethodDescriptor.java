@@ -15,12 +15,13 @@
  */
 package org.teavm.model;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class MethodDescriptor {
+public class MethodDescriptor implements Serializable {
     private String name;
     private ValueType[] signature;
-    private int hash;
+    private transient int hash;
 
     public MethodDescriptor(String name, ValueType... signature) {
         if (signature.length < 1) {

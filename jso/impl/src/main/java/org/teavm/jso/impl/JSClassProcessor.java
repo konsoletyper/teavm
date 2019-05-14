@@ -365,7 +365,7 @@ class JSClassProcessor {
         boolean returnByRef = method.getAnnotations().get(JSByRef.class.getName()) != null;
         if (returnByRef && !typeHelper.isSupportedByRefType(method.getResultType())) {
             diagnostics.error(callLocation, "Method {{m0}} is marked with @JSByRef, but does not return valid "
-                    + "array type");
+                    + "array type", method.getReference());
             return false;
         }
 
