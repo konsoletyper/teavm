@@ -36,5 +36,9 @@ public interface HTMLCanvasElement extends HTMLElement, CanvasImageSource {
 
     JSObject getContext(String contextId, JSObject attributes);
 
+    String toDataURL(String type, double quality);
+
     String toDataURL(String type);
+
+    String toDataURL();
 }
