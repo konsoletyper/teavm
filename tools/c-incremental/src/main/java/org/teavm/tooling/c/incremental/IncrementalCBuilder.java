@@ -15,11 +15,14 @@
  */
 package org.teavm.tooling.c.incremental;
 
+import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -27,6 +30,7 @@ import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import org.teavm.backend.c.CTarget;
 import org.teavm.backend.c.generate.SimpleStringPool;
@@ -61,6 +65,8 @@ public class IncrementalCBuilder {
     private String[] classPath;
     private int minHeapSize = 32;
     private String targetPath;
+    private String externalTool;
+    private String externalToolWorkingDir;
 
     private IncrementalDirectoryBuildTarget buildTarget;
     private FileSystemWatcher watcher;
@@ -87,6 +93,8 @@ public class IncrementalCBuilder {
     private boolean waiting;
     private Thread buildThread;
 
+    private boolean needsExternalTool;
+
     public void setMainClass(String mainClass) {
         this.mainClass = mainClass;
     }
@@ -105,6 +113,14 @@ public class IncrementalCBuilder {
 
     public void setLog(TeaVMToolLog log) {
         this.log = log;
+    }
+
+    public void setExternalTool(String externalTool) {
+        this.externalTool = externalTool;
+    }
+
+    public void setExternalToolWorkingDir(String externalToolWorkingDir) {
+        this.externalToolWorkingDir = externalToolWorkingDir;
     }
 
     public void addProgressHandler(ProgressHandler handler) {
@@ -316,9 +332,12 @@ public class IncrementalCBuilder {
         vm.build(buildTarget, "");
 
         postBuild(vm, startTime);
+
+        runExternalTool();
     }
 
     private void postBuild(TeaVM vm, long startTime) {
+        needsExternalTool = false;
         if (!vm.wasCancelled()) {
             log.info("Recompiled stale methods: " + programCache.getPendingItemsCount());
             fireBuildComplete(vm);
@@ -329,6 +348,7 @@ public class IncrementalCBuilder {
                 programCache.commit();
                 astCache.commit();
                 reportCompilationComplete(true);
+                needsExternalTool = true;
             } else {
                 log.info("Build complete with errors");
                 reportCompilationComplete(false);
@@ -361,6 +381,46 @@ public class IncrementalCBuilder {
         }
 
         log.info("Compilation took " + (System.currentTimeMillis() - startTime) + " ms");
+    }
+
+    private void runExternalTool() {
+        if (externalTool == null || !needsExternalTool) {
+            return;
+        }
+
+        try {
+            log.info("Running external tool");
+            ProcessBuilder pb = new ProcessBuilder(externalTool);
+            if (externalToolWorkingDir != null) {
+                pb.directory(new File(externalToolWorkingDir));
+            }
+            Process process = pb.start();
+            BufferedReader stdoutReader = new BufferedReader(new InputStreamReader(process.getInputStream(),
+                    StandardCharsets.UTF_8));
+            BufferedReader stderrReader = new BufferedReader(new InputStreamReader(process.getErrorStream(),
+                    StandardCharsets.UTF_8));
+            daemon("external tool stdout watcher", new ExternalOutputWatcher(stdoutReader,
+                    s -> log.info("[external tool] " + s)));
+            daemon("external tool stderr watcher", new ExternalOutputWatcher(stderrReader,
+                    s -> log.error("[external tool] " + s)));
+
+            int code = process.waitFor();
+            if (code != 0) {
+                log.error("External tool returned non-zero code: " + code);
+            }
+        } catch (IOException e) {
+            log.error("Could not start external tool", e);
+        } catch (InterruptedException e) {
+            log.info("Interrupted while running external tool");
+        }
+    }
+
+    private static Thread daemon(String name, Runnable runnable) {
+        Thread thread = new Thread(runnable);
+        thread.setDaemon(true);
+        thread.setName(name);
+        thread.start();
+        return thread;
     }
 
     private ClassReaderSource packClasses(ClassReaderSource source, Collection<? extends String> classNames) {
@@ -505,6 +565,31 @@ public class IncrementalCBuilder {
             }
 
             return TeaVMProgressFeedback.CONTINUE;
+        }
+    }
+
+    class ExternalOutputWatcher implements Runnable {
+        private BufferedReader reader;
+        private Consumer<String> consumer;
+
+        ExternalOutputWatcher(BufferedReader reader, Consumer<String> consumer) {
+            this.reader = reader;
+            this.consumer = consumer;
+        }
+
+        @Override
+        public void run() {
+            try {
+                while (true) {
+                    String line = reader.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    consumer.accept(line);
+                }
+            } catch (IOException e) {
+                log.error("Error reading build daemon output", e);
+            }
         }
     }
 }

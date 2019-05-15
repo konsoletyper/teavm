@@ -58,6 +58,18 @@ public class TeaVMCBuilderRunner {
                 .hasArg()
                 .withDescription("Minimum heap size in bytes")
                 .create());
+        options.addOption(OptionBuilder
+                .withLongOpt("external-tool")
+                .withArgName("path")
+                .hasArg()
+                .withDescription("Process to run after successful build")
+                .create());
+        options.addOption(OptionBuilder
+                .withLongOpt("external-tool-workdir")
+                .withArgName("path")
+                .hasArg()
+                .withDescription("Working directory of process")
+                .create());
     }
 
     private TeaVMCBuilderRunner(CommandLine commandLine) {
@@ -88,6 +100,7 @@ public class TeaVMCBuilderRunner {
         parseClassPathOptions();
         parseOutputOptions();
         parseHeap();
+        parseExternalTool();
 
         builder.setLog(new ConsoleTeaVMToolLog(commandLine.hasOption('v')));
 
@@ -97,6 +110,22 @@ public class TeaVMCBuilderRunner {
             printUsage();
         } else if (args.length == 1) {
             builder.setMainClass(args[0]);
+        }
+    }
+
+    private void parseExternalTool() {
+        boolean hasExternalTool = false;
+        if (commandLine.hasOption("external-tool")) {
+            builder.setExternalTool(commandLine.getOptionValue("external-tool"));
+            hasExternalTool = true;
+        }
+
+        if (commandLine.hasOption("external-tool-workdir")) {
+            if (!hasExternalTool) {
+                System.err.println("Redundant 'external-tool-workdir' option: no external tool specified");
+            } else {
+                builder.setExternalToolWorkingDir(commandLine.getOptionValue("external-tool-workdir"));
+            }
         }
     }
 
