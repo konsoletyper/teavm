@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,15 +15,8 @@
  */
 package org.teavm.runtime;
 
-import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
-import org.teavm.interop.Unmanaged;
 
-@Unmanaged
-@StaticInit
-public class CallSiteLocation extends Structure {
-    public StringPtr fileName;
-    public StringPtr className;
-    public StringPtr methodName;
-    public int lineNumber;
+public class RuntimeObjectPtr extends Structure {
+    RuntimeObject value;
 }

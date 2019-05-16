@@ -84,7 +84,6 @@ public class ClassGenerator {
     private CodeWriter headerWriter;
     private IncludeManager includes;
     private IncludeManager headerIncludes;
-    private boolean stackDefined;
 
     public ClassGenerator(GenerationContext context, ClassReaderSource unprocessedClassSource,
             TagRegistry tagRegistry, Decompiler decompiler) {
@@ -165,18 +164,10 @@ public class ClassGenerator {
     };
 
     public void generateClass(CodeWriter writer, CodeWriter headerWriter, ClassHolder cls) {
-        stackDefined = false;
-        init(writer, headerWriter, fileName(cls.getName()));
+        ValueType type = ValueType.object(cls.getName());
+        init(writer, headerWriter, fileName(cls.getName()), type);
 
-        codeGenerator = new CodeGenerator(context, codeWriter, includes);
-
-        String sysInitializerName = context.getNames().forClassSystemInitializer(cls.getName());
-        headerWriter.println("extern void " + sysInitializerName + "();");
-        writer.println("void " + sysInitializerName + "() {").indent();
-        initWriter = writer.fragment();
-        writer.outdent().println("}");
-        includes.includeClass(cls.getName());
-
+        generateStringPoolDecl(type);
         generateClassStructure(cls);
         generateClassStaticFields(cls);
         generateClassMethods(cls);
@@ -184,6 +175,7 @@ public class ClassGenerator {
         generateVirtualTable(ValueType.object(cls.getName()));
         generateStaticGCRoots(cls.getName());
         generateLayoutArray(cls.getName());
+        generateStringPool(type);
     }
 
     private void generateCallSites(List<? extends CallSiteDescriptor> callSites, String callSitesName) {
@@ -193,12 +185,14 @@ public class ClassGenerator {
     }
 
     public void generateType(CodeWriter writer, CodeWriter headerWriter, ValueType type) {
-        init(writer, headerWriter, fileName(type));
+        init(writer, headerWriter, fileName(type), type);
+        generateStringPoolDecl(type);
         includes.includeType(type);
         generateVirtualTable(type);
+        generateStringPool(type);
     }
 
-    private void init(CodeWriter writer, CodeWriter headerWriter, String fileName) {
+    private void init(CodeWriter writer, CodeWriter headerWriter, String fileName, ValueType type) {
         staticGcRoots = null;
         classLayout = null;
 
@@ -211,6 +205,38 @@ public class ClassGenerator {
         headerIncludes = new SimpleIncludeManager(headerWriter);
         headerIncludes.init(fileName + ".h");
         headerIncludes.includePath("runtime.h");
+
+        codeGenerator = new CodeGenerator(context, codeWriter, includes);
+
+        String sysInitializerName = context.getNames().forClassSystemInitializer(type);
+        headerWriter.println("extern void " + sysInitializerName + "();");
+        writer.println("void " + sysInitializerName + "() {").indent();
+        initWriter = writer.fragment();
+        writer.outdent().println("}");
+        includes.includeType(type);
+    }
+
+    private void generateStringPoolDecl(ValueType type) {
+        if (!context.isIncremental()) {
+            return;
+        }
+
+        String poolName = "strings_" + context.getNames().forClassInstance(type);
+        codeWriter.println("TeaVM_String* " + poolName + "[];");
+        codeWriter.println("#define TEAVM_GET_STRING(i) " + poolName + "[i]");
+    }
+
+    private void generateStringPool(ValueType type) {
+        if (!context.isIncremental()) {
+            return;
+        }
+
+        codeWriter.println("#undef TEAVM_GET_STRING");
+
+        String poolName = "strings_" + context.getNames().forClassInstance(type);
+        StringPoolGenerator poolGenerator = new StringPoolGenerator(context, poolName);
+        poolGenerator.generate(codeWriter);
+        poolGenerator.generateStringPoolHeaders(initWriter, includes);
     }
 
     public Set<ValueType> getTypes() {
@@ -242,17 +268,17 @@ public class ClassGenerator {
                 } else {
                     callSitesName = "NULL";
                 }
-                if (stackDefined) {
-                    codeWriter.println("#undef TEAVM_ALLOC_STACK");
-                }
                 codeWriter.println("#define TEAVM_ALLOC_STACK(size) TEAVM_ALLOC_STACK_DEF(size, "
                         + callSitesName + ")");
-                stackDefined = true;
             }
 
             generateMethodForwardDeclaration(method);
             RegularMethodNode methodNode = decompiler.decompileRegular(method);
             codeGenerator.generateMethod(methodNode);
+
+            if (context.isIncremental()) {
+                codeWriter.println("#undef TEAVM_ALLOC_STACK");
+            }
         }
     }
 
@@ -579,7 +605,7 @@ public class ClassGenerator {
         codeWriter.println(".flags = " + flags + ",");
         codeWriter.println(".tag = " + tag + ",");
         codeWriter.println(".canary = 0,");
-        codeWriter.println(".name = (TeaVM_Object*) (teavm_stringPool + " + nameRef + "),");
+        codeWriter.println(".name = (TeaVM_Object**) &TEAVM_GET_STRING(" + nameRef + "),");
         codeWriter.println(".simpleName = NULL,");
         codeWriter.println(".arrayType = " + arrayTypeExpr + ",");
         codeWriter.println(".itemType = " + itemTypeExpr + ",");

@@ -183,6 +183,6 @@ public class CallSiteGenerator {
     }
 
     private String getStringExpr(String s) {
-        return s != null ? "teavm_stringPool + " + context.getStringPool().getStringIndex(s) : "NULL";
+        return s != null ? "&TEAVM_GET_STRING(" + context.getStringPool().getStringIndex(s) + ")" : "NULL";
     }
 }

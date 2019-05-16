@@ -46,7 +46,7 @@ public abstract class LowLevelNameProvider {
     protected Map<String, String> classNames = new HashMap<>();
     protected Map<String, String> classInitializerNames = new HashMap<>();
     protected Map<String, String> classClassNames = new HashMap<>();
-    protected Map<String, String> classSystemInitializerNames = new HashMap<>();
+    protected Map<ValueType, String> classSystemInitializerNames = new HashMap<>();
     protected Map<ValueType, String> classInstanceNames = new HashMap<>();
     protected Map<ValueType, String> supertypeNames = new HashMap<>();
 
@@ -109,9 +109,9 @@ public abstract class LowLevelNameProvider {
         return classInitializerNames.computeIfAbsent(className, k -> pickUnoccupied("initclass_" + suggestForClass(k)));
     }
 
-    public String forClassSystemInitializer(String className) {
-        return classSystemInitializerNames.computeIfAbsent(className, k -> pickUnoccupied("sysinitclass_"
-                + suggestForClass(k)));
+    public String forClassSystemInitializer(ValueType type) {
+        return classSystemInitializerNames.computeIfAbsent(type, k -> pickUnoccupied("sysinitclass_"
+                + suggestForType(k)));
     }
 
     public String forClassClass(String className) {

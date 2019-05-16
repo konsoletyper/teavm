@@ -39,7 +39,7 @@ public class RuntimeClass extends RuntimeObject {
     public int flags;
     public int tag;
     public int canary;
-    public RuntimeObject name;
+    public RuntimeObjectPtr name;
     public RuntimeClass itemType;
     public RuntimeClass arrayType;
     public IsSupertypeFunction isSupertypeOf;

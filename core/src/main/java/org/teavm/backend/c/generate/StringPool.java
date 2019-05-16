@@ -20,5 +20,5 @@ import java.util.List;
 public interface StringPool {
     int getStringIndex(String string);
 
-    List<String> getStrings();
+    List<? extends String> getStrings();
 }

@@ -29,7 +29,7 @@ typedef struct TeaVM_Class {
     int32_t flags;
     int32_t tag;
     int32_t canary;
-    TeaVM_Object* name;
+    TeaVM_Object** name;
     struct TeaVM_Class* itemType;
     struct TeaVM_Class* arrayType;
     int32_t (*isSupertypeOf)(struct TeaVM_Class*);
@@ -134,12 +134,7 @@ static inline void* teavm_checkcast(void* obj, int32_t (*cls)(TeaVM_Class*)) {
 #define TEAVM_ADDRESS_ADD(address, offset) ((char *) (address) + (offset))
 #define TEAVM_STRUCTURE_ADD(structure, address, offset) (((structure*) (address)) + offset)
 
-#define TEAVM_NULL_STRING { \
-    .characters = NULL, \
-    .hashCode = 0 \
-}
-
-#define TEAVM_STRING(length, hash, s) { \
+#define TEAVM_STRING(length, hash, s) &(TeaVM_String) { \
     .characters = (TeaVM_Array*) & (struct { TeaVM_Array hdr; char16_t data[(length) + 1]; }) { \
         .hdr = { .size = length }, \
         .data = s \
@@ -147,7 +142,7 @@ static inline void* teavm_checkcast(void* obj, int32_t (*cls)(TeaVM_Class*)) {
     .hashCode = INT32_C(hash) \
 }
 
-#define TEAVM_STRING_FROM_CODES(length, hash, ...) { \
+#define TEAVM_STRING_FROM_CODES(length, hash, ...) &(TeaVM_String) { \
     .characters = (TeaVM_Array*) & (struct { TeaVM_Array hdr; char16_t data[(length) + 1]; }) { \
         .hdr = { .size = length }, \
         .data = { __VA_ARGS__ } \
@@ -177,7 +172,7 @@ typedef struct {
 } TeaVM_ResourceArray;
 
 typedef struct {
-    TeaVM_String* key;
+    TeaVM_String** key;
     void* value;
 } TeaVM_ResourceMapEntry;
 
@@ -248,3 +243,9 @@ extern void teavm_printInt(int32_t i);
 extern TeaVM_Array* teavm_parseArguments(int argc, char** argv);
 
 extern void teavm_registerStaticGcRoots(void***, int count);
+
+extern TeaVM_String* teavm_registerString(TeaVM_String*);
+
+static inline TeaVM_Object* teavm_dereferenceNullable(TeaVM_Object** o) {
+    return o != NULL ? *o : NULL;
+}

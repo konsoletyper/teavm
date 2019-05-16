@@ -65,7 +65,7 @@ class MetadataCIntrinsic implements Generator {
         } else if (value instanceof String) {
             int stringIndex = context.stringPool().getStringIndex((String) value);
             context.includes().includePath("strings.h");
-            context.writerBefore().print("(TeaVM_Object*) (teavm_stringPool + " + stringIndex + ")");
+            context.writerBefore().print("(TeaVM_Object**) &TEAVM_GET_STRING(" + stringIndex + ")");
         } else if (value instanceof Boolean) {
             context.writerBefore().print((Boolean) value ? "1" : "0");
         } else if (value instanceof Integer) {
@@ -164,7 +164,7 @@ class MetadataCIntrinsic implements Generator {
         } else if (Resource.class.isAssignableFrom(cls)) {
             return "void*";
         } else if (cls == String.class) {
-            return "TeaVM_Object*";
+            return "TeaVM_Object**";
         } else {
             throw new IllegalArgumentException("Don't know how to write resource type " + cls);
         }
@@ -237,8 +237,8 @@ class MetadataCIntrinsic implements Generator {
             if (key == null) {
                 context.writerBefore().print("{ NULL, NULL }");
             } else {
-                context.writerBefore().print("{ teavm_stringPool + "
-                        + context.stringPool().getStringIndex(key) + ", ");
+                context.writerBefore().print("{ &TEAVM_GET_STRING("
+                        + context.stringPool().getStringIndex(key) + "), ");
                 writeValue(context, resourceMap.get(key));
                 context.writerBefore().print("}");
             }

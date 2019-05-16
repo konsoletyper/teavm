@@ -44,7 +44,7 @@ TeaVM_ResourceMapEntry* teavm_lookupResource(TeaVM_ResourceMap *map, TeaVM_Strin
         if (map->entries[index].key == NULL) {
             return NULL;
         }
-        if (teavm_equals(map->entries[index].key, string)) {
+        if (teavm_equals(*map->entries[index].key, string)) {
             return &map->entries[index];
         }
     }

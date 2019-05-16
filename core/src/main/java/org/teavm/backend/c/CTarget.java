@@ -47,7 +47,6 @@ import org.teavm.backend.c.generate.NameProvider;
 import org.teavm.backend.c.generate.OutputFileUtil;
 import org.teavm.backend.c.generate.SimpleIncludeManager;
 import org.teavm.backend.c.generate.SimpleStringPool;
-import org.teavm.backend.c.generate.StringPool;
 import org.teavm.backend.c.generate.StringPoolGenerator;
 import org.teavm.backend.c.generators.ArrayGenerator;
 import org.teavm.backend.c.generators.Generator;
@@ -145,15 +144,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private Set<MethodReference> asyncMethods;
     private boolean incremental;
     private boolean lineNumbersGenerated;
-    private StringPool stringPool;
-
-    public CTarget() {
-        this(new SimpleStringPool());
-    }
-
-    public CTarget(StringPool stringPool) {
-        this.stringPool = stringPool;
-    }
+    private SimpleStringPool stringPool;
 
     public void setMinHeapSize(int minHeapSize) {
         this.minHeapSize = minHeapSize;
@@ -333,6 +324,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         List<Generator> generators = new ArrayList<>();
         generators.add(new ArrayGenerator());
 
+        stringPool = new SimpleStringPool();
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
                 controller.getDependencyInfo(), stringPool, nameProvider, controller.getDiagnostics(), classes,
                 intrinsics, generators, asyncMethods::contains, buildTarget, incremental);
@@ -363,9 +355,12 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         generateSpecialFunctions(context, runtimeWriter);
         OutputFileUtil.write(runtimeWriter, "runtime.c", buildTarget);
         OutputFileUtil.write(runtimeHeaderWriter, "runtime.h", buildTarget);
+        BufferedCodeWriter stringhashWriter = new BufferedCodeWriter(false);
+        emitResource(stringhashWriter, "stringhash.c");
+        OutputFileUtil.write(stringhashWriter, "stringhash.c", buildTarget);
 
         generateCallSites(buildTarget, context, classes.getClassNames());
-        generateStrings(buildTarget, stringPool);
+        generateStrings(buildTarget, context);
 
         List<ValueType> types = classGenerator.getTypes().stream()
                 .filter(c -> ClassGenerator.needsVirtualTable(characteristics, c))
@@ -373,7 +368,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         generateMainFile(context, classes, types, buildTarget);
         generateAllFile(classes, types, buildTarget);
     }
-
 
     private void emitResource(CodeWriter writer, String resourceName) {
         ClassLoader classLoader = CTarget.class.getClassLoader();
@@ -407,6 +401,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             String name = ClassGenerator.fileName(className);
             OutputFileUtil.write(writer, name + ".c", buildTarget);
             OutputFileUtil.write(headerWriter, name + ".h", buildTarget);
+            if (incremental) {
+                stringPool.reset();
+            }
         }
 
         for (ValueType type : classGenerator.getTypes()) {
@@ -419,6 +416,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             String name = ClassGenerator.fileName(type);
             OutputFileUtil.write(writer, name + ".c", buildTarget);
             OutputFileUtil.write(headerWriter, name + ".h", buildTarget);
+            if (incremental) {
+                stringPool.reset();
+            }
         }
     }
 
@@ -495,16 +495,28 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 + "*) ((void**) frame)[3]) + id)");
     }
 
-    private void generateStrings(BuildTarget buildTarget, StringPool stringPool) throws IOException {
+    private void generateStrings(BuildTarget buildTarget, GenerationContext context) throws IOException {
         BufferedCodeWriter writer = new BufferedCodeWriter(false);
+        IncludeManager includes = new SimpleIncludeManager(writer);
+        includes.init("strings.c");
         BufferedCodeWriter headerWriter = new BufferedCodeWriter(false);
 
         headerWriter.println("#pragma once");
         headerWriter.println("#include \"runtime.h\"");
-        headerWriter.println("extern TeaVM_String teavm_stringPool[];");
+        headerWriter.println("extern void teavm_initStringPool();");
+        if (!incremental) {
+            headerWriter.println("extern TeaVM_String* teavm_stringPool[];");
+            headerWriter.println("#define TEAVM_GET_STRING(i) teavm_stringPool[i]");
 
-        writer.println("#include \"strings.h\"");
-        new StringPoolGenerator(writer).generate(stringPool.getStrings());
+            writer.println("#include \"strings.h\"");
+            StringPoolGenerator poolGenerator = new StringPoolGenerator(context, "teavm_stringPool");
+            poolGenerator.generate(writer);
+            writer.println("void teavm_initStringPool() {").indent();
+            poolGenerator.generateStringPoolHeaders(writer, includes);
+            writer.outdent().println("}");
+        } else {
+            writer.println("void teavm_initStringPool() {}");
+        }
 
         OutputFileUtil.write(writer, "strings.c", buildTarget);
         OutputFileUtil.write(headerWriter, "strings.h", buildTarget);
@@ -652,10 +664,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         writer.println("teavm_beforeInit();");
         writer.println("teavm_initHeap(" + minHeapSize + ");");
         generateVirtualTableHeaders(context, writer, types);
-        generateStringPoolHeaders(context, writer);
-        for (String className : classes.getClassNames()) {
-            includes.includeClass(className);
-            writer.println(context.getNames().forClassSystemInitializer(className) + "();");
+        writer.println("teavm_initStringPool();");
+        for (ValueType type : types) {
+            includes.includeType(type);
+            writer.println(context.getNames().forClassSystemInitializer(type) + "();");
         }
         writer.println("teavm_afterInitClasses();");
         generateStaticInitializerCalls(context, writer, includes, classes);
@@ -702,19 +714,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
         writer.println("for (int i = 0; i < " + types.size() + "; ++i) {").indent();
         writer.println("teavm_classReferences[i]->parent.header = classHeader;");
-        writer.outdent().println("}");
-    }
-
-    private void generateStringPoolHeaders(GenerationContext context, CodeWriter writer) {
-        String stringClassName = context.getNames().forClassInstance(ValueType.object("java.lang.String"));
-        writer.print("int32_t stringHeader = TEAVM_PACK_CLASS(&" + stringClassName + ") | ");
-        CodeGeneratorUtil.writeIntValue(writer, RuntimeObject.GC_MARKED);
-        writer.println(";");
-
-        int size = context.getStringPool().getStrings().size();
-        writer.println("for (int i = 0; i < " + size + "; ++i) {").indent();
-        writer.println("TeaVM_Object *s = (TeaVM_Object*) (teavm_stringPool + i);");
-        writer.println("if (s != NULL) s->header = stringHeader;");
         writer.outdent().println("}");
     }
 

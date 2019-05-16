@@ -43,7 +43,7 @@ public final class CodeGeneratorUtil {
         } else if (value instanceof String) {
             includes.includePath("strings.h");
             int index = context.getStringPool().getStringIndex((String) value);
-            writer.print("(teavm_stringPool + " + index + ")");
+            writer.print("TEAVM_GET_STRING(" + index + ")");
         } else if (value instanceof Integer) {
             writeIntValue(writer, (Integer) value);
         } else if (value instanceof Long) {

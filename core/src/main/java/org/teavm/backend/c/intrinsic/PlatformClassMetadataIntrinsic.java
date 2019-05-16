@@ -53,6 +53,7 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
                 printFieldAccess(context, invocation, SUPERCLASS_FIELD);
                 break;
             case "getName":
+                context.writer().print("*");
                 printFieldAccess(context, invocation, NAME_FIELD);
                 break;
         }

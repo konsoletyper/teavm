@@ -33,7 +33,6 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.teavm.backend.c.CTarget;
-import org.teavm.backend.c.generate.SimpleStringPool;
 import org.teavm.cache.InMemoryMethodNodeCache;
 import org.teavm.cache.InMemoryProgramCache;
 import org.teavm.cache.InMemorySymbolTable;
@@ -75,7 +74,6 @@ public class IncrementalCBuilder {
     private MemoryCachedClassReaderSource classSource;
 
     private ReferenceCache referenceCache = new ReferenceCache();
-    private SimpleStringPool stringPool = new SimpleStringPool();
     private InMemorySymbolTable symbolTable = new InMemorySymbolTable();
     private InMemorySymbolTable fileSymbolTable = new InMemorySymbolTable();
     private InMemorySymbolTable variableSymbolTable = new InMemorySymbolTable();
@@ -309,7 +307,7 @@ public class IncrementalCBuilder {
         classSource.setProvider(name -> PreOptimizingClassHolderSource.optimize(classPathMapper, name));
 
         long startTime = System.currentTimeMillis();
-        CTarget cTarget = new CTarget(stringPool);
+        CTarget cTarget = new CTarget();
 
         TeaVM vm = new TeaVMBuilder(cTarget)
                 .setReferenceCache(referenceCache)
@@ -369,7 +367,6 @@ public class IncrementalCBuilder {
         astCache.discard();
         programCache.discard();
         buildTarget.reset();
-        stringPool.reset();
         cancelRequested = false;
     }
 

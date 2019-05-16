@@ -25,81 +25,25 @@ public class SimpleStringPool implements StringPool {
     private ObjectIntMap<String> stringIndexes = new ObjectIntHashMap<>();
     private final List<String> strings = new ArrayList<>();
     private final List<String> readonlyStrings = Collections.unmodifiableList(strings);
-    private final List<FreeIndex> freeIndexes = new ArrayList<>();
-    private FreeIndex firstFreeIndex;
-    private FreeIndex lastFreeIndex;
-    private ObjectIntMap<String> lastStringIndexes = new ObjectIntHashMap<>();
 
     @Override
     public int getStringIndex(String string) {
         int index = stringIndexes.getOrDefault(string, -1);
         if (index < 0) {
-            index = lastStringIndexes.getOrDefault(string, -1);
-            if (index >= 0) {
-                removeFreeIndex(index);
-                strings.set(index, string);
-            } else if (firstFreeIndex != null) {
-                index = firstFreeIndex.value;
-                freeIndexes.set(index, null);
-                firstFreeIndex = firstFreeIndex.next;
-                if (firstFreeIndex == null) {
-                    lastFreeIndex = null;
-                }
-                strings.set(index, string);
-            } else {
-                index = strings.size();
-                strings.add(string);
-            }
+            index = strings.size();
+            strings.add(string);
             stringIndexes.put(string, index);
         }
         return index;
     }
 
-    private void removeFreeIndex(int index) {
-        FreeIndex freeIndex = freeIndexes.get(index);
-        if (freeIndex == null) {
-            return;
-        }
-        freeIndexes.set(index, null);
-
-        if (freeIndex.previous != null) {
-            freeIndex.previous.next = freeIndex.next;
-        } else {
-            firstFreeIndex = freeIndex.next;
-        }
-        if (freeIndex.next != null) {
-            freeIndex.next.previous = freeIndex.previous;
-        } else {
-            lastFreeIndex = freeIndex.previous;
-        }
-    }
-
     @Override
-    public List<String> getStrings() {
+    public List<? extends String> getStrings() {
         return readonlyStrings;
     }
 
     public void reset() {
-        for (int i = freeIndexes.size(); i < strings.size(); ++i) {
-            FreeIndex freeIndex = new FreeIndex();
-            freeIndexes.add(freeIndex);
-            if (lastFreeIndex != null) {
-                freeIndex.previous = lastFreeIndex;
-                lastFreeIndex.next = freeIndex;
-            }
-            lastFreeIndex = freeIndex;
-        }
-        lastStringIndexes.clear();
-        lastStringIndexes.putAll(stringIndexes);
+        strings.clear();
         stringIndexes.clear();
-        for (int i = 0; i < strings.size(); ++i) {
-            strings.set(i, null);
-        }
-    }
-
-    static class FreeIndex {
-        int value;
-        FreeIndex previous;
-        FreeIndex next;
     }
 }

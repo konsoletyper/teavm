@@ -39,13 +39,13 @@ public final class ExceptionHandling {
             if (location.className == null || location.methodName == null) {
                 Console.printString("(Unknown method)");
             } else {
-                Console.printString(location.className);
+                Console.printString(location.className.value);
                 Console.printString(".");
-                Console.printString(location.methodName);
+                Console.printString(location.methodName.value);
             }
             Console.printString("(");
             if (location.fileName != null && location.lineNumber >= 0) {
-                Console.printString(location.fileName);
+                Console.printString(location.fileName.value);
                 Console.printString(":");
                 Console.printInt(location.lineNumber);
             }
@@ -120,8 +120,10 @@ public final class ExceptionHandling {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
             CallSite callSite = findCallSiteById(callSiteId, stackFrame);
             CallSiteLocation location = callSite.location;
-            StackTraceElement element = createElement(location != null ? location.className : "",
-                    location != null ? location.methodName : "", location != null ? location.fileName : null,
+            StackTraceElement element = createElement(
+                    location != null && location.className != null ? location.className.value : "",
+                    location != null && location.methodName != null ? location.methodName.value : "",
+                    location != null && location.fileName != null ? location.fileName.value : null,
                     location != null ? location.lineNumber : -1);
             target[index++] = element;
             stackFrame = ShadowStack.getNextStackFrame(stackFrame);

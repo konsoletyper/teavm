@@ -59,10 +59,17 @@ public class ResourceReadCIntrinsic implements Intrinsic {
 
         String resourceName = "resources/" + context.escapeFileName(invocation.getMethod().getClassName()) + ".h";
         context.includes().includePath(resourceName);
+        boolean isString = invocation.getMethod().getReturnType().isObject("java.lang.String");
+        if (isString) {
+            context.writer().print("teavm_dereferenceNullable(");
+        }
         context.writer().print("TEAVM_FIELD(");
         context.emit(invocation.getArguments().get(0));
         context.writer().print(", ").print(context.names().forClass(invocation.getMethod().getClassName()));
         context.writer().print(", ").print(name).print(")");
+        if (isString) {
+            context.writer().print(")");
+        }
     }
 
     private void applyForResourceMap(IntrinsicContext context, InvocationExpr invocation) {
