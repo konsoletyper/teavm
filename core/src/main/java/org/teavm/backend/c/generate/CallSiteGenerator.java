@@ -114,6 +114,9 @@ public class CallSiteGenerator {
     }
 
     private void generateLocations() {
+        if (locations.isEmpty()) {
+            return;
+        }
         includes.includeClass(CALL_SITE_LOCATION);
         writer.print("static ").print(callSiteLocationName).print(" callSiteLocations_" + callSitesName
                 + "[" + locations.size() + "] = {").indent();
@@ -147,6 +150,9 @@ public class CallSiteGenerator {
     }
 
     private void generateHandlers() {
+        if (exceptionHandlers.isEmpty()) {
+            return;
+        }
         includes.includeClass(EXCEPTION_HANDLER);
         writer.print("static ").print(exceptionHandlerName).print(" exceptionHandlers_" + callSitesName + "["
                 + exceptionHandlers.size() + "] = {").indent();

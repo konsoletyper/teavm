@@ -69,12 +69,11 @@ public class VirtualTableProvider {
         }
         if (cls.getParent() != null) {
             fillClass(cls.getParent(), methodCalledVirtually);
-            VirtualTable parentTable = virtualTables.get(cls.getParent());
-            for (VirtualTableEntry parentEntry : parentTable.entries.values()) {
-                VirtualTableEntry entry = new VirtualTableEntry(table, parentEntry.getMethod(),
-                        parentEntry.getImplementor(), parentEntry.getIndex());
-                table.entries.put(entry.getMethod(), entry);
-            }
+            copyEntriesFromSupertype(table, virtualTables.get(cls.getParent()));
+        }
+        for (String itf : cls.getInterfaces()) {
+            fillClass(itf, methodCalledVirtually);
+            copyEntriesFromSupertype(table, virtualTables.get(itf));
         }
 
         Set<MethodDescriptor> newDescriptors = virtualMethodMap.get(className);
@@ -103,6 +102,14 @@ public class VirtualTableProvider {
             if (entry != null && methodCalledVirtually.test(method.getReference())) {
                 entry.implementor = method.getReference();
             }
+        }
+    }
+
+    private void copyEntriesFromSupertype(VirtualTable table, VirtualTable supertypeTable) {
+        for (VirtualTableEntry parentEntry : supertypeTable.entries.values()) {
+            VirtualTableEntry entry = new VirtualTableEntry(table, parentEntry.getMethod(),
+                    parentEntry.getImplementor(), parentEntry.getIndex());
+            table.entries.put(entry.getMethod(), entry);
         }
     }
 

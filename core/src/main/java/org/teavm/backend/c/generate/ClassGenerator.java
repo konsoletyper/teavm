@@ -613,7 +613,6 @@ public class ClassGenerator {
         codeWriter.println(".superclass = " + parent + ",");
         codeWriter.println(".superinterfaceCount = " + superinterfaceCount + ",");
         codeWriter.println(".superinterfaces = " + superinterfaces + ",");
-        codeWriter.println(".enumValues = NULL,");
         codeWriter.println(".layout = " + layout + ",");
         codeWriter.println(".enumValues = " + enumConstants + ",");
         codeWriter.println(".init = " + initFunction);
