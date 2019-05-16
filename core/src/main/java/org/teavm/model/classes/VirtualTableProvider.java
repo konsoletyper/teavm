@@ -107,9 +107,12 @@ public class VirtualTableProvider {
 
     private void copyEntriesFromSupertype(VirtualTable table, VirtualTable supertypeTable) {
         for (VirtualTableEntry parentEntry : supertypeTable.entries.values()) {
-            VirtualTableEntry entry = new VirtualTableEntry(table, parentEntry.getMethod(),
-                    parentEntry.getImplementor(), parentEntry.getIndex());
-            table.entries.put(entry.getMethod(), entry);
+            VirtualTableEntry existingEntry = table.entries.get(parentEntry.getMethod());
+            if (existingEntry == null || existingEntry.getImplementor() == null) {
+                VirtualTableEntry entry = new VirtualTableEntry(table, parentEntry.getMethod(),
+                        parentEntry.getImplementor(), parentEntry.getIndex());
+                table.entries.put(entry.getMethod(), entry);
+            }
         }
     }
 
