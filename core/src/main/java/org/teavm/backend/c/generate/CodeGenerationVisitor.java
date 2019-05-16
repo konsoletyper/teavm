@@ -22,7 +22,9 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.nio.LongBuffer;
 import java.nio.ShortBuffer;
+import java.util.ArrayDeque;
 import java.util.ArrayList;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -78,6 +80,7 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.runtime.Allocator;
@@ -116,6 +119,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private IncludeManager includes;
     private boolean end;
     private boolean async;
+    private final Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
 
     static {
         BUFFER_TYPES.put(ByteBuffer.class.getName(), "int8_t");
@@ -148,137 +152,143 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(BinaryExpr expr) {
-        switch (expr.getOperation()) {
-            case COMPARE:
-                writer.print("teavm_compare_");
-                switch (expr.getType()) {
-                    case INT:
-                        writer.print("i32");
-                        break;
-                    case LONG:
-                        writer.print("i64");
-                        break;
-                    case FLOAT:
-                        writer.print("float");
-                        break;
-                    case DOUBLE:
-                        writer.print("double");
-                        break;
+        pushLocation(expr.getLocation());
+        try {
+            switch (expr.getOperation()) {
+                case COMPARE:
+                    writer.print("teavm_compare_");
+                    switch (expr.getType()) {
+                        case INT:
+                            writer.print("i32");
+                            break;
+                        case LONG:
+                            writer.print("i64");
+                            break;
+                        case FLOAT:
+                            writer.print("float");
+                            break;
+                        case DOUBLE:
+                            writer.print("double");
+                            break;
+                    }
+                    writer.print("(");
+                    expr.getFirstOperand().acceptVisitor(this);
+                    writer.print(", ");
+                    expr.getSecondOperand().acceptVisitor(this);
+                    writer.print(")");
+                    return;
+                case UNSIGNED_RIGHT_SHIFT: {
+                    String type = expr.getType() == OperationType.LONG ? "int64_t" : "int32_t";
+                    writer.print("((" + type + ") ((u" + type + ") ");
+
+                    expr.getFirstOperand().acceptVisitor(this);
+                    writer.print(" >> ");
+                    expr.getSecondOperand().acceptVisitor(this);
+
+                    writer.print("))");
+                    return;
                 }
-                writer.print("(");
-                expr.getFirstOperand().acceptVisitor(this);
-                writer.print(", ");
-                expr.getSecondOperand().acceptVisitor(this);
-                writer.print(")");
-                return;
-            case UNSIGNED_RIGHT_SHIFT: {
-                String type = expr.getType() == OperationType.LONG ? "int64_t" : "int32_t";
-                writer.print("((" + type + ") ((u" + type + ") ");
 
-                expr.getFirstOperand().acceptVisitor(this);
-                writer.print(" >> ");
-                expr.getSecondOperand().acceptVisitor(this);
+                case MODULO: {
+                    switch (expr.getType()) {
+                        case FLOAT:
+                            writer.print("fmodf(");
+                            expr.getFirstOperand().acceptVisitor(this);
+                            writer.print(", ");
+                            expr.getSecondOperand().acceptVisitor(this);
+                            writer.print(")");
+                            return;
+                        case DOUBLE:
+                            writer.print("fmod(");
+                            expr.getFirstOperand().acceptVisitor(this);
+                            writer.print(", ");
+                            expr.getSecondOperand().acceptVisitor(this);
+                            writer.print(")");
+                            return;
+                        default:
+                            break;
+                    }
+                    break;
+                }
 
-                writer.print("))");
-                return;
+                default:
+                    break;
             }
 
-            case MODULO: {
-                switch (expr.getType()) {
-                    case FLOAT:
-                        writer.print("fmodf(");
-                        expr.getFirstOperand().acceptVisitor(this);
-                        writer.print(", ");
-                        expr.getSecondOperand().acceptVisitor(this);
-                        writer.print(")");
-                        return;
-                    case DOUBLE:
-                        writer.print("fmod(");
-                        expr.getFirstOperand().acceptVisitor(this);
-                        writer.print(", ");
-                        expr.getSecondOperand().acceptVisitor(this);
-                        writer.print(")");
-                        return;
-                    default:
-                        break;
-                }
-                break;
+            writer.print("(");
+            expr.getFirstOperand().acceptVisitor(this);
+
+            String op;
+            switch (expr.getOperation()) {
+                case ADD:
+                    op = "+";
+                    break;
+                case SUBTRACT:
+                    op = "-";
+                    break;
+                case MULTIPLY:
+                    op = "*";
+                    break;
+                case DIVIDE:
+                    op = "/";
+                    break;
+                case MODULO:
+                    op = "%";
+                    break;
+                case BITWISE_AND:
+                    op = "&";
+                    break;
+                case BITWISE_OR:
+                    op = "|";
+                    break;
+                case BITWISE_XOR:
+                    op = "^";
+                    break;
+                case LEFT_SHIFT:
+                    op = "<<";
+                    break;
+                case RIGHT_SHIFT:
+                    op = ">>";
+                    break;
+                case EQUALS:
+                    op = "==";
+                    break;
+                case NOT_EQUALS:
+                    op = "!=";
+                    break;
+                case GREATER:
+                    op = ">";
+                    break;
+                case GREATER_OR_EQUALS:
+                    op = ">=";
+                    break;
+                case LESS:
+                    op = "<";
+                    break;
+                case LESS_OR_EQUALS:
+                    op = "<=";
+                    break;
+                case AND:
+                    op = "&&";
+                    break;
+                case OR:
+                    op = "||";
+                    break;
+                default:
+                    throw new AssertionError();
             }
 
-            default:
-                break;
+            writer.print(" ").print(op).print(" ");
+            expr.getSecondOperand().acceptVisitor(this);
+            writer.print(")");
+        } finally {
+            popLocation(expr.getLocation());
         }
-
-        writer.print("(");
-        expr.getFirstOperand().acceptVisitor(this);
-
-        String op;
-        switch (expr.getOperation()) {
-            case ADD:
-                op = "+";
-                break;
-            case SUBTRACT:
-                op = "-";
-                break;
-            case MULTIPLY:
-                op = "*";
-                break;
-            case DIVIDE:
-                op = "/";
-                break;
-            case MODULO:
-                op = "%";
-                break;
-            case BITWISE_AND:
-                op = "&";
-                break;
-            case BITWISE_OR:
-                op = "|";
-                break;
-            case BITWISE_XOR:
-                op = "^";
-                break;
-            case LEFT_SHIFT:
-                op = "<<";
-                break;
-            case RIGHT_SHIFT:
-                op = ">>";
-                break;
-            case EQUALS:
-                op = "==";
-                break;
-            case NOT_EQUALS:
-                op = "!=";
-                break;
-            case GREATER:
-                op = ">";
-                break;
-            case GREATER_OR_EQUALS:
-                op = ">=";
-                break;
-            case LESS:
-                op = "<";
-                break;
-            case LESS_OR_EQUALS:
-                op = "<=";
-                break;
-            case AND:
-                op = "&&";
-                break;
-            case OR:
-                op = "||";
-                break;
-            default:
-                throw new AssertionError();
-        }
-
-        writer.print(" ").print(op).print(" ");
-        expr.getSecondOperand().acceptVisitor(this);
-        writer.print(")");
     }
 
     @Override
     public void visit(UnaryExpr expr) {
+        pushLocation(expr.getLocation());
         switch (expr.getOperation()) {
             case NOT:
                 writer.print("(");
@@ -316,10 +326,12 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 writer.print(")");
                 break;
         }
+        popLocation(expr.getLocation());
     }
 
     @Override
     public void visit(ConditionalExpr expr) {
+        pushLocation(expr.getLocation());
         writer.print("(");
         expr.getCondition().acceptVisitor(this);
         writer.print(" ? ");
@@ -327,34 +339,43 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         writer.print(" : ");
         expr.getAlternative().acceptVisitor(this);
         writer.print(")");
+        popLocation(expr.getLocation());
     }
 
     @Override
     public void visit(ConstantExpr expr) {
+        pushLocation(expr.getLocation());
         CodeGeneratorUtil.writeValue(writer, context, includes, expr.getValue());
+        popLocation(expr.getLocation());
     }
 
     @Override
     public void visit(VariableExpr expr) {
+        pushLocation(expr.getLocation());
         if (expr.getIndex() == 0) {
             writer.print("teavm_this_");
         } else {
             writer.print("teavm_local_" + expr.getIndex());
         }
+        popLocation(expr.getLocation());
     }
 
     @Override
     public void visit(SubscriptExpr expr) {
+        pushLocation(expr.getLocation());
         writer.print("TEAVM_ARRAY_AT(");
         expr.getArray().acceptVisitor(this);
         writer.print(", ").print(getArrayType(expr.getType())).print(", ");
         expr.getIndex().acceptVisitor(this);
         writer.print(")");
+        popLocation(expr.getLocation());
     }
 
     @Override
     public void visit(UnwrapArrayExpr expr) {
+        pushLocation(expr.getLocation());
         expr.getArray().acceptVisitor(this);
+        popLocation(expr.getLocation());
     }
 
     private static String getArrayType(ArrayType type) {
@@ -393,10 +414,13 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
         Intrinsic intrinsic = context.getIntrinsic(expr.getMethod());
         if (intrinsic != null) {
+            pushLocation(expr.getLocation());
             intrinsic.apply(intrinsicContext, expr);
+            popLocation(expr.getLocation());
             return;
         }
 
+        pushLocation(expr.getLocation());
         switch (expr.getType()) {
             case CONSTRUCTOR: {
                 String receiver = allocTemporaryVariable(CVariableType.PTR);
@@ -482,6 +506,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 break;
             }
         }
+
+        popLocation(expr.getLocation());
     }
 
     private void generateWrappedNativeCall(MethodReader method, InvocationExpr expr) {
@@ -647,6 +673,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     public void visit(QualificationExpr expr) {
         FieldReference field = expr.getField();
         if (isMonitorField(field)) {
+            pushLocation(expr.getLocation());
             String tmp = allocTemporaryVariable(CVariableType.INT);
             writer.print("(" + tmp + " = TEAVM_FIELD(");
             expr.getQualified().acceptVisitor(this);
@@ -654,9 +681,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             writer.print(", ").print(names.forClass(field.getClassName()) + ", "
                     + names.forMemberField(field) + ")");
             writer.print(", TEAVM_UNPACK_MONITOR(" + tmp + "))");
+            popLocation(expr.getLocation());
             return;
         }
 
+        pushLocation(expr.getLocation());
         includes.includeClass(field.getClassName());
         if (expr.getQualified() != null) {
             writer.print("TEAVM_FIELD(");
@@ -665,6 +694,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         } else {
             writer.print(names.forStaticField(field));
         }
+        popLocation(expr.getLocation());
     }
 
     private boolean isMonitorField(FieldReference field) {
@@ -673,9 +703,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(NewExpr expr) {
+        pushLocation(expr.getLocation());
         includes.includeClass(expr.getConstructedClass());
         includes.includeClass(ALLOC_METHOD.getClassName());
         allocObject(expr.getConstructedClass());
+        popLocation(expr.getLocation());
     }
 
     private void allocObject(String className) {
@@ -686,6 +718,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(NewArrayExpr expr) {
+        pushLocation(expr.getLocation());
         ValueType type = ValueType.arrayOf(expr.getType());
         writer.print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(&")
                 .print(names.forClassInstance(type)).print(", ");
@@ -693,6 +726,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         includes.includeType(type);
         expr.getLength().acceptVisitor(this);
         writer.print(")");
+        popLocation(expr.getLocation());
     }
 
     @Override
@@ -714,10 +748,12 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(InstanceOfExpr expr) {
+        pushLocation(expr.getLocation());
         writer.print("teavm_instanceof(");
         expr.getExpr().acceptVisitor(this);
         includes.includeType(expr.getType());
         writer.print(", ").print(names.forSupertypeFunction(expr.getType())).print(")");
+        popLocation(expr.getLocation());
     }
 
     @Override
@@ -730,14 +766,17 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 return;
             }
         }
+        pushLocation(expr.getLocation());
         writer.print("teavm_checkcast(");
         expr.getValue().acceptVisitor(this);
         includes.includeType(expr.getTarget());
         writer.print(", ").print(names.forSupertypeFunction(expr.getTarget())).print(")");
+        popLocation(expr.getLocation());
     }
 
     @Override
     public void visit(PrimitiveCastExpr expr) {
+        pushLocation(expr.getLocation());
         writer.print("((");
         switch (expr.getTarget()) {
             case INT:
@@ -756,10 +795,12 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         writer.print(") ");
         expr.getValue().acceptVisitor(this);
         writer.print(")");
+        popLocation(expr.getLocation());
     }
 
     @Override
     public void visit(AssignmentStatement statement) {
+        pushLocation(statement.getLocation());
         if (statement.getLeftValue() != null) {
             if (statement.getLeftValue() instanceof QualificationExpr) {
                 QualificationExpr qualification = (QualificationExpr) statement.getLeftValue();
@@ -772,6 +813,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                             + names.forMemberField(field) + ") = TEAVM_PACK_MONITOR(");
                     statement.getRightValue().acceptVisitor(this);
                     writer.println(");");
+                    popLocation(statement.getLocation());
                     return;
                 }
             }
@@ -785,6 +827,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         if (statement.isAsync()) {
             emitSuspendChecker();
         }
+
+        popLocation(statement.getLocation());
     }
 
     @Override
@@ -809,9 +853,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(ConditionalStatement statement) {
         while (true) {
+            pushLocation(statement.getCondition().getLocation());
             writer.print("if (");
             statement.getCondition().acceptVisitor(this);
             writer.println(") {").indent();
+            popLocation(statement.getCondition().getLocation());
 
             visitMany(statement.getConsequent());
             writer.outdent().print("}");
@@ -836,9 +882,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(SwitchStatement statement) {
+        pushLocation(statement.getValue().getLocation());
         writer.print("switch (");
         statement.getValue().acceptVisitor(this);
         writer.print(") {").println().indent();
+        popLocation(statement.getValue().getLocation());
 
         for (SwitchClause clause : statement.getClauses()) {
             for (int condition : clause.getConditions()) {
@@ -906,44 +954,54 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(BreakStatement statement) {
+        pushLocation(statement.getLocation());
         if (statement.getTarget() == null || statement.getTarget().getId() == null) {
             writer.println("break;");
         } else {
             writer.println("goto teavm_label_" + statement.getTarget().getId() + ";");
         }
+        popLocation(statement.getLocation());
     }
 
     @Override
     public void visit(ContinueStatement statement) {
+        pushLocation(statement.getLocation());
         if (statement.getTarget() == null || statement.getTarget().getId() == null) {
             writer.println("continue;");
         } else {
             writer.println("goto teavm_cnt_" + statement.getTarget().getId() + ";");
         }
+        popLocation(statement.getLocation());
     }
 
     @Override
     public void visit(ReturnStatement statement) {
+        pushLocation(statement.getLocation());
         writer.print("return");
         if (statement.getResult() != null) {
             writer.print(" ");
             statement.getResult().acceptVisitor(this);
         }
         writer.println(";");
+        popLocation(statement.getLocation());
     }
 
     @Override
     public void visit(ThrowStatement statement) {
+        pushLocation(statement.getLocation());
         includes.includeClass(THROW_EXCEPTION_METHOD.getClassName());
         writer.print(names.forMethod(THROW_EXCEPTION_METHOD)).print("(");
         statement.getException().acceptVisitor(this);
         writer.println(");");
+        popLocation(statement.getLocation());
     }
 
     @Override
     public void visit(InitClassStatement statement) {
+        pushLocation(statement.getLocation());
         includes.includeClass(statement.getClassName());
         writer.println(names.forClassInitializer(statement.getClassName()) + "();");
+        popLocation(statement.getLocation());
     }
 
     @Override
@@ -956,18 +1014,22 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(MonitorEnterStatement statement) {
+        pushLocation(statement.getLocation());
         includes.includeClass("java.lang.Object");
         writer.print(names.forMethod(async ? MONITOR_ENTER : MONITOR_ENTER_SYNC)).print("(");
         statement.getObjectRef().acceptVisitor(this);
         writer.println(");");
+        popLocation(statement.getLocation());
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
+        pushLocation(statement.getLocation());
         includes.includeClass("java.lang.Object");
         writer.print(names.forMethod(async ? MONITOR_EXIT : MONITOR_EXIT_SYNC)).print("(");
         statement.getObjectRef().acceptVisitor(this);
         writer.println(");");
+        popLocation(statement.getLocation());
     }
 
     public void emitSuspendChecker() {
@@ -1042,5 +1104,47 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             }
         }
         return CVariableType.PTR;
+    }
+
+    private void pushLocation(TextLocation location) {
+        if (location == null) {
+            return;
+        }
+        LocationStackEntry prevEntry = locationStack.peek();
+        if (prevEntry == null || !location.equals(prevEntry.location)) {
+            if (location.getFileName() == null) {
+                writer.nosource();
+            } else {
+                writer.source(location.getFileName(), location.getLine());
+            }
+        }
+        locationStack.push(new LocationStackEntry(location));
+    }
+
+    private void popLocation(TextLocation location) {
+        if (location == null) {
+            return;
+        }
+        LocationStackEntry prevEntry = locationStack.pop();
+        LocationStackEntry entry = locationStack.peek();
+        if (entry != null) {
+            if (!entry.location.equals(prevEntry.location)) {
+                if (entry.location.getFileName() == null) {
+                    writer.nosource();
+                } else {
+                    writer.source(entry.location.getFileName(), entry.location.getLine());
+                }
+            }
+        } else {
+            writer.nosource();
+        }
+    }
+
+    static class LocationStackEntry {
+        final TextLocation location;
+
+        LocationStackEntry(TextLocation location) {
+            this.location = location;
+        }
     }
 }

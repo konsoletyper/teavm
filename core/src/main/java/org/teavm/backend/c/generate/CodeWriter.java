@@ -137,4 +137,8 @@ public abstract class CodeWriter {
     protected abstract void indentBy(int amount);
 
     public abstract void flush();
+
+    public abstract void source(String fileName, int lineNumber);
+
+    public abstract void nosource();
 }

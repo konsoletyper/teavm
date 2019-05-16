@@ -144,6 +144,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private Characteristics characteristics;
     private Set<MethodReference> asyncMethods;
     private boolean incremental;
+    private boolean lineNumbersGenerated;
     private StringPool stringPool;
 
     public CTarget() {
@@ -160,6 +161,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     public void setIncremental(boolean incremental) {
         this.incremental = incremental;
+    }
+
+    public void setLineNumbersGenerated(boolean lineNumbersGenerated) {
+        this.lineNumbersGenerated = lineNumbersGenerated;
     }
 
     @Override
@@ -332,8 +337,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 controller.getDependencyInfo(), stringPool, nameProvider, controller.getDiagnostics(), classes,
                 intrinsics, generators, asyncMethods::contains, buildTarget, incremental);
 
-        BufferedCodeWriter runtimeWriter = new BufferedCodeWriter();
-        BufferedCodeWriter runtimeHeaderWriter = new BufferedCodeWriter();
+        BufferedCodeWriter runtimeWriter = new BufferedCodeWriter(false);
+        BufferedCodeWriter runtimeHeaderWriter = new BufferedCodeWriter(false);
         emitResource(runtimeWriter, "runtime.c");
 
         runtimeHeaderWriter.println("#pragma once");
@@ -393,8 +398,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         classGenerator.prepare(classes);
 
         for (String className : classNames) {
-            BufferedCodeWriter writer = new BufferedCodeWriter();
-            BufferedCodeWriter headerWriter = new BufferedCodeWriter();
+            BufferedCodeWriter writer = new BufferedCodeWriter(lineNumbersGenerated);
+            BufferedCodeWriter headerWriter = new BufferedCodeWriter(false);
             ClassHolder cls = classes.get(className);
             if (cls != null) {
                 classGenerator.generateClass(writer, headerWriter, cls);
@@ -408,8 +413,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             if (type instanceof ValueType.Object) {
                 continue;
             }
-            BufferedCodeWriter writer = new BufferedCodeWriter();
-            BufferedCodeWriter headerWriter = new BufferedCodeWriter();
+            BufferedCodeWriter writer = new BufferedCodeWriter(false);
+            BufferedCodeWriter headerWriter = new BufferedCodeWriter(false);
             classGenerator.generateType(writer, headerWriter, type);
             String name = ClassGenerator.fileName(type);
             OutputFileUtil.write(writer, name + ".c", buildTarget);
@@ -451,8 +456,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateCallSites(BuildTarget buildTarget, GenerationContext context,
             Collection<? extends String> classNames) throws IOException {
-        BufferedCodeWriter writer = new BufferedCodeWriter();
-        BufferedCodeWriter headerWriter = new BufferedCodeWriter();
+        BufferedCodeWriter writer = new BufferedCodeWriter(false);
+        BufferedCodeWriter headerWriter = new BufferedCodeWriter(false);
 
         IncludeManager includes = new SimpleIncludeManager(writer);
         includes.init("callsites.c");
@@ -491,8 +496,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     }
 
     private void generateStrings(BuildTarget buildTarget, StringPool stringPool) throws IOException {
-        BufferedCodeWriter writer = new BufferedCodeWriter();
-        BufferedCodeWriter headerWriter = new BufferedCodeWriter();
+        BufferedCodeWriter writer = new BufferedCodeWriter(false);
+        BufferedCodeWriter headerWriter = new BufferedCodeWriter(false);
 
         headerWriter.println("#pragma once");
         headerWriter.println("#include \"runtime.h\"");
@@ -588,7 +593,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateMainFile(GenerationContext context, ListableClassHolderSource classes,
             List<? extends ValueType> types, BuildTarget buildTarget) throws IOException {
-        BufferedCodeWriter writer = new BufferedCodeWriter();
+        BufferedCodeWriter writer = new BufferedCodeWriter(false);
         IncludeManager includes = new SimpleIncludeManager(writer);
         includes.init("main.c");
         includes.includePath("runtime.h");
@@ -601,7 +606,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateAllFile(ListableClassHolderSource classes, List<? extends ValueType> types,
             BuildTarget buildTarget) throws IOException {
-        BufferedCodeWriter writer = new BufferedCodeWriter();
+        BufferedCodeWriter writer = new BufferedCodeWriter(false);
         IncludeManager includes = new SimpleIncludeManager(writer);
         includes.init("all.c");
         includes.includePath("runtime.c");

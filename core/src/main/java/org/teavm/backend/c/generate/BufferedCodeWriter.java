@@ -18,18 +18,24 @@ package org.teavm.backend.c.generate;
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 
 public class BufferedCodeWriter extends CodeWriter {
     private List<Fragment> fragments = new ArrayList<>();
     private int currentIndent;
     private int lastIndent;
     private StringBuilder buffer = new StringBuilder();
+    private boolean lineNumbersEmitted;
+    private String lastFileName;
+    private int lastLineNumber;
+    private boolean locationDirty;
 
-    public BufferedCodeWriter() {
+    public BufferedCodeWriter(boolean lineNumbersEmitted) {
+        this.lineNumbersEmitted = lineNumbersEmitted;
     }
 
-    public void writeTo(PrintWriter writer) {
-        WriterWithContext writerWithContext = new WriterWithContext(writer);
+    public void writeTo(PrintWriter writer, String fileName) {
+        WriterWithContext writerWithContext = new WriterWithContext(writer, fileName);
         for (Fragment fragment : fragments) {
             fragment.writeTo(writerWithContext);
         }
@@ -38,8 +44,12 @@ public class BufferedCodeWriter extends CodeWriter {
     @Override
     public CodeWriter fragment() {
         flush();
-        BufferedCodeWriter innerWriter = new BufferedCodeWriter();
+        BufferedCodeWriter innerWriter = new BufferedCodeWriter(lineNumbersEmitted);
+        innerWriter.lastFileName = lastFileName;
+        innerWriter.lastLineNumber = lastLineNumber;
+        innerWriter.locationDirty = locationDirty;
         fragments.add(new InnerWriterFragment(innerWriter.fragments));
+        locationDirty = true;
         return innerWriter;
     }
 
@@ -49,6 +59,9 @@ public class BufferedCodeWriter extends CodeWriter {
         buffer.setLength(0);
         lastIndent = currentIndent;
         currentIndent = 0;
+        if (lineNumbersEmitted) {
+            lastLineNumber++;
+        }
     }
 
     @Override
@@ -66,35 +79,121 @@ public class BufferedCodeWriter extends CodeWriter {
     }
 
     @Override
+    public void source(String fileName, int lineNumber) {
+        if (!lineNumbersEmitted) {
+            return;
+        }
+
+        if (!Objects.equals(lastFileName, fileName) || lastLineNumber != lineNumber || locationDirty) {
+            flush();
+            fragments.add(new SourceFragment(fileName, lineNumber));
+            lastFileName = fileName;
+            lastLineNumber = lineNumber;
+            locationDirty = false;
+        }
+    }
+
+    @Override
+    public void nosource() {
+        source(null, 0);
+    }
+
+    @Override
     public void flush() {
-        fragments.add(new SimpleFragment(false, lastIndent, buffer.toString()));
-        lastIndent = currentIndent;
-        currentIndent = 0;
-        buffer.setLength(0);
+        if (buffer.length() > 0 || lastIndent != 0 || currentIndent != 0) {
+            fragments.add(new SimpleFragment(false, lastIndent, buffer.toString()));
+            lastIndent = currentIndent;
+            currentIndent = 0;
+            buffer.setLength(0);
+        }
     }
 
     static class WriterWithContext {
         PrintWriter writer;
         boolean isNewLine = true;
         int indentLevel;
+        String initialFileName;
+        String fileName;
+        int lineNumber;
+        int absLineNumber = 1;
+        String pendingFileName;
+        int pendingLineNumber = -1;
 
-        WriterWithContext(PrintWriter writer) {
+        WriterWithContext(PrintWriter writer, String fileName) {
             this.writer = writer;
+            this.fileName = fileName;
+            initialFileName = fileName;
+            lineNumber = 1;
         }
 
         void append(String text) {
+            if (text.isEmpty()) {
+                return;
+            }
             if (isNewLine) {
-                for (int i = 0; i < indentLevel; ++i) {
-                    writer.print("    ");
+                if (pendingFileName != null || pendingLineNumber >= 0) {
+                    printLineDirective(pendingFileName, pendingLineNumber);
+                    pendingLineNumber = -1;
+                    pendingFileName = null;
                 }
+                printIndent();
                 isNewLine = false;
             }
             writer.print(text);
         }
 
+        private void printLineDirective(String fileName, int lineNumber) {
+            if (Objects.equals(this.fileName, fileName) && lineNumber == this.lineNumber) {
+                return;
+            }
+
+            printIndent();
+            writer.print("#line ");
+            if (Objects.equals(fileName, initialFileName)) {
+                lineNumber = absLineNumber + 1;
+            }
+            writer.print(lineNumber);
+            if (!Objects.equals(fileName, this.fileName)) {
+                writer.print(" \"");
+                escape(writer, fileName);
+                writer.print("\"");
+            }
+            writer.println();
+            absLineNumber++;
+            this.fileName = fileName;
+            this.lineNumber = lineNumber;
+        }
+
         void newLine() {
+            lineNumber++;
+            absLineNumber++;
             writer.println();
             isNewLine = true;
+        }
+
+        private void printIndent() {
+            for (int i = 0; i < indentLevel; ++i) {
+                writer.print("    ");
+            }
+        }
+
+        void source(String fileName, int lineNumber) {
+            if (fileName == null) {
+                fileName = initialFileName;
+                lineNumber = absLineNumber;
+            }
+            if (!Objects.equals(this.fileName, fileName) || this.lineNumber != lineNumber) {
+                if (isNewLine) {
+                    pendingFileName = fileName;
+                    pendingLineNumber = lineNumber;
+                } else {
+                    this.lineNumber++;
+                    absLineNumber++;
+                    writer.println();
+                    printLineDirective(fileName, lineNumber);
+                    isNewLine = true;
+                }
+            }
         }
     }
 
@@ -119,6 +218,62 @@ public class BufferedCodeWriter extends CodeWriter {
             writer.append(text);
             if (newLine) {
                 writer.newLine();
+            }
+        }
+    }
+
+    static class SourceFragment extends Fragment {
+        private String fileName;
+        private int lineNumber;
+
+        SourceFragment(String fileName, int lineNumber) {
+            this.fileName = fileName;
+            this.lineNumber = lineNumber;
+        }
+
+        @Override
+        void writeTo(WriterWithContext writer) {
+            writer.source(fileName, lineNumber);
+        }
+    }
+
+    private static void escape(PrintWriter writer, String string) {
+        int chunkSize = 256;
+        for (int i = 0; i < string.length(); i += chunkSize) {
+            int last = Math.min(i + chunkSize, string.length());
+
+            for (int j = i; j < last; ++j) {
+                char c = string.charAt(j);
+                switch (c) {
+                    case '\\':
+                        writer.print("\\\\");
+                        break;
+                    case '"':
+                        writer.print("\\\"");
+                        break;
+                    case '\r':
+                        writer.print("\\r");
+                        break;
+                    case '\n':
+                        writer.print("\\n");
+                        break;
+                    case '\t':
+                        writer.print("\\t");
+                        break;
+                    default:
+                        if (c < 32) {
+                            writer.print("\\0" + Character.forDigit(c >> 3, 8) + Character.forDigit(c & 0x7, 8));
+                        } else if (c > 127) {
+                            writer.print("\\u"
+                                    + Character.forDigit(c >> 12, 16)
+                                    + Character.forDigit((c >> 8) & 15, 16)
+                                    + Character.forDigit((c >> 4) & 15, 16)
+                                    + Character.forDigit(c & 15, 16));
+                        } else {
+                            writer.print(c);
+                        }
+                        break;
+                }
             }
         }
     }

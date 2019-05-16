@@ -321,6 +321,7 @@ public class TeaVMTool {
     private CTarget prepareCTarget() {
         cTarget = new CTarget();
         cTarget.setMinHeapSize(minHeapSize);
+        cTarget.setLineNumbersGenerated(debugInformationGenerated);
         return cTarget;
     }
 

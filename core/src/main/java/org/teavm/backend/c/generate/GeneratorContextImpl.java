@@ -92,12 +92,12 @@ class GeneratorContextImpl implements GeneratorContext {
 
     @Override
     public FileGenerator createSourceFile(String path) {
-        return createFile(new BufferedCodeWriter(), path);
+        return createFile(new BufferedCodeWriter(false), path);
     }
 
     @Override
     public FileGenerator createHeaderFile(String path) {
-        BufferedCodeWriter writer = new BufferedCodeWriter();
+        BufferedCodeWriter writer = new BufferedCodeWriter(false);
         writer.println("#pragma once");
         return createFile(writer, path);
     }

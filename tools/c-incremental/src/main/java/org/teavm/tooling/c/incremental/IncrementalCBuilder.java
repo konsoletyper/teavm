@@ -64,6 +64,7 @@ public class IncrementalCBuilder {
     private String mainClass;
     private String[] classPath;
     private int minHeapSize = 32;
+    private boolean lineNumbersGenerated;
     private String targetPath;
     private String externalTool;
     private String externalToolWorkingDir;
@@ -105,6 +106,10 @@ public class IncrementalCBuilder {
 
     public void setMinHeapSize(int minHeapSize) {
         this.minHeapSize = minHeapSize;
+    }
+
+    public void setLineNumbersGenerated(boolean lineNumbersGenerated) {
+        this.lineNumbersGenerated = lineNumbersGenerated;
     }
 
     public void setTargetPath(String targetPath) {
@@ -316,6 +321,7 @@ public class IncrementalCBuilder {
 
         cTarget.setIncremental(true);
         cTarget.setMinHeapSize(minHeapSize * 1024 * 1024);
+        cTarget.setLineNumbersGenerated(lineNumbersGenerated);
         vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
         vm.setCacheStatus(classSource);
         vm.addVirtualMethods(m -> true);

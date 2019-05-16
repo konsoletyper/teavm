@@ -53,6 +53,10 @@ public class TeaVMCBuilderRunner {
                 .withLongOpt("verbose")
                 .create('v'));
         options.addOption(OptionBuilder
+                .withDescription("generate debugger-friendly code")
+                .withLongOpt("debug")
+                .create('g'));
+        options.addOption(OptionBuilder
                 .withLongOpt("min-heap")
                 .withArgName("size")
                 .hasArg()
@@ -103,6 +107,7 @@ public class TeaVMCBuilderRunner {
         parseExternalTool();
 
         builder.setLog(new ConsoleTeaVMToolLog(commandLine.hasOption('v')));
+        builder.setLineNumbersGenerated(commandLine.hasOption('g'));
 
         String[] args = commandLine.getArgs();
         if (args.length != 1) {

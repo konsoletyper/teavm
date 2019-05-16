@@ -28,7 +28,7 @@ public final class OutputFileUtil {
     public static void write(BufferedCodeWriter code, String name, BuildTarget buildTarget) throws IOException {
         try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(
                 buildTarget.createResource(name), StandardCharsets.UTF_8))) {
-            code.writeTo(writer);
+            code.writeTo(writer, name);
         }
     }
 }
