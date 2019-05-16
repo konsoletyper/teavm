@@ -622,6 +622,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         IncludeManager includes = new SimpleIncludeManager(writer);
         includes.init("all.c");
         includes.includePath("runtime.c");
+        includes.includePath("stringhash.c");
         includes.includePath("strings.c");
         includes.includePath("callsites.c");
 
