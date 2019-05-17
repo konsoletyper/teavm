@@ -72,7 +72,7 @@ import org.teavm.dependency.DependencyListener;
 import org.teavm.dependency.DependencyType;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.interop.PlatformMarker;
-import org.teavm.interop.PlatformMarkers;
+import org.teavm.interop.Platforms;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.CallLocation;
@@ -726,7 +726,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     @Override
     public String[] getPlatformTags() {
-        return new String[] { PlatformMarkers.JAVASCRIPT };
+        return new String[] { Platforms.JAVASCRIPT };
     }
 
     @Override

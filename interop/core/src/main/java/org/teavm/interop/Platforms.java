@@ -15,8 +15,8 @@
  */
 package org.teavm.interop;
 
-public final class PlatformMarkers {
-    private PlatformMarkers() {
+public final class Platforms {
+    private Platforms() {
     }
 
     public static final String JAVASCRIPT = "javascript";

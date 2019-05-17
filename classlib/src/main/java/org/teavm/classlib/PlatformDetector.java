@@ -16,28 +16,28 @@
 package org.teavm.classlib;
 
 import org.teavm.interop.PlatformMarker;
-import org.teavm.interop.PlatformMarkers;
+import org.teavm.interop.Platforms;
 
 public final class PlatformDetector {
     private PlatformDetector() {
     }
 
-    @PlatformMarker(PlatformMarkers.WEBASSEMBLY)
+    @PlatformMarker(Platforms.WEBASSEMBLY)
     public static boolean isWebAssembly() {
         return false;
     }
 
-    @PlatformMarker(PlatformMarkers.JAVASCRIPT)
+    @PlatformMarker(Platforms.JAVASCRIPT)
     public static boolean isJavaScript() {
         return false;
     }
 
-    @PlatformMarker(PlatformMarkers.C)
+    @PlatformMarker(Platforms.C)
     public static boolean isC() {
         return false;
     }
 
-    @PlatformMarker(PlatformMarkers.LOW_LEVEL)
+    @PlatformMarker(Platforms.LOW_LEVEL)
     public static boolean isLowLevel() {
         return false;
     }

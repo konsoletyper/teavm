@@ -16,11 +16,16 @@
 package org.teavm.model.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.interop.SupportedOn;
+import org.teavm.interop.UnsupportedOn;
 import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 import org.teavm.model.optimization.UnreachableBasicBlockEliminator;
@@ -35,14 +40,17 @@ public class MissingItemsProcessor {
     private Collection<String> reachableClasses;
     private Collection<MethodReference> reachableMethods;
     private Collection<FieldReference> reachableFields;
+    private Set<String> platformTags = new HashSet<>();
 
-    public MissingItemsProcessor(DependencyInfo dependencyInfo, ClassHierarchy hierarchy, Diagnostics diagnostics) {
+    public MissingItemsProcessor(DependencyInfo dependencyInfo, ClassHierarchy hierarchy, Diagnostics diagnostics,
+            String[] platformTags) {
         this.dependencyInfo = dependencyInfo;
         this.diagnostics = diagnostics;
         this.hierarchy = hierarchy;
         reachableClasses = dependencyInfo.getReachableClasses();
         reachableMethods = dependencyInfo.getReachableMethods();
         reachableFields = dependencyInfo.getReachableFields();
+        this.platformTags.addAll(Arrays.asList(platformTags));
     }
 
     public void processClass(ClassHolder cls) {
@@ -132,9 +140,21 @@ public class MissingItemsProcessor {
     }
 
     private boolean checkClass(TextLocation location, String className) {
-        if (!reachableClasses.contains(className) || !dependencyInfo.getClass(className).isMissing()) {
+        if (!reachableClasses.contains(className)) {
+            return false;
+        }
+
+        if (!dependencyInfo.getClass(className).isMissing()) {
+            ClassReader cls = dependencyInfo.getClassSource().get(className);
+            if (cls != null && !checkPlatformSupported(cls.getAnnotations())) {
+                diagnostics.error(new CallLocation(methodRef, location), "Class {{c0}} is not supported on "
+                        + "current target", className);
+                emitExceptionThrow(location, NoClassDefFoundError.class.getName(), "Class not found: " + className);
+                return false;
+            }
             return true;
         }
+
         diagnostics.error(new CallLocation(methodRef, location), "Class {{c0}} was not found",
                 className);
         emitExceptionThrow(location, NoClassDefFoundError.class.getName(), "Class not found: " + className);
@@ -159,14 +179,28 @@ public class MissingItemsProcessor {
             return true;
         }
         MethodDependencyInfo methodDep = dependencyInfo.getMethod(method);
-        if (!methodDep.isMissing() || !methodDep.isUsed()) {
+        if (!methodDep.isUsed()) {
+            return true;
+        }
+
+        if (!methodDep.isMissing()) {
+            ClassReader cls = dependencyInfo.getClassSource().get(method.getClassName());
+            if (cls != null) {
+                MethodReader methodReader = cls.getMethod(method.getDescriptor());
+                if (methodReader != null && !checkPlatformSupported(methodReader.getAnnotations())) {
+                    diagnostics.error(new CallLocation(methodRef, location), "Method {{m0}} is not supported on "
+                            + "current target", method);
+                    emitExceptionThrow(location, NoSuchMethodError.class.getName(), "Method not found: " + method);
+                    return false;
+                }
+            }
             return true;
         }
 
         diagnostics.error(new CallLocation(methodRef, location), "Method {{m0}} was not found",
                 method);
         emitExceptionThrow(location, NoSuchMethodError.class.getName(), "Method not found: " + method);
-        return true;
+        return false;
     }
 
     private boolean checkVirtualMethod(TextLocation location, MethodReference method) {
@@ -197,6 +231,28 @@ public class MissingItemsProcessor {
         diagnostics.error(new CallLocation(methodRef, location), "Field {{f0}} was not found",
                 field);
         emitExceptionThrow(location, NoSuchFieldError.class.getName(), "Field not found: " + field);
+        return true;
+    }
+
+    private boolean checkPlatformSupported(AnnotationContainerReader annotations) {
+        AnnotationReader supportedAnnot = annotations.get(SupportedOn.class.getName());
+        AnnotationReader unsupportedAnnot = annotations.get(UnsupportedOn.class.getName());
+        if (supportedAnnot != null) {
+            for (AnnotationValue value : supportedAnnot.getValue("value").getList()) {
+                if (platformTags.contains(value.getString())) {
+                    return true;
+                }
+            }
+            return false;
+        }
+        if (unsupportedAnnot != null) {
+            for (AnnotationValue value : unsupportedAnnot.getValue("value").getList()) {
+                if (platformTags.contains(value.getString())) {
+                    return false;
+                }
+            }
+            return true;
+        }
         return true;
     }
 

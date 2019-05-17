@@ -551,7 +551,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         Linker linker = new Linker(dependency);
         MutableClassHolderSource cutClasses = new MutableClassHolderSource();
         MissingItemsProcessor missingItemsProcessor = new MissingItemsProcessor(dependency,
-                dependency.getClassHierarchy(), diagnostics);
+                dependency.getClassHierarchy(), diagnostics, target.getPlatformTags());
         if (wasCancelled()) {
             return cutClasses;
         }
@@ -913,7 +913,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     class PostProcessingClassHolderSource implements ListableClassHolderSource {
         private Linker linker = new Linker(dependencyAnalyzer);
         private MissingItemsProcessor missingItemsProcessor = new MissingItemsProcessor(dependencyAnalyzer,
-                dependencyAnalyzer.getClassHierarchy(), diagnostics);
+                dependencyAnalyzer.getClassHierarchy(), diagnostics, target.getPlatformTags());
         private Map<String, ClassHolder> cache = new HashMap<>();
         private Set<String> classNames = Collections.unmodifiableSet(new HashSet<>(
                 dependencyAnalyzer.getReachableClasses().stream()

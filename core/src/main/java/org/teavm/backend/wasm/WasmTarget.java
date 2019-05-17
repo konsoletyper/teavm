@@ -100,7 +100,7 @@ import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
-import org.teavm.interop.PlatformMarkers;
+import org.teavm.interop.Platforms;
 import org.teavm.interop.StaticInit;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.BasicBlock;
@@ -806,7 +806,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     @Override
     public String[] getPlatformTags() {
-        return new String[] { PlatformMarkers.WEBASSEMBLY, PlatformMarkers.LOW_LEVEL };
+        return new String[] { Platforms.WEBASSEMBLY, Platforms.LOW_LEVEL };
     }
 
     @Override

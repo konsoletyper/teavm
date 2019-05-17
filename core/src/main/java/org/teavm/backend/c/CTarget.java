@@ -77,7 +77,7 @@ import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
 import org.teavm.interop.Address;
-import org.teavm.interop.PlatformMarkers;
+import org.teavm.interop.Platforms;
 import org.teavm.interop.Structure;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHierarchy;
@@ -775,7 +775,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     @Override
     public String[] getPlatformTags() {
-        return new String[] { PlatformMarkers.C, PlatformMarkers.LOW_LEVEL };
+        return new String[] { Platforms.C, Platforms.LOW_LEVEL };
     }
 
     @Override
