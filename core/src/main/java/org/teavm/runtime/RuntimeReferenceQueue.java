@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,23 +13,9 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang.ref;
+package org.teavm.runtime;
 
-import org.teavm.classlib.java.lang.TObject;
-
-public abstract class TReference<T> extends TObject {
-    public T get() {
-        return null;
-    }
-
-    public void clear() {
-    }
-
-    public boolean isEnqueued() {
-        return false;
-    }
-
-    public boolean enqueue() {
-        return false;
-    }
+public class RuntimeReferenceQueue extends RuntimeObject {
+    public RuntimeReference first;
+    public RuntimeReference last;
 }

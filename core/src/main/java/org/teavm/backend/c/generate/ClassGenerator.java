@@ -16,6 +16,8 @@
 package org.teavm.backend.c.generate;
 
 import java.io.IOException;
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -64,11 +66,15 @@ import org.teavm.runtime.CallSite;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
+import org.teavm.runtime.RuntimeReference;
+import org.teavm.runtime.RuntimeReferenceQueue;
 
 public class ClassGenerator {
     private static final Set<String> classesWithDeclaredStructures = new HashSet<>(Arrays.asList(
             "java.lang.Object", "java.lang.String", "java.lang.Class",
-            RuntimeArray.class.getName(), RuntimeClass.class.getName(), RuntimeObject.class.getName()
+            RuntimeArray.class.getName(), RuntimeClass.class.getName(), RuntimeObject.class.getName(),
+            WeakReference.class.getName(), ReferenceQueue.class.getName(),
+            RuntimeReferenceQueue.class.getName(), RuntimeReference.class.getName()
     ));
 
     private GenerationContext context;
@@ -564,6 +570,15 @@ public class ClassGenerator {
                     sb.append("(TeaVM_Class*) &").append(context.getNames().forClassInstance(ValueType.object(itf)));
                 }
                 superinterfaces = sb.append(" }").toString();
+            }
+
+            switch (className) {
+                case "java.lang.ref.WeakReference":
+                    flags |= RuntimeClass.VM_TYPE_WEAKREFERENCE << RuntimeClass.VM_TYPE_SHIFT;
+                    break;
+                case "java.lang.ref.ReferenceQueue":
+                    flags |= RuntimeClass.VM_TYPE_REFERENCEQUEUE << RuntimeClass.VM_TYPE_SHIFT;
+                    break;
             }
 
         } else if (type instanceof ValueType.Array) {

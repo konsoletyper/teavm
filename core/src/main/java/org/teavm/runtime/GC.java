@@ -32,6 +32,7 @@ public final class GC {
     static FreeChunkHolder currentChunkPointer;
     static int freeChunks;
     static int freeMemory = (int) availableBytes();
+    static RuntimeReference firstWeakReference;
 
     static native Address gcStorageAddress();
 
@@ -122,12 +123,14 @@ public final class GC {
 
     public static boolean collectGarbage(int size) {
         mark();
+        processReferences();
         sweep();
         updateFreeMemory();
         return true;
     }
 
     private static void mark() {
+        firstWeakReference = null;
         Allocator.fillZero(regionsAddress().toAddress(), regionMaxCount() * Structure.sizeOf(Region.class));
 
         Address staticRoots = Mutator.getStaticGCRoots();
@@ -176,34 +179,101 @@ public final class GC {
 
             RuntimeClass cls = RuntimeClass.getClass(object);
             if (cls.itemType == null) {
-                while (cls != null) {
-                    Address layout = cls.layout;
-                    if (layout != null) {
-                        short fieldCount = layout.getShort();
-                        while (fieldCount-- > 0) {
-                            layout = layout.add(2);
-                            int fieldOffset = layout.getShort();
-                            RuntimeObject reference = object.toAddress().add(fieldOffset).getAddress().toStructure();
-                            if (reference != null && !isMarked(reference)) {
-                                MarkQueue.enqueue(reference);
-                            }
-                        }
-                    }
-                    cls = cls.parent;
-                }
+                markObject(cls, object);
             } else {
-                if ((cls.itemType.flags & RuntimeClass.PRIMITIVE) == 0) {
-                    RuntimeArray array = (RuntimeArray) object;
-                    Address base = Address.align(array.toAddress().add(RuntimeArray.class, 1), Address.sizeOf());
-                    for (int i = 0; i < array.size; ++i) {
-                        RuntimeObject reference = base.getAddress().toStructure();
-                        if (reference != null && !isMarked(reference)) {
-                            MarkQueue.enqueue(reference);
-                        }
-                        base = base.add(Address.sizeOf());
-                    }
+                markArray(cls, (RuntimeArray) object);
+            }
+        }
+    }
+
+    private static void markObject(RuntimeClass cls, RuntimeObject object) {
+        while (cls != null) {
+            int type = (cls.flags >> RuntimeClass.VM_TYPE_SHIFT) & RuntimeClass.VM_TYPE_MASK;
+            switch (type) {
+                case RuntimeClass.VM_TYPE_WEAKREFERENCE:
+                    markWeakReference((RuntimeReference) object);
+                    break;
+
+                case RuntimeClass.VM_TYPE_REFERENCEQUEUE:
+                    markReferenceQueue((RuntimeReferenceQueue) object);
+                    break;
+
+                default:
+                    markFields(cls, object);
+                    break;
+            }
+            cls = cls.parent;
+        }
+    }
+
+    private static void markWeakReference(RuntimeReference object) {
+        if (object.queue != null) {
+            mark(object.queue);
+            if (object.next != null && object.object != null) {
+                mark(object.object);
+            }
+        }
+        if (object.next == null && object.object != null) {
+            object.next = firstWeakReference;
+            firstWeakReference = object;
+        }
+    }
+
+    private static void markReferenceQueue(RuntimeReferenceQueue object) {
+        RuntimeReference reference = object.first;
+        while (reference != null) {
+            mark(reference);
+            reference = reference.next;
+        }
+    }
+
+    private static void markFields(RuntimeClass cls, RuntimeObject object) {
+        Address layout = cls.layout;
+        if (layout != null) {
+            short fieldCount = layout.getShort();
+            while (fieldCount-- > 0) {
+                layout = layout.add(2);
+                int fieldOffset = layout.getShort();
+                RuntimeObject reference = object.toAddress().add(fieldOffset).getAddress().toStructure();
+                if (reference != null && !isMarked(reference)) {
+                    MarkQueue.enqueue(reference);
                 }
             }
+        }
+    }
+
+    private static void markArray(RuntimeClass cls, RuntimeArray array) {
+        if ((cls.itemType.flags & RuntimeClass.PRIMITIVE) != 0) {
+            return;
+        }
+        Address base = Address.align(array.toAddress().add(RuntimeArray.class, 1), Address.sizeOf());
+        for (int i = 0; i < array.size; ++i) {
+            RuntimeObject reference = base.getAddress().toStructure();
+            if (reference != null && !isMarked(reference)) {
+                MarkQueue.enqueue(reference);
+            }
+            base = base.add(Address.sizeOf());
+        }
+    }
+
+    private static void processReferences() {
+        RuntimeReference reference = firstWeakReference;
+        while (reference != null) {
+            RuntimeReference next = reference.next;
+            reference.next = null;
+            if ((reference.object.classReference & RuntimeObject.GC_MARKED) == 0) {
+                reference.object = null;
+                RuntimeReferenceQueue queue = reference.queue;
+                if (queue != null) {
+                    if (queue.first == null) {
+                        queue.first = reference;
+                    } else {
+                        queue.last.next = reference;
+                    }
+                    queue.last = reference;
+                }
+            }
+            reference = next;
         }
     }
 

@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.c.generate;
 
+import java.lang.ref.ReferenceQueue;
+import java.lang.ref.WeakReference;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -25,6 +27,8 @@ import org.teavm.model.FieldReference;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
+import org.teavm.runtime.RuntimeReference;
+import org.teavm.runtime.RuntimeReferenceQueue;
 
 public class NameProvider extends LowLevelNameProvider {
     private static final Set<? extends String> keywords = Collections.unmodifiableSet(new HashSet<>(Arrays.asList(
@@ -41,12 +45,18 @@ public class NameProvider extends LowLevelNameProvider {
         occupiedTopLevelNames.add("TeaVM_Array");
         occupiedTopLevelNames.add("TeaVM_String");
         occupiedTopLevelNames.add("TeaVM_Class");
+        occupiedTopLevelNames.add("TeaVM_Reference");
+        occupiedTopLevelNames.add("TeaVM_ReferenceQueue");
 
         classNames.put(RuntimeObject.class.getName(), "TeaVM_Object");
         classNames.put(Object.class.getName(), "TeaVM_Object");
         classNames.put(String.class.getName(), "TeaVM_String");
         classNames.put(RuntimeClass.class.getName(), "TeaVM_Class");
         classNames.put(RuntimeArray.class.getName(), "TeaVM_Array");
+        classNames.put(WeakReference.class.getName(), "TeaVM_Reference");
+        classNames.put(ReferenceQueue.class.getName(), "TeaVM_ReferenceQueue");
+        classNames.put(RuntimeReference.class.getName(), "TeaVM_Reference");
+        classNames.put(RuntimeReferenceQueue.class.getName(), "TeaVM_ReferenceQueue");
 
         memberFieldNames.put(new FieldReference(RuntimeObject.class.getName(), "classReference"), "header");
         memberFieldNames.put(new FieldReference(RuntimeObject.class.getName(), "hashCode"), "hash");
@@ -54,15 +64,21 @@ public class NameProvider extends LowLevelNameProvider {
         memberFieldNames.put(new FieldReference(String.class.getName(), "characters"), "characters");
         memberFieldNames.put(new FieldReference(String.class.getName(), "hashCode"), "hashCode");
 
-        for (String name : new String[] { "size", "flags", "tag", "canary", "name", "itemType", "arrayType",
-                "isSupertypeOf", "init", "enumValues", "layout", "simpleName", "superinterfaceCount",
-                "superinterfaces" }) {
-            memberFieldNames.put(new FieldReference(RuntimeClass.class.getName(), name), name);
-        }
+        preserveFieldNames(RuntimeClass.class.getName(), "size", "flags", "tag", "canary", "name", "itemType",
+                "arrayType", "isSupertypeOf", "init", "enumValues", "layout", "simpleName", "superinterfaceCount",
+                "superinterfaces");
         memberFieldNames.put(new FieldReference(RuntimeClass.class.getName(), "parent"), "superclass");
+        preserveFieldNames(RuntimeReference.class.getName(), "queue", "object", "next");
+        preserveFieldNames(RuntimeReferenceQueue.class.getName(), "first", "last");
 
         occupiedClassNames.put(RuntimeObject.class.getName(), new HashSet<>(Arrays.asList("header")));
         occupiedClassNames.put(RuntimeArray.class.getName(), new HashSet<>(Arrays.asList("length")));
+    }
+
+    private void preserveFieldNames(String className, String... fieldNames) {
+        for (String name : fieldNames) {
+            memberFieldNames.put(new FieldReference(className, name), name);
+        }
     }
 
     @Override

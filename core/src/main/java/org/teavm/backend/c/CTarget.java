@@ -51,6 +51,8 @@ import org.teavm.backend.c.generate.StringPoolGenerator;
 import org.teavm.backend.c.generators.ArrayGenerator;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.generators.GeneratorFactory;
+import org.teavm.backend.c.generators.ReferenceQueueGenerator;
+import org.teavm.backend.c.generators.WeakReferenceGenerator;
 import org.teavm.backend.c.intrinsic.AddressIntrinsic;
 import org.teavm.backend.c.intrinsic.AllocatorIntrinsic;
 import org.teavm.backend.c.intrinsic.ConsoleIntrinsic;
@@ -72,7 +74,9 @@ import org.teavm.backend.c.intrinsic.ShadowStackIntrinsic;
 import org.teavm.backend.c.intrinsic.StringsIntrinsic;
 import org.teavm.backend.c.intrinsic.StructureIntrinsic;
 import org.teavm.backend.lowlevel.dependency.ExceptionHandlingDependencyListener;
+import org.teavm.backend.lowlevel.dependency.WeakReferenceDependencyListener;
 import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
+import org.teavm.backend.lowlevel.transform.WeakReferenceTransformation;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
@@ -163,12 +167,14 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         List<ClassHolderTransformer> transformers = new ArrayList<>();
         transformers.add(new ClassPatch());
         transformers.add(new CDependencyListener());
+        transformers.add(new WeakReferenceTransformation());
         return transformers;
     }
 
     @Override
     public List<DependencyListener> getDependencyListeners() {
-        return Arrays.asList(new CDependencyListener(), exportDependencyListener, new InteropDependencyListener());
+        return Arrays.asList(new CDependencyListener(), exportDependencyListener, new InteropDependencyListener(),
+                new WeakReferenceDependencyListener());
     }
 
     @Override
@@ -323,6 +329,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
         List<Generator> generators = new ArrayList<>();
         generators.add(new ArrayGenerator());
+        generators.add(new WeakReferenceGenerator());
+        generators.add(new ReferenceQueueGenerator());
 
         stringPool = new SimpleStringPool();
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
@@ -355,10 +363,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         generateSpecialFunctions(context, runtimeWriter);
         OutputFileUtil.write(runtimeWriter, "runtime.c", buildTarget);
         OutputFileUtil.write(runtimeHeaderWriter, "runtime.h", buildTarget);
-        BufferedCodeWriter stringhashWriter = new BufferedCodeWriter(false);
-        emitResource(stringhashWriter, "stringhash.c");
-        OutputFileUtil.write(stringhashWriter, "stringhash.c", buildTarget);
-
+        copyResource("stringhash.c", buildTarget);
+        copyResource("references.c", buildTarget);
         generateCallSites(buildTarget, context, classes.getClassNames());
         generateStrings(buildTarget, context);
 
@@ -367,6 +373,12 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 .collect(Collectors.toList());
         generateMainFile(context, classes, types, buildTarget);
         generateAllFile(classes, types, buildTarget);
+    }
+
+    private void copyResource(String name, BuildTarget buildTarget) throws IOException {
+        BufferedCodeWriter writer = new BufferedCodeWriter(false);
+        emitResource(writer, name);
+        OutputFileUtil.write(writer, name, buildTarget);
     }
 
     private void emitResource(CodeWriter writer, String resourceName) {

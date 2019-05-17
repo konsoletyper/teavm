@@ -15,11 +15,6 @@
  */
 package org.teavm.classlib.java.lang.ref;
 
-/**
- *
- * @author Alexey Andreev
- * @param <T>
- */
 public class TReferenceQueue<T> {
     public TReference<T> poll() {
         return null;
