@@ -294,8 +294,8 @@ public class DebugInformation {
 
     private DebuggerCallSite getCallSite(int index) {
         RecordArray.Record record = callSiteMapping.get(index);
-        int type = record.get(0);
-        int method = record.get(1);
+        int type = record.get(2);
+        int method = record.get(3);
         switch (type) {
             case DebuggerCallSite.NONE:
                 return null;
