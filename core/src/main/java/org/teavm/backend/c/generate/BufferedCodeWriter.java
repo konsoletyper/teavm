@@ -182,17 +182,15 @@ public class BufferedCodeWriter extends CodeWriter {
                 fileName = initialFileName;
                 lineNumber = absLineNumber;
             }
-            if (!Objects.equals(this.fileName, fileName) || this.lineNumber != lineNumber) {
-                if (isNewLine) {
-                    pendingFileName = fileName;
-                    pendingLineNumber = lineNumber;
-                } else {
-                    this.lineNumber++;
-                    absLineNumber++;
-                    writer.println();
-                    printLineDirective(fileName, lineNumber);
-                    isNewLine = true;
-                }
+            if (isNewLine) {
+                pendingFileName = fileName;
+                pendingLineNumber = lineNumber;
+            } else if (!Objects.equals(this.fileName, fileName) || this.lineNumber != lineNumber) {
+                this.lineNumber++;
+                absLineNumber++;
+                writer.println();
+                printLineDirective(fileName, lineNumber);
+                isNewLine = true;
             }
         }
     }
