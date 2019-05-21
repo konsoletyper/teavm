@@ -347,8 +347,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
         emitResource(runtimeHeaderWriter, "runtime.h");
 
-        ClassGenerator classGenerator = new ClassGenerator(context, controller.getUnprocessedClassSource(),
-                tagRegistry, decompiler);
+        ClassGenerator classGenerator = new ClassGenerator(context, tagRegistry, decompiler);
         IntrinsicFactoryContextImpl intrinsicFactoryContext = new IntrinsicFactoryContextImpl(
                 controller.getUnprocessedClassSource(), controller.getClassLoader(), controller.getServices(),
                 controller.getProperties());
@@ -365,6 +364,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         OutputFileUtil.write(runtimeHeaderWriter, "runtime.h", buildTarget);
         copyResource("stringhash.c", buildTarget);
         copyResource("references.c", buildTarget);
+        copyResource("date.c", buildTarget);
         generateCallSites(buildTarget, context, classes.getClassNames());
         generateStrings(buildTarget, context);
 
@@ -637,6 +637,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         includes.includePath("stringhash.c");
         includes.includePath("strings.c");
         includes.includePath("callsites.c");
+        includes.includePath("references.c");
+        includes.includePath("date.c");
 
         for (String className : classes.getClassNames()) {
             includes.includePath(ClassGenerator.fileName(className) + ".c");

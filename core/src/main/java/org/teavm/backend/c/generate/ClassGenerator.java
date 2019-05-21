@@ -38,7 +38,6 @@ import org.teavm.model.AnnotationHolder;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReader;
@@ -78,7 +77,6 @@ public class ClassGenerator {
     ));
 
     private GenerationContext context;
-    private ClassReaderSource unprocessedClassSource;
     private Decompiler decompiler;
     private TagRegistry tagRegistry;
     private CodeGenerator codeGenerator;
@@ -91,10 +89,8 @@ public class ClassGenerator {
     private IncludeManager includes;
     private IncludeManager headerIncludes;
 
-    public ClassGenerator(GenerationContext context, ClassReaderSource unprocessedClassSource,
-            TagRegistry tagRegistry, Decompiler decompiler) {
+    public ClassGenerator(GenerationContext context, TagRegistry tagRegistry, Decompiler decompiler) {
         this.context = context;
-        this.unprocessedClassSource = unprocessedClassSource;
         this.tagRegistry = tagRegistry;
         this.decompiler = decompiler;
     }
@@ -436,7 +432,7 @@ public class ClassGenerator {
         String className = null;
         if (type instanceof ValueType.Object) {
             className = ((ValueType.Object) type).getClassName();
-            generateVirtualTableStructure(unprocessedClassSource.get(className));
+            generateVirtualTableStructure(className);
         } else if (type instanceof ValueType.Array) {
             className = "java.lang.Object";
         }
@@ -633,20 +629,17 @@ public class ClassGenerator {
         codeWriter.println(".init = " + initFunction);
     }
 
-    private void generateVirtualTableStructure(ClassReader cls) {
-        if (cls == null) {
-            return;
-        }
-        String name = context.getNames().forClassClass(cls.getName());
+    private void generateVirtualTableStructure(String className) {
+        String name = context.getNames().forClassClass(className);
 
         headerWriter.print("typedef struct ").print(name).println(" {").indent();
         headerWriter.println("TeaVM_Class parent;");
 
-        VirtualTable virtualTable = context.getVirtualTableProvider().lookup(cls.getName());
+        VirtualTable virtualTable = context.getVirtualTableProvider().lookup(className);
         if (virtualTable != null) {
             for (VirtualTableEntry entry : virtualTable.getEntries().values()) {
                 String methodName = context.getNames().forVirtualMethod(
-                        new MethodReference(cls.getName(), entry.getMethod()));
+                        new MethodReference(className, entry.getMethod()));
                 headerWriter.printType(entry.getMethod().getResultType())
                         .print(" (*").print(methodName).print(")(");
                 codeGenerator.generateMethodParameters(headerWriter, entry.getMethod(), false, false);

@@ -276,3 +276,22 @@ extern TeaVM_Object* teavm_reference_get(TeaVM_Reference*);
 extern TeaVM_Reference* teavm_reference_poll(TeaVM_ReferenceQueue*);
 
 extern void teavm_reference_init(TeaVM_Reference*, TeaVM_Object*, TeaVM_ReferenceQueue*);
+
+extern void teavm_date_init();
+extern int64_t teavm_date_create(int32_t,int32_t,int32_t,int32_t,int32_t,int32_t);
+extern int64_t teavm_date_createUtc(int32_t,int32_t,int32_t,int32_t,int32_t,int32_t);
+extern int64_t teavm_date_parse(char* s);
+extern int32_t teavm_date_getYear(int64_t);
+extern int64_t teavm_date_setYear(int64_t,int32_t);
+extern int32_t teavm_date_getMonth(int64_t);
+extern int64_t teavm_date_setMonth(int64_t,int32_t);
+extern int32_t teavm_date_getDate(int64_t);
+extern int64_t teavm_date_setDate(int64_t,int32_t);
+extern int32_t teavm_date_getDay(int64_t);
+extern int32_t teavm_date_getHours(int64_t);
+extern int64_t teavm_date_setHours(int64_t,int32_t);
+extern int32_t teavm_date_getMinutes(int64_t);
+extern int64_t teavm_date_setMinutes(int64_t,int32_t);
+extern int32_t teavm_date_getSeconds(int64_t);
+extern int64_t teavm_date_setSeconds(int64_t,int32_t);
+extern char* teavm_date_format(int64_t);

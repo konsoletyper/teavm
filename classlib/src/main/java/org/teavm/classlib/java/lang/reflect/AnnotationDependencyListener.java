@@ -18,9 +18,7 @@ package org.teavm.classlib.java.lang.reflect;
 import java.lang.annotation.Annotation;
 import java.lang.annotation.Retention;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
@@ -44,7 +42,6 @@ import org.teavm.platform.PlatformAnnotationProvider;
 import org.teavm.platform.PlatformClass;
 
 public class AnnotationDependencyListener extends AbstractDependencyListener {
-    private Set<MethodReference> reachedMethods = new HashSet<>();
     private static final MethodReference GET_ANNOTATIONS_METHOD = new MethodReference(
             Platform.class, "getAnnotations", PlatformClass.class, Annotation[].class);
     private static final String ANNOTATIONS_READER_SUFFIX = "$$__annotations__$$";
@@ -120,10 +117,6 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
 
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
-        if (!reachedMethods.add(method.getReference())) {
-            return;
-        }
-
         ValueType type = method.getMethod().getResultType();
         while (type instanceof ValueType.Array) {
             type = ((ValueType.Array) type).getItemType();
