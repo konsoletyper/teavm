@@ -15,8 +15,10 @@
  */
 package org.teavm.model.classes;
 
+import com.carrotsearch.hppc.IntArrayList;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
+import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -28,6 +30,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Predicate;
+import org.teavm.common.Graph;
+import org.teavm.common.GraphBuilder;
 import org.teavm.common.LCATree;
 import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassReader;
@@ -36,6 +40,7 @@ import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
+import org.teavm.model.util.GraphColorer;
 
 public class VirtualTableBuilder {
     private ListableClassReaderSource classes;
@@ -47,6 +52,10 @@ public class VirtualTableBuilder {
     private ObjectIntMap<String> classTreeIndexes;
     private List<String> classList;
     private VirtualTableProvider result;
+    private List<MethodDescriptor> methodDescriptors;
+    private ObjectIntMap<MethodDescriptor> methodDescriptorIndexes;
+    private int[] methodColors;
+    private int methodColorCount;
 
     public VirtualTableBuilder(ListableClassReaderSource classes) {
         this.classes = classes;
@@ -71,6 +80,7 @@ public class VirtualTableBuilder {
 
         classChildren = new HashMap<>();
         buildClassChildren();
+        pack();
         liftEntries();
 
         buildResult();
@@ -269,7 +279,9 @@ public class VirtualTableBuilder {
             TableBuilder table = tables.get(className);
             EntryBuilder entry = table.entries.get(method);
             if (entry == null) {
-                table.entries.put(method, new EntryBuilder());
+                entry = new EntryBuilder();
+                entry.fake = true;
+                table.entries.put(method, entry);
             }
 
             if (className.equals(toClass)) {
@@ -281,6 +293,45 @@ public class VirtualTableBuilder {
             }
             className = cls.getParent();
         }
+    }
+
+    private void pack() {
+        methodDescriptorIndexes = new ObjectIntHashMap<>();
+        methodDescriptors = new ArrayList<>();
+
+        GraphBuilder graphBuilder = new GraphBuilder();
+        for (String className : classes.getClassNames()) {
+            TableBuilder table = tables.get(className);
+            MethodDescriptor[] methods = table.entries.keySet().toArray(new MethodDescriptor[0]);
+            for (int i = 0; i < methods.length; ++i) {
+                for (int j = i + 1; j < methods.length; ++j) {
+                    int a = getMethodIndex(methods[i]);
+                    int b = getMethodIndex(methods[j]);
+                    graphBuilder.addEdge(a, b);
+                    graphBuilder.addEdge(b, a);
+                }
+            }
+        }
+
+        Graph interferenceGraph = graphBuilder.build();
+        methodColors = new int[methodDescriptors.size()];
+        Arrays.fill(methodColors, -1);
+        new GraphColorer().colorize(interferenceGraph, methodColors);
+        int colorCount = 0;
+        for (int i = 0; i < methodColors.length; ++i) {
+            colorCount = Math.max(colorCount, methodColors[i]--);
+        }
+        methodColorCount = colorCount;
+    }
+
+    private int getMethodIndex(MethodDescriptor method) {
+        int index = methodDescriptorIndexes.getOrDefault(method, -1);
+        if (index < 0) {
+            index = methodDescriptors.size();
+            methodDescriptors.add(method);
+            methodDescriptorIndexes.put(method, index);
+        }
+        return index;
     }
 
     private void buildResult() {
@@ -296,7 +347,10 @@ public class VirtualTableBuilder {
                 continue;
             }
 
-            buildResultForClass(className, new Context(), null);
+            Context context = new Context();
+            context.indexes = new int[methodColorCount];
+            Arrays.fill(context.indexes, -1);
+            buildResultForClass(className, context, null);
         }
     }
 
@@ -304,30 +358,52 @@ public class VirtualTableBuilder {
         TableBuilder table = tables.get(className);
         ClassReader cls = classes.get(className);
 
-        int start = context.methods.size();
+        int colorsStart = context.colors.size();
+        int initialMethodsStart = parent != null ? parent.size() : 0;
+        int methodsStart = initialMethodsStart;
+        IntArrayList resolvedIndexes = new IntArrayList();
         Map<MethodDescriptor, VirtualTableEntry> resultEntries = new HashMap<>();
         for (MethodDescriptor method : table.entries.keySet()) {
+            int color = methodColors[methodDescriptorIndexes.get(method)];
             EntryBuilder entry = table.entries.get(method);
-            int index = context.indexes.getOrDefault(method, -1);
+            int index = context.indexes[color];
             if (index < 0) {
-                index = context.indexes.size();
-                context.indexes.put(method, index);
-                context.methods.add(method);
+                index = context.colors.size();
+                context.indexes[color] = index;
+                context.colors.add(color);
+                context.methods.add(null);
             }
 
             if (entry.implementor != null) {
                 VirtualTableEntry resultEntry = new VirtualTableEntry(method, entry.implementor, index);
                 resultEntries.put(method, resultEntry);
-
                 propagateInterfaceIndexes(cls, method, index);
+            }
+
+            if (context.methods.get(index) == null && !entry.fake) {
+                context.methods.set(index, method);
+                resolvedIndexes.add(index);
+                while (index < methodsStart) {
+                    methodsStart -= parent.getMethods().size();
+                    parent = parent.getParent();
+                    if (parent == null) {
+                        break;
+                    }
+                }
             }
         }
 
-        List<MethodDescriptor> newMethods = context.methods.subList(start, context.methods.size());
+        List<MethodDescriptor> newMethods = context.methods.subList(methodsStart, context.methods.size());
+        Set<MethodDescriptor> methodSet = new HashSet<>();
+        for (MethodDescriptor method : newMethods) {
+            if (method != null) {
+                methodSet.add(method);
+            }
+        }
         List<? extends MethodDescriptor> readonlyNewMethods = Collections.unmodifiableList(
                 Arrays.asList(newMethods.toArray(new MethodDescriptor[0])));
         VirtualTable resultTable = new VirtualTable(className, parent, readonlyNewMethods,
-                new HashSet<>(readonlyNewMethods), resultEntries);
+                methodSet, resultEntries);
         result.virtualTables.put(className, resultTable);
 
         List<String> children = classChildren.get(className);
@@ -337,11 +413,14 @@ public class VirtualTableBuilder {
             }
         }
 
-        newMethods = context.methods.subList(start, context.methods.size());
-        for (MethodDescriptor method : newMethods) {
-            context.indexes.remove(method);
+        for (int i = colorsStart; i < context.colors.size(); ++i) {
+            context.indexes[context.colors.get(i)] = -1;
         }
-        newMethods.clear();
+        context.colors.removeRange(colorsStart, context.colors.size());
+        for (IntCursor resolvedIndex : resolvedIndexes) {
+            context.methods.set(resolvedIndex.value, null);
+        }
+        context.methods.subList(initialMethodsStart, context.methods.size()).clear();
     }
 
     private void propagateInterfaceIndexes(ClassReader cls, MethodDescriptor method, int index) {
@@ -422,6 +501,7 @@ public class VirtualTableBuilder {
         MethodReference implementor;
         EntryBuilder[] parents;
         int index = -1;
+        boolean fake;
 
         void addParent(EntryBuilder parent) {
             if (parents == null) {
@@ -434,7 +514,8 @@ public class VirtualTableBuilder {
     }
 
     static class Context {
-        ObjectIntMap<MethodDescriptor> indexes = new ObjectIntHashMap<>();
+        int[] indexes;
+        IntArrayList colors = new IntArrayList();
         List<MethodDescriptor> methods = new ArrayList<>();
     }
 }
