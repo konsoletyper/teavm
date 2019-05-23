@@ -163,7 +163,7 @@ public class WasmClassGenerator {
             ClassBinaryData itemBinaryData = binaryDataMap.get(itemType);
 
             VirtualTable vtable = vtableProvider.lookup("java.lang.Object");
-            int vtableSize = vtable != null ? vtable.getEntries().size() : 0;
+            int vtableSize = vtable != null ? vtable.size() : 0;
             DataType arrayType = new DataArray(DataPrimitives.INT, vtableSize);
             DataValue wrapper = new DataStructure((byte) 0, classStructure, arrayType).createValue();
 
@@ -250,7 +250,7 @@ public class WasmClassGenerator {
         int flags = 0;
 
         VirtualTable vtable = vtableProvider.lookup(name);
-        int vtableSize = vtable != null ? vtable.getEntries().size() : 0;
+        int vtableSize = vtable != null ? vtable.size() : 0;
 
         DataType arrayType = new DataArray(DataPrimitives.INT, vtableSize);
         DataValue wrapper = new DataStructure((byte) 0, classStructure, arrayType).createValue();
@@ -376,19 +376,28 @@ public class WasmClassGenerator {
 
     private void fillVirtualTable(VirtualTable vtable, DataValue array) {
         int index = 0;
-        for (VirtualTableEntry vtableEntry : vtable.getEntries().values()) {
-            int methodIndex;
-            if (vtableEntry.getImplementor() == null) {
-                methodIndex = -1;
-            } else {
-                methodIndex = functions.computeIfAbsent(vtableEntry.getImplementor(), implementor -> {
-                    int result = functionTable.size();
-                    functionTable.add(names.forMethod(implementor));
-                    return result;
-                });
-            }
+        List<VirtualTable> tables = new ArrayList<>();
+        while (vtable != null) {
+            tables.add(vtable);
+            vtable = vtable.getParent();
+        }
+        for (int i = tables.size() - 1; i >= 0; --i) {
+            vtable = tables.get(i);
+            for (MethodDescriptor method : vtable.getMethods()) {
+                int methodIndex = -1;
+                if (method != null) {
+                    VirtualTableEntry entry = vtable.getEntry(method);
+                    if (entry != null) {
+                        methodIndex = functions.computeIfAbsent(entry.getImplementor(), implementor -> {
+                            int result = functionTable.size();
+                            functionTable.add(names.forMethod(implementor));
+                            return result;
+                        });
+                    }
+                }
 
-            array.setInt(index++, methodIndex);
+                array.setInt(index++, methodIndex);
+            }
         }
     }
 

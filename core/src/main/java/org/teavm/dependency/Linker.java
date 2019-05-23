@@ -15,6 +15,7 @@
  */
 package org.teavm.dependency;
 
+import org.teavm.model.AccessLevel;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
@@ -24,6 +25,7 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.instructions.GetFieldInstruction;
@@ -67,10 +69,36 @@ public class Linker {
             for (Instruction insn : block) {
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction) insn;
+                    MethodReference calledRef = invoke.getMethod();
                     if (invoke.getType() == InvocationType.SPECIAL) {
-                        MethodDependencyInfo linkedMethod = dependency.getMethodImplementation(invoke.getMethod());
+                        MethodDependencyInfo linkedMethod = dependency.getMethodImplementation(calledRef);
                         if (linkedMethod != null) {
                             invoke.setMethod(linkedMethod.getReference());
+                        }
+                    } else if (invoke.getType() == InvocationType.VIRTUAL) {
+                        MethodDependencyInfo linkedMethod = dependency.getMethodImplementation(calledRef);
+                        if (linkedMethod == null || linkedMethod.isMissing()) {
+                            continue;
+                        }
+                        calledRef = linkedMethod.getReference();
+                        ClassReader cls = dependency.getClassSource().get(calledRef.getClassName());
+                        boolean isFinal = false;
+                        if (cls != null) {
+                            if (cls.hasModifier(ElementModifier.FINAL)) {
+                                isFinal = true;
+                            } else {
+                                MethodReader calledMethod = cls.getMethod(calledRef.getDescriptor());
+                                if (calledMethod != null) {
+                                    if (calledMethod.hasModifier(ElementModifier.FINAL)
+                                            || calledMethod.getLevel() == AccessLevel.PRIVATE) {
+                                        isFinal = true;
+                                    }
+                                }
+                            }
+                        }
+                        if (isFinal) {
+                            invoke.setType(InvocationType.SPECIAL);
+                            invoke.setMethod(calledRef);
                         }
                     }
                 } else if (insn instanceof GetFieldInstruction) {

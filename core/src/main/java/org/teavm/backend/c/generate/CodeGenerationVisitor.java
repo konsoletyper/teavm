@@ -422,87 +422,17 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
         pushLocation(expr.getLocation());
         switch (expr.getType()) {
-            case CONSTRUCTOR: {
-                String receiver = allocTemporaryVariable(CVariableType.PTR);
-                writer.print("(" + receiver + " = ");
-                allocObject(expr.getMethod().getClassName());
-                writer.print(", ");
-
-                MethodReader method = context.getClassSource().resolve(expr.getMethod());
-                MethodReference reference = expr.getMethod();
-                if (method != null) {
-                    reference = method.getReference();
-                }
-
-                includes.includeClass(reference.getClassName());
-                writer.print(names.forMethod(reference));
-
-                writer.print("(" + receiver);
-                for (Expr arg : expr.getArguments()) {
-                    writer.print(", ");
-                    arg.acceptVisitor(this);
-                }
-                writer.print("), " + receiver + ")");
-
-                freeTemporaryVariable(CVariableType.PTR);
-
+            case CONSTRUCTOR:
+                generateCallToConstructor(expr.getMethod(), expr.getArguments());
                 break;
-            }
+
             case SPECIAL:
-            case STATIC: {
-                MethodReader method = context.getClassSource().resolve(expr.getMethod());
-                if (method != null && isWrappedNativeCall(method)) {
-                    generateWrappedNativeCall(method, expr);
-                } else {
-                    MethodReference reference = expr.getMethod();
-                    if (method != null) {
-                        reference = method.getReference();
-                    }
-                    includes.includeClass(reference.getClassName());
-                    writer.print(names.forMethod(reference));
-
-                    writer.print("(");
-                    if (!expr.getArguments().isEmpty()) {
-                        expr.getArguments().get(0).acceptVisitor(this);
-                        for (int i = 1; i < expr.getArguments().size(); ++i) {
-                            writer.print(", ");
-                            expr.getArguments().get(i).acceptVisitor(this);
-                        }
-                    }
-                    writer.print(")");
-                }
-
+            case STATIC:
+                generateDirectCall(expr.getMethod(), expr.getArguments());
                 break;
-            }
+
             case DYNAMIC: {
-                VirtualTable vtable = context.getVirtualTableProvider().lookup(expr.getMethod().getClassName());
-                if (vtable == null || !vtable.getEntries().containsKey(expr.getMethod().getDescriptor())) {
-                    writer.print("(");
-                    for (Expr arg : expr.getArguments()) {
-                        arg.acceptVisitor(this);
-                        writer.print(", ");
-                    }
-                    printDefaultValue(expr.getMethod().getReturnType());
-                    writer.print(")");
-                } else {
-                    String receiver = allocTemporaryVariable(CVariableType.PTR);
-                    writer.print("((").print(receiver).print(" = ");
-                    expr.getArguments().get(0).acceptVisitor(this);
-
-                    includes.includeClass(expr.getMethod().getClassName());
-                    writer.print("), TEAVM_METHOD(")
-                            .print(receiver).print(", ")
-                            .print(names.forClassClass(expr.getMethod().getClassName())).print(", ")
-                            .print(names.forVirtualMethod(expr.getMethod()))
-                            .print(")(").print(receiver);
-                    for (int i = 1; i < expr.getArguments().size(); ++i) {
-                        writer.print(", ");
-                        expr.getArguments().get(i).acceptVisitor(this);
-                    }
-                    writer.print("))");
-
-                    freeTemporaryVariable(CVariableType.PTR);
-                }
+                generateVirtualCall(expr.getMethod(), expr.getArguments());
                 break;
             }
         }
@@ -510,7 +440,100 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         popLocation(expr.getLocation());
     }
 
-    private void generateWrappedNativeCall(MethodReader method, InvocationExpr expr) {
+    private void generateCallToConstructor(MethodReference reference, List<? extends Expr> arguments) {
+        String receiver = allocTemporaryVariable(CVariableType.PTR);
+        writer.print("(" + receiver + " = ");
+        allocObject(reference.getClassName());
+        writer.print(", ");
+
+        MethodReader method = context.getClassSource().resolve(reference);
+        if (method != null) {
+            reference = method.getReference();
+        }
+
+        includes.includeClass(reference.getClassName());
+        writer.print(names.forMethod(reference));
+
+        writer.print("(" + receiver);
+        for (Expr arg : arguments) {
+            writer.print(", ");
+            arg.acceptVisitor(this);
+        }
+        writer.print("), " + receiver + ")");
+
+        freeTemporaryVariable(CVariableType.PTR);
+    }
+
+    private void generateDirectCall(MethodReference reference, List<? extends Expr> arguments) {
+        MethodReader method = context.getClassSource().resolve(reference);
+        if (method != null && isWrappedNativeCall(method)) {
+            generateWrappedNativeCall(method, arguments);
+        } else {
+            if (method == null || method.hasModifier(ElementModifier.ABSTRACT)) {
+                generateNoMethodCall(reference, arguments);
+                return;
+            }
+
+            reference = method.getReference();
+            includes.includeClass(reference.getClassName());
+            writer.print(names.forMethod(reference));
+
+            writer.print("(");
+            if (!arguments.isEmpty()) {
+                arguments.get(0).acceptVisitor(this);
+                for (int i = 1; i < arguments.size(); ++i) {
+                    writer.print(", ");
+                    arguments.get(i).acceptVisitor(this);
+                }
+            }
+            writer.print(")");
+        }
+    }
+
+    private void generateVirtualCall(MethodReference reference, List<? extends Expr> arguments) {
+        VirtualTable vtable = context.getVirtualTableProvider().lookup(reference.getClassName());
+        String vtableClass = null;
+        if (vtable != null) {
+            VirtualTable containingVt = vtable.findMethodContainer(reference.getDescriptor());
+            if (containingVt != null) {
+                vtableClass = containingVt.getClassName();
+            }
+        }
+        if (vtableClass == null) {
+            generateNoMethodCall(reference, arguments);
+            return;
+        }
+
+        String receiver = allocTemporaryVariable(CVariableType.PTR);
+        writer.print("((").print(receiver).print(" = ");
+        arguments.get(0).acceptVisitor(this);
+
+        includes.includeClass(vtableClass);
+        writer.print("), TEAVM_METHOD(")
+                .print(receiver).print(", ")
+                .print(names.forClassClass(vtableClass)).print(", ")
+                .print(names.forVirtualMethod(reference.getDescriptor()))
+                .print(")(").print(receiver);
+        for (int i = 1; i < arguments.size(); ++i) {
+            writer.print(", ");
+            arguments.get(i).acceptVisitor(this);
+        }
+        writer.print("))");
+
+        freeTemporaryVariable(CVariableType.PTR);
+    }
+
+    private void generateNoMethodCall(MethodReference reference, List<? extends Expr> arguments) {
+        writer.print("(");
+        for (Expr arg : arguments) {
+            arg.acceptVisitor(this);
+            writer.print(", ");
+        }
+        printDefaultValue(reference.getReturnType());
+        writer.print(")");
+    }
+
+    private void generateWrappedNativeCall(MethodReader method, List<? extends Expr> arguments) {
         List<String> temporaries = new ArrayList<>();
         List<String> stringTemporaries = new ArrayList<>();
         String resultTmp = null;
@@ -518,13 +541,13 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             resultTmp = allocTemporaryVariable(typeToCType(method.getResultType()));
         }
 
-        for (int i = 0; i < expr.getArguments().size(); ++i) {
+        for (int i = 0; i < arguments.size(); ++i) {
             temporaries.add(allocTemporaryVariable(parameterTypeForCall(method, i)));
         }
         boolean stringResult = method.getResultType().isObject(String.class);
 
         writer.print("(");
-        for (int i = 0; i < expr.getArguments().size(); ++i) {
+        for (int i = 0; i < arguments.size(); ++i) {
             String tmp = temporaries.get(i);
             writer.print(tmp + " = ");
             ValueType type = method.hasModifier(ElementModifier.STATIC)
@@ -532,23 +555,23 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                     : i == 0 ? ValueType.object(method.getOwnerName()) : method.parameterType(i - 1);
             if (type.isObject(String.class)) {
                 writer.print("teavm_stringToC(");
-                expr.getArguments().get(i).acceptVisitor(this);
+                arguments.get(i).acceptVisitor(this);
                 writer.print(")");
                 stringTemporaries.add(tmp);
             } else if (isPrimitiveArray(type)) {
                 writer.print("TEAVM_ARRAY_DATAN(");
-                expr.getArguments().get(i).acceptVisitor(this);
+                arguments.get(i).acceptVisitor(this);
                 writer.print(", ").printStrictType(((ValueType.Array) type).getItemType()).print(")");
             } else if (isPrimitiveBuffer(type)) {
                 writer.print("TEAVM_ARRAY_DATA(TEAVM_FIELD(");
                 String typeName = ((ValueType.Object) type).getClassName();
-                expr.getArguments().get(i).acceptVisitor(this);
+                arguments.get(i).acceptVisitor(this);
                 includes.includeClass(typeName);
                 writer.print(", ").print(names.forClass(typeName)).print(", ")
                         .print(names.forMemberField(new FieldReference(typeName, "array"))).print(")");
                 writer.print(", ").print(BUFFER_TYPES.get(typeName)).print(")");
             } else {
-                expr.getArguments().get(i).acceptVisitor(this);
+                arguments.get(i).acceptVisitor(this);
             }
 
             writer.print(", ");

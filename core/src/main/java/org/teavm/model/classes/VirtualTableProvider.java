@@ -15,116 +15,25 @@
  */
 package org.teavm.model.classes;
 
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
-import java.util.function.Predicate;
-import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.ElementModifier;
-import org.teavm.model.ListableClassReaderSource;
-import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 
 public class VirtualTableProvider {
-    private ClassReaderSource classSource;
-    private Map<String, Set<MethodDescriptor>> virtualMethodMap = new HashMap<>();
-    private Map<String, VirtualTable> virtualTables = new LinkedHashMap<>();
-    private InterfaceToClassMapping interfaceMapping;
+    Map<String, VirtualTable> virtualTables = new LinkedHashMap<>();
 
-    public VirtualTableProvider(ListableClassReaderSource classSource, Set<MethodReference> virtualMethods,
-            Predicate<MethodReference> methodCalledVirtually) {
-        this.classSource = classSource;
-        interfaceMapping = new InterfaceToClassMapping(classSource);
-
-        Set<String> classNames = new HashSet<>(classSource.getClassNames());
-        for (MethodReference virtualMethod : virtualMethods) {
-            String cls = interfaceMapping.mapClass(virtualMethod.getClassName());
-            if (cls == null) {
-                cls = virtualMethod.getClassName();
-            }
-            classNames.add(cls);
-            virtualMethodMap.computeIfAbsent(cls, c -> new LinkedHashSet<>()).add(virtualMethod.getDescriptor());
-        }
-
-        for (String className : classNames) {
-            fillClass(className, methodCalledVirtually);
-        }
-    }
-
-    private void fillClass(String className, Predicate<MethodReference> methodCalledVirtually) {
-        if (virtualTables.containsKey(className)) {
-            return;
-        }
-
-        VirtualTable table = new VirtualTable(className);
-        virtualTables.put(className, table);
-        ClassReader cls = classSource.get(className);
-        if (cls == null) {
-            return;
-        }
-        if (cls.getParent() != null) {
-            fillClass(cls.getParent(), methodCalledVirtually);
-            copyEntriesFromSupertype(table, virtualTables.get(cls.getParent()));
-        }
-        for (String itf : cls.getInterfaces()) {
-            fillClass(itf, methodCalledVirtually);
-            copyEntriesFromSupertype(table, virtualTables.get(itf));
-        }
-
-        Set<MethodDescriptor> newDescriptors = virtualMethodMap.get(className);
-        if (newDescriptors != null) {
-            for (MethodDescriptor method : newDescriptors) {
-                if (!table.entries.containsKey(method)) {
-                    MethodReader implementation = classSource.resolveImplementation(
-                            className, method);
-                    MethodReference implementationRef = implementation != null
-                            ? implementation.getReference()
-                            : null;
-                    if (implementationRef != null && !methodCalledVirtually.test(implementationRef)) {
-                        implementationRef = null;
-                    }
-                    table.entries.put(method, new VirtualTableEntry(table, method, implementationRef,
-                            table.entries.size()));
-                }
-            }
-        }
-
-        for (MethodReader method : cls.getMethods()) {
-            if (method.hasModifier(ElementModifier.ABSTRACT)) {
-                continue;
-            }
-            VirtualTableEntry entry = table.entries.get(method.getDescriptor());
-            if (entry != null && methodCalledVirtually.test(method.getReference())) {
-                entry.implementor = method.getReference();
-            }
-        }
-    }
-
-    private void copyEntriesFromSupertype(VirtualTable table, VirtualTable supertypeTable) {
-        for (VirtualTableEntry parentEntry : supertypeTable.entries.values()) {
-            VirtualTableEntry existingEntry = table.entries.get(parentEntry.getMethod());
-            if (existingEntry == null || existingEntry.getImplementor() == null) {
-                VirtualTableEntry entry = new VirtualTableEntry(table, parentEntry.getMethod(),
-                        parentEntry.getImplementor(), parentEntry.getIndex());
-                table.entries.put(entry.getMethod(), entry);
-            }
-        }
+    VirtualTableProvider() {
     }
 
     public VirtualTableEntry lookup(MethodReference method) {
-        VirtualTable vtable = virtualTables.get(interfaceMapping.mapClass(method.getClassName()));
+        VirtualTable vtable = virtualTables.get(method.getClassName());
         if (vtable == null) {
             return null;
         }
-        return vtable.getEntries().get(method.getDescriptor());
+        return vtable.getEntry(method.getDescriptor());
     }
 
     public VirtualTable lookup(String className) {
-        return virtualTables.get(interfaceMapping.mapClass(className));
+        return virtualTables.get(className);
     }
 }

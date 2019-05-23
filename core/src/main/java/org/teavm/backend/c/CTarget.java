@@ -27,7 +27,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -100,6 +99,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
+import org.teavm.model.classes.VirtualTableBuilder;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.InvocationType;
@@ -115,6 +115,8 @@ import org.teavm.model.lowlevel.ShadowStackTransformer;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.runtime.Allocator;
+import org.teavm.runtime.CallSite;
+import org.teavm.runtime.CallSiteLocation;
 import org.teavm.runtime.EventQueue;
 import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.Fiber;
@@ -265,6 +267,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 dependencyAnalyzer.linkMethod(method.getReference()).use();
             }
         }
+
+        dependencyAnalyzer.linkClass(CallSite.class.getName());
+        dependencyAnalyzer.linkClass(CallSiteLocation.class.getName());
 
         dependencyAnalyzer.addDependencyListener(new ExceptionHandlingDependencyListener());
     }
@@ -535,7 +540,14 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     }
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
-        Set<MethodReference> virtualMethods = new LinkedHashSet<>();
+        VirtualTableBuilder builder = new VirtualTableBuilder(classes);
+        builder.setMethodsUsedAtCallSites(getMethodsUsedOnCallSites(classes));
+        builder.setMethodCalledVirtually(controller::isVirtual);
+        return builder.build();
+    }
+
+    private Set<MethodReference> getMethodsUsedOnCallSites(ListableClassHolderSource classes) {
+        Set<MethodReference> virtualMethods = new HashSet<>();
 
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
@@ -560,7 +572,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             }
         }
 
-        return new VirtualTableProvider(classes, virtualMethods, controller::isVirtual);
+        return virtualMethods;
     }
 
     private void generateSpecialFunctions(GenerationContext context, CodeWriter writer) {
@@ -631,6 +643,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private void generateAllFile(ListableClassHolderSource classes, List<? extends ValueType> types,
             BuildTarget buildTarget) throws IOException {
         BufferedCodeWriter writer = new BufferedCodeWriter(false);
+        writer.println("#define _XOPEN_SOURCE");
+        writer.println("#define __USE_XOPEN");
+        writer.println("#define _GNU_SOURCE");
+
         IncludeManager includes = new SimpleIncludeManager(writer);
         includes.init("all.c");
         includes.includePath("runtime.c");

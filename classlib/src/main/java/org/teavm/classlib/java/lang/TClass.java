@@ -560,7 +560,7 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     @SuppressWarnings("unchecked")
     public T cast(TObject obj) {
         if (obj != null && !isAssignableFrom((TClass<?>) (Object) obj.getClass())) {
-            throw new TClassCastException(obj.getClass().getName() + " is not subtype of " + name);
+            throw new TClassCastException(obj.getClass().getName() + " is not subtype of " + getName());
         }
         return (T) obj;
     }

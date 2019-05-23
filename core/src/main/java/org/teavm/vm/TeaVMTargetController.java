@@ -44,6 +44,8 @@ public interface TeaVMTargetController {
 
     ServiceRepository getServices();
 
+    TeaVMOptimizationLevel getOptimizationLevel();
+
     boolean isFriendlyToDebugger();
 
     Map<? extends String, ? extends TeaVMEntryPoint> getEntryPoints();

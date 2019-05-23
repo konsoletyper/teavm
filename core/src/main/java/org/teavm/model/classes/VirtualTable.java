@@ -15,28 +15,59 @@
  */
 package org.teavm.model.classes;
 
-import java.util.Collections;
-import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import org.teavm.model.MethodDescriptor;
 
 public class VirtualTable {
     private String className;
-    Map<MethodDescriptor, VirtualTableEntry> entries = new LinkedHashMap<>();
-    private Map<MethodDescriptor, VirtualTableEntry> readonlyEntries;
+    private VirtualTable parent;
+    private List<? extends MethodDescriptor> methods;
+    private Set<MethodDescriptor> methodSet;
+    private Map<MethodDescriptor, VirtualTableEntry> entryMap;
 
-    VirtualTable(String className) {
+    VirtualTable(String className, VirtualTable parent, List<? extends MethodDescriptor> methods,
+            Set<MethodDescriptor> methodSet, Map<MethodDescriptor, VirtualTableEntry> entryMap) {
         this.className = className;
+        this.parent = parent;
+        this.methods = methods;
+        this.methodSet = methodSet;
+        this.entryMap = entryMap;
     }
 
     public String getClassName() {
         return className;
     }
 
-    public Map<MethodDescriptor, VirtualTableEntry> getEntries() {
-        if (readonlyEntries == null) {
-            readonlyEntries = Collections.unmodifiableMap(entries);
+    public VirtualTable getParent() {
+        return parent;
+    }
+
+    public List<? extends MethodDescriptor> getMethods() {
+        return methods;
+    }
+
+    public VirtualTableEntry getEntry(MethodDescriptor method) {
+        return entryMap.get(method);
+    }
+
+    public boolean hasMethod(MethodDescriptor method) {
+        return methodSet.contains(method);
+    }
+
+    public VirtualTable findMethodContainer(MethodDescriptor method) {
+        VirtualTable vt = this;
+        while (vt != null) {
+            if (vt.hasMethod(method)) {
+                return vt;
+            }
+            vt = vt.getParent();
         }
-        return readonlyEntries;
+        return null;
+    }
+
+    public int size() {
+        return methods.size() + (parent != null ? parent.size() : 0);
     }
 }

@@ -78,11 +78,11 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
         }
 
         if (method.hasModifier(ElementModifier.SYNCHRONIZED)) {
-            processAsyncMethod(methodDep);
+            processAsyncMethod();
         }
     }
 
-    private void processAsyncMethod(MethodDependency methodDep) {
+    private void processAsyncMethod() {
         if (asyncSupported) {
             linkMethod(MONITOR_ENTER_METHOD).use();
         }
@@ -144,7 +144,7 @@ public class FastDependencyAnalyzer extends DependencyAnalyzer {
                     if (fullType instanceof ValueType.Object) {
                         String prefix = key.substring(0, degree) + "L";
                         String className = ((ValueType.Object) fullType).getClassName();
-                        ClassReader cls = getClassSource().get(key);
+                        ClassReader cls = getClassSource().get(className);
                         if (cls != null) {
                             if (cls.getParent() != null) {
                                 node.connect(getSubtypeNode(prefix + cls.getParent().replace('.', '/') + ";"));

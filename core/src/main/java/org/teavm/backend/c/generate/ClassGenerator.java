@@ -18,7 +18,6 @@ package org.teavm.backend.c.generate;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -436,7 +435,9 @@ public class ClassGenerator {
         } else if (type instanceof ValueType.Array) {
             className = "java.lang.Object";
         }
-        String structName = className != null
+        ClassReader cls = className != null ? context.getClassSource().get(className) : null;
+
+        String structName = className != null && (cls == null || !cls.hasModifier(ElementModifier.INTERFACE))
                 ? context.getNames().forClassClass(className)
                 : "TeaVM_Class";
         if (className != null) {
@@ -444,7 +445,6 @@ public class ClassGenerator {
         }
         String name = context.getNames().forClassInstance(type);
 
-        ClassReader cls = className != null ? context.getClassSource().get(className) : null;
         String enumConstants;
         if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
             enumConstants = writeEnumConstants(cls, name);
@@ -459,35 +459,49 @@ public class ClassGenerator {
         codeWriter.print("alignas(8) ").print(structName).print(" ").print(name).println(" = {").indent();
 
         if (className != null) {
-            codeWriter.println(".parent = {").indent();
-            generateRuntimeClassInitializer(type, enumConstants);
-            codeWriter.outdent().println("},");
-
             VirtualTable virtualTable = context.getVirtualTableProvider().lookup(className);
-            if (virtualTable != null) {
-                List<VirtualTableEntry> entries = new ArrayList<>(virtualTable.getEntries().values());
-                for (int i = 0; i < entries.size(); ++i) {
-                    VirtualTableEntry entry = entries.get(i);
-                    String methodName = context.getNames().forVirtualMethod(
-                            new MethodReference(className, entry.getMethod()));
-                    String implName = entry.getImplementor() != null
-                            ? "&" + context.getNames().forMethod(entry.getImplementor())
-                            : "NULL";
-                    if (entry.getImplementor() != null) {
-                        includes.includeClass(entry.getImplementor().getClassName());
-                    }
-                    codeWriter.print(".").print(methodName).print(" = ").print(implName);
-                    if (i < entries.size() - 1) {
-                        codeWriter.print(",");
-                    }
-                    codeWriter.println();
-                }
+            if (cls.hasModifier(ElementModifier.INTERFACE)) {
+                generateRuntimeClassInitializer(type, enumConstants);
+            } else if (virtualTable != null) {
+                generateVirtualTableContent(virtualTable, virtualTable, type, enumConstants);
+            } else {
+                codeWriter.println(".parent = {").indent();
+                generateRuntimeClassInitializer(type, enumConstants);
+                codeWriter.outdent().println("}");
             }
         } else {
             generateRuntimeClassInitializer(type, enumConstants);
         }
 
         codeWriter.outdent().println("};");
+    }
+
+    private void generateVirtualTableContent(VirtualTable current, VirtualTable original, ValueType type,
+            String enumConstants) {
+        codeWriter.println(".parent = {").indent();
+        if (current.getParent() == null) {
+            generateRuntimeClassInitializer(type, enumConstants);
+        } else {
+            generateVirtualTableContent(current.getParent(), original, type, enumConstants);
+        }
+        codeWriter.outdent().print("}");
+
+        for (MethodDescriptor method : current.getMethods()) {
+            if (method == null) {
+                continue;
+            }
+            VirtualTableEntry entry = original.getEntry(method);
+            if (entry == null) {
+                continue;
+            }
+
+            codeWriter.println(",");
+            String methodName = context.getNames().forVirtualMethod(method);
+            String implName = "&" + context.getNames().forMethod(entry.getImplementor());
+            includes.includeClass(entry.getImplementor().getClassName());
+            codeWriter.print(".").print(methodName).print(" = ").print(implName);
+        }
+        codeWriter.println();
     }
 
     private String writeEnumConstants(ClassReader cls, String baseName) {
@@ -633,17 +647,30 @@ public class ClassGenerator {
         String name = context.getNames().forClassClass(className);
 
         headerWriter.print("typedef struct ").print(name).println(" {").indent();
-        headerWriter.println("TeaVM_Class parent;");
 
         VirtualTable virtualTable = context.getVirtualTableProvider().lookup(className);
         if (virtualTable != null) {
-            for (VirtualTableEntry entry : virtualTable.getEntries().values()) {
-                String methodName = context.getNames().forVirtualMethod(
-                        new MethodReference(className, entry.getMethod()));
-                headerWriter.printType(entry.getMethod().getResultType())
-                        .print(" (*").print(methodName).print(")(");
-                codeGenerator.generateMethodParameters(headerWriter, entry.getMethod(), false, false);
-                headerWriter.println(");");
+            String parentName = "TeaVM_Class";
+            int index = 0;
+            if (virtualTable.getParent() != null) {
+                headerIncludes.includeClass(virtualTable.getParent().getClassName());
+                parentName = context.getNames().forClassClass(virtualTable.getParent().getClassName());
+                index = virtualTable.getParent().size();
+            }
+
+            headerWriter.println(parentName + " parent;");
+            int padIndex = 0;
+            for (MethodDescriptor method : virtualTable.getMethods()) {
+                if (method != null) {
+                    String methodName = context.getNames().forVirtualMethod(method);
+                    headerWriter.printType(method.getResultType())
+                            .print(" (*").print(methodName).print(")(");
+                    codeGenerator.generateMethodParameters(headerWriter, method, false, false);
+                    headerWriter.print(")");
+                } else {
+                    headerWriter.print("void (*pad" + padIndex++ + ")()");
+                }
+                headerWriter.println("; // " + index++);
             }
         }
 

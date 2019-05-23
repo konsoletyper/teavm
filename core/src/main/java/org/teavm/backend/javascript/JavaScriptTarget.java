@@ -239,6 +239,13 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         dep.use();
 
         dependencyAnalyzer.linkField(new FieldReference(String.class.getName(), "characters"));
+        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "hashCode", int.class))
+                .propagate(0, "java.lang.String")
+                .use();
+        dependencyAnalyzer.linkMethod(new MethodReference(String.class, "equals", Object.class, boolean.class))
+                .propagate(0, "java.lang.String")
+                .propagate(1, "java.lang.String")
+                .use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(Object.class, "clone", Object.class));
         MethodDependency exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(

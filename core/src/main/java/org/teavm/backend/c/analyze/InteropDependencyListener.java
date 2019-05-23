@@ -24,6 +24,8 @@ import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.ValueType;
 
 public class InteropDependencyListener extends AbstractDependencyListener {
     @Override
@@ -31,11 +33,16 @@ public class InteropDependencyListener extends AbstractDependencyListener {
         if (agent.getClassHierarchy().isSuperType(Structure.class.getName(), className, false)) {
             ClassReader cls = agent.getClassSource().get(className);
             if (cls != null) {
-                for (FieldReader field : cls.getFields()) {
-                    if (!field.hasModifier(ElementModifier.STATIC)) {
-                        agent.linkField(field.getReference());
-                    }
-                }
+                reachFields(agent, cls);
+            }
+        }
+    }
+
+    private void reachFields(DependencyAgent agent, ClassReader cls) {
+        for (FieldReader field : cls.getFields()) {
+            if (!field.hasModifier(ElementModifier.STATIC)) {
+                agent.linkField(field.getReference());
+                reachType(agent, field.getType());
             }
         }
     }
@@ -51,8 +58,22 @@ public class InteropDependencyListener extends AbstractDependencyListener {
             return;
         }
 
-        if (method.getReference().getReturnType().isObject("java.lang.String")) {
+        MethodReference reference = method.getReference();
+        if (reference.getReturnType().isObject("java.lang.String")) {
             method.getResult().propagate(agent.getType("java.lang.String"));
+        }
+
+        for (int i = 0; i < reference.parameterCount(); ++i) {
+            reachType(agent, reference.parameterType(i));
+        }
+    }
+
+    private void reachType(DependencyAgent agent, ValueType type) {
+        if (type instanceof ValueType.Object) {
+            String fieldClassName = ((ValueType.Object) type).getClassName();
+            if (agent.getClassHierarchy().isSuperType(Structure.class.getName(), fieldClassName, false)) {
+                agent.linkClass(fieldClassName);
+            }
         }
     }
 }

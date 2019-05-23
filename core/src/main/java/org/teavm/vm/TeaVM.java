@@ -908,6 +908,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         public ClassInitializerInfo getClassInitializerInfo() {
             return classInitializerInfo;
         }
+
+        @Override
+        public TeaVMOptimizationLevel getOptimizationLevel() {
+            return optimizationLevel;
+        }
     };
 
     class PostProcessingClassHolderSource implements ListableClassHolderSource {
@@ -954,12 +959,14 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     }
                     return program;
                 };
+
                 for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
                     MethodDependencyInfo methodDep = dependencyAnalyzer.getMethod(method.getReference());
                     if (methodDep == null) {
                         cls.removeMethod(method);
                     } else if (!methodDep.isUsed()) {
                         method.getModifiers().add(ElementModifier.ABSTRACT);
+                        method.setProgram(null);
                     } else {
                         MethodReader methodReader = classReader.getMethod(method.getDescriptor());
                         if (methodReader != null && methodReader.getProgram() != null) {

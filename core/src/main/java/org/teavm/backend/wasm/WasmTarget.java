@@ -123,6 +123,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.classes.TagRegistry;
+import org.teavm.model.classes.VirtualTableBuilder;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.InvocationType;
@@ -776,6 +777,13 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     }
 
     private VirtualTableProvider createVirtualTableProvider(ListableClassHolderSource classes) {
+        VirtualTableBuilder builder = new VirtualTableBuilder(classes);
+        builder.setMethodsUsedAtCallSites(getMethodsUsedOnCallSites(classes));
+        builder.setMethodCalledVirtually(controller::isVirtual);
+        return builder.build();
+    }
+
+    private Set<MethodReference> getMethodsUsedOnCallSites(ListableClassHolderSource classes) {
         Set<MethodReference> virtualMethods = new HashSet<>();
 
         for (String className : classes.getClassNames()) {
@@ -801,7 +809,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             }
         }
 
-        return new VirtualTableProvider(classes, virtualMethods, controller::isVirtual);
+        return virtualMethods;
     }
 
     @Override

@@ -160,7 +160,7 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
                 fieldDep.getValue().connect(receiverNode);
             }
         }
-        initClass(field.getClassName());
+        touchField(instance, fieldDep, field);
     }
 
     @Override
@@ -174,7 +174,17 @@ abstract class AbstractInstructionAnalyzer extends AbstractInstructionReader {
                 valueNode.connect(fieldDep.getValue());
             }
         }
-        initClass(field.getClassName());
+        touchField(instance, fieldDep, field);
+    }
+
+    private void touchField(VariableReader instance, FieldDependency fieldDep, FieldReference field) {
+        if (instance == null) {
+            if (fieldDep.getField() != null) {
+                initClass(fieldDep.getField().getOwnerName());
+            }
+        } else {
+            getAnalyzer().linkClass(field.getClassName());
+        }
     }
 
     @Override

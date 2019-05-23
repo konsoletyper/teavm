@@ -185,7 +185,7 @@ public class TObject {
         }
     }
 
-    boolean isEmptyMonitor() {
+    final boolean isEmptyMonitor() {
         Monitor monitor = this.monitor;
         if (monitor == null) {
             return true;
@@ -246,7 +246,7 @@ public class TObject {
         return getClass().getName() + "@" + TInteger.toHexString(identity());
     }
 
-    int identity() {
+    final int identity() {
         if (PlatformDetector.isLowLevel()) {
             Monitor monitor = this.monitor;
             if (monitor == null) {

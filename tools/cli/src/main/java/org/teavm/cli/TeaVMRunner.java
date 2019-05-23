@@ -132,7 +132,7 @@ public final class TeaVMRunner {
                 .withLongOpt("min-heap")
                 .withArgName("size")
                 .hasArg()
-                .withDescription("Minimum heap size in bytes (for C and WebAssembly)")
+                .withDescription("Minimum heap size in megabytes (for C and WebAssembly)")
                 .create());
         options.addOption(OptionBuilder
                 .withLongOpt("max-toplevel-names")
@@ -323,7 +323,7 @@ public final class TeaVMRunner {
                 printUsage();
                 return;
             }
-            tool.setMinHeapSize(size);
+            tool.setMinHeapSize(size * 1024 * 1024);
         }
     }
 
