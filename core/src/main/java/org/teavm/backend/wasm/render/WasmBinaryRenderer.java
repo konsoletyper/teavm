@@ -333,13 +333,10 @@ public class WasmBinaryRenderer {
 
         WasmBinaryWriter functionsSubsection = new WasmBinaryWriter();
         Collection<WasmFunction> functions = module.getFunctions().values();
-
+        functions = functions.stream().filter(f -> f.getImportName() != null).collect(Collectors.toList());
         functionsSubsection.writeLEB(functions.size());
 
         for (WasmFunction function : functions) {
-            if (function.getImportName() != null) {
-                continue;
-            }
             functionsSubsection.writeLEB(functionIndexes.get(function.getName()));
             functionsSubsection.writeAsciiString(function.getName());
         }

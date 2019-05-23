@@ -518,7 +518,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         for (String className : classes.getClassNames()) {
             ClassHolder cls = classes.get(className);
             for (MethodHolder method : cls.getMethods()) {
-                if (context.getIntrinsic(method.getReference()) != null) {
+                if (method.hasModifier(ElementModifier.ABSTRACT)
+                        || context.getIntrinsic(method.getReference()) != null) {
                     continue;
                 }
                 module.add(generator.generateDefinition(method.getReference()));

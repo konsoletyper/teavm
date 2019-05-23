@@ -110,10 +110,11 @@ import org.teavm.backend.wasm.render.WasmTypeInference;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
-import org.teavm.model.classes.VirtualTableEntry;
+import org.teavm.model.classes.VirtualTable;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
@@ -909,10 +910,12 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         if (expr.getType() == InvocationType.STATIC || expr.getType() == InvocationType.SPECIAL) {
-            String methodName = context.names.forMethod(expr.getMethod());
+            MethodReader method = context.getClassSource().resolve(expr.getMethod());
+            MethodReference reference = method != null ? method.getReference() : expr.getMethod();
+            String methodName = context.names.forMethod(reference);
 
             WasmCall call = new WasmCall(methodName);
-            if (context.getImportedMethod(expr.getMethod()) != null) {
+            if (context.getImportedMethod(reference) != null) {
                 call.setImported(true);
             }
             for (Expr argument : expr.getArguments()) {
@@ -942,23 +945,31 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
             result = block;
         } else {
+            MethodReference reference = expr.getMethod();
             accept(expr.getArguments().get(0));
             WasmExpression instance = result;
             WasmBlock block = new WasmBlock(false);
-            block.setType(WasmGeneratorUtil.mapType(expr.getMethod().getReturnType()));
+            block.setType(WasmGeneratorUtil.mapType(reference.getReturnType()));
 
             WasmLocal instanceVar = getTemporary(WasmType.INT32);
             block.getBody().add(new WasmSetLocal(instanceVar, instance));
             instance = new WasmGetLocal(instanceVar);
 
             int vtableOffset = classGenerator.getClassSize(RuntimeClass.class.getName());
-            VirtualTableEntry vtableEntry = context.getVirtualTableProvider().lookup(expr.getMethod());
-            if (vtableEntry == null) {
+            VirtualTable vtable = context.getVirtualTableProvider().lookup(reference.getClassName());
+            if (vtable != null) {
+                vtable = vtable.findMethodContainer(reference.getDescriptor());
+            }
+            if (vtable == null) {
                 result = new WasmUnreachable();
                 return;
             }
+            int vtableIndex = vtable.getMethods().indexOf(reference.getDescriptor());
+            if (vtable.getParent() != null) {
+                vtableIndex += vtable.getParent().size();
+            }
             WasmExpression methodIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    getReferenceToClass(instance), new WasmInt32Constant(vtableEntry.getIndex() * 4 + vtableOffset));
+                    getReferenceToClass(instance), new WasmInt32Constant(vtableIndex * 4 + vtableOffset));
             methodIndex = new WasmLoadInt32(4, methodIndex, WasmInt32Subtype.INT32);
 
             WasmIndirectCall call = new WasmIndirectCall(methodIndex);

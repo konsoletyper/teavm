@@ -76,6 +76,8 @@ public class WasmClassGenerator {
             DataPrimitives.INT, /* isInstance function */
             DataPrimitives.INT, /* init function */
             DataPrimitives.ADDRESS, /* parent */
+            DataPrimitives.INT, /* interface count */
+            DataPrimitives.ADDRESS, /* interfaces */
             DataPrimitives.ADDRESS, /* enum values */
             DataPrimitives.ADDRESS, /* layout */
             DataPrimitives.ADDRESS  /* simple name */);
@@ -92,9 +94,9 @@ public class WasmClassGenerator {
     private static final int CLASS_IS_INSTANCE = 8;
     private static final int CLASS_INIT = 9;
     private static final int CLASS_PARENT = 10;
-    private static final int CLASS_ENUM_VALUES = 11;
-    private static final int CLASS_LAYOUT = 12;
-    private static final int CLASS_SIMPLE_NAME = 13;
+    private static final int CLASS_ENUM_VALUES = 13;
+    private static final int CLASS_LAYOUT = 14;
+    private static final int CLASS_SIMPLE_NAME = 15;
 
     public WasmClassGenerator(ClassReaderSource processedClassSource, ClassReaderSource classSource,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, BinaryWriter binaryWriter,
@@ -377,13 +379,13 @@ public class WasmClassGenerator {
     private void fillVirtualTable(VirtualTable vtable, DataValue array) {
         int index = 0;
         List<VirtualTable> tables = new ArrayList<>();
-        while (vtable != null) {
-            tables.add(vtable);
-            vtable = vtable.getParent();
+        VirtualTable vt = vtable;
+        while (vt != null) {
+            tables.add(vt);
+            vt = vt.getParent();
         }
         for (int i = tables.size() - 1; i >= 0; --i) {
-            vtable = tables.get(i);
-            for (MethodDescriptor method : vtable.getMethods()) {
+            for (MethodDescriptor method : tables.get(i).getMethods()) {
                 int methodIndex = -1;
                 if (method != null) {
                     VirtualTableEntry entry = vtable.getEntry(method);

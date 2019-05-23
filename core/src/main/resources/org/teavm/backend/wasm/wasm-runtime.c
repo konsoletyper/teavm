@@ -41,3 +41,12 @@ inline static float reinterpret_int32(int32_t v) {
     reinterpret_union_32.i = v;
     return reinterpret_union_32.f;
 }
+
+static void logOutOfMemory() {
+    abort();
+}
+
+static void logString(int32_t v) {
+}
+static void logInt(int32_t v) {
+}
