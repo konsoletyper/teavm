@@ -154,6 +154,7 @@
               <optimizationLevel>FULL</optimizationLevel>
             </configuration>
           </execution>
+          <!--
           <execution>
             <id>wasm-client</id>
             <goals>
@@ -168,6 +169,7 @@
               <heapSize>8</heapSize>
             </configuration>
           </execution>
+          -->
           <execution>
             <id>native-client</id>
             <goals>

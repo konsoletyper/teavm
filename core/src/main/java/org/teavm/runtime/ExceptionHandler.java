@@ -24,4 +24,5 @@ import org.teavm.interop.Unmanaged;
 public class ExceptionHandler extends Structure {
     public int id;
     public RuntimeClass exceptionClass;
+    public ExceptionHandler next;
 }
