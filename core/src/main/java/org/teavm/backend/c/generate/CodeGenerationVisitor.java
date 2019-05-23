@@ -352,12 +352,16 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     @Override
     public void visit(VariableExpr expr) {
         pushLocation(expr.getLocation());
-        if (expr.getIndex() == 0) {
-            writer.print("teavm_this_");
-        } else {
-            writer.print("teavm_local_" + expr.getIndex());
-        }
+        writer.print(getVariableName(expr.getIndex()));
         popLocation(expr.getLocation());
+    }
+
+    private String getVariableName(int index) {
+        if (index == 0) {
+            return "teavm_this_";
+        } else {
+            return "teavm_local_" + index;
+        }
     }
 
     @Override
@@ -504,12 +508,21 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             return;
         }
 
-        String receiver = allocTemporaryVariable(CVariableType.PTR);
-        writer.print("((").print(receiver).print(" = ");
-        arguments.get(0).acceptVisitor(this);
+        Expr receiverArg = arguments.get(0);
+        boolean closingParenthesis = false;
+        String receiver;
+        if (receiverArg instanceof VariableExpr) {
+            receiver = getVariableName(((VariableExpr) receiverArg).getIndex());
+        } else {
+            receiver = allocTemporaryVariable(CVariableType.PTR);
+            writer.print("((").print(receiver).print(" = ");
+            arguments.get(0).acceptVisitor(this);
+            writer.print("), ");
+            closingParenthesis = true;
+        }
 
         includes.includeClass(vtableClass);
-        writer.print("), TEAVM_METHOD(")
+        writer.print("TEAVM_METHOD(")
                 .print(receiver).print(", ")
                 .print(names.forClassClass(vtableClass)).print(", ")
                 .print(names.forVirtualMethod(reference.getDescriptor()))
@@ -518,9 +531,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             writer.print(", ");
             arguments.get(i).acceptVisitor(this);
         }
-        writer.print("))");
-
-        freeTemporaryVariable(CVariableType.PTR);
+        writer.print(")");
+        if (closingParenthesis) {
+            writer.print(")");
+            freeTemporaryVariable(CVariableType.PTR);
+        }
     }
 
     private void generateNoMethodCall(MethodReference reference, List<? extends Expr> arguments) {
