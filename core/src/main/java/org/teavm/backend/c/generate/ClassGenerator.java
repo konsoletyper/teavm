@@ -25,10 +25,16 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
+import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.lowlevel.generate.ClassGeneratorUtil;
+import org.teavm.cache.AstCacheEntry;
+import org.teavm.cache.AstDependencyExtractor;
+import org.teavm.cache.CacheStatus;
+import org.teavm.cache.EmptyMethodNodeCache;
+import org.teavm.cache.MethodNodeCache;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.NoGcRoot;
@@ -77,6 +83,7 @@ public class ClassGenerator {
 
     private GenerationContext context;
     private Decompiler decompiler;
+    private CacheStatus cacheStatus;
     private TagRegistry tagRegistry;
     private CodeGenerator codeGenerator;
     private FieldReference[] staticGcRoots;
@@ -87,11 +94,19 @@ public class ClassGenerator {
     private CodeWriter headerWriter;
     private IncludeManager includes;
     private IncludeManager headerIncludes;
+    private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
+    private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
 
-    public ClassGenerator(GenerationContext context, TagRegistry tagRegistry, Decompiler decompiler) {
+    public ClassGenerator(GenerationContext context, TagRegistry tagRegistry, Decompiler decompiler,
+            CacheStatus cacheStatus) {
         this.context = context;
         this.tagRegistry = tagRegistry;
         this.decompiler = decompiler;
+        this.cacheStatus = cacheStatus;
+    }
+
+    public void setAstCache(MethodNodeCache astCache) {
+        this.astCache = astCache;
     }
 
     public void prepare(ListableClassHolderSource classes) {
@@ -274,7 +289,16 @@ public class ClassGenerator {
             }
 
             generateMethodForwardDeclaration(method);
-            RegularMethodNode methodNode = decompiler.decompileRegular(method);
+            RegularMethodNode methodNode;
+            AstCacheEntry entry = astCache.get(method.getReference(), cacheStatus);
+            if (entry == null) {
+                methodNode = decompiler.decompileRegular(method);
+                astCache.store(method.getReference(), new AstCacheEntry(methodNode, new ControlFlowEntry[0]),
+                        () -> dependencyExtractor.extract(methodNode));
+            } else {
+                methodNode = entry.method;
+            }
+
             codeGenerator.generateMethod(methodNode);
 
             if (context.isIncremental()) {

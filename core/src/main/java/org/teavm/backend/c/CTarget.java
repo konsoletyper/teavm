@@ -76,6 +76,8 @@ import org.teavm.backend.lowlevel.dependency.ExceptionHandlingDependencyListener
 import org.teavm.backend.lowlevel.dependency.WeakReferenceDependencyListener;
 import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
 import org.teavm.backend.lowlevel.transform.WeakReferenceTransformation;
+import org.teavm.cache.EmptyMethodNodeCache;
+import org.teavm.cache.MethodNodeCache;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
@@ -148,6 +150,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private List<GeneratorFactory> generatorFactories = new ArrayList<>();
     private Characteristics characteristics;
     private Set<MethodReference> asyncMethods;
+    private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
     private boolean incremental;
     private boolean lineNumbersGenerated;
     private SimpleStringPool stringPool;
@@ -162,6 +165,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     public void setLineNumbersGenerated(boolean lineNumbersGenerated) {
         this.lineNumbersGenerated = lineNumbersGenerated;
+    }
+
+    public void setAstCache(MethodNodeCache astCache) {
+        this.astCache = astCache;
     }
 
     @Override
@@ -352,7 +359,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
         emitResource(runtimeHeaderWriter, "runtime.h");
 
-        ClassGenerator classGenerator = new ClassGenerator(context, tagRegistry, decompiler);
+        ClassGenerator classGenerator = new ClassGenerator(context, tagRegistry, decompiler,
+                controller.getCacheStatus());
+        classGenerator.setAstCache(astCache);
         IntrinsicFactoryContextImpl intrinsicFactoryContext = new IntrinsicFactoryContextImpl(
                 controller.getUnprocessedClassSource(), controller.getClassLoader(), controller.getServices(),
                 controller.getProperties());
@@ -642,6 +651,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateAllFile(ListableClassHolderSource classes, List<? extends ValueType> types,
             BuildTarget buildTarget) throws IOException {
+        List<String> allFiles = getGeneratedFiles(classes, types);
+
         BufferedCodeWriter writer = new BufferedCodeWriter(false);
         writer.println("#define _XOPEN_SOURCE");
         writer.println("#define __USE_XOPEN");
@@ -649,23 +660,38 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
         IncludeManager includes = new SimpleIncludeManager(writer);
         includes.init("all.c");
-        includes.includePath("runtime.c");
-        includes.includePath("stringhash.c");
-        includes.includePath("strings.c");
-        includes.includePath("callsites.c");
-        includes.includePath("references.c");
-        includes.includePath("date.c");
-
-        for (String className : classes.getClassNames()) {
-            includes.includePath(ClassGenerator.fileName(className) + ".c");
+        for (String file : allFiles) {
+            includes.includePath(file);
         }
-        for (ValueType type : types) {
-            includes.includePath(ClassGenerator.fileName(type) + ".c");
-        }
-
-        includes.includePath("main.c");
 
         OutputFileUtil.write(writer, "all.c", buildTarget);
+
+        writer = new BufferedCodeWriter(false);
+        for (String file : allFiles) {
+            writer.println(file);
+        }
+        OutputFileUtil.write(writer, "all.txt", buildTarget);
+    }
+
+    private List<String> getGeneratedFiles(ListableClassHolderSource classes, List<? extends ValueType> types) {
+        List<String> files = new ArrayList<>();
+        files.add("runtime.c");
+        files.add("stringhash.c");
+        files.add("strings.c");
+        files.add("callsites.c");
+        files.add("references.c");
+        files.add("date.c");
+
+        for (String className : classes.getClassNames()) {
+            files.add(ClassGenerator.fileName(className) + ".c");
+        }
+        for (ValueType type : types) {
+            files.add(ClassGenerator.fileName(type) + ".c");
+        }
+
+        files.add("main.c");
+
+        return files;
     }
 
     private void generateArrayOfClassReferences(GenerationContext context, CodeWriter writer, IncludeManager includes,
