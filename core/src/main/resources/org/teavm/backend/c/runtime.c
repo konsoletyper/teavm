@@ -283,7 +283,7 @@ size_t teavm_mbSize(char16_t* javaChars, int32_t javaCharsCount) {
     mbstate_t state = {0};
     for (int32_t i = 0; i < javaCharsCount; ++i) {
         size_t result = c16rtomb(buffer, javaChars[i], &state);
-        if (result < 0) {
+        if (result == -1) {
             break;
         }
         sz += result;
@@ -298,7 +298,7 @@ int32_t teavm_c16Size(char* cstring, size_t count) {
         size_t result = mbrtoc16(NULL, cstring, count, &state);
         if (result == -1) {
             break;
-        } else if (result >= 0) {
+        } else if ((int) result >= 0) {
             sz++;
             count -= result;
             cstring += result;
@@ -324,7 +324,11 @@ char* teavm_stringToC(void* obj) {
     char* dst = result;
     mbstate_t state = {0};
     for (int32_t i = 0; i < charArray->size; ++i) {
-        dst += c16rtomb(dst, javaChars[i], &state);
+        size_t result = c16rtomb(dst, javaChars[i], &state);
+        if (result == -1) {
+            break;
+        }
+        dst += result;
     }
     *dst = '\0';
     return result;
@@ -344,7 +348,7 @@ TeaVM_String* teavm_cToString(char* cstring) {
         int32_t result = mbrtoc16(javaChars++, cstring, clen, &state);
         if (result == -1) {
             break;
-        } else if (result >= 0) {
+        } else if ((int) result >= 0) {
             clen -= result;
             cstring += result;
         }
