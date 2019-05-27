@@ -126,13 +126,12 @@ public class VirtualTableBuilder {
         List<MethodDescriptor> methodsAtCallSites = methodsUsedAtCallSites.get(className);
         if (methodsAtCallSites != null) {
             for (MethodDescriptor methodDesc : methodsAtCallSites) {
+                if (cls.hasModifier(ElementModifier.FINAL) && !table.entries.containsKey(methodDesc)) {
+                    continue;
+                }
                 MethodReader method = cls.getMethod(methodDesc);
-                if (method != null) {
-                    if (method.hasModifier(ElementModifier.FINAL)
-                            || method.getLevel() == AccessLevel.PRIVATE
-                            || cls.hasModifier(ElementModifier.FINAL)) {
-                        continue;
-                    }
+                if (method != null && method.getLevel() == AccessLevel.PRIVATE) {
+                    continue;
                 }
                 table.entries.computeIfAbsent(methodDesc, k -> new EntryBuilder());
             }
@@ -148,9 +147,7 @@ public class VirtualTableBuilder {
 
             EntryBuilder entry = table.entries.get(method.getDescriptor());
             if (entry == null) {
-                if (method.hasModifier(ElementModifier.FINAL)
-                        || method.getLevel() == AccessLevel.PRIVATE
-                        || cls.hasModifier(ElementModifier.FINAL)) {
+                if (cls.hasModifier(ElementModifier.FINAL)) {
                     continue;
                 }
                 entry = new EntryBuilder();
