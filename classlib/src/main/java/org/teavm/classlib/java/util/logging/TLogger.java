@@ -64,6 +64,9 @@ public class TLogger {
             System.out.print(record.getLevel().getName());
             System.out.print("] ");
             System.out.println(message);
+            if (record.getThrown() != null) {
+                record.getThrown().printStackTrace(System.out);
+            }
         } else {
             if (record.getLevel().intValue() >= TLevel.SEVERE.intValue()) {
                 error(message);
