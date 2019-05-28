@@ -10,7 +10,8 @@
 #endif
 
 #ifdef _MSC_VER
-#define alignas(x)
+#define alignas(n) __declspec(align(n))
+#pragma comment (lib,"uuid.lib")
 #endif
 
 typedef struct TeaVM_Object {

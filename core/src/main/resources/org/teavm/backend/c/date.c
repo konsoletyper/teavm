@@ -12,6 +12,11 @@
 #define _GNU_SOURCE
 #endif
 
+#ifdef _MSC_VER
+#define timegm _mkgmtime
+#define localtime_r(a, b) localtime_s(b, a)
+#endif
+
 #include <time.h>
 
 static time_t teavm_epochStart;
@@ -73,10 +78,14 @@ int64_t teavm_date_createUtc(int32_t year, int32_t month, int32_t day, int32_t h
 }
 
 int64_t teavm_date_parse(char* s) {
-    struct tm t;
-    strptime(s, teavm_date_defaultFormat, &t);
-    time_t result = mktime(&t);
-    return (int64_t) (1000 * difftime(result, teavm_epochStart));
+    #ifdef __GNUC__
+        struct tm t;
+        strptime(s, teavm_date_defaultFormat, &t);
+        time_t result = mktime(&t);
+        return (int64_t) (1000 * difftime(result, teavm_epochStart));
+    #else
+        return 0;
+    #endif
 }
 
 int32_t teavm_date_getYear(int64_t time) {

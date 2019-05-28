@@ -21,6 +21,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.ConcurrentLinkedQueue;
 
 class CRunStrategy implements TestRunStrategy {
     private String compilerCommand;
@@ -87,25 +88,45 @@ class CRunStrategy implements TestRunStrategy {
         return runProcess(new ProcessBuilder(command).directory(inputDir).start(), output);
     }
 
-    private boolean runProcess(Process process, List<String> output) throws IOException, InterruptedException {
+    private boolean runProcess(Process process, List<String> output) throws InterruptedException {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(process.getInputStream()));
         BufferedReader stderr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
+        ConcurrentLinkedQueue<String> lines = new ConcurrentLinkedQueue<>();
 
-        while (true) {
-            String line = stderr.readLine();
-            if (line == null) {
-                break;
+        Thread thread = new Thread(() -> {
+            try {
+                while (true) {
+                    String line = stderr.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    lines.add(line);
+                }
+            } catch (IOException e) {
+                // do nothing
             }
-            output.add(line);
-        }
-        while (true) {
-            String line = stdin.readLine();
-            if (line == null) {
-                break;
-            }
-            output.add(line);
-        }
+        });
+        thread.setDaemon(true);
+        thread.start();
 
-        return process.waitFor() == 0;
+        thread = new Thread(() -> {
+            try {
+                while (true) {
+                    String line = stdin.readLine();
+                    if (line == null) {
+                        break;
+                    }
+                    lines.add(line);
+                }
+            } catch (IOException e) {
+                // do nothing
+            }
+        });
+        thread.setDaemon(true);
+        thread.start();
+
+        boolean result = process.waitFor() == 0;
+        output.addAll(lines);
+        return result;
     }
 }

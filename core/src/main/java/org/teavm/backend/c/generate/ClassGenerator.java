@@ -478,7 +478,7 @@ public class ClassGenerator {
 
         headerWriter.print("extern ").print(structName).print(" ").print(name).println(";");
         if (classLayout != null) {
-            codeWriter.println("static int16_t teavm_classLayouts_" + name + "[];");
+            codeWriter.println("static int16_t teavm_classLayouts_" + name + "[" + (classLayout.length + 1) + "];");
         }
         codeWriter.print("alignas(8) ").print(structName).print(" ").print(name).println(" = {").indent();
 
@@ -741,7 +741,8 @@ public class ClassGenerator {
         }
 
         String name = context.getNames().forClassInstance(ValueType.object(className));
-        codeWriter.print("static int16_t teavm_classLayouts_" + name + "[" + classLayout.length + " + 1] = {").indent();
+        codeWriter.print("static int16_t teavm_classLayouts_" + name + "[" + (classLayout.length + 1) + "] = {")
+                .indent();
         codeWriter.println().print("INT16_C(" + classLayout.length + ")");
 
         for (FieldReference field : classLayout) {

@@ -18,6 +18,7 @@
 
 #ifdef _MSC_VER
 #include <Windows.h>
+#include <synchapi.h>
 #endif
 
 void* teavm_gc_heapAddress = NULL;
@@ -55,25 +56,32 @@ TeaVM_ResourceMapEntry* teavm_lookupResource(TeaVM_ResourceMap *map, TeaVM_Strin
 static timer_t teavm_queueTimer;
 #endif
 
+#ifdef _MSC_VER
+static HANDLE teavm_queueTimer;
+#endif
+
 void teavm_beforeInit() {
     srand(time(NULL));
 
     #ifdef __GNUC__
-    struct sigaction sigact;
-    sigact.sa_flags = 0;
-    sigact.sa_handler = NULL;
-    sigaction(SIGRTMIN, &sigact, NULL);
+        struct sigaction sigact;
+        sigact.sa_flags = 0;
+        sigact.sa_handler = NULL;
+        sigaction(SIGRTMIN, &sigact, NULL);
 
-    sigset_t signals;
-    sigemptyset(&signals );
-    sigaddset(&signals, SIGRTMIN);
-    sigprocmask(SIG_BLOCK, &signals, NULL);
+        sigset_t signals;
+        sigemptyset(&signals );
+        sigaddset(&signals, SIGRTMIN);
+        sigprocmask(SIG_BLOCK, &signals, NULL);
 
-    struct sigevent sev;
-    sev.sigev_notify = SIGEV_SIGNAL;
-    sev.sigev_signo = SIGRTMIN;
-    timer_create(CLOCK_REALTIME, &sev, &teavm_queueTimer);
+        struct sigevent sev;
+        sev.sigev_notify = SIGEV_SIGNAL;
+        sev.sigev_signo = SIGRTMIN;
+        timer_create(CLOCK_REALTIME, &sev, &teavm_queueTimer);
+    #endif
 
+    #ifdef _MSC_VER
+        teavm_queueTimer = CreateEvent(NULL, TRUE, FALSE, TEXT("TeaVM_eventQueue"));
     #endif
 }
 
@@ -218,6 +226,19 @@ void teavm_interrupt() {
 
 #endif
 
+#ifdef _MSC_VER
+
+void teavm_waitFor(int64_t timeout) {
+    WaitForSingleObject(teavm_queueTimer, timeout);
+    ResetEvent(teavm_queueTimer);
+}
+
+void teavm_interrupt() {
+    SetEvent(teavm_queueTimer);
+}
+
+#endif
+
 void teavm_outOfMemory() {
     fprintf(stderr, "Application crashed due to lack of free memory\n");
     exit(1);
@@ -279,7 +300,7 @@ TeaVM_Array* teavm_resourceMapKeys(TeaVM_ResourceMap *map) {
 
 size_t teavm_mbSize(char16_t* javaChars, int32_t javaCharsCount) {
     size_t sz = 0;
-    char buffer[__STDC_UTF_16__];
+    char buffer[8];
     mbstate_t state = {0};
     for (int32_t i = 0; i < javaCharsCount; ++i) {
         size_t result = c16rtomb(buffer, javaChars[i], &state);
