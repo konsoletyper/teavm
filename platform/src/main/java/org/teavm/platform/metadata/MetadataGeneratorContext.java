@@ -60,15 +60,6 @@ public interface MetadataGeneratorContext extends ServiceRepository {
     <T extends Resource> T createResource(Class<T> resourceType);
 
     /**
-     * Creates a new resource that represents class literal. Client code then may use
-     * {@link Platform#classFromResource(ClassResource)} to get actual class.
-     *
-     * @param className class to which resource is to point.
-     * @return a new resource.
-     */
-    ClassResource createClassResource(String className);
-
-    /**
      * Creates a new resource that represents static field. Client code then may use
      * {@link Platform#objectFromResource(StaticFieldResource)} to get actual field value.
      *

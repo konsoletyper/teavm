@@ -29,7 +29,6 @@ import org.teavm.jso.JSBody;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.browser.Window;
 import org.teavm.jso.core.JSString;
-import org.teavm.platform.metadata.ClassResource;
 import org.teavm.platform.metadata.StaticFieldResource;
 import org.teavm.platform.plugin.PlatformGenerator;
 import org.teavm.runtime.RuntimeClass;
@@ -129,10 +128,6 @@ public final class Platform {
             cls.init.run();
         }
     }
-
-    @InjectedBy(PlatformGenerator.class)
-    @PluggableDependency(PlatformGenerator.class)
-    public static native PlatformClass classFromResource(ClassResource resource);
 
     @InjectedBy(PlatformGenerator.class)
     @PluggableDependency(PlatformGenerator.class)

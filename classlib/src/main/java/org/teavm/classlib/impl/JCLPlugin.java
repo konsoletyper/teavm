@@ -49,7 +49,6 @@ import org.teavm.interop.PlatformMarker;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.PlatformClass;
-import org.teavm.platform.metadata.ClassResource;
 import org.teavm.platform.metadata.ResourceArray;
 import org.teavm.platform.metadata.ResourceMap;
 import org.teavm.platform.metadata.StringResource;
@@ -144,6 +143,13 @@ public class JCLPlugin implements TeaVMPlugin {
         TeaVMPluginUtil.handleNatives(host, Math.class);
 
         installMetadata(host.getService(MetadataRegistration.class));
+        host.add(new DeclaringClassDependencyListener());
+
+        TeaVMJavaScriptHost jsExtension = host.getExtension(TeaVMJavaScriptHost.class);
+        if (jsExtension != null) {
+            jsExtension.add(new MethodReference(Class.class, "getDeclaringClassImpl", PlatformClass.class,
+                    PlatformClass.class), new DeclaringClassGenerator());
+        }
     }
 
     private void installMetadata(MetadataRegistration reg) {
@@ -207,9 +213,6 @@ public class JCLPlugin implements TeaVMPlugin {
                 new CharacterMetadataGenerator());
         reg.register(new MethodReference(Character.class, "obtainClasses", StringResource.class),
                 new CharacterMetadataGenerator());
-
-        reg.register(new MethodReference(Class.class, "getDeclaringClass", PlatformClass.class, ClassResource.class),
-                new DeclaringClassMetadataGenerator());
     }
 
     @PlatformMarker

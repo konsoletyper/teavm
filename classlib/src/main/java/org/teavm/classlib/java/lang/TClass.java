@@ -47,7 +47,6 @@ import org.teavm.jso.core.JSArray;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformClass;
 import org.teavm.platform.PlatformSequence;
-import org.teavm.platform.metadata.ClassResource;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
@@ -598,11 +597,11 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     public TClass<?> getDeclaringClass() {
-        ClassResource res = getDeclaringClass(platformClass);
-        return res != null ? getClass(Platform.classFromResource(res)) : null;
+        PlatformClass result = getDeclaringClassImpl(getPlatformClass());
+        return result != null ? getClass(result) : null;
     }
-
-    private static native ClassResource getDeclaringClass(PlatformClass cls);
+    
+    private static native PlatformClass getDeclaringClassImpl(PlatformClass cls);
 
     @SuppressWarnings("unchecked")
     public <U> TClass<? extends U> asSubclass(TClass<U> clazz) {

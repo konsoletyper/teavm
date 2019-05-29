@@ -17,7 +17,6 @@ package org.teavm.platform.plugin;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.BiConsumer;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.c.TeaVMCHost;
 import org.teavm.backend.c.intrinsic.Intrinsic;
@@ -34,7 +33,6 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformQueue;
-import org.teavm.platform.metadata.ClassScopedMetadataGenerator;
 import org.teavm.platform.metadata.MetadataGenerator;
 import org.teavm.vm.TeaVMPluginUtil;
 import org.teavm.vm.spi.TeaVMHost;
@@ -43,8 +41,6 @@ import org.teavm.vm.spi.TeaVMPlugin;
 public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
     private MetadataProviderTransformer metadataTransformer = new MetadataProviderTransformer();
     private List<MetadataGeneratorConsumer> metadataGeneratorConsumers = new ArrayList<>();
-    private List<BiConsumer<MethodReference, ClassScopedMetadataGenerator>> scopedMetadataGeneratorConsumers
-            = new ArrayList<>();
 
     @Override
     public void install(TeaVMHost host) {
@@ -71,8 +67,6 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
 
             metadataGeneratorConsumers.add((method, constructor, generator) -> jsHost.add(method,
                     new MetadataProviderNativeGenerator(generator, constructor)));
-            scopedMetadataGeneratorConsumers.add((method, generator) -> jsHost.add(method,
-                    new ClassScopedMetadataProviderNativeGenerator(generator)));
         } else if (!isBootstrap()) {
             host.add(new StringAmplifierTransformer());
         }
@@ -147,13 +141,6 @@ public class PlatformPlugin implements TeaVMPlugin, MetadataRegistration {
             consumer.consume(constructor, method, generator);
         }
         metadataTransformer.addMetadataMethod(method);
-    }
-
-    @Override
-    public void register(MethodReference method, ClassScopedMetadataGenerator generator) {
-        for (BiConsumer<MethodReference, ClassScopedMetadataGenerator> consumer : scopedMetadataGeneratorConsumers) {
-            consumer.accept(method, generator);
-        }
     }
 
     interface MetadataGeneratorConsumer {

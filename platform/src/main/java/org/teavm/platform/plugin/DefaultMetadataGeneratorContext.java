@@ -20,7 +20,6 @@ import java.util.Properties;
 import org.teavm.common.ServiceRepository;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReference;
-import org.teavm.platform.metadata.ClassResource;
 import org.teavm.platform.metadata.MetadataGeneratorContext;
 import org.teavm.platform.metadata.Resource;
 import org.teavm.platform.metadata.ResourceArray;
@@ -79,11 +78,6 @@ class DefaultMetadataGeneratorContext implements MetadataGeneratorContext {
     @Override
     public <T extends Resource> ResourceArray<T> createResourceArray() {
         return new BuildTimeResourceArray<>();
-    }
-
-    @Override
-    public ClassResource createClassResource(String className) {
-        return new BuildTimeClassResource(className);
     }
 
     @Override

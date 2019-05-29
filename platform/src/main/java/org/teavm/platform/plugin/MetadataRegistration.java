@@ -16,11 +16,8 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.model.MethodReference;
-import org.teavm.platform.metadata.ClassScopedMetadataGenerator;
 import org.teavm.platform.metadata.MetadataGenerator;
 
 public interface MetadataRegistration {
     void register(MethodReference method, MetadataGenerator generator);
-
-    void register(MethodReference method, ClassScopedMetadataGenerator generator);
 }
