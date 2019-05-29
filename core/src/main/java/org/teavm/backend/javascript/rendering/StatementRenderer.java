@@ -1483,7 +1483,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             }
             if (!defaultHandlerOccurred) {
                 writer.ws().append("else").ws().append("{").indent().softNewLine();
-                writer.append("throw $$je;").softNewLine();
+                writer.append("throw $$e;").softNewLine();
                 writer.outdent().append("}").softNewLine();
             } else {
                 writer.softNewLine();

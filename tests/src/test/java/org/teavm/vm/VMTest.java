@@ -18,6 +18,7 @@ package org.teavm.vm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.function.Supplier;
 import org.junit.Test;
@@ -487,5 +488,22 @@ public class VMTest {
 
     interface ScriptExecutionWrapper {
         Object wrap(Supplier<Object> execution);
+    }
+
+    @Test
+    public void uncaughtExceptionRethrown() {
+        boolean exceptionCaught = false;
+        try {
+            try {
+                throw new NullPointerException("ok");
+            } catch (IndexOutOfBoundsException e) {
+                fail("Should not get there");
+            }
+            fail("Should not get there");
+        } catch (NullPointerException e) {
+            assertEquals("ok", e.getMessage());
+            exceptionCaught = true;
+        }
+        assertTrue("Exception was not caught", exceptionCaught);
     }
 }
