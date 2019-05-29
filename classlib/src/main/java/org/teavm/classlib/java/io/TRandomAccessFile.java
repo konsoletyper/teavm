@@ -30,6 +30,7 @@ import org.teavm.classlib.java.lang.TNullPointerException;
 
 public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
     private boolean readOnly;
+    private boolean autoFlush;
     private VirtualFileAccessor accessor;
     private int pos;
     private byte[] buff;
@@ -44,8 +45,10 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
                 readOnly = true;
                 break;
             case "rw":
+                break;
             case "rwd":
             case "rws":
+                autoFlush = true;
                 break;
             default:
                 throw new IllegalArgumentException("Invalid mode: " + mode);
@@ -56,10 +59,11 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
             throw new FileNotFoundException();
         }
 
-        accessor = virtualFile.createAccessor();
+        accessor = virtualFile.createAccessor(true, !readOnly, false);
         if (accessor == null) {
             throw new FileNotFoundException();
         }
+        buff = new byte[16];
     }
 
     @Override
@@ -281,20 +285,17 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
 
     @Override
     public void write(int b) throws IOException {
-        if (readOnly) {
-            throw new IOException("This instance is read-only");
-        }
         ensureOpened();
         byte[] buffer = { (byte) b };
         accessor.write(pos, buffer, 0, 1);
+        if (autoFlush) {
+            accessor.flush();
+        }
         pos++;
     }
 
     @Override
     public void write(byte[] b) throws IOException {
-        if (readOnly) {
-            throw new IOException("This instance is read-only");
-        }
         write(b, 0, b.length);
     }
 
@@ -306,6 +307,9 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
         }
         ensureOpened();
         accessor.write(pos, b, off, len);
+        if (autoFlush) {
+            accessor.flush();
+        }
         pos += len;
     }
 
@@ -456,7 +460,7 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
         return new String(out, 0, s);
     }
 
-    static int writeShortToBuffer(int val, byte[] buffer, int offset) throws IOException {
+    static int writeShortToBuffer(int val, byte[] buffer, int offset) {
         buffer[offset++] = (byte) (val >> 8);
         buffer[offset++] = (byte) val;
         return offset;
@@ -478,7 +482,7 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
         return utfCount;
     }
 
-    static int writeUTFBytesToBuffer(String str, byte[] buffer, int offset) throws IOException {
+    static int writeUTFBytesToBuffer(String str, byte[] buffer, int offset) {
         int length = str.length();
         for (int i = 0; i < length; i++) {
             int charValue = str.charAt(i);

@@ -27,6 +27,7 @@ import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 import org.teavm.interop.Import;
+import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSBody;
 import org.teavm.platform.metadata.ResourceMap;
 
@@ -190,6 +191,7 @@ public final class DateTimeZoneProvider {
 
     @JSBody(params = "instant", script = "return new Date(instant).getTimezoneOffset();")
     @Import(module = "teavm", name = "getNativeOffset")
+    @Unmanaged
     private static native int getNativeOffset(double instant);
 
     private static native ResourceMap<ResourceMap<TimeZoneResource>> getResource();

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,32 +13,29 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.classlib.impl.c;
 
-import java.io.IOException;
-import org.teavm.classlib.java.io.TOutputStream;
-import org.teavm.interop.DelegateTo;
+import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.Unmanaged;
 import org.teavm.interop.c.Include;
-import org.teavm.jso.JSBody;
 
-class TConsoleOutputStreamStderr extends TOutputStream {
-    @Override
-    @DelegateTo("writeLowLevel")
-    public void write(int b) throws IOException {
-        writeJs(b);
+public final class Memory {
+    private Memory() {
     }
 
-    @JSBody(params = "b", script = "$rt_putStderr(b);")
-    private static native void writeJs(int b);
-
-    private void writeLowLevel(int b) {
-        writeImpl(b);
-    }
-
-    @Include("wchar.h")
-    @Import(name = "putwchar", module = "teavm")
+    @Include("stdlib.h")
+    @Import(name = "malloc")
     @Unmanaged
-    static native void writeImpl(int b);
+    public static native Address malloc(int size);
+
+    @Include("stdlib.h")
+    @Import(name = "free")
+    @Unmanaged
+    public static native void free(Address address);
+
+    @Include("string.h")
+    @Import(name = "memcpy")
+    @Unmanaged
+    public static native void memcpy(Address target, Address source, int size);
 }

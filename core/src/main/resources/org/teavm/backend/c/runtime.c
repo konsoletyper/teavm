@@ -14,6 +14,7 @@
 #include <unistd.h>
 #include <sys/mman.h>
 #include <signal.h>
+#include <locale.h>
 #endif
 
 #ifdef _MSC_VER
@@ -64,6 +65,8 @@ void teavm_beforeInit() {
     srand(time(NULL));
 
     #ifdef __GNUC__
+        setlocale (LC_ALL, "");
+
         struct sigaction sigact;
         sigact.sa_flags = 0;
         sigact.sa_handler = NULL;
@@ -377,6 +380,42 @@ TeaVM_String* teavm_cToString(char* cstring) {
     return teavm_createString(charArray);
 }
 
+char16_t* teavm_mbToChar16(char* cstring, int32_t* length) {
+    size_t clen = strlen(cstring);
+    int32_t size = teavm_c16Size(cstring, clen);
+    char16_t* javaChars = malloc(sizeof(char16_t) * (size + 2));
+    mbstate_t state = {0};
+    for (int32_t i = 0; i < size; ++i) {
+        int32_t result = mbrtoc16(javaChars + i, cstring, clen, &state);
+        if (result == -1) {
+            break;
+        } else if ((int) result >= 0) {
+            clen -= result;
+            cstring += result;
+        }
+    }
+    *length = size;
+    return javaChars;
+}
+
+char* teavm_char16ToMb(char16_t* javaChars, int32_t length) {
+    size_t sz = teavm_mbSize(javaChars, length);
+    char* cchars = malloc(sz + 1);
+
+    int32_t j = 0;
+    char* dst = cchars;
+    mbstate_t state = {0};
+    for (int32_t i = 0; i < length; ++i) {
+        size_t result = c16rtomb(dst, javaChars[i], &state);
+        if (result == -1) {
+            break;
+        }
+        dst += result;
+    }
+    *dst = '\0';
+    return cchars;
+}
+
 TeaVM_Array* teavm_parseArguments(int argc, char** argv) {
     TeaVM_Array* array = teavm_allocateStringArray(argc - 1);
     TeaVM_String** arrayData = TEAVM_ARRAY_DATA(array, TeaVM_String*);
@@ -437,4 +476,26 @@ void teavm_afterInitClasses() {
         free(builder);
         builder = next;
     }
+}
+
+void teavm_disposeStringList(TeaVM_StringList* list) {
+    while (list != NULL) {
+        TeaVM_StringList* next = list->next;
+        if (list->data != NULL) {
+            free(list->data);
+        }
+        free(list);
+        list = next;
+    }
+}
+TeaVM_StringList* teavm_appendString(TeaVM_StringList* list, char16_t* data, int32_t length) {
+    TeaVM_StringList* entry = malloc(sizeof(TeaVM_StringList));
+    if (entry == NULL) {
+        teavm_disposeStringList(list);
+        return NULL;
+    }
+    entry->data = data;
+    entry->length = length;
+    entry->next = list;
+    return entry;
 }

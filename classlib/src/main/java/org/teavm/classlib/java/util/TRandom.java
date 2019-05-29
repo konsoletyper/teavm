@@ -20,6 +20,7 @@ import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TMath;
 import org.teavm.classlib.java.lang.TObject;
 import org.teavm.interop.Import;
+import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSBody;
 
 public class TRandom extends TObject implements TSerializable {
@@ -82,6 +83,7 @@ public class TRandom extends TObject implements TSerializable {
     }
 
     @Import(name = "teavm_rand")
+    @Unmanaged
     private static native double crand();
 
     /**
@@ -119,5 +121,6 @@ public class TRandom extends TObject implements TSerializable {
 
     @JSBody(script = "return Math.random();")
     @Import(module = "teavmMath", name = "random")
+    @Unmanaged
     private static native double random();
 }

@@ -101,6 +101,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private static final String C_ENABLED = "teavm.junit.c";
     private static final String WASM_ENABLED = "teavm.junit.wasm";
     private static final String C_COMPILER = "teavm.junit.c.compiler";
+    private static final String C_LINE_NUMBERS = "teavm.junit.c.lineNumbers";
     private static final String MINIFIED = "teavm.junit.minified";
     private static final String OPTIMIZED = "teavm.junit.optimized";
     private static final String FAST_ANALYSIS = "teavm.junit.fastAnalysis";
@@ -607,8 +608,14 @@ public class TeaVMTestRunner extends Runner implements Filterable {
                 throw new RuntimeException(e);
             }
         };
-        return compileTest(method, configuration, CTarget::new, TestNativeEntryPoint.class.getName(), path, ".c",
+        return compileTest(method, configuration, this::createCTarget, TestNativeEntryPoint.class.getName(), path, ".c",
                 postBuild, true);
+    }
+
+    private CTarget createCTarget() {
+        CTarget cTarget = new CTarget();
+        cTarget.setLineNumbersGenerated(Boolean.parseBoolean(System.getProperty(C_LINE_NUMBERS, "false")));
+        return cTarget;
     }
 
     private CompileResult compileToWasm(Method method, TeaVMTestConfiguration<WasmTarget> configuration,

@@ -101,7 +101,7 @@ public class AddressIntrinsic implements Intrinsic {
                 context.writer().print(")");
                 break;
             case "getChar":
-                context.writer().print("((int32_t) *(uchar16_t*) ");
+                context.writer().print("((int32_t) *(char16_t*) ");
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(")");
                 break;
@@ -136,9 +136,9 @@ public class AddressIntrinsic implements Intrinsic {
                 context.writer().print(")");
                 break;
             case "putChar":
-                context.writer().print("(*(uchar16_t*) ");
+                context.writer().print("(*(char16_t*) ");
                 context.emit(invocation.getArguments().get(0));
-                context.writer().print(" = (uchar16_t) ");
+                context.writer().print(" = (char16_t) ");
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print(")");
                 break;
@@ -225,6 +225,7 @@ public class AddressIntrinsic implements Intrinsic {
             case BYTE:
                 return 1;
             case SHORT:
+            case CHARACTER:
                 return 2;
             case INTEGER:
             case FLOAT:

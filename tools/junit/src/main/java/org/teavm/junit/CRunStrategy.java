@@ -56,10 +56,11 @@ class CRunStrategy implements TestRunStrategy {
             writeLines(compilerOutput);
 
             List<String> runtimeOutput = new ArrayList<>();
+            List<String> stdout = new ArrayList<>();
             outputFile.setExecutable(true);
-            runProcess(new ProcessBuilder(outputFile.getPath()).start(), runtimeOutput);
-            if (!runtimeOutput.isEmpty() && runtimeOutput.get(runtimeOutput.size() - 1).equals("SUCCESS")) {
-                writeLines(runtimeOutput.subList(0, runtimeOutput.size() - 1));
+            runProcess(new ProcessBuilder(outputFile.getPath()).start(), runtimeOutput, stdout);
+            if (!stdout.isEmpty() && stdout.get(stdout.size() - 1).equals("SUCCESS")) {
+                writeLines(runtimeOutput);
                 run.getCallback().complete();
             } else {
                 run.getCallback().error(new RuntimeException("Test failed:\n" + mergeLines(runtimeOutput)));
@@ -83,12 +84,13 @@ class CRunStrategy implements TestRunStrategy {
         }
     }
 
-    private boolean runCompiler(File inputDir, List<String> output) throws IOException, InterruptedException {
+    private boolean runCompiler(File inputDir, List<String> output)
+            throws IOException, InterruptedException {
         String command = new File(compilerCommand).getAbsolutePath();
-        return runProcess(new ProcessBuilder(command).directory(inputDir).start(), output);
+        return runProcess(new ProcessBuilder(command).directory(inputDir).start(), output, new ArrayList<>());
     }
 
-    private boolean runProcess(Process process, List<String> output) throws InterruptedException {
+    private boolean runProcess(Process process, List<String> output, List<String> stdout) throws InterruptedException {
         BufferedReader stdin = new BufferedReader(new InputStreamReader(process.getInputStream()));
         BufferedReader stderr = new BufferedReader(new InputStreamReader(process.getErrorStream()));
         ConcurrentLinkedQueue<String> lines = new ConcurrentLinkedQueue<>();
@@ -109,21 +111,18 @@ class CRunStrategy implements TestRunStrategy {
         thread.setDaemon(true);
         thread.start();
 
-        thread = new Thread(() -> {
-            try {
-                while (true) {
-                    String line = stdin.readLine();
-                    if (line == null) {
-                        break;
-                    }
-                    lines.add(line);
+        try {
+            while (true) {
+                String line = stdin.readLine();
+                if (line == null) {
+                    break;
                 }
-            } catch (IOException e) {
-                // do nothing
+                lines.add(line);
+                stdout.add(line);
             }
-        });
-        thread.setDaemon(true);
-        thread.start();
+        } catch (IOException e) {
+            // do nothing
+        }
 
         boolean result = process.waitFor() == 0;
         output.addAll(lines);

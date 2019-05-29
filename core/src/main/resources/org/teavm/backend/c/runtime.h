@@ -207,6 +207,8 @@ extern int32_t teavm_timeZoneOffset();
 
 extern char* teavm_stringToC(void*);
 extern TeaVM_String* teavm_cToString(char*);
+extern char16_t* teavm_mbToChar16(char*, int32_t*);
+extern char* teavm_char16ToMb(char16_t*, int32_t);
 static inline void teavm_free(void* s) {
     if (s != NULL) {
         free(s);
@@ -238,12 +240,12 @@ extern void teavm_waitFor(int64_t timeout);
 extern void teavm_interrupt();
 
 extern void teavm_outOfMemory();
-extern void teavm_printString(char* s);
-extern void teavm_printInt(int32_t i);
+extern void teavm_printString(char*);
+extern void teavm_printInt(int32_t);
 
-extern TeaVM_Array* teavm_parseArguments(int argc, char** argv);
+extern TeaVM_Array* teavm_parseArguments(int, char**);
 
-extern void teavm_registerStaticGcRoots(void***, int count);
+extern void teavm_registerStaticGcRoots(void***, int);
 
 extern TeaVM_String* teavm_registerString(TeaVM_String*);
 
@@ -279,9 +281,11 @@ extern TeaVM_Reference* teavm_reference_poll(TeaVM_ReferenceQueue*);
 extern void teavm_reference_init(TeaVM_Reference*, TeaVM_Object*, TeaVM_ReferenceQueue*);
 
 extern void teavm_date_init();
+extern int64_t teavm_date_timeToTimestamp(time_t);
+extern time_t teavm_date_timestampToTime(int64_t);
 extern int64_t teavm_date_create(int32_t,int32_t,int32_t,int32_t,int32_t,int32_t);
 extern int64_t teavm_date_createUtc(int32_t,int32_t,int32_t,int32_t,int32_t,int32_t);
-extern int64_t teavm_date_parse(char* s);
+extern int64_t teavm_date_parse(char*);
 extern int32_t teavm_date_getYear(int64_t);
 extern int64_t teavm_date_setYear(int64_t,int32_t);
 extern int32_t teavm_date_getMonth(int64_t);
@@ -296,3 +300,43 @@ extern int64_t teavm_date_setMinutes(int64_t,int32_t);
 extern int32_t teavm_date_getSeconds(int64_t);
 extern int64_t teavm_date_setSeconds(int64_t,int32_t);
 extern char* teavm_date_format(int64_t);
+
+#define TEAVM_SURROGATE_BIT_MASK 0xFC00
+#define TEAVM_SURROGATE_INV_BIT_MASK 0x03FF
+#define TEAVM_HIGH_SURROGATE_BITS 0xD800
+#define TEAVM_LOW_SURROGATE_BITS 0xDC00
+#define TEAVM_MIN_SUPPLEMENTARY_CODE_POINT 0x010000
+
+//extern int32_t teavm_utf8_encode(char16_t*, int32_t, char*);
+//extern int32_t teavm_utf8_decode(char*, int32_t, char16_t*);
+
+typedef struct TeaVM_StringList {
+    char16_t* data;
+    int32_t length;
+    struct TeaVM_StringList* next;
+} TeaVM_StringList;
+
+extern void teavm_disposeStringList(TeaVM_StringList*);
+extern TeaVM_StringList* teavm_appendString(TeaVM_StringList*, char16_t*, int32_t);
+
+extern int32_t teavm_file_homeDirectory(char16_t**);
+extern int32_t teavm_file_workDirectory(char16_t**);
+extern int32_t teavm_file_isFile(char16_t*, int32_t);
+extern int32_t teavm_file_isDir(char16_t*, int32_t);
+extern int32_t teavm_file_canRead(char16_t*, int32_t);
+extern int32_t teavm_file_canWrite(char16_t*, int32_t);
+extern TeaVM_StringList* teavm_file_listFiles(char16_t*, int32_t);
+extern int32_t teavm_file_createDirectory(char16_t*, int32_t);
+extern int32_t teavm_file_createFile(char16_t*, int32_t);
+extern int32_t teavm_file_delete(char16_t*, int32_t);
+extern int32_t teavm_file_rename(char16_t*, int32_t, char16_t*, int32_t);
+extern int64_t teavm_file_lastModified(char16_t*, int32_t);
+extern int32_t teavm_file_setLastModified(char16_t*, int32_t, int64_t);
+extern int32_t teavm_file_length(char16_t*, int32_t);
+extern int64_t teavm_file_open(char16_t*, int32_t, int32_t);
+extern int32_t teavm_file_close(int64_t);
+extern int32_t teavm_file_flush(int64_t);
+extern int32_t teavm_file_seek(int64_t, int32_t, int32_t);
+extern int32_t teavm_file_tell(int64_t);
+extern int32_t teavm_file_read(int64_t, int8_t*, int32_t, int32_t);
+extern int32_t teavm_file_write(int64_t, int8_t*, int32_t, int32_t);

@@ -18,6 +18,7 @@ package org.teavm.classlib.java.lang;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
+import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSBody;
 
 @NoSideEffects
@@ -233,21 +234,25 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     @JSBody(params = "v", script = "return isNaN(v);")
     @Import(module = "teavm", name = "isnan")
     @NoSideEffects
+    @Unmanaged
     public static native boolean isNaN(double v);
 
     @JSBody(script = "return NaN;")
     @Import(module = "teavm", name = "teavm_getNaN")
     @NoSideEffects
+    @Unmanaged
     private static native double getNaN();
 
     @JSBody(params = "v", script = "return !isFinite(v);")
     @Import(module = "teavm", name = "isinf")
     @NoSideEffects
+    @Unmanaged
     public static native boolean isInfinite(double v);
 
     @JSBody(params = "v", script = "return isFinite(v);")
     @Import(module = "teavm", name = "isfinite")
     @NoSideEffects
+    @Unmanaged
     public static native boolean isFinite(double v);
 
     public static long doubleToRawLongBits(double value) {
@@ -257,11 +262,13 @@ public class TDouble extends TNumber implements TComparable<TDouble> {
     @InjectedBy(DoubleGenerator.class)
     @Import(name = "teavm_reinterpretDoubleToLong")
     @NoSideEffects
+    @Unmanaged
     public static native long doubleToLongBits(double value);
 
     @InjectedBy(DoubleGenerator.class)
     @Import(name = "teavm_reinterpretLongToDouble")
     @NoSideEffects
+    @Unmanaged
     public static native double longBitsToDouble(long bits);
 
     public static String toHexString(double d) {

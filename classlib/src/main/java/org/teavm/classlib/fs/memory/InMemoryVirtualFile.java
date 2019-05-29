@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,10 +13,11 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.fs;
+package org.teavm.classlib.fs.memory;
 
 import java.io.IOException;
 import java.util.Arrays;
+import org.teavm.classlib.fs.VirtualFileAccessor;
 
 public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
     byte[] data = new byte[0];
@@ -37,31 +38,31 @@ public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
     }
 
     @Override
-    public VirtualFile[] listFiles() {
+    public String[] listFiles() {
+        return null;
+    }
+
+    @Override
+    public AbstractInMemoryVirtualFile getChildFile(String fileName) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public VirtualFile getChildFile(String fileName) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public VirtualFileAccessor createAccessor() {
+    public VirtualFileAccessor createAccessor(boolean readable, boolean writable, boolean append) {
         if (parent == null) {
             return null;
         }
 
         return new VirtualFileAccessor() {
             @Override
-            public int read(int pos, byte[] buffer, int offset, int limit) throws IOException {
+            public int read(int pos, byte[] buffer, int offset, int limit) {
                 limit = Math.max(0, Math.min(size - pos, limit));
                 System.arraycopy(data, pos, buffer, offset, limit);
                 return limit;
             }
 
             @Override
-            public void write(int pos, byte[] buffer, int offset, int limit) throws IOException {
+            public void write(int pos, byte[] buffer, int offset, int limit) {
                 expandData(pos + limit);
                 System.arraycopy(buffer, offset, data, pos, limit);
                 size = pos + limit;
@@ -74,27 +75,35 @@ public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
             }
 
             @Override
-            public void resize(int size) throws IOException {
+            public void resize(int size) {
                 expandData(size);
                 InMemoryVirtualFile.this.size = size;
                 modify();
+            }
+
+            @Override
+            public void close() {
+            }
+
+            @Override
+            public void flush() {
             }
         };
     }
 
     @Override
-    public VirtualFile createFile(String fileName) {
+    public InMemoryVirtualFile createFile(String fileName) throws IOException {
+        throw new IOException("Can't create file " + fileName + " since parent path denotes regular file");
+    }
+
+    @Override
+    public InMemoryVirtualDirectory createDirectory(String fileName) {
         throw new UnsupportedOperationException();
     }
 
     @Override
-    public VirtualFile createDirectory(String fileName) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public void adopt(VirtualFile file, String fileName) {
-        throw new UnsupportedOperationException();
+    public boolean adopt(AbstractInMemoryVirtualFile file, String fileName) {
+        return false;
     }
 
     @Override

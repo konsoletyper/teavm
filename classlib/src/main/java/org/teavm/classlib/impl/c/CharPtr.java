@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,20 +13,10 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.fs;
+package org.teavm.classlib.impl.c;
 
-import java.io.IOException;
+import org.teavm.interop.Structure;
 
-public interface VirtualFileAccessor {
-    int read(int pos, byte[] buffer, int offset, int limit) throws IOException;
-
-    void write(int pos, byte[] buffer, int offset, int limit) throws IOException;
-
-    int size() throws IOException;
-
-    void resize(int size) throws IOException;
-
-    void close() throws IOException;
-
-    void flush() throws IOException;
+public class CharPtr extends Structure {
+    public char value;
 }

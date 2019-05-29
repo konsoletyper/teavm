@@ -19,6 +19,8 @@ import java.util.Enumeration;
 import java.util.Properties;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.classlib.fs.c.CFileSystem;
+import org.teavm.classlib.impl.c.Memory;
 import org.teavm.classlib.java.io.TConsole;
 import org.teavm.classlib.java.io.TInputStream;
 import org.teavm.classlib.java.io.TPrintStream;
@@ -154,9 +156,26 @@ public final class TSystem extends TObject {
             defaults.put("line.separator", lineSeparator());
             defaults.put("java.io.tmpdir", "/tmp");
             defaults.put("java.vm.version", "1.8");
-            defaults.put("user.home", "/");
+            defaults.put("user.home", getHomeDir());
             properties = new Properties(defaults);
         }
+    }
+
+    private static String getHomeDir() {
+        if (!PlatformDetector.isC()) {
+            return "/";
+        }
+
+        Address resultPtr = Memory.malloc(Address.sizeOf());
+        int length = CFileSystem.homeDirectory(resultPtr);
+        Address result = resultPtr.getAddress();
+        Memory.free(resultPtr);
+
+        char[] chars = new char[length];
+        Memory.memcpy(Address.ofData(chars), result, chars.length * 2);
+        Memory.free(result);
+
+        return new String(chars);
     }
 
     public static String getProperty(@SuppressWarnings("unused") String key) {

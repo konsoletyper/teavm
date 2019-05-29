@@ -21,6 +21,7 @@ import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TSystem;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
+import org.teavm.interop.Unmanaged;
 import org.teavm.jso.core.JSDate;
 
 public class TDate implements TComparable<TDate> {
@@ -34,6 +35,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_init")
     @NoSideEffects
+    @Unmanaged
     private static native void initLowLevel();
 
     public TDate() {
@@ -66,6 +68,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_create")
     @NoSideEffects
+    @Unmanaged
     private static native long initDateLowLevel(int year, int month, int date, int hrs, int min, int sec);
 
     public TDate(String s) {
@@ -88,6 +91,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_createUtc")
     @NoSideEffects
+    @Unmanaged
     private static native long initUtcDateLowLevel(int year, int month, int date, int hrs, int min, int sec);
 
     @Deprecated
@@ -105,6 +109,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_parse")
     @NoSideEffects
+    @Unmanaged
     private static native long parseLowLevel(String s);
 
     @Deprecated
@@ -117,6 +122,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_getYear")
     @NoSideEffects
+    @Unmanaged
     private static native int getYearLowLevel(long date);
 
     @Deprecated
@@ -132,6 +138,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_setYear")
     @NoSideEffects
+    @Unmanaged
     private static native long setYearLowLevel(long date, int year);
 
     @Deprecated
@@ -144,6 +151,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_getMonth")
     @NoSideEffects
+    @Unmanaged
     private static native int getMonthLowLevel(long date);
 
     @Deprecated
@@ -159,6 +167,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_setMonth")
     @NoSideEffects
+    @Unmanaged
     private static native long setMonthLowLevel(long date, int month);
 
     @Deprecated
@@ -171,6 +180,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_getDate")
     @NoSideEffects
+    @Unmanaged
     private static native int getDateLowLevel(long date);
 
     @Deprecated
@@ -186,6 +196,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_setDate")
     @NoSideEffects
+    @Unmanaged
     private static native int setDateLowLevel(long target, int date);
 
     @Deprecated
@@ -197,6 +208,7 @@ public class TDate implements TComparable<TDate> {
     }
 
     @Import(name = "teavm_date_getDay")
+    @Unmanaged
     public static native int getDayLowLevel(long date);
 
     @Deprecated
@@ -224,6 +236,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_setHours")
     @NoSideEffects
+    @Unmanaged
     private static native int setHoursLowLevel(long date, int hours);
 
     @Deprecated
@@ -236,6 +249,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_getMinutes")
     @NoSideEffects
+    @Unmanaged
     private static native int getMinutesLowLevel(long date);
 
     @Deprecated
@@ -251,6 +265,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_setMinutes")
     @NoSideEffects
+    @Unmanaged
     private static native int setMinutesLowLevel(long date, int minutes);
 
     @Deprecated
@@ -263,6 +278,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_getSeconds")
     @NoSideEffects
+    @Unmanaged
     private static native int getSecondsLowLevel(long date);
 
     @Deprecated
@@ -278,6 +294,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_setSeconds")
     @NoSideEffects
+    @Unmanaged
     private static native int setSecondsLowLevel(long date, int seconds);
 
     public long getTime() {

@@ -33,7 +33,7 @@ public class TFileInputStream extends InputStream {
             throw new FileNotFoundException();
         }
 
-        accessor = virtualFile.createAccessor();
+        accessor = virtualFile.createAccessor(true, false, false);
         if (accessor == null) {
             throw new FileNotFoundException();
         }

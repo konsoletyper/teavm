@@ -15,8 +15,20 @@
  */
 package org.teavm.classlib.fs;
 
+import org.teavm.classlib.PlatformDetector;
+import org.teavm.classlib.fs.c.CFileSystem;
+import org.teavm.classlib.fs.memory.InMemoryVirtualFileSystem;
+
 public final class VirtualFileSystemProvider {
-    private static VirtualFileSystem instance = new InMemoryVirtualFileSystem();
+    private static VirtualFileSystem instance;
+
+    static {
+        if (PlatformDetector.isC()) {
+            instance = new CFileSystem();
+        } else {
+            instance = new InMemoryVirtualFileSystem();
+        }
+    }
 
     private VirtualFileSystemProvider() {
     }

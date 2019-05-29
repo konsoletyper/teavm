@@ -1323,7 +1323,7 @@ public class FileTest {
             // it a new directory name.)
             if (baseDir.exists()) {
                 dirNumber++;
-                baseDir = new File(base, String.valueOf(dirNumber));
+                baseDir = new File(base, platformId + String.valueOf(dirNumber));
             } else {
                 dirExists = false;
             }

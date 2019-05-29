@@ -379,6 +379,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         copyResource("stringhash.c", buildTarget);
         copyResource("references.c", buildTarget);
         copyResource("date.c", buildTarget);
+        copyResource("file.c", buildTarget);
         generateCallSites(buildTarget, context, classes.getClassNames());
         generateStrings(buildTarget, context);
 
@@ -681,6 +682,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         files.add("callsites.c");
         files.add("references.c");
         files.add("date.c");
+        files.add("file.c");
 
         for (String className : classes.getClassNames()) {
             files.add(ClassGenerator.fileName(className) + ".c");
