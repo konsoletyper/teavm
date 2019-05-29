@@ -51,13 +51,5 @@ public class URLEncoderTest {
         } catch (UnsupportedEncodingException e) {
             // expected
         }
-
-        // Regression for HARMONY-1233
-        try {
-            URLEncoder.encode(null, "harmony");
-            fail("NullPointerException expected");
-        } catch (NullPointerException e) {
-            // expected
-        }
     }
 }
