@@ -76,6 +76,7 @@ public class RuntimeRenderer {
     public void renderHandWrittenRuntime(String name) throws IOException {
         AstRoot ast = parseRuntime(name);
         ast.visit(new StringConstantElimination());
+        new RuntimeAstTransformer(writer.getNaming()).accept(ast);
         AstWriter astWriter = new AstWriter(writer);
         astWriter.hoist(ast);
         astWriter.print(ast);

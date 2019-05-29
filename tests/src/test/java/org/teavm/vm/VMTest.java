@@ -473,7 +473,6 @@ public class VMTest {
         assertEquals("foo", b[0]);
     }
 
-
     @Test
     public void stringConstantsInBaseClass() {
         new DerivedClassWithConstantFields();
@@ -505,5 +504,13 @@ public class VMTest {
             exceptionCaught = true;
         }
         assertTrue("Exception was not caught", exceptionCaught);
+    }
+
+    @Test
+    public void arrayMonitor() throws InterruptedException {
+        int[] array = { 1, 2, 3 };
+        synchronized (array) {
+            array.wait(1);
+        }
     }
 }

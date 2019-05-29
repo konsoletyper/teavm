@@ -15,9 +15,10 @@
  */
 
 function $rt_array(cls, data) {
+    $rt_initMonitorField(this);
+    this.$id$ = 0;
     this.type = cls;
     this.data = data;
-    this.$id$ = 0;
     this.constructor = $rt_arraycls(cls);
 }
 $rt_array.prototype = Object.create($rt_objcls().prototype);
