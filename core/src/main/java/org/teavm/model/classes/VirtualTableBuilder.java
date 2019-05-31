@@ -274,6 +274,9 @@ public class VirtualTableBuilder {
             Set<String> visited) {
         while (visited.add(className)) {
             TableBuilder table = tables.get(className);
+            if (table == null) {
+                break;
+            }
             EntryBuilder entry = table.entries.get(method);
             if (entry == null) {
                 entry = new EntryBuilder();
