@@ -53,6 +53,10 @@ public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
             return null;
         }
 
+        if (writable && readOnly) {
+            return null;
+        }
+
         return new VirtualFileAccessor() {
             @Override
             public int read(int pos, byte[] buffer, int offset, int limit) {
