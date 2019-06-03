@@ -159,7 +159,7 @@ public class ExportDependencyListener extends AbstractDependencyListener {
                 .collect(Collectors.toList());
         if (candidates.isEmpty()) {
             diagnostics.error(location, "There's no static method '" + methodName + "' in class '{{c0}}'",
-                    targetClass);
+                    targetClass.getName());
             valid = false;
         }
 

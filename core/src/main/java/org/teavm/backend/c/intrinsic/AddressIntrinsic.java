@@ -17,7 +17,9 @@ package org.teavm.backend.c.intrinsic;
 
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.c.util.ConstantUtil;
+import org.teavm.backend.c.util.InteropUtil;
 import org.teavm.interop.Address;
+import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
@@ -172,9 +174,20 @@ public class AddressIntrinsic implements Intrinsic {
                     String className = ConstantUtil.getClassLiteral(context, invocation,
                             invocation.getArguments().get(1));
                     context.emit(invocation.getArguments().get(2));
-                    context.writer().print(" * sizeof(")
-                            .print(className != null ? context.names().forClass(className) : "**")
-                            .print(")");
+
+                    String structureName;
+                    ClassReader cls = className != null ? context.classes().get(className) : null;
+                    if (cls != null && InteropUtil.isNative(cls)) {
+                        structureName = InteropUtil.getNativeName(cls);
+                        InteropUtil.processInclude(cls.getAnnotations(), context.includes());
+                    } else if (className != null) {
+                        structureName = context.names().forClass(className);
+                        context.includes().includeClass(className);
+                    } else {
+                        structureName = "**";
+                    }
+
+                    context.writer().print(" * sizeof(").print(structureName).print(")");
                     context.writer().print(")");
                 }
                 break;

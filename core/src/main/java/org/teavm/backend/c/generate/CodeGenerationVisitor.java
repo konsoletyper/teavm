@@ -67,15 +67,13 @@ import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
+import org.teavm.backend.c.util.InteropUtil;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
-import org.teavm.interop.c.Include;
 import org.teavm.interop.c.Variable;
-import org.teavm.model.AnnotationContainerReader;
-import org.teavm.model.AnnotationReader;
-import org.teavm.model.AnnotationValue;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReader;
@@ -409,10 +407,10 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     public void visit(InvocationExpr expr) {
         ClassReader cls = context.getClassSource().get(expr.getMethod().getClassName());
         if (cls != null) {
-            processInclude(cls.getAnnotations());
+            InteropUtil.processInclude(cls.getAnnotations(), includes);
             MethodReader method = cls.getMethod(expr.getMethod().getDescriptor());
             if (method != null) {
-                processInclude(method.getAnnotations());
+                InteropUtil.processInclude(method.getAnnotations(), includes);
             }
         }
 
@@ -690,23 +688,6 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
     }
 
-    private void processInclude(AnnotationContainerReader container) {
-        AnnotationReader annot = container.get(Include.class.getName());
-        if (annot == null) {
-            return;
-        }
-        String includeString = annot.getValue("value").getString();
-
-        AnnotationValue systemValue = annot.getValue("isSystem");
-        if (systemValue == null || systemValue.getBoolean()) {
-            includeString = "<" + includeString + ">";
-        } else {
-            includeString = "\"" + includeString + "\"";
-        }
-
-        includes.addInclude(includeString);
-    }
-
     @Override
     public void visit(QualificationExpr expr) {
         FieldReference field = expr.getField();
@@ -724,15 +705,33 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
 
         pushLocation(expr.getLocation());
-        includes.includeClass(field.getClassName());
-        if (expr.getQualified() != null) {
+        printFieldRef(expr.getQualified(), field);
+        popLocation(expr.getLocation());
+    }
+
+    private void printFieldRef(Expr qualified, FieldReference field) {
+        if (qualified != null) {
+            ClassReader cls = context.getClassSource().get(field.getClassName());
             writer.print("TEAVM_FIELD(");
-            expr.getQualified().acceptVisitor(this);
-            writer.print(", ").print(names.forClass(field.getClassName()) + ", " + names.forMemberField(field) + ")");
+            qualified.acceptVisitor(this);
+            if (cls != null && isNative(cls)) {
+                InteropUtil.processInclude(cls.getAnnotations(), includes);
+                writer.print(", ").print(InteropUtil.getNativeName(cls))
+                        .print(", ").print(InteropUtil.getNativeName(cls, field.getFieldName()));
+            } else {
+                includes.includeClass(field.getClassName());
+                writer.print(", ").print(names.forClass(field.getClassName()))
+                        .print(", ").print(names.forMemberField(field));
+            }
+            writer.print(")");
         } else {
+            includes.includeClass(field.getClassName());
             writer.print(names.forStaticField(field));
         }
-        popLocation(expr.getLocation());
+    }
+
+    private boolean isNative(ClassReader cls) {
+        return context.getCharacteristics().isStructure(cls.getName()) && InteropUtil.isNative(cls);
     }
 
     private boolean isMonitorField(FieldReference field) {
@@ -1121,6 +1120,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         @Override
         public boolean isIncremental() {
             return context.isIncremental();
+        }
+
+        @Override
+        public ClassReaderSource classes() {
+            return context.getClassSource();
         }
     };
 

@@ -29,6 +29,7 @@ import org.teavm.ast.ControlFlowEntry;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.c.generators.Generator;
+import org.teavm.backend.c.util.InteropUtil;
 import org.teavm.backend.lowlevel.generate.ClassGeneratorUtil;
 import org.teavm.cache.AstCacheEntry;
 import org.teavm.cache.AstDependencyExtractor;
@@ -755,6 +756,9 @@ public class ClassGenerator {
 
     private boolean needsData(ClassReader cls) {
         if (cls.hasModifier(ElementModifier.INTERFACE)) {
+            return false;
+        }
+        if (InteropUtil.isNative(cls)) {
             return false;
         }
         return !cls.getName().equals(Structure.class.getName())
