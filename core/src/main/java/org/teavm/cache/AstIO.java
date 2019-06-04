@@ -895,6 +895,7 @@ public class AstIO {
                 return parseInvocationExpr(InvocationType.DYNAMIC, input);
             case 17: {
                 QualificationExpr expr = new QualificationExpr();
+                expr.setQualified(readExpr(input));
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
                 expr.setField(new FieldReference(className, fieldName));
@@ -902,7 +903,6 @@ public class AstIO {
             }
             case 18: {
                 QualificationExpr expr = new QualificationExpr();
-                expr.setQualified(readExpr(input));
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
                 expr.setField(new FieldReference(className, fieldName));
