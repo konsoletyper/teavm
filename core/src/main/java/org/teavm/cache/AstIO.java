@@ -125,12 +125,9 @@ public class AstIO {
         int index = input.readShort();
         VariableType type = VariableType.values()[input.readByte()];
         VariableNode variable = new VariableNode(index, type);
-        int nameCount = input.readByte();
-        for (int i = 0; i < nameCount; ++i) {
-            variable.setName(input.readUTF());
-            if (variable.getName().isEmpty()) {
-                variable.setName(null);
-            }
+        variable.setName(input.readUTF());
+        if (variable.getName().isEmpty()) {
+            variable.setName(null);
         }
         return variable;
     }
