@@ -815,7 +815,7 @@ public class AstIO {
                 BinaryExpr expr = new BinaryExpr();
                 expr.setOperation(binaryOperations[input.readByte()]);
                 byte valueType = input.readByte();
-                expr.setType(valueType > 0 ? OperationType.values()[valueType] : null);
+                expr.setType(valueType > 0 ? OperationType.values()[valueType - 1] : null);
                 expr.setFirstOperand(readExpr(input));
                 expr.setSecondOperand(readExpr(input));
                 return expr;
@@ -824,7 +824,7 @@ public class AstIO {
                 UnaryExpr expr = new UnaryExpr();
                 expr.setOperation(unaryOperations[input.readByte()]);
                 byte valueType = input.readByte();
-                expr.setType(valueType > 0 ? OperationType.values()[valueType] : null);
+                expr.setType(valueType > 0 ? OperationType.values()[valueType - 1] : null);
                 expr.setOperand(readExpr(input));
                 return expr;
             }
