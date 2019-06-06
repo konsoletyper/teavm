@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.c.generate;
 
+import org.teavm.backend.c.util.InteropUtil;
+import org.teavm.model.ClassReader;
 import org.teavm.model.ValueType;
 
 public final class CodeGeneratorUtil {
@@ -99,4 +101,14 @@ public final class CodeGeneratorUtil {
         writer.print(String.valueOf(v));
     }
 
+    public static void printClassReference(CodeWriter writer, IncludeManager includes, NameProvider names,
+            ClassReader cls, String className) {
+        if (cls != null && InteropUtil.isNative(cls)) {
+            InteropUtil.processInclude(cls.getAnnotations(), includes);
+            InteropUtil.printNativeReference(writer, cls);
+        } else {
+            includes.includeClass(className);
+            writer.print(names.forClass(className));
+        }
+    }
 }

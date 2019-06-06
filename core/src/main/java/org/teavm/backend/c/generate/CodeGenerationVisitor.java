@@ -714,14 +714,14 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             ClassReader cls = context.getClassSource().get(field.getClassName());
             writer.print("TEAVM_FIELD(");
             qualified.acceptVisitor(this);
+            writer.print(", ");
             if (cls != null && isNative(cls)) {
                 InteropUtil.processInclude(cls.getAnnotations(), includes);
-                writer.print(", ").print(InteropUtil.getNativeName(cls))
-                        .print(", ").print(InteropUtil.getNativeName(cls, field.getFieldName()));
+                InteropUtil.printNativeReference(writer, cls);
+                writer.print(", ").print(InteropUtil.getNativeName(cls, field.getFieldName()));
             } else {
                 includes.includeClass(field.getClassName());
-                writer.print(", ").print(names.forClass(field.getClassName()))
-                        .print(", ").print(names.forMemberField(field));
+                writer.print(names.forClass(field.getClassName())).print(", ").print(names.forMemberField(field));
             }
             writer.print(")");
         } else {

@@ -16,8 +16,8 @@
 package org.teavm.backend.c.intrinsic;
 
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.c.generate.CodeGeneratorUtil;
 import org.teavm.backend.c.util.ConstantUtil;
-import org.teavm.backend.c.util.InteropUtil;
 import org.teavm.interop.Structure;
 import org.teavm.model.ClassReader;
 import org.teavm.model.MethodReference;
@@ -64,7 +64,11 @@ public class StructureIntrinsic implements Intrinsic {
             case "sizeOf": {
                 String className = ConstantUtil.getClassLiteral(context, invocation, invocation.getArguments().get(0));
                 if (className != null) {
-                    context.writer().print("sizeof(").print(context.names().forClass(className)).print(")");
+                    context.writer().print("sizeof(");
+                    ClassReader cls = context.classes().get(className);
+                    CodeGeneratorUtil.printClassReference(context.writer(), context.includes(), context.names(), cls,
+                            className);
+                    context.writer().print(")");
                 }
                 break;
             }
@@ -72,15 +76,10 @@ public class StructureIntrinsic implements Intrinsic {
                 String className = ConstantUtil.getClassLiteral(context, invocation, invocation.getArguments().get(0));
                 if (className != null) {
                     ClassReader cls = context.classes().get(className);
-                    String structureName;
-                    if (InteropUtil.isNative(cls)) {
-                        structureName = InteropUtil.getNativeName(cls);
-                        InteropUtil.processInclude(cls.getAnnotations(), context.includes());
-                    } else {
-                        structureName = context.names().forClass(className);
-                        context.includes().includeClass(className);
-                    }
-                    context.writer().print("TEAVM_STRUCTURE_ADD(").print(structureName).print(", ");
+                    context.writer().print("TEAVM_STRUCTURE_ADD(");
+                    CodeGeneratorUtil.printClassReference(context.writer(), context.includes(), context.names(), cls,
+                            className);
+                    context.writer().print(", ");
                     context.emit(invocation.getArguments().get(1));
                     context.writer().print(", ");
                     context.emit(invocation.getArguments().get(2));

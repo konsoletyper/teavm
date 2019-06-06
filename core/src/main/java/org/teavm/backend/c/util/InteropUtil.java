@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.c.util;
 
+import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generate.IncludeManager;
 import org.teavm.interop.c.Include;
 import org.teavm.interop.c.Name;
@@ -33,8 +34,18 @@ public final class InteropUtil {
         return cls.getAnnotations().get(Native.class.getName()) != null;
     }
 
+    public static void printNativeReference(CodeWriter writer, ClassReader cls) {
+        AnnotationReader annot = cls.getAnnotations().get(Native.class.getName());
+        if (annot != null) {
+            AnnotationValue fieldValue = annot.getValue("structKeyword");
+            if (fieldValue != null && fieldValue.getBoolean()) {
+                writer.print("struct ");
+            }
+        }
+        writer.print(getNativeName(cls));
+    }
 
-    public static String getNativeName(ClassReader cls) {
+    private static String getNativeName(ClassReader cls) {
         AnnotationReader nameAnnot = cls.getAnnotations().get(Name.class.getName());
         if (nameAnnot != null) {
             return nameAnnot.getValue("value").getString();
