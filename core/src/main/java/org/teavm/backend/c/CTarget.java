@@ -122,6 +122,7 @@ import org.teavm.runtime.CallSiteLocation;
 import org.teavm.runtime.EventQueue;
 import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.Fiber;
+import org.teavm.runtime.GC;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
@@ -739,7 +740,17 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private void generateStaticInitializerCalls(GenerationContext context, CodeWriter writer, IncludeManager includes,
             ListableClassReaderSource classes) {
         MethodDescriptor clinitDescriptor = new MethodDescriptor("<clinit>", ValueType.VOID);
+        if (classes.getClassNames().contains(GC.class.getName())) {
+            includes.includeClass(GC.class.getName());
+            String clinitName = context.getNames().forMethod(new MethodReference(GC.class.getName(),
+                    clinitDescriptor));
+            writer.println(clinitName + "();");
+        }
+
         for (String className : classes.getClassNames()) {
+            if (className.equals(GC.class.getName())) {
+                continue;
+            }
             ClassReader cls = classes.get(className);
             if (!context.getCharacteristics().isStaticInit(cls.getName())
                     && !context.getCharacteristics().isStructure(cls.getName())) {
