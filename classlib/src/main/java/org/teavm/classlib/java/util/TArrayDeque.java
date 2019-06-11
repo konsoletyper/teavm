@@ -262,11 +262,17 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
                     array[i + 1] = array[i];
                 }
                 array[head++] = null;
+                if (head >= array.length) {
+                    head = 0;
+                }
             } else {
                 for (int i = index + 1; i < tail; ++i) {
                     array[i - 1] = array[i];
                 }
                 array[--tail] = null;
+                if (tail == 0) {
+                    tail += array.length;
+                }
             }
         }
     }
@@ -295,6 +301,9 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
                 return result;
             }
             @Override public void remove() {
+                if (lastIndex < 0) {
+                    throw new IllegalStateException();
+                }
                 removeAt(lastIndex);
                 lastIndex = -1;
             }
