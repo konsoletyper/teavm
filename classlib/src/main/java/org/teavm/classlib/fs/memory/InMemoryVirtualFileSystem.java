@@ -35,4 +35,14 @@ public class InMemoryVirtualFileSystem implements VirtualFileSystem {
     public void setUserDir(String userDir) {
         this.userDir = userDir;
     }
+
+    @Override
+    public boolean isWindows() {
+        return false;
+    }
+
+    @Override
+    public String canonicalize(String path) {
+        return path;
+    }
 }

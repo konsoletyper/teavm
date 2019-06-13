@@ -279,7 +279,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             success = runInJvm(child, notifier, expectedExceptions);
         }
 
-
         if (success && outputDir != null) {
             int[] configurationIndex = new int[] { 0 };
             List<Consumer<Boolean>> onSuccess = new ArrayList<>();

@@ -19,6 +19,7 @@ import java.util.Enumeration;
 import java.util.Properties;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.PlatformDetector;
+import org.teavm.classlib.fs.VirtualFileSystemProvider;
 import org.teavm.classlib.fs.c.CFileSystem;
 import org.teavm.classlib.impl.c.Memory;
 import org.teavm.classlib.java.io.TConsole;
@@ -154,11 +155,20 @@ public final class TSystem extends TObject {
             defaults.put("file.separator", "/");
             defaults.put("path.separator", ":");
             defaults.put("line.separator", lineSeparator());
-            defaults.put("java.io.tmpdir", "/tmp");
+            defaults.put("java.io.tmpdir", getTempDir());
             defaults.put("java.vm.version", "1.8");
             defaults.put("user.home", getHomeDir());
             properties = new Properties(defaults);
         }
+    }
+
+    private static String getTempDir() {
+        if (!PlatformDetector.isC()) {
+            return "/tmp";
+        }
+        Address resultPtr = Memory.malloc(Address.sizeOf());
+        int length = CFileSystem.tempDirectory(resultPtr);
+        return VirtualFileSystemProvider.getInstance().canonicalize(toJavaString(resultPtr, length));
     }
 
     private static String getHomeDir() {
@@ -168,6 +178,10 @@ public final class TSystem extends TObject {
 
         Address resultPtr = Memory.malloc(Address.sizeOf());
         int length = CFileSystem.homeDirectory(resultPtr);
+        return VirtualFileSystemProvider.getInstance().canonicalize(toJavaString(resultPtr, length));
+    }
+
+    private static String toJavaString(Address resultPtr, int length) {
         Address result = resultPtr.getAddress();
         Memory.free(resultPtr);
 

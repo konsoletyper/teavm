@@ -93,6 +93,9 @@ public class TFileInputStream extends InputStream {
 
     @Override
     public void close() throws IOException {
+        if (accessor != null) {
+            accessor.close();
+        }
         accessor = null;
     }
 

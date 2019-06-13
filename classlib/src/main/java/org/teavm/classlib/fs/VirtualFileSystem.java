@@ -19,4 +19,8 @@ public interface VirtualFileSystem {
     String getUserDir();
 
     VirtualFile getFile(String path);
+
+    boolean isWindows();
+
+    String canonicalize(String path);
 }

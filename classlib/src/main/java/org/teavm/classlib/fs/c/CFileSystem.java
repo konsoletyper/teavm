@@ -74,6 +74,31 @@ public class CFileSystem implements VirtualFileSystem {
         return entry.get();
     }
 
+    @Override
+    public boolean isWindows() {
+        return isWindowsNative();
+    }
+
+    @Override
+    public String canonicalize(String path) {
+        if (!isWindows()) {
+            return path;
+        }
+        char[] pathChars = path.toCharArray();
+        Address resultPtr = Memory.malloc(Address.sizeOf());
+        int resultSize = canonicalizeNative(pathChars, pathChars.length, resultPtr);
+        Address result = resultPtr.getAddress();
+        Memory.free(resultPtr);
+        if (resultSize < 0) {
+            return path;
+        }
+
+        char[] chars = new char[resultSize];
+        Memory.memcpy(Address.ofData(chars), result, chars.length * 2);
+        Memory.free(result);
+        return new String(chars);
+    }
+
     static class Entry extends WeakReference<CVirtualFile> {
         String path;
 
@@ -86,6 +111,10 @@ public class CFileSystem implements VirtualFileSystem {
     @Import(name = "teavm_file_homeDirectory")
     @Unmanaged
     public static native int homeDirectory(Address resultPtr);
+
+    @Import(name = "teavm_file_tempDirectory")
+    @Unmanaged
+    public static native int tempDirectory(Address resultPtr);
 
     @Import(name = "teavm_file_workDirectory")
     @Unmanaged
@@ -170,4 +199,12 @@ public class CFileSystem implements VirtualFileSystem {
     @Import(name = "teavm_file_write")
     @Unmanaged
     static native int write(long file, byte[] data, int offset, int count);
+
+    @Import(name = "teavm_file_isWindows")
+    @Unmanaged
+    static native boolean isWindowsNative();
+
+    @Import(name = "teavm_file_canonicalize")
+    @Unmanaged
+    static native int canonicalizeNative(char[] name, int nameSize, Address resultPtr);
 }

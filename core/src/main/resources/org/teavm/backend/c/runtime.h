@@ -340,3 +340,8 @@ extern int32_t teavm_file_seek(int64_t, int32_t, int32_t);
 extern int32_t teavm_file_tell(int64_t);
 extern int32_t teavm_file_read(int64_t, int8_t*, int32_t, int32_t);
 extern int32_t teavm_file_write(int64_t, int8_t*, int32_t, int32_t);
+extern int32_t teavm_file_isWindows();
+
+#ifdef _MSC_VER
+extern int64_t teavm_unixTimeOffset;
+#endif

@@ -85,6 +85,16 @@ void teavm_beforeInit() {
 
     #ifdef _MSC_VER
         teavm_queueTimer = CreateEvent(NULL, TRUE, FALSE, TEXT("TeaVM_eventQueue"));
+
+        SYSTEMTIME unixEpochStart = {
+            .wYear = 1970,
+            .wMonth = 1,
+            .wDayOfWeek = 3,
+            .wDay = 1
+        };
+        FILETIME fileTimeStart;
+        SystemTimeToFileTime(&unixEpochStart, &fileTimeStart);
+        teavm_unixTimeOffset = fileTimeStart.dwLowDateTime | ((uint64_t) fileTimeStart.dwHighDateTime << 32);
     #endif
 }
 
@@ -172,30 +182,15 @@ void teavm_initHeap(int64_t heapSize) {
     teavm_gc_availableBytes = heapSize;
 }
 
-static SYSTEMTIME teavm_unixEpochStart = {
-    .wYear = 1970,
-    .wMonth = 1,
-    .wDayOfWeek = 3,
-    .wDay = 1,
-    .wHour = 0,
-    .wMinute = 0,
-    .wSecond = 0,
-    .wMilliseconds = 0
-};
+int64_t teavm_unixTimeOffset;
 
 int64_t teavm_currentTimeMillis() {
     SYSTEMTIME time;
     FILETIME fileTime;
     GetSystemTime(&time);
     SystemTimeToFileTime(&time, &fileTime);
-
-    FILETIME fileTimeStart;
-    SystemTimeToFileTime(&teavm_unixEpochStart, &fileTimeStart);
-
     uint64_t current = fileTime.dwLowDateTime | ((uint64_t) fileTime.dwHighDateTime << 32);
-    uint64_t start = fileTimeStart.dwLowDateTime | ((uint64_t) fileTimeStart.dwHighDateTime << 32);
-
-    return (int64_t) ((current - start) / 10000);
+    return (int64_t) ((current - teavm_unixTimeOffset) / 10000);
 }
 #endif
 

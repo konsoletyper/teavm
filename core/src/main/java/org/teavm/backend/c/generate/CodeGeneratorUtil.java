@@ -87,6 +87,8 @@ public final class CodeGeneratorUtil {
             }
         } else if (value instanceof Boolean) {
             writer.print((Boolean) value ? "1" : "0");
+        } else if (value instanceof Character) {
+            writeIntValue(writer, (char) value);
         } else if (value instanceof ValueType) {
             includes.includeType((ValueType) value);
             writer.print("&").print(context.getNames().forClassInstance((ValueType) value));
