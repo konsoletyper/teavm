@@ -140,7 +140,7 @@ public class TFile implements Serializable, Comparable<TFile> {
             if (path.charAt(0) != separatorChar) {
                 result.append(separator);
             }
-        } if (fs().isWindows() && path.charAt(0) == separatorChar) {
+        } else if (fs().isWindows() && path.charAt(0) == separatorChar) {
             result.setLength(3);
         }
         result.append(path);
