@@ -192,6 +192,14 @@ int64_t teavm_currentTimeMillis() {
     uint64_t current = fileTime.dwLowDateTime | ((uint64_t) fileTime.dwHighDateTime << 32);
     return (int64_t) ((current - teavm_unixTimeOffset) / 10000);
 }
+int64_t teavm_currentTimeNano() {
+    SYSTEMTIME time;
+    FILETIME fileTime;
+    GetSystemTime(&time);
+    SystemTimeToFileTime(&time, &fileTime);
+    uint64_t current = fileTime.dwLowDateTime | ((uint64_t) fileTime.dwHighDateTime << 32);
+    return (int64_t) ((current - teavm_unixTimeOffset) / 10);
+}
 #endif
 
 int32_t teavm_timeZoneOffset() {
@@ -353,6 +361,21 @@ char* teavm_stringToC(void* obj) {
     return result;
 }
 
+char16_t* teavm_stringToC16(void* obj) {
+    if (obj == NULL) {
+        return NULL;
+    }
+
+    TeaVM_String* javaString = (TeaVM_String*) obj;
+    TeaVM_Array* charArray = javaString->characters;
+    char16_t* javaChars = TEAVM_ARRAY_DATA(charArray, char16_t);
+    size_t sz = charArray->size;
+    char16_t* result = malloc((sz + 1) * sizeof(char16_t));
+    memcpy(result, javaChars, sz * sizeof(char16_t));
+    result[sz] = 0;
+    return result;
+}
+
 TeaVM_String* teavm_cToString(char* cstring) {
     if (cstring == NULL) {
         return NULL;
@@ -372,6 +395,21 @@ TeaVM_String* teavm_cToString(char* cstring) {
             cstring += result;
         }
     }
+    return teavm_createString(charArray);
+}
+
+TeaVM_String* teavm_c16ToString(char16_t* cstring) {
+    if (cstring == NULL) {
+        return NULL;
+    }
+
+    int32_t size = 0;
+    while (cstring[size] == 0) {
+        ++size;
+    }
+    TeaVM_Array* charArray = teavm_allocateCharArray(size);
+    char16_t* javaChars = TEAVM_ARRAY_DATA(charArray, char16_t);
+    memcpy(javaChars, cstring, size * sizeof(char16_t));
     return teavm_createString(charArray);
 }
 

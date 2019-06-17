@@ -24,7 +24,11 @@ import org.teavm.model.MethodReference;
 public class MathNativeGenerator implements Generator {
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
-        function(context, writer, "Math." + methodRef.getName(), methodRef.parameterCount());
+        String name = methodRef.getName();
+        if (name.equals("randomImpl")) {
+            name = "random";
+        }
+        function(context, writer, "Math." + name, methodRef.parameterCount());
     }
 
     private void function(GeneratorContext context, SourceWriter writer, String name, int paramCount)

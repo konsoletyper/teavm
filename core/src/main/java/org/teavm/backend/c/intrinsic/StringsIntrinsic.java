@@ -41,6 +41,18 @@ public class StringsIntrinsic implements Intrinsic {
                 context.emit(invocation.getArguments().get(0));
                 context.writer().print(")");
                 break;
+            case "toC16": {
+                Expr arg = invocation.getArguments().get(0);
+                context.writer().print("teavm_stringToC16(");
+                context.emit(arg);
+                context.writer().print(")");
+                break;
+            }
+            case "fromC16":
+                context.writer().print("teavm_c16ToString(");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(")");
+                break;
         }
     }
 }

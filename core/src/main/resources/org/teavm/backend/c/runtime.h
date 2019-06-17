@@ -207,6 +207,8 @@ extern int32_t teavm_timeZoneOffset();
 
 extern char* teavm_stringToC(void*);
 extern TeaVM_String* teavm_cToString(char*);
+extern char16_t* teavm_stringToC16(void*);
+extern TeaVM_String* teavm_c16ToString(char16_t*);
 extern char16_t* teavm_mbToChar16(char*, int32_t*);
 extern char* teavm_char16ToMb(char16_t*, int32_t);
 static inline void teavm_free(void* s) {

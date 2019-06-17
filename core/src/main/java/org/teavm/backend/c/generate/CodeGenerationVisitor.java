@@ -70,7 +70,9 @@ import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.backend.c.util.InteropUtil;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
+import org.teavm.interop.c.Char16;
 import org.teavm.interop.c.Variable;
+import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
@@ -558,8 +560,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             temporaries.add(allocTemporaryVariable(parameterTypeForCall(method, i)));
         }
         boolean stringResult = method.getResultType().isObject(String.class);
+        boolean string16Result = method.getAnnotations().get(Char16.class.getName()) != null;
 
         writer.print("(");
+        AnnotationContainerReader[] parameterAnnotations = method.getParameterAnnotations();
+
         for (int i = 0; i < arguments.size(); ++i) {
             String tmp = temporaries.get(i);
             writer.print(tmp + " = ");
@@ -567,7 +572,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                     ? method.parameterType(i)
                     : i == 0 ? ValueType.object(method.getOwnerName()) : method.parameterType(i - 1);
             if (type.isObject(String.class)) {
-                writer.print("teavm_stringToC(");
+                int annotIndex = method.hasModifier(ElementModifier.STATIC) ? i : i - 1;
+                boolean is16Char = annotIndex >= 0
+                        && parameterAnnotations[annotIndex].get(Char16.class.getName()) != null;
+                String functionName = is16Char ? "teavm_stringToC16" : "teavm_stringToC";
+                writer.print(functionName).print("(");
                 arguments.get(i).acceptVisitor(this);
                 writer.print(")");
                 stringTemporaries.add(tmp);
@@ -616,7 +625,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         if (resultTmp != null) {
             writer.print(", ");
             if (stringResult) {
-                writer.print("teavm_cToString(");
+                String functionName = string16Result ? "teavm_c16ToString" : "teavm_cToString";
+                writer.print(functionName).print("(");
             }
             writer.print(resultTmp);
             if (stringResult) {

@@ -244,7 +244,7 @@ public class ClassGenerator {
     }
 
     private void generateStringPool(ValueType type) {
-        if (!context.isIncremental()) {
+        if (!context.isIncremental() || context.getStringPool().getStrings().isEmpty()) {
             return;
         }
 
