@@ -59,8 +59,9 @@ int32_t teavm_file_workDirectory(char16_t** result) {
 }
 
 int32_t teavm_file_tempDirectory(char16_t** result) {
-  static const char16_t tmp[] = u"/tmp";
-  *result = malloc(sizeof(tmp));
+  static const char16_t string[] = u"/tmp";
+  char16_t* copy = malloc(sizeof(string));
+  *result = copy;
   int32_t i = 0;
   while (string[i] != 0) {
     copy[i] = string[i];
