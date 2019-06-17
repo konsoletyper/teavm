@@ -117,6 +117,7 @@ public class CoroutineTransformation {
             processBlock(program.basicBlockAt(i));
         }
         splitter.fixProgram();
+        new PhiUpdater().updatePhis(program, methodReference.parameterCount() + 1);
         processIrreducibleCfg();
     }
 
