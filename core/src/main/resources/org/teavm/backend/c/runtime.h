@@ -12,6 +12,13 @@
 #ifdef _MSC_VER
 #define alignas(n) __declspec(align(n))
 #pragma comment (lib,"uuid.lib")
+
+#ifdef WINAPI_FAMILY
+    #if WINAPI_FAMILY == 2 || WINAPI_FAMILY == 3 || WINAPI_FAMILY == 5
+        #define _WINDOWS_UWP 1
+    #endif
+#endif
+
 #endif
 
 typedef struct TeaVM_Object {

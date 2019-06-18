@@ -147,6 +147,24 @@ int64_t teavm_currentTimeNano() {
 #endif
 
 #ifdef _MSC_VER
+static void* teavm_virtualAlloc(int size) {
+    #ifdef _WINDOWS_UWP
+        return VirtualAllocFromApp(
+                NULL,
+                size,
+                MEM_RESERVE | MEM_COMMIT,
+                PAGE_READWRITE
+        );
+    #else
+        return VirtualAlloc(
+                NULL,
+                size,
+                MEM_RESERVE | MEM_COMMIT,
+                PAGE_READWRITE
+        );
+    #endif
+}
+
 void teavm_initHeap(int64_t heapSize) {
     long workSize = heapSize / 16;
     long regionsSize = (long) (heapSize / teavm_gc_regionSize);
@@ -158,24 +176,9 @@ void teavm_initHeap(int64_t heapSize) {
     int workPages = (int) ((workSize + pageSize + 1) / pageSize * pageSize);
     int regionsPages = (int) ((regionsSize * 2 + pageSize + 1) / pageSize * pageSize);
 
-    teavm_gc_heapAddress = VirtualAlloc(
-            NULL,
-            heapPages,
-            MEM_RESERVE | MEM_COMMIT,
-            PAGE_READWRITE
-    );
-    teavm_gc_gcStorageAddress = VirtualAlloc(
-            NULL,
-            workPages,
-            MEM_RESERVE | MEM_COMMIT,
-            PAGE_READWRITE
-    );
-    teavm_gc_regionsAddress = VirtualAlloc(
-            NULL,
-            regionsPages,
-            MEM_RESERVE | MEM_COMMIT,
-            PAGE_READWRITE
-    );
+    teavm_gc_heapAddress = teavm_virtualAlloc(heapPages);
+    teavm_gc_gcStorageAddress = teavm_virtualAlloc(workPages);
+    teavm_gc_regionsAddress = teavm_virtualAlloc(regionsPages);
 
     teavm_gc_gcStorageSize = (int) workSize;
     teavm_gc_regionMaxCount = regionsSize;
@@ -202,10 +205,17 @@ int64_t teavm_currentTimeNano() {
 }
 #endif
 
+#ifdef _MSC_VER
+#define gmtime_r(a, b) gmtime_s(b, a)
+#define mktime_r(a, b) mktime_s(b, a)
+#define localtime_r(a, b) localtime_s(b, a)
+#endif
+
 int32_t teavm_timeZoneOffset() {
+    struct tm tm;
     time_t t = time(NULL);
-    time_t local = mktime(localtime(&t));
-    time_t utc = mktime(gmtime(&t));
+    time_t local = mktime(localtime_r(&t, &tm));
+    time_t utc = mktime(gmtime_r(&t, &tm));
     return difftime(utc, local) / 60;
 }
 

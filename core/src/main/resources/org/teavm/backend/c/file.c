@@ -383,8 +383,12 @@ int32_t teavm_file_isDir(char16_t* name, int32_t nameSize) {
 
 static int32_t teavm_file_checkExistingFileAccess(char16_t* name, int32_t nameSize, DWORD desiredAccess) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
-    HANDLE fileHandle = CreateFileW(nativeName, desiredAccess, FILE_SHARE_READ, 0, OPEN_EXISTING,
-            FILE_ATTRIBUTE_NORMAL, 0);
+    #ifdef _WINDOWS_UWP
+        HANDLE fileHandle = CreateFile2(nativeName, desiredAccess, FILE_SHARE_READ, OPEN_EXISTING, NULL);
+    #else
+        HANDLE fileHandle = CreateFileW(nativeName, desiredAccess, FILE_SHARE_READ, 0, OPEN_EXISTING,
+                FILE_ATTRIBUTE_NORMAL, 0);
+    #endif
     int32_t result = fileHandle != INVALID_HANDLE_VALUE;
     if (fileHandle != INVALID_HANDLE_VALUE) {
         CloseHandle(fileHandle);
@@ -409,7 +413,11 @@ int32_t teavm_file_createDirectory(char16_t* name, int32_t nameSize) {
 
 int32_t teavm_file_createFile(char16_t* name, int32_t nameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
-    HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+    #ifdef _WINDOWS_UWP
+        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE, 0, OPEN_EXISTING, NULL);
+    #else
+        HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+    #endif
     int32_t result = 2;
     free(nativeName);
 
@@ -436,7 +444,7 @@ int32_t teavm_file_delete(char16_t* name, int32_t nameSize) {
 int32_t teavm_file_rename(char16_t* name, int32_t nameSize, char16_t* newName, int32_t newNameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     WCHAR* nativeNewName = teavm_file_convertPath(newName, newNameSize);
-    int32_t result = MoveFileW(nativeName, nativeNewName);
+    int32_t result = MoveFileExW(nativeName, nativeNewName, 0);
     free(nativeName);
     free(nativeNewName);
     return result;
@@ -462,7 +470,11 @@ int32_t teavm_file_setReadonly(char16_t* name, int32_t nameSize, int32_t readonl
 int64_t teavm_file_lastModified(char16_t* name, int32_t nameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     FILETIME modified;
-	HANDLE fileHandle = CreateFileW(nativeName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    #ifdef _WINDOWS_UWP
+        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_READ, 0, OPEN_EXISTING, NULL);
+    #else
+        HANDLE fileHandle = CreateFileW(nativeName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    #endif
 	free(nativeName);
 	if (fileHandle == INVALID_HANDLE_VALUE) {
 		return 0;
@@ -481,7 +493,11 @@ int64_t teavm_file_lastModified(char16_t* name, int32_t nameSize) {
 int32_t teavm_file_setLastModified(char16_t* name, int32_t nameSize, int64_t lastModified) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
 
-	HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    #ifdef _WINDOWS_UWP
+        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE, 0, OPEN_EXISTING, NULL);
+    #else
+        HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+    #endif
 	free(nativeName);
 	if (fileHandle == INVALID_HANDLE_VALUE) {
 		return 0;
@@ -514,7 +530,12 @@ int64_t teavm_file_open(char16_t* name, int32_t nameSize, int32_t mode) {
     DWORD desiredAccess = (readable ? GENERIC_READ : 0) | (writable ? GENERIC_WRITE : 0);
 
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
-    HANDLE fileHandle = CreateFileW(nativeName, desiredAccess, 0, 0, creationDisposition, FILE_ATTRIBUTE_NORMAL, 0);
+    #ifdef _WINDOWS_UWP
+        HANDLE fileHandle = CreateFile2(nativeName, desiredAccess, 0, creationDisposition, NULL);
+    #else
+        HANDLE fileHandle = CreateFileW(nativeName, desiredAccess, 0, 0, creationDisposition,
+         FILE_ATTRIBUTE_NORMAL, 0);
+    #endif
     free(nativeName);
 
 	if (fileHandle == INVALID_HANDLE_VALUE) {
