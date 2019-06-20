@@ -27,6 +27,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -719,7 +720,12 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateMain(GenerationContext context, CodeWriter writer, IncludeManager includes,
             ListableClassHolderSource classes, List<? extends ValueType> types) {
-        writer.println("int main(int argc, char** argv) {").indent();
+        Iterator<? extends TeaVMEntryPoint> entryPointIter = controller.getEntryPoints().values().iterator();
+        String mainFunctionName = entryPointIter.hasNext() ? entryPointIter.next().getPublicName() : null;
+        if (mainFunctionName == null) {
+            mainFunctionName = "main";
+        }
+        writer.println("int " + mainFunctionName + "(int argc, char** argv) {").indent();
 
         writer.println("teavm_beforeInit();");
         writer.println("teavm_initHeap(" + minHeapSize + ");");
@@ -832,8 +838,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateCallToMainMethod(IntrinsicContext context, InvocationExpr invocation) {
         NameProvider names = context.names();
-        TeaVMEntryPoint entryPoint = controller.getEntryPoints().get("main");
-        if (entryPoint != null) {
+        Iterator<? extends TeaVMEntryPoint> entryPointIter = controller.getEntryPoints().values().iterator();
+        if (entryPointIter.hasNext()) {
+            TeaVMEntryPoint entryPoint = entryPointIter.next();
             context.includes().includeClass(entryPoint.getMethod().getClassName());
             String mainMethod = names.forMethod(entryPoint.getMethod());
             context.writer().print(mainMethod + "(");

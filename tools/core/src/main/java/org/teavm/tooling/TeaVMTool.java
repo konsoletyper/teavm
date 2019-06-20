@@ -103,6 +103,7 @@ public class TeaVMTool {
     private Set<File> generatedFiles = new HashSet<>();
     private int minHeapSize = 32 * (1 << 20);
     private ReferenceCache referenceCache;
+    private String mainFunctionName;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -248,6 +249,10 @@ public class TeaVMTool {
         this.wasmVersion = wasmVersion;
     }
 
+    public void setMainFunctionName(String mainFunctionName) {
+        this.mainFunctionName = mainFunctionName;
+    }
+
     public void setProgressListener(TeaVMProgressListener progressListener) {
         this.progressListener = progressListener;
     }
@@ -389,7 +394,7 @@ public class TeaVMTool {
                 vm.add(transformer);
             }
             if (mainClass != null) {
-                vm.entryPoint(mainClass, entryPointName);
+                vm.entryPoint(mainClass, entryPointName != null ? entryPointName : "main");
             }
             for (String className : classesToPreserve) {
                 vm.preserveType(className);

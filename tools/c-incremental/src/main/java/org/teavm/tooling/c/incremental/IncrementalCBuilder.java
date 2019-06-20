@@ -67,6 +67,7 @@ public class IncrementalCBuilder {
     private String targetPath;
     private String externalTool;
     private String externalToolWorkingDir;
+    private String mainFunctionName;
 
     private IncrementalDirectoryBuildTarget buildTarget;
     private FileSystemWatcher watcher;
@@ -124,6 +125,10 @@ public class IncrementalCBuilder {
 
     public void setExternalToolWorkingDir(String externalToolWorkingDir) {
         this.externalToolWorkingDir = externalToolWorkingDir;
+    }
+
+    public void setMainFunctionName(String mainFunctionName) {
+        this.mainFunctionName = mainFunctionName;
     }
 
     public void addProgressHandler(ProgressHandler handler) {
@@ -329,7 +334,7 @@ public class IncrementalCBuilder {
         vm.installPlugins();
 
         vm.setLastKnownClasses(lastReachedClasses);
-        vm.entryPoint(mainClass);
+        vm.entryPoint(mainClass, mainFunctionName != null ? mainFunctionName : "main");
 
         log.info("Starting build");
         progressListener.last = 0;

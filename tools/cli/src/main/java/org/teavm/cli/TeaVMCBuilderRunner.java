@@ -63,6 +63,12 @@ public class TeaVMCBuilderRunner {
                 .withDescription("Minimum heap size in bytes")
                 .create());
         options.addOption(OptionBuilder
+                .withLongOpt("entry-point")
+                .withArgName("name")
+                .hasArg()
+                .withDescription("Name of entry point function (main by default)")
+                .create('e'));
+        options.addOption(OptionBuilder
                 .withLongOpt("external-tool")
                 .withArgName("path")
                 .hasArg()
@@ -108,6 +114,9 @@ public class TeaVMCBuilderRunner {
 
         builder.setLog(new ConsoleTeaVMToolLog(commandLine.hasOption('v')));
         builder.setLineNumbersGenerated(commandLine.hasOption('g'));
+        if (commandLine.hasOption('e')) {
+            builder.setMainFunctionName(commandLine.getOptionValue('e'));
+        }
 
         String[] args = commandLine.getArgs();
         if (args.length != 1) {
