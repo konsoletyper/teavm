@@ -240,6 +240,9 @@ public class ClassGenerator {
 
         String poolName = "strings_" + context.getNames().forClassInstance(type);
         codeWriter.println("TeaVM_String* " + poolName + "[];");
+        codeWriter.println("#ifdef TEAVM_GET_STRING");
+        codeWriter.println("#undef TEAVM_GET_STRING");
+        codeWriter.println("#endif");
         codeWriter.println("#define TEAVM_GET_STRING(i) " + poolName + "[i]");
     }
 

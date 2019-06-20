@@ -62,7 +62,7 @@ static HANDLE teavm_queueTimer;
 #endif
 
 void teavm_beforeInit() {
-    srand(time(NULL));
+    srand((unsigned int) time(NULL));
 
     #ifdef __GNUC__
         setlocale (LC_ALL, "");
@@ -100,7 +100,7 @@ void teavm_beforeInit() {
 
 #ifdef __GNUC__
 void teavm_initHeap(int64_t heapSize) {
-    long workSize = heapSize / 16;
+    long workSize = (long) (heapSize / 16);
     long regionsSize = (long) (heapSize / teavm_gc_regionSize);
 
     long pageSize = sysconf(_SC_PAGE_SIZE);
@@ -166,7 +166,7 @@ static void* teavm_virtualAlloc(int size) {
 }
 
 void teavm_initHeap(int64_t heapSize) {
-    long workSize = heapSize / 16;
+    long workSize = (long) (heapSize / 16);
     long regionsSize = (long) (heapSize / teavm_gc_regionSize);
 
     SYSTEM_INFO systemInfo;
@@ -206,9 +206,8 @@ int64_t teavm_currentTimeNano() {
 #endif
 
 #ifdef _MSC_VER
-#define gmtime_r(a, b) gmtime_s(b, a)
-#define mktime_r(a, b) mktime_s(b, a)
-#define localtime_r(a, b) localtime_s(b, a)
+#define gmtime_r(a, b) gmtime_s(a, b)
+#define localtime_r(a, b) localtime_s(a, b)
 #endif
 
 int32_t teavm_timeZoneOffset() {
@@ -216,7 +215,7 @@ int32_t teavm_timeZoneOffset() {
     time_t t = time(NULL);
     time_t local = mktime(localtime_r(&t, &tm));
     time_t utc = mktime(gmtime_r(&t, &tm));
-    return difftime(utc, local) / 60;
+    return (int32_t) (difftime(utc, local) / 60);
 }
 
 #ifdef __GNUC__
@@ -245,7 +244,7 @@ void teavm_interrupt() {
 #ifdef _MSC_VER
 
 void teavm_waitFor(int64_t timeout) {
-    WaitForSingleObject(teavm_queueTimer, timeout);
+    WaitForSingleObject(teavm_queueTimer, (DWORD) timeout);
     ResetEvent(teavm_queueTimer);
 }
 
@@ -320,7 +319,7 @@ size_t teavm_mbSize(char16_t* javaChars, int32_t javaCharsCount) {
     mbstate_t state = {0};
     for (int32_t i = 0; i < javaCharsCount; ++i) {
         size_t result = c16rtomb(buffer, javaChars[i], &state);
-        if (result == -1) {
+        if (result == (size_t) -1) {
             break;
         }
         sz += result;
@@ -333,7 +332,7 @@ int32_t teavm_c16Size(char* cstring, size_t count) {
     int32_t sz = 0;
     while (count > 0) {
         size_t result = mbrtoc16(NULL, cstring, count, &state);
-        if (result == -1) {
+        if (result == (size_t) -1) {
             break;
         } else if ((int) result >= 0) {
             sz++;
@@ -362,7 +361,7 @@ char* teavm_stringToC(void* obj) {
     mbstate_t state = {0};
     for (int32_t i = 0; i < charArray->size; ++i) {
         size_t result = c16rtomb(dst, javaChars[i], &state);
-        if (result == -1) {
+        if (result == (size_t) -1) {
             break;
         }
         dst += result;
@@ -397,8 +396,8 @@ TeaVM_String* teavm_cToString(char* cstring) {
     char16_t* javaChars = TEAVM_ARRAY_DATA(charArray, char16_t);
     mbstate_t state = {0};
     for (int32_t i = 0; i < size; ++i) {
-        int32_t result = mbrtoc16(javaChars++, cstring, clen, &state);
-        if (result == -1) {
+        size_t result = mbrtoc16(javaChars++, cstring, clen, &state);
+        if (result == (size_t) -1) {
             break;
         } else if ((int) result >= 0) {
             clen -= result;
@@ -429,8 +428,8 @@ char16_t* teavm_mbToChar16(char* cstring, int32_t* length) {
     char16_t* javaChars = malloc(sizeof(char16_t) * (size + 2));
     mbstate_t state = {0};
     for (int32_t i = 0; i < size; ++i) {
-        int32_t result = mbrtoc16(javaChars + i, cstring, clen, &state);
-        if (result == -1) {
+        size_t result = mbrtoc16(javaChars + i, cstring, clen, &state);
+        if (result == (size_t) -1) {
             break;
         } else if ((int) result >= 0) {
             clen -= result;
@@ -542,3 +541,14 @@ TeaVM_StringList* teavm_appendString(TeaVM_StringList* list, char16_t* data, int
     entry->next = list;
     return entry;
 }
+
+#ifndef TEAVM_WINDOWS_LOG
+void teavm_logchar(char16_t c) {
+    putwchar(c);
+}
+#else
+void teavm_logchar(int32_t c) {
+	char16_t buffer[2] = { (char16_t) c, 0 };
+	OutputDebugStringW(buffer);
+}
+#endif

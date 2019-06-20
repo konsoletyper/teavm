@@ -48,13 +48,14 @@ int64_t teavm_date_timeToTimestamp(time_t t) {
 }
 
 time_t teavm_date_timestampToTime(int64_t timestamp) {
+    int64_t seconds = (timestamp / 1000);
     struct tm t = {
         .tm_year = 70,
         .tm_mon = 0,
         .tm_mday = 1,
-        .tm_hour = 0,
-        .tm_min = 0,
-        .tm_sec = timestamp / 1000,
+        .tm_hour = (int) (seconds / 3600),
+        .tm_min = (int) ((seconds / 60) % 60),
+        .tm_sec = (int) (seconds % 60),
         .tm_isdst = -1
     };
     return timegm(&t) + timestamp % 1000;
@@ -62,7 +63,10 @@ time_t teavm_date_timestampToTime(int64_t timestamp) {
 
 inline static struct tm* teavm_date_decompose(int64_t timestamp, struct tm *t) {
     *t = teavm_epochStartTm;
-    t->tm_sec += timestamp / 1000;
+    int64_t seconds = (timestamp / 1000);
+    t->tm_sec += (int) (seconds % 60);
+    t->tm_min += (int) ((seconds / 60) % 60);
+    t->tm_hour += (int) (seconds / 3600);
     mktime(t);
     return t;
 }
@@ -179,7 +183,10 @@ int64_t teavm_date_setSeconds(int64_t time, int32_t seconds) {
 char* teavm_date_format(int64_t time) {
     struct tm t;
     t = teavm_epochStartTm;
-    t.tm_sec += time / 1000;
+    int64_t seconds = (time / 1000);
+    t.tm_sec += (int) (seconds % 60);
+    t.tm_min += (int) ((seconds / 60) % 60);
+    t.tm_hour += (int) (seconds / 3600);
     mktime(&t);
     strftime(teavm_date_formatBuffer, 512, teavm_date_defaultFormat, &t);
     return teavm_date_formatBuffer;

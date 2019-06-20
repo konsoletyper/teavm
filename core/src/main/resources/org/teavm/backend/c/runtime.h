@@ -12,6 +12,8 @@
 #ifdef _MSC_VER
 #define alignas(n) __declspec(align(n))
 #pragma comment (lib,"uuid.lib")
+#pragma warning(disable:4116)
+#pragma warning(disable:4102)
 
 #ifdef WINAPI_FAMILY
     #if WINAPI_FAMILY == 2 || WINAPI_FAMILY == 3 || WINAPI_FAMILY == 5
@@ -354,3 +356,5 @@ extern int32_t teavm_file_isWindows();
 #ifdef _MSC_VER
 extern int64_t teavm_unixTimeOffset;
 #endif
+
+extern void teavm_logchar(int32_t);

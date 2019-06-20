@@ -587,7 +587,7 @@ int32_t teavm_file_isWindows() {
 }
 
 static TeaVM_StringList* teavm_file_addToList(TeaVM_StringList* strings, char16_t* data) {
-    int32_t size = wcslen(data);
+    int32_t size = (int32_t) wcslen(data);
     WCHAR* copy = malloc(size * sizeof(char16_t));
     memcpy(copy, data, size * sizeof(char16_t));
     return teavm_appendString(strings, copy, size);

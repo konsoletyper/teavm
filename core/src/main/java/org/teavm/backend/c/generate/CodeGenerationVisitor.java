@@ -600,7 +600,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
 
         if (resultTmp != null) {
-            writer.print(resultTmp + " = ");
+            writer.print(resultTmp + " = (" + typeToCType(method.getResultType()).text + ") ");
         }
         writer.print(names.forMethod(method.getReference()));
         if (method.getAnnotations().get(Variable.class.getName()) == null) {
