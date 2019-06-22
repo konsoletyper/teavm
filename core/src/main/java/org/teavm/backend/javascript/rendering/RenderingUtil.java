@@ -142,14 +142,17 @@ public final class RenderingUtil {
     }
 
     public static String indexToId(int index, String startChars) {
-        StringBuilder sb = new StringBuilder();
-        sb.append(startChars.charAt(index % startChars.length()));
-        index /= startChars.length();
-        while (index > 0) {
-            sb.append(VARIABLE_PART_CHARS.charAt(index % VARIABLE_PART_CHARS.length()));
-            index /= VARIABLE_PART_CHARS.length();
+        if (index >= startChars.length()) {
+            index -= startChars.length() - VARIABLE_PART_CHARS.length();
+            StringBuilder sb = new StringBuilder();
+            while (index >= startChars.length()) {
+                sb.append(VARIABLE_PART_CHARS.charAt(index % VARIABLE_PART_CHARS.length()));
+                index /= VARIABLE_PART_CHARS.length();
+            }
+            return sb.append(startChars.charAt(index % startChars.length())).reverse().toString();
+        } else {
+            return String.valueOf(startChars.charAt(index));
         }
-        return sb.toString();
     }
 
     public static String indexToId(int index) {
