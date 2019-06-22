@@ -97,7 +97,11 @@ function $rt_resuming() {
     return thread != null && thread.isResuming();
 }
 function $rt_suspend(callback) {
-    return $rt_nativeThread().suspend(callback);
+    var nativeThread = $rt_nativeThread();
+    if (nativeThread === null) {
+        throw new Error("Suspension point reached from non-threading context (perhaps, from native JS method).");
+    }
+    return nativeThread.suspend(callback);
 }
 function $rt_startThread(runner, callback) {
     new TeaVMThread(runner).start(callback);

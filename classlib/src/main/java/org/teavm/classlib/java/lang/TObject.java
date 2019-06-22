@@ -25,7 +25,6 @@ import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Rename;
 import org.teavm.interop.Structure;
 import org.teavm.interop.Superclass;
-import org.teavm.interop.Sync;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.browser.TimerHandler;
 import org.teavm.platform.Platform;
@@ -141,12 +140,10 @@ public class TObject {
         });
     }
 
-    @Sync
     static void monitorExit(TObject o) {
         monitorExit(o, 1);
     }
 
-    @Sync
     static void monitorExit(TObject o, int count) {
         if (o.isEmptyMonitor() || o.monitor.owner != TThread.currentThread()) {
             throw new TIllegalMonitorStateException();
@@ -353,7 +350,6 @@ public class TObject {
         return copy;
     }
 
-    @Sync
     @Rename("notify")
     public final void notify0() {
         if (!holdsLock(this)) {
@@ -379,7 +375,6 @@ public class TObject {
         }
     }
 
-    @Sync
     @Rename("notifyAll")
     public final void notifyAll0() {
         if (!holdsLock(this)) {

@@ -22,15 +22,11 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.CallSite;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Async;
-import org.teavm.interop.SuppressSyncErrors;
-import org.teavm.interop.Sync;
-import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
@@ -161,20 +157,6 @@ public class AsyncMethodFinder {
         MethodReader method = cls.getMethod(methodRef.getDescriptor());
         if (method == null) {
             return;
-        }
-        if (method.getAnnotations().get(Sync.class.getName()) != null
-                || method.getAnnotations().get(InjectedBy.class.getName()) != null) {
-            if (method.getAnnotations().get(SuppressSyncErrors.class.getName()) == null) {
-                diagnostics.error(new CallLocation(methodRef), "Method {{m0}} is claimed to be "
-                        + "synchronous, but it is has invocations of asynchronous methods:" 
-                        + stack.toString(), methodRef);
-                return;
-            } else {
-                diagnostics.warning(new CallLocation(methodRef), "Error as Warning because "
-                        + " Method {{m0}} has @SuppressSyncErrors annotation. Method {{m0}} "
-                        + "is claimed to be synchronous, but it is has invocations of "
-                        + "asynchronous methods:" + stack.toString(), methodRef);
-            }
         }
 
         if (!hasAsyncMethods && methodRef.getClassName().equals("java.lang.Object")

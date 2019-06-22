@@ -33,7 +33,6 @@ import org.teavm.backend.javascript.rendering.JSParser;
 import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.NoSideEffects;
-import org.teavm.interop.Sync;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSByRef;
 import org.teavm.jso.JSFunctor;
@@ -41,7 +40,6 @@ import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
-import org.teavm.model.AccessLevel;
 import org.teavm.model.AnnotationContainerReader;
 import org.teavm.model.AnnotationHolder;
 import org.teavm.model.AnnotationReader;
@@ -189,50 +187,6 @@ class JSClassProcessor {
                 .filter(Objects::nonNull)
                 .findFirst()
                 .orElse(null);
-    }
-
-    void makeSync(ClassHolder cls) {
-        Set<MethodDescriptor> methods = new HashSet<>();
-        findInheritedMethods(cls, methods, new HashSet<>());
-        for (MethodHolder method : cls.getMethods()) {
-            if (methods.contains(method.getDescriptor())) {
-                makeSync(method);
-            }
-        }
-    }
-
-    static void makeSync(MethodHolder method) {
-        if (method.getAnnotations().get(Sync.class.getName()) == null) {
-            AnnotationHolder annot = new AnnotationHolder(Sync.class.getName());
-            method.getAnnotations().add(annot);
-        }
-    }
-
-    private void findInheritedMethods(ClassReader cls, Set<MethodDescriptor> methods, Set<String> visited) {
-        if (!visited.add(cls.getName())) {
-            return;
-        }
-        if (typeHelper.isJavaScriptClass(cls.getName())) {
-            for (MethodReader method : cls.getMethods()) {
-                if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.FINAL)
-                        && method.getLevel() != AccessLevel.PRIVATE) {
-                    methods.add(method.getDescriptor());
-                }
-            }
-        } else if (typeHelper.isJavaScriptImplementation(cls.getName())) {
-            if (cls.getParent() != null) {
-                ClassReader parentCls = classSource.get(cls.getParent());
-                if (parentCls != null) {
-                    findInheritedMethods(parentCls, methods, visited);
-                }
-            }
-            for (String iface : cls.getInterfaces()) {
-                ClassReader parentCls = classSource.get(iface);
-                if (parentCls != null) {
-                    findInheritedMethods(parentCls, methods, visited);
-                }
-            }
-        }
     }
 
     private static ValueType[] getStaticSignature(MethodReference method) {
