@@ -31,6 +31,7 @@
     <inspection_tool class="Convert2Lambda" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="Convert2MethodRef" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
     <inspection_tool class="CssUnusedSymbol" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="Duplicates" enabled="false" level="WEAK WARNING" enabled_by_default="false" />
     <inspection_tool class="EmptyCatchBlock" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="m_includeComments" value="true" />
       <option name="m_ignoreTestCases" value="true" />
