@@ -152,6 +152,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private List<GeneratorFactory> generatorFactories = new ArrayList<>();
     private Characteristics characteristics;
     private Set<MethodReference> asyncMethods;
+    private boolean hasThreads;
     private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
     private boolean incremental;
     private boolean lineNumbersGenerated;
@@ -285,11 +286,11 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     @Override
     public void analyzeBeforeOptimizations(ListableClassReaderSource classSource) {
-        AsyncMethodFinder asyncFinder = new AsyncMethodFinder(controller.getDependencyInfo().getCallGraph(),
-                controller.getDiagnostics());
+        AsyncMethodFinder asyncFinder = new AsyncMethodFinder(controller.getDependencyInfo().getCallGraph());
         asyncFinder.find(classSource);
         asyncMethods = new HashSet<>(asyncFinder.getAsyncMethods());
         asyncMethods.addAll(asyncFinder.getAsyncFamilyMethods());
+        hasThreads = asyncFinder.hasAsyncMethods();
     }
 
     @Override
@@ -302,7 +303,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
         nullCheckTransformation.apply(program, method.getResultType());
-        new CoroutineTransformation(controller.getUnprocessedClassSource(), asyncMethods)
+        new CoroutineTransformation(controller.getUnprocessedClassSource(), asyncMethods, hasThreads)
                 .apply(program, method.getReference());
         ShadowStackTransformer shadowStackTransformer = !incremental
                 ? this.shadowStackTransformer
