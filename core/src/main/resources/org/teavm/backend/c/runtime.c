@@ -413,7 +413,7 @@ TeaVM_String* teavm_c16ToString(char16_t* cstring) {
     }
 
     int32_t size = 0;
-    while (cstring[size] == 0) {
+    while (cstring[size] != 0) {
         ++size;
     }
     TeaVM_Array* charArray = teavm_allocateCharArray(size);
