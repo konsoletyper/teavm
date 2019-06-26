@@ -249,6 +249,7 @@ public class IncrementalCBuilder {
 
     private List<String> getChangedClasses(Collection<File> changedFiles) {
         List<String> result = new ArrayList<>();
+        String[] prefixes = Arrays.stream(classPath).map(s -> s.replace('\\', '/')).toArray(String[]::new);
 
         for (File file : changedFiles) {
             String path = file.getPath().replace('\\', '/');
@@ -256,7 +257,7 @@ public class IncrementalCBuilder {
                 continue;
             }
 
-            String prefix = Arrays.stream(classPath)
+            String prefix = Arrays.stream(prefixes)
                     .filter(path::startsWith)
                     .findFirst()
                     .orElse("");
