@@ -201,7 +201,7 @@ int64_t teavm_currentTimeNano() {
     GetSystemTime(&time);
     SystemTimeToFileTime(&time, &fileTime);
     uint64_t current = fileTime.dwLowDateTime | ((uint64_t) fileTime.dwHighDateTime << 32);
-    return (int64_t) ((current - teavm_unixTimeOffset) / 10);
+    return (int64_t) ((current - teavm_unixTimeOffset) * 100);
 }
 #endif
 
