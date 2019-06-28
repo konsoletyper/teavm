@@ -477,7 +477,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         Set<MethodReference> splitMethods = new HashSet<>(asyncMethods);
         splitMethods.addAll(asyncFamilyMethods);
 
-        Decompiler decompiler = new Decompiler(classes, splitMethods, controller.isFriendlyToDebugger(), false);
+        Decompiler decompiler = new Decompiler(classes, splitMethods, controller.isFriendlyToDebugger());
 
         List<PreparedClass> classNodes = new ArrayList<>();
         for (String className : getClassOrdering(classes)) {

@@ -317,7 +317,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         ClassHierarchy hierarchy = new ClassHierarchy(classes);
         TagRegistry tagRegistry = new TagRegistry(classes, hierarchy);
 
-        Decompiler decompiler = new Decompiler(classes, new HashSet<>(), false, true);
+        Decompiler decompiler = new Decompiler(classes, new HashSet<>(), controller.isFriendlyToDebugger());
         Characteristics characteristics = new Characteristics(controller.getUnprocessedClassSource());
 
         NameProvider nameProvider = new NameProvider(controller.getUnprocessedClassSource());

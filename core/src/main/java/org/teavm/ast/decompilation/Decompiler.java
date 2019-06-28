@@ -74,14 +74,11 @@ public class Decompiler {
     private Deque<Block> stack;
     private Program program;
     private boolean friendlyToDebugger;
-    private boolean moveConstants;
 
-    public Decompiler(ClassHolderSource classSource, Set<MethodReference> splitMethods, boolean friendlyToDebugger,
-            boolean moveConstants) {
+    public Decompiler(ClassHolderSource classSource, Set<MethodReference> splitMethods, boolean friendlyToDebugger) {
         this.classSource = classSource;
         this.splitMethods = splitMethods;
         this.friendlyToDebugger = friendlyToDebugger;
-        this.moveConstants = moveConstants;
     }
 
     static class Block {
@@ -152,7 +149,7 @@ public class Decompiler {
             methodNode.getVariables().add(variable);
         }
 
-        Optimizer optimizer = new Optimizer(moveConstants);
+        Optimizer optimizer = new Optimizer();
         optimizer.optimize(methodNode, method.getProgram(), friendlyToDebugger);
         methodNode.getModifiers().addAll(method.getModifiers());
 
@@ -185,7 +182,7 @@ public class Decompiler {
             node.getVariables().add(variable);
         }
 
-        Optimizer optimizer = new Optimizer(moveConstants);
+        Optimizer optimizer = new Optimizer();
         optimizer.optimize(node, splitter, friendlyToDebugger);
         node.getModifiers().addAll(method.getModifiers());
 

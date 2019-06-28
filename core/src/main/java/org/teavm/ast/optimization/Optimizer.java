@@ -32,12 +32,6 @@ import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
 
 public class Optimizer {
-    private boolean moveConstants;
-
-    public Optimizer(boolean moveConstants) {
-        this.moveConstants = moveConstants;
-    }
-
     public void optimize(RegularMethodNode method, Program program, boolean friendlyToDebugger) {
         ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
         stats.analyze(program);
@@ -54,7 +48,7 @@ public class Optimizer {
             }
         }
         OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads,
-                moveConstants ? stats.constants : new Object[stats.constants.length], friendlyToDebugger);
+                stats.constants, friendlyToDebugger);
         method.getBody().acceptVisitor(optimizer);
         method.setBody(optimizer.resultStmt);
         int paramCount = method.getReference().parameterCount();
@@ -89,7 +83,7 @@ public class Optimizer {
             breakEliminator.eliminate(part.getStatement());
             findEscapingLiveVars(liveness, cfg, splitter, i, preservedVars);
             OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads,
-                    moveConstants ? stats.constants : new Object[stats.constants.length], friendlyToDebugger);
+                    stats.constants, friendlyToDebugger);
             part.getStatement().acceptVisitor(optimizer);
             part.setStatement(optimizer.resultStmt);
         }
