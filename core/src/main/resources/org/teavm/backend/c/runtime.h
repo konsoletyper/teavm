@@ -4,6 +4,10 @@
 #include <stddef.h>
 #include <math.h>
 
+#ifdef TEAVM_USE_SETJMP
+#include <setjmp.h>
+#endif
+
 #ifdef __GNUC__
 #include <stdalign.h>
 #include <signal.h>
@@ -58,6 +62,18 @@ typedef struct TeaVM_String {
     int32_t hashCode;
 } TeaVM_String;
 
+typedef struct TeaVM_StackFrame {
+    struct TeaVM_StackFrame* next;
+    #ifdef TEAVM_INCREMENTAL
+        void* callSites;
+    #endif
+    #ifdef TEAVM_USE_SETJMP
+        jmp_buf* jmpTarget;
+    #endif
+    int32_t size;
+    int32_t callSiteId;
+} TeaVM_StackFrame;
+
 extern void* teavm_gc_heapAddress;
 extern char *teavm_beforeClasses;
 
@@ -87,10 +103,10 @@ static inline int32_t teavm_compare_i64(int64_t a, int64_t b) {
     return a > b ? INT32_C(1) : a < b ? INT32_C(-1) : INT32_C(0);
 }
 static inline int32_t teavm_compare_float(float a, float b) {
-    return a > b ? INT32_C(1) : a < b ? INT32_C(-1) : INT32_C(0);
+    return a > b ? INT32_C(1) : a < b ? INT32_C(-1) : a == b ? INT32_C(0) : INT32_C(1);
 }
 static inline int32_t teavm_compare_double(double a, double b) {
-    return a > b ? INT32_C(1) : a < b ? INT32_C(-1) : INT32_C(0);
+    return a > b ? INT32_C(1) : a < b ? INT32_C(-1) : a == b ? INT32_C(0) : INT32_C(1);
 }
 
 #define TEAVM_ALIGN(addr, alignment) ((void*) (((uintptr_t) (addr) + ((alignment) - 1)) / (alignment) * (alignment)))
@@ -110,36 +126,39 @@ static inline void* teavm_checkcast(void* obj, int32_t (*cls)(TeaVM_Class*)) {
 
 #ifdef TEAVM_INCREMENTAL
 
-    #define TEAVM_ALLOC_STACK_DEF(size, callSites) \
-        void* teavm__shadowStack__[(size) + 4]; \
-        teavm__shadowStack__[0] = teavm_stackTop; \
-        teavm__shadowStack__[2] = (void*) size; \
-        teavm__shadowStack__[3] = (void*) (callSites); \
-        teavm_stackTop = teavm__shadowStack__
+    #define TEAVM_ALLOC_STACK_DEF(sz, cs) \
+        struct { TeaVM_StackFrame header; void* data[(sz)]; } teavm_shadowStack; \
+        teavm_shadowStack.header.next = teavm_stackTop; \
+        teavm_shadowStack.header.callSites = (cs); \
+        teavm_shadowStack.header.size = (sz); \
+        teavm_stackTop = &teavm_shadowStack.header
 
     #define TEAVM_STACK_HEADER_ADD_SIZE 1
 
 #else
 
-    #define TEAVM_ALLOC_STACK(size) \
-        void* teavm__shadowStack__[(size) + 3]; \
-        teavm__shadowStack__[0] = teavm_stackTop; \
-        teavm__shadowStack__[2] = (void*) size; \
-        teavm_stackTop = teavm__shadowStack__
+    #define TEAVM_ALLOC_STACK(sz) \
+        struct { TeaVM_StackFrame header; void* data[(sz)]; } teavm_shadowStack; \
+        teavm_shadowStack.header.next = teavm_stackTop; \
+        teavm_shadowStack.header.size = (sz); \
+        teavm_stackTop = &teavm_shadowStack.header
 
     #define TEAVM_STACK_HEADER_ADD_SIZE 0
 
 #endif
 
 
-#define TEAVM_RELEASE_STACK teavm_stackTop = teavm__shadowStack__[0]
-#define TEAVM_GC_ROOT(index, ptr) teavm__shadowStack__[3 + TEAVM_STACK_HEADER_ADD_SIZE + (index)] = ptr
-#define TEAVM_GC_ROOT_RELEASE(index) teavm__shadowStack__[3 + TEAVM_STACK_HEADER_ADD_SIZE + (index)] = NULL
-#define TEAVM_GC_ROOTS_COUNT(ptr) ((int32_t) (intptr_t) ((void**) (ptr))[2])
-#define TEAVM_GET_GC_ROOTS(ptr) (((void**) (ptr)) + 3 + TEAVM_STACK_HEADER_ADD_SIZE)
-#define TEAVM_CALL_SITE(id) (teavm__shadowStack__[1] = (void*) (id))
-#define TEAVM_EXCEPTION_HANDLER ((int32_t) (intptr_t) (teavm__shadowStack__[1]))
-#define TEAVM_SET_EXCEPTION_HANDLER(frame, id) (((void**) (frame))[1] = (void*) (intptr_t) (id))
+#define TEAVM_RELEASE_STACK (teavm_stackTop = teavm_shadowStack.header.next)
+#define TEAVM_GC_ROOT(index, ptr) teavm_shadowStack.data[index] = ptr
+#define TEAVM_GC_ROOT_RELEASE(index) teavm_shadowStack.data[index] = NULL
+#define TEAVM_GC_ROOTS_COUNT(ptr) (((TeaVM_StackFrame*) (ptr))->size);
+#define TEAVM_GET_GC_ROOTS(ptr) &((struct { TeaVM_StackFrame header; void* data[1]; }*) (ptr))->data;
+#define TEAVM_CALL_SITE(id) (teavm_shadowStack.header.callSiteId = (id))
+#define TEAVM_WITH_CALL_SITE_ID(id, expr) (TEAVM_CALL_SITE(id), (expr))
+#define TEAVM_EXCEPTION_HANDLER (teavm_shadowStack.header.callSiteId)
+#define TEAVM_SET_EXCEPTION_HANDLER(frame, id) (((TeaVM_StackFrame*) (frame))->callSiteId = (id))
+#define TEAVM_GET_NEXT_FRAME(frame) (((TeaVM_StackFrame*) (frame))->next)
+#define TEAVM_GET_CALL_SITE_ID(frame) (((TeaVM_StackFrame*) (frame))->callSiteId)
 
 #define TEAVM_ADDRESS_ADD(address, offset) ((char *) (address) + (offset))
 #define TEAVM_STRUCTURE_ADD(structure, address, offset) (((structure*) (address)) + offset)
@@ -160,7 +179,7 @@ static inline void* teavm_checkcast(void* obj, int32_t (*cls)(TeaVM_Class*)) {
     .hashCode = INT32_C(hash) \
 }
 
-extern void** teavm_stackTop;
+extern TeaVM_StackFrame* teavm_stackTop;
 
 extern void* teavm_gc_gcStorageAddress;
 extern int32_t teavm_gc_gcStorageSize;
@@ -360,3 +379,48 @@ extern int64_t teavm_unixTimeOffset;
 #endif
 
 extern void teavm_logchar(int32_t);
+
+#ifdef TEAVM_USE_SETJMP
+#define TEAVM_JUMP_SUPPORTED 1
+#define TEAVM_TRY \
+    do { \
+        jmp_buf teavm_tryBuffer; \
+        jmp_buf* teavm_oldTryBuffer = teavm_shadowStack.header.jmpTarget; \
+        teavm_shadowStack.header.jmpTarget = &teavm_tryBuffer; \
+        int teavm_exceptionHandler = setjmp(teavm_tryBuffer); \
+        switch (teavm_exceptionHandler) { \
+            case 0: {
+#define TEAVM_CATCH \
+                break; \
+            } \
+            default: { \
+                longjmp(*teavm_oldTryBuffer, teavm_exceptionHandler); \
+                break; \
+            }
+#define TEAVM_END_TRY \
+        } \
+        teavm_shadowStack.header.jmpTarget = teavm_oldTryBuffer; \
+    } while (0);
+
+#define TEAVM_JUMP_TO_FRAME(frame, id) \
+    teavm_stackTop = (TeaVM_StackFrame*) (frame); \
+    longjmp(*teavm_stackTop->jmpTarget, id)
+extern void teavm_throwNullPointerException();
+inline static void* teavm_nullCheck(void* o) {
+    if (o == NULL) {
+        teavm_throwNullPointerException();
+        #ifdef __GNUC__
+            __builtin_unreachable();
+        #endif
+        #ifdef _MSC_VER
+            __assume(0);
+        #endif
+    }
+    return o;
+}
+#else
+#define TEAVM_JUMP_SUPPORTED 0
+#define TEAVM_JUMP_TO_FRAME(frame, id)
+#endif
+
+extern void* teavm_catchException();

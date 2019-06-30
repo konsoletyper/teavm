@@ -28,6 +28,9 @@ public class ExceptionHandlingIntrinsic implements Intrinsic {
 
         switch (method.getName()) {
             case "findCallSiteById":
+            case "isJumpSupported":
+            case "jumpToFrame":
+            case "abort":
                 return true;
             default:
                 return false;
@@ -44,6 +47,23 @@ public class ExceptionHandlingIntrinsic implements Intrinsic {
                 context.writer().print(", ");
                 context.emit(invocation.getArguments().get(1));
                 context.writer().print(")");
+                break;
+
+            case "isJumpSupported":
+                context.writer().print("TEAVM_JUMP_SUPPORTED");
+                break;
+
+            case "jumpToFrame":
+                context.writer().print("TEAVM_JUMP_TO_FRAME(");
+                context.emit(invocation.getArguments().get(0));
+                context.writer().print(", ");
+                context.emit(invocation.getArguments().get(1));
+                context.writer().print(")");
+                break;
+
+            case "abort":
+                context.includes().addInclude("<stdlib.h>");
+                context.writer().print("abort();");
                 break;
         }
     }

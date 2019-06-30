@@ -18,6 +18,7 @@ package org.teavm.backend.c.generate;
 import java.io.IOException;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
@@ -93,10 +94,12 @@ public class ClassGenerator {
     private CodeWriter codeWriter;
     private CodeWriter initWriter;
     private CodeWriter headerWriter;
+    private CodeWriter callSitesWriter;
     private IncludeManager includes;
     private IncludeManager headerIncludes;
     private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
+    private List<CallSiteDescriptor> callSites;
 
     public ClassGenerator(GenerationContext context, TagRegistry tagRegistry, Decompiler decompiler,
             CacheStatus cacheStatus) {
@@ -108,6 +111,10 @@ public class ClassGenerator {
 
     public void setAstCache(MethodNodeCache astCache) {
         this.astCache = astCache;
+    }
+
+    public void setCallSites(List<CallSiteDescriptor> callSites) {
+        this.callSites = callSites;
     }
 
     public void prepare(ListableClassHolderSource classes) {
@@ -196,7 +203,7 @@ public class ClassGenerator {
     }
 
     private void generateCallSites(List<? extends CallSiteDescriptor> callSites, String callSitesName) {
-        CallSiteGenerator generator = new CallSiteGenerator(context, codeWriter, includes, callSitesName);
+        CallSiteGenerator generator = new CallSiteGenerator(context, callSitesWriter, includes, callSitesName);
         generator.setStatic(true);
         generator.generate(callSites);
     }
@@ -224,6 +231,9 @@ public class ClassGenerator {
         headerIncludes.includePath("runtime.h");
 
         codeGenerator = new CodeGenerator(context, codeWriter, includes);
+        if (context.isLongjmp() && !context.isIncremental()) {
+            codeGenerator.setCallSites(callSites);
+        }
 
         String sysInitializerName = context.getNames().forClassSystemInitializer(type);
         headerWriter.println("extern void " + sysInitializerName + "();");
@@ -279,17 +289,7 @@ public class ClassGenerator {
             }
 
             if (context.isIncremental()) {
-                String callSitesName;
-                List<? extends CallSiteDescriptor> callSites = CallSiteDescriptor.extract(method.getProgram());
-                if (!callSites.isEmpty()) {
-                    callSitesName = "callsites_" + context.getNames().forMethod(method.getReference());
-                    includes.includeClass(CallSite.class.getName());
-                    generateCallSites(callSites, callSitesName);
-                } else {
-                    callSitesName = "NULL";
-                }
-                codeWriter.println("#define TEAVM_ALLOC_STACK(size) TEAVM_ALLOC_STACK_DEF(size, "
-                        + callSitesName + ")");
+                callSitesWriter = codeWriter.fragment();
             }
 
             generateMethodForwardDeclaration(method);
@@ -303,9 +303,19 @@ public class ClassGenerator {
                 methodNode = entry.method;
             }
 
+            List<CallSiteDescriptor> callSites = null;
+            if (context.isLongjmp()) {
+                if (context.isIncremental()) {
+                    callSites = new ArrayList<>();
+                    codeGenerator.setCallSites(callSites);
+                }
+            }
+
             codeGenerator.generateMethod(methodNode);
 
             if (context.isIncremental()) {
+                generateCallSites(method.getReference(),
+                        context.isLongjmp() ? callSites : CallSiteDescriptor.extract(method.getProgram()));
                 codeWriter.println("#undef TEAVM_ALLOC_STACK");
             }
         }
@@ -316,6 +326,19 @@ public class ClassGenerator {
         headerWriter.print("extern ");
         codeGenerator.generateMethodSignature(headerWriter, method.getReference(), isStatic, false);
         headerWriter.println(";");
+    }
+
+    private void generateCallSites(MethodReference method, List<? extends CallSiteDescriptor> callSites) {
+        String callSitesName;
+        if (!callSites.isEmpty()) {
+            callSitesName = "callsites_" + context.getNames().forMethod(method);
+            includes.includeClass(CallSite.class.getName());
+            generateCallSites(callSites, callSitesName);
+        } else {
+            callSitesName = "NULL";
+        }
+        callSitesWriter.println("#define TEAVM_ALLOC_STACK(size) TEAVM_ALLOC_STACK_DEF(size, "
+                + callSitesName + ")");
     }
 
     private void generateInitializer(ClassHolder cls) {

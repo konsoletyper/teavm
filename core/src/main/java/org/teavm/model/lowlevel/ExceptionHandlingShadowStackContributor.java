@@ -272,20 +272,27 @@ public class ExceptionHandlingShadowStackContributor {
     }
 
     private boolean isCallInstruction(Instruction insn) {
+        return isCallInstruction(characteristics, insn);
+    }
+
+    public static boolean isCallInstruction(Characteristics characteristics, Instruction insn) {
         if (insn instanceof InitClassInstruction || insn instanceof ConstructInstruction
                 || insn instanceof ConstructArrayInstruction || insn instanceof ConstructMultiArrayInstruction
                 || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction
                 || insn instanceof MonitorEnterInstruction || insn instanceof MonitorExitInstruction) {
             return true;
         } else if (insn instanceof InvokeInstruction) {
-            MethodReference method = ((InvokeInstruction) insn).getMethod();
-            if (characteristics.isManaged(method)) {
-                return true;
-            }
-            return method.getClassName().equals(ExceptionHandling.class.getName())
-                    && method.getName().startsWith("throw");
+            return isManagedMethodCall(characteristics, ((InvokeInstruction) insn).getMethod());
         }
         return false;
+    }
+
+    public static boolean isManagedMethodCall(Characteristics characteristics, MethodReference method) {
+        if (characteristics.isManaged(method)) {
+            return true;
+        }
+        return method.getClassName().equals(ExceptionHandling.class.getName())
+                && method.getName().startsWith("throw");
     }
 
     private boolean isSpecialCallInstruction(Instruction insn) {

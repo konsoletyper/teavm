@@ -24,7 +24,7 @@
 
 void* teavm_gc_heapAddress = NULL;
 
-void** teavm_stackTop;
+TeaVM_StackFrame* teavm_stackTop = NULL;
 
 void* teavm_gc_gcStorageAddress = NULL;
 int32_t teavm_gc_gcStorageSize = INT32_C(0);

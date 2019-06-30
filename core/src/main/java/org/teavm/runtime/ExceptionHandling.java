@@ -25,15 +25,26 @@ public final class ExceptionHandling {
     private ExceptionHandling() {
     }
 
+    @Unmanaged
     public static native CallSite findCallSiteById(int id, Address frame);
 
+    @Unmanaged
+    public static native boolean isJumpSupported();
+
+    @Unmanaged
+    public static native void jumpToFrame(Address frame, int id);
+
+    @Unmanaged
+    public static native void abort();
+
+    @Unmanaged
     public static void printStack() {
         Address stackFrame = ShadowStack.getStackTop();
         while (stackFrame != null) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
             CallSite callSite = findCallSiteById(callSiteId, stackFrame);
             CallSiteLocation location = callSite.location;
-            MethodLocation methodLocation = location.method;
+            MethodLocation methodLocation = location != null ? location.method : null;
 
             Console.printString("    at ");
             if (methodLocation.className == null || methodLocation.methodName == null) {
@@ -56,7 +67,7 @@ public final class ExceptionHandling {
 
     private static Throwable thrownException;
 
-    @Export(name = "sys_catchException")
+    @Export(name = "teavm_catchException")
     @Unmanaged
     public static Throwable catchException() {
         Throwable exception = thrownException;
@@ -72,6 +83,7 @@ public final class ExceptionHandling {
         RuntimeClass exceptionClass = RuntimeClass.getClass(exceptionPtr);
 
         Address stackFrame = ShadowStack.getStackTop();
+        int handlerId = 0;
         stackLoop: while (stackFrame != null) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
             CallSite callSite = findCallSiteById(callSiteId, stackFrame);
@@ -79,6 +91,7 @@ public final class ExceptionHandling {
 
             while (handler != null) {
                 if (handler.exceptionClass == null || handler.exceptionClass.isSupertypeOf.apply(exceptionClass)) {
+                    handlerId = handler.id;
                     ShadowStack.setExceptionHandlerId(stackFrame, handler.id);
                     break stackLoop;
                 }
@@ -88,6 +101,13 @@ public final class ExceptionHandling {
             ShadowStack.setExceptionHandlerId(stackFrame, callSiteId - 1);
             stackFrame = ShadowStack.getNextStackFrame(stackFrame);
         }
+
+        if (stackFrame == null) {
+            printStack();
+            abort();
+        } else if (isJumpSupported()) {
+            jumpToFrame(stackFrame, handlerId);
+        }
     }
 
     @Unmanaged
@@ -96,6 +116,7 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
+    @Export(name = "teavm_throwNullPointerException")
     public static void throwNullPointerException() {
         throw new NullPointerException();
     }
@@ -119,11 +140,11 @@ public final class ExceptionHandling {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
             CallSite callSite = findCallSiteById(callSiteId, stackFrame);
             CallSiteLocation location = callSite.location;
-            MethodLocation methodLocation = location.method;
+            MethodLocation methodLocation = location != null ? location.method : null;
             StackTraceElement element = createElement(
-                    location != null && methodLocation.className != null ? methodLocation.className.value : "",
-                    location != null && methodLocation.methodName != null ? methodLocation.methodName.value : "",
-                    location != null && methodLocation.fileName != null ? methodLocation.fileName.value : null,
+                    methodLocation != null && methodLocation.className != null ? methodLocation.className.value : "",
+                    methodLocation != null && methodLocation.methodName != null ? methodLocation.methodName.value : "",
+                    methodLocation != null && methodLocation.fileName != null ? methodLocation.fileName.value : null,
                     location != null ? location.lineNumber : -1);
             target[index++] = element;
             stackFrame = ShadowStack.getNextStackFrame(stackFrame);

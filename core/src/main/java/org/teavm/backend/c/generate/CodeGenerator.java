@@ -15,12 +15,16 @@
  */
 package org.teavm.backend.c.generate;
 
+import com.carrotsearch.hppc.IntContainer;
+import java.util.List;
 import org.teavm.ast.MethodNode;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
+import org.teavm.backend.c.analyze.VolatileDefinitionFinder;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.lowlevel.CallSiteDescriptor;
 
 public class CodeGenerator {
     private GenerationContext context;
@@ -28,12 +32,17 @@ public class CodeGenerator {
     private CodeWriter localsWriter;
     private NameProvider names;
     private IncludeManager includes;
+    private List<CallSiteDescriptor> callSites;
 
     public CodeGenerator(GenerationContext context, CodeWriter writer, IncludeManager includes) {
         this.context = context;
         this.writer = writer;
         this.names = context.getNames();
         this.includes = includes;
+    }
+
+    public void setCallSites(List<CallSiteDescriptor> callSites) {
+        this.callSites = callSites;
     }
 
     public void generateMethod(RegularMethodNode methodNode) {
@@ -44,13 +53,16 @@ public class CodeGenerator {
 
         localsWriter = writer.fragment();
         CodeGenerationVisitor visitor = generateMethodBody(methodNode);
-        generateLocals(methodNode, visitor.getTemporaries());
+        generateLocals(methodNode, visitor.getTemporaries(), visitor.getSpilledVariables());
 
         writer.outdent().println("}");
     }
 
     private CodeGenerationVisitor generateMethodBody(RegularMethodNode methodNode) {
-        CodeGenerationVisitor visitor = new CodeGenerationVisitor(context, writer, includes);
+        VolatileDefinitionFinder volatileDefinitions = new VolatileDefinitionFinder();
+        volatileDefinitions.findVolatileDefinitions(methodNode.getBody());
+        CodeGenerationVisitor visitor = new CodeGenerationVisitor(context, writer, includes, callSites,
+                volatileDefinitions);
         visitor.setAsync(context.isAsync(methodNode.getReference()));
         visitor.setCallingMethod(methodNode.getReference());
         methodNode.getBody().acceptVisitor(visitor);
@@ -94,7 +106,7 @@ public class CodeGenerator {
         }
     }
 
-    private void generateLocals(MethodNode methodNode, int[] temporaryCount) {
+    private void generateLocals(MethodNode methodNode, int[] temporaryCount, IntContainer spilledVariables) {
         int start = methodNode.getReference().parameterCount() + 1;
         for (int i = start; i < methodNode.getVariables().size(); ++i) {
             VariableNode variableNode = methodNode.getVariables().get(i);
@@ -103,6 +115,10 @@ public class CodeGenerator {
             }
             localsWriter.printType(variableNode.getType()).print(" teavm_local_").print(String.valueOf(i))
                     .println(";");
+            if (spilledVariables.contains(i)) {
+                localsWriter.print("volatile ").printType(variableNode.getType()).print(" teavm_spill_")
+                        .print(String.valueOf(i)).println(";");
+            }
         }
 
         for (CVariableType type : CVariableType.values()) {

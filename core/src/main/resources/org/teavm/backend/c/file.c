@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <utime.h>
 #include <pwd.h>
+#include <string.h>
 
 int32_t teavm_file_homeDirectory(char16_t** result) {
     struct passwd *pw = getpwuid(getuid());

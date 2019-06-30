@@ -63,6 +63,10 @@ public class TeaVMCBuilderRunner {
                 .withDescription("Minimum heap size in bytes")
                 .create());
         options.addOption(OptionBuilder
+                .withLongOpt("no-longjmp")
+                .withDescription("Don't use setjmp/longjmp functions to emulate exception handling")
+                .create());
+        options.addOption(OptionBuilder
                 .withLongOpt("entry-point")
                 .withArgName("name")
                 .hasArg()
@@ -116,6 +120,9 @@ public class TeaVMCBuilderRunner {
         builder.setLineNumbersGenerated(commandLine.hasOption('g'));
         if (commandLine.hasOption('e')) {
             builder.setMainFunctionName(commandLine.getOptionValue('e'));
+        }
+        if (commandLine.hasOption("no-longjmp")) {
+            builder.setLongjmpSupported(false);
         }
 
         String[] args = commandLine.getArgs();

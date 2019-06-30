@@ -20,6 +20,8 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.Arrays;
+import java.util.List;
 import java.util.function.Supplier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -116,19 +118,19 @@ public class VMTest {
     @Test
     public void catchFinally() {
         StringBuilder sb = new StringBuilder();
+        List<String> a = Arrays.asList("a", "b");
+        if (a.isEmpty()) {
+            return;
+        }
         try {
-            if (Integer.parseInt("invalid") > 0) {
-                sb.append("err1;");
-            } else {
-                sb.append("err2;");
+            for (String b : a) {
+                if (b.length() < 3) {
+                    sb.append(b);
+                }
             }
-            sb.append("err3");
-        } catch (NumberFormatException e) {
-            sb.append("catch;");
         } finally {
             sb.append("finally;");
         }
-        assertEquals("catch;finally;", sb.toString());
     }
 
     @Test
@@ -195,7 +197,7 @@ public class VMTest {
             n += foo() * 5;
         } catch (RuntimeException e) {
             assertEquals(RuntimeException.class, e.getClass());
-            assertEquals(n, 22);
+            assertEquals(22, n);
         }
     }
 

@@ -73,9 +73,9 @@ public class ShadowStackIntrinsic implements Intrinsic {
                 context.writer().print("teavm_stackTop");
                 return;
             case "getNextStackFrame":
-                context.writer().print("((void**) ");
+                context.writer().print("TEAVM_GET_NEXT_FRAME(");
                 context.emit(invocation.getArguments().get(0));
-                context.writer().print(")[0]");
+                context.writer().print(")");
                 return;
             case "getStackRootCount":
                 context.writer().print("TEAVM_GC_ROOTS_COUNT(");
@@ -89,9 +89,9 @@ public class ShadowStackIntrinsic implements Intrinsic {
                 return;
             }
             case "getCallSiteId":
-                context.writer().print("((int32_t) (intptr_t) ((void**) ");
+                context.writer().print("TEAVM_GET_CALL_SITE_ID(");
                 context.emit(invocation.getArguments().get(0));
-                context.writer().print(")[1])");
+                context.writer().print(")");
                 return;
         }
 

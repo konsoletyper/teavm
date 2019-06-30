@@ -55,7 +55,7 @@ public final class EventQueue {
     }
 
     public static void kill(int id) {
-        for (int i = 0; i < data.length; ++i) {
+        for (int i = 0; i < size; ++i) {
             if (data[i].id == id) {
                 remove(i);
                 break;

@@ -93,7 +93,6 @@ import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.SwitchTableEntry;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
-import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.TransitionExtractor;
 
 public class ProgramParser {
@@ -185,8 +184,6 @@ public class ProgramParser {
         while (program.variableCount() <= signatureVars) {
             program.createVariable();
         }
-        program.basicBlockAt(0).getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(
-                program.basicBlockAt(1), program));
         return program;
     }
 

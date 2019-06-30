@@ -61,9 +61,7 @@ public class Decompiler {
     private Graph graph;
     private LoopGraph loopGraph;
     private GraphIndexer indexer;
-    private int[] loops;
     private int[] loopSuccessors;
-    private Block[] blockMap;
     private boolean[] exceptionHandlers;
     private int lastBlockId;
     private RangeTree codeTree;
@@ -83,7 +81,6 @@ public class Decompiler {
 
     static class Block {
         Block parent;
-        int parentOffset;
         final IdentifiedStatement statement;
         final List<Statement> body;
         final int end;
@@ -99,24 +96,6 @@ public class Decompiler {
             this.body = body;
             this.start = start;
             this.end = end;
-        }
-
-        void installTo(int index, Block[] blockMap) {
-            if (nodeBackup == null) {
-                nodeToRestore = index;
-                nodeBackup = blockMap[index];
-            } else {
-                nodeToRestore2 = index;
-                nodeBackup2 = blockMap[index];
-            }
-            blockMap[index] = this;
-        }
-
-        void removeFrom(Block[] blockMap) {
-            blockMap[nodeToRestore] = nodeBackup;
-            if (nodeToRestore2 >= 0) {
-                blockMap[nodeToRestore2] = nodeBackup2;
-            }
         }
     }
 
@@ -207,16 +186,14 @@ public class Decompiler {
         graph = indexer.getGraph();
         loopGraph = new LoopGraph(this.graph);
         unflatCode();
-        blockMap = new Block[program.basicBlockCount() * 2 + 1];
         stack = new ArrayDeque<>();
         this.program = program;
         BlockStatement rootStmt = new BlockStatement();
         rootStmt.setId("root");
-        stack.push(new Block(rootStmt, rootStmt.getBody(), -1, -1));
+        stack.push(new Block(rootStmt, rootStmt.getBody(), -1, Integer.MAX_VALUE));
         StatementGenerator generator = new StatementGenerator();
         generator.classSource = classSource;
         generator.program = program;
-        generator.blockMap = blockMap;
         generator.indexer = indexer;
         parentNode = codeTree.getRoot();
         currentNode = parentNode.getFirstChild();
@@ -224,18 +201,7 @@ public class Decompiler {
         fillExceptionHandlers(program);
         for (int i = 0; i < this.graph.size(); ++i) {
             int node = i < indexer.size() ? indexer.nodeAt(i) : -1;
-            int next = i + 1;
-            int head = loops[i];
-            if (head != -1 && loopSuccessors[head] == next) {
-                next = head;
-            }
-
-            if (node >= 0) {
-                generator.currentBlock = program.basicBlockAt(node);
-                int tmp = indexer.nodeAt(next);
-                generator.nextBlock = tmp >= 0 && next < indexer.size() ? program.basicBlockAt(tmp) : null;
-            }
-
+            BasicBlock basicBlock = node >= 0 ? program.basicBlockAt(node) : null;
             Block block = stack.peek();
 
             while (parentNode.getEnd() == i) {
@@ -245,16 +211,18 @@ public class Decompiler {
             for (Block newBlock : createBlocks(i)) {
                 block.body.add(newBlock.statement);
                 newBlock.parent = block;
-                newBlock.parentOffset = block.body.size();
                 stack.push(newBlock);
                 block = newBlock;
             }
-            createNewBookmarks(generator.currentBlock.getTryCatchBlocks());
+            if (basicBlock != null) {
+                createNewBookmarks(basicBlock.getTryCatchBlocks());
+            }
+            generator.currentBlock = block;
 
-            if (node >= 0) {
+            if (basicBlock != null) {
                 generator.statements.clear();
                 TextLocation lastLocation = null;
-                for (Instruction insn : generator.currentBlock) {
+                for (Instruction insn : basicBlock) {
                     if (insn.getLocation() != null && lastLocation != insn.getLocation()) {
                         lastLocation = insn.getLocation();
                     }
@@ -276,20 +244,17 @@ public class Decompiler {
                 Block oldBlock = block;
                 stack.pop();
                 block = stack.peek();
-                if (block.start >= 0) {
-                    int mappedStart = indexer.nodeAt(block.start);
-                    if (blockMap[mappedStart] == oldBlock) {
-                        blockMap[mappedStart] = block;
-                    }
-                }
 
-                for (int j = 0; j < oldBlock.tryCatches.size(); ++j) {
+                for (int j = oldBlock.tryCatches.size() - 1; j >= 0; --j) {
                     TryCatchBookmark bookmark = oldBlock.tryCatches.get(j);
                     TryCatchStatement tryCatchStmt = new TryCatchStatement();
                     tryCatchStmt.setExceptionType(bookmark.exceptionType);
                     tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
-                    tryCatchStmt.getHandler().add(generator.generateJumpStatement(
-                            program.basicBlockAt(bookmark.exceptionHandler)));
+                    Statement handlerStatement = generator.generateJumpStatement(block,
+                            program.basicBlockAt(bookmark.exceptionHandler));
+                    if (handlerStatement != null) {
+                        tryCatchStmt.getHandler().add(handlerStatement);
+                    }
                     List<Statement> blockPart = oldBlock.body.subList(bookmark.offset, oldBlock.body.size());
                     tryCatchStmt.getProtectedBody().addAll(blockPart);
                     blockPart.clear();
@@ -301,11 +266,16 @@ public class Decompiler {
                 tryCatchBookmarks.subList(tryCatchBookmarks.size() - oldBlock.tryCatches.size(),
                         tryCatchBookmarks.size()).clear();
                 oldBlock.tryCatches.clear();
-                oldBlock.removeFrom(blockMap);
             }
 
-            if (generator.nextBlock != null && !isTrivialBlock(generator.nextBlock)) {
-                closeExpiredBookmarks(generator, generator.nextBlock.getTryCatchBlocks());
+            if (i < this.graph.size() - 1) {
+                int nextNode = indexer.nodeAt(i + 1);
+                if (nextNode >= 0 && nextNode < program.basicBlockCount()) {
+                    BasicBlock nextBlock = program.basicBlockAt(nextNode);
+                    if (!isTrivialBlock(nextBlock)) {
+                        closeExpiredBookmarks(generator, nextBlock.getTryCatchBlocks());
+                    }
+                }
             }
         }
 
@@ -364,37 +334,42 @@ public class Decompiler {
             removedBookmarks.add(bookmark);
         }
 
-        Collections.reverse(removedBookmarks);
-        for (TryCatchBookmark bookmark : removedBookmarks) {
+        if (!removedBookmarks.isEmpty()) {
+            Collections.reverse(removedBookmarks);
             Block block = stack.peek();
-            while (block != bookmark.block) {
-                if (block.body.size() > 1) {
+
+            int lastBookmark = removedBookmarks.size() - 1;
+            boolean first = true;
+            while (lastBookmark >= 0) {
+                for (int j = lastBookmark; j >= 0; --j) {
+                    TryCatchBookmark bookmark = removedBookmarks.get(j);
+
                     TryCatchStatement tryCatchStmt = new TryCatchStatement();
                     tryCatchStmt.setExceptionType(bookmark.exceptionType);
                     tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
-                    tryCatchStmt.getHandler().add(generator.generateJumpStatement(
-                            program.basicBlockAt(bookmark.exceptionHandler)));
-                    List<Statement> body = block.body.subList(0, block.body.size() - 1);
+                    Statement handlerStatement = generator.generateJumpStatement(block,
+                            program.basicBlockAt(bookmark.exceptionHandler));
+                    if (handlerStatement != null) {
+                        tryCatchStmt.getHandler().add(handlerStatement);
+                    }
+
+                    List<Statement> body = first ? block.body : block.body.subList(0, block.body.size() - 1);
+                    if (bookmark.block == block) {
+                        body = body.subList(bookmark.offset, body.size());
+                        lastBookmark = j - 1;
+                    }
                     tryCatchStmt.getProtectedBody().addAll(body);
-                    body.clear();
-                    body.add(tryCatchStmt);
+                    if (!body.isEmpty()) {
+                        body.clear();
+                        body.add(tryCatchStmt);
+                    }
                 }
+
+                block.tryCatches.removeAll(removedBookmarks);
+
                 block = block.parent;
+                first = false;
             }
-            TryCatchStatement tryCatchStmt = new TryCatchStatement();
-            tryCatchStmt.setExceptionType(bookmark.exceptionType);
-            tryCatchStmt.setExceptionVariable(bookmark.exceptionVariable);
-            Statement jumpToHandler = generator.generateJumpStatement(program.basicBlockAt(bookmark.exceptionHandler));
-            if (jumpToHandler != null) {
-                tryCatchStmt.getHandler().add(jumpToHandler);
-            }
-            List<Statement> blockPart = block.body.subList(bookmark.offset, block.body.size());
-            tryCatchStmt.getProtectedBody().addAll(blockPart);
-            blockPart.clear();
-            if (!tryCatchStmt.getProtectedBody().isEmpty()) {
-                blockPart.add(tryCatchStmt);
-            }
-            block.tryCatches.remove(bookmark);
         }
 
         tryCatchBookmarks.subList(start, tryCatchBookmarks.size()).clear();
@@ -402,16 +377,31 @@ public class Decompiler {
 
     private void createNewBookmarks(List<TryCatchBlock> tryCatchBlocks) {
         // Add new bookmarks
+        Block previousRoot = null;
         for (int i = tryCatchBookmarks.size(); i < tryCatchBlocks.size(); ++i) {
             TryCatchBlock tryCatch = tryCatchBlocks.get(tryCatchBlocks.size() - 1 - i);
             TryCatchBookmark bookmark = new TryCatchBookmark();
-            bookmark.block = stack.peek();
-            bookmark.offset = bookmark.block.body.size();
+
+            Block block = stack.peek();
+            int offset = block.body.size();
+
+            if (offset == 0 && block != previousRoot) {
+                while (block.parent != previousRoot
+                        && block.parent.start == block.start
+                        && block.end < indexer.indexOf(tryCatch.getHandler().getIndex())
+                        && block.parent.body.size() == 1) {
+                    block = block.parent;
+                }
+            }
+            previousRoot = block;
+
+            bookmark.block = block;
+            bookmark.offset = offset;
             bookmark.exceptionHandler = tryCatch.getHandler().getIndex();
             bookmark.exceptionType = tryCatch.getExceptionType();
             bookmark.exceptionVariable = tryCatch.getHandler().getExceptionVariable() != null
                     ? tryCatch.getHandler().getExceptionVariable().getIndex() : null;
-            bookmark.block.tryCatches.add(bookmark);
+            block.tryCatches.add(bookmark);
             tryCatchBookmarks.add(bookmark);
         }
     }
@@ -421,26 +411,16 @@ public class Decompiler {
         while (currentNode != null && currentNode.getStart() == start) {
             Block block;
             IdentifiedStatement statement;
-            boolean loop = false;
             if (loopSuccessors[start] == currentNode.getEnd() || isSingleBlockLoop(start)) {
                 WhileStatement whileStatement = new WhileStatement();
                 statement = whileStatement;
                 block = new Block(statement, whileStatement.getBody(), start, currentNode.getEnd());
-                loop = true;
             } else {
                 BlockStatement blockStatement = new BlockStatement();
                 statement = blockStatement;
                 block = new Block(statement, blockStatement.getBody(), start, currentNode.getEnd());
             }
             result.add(block);
-            int mappedIndex = indexer.nodeAt(currentNode.getEnd());
-            if (mappedIndex >= 0 && (blockMap[mappedIndex] == null
-                    || !(blockMap[mappedIndex].statement instanceof WhileStatement))) {
-                block.installTo(mappedIndex, blockMap);
-            }
-            if (loop) {
-                block.installTo(indexer.nodeAt(start), blockMap);
-            }
             parentNode = currentNode;
             currentNode = currentNode.getFirstChild();
         }
@@ -477,17 +457,6 @@ public class Decompiler {
 
         // For each node find head of loop this node belongs to.
         //
-        int[] loops = new int[sz];
-        Arrays.fill(loops, -1);
-        for (int head = 0; head < sz; ++head) {
-            int end = loopSuccessors[head];
-            if (end > sz) {
-                continue;
-            }
-            for (int node = head + 1; node < end; ++node) {
-                loops[node] = head;
-            }
-        }
 
         List<RangeTree.Range> ranges = new ArrayList<>();
         for (int node = 0; node < sz; ++node) {
@@ -509,6 +478,5 @@ public class Decompiler {
         }
         codeTree = new RangeTree(sz + 1, ranges);
         this.loopSuccessors = loopSuccessors;
-        this.loops = loops;
     }
 }

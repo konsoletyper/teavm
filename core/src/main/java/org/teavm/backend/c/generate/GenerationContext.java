@@ -44,11 +44,13 @@ public class GenerationContext {
     private Predicate<MethodReference> asyncMethods;
     private BuildTarget buildTarget;
     private boolean incremental;
+    private boolean longjmp;
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
             DependencyInfo dependencies, StringPool stringPool, NameProvider names, Diagnostics diagnostics,
             ClassReaderSource classSource, List<Intrinsic> intrinsics, List<Generator> generators,
-            Predicate<MethodReference> asyncMethods, BuildTarget buildTarget, boolean incremental) {
+            Predicate<MethodReference> asyncMethods, BuildTarget buildTarget, boolean incremental,
+            boolean longjmp) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
         this.dependencies = dependencies;
@@ -61,6 +63,7 @@ public class GenerationContext {
         this.asyncMethods = asyncMethods;
         this.buildTarget = buildTarget;
         this.incremental = incremental;
+        this.longjmp = longjmp;
     }
 
     public void addIntrinsic(Intrinsic intrinsic) {
@@ -123,5 +126,9 @@ public class GenerationContext {
 
     public boolean isIncremental() {
         return incremental;
+    }
+
+    public boolean isLongjmp() {
+        return longjmp;
     }
 }

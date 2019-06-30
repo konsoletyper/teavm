@@ -20,27 +20,22 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.teavm.ast.AssignmentStatement;
+import org.teavm.ast.AbstractStatementVisitor;
 import org.teavm.ast.BlockStatement;
 import org.teavm.ast.BreakStatement;
 import org.teavm.ast.ConditionalStatement;
 import org.teavm.ast.ContinueStatement;
-import org.teavm.ast.GotoPartStatement;
 import org.teavm.ast.IdentifiedStatement;
-import org.teavm.ast.InitClassStatement;
-import org.teavm.ast.MonitorEnterStatement;
-import org.teavm.ast.MonitorExitStatement;
 import org.teavm.ast.ReturnStatement;
 import org.teavm.ast.SequentialStatement;
 import org.teavm.ast.Statement;
-import org.teavm.ast.StatementVisitor;
 import org.teavm.ast.SwitchClause;
 import org.teavm.ast.SwitchStatement;
 import org.teavm.ast.ThrowStatement;
 import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.WhileStatement;
 
-class BreakEliminator implements StatementVisitor {
+class BreakEliminator extends AbstractStatementVisitor {
     private Map<BlockStatement, List<Statement>> blockSuccessors = new LinkedHashMap<>();
     private Set<IdentifiedStatement> outerStatements = new LinkedHashSet<>();
     private List<Statement> currentSequence;
@@ -64,10 +59,6 @@ class BreakEliminator implements StatementVisitor {
 
         currentIndex = oldIndex;
         currentSequence = oldSequence;
-    }
-
-    @Override
-    public void visit(AssignmentStatement statement) {
     }
 
     @Override
@@ -146,10 +137,6 @@ class BreakEliminator implements StatementVisitor {
     }
 
     @Override
-    public void visit(InitClassStatement statement) {
-    }
-
-    @Override
     public void visit(TryCatchStatement statement) {
         Map<BlockStatement, List<Statement>> oldBlockSuccessors = blockSuccessors;
         Set<IdentifiedStatement> oldOuterStatements = outerStatements;
@@ -159,18 +146,6 @@ class BreakEliminator implements StatementVisitor {
         outerStatements = oldOuterStatements;
         blockSuccessors = oldBlockSuccessors;
         processSequence(statement.getHandler());
-    }
-
-    @Override
-    public void visit(GotoPartStatement statement) {
-    }
-
-    @Override
-    public void visit(MonitorEnterStatement statement) {
-    }
-
-    @Override
-    public void visit(MonitorExitStatement statement) {
     }
 
     private boolean escapes(List<Statement> statements) {

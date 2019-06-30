@@ -25,7 +25,6 @@ import org.teavm.classlib.java.lang.TObject;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.NoSideEffects;
-import org.teavm.interop.Unmanaged;
 import org.teavm.platform.PlatformClass;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
@@ -69,7 +68,6 @@ public final class TArray extends TObject {
     private static native TObject newInstanceImpl(PlatformClass componentType, int length);
 
     @SuppressWarnings("unused")
-    @Unmanaged
     private static RuntimeObject newInstanceLowLevel(RuntimeClass cls, int length) {
         return Allocator.allocateArray(cls.arrayType, length).toStructure();
     }

@@ -165,7 +165,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 controller.getUnprocessedClassSource());
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
-        shadowStackTransformer = new ShadowStackTransformer(managedMethodRepository);
+        shadowStackTransformer = new ShadowStackTransformer(managedMethodRepository, true);
     }
 
     @Override

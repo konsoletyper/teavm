@@ -103,7 +103,7 @@ public class TeaVMTool {
     private Set<File> generatedFiles = new HashSet<>();
     private int minHeapSize = 32 * (1 << 20);
     private ReferenceCache referenceCache;
-    private String mainFunctionName;
+    private boolean longjmpSupported = true;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -249,8 +249,8 @@ public class TeaVMTool {
         this.wasmVersion = wasmVersion;
     }
 
-    public void setMainFunctionName(String mainFunctionName) {
-        this.mainFunctionName = mainFunctionName;
+    public void setLongjmpSupported(boolean longjmpSupported) {
+        this.longjmpSupported = longjmpSupported;
     }
 
     public void setProgressListener(TeaVMProgressListener progressListener) {
@@ -327,6 +327,7 @@ public class TeaVMTool {
         cTarget = new CTarget();
         cTarget.setMinHeapSize(minHeapSize);
         cTarget.setLineNumbersGenerated(debugInformationGenerated);
+        cTarget.setLongjmpUsed(longjmpSupported);
         return cTarget;
     }
 

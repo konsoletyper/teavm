@@ -17,7 +17,9 @@ package org.teavm.model.util;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import org.teavm.common.DisjointSet;
@@ -151,17 +153,103 @@ public class RegisterAllocator {
     }
 
     private void insertPhiArgumentsCopies(Program program) {
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
+        List<List<Incoming>> catchIncomingsByVariable = new ArrayList<>(
+                Collections.nCopies(program.variableCount(), null));
+
+        int sz = program.basicBlockCount();
+        for (int i = 0; i < sz; ++i) {
+            BasicBlock block = program.basicBlockAt(i);
             Map<BasicBlock, BasicBlock> blockMap = new HashMap<>();
-            for (Phi phi : program.basicBlockAt(i).getPhis()) {
+            List<Incoming> incomingsToRepeat = new ArrayList<>();
+            for (Phi phi : block.getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
-                    insertCopy(incoming, blockMap);
+                    boolean fromTry = incoming.getSource().getTryCatchBlocks().stream()
+                            .anyMatch(tryCatch -> tryCatch.getHandler() == incoming.getPhi().getBasicBlock());
+                    if (fromTry) {
+                        int valueIndex = incoming.getValue().getIndex();
+                        List<Incoming> catchIncomings = catchIncomingsByVariable.get(valueIndex);
+                        if (catchIncomings == null) {
+                            catchIncomings = new ArrayList<>(1);
+                            catchIncomingsByVariable.set(valueIndex, catchIncomings);
+                        }
+                        catchIncomings.add(incoming);
+                    } else {
+                        insertCopy(incoming, blockMap);
+                        incomingsToRepeat.add(incoming);
+                    }
                 }
             }
-            for (Phi phi : program.basicBlockAt(i).getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    insertCopy(incoming, blockMap);
+
+            for (Incoming incoming : incomingsToRepeat) {
+                insertCopy(incoming, blockMap);
+            }
+        }
+
+        DefinitionExtractor definitionExtractor = new DefinitionExtractor();
+        List<Instruction> nextInstructions = new ArrayList<>();
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction instruction : block) {
+                instruction.acceptVisitor(definitionExtractor);
+                Variable[] definedVariables = definitionExtractor.getDefinedVariables();
+                for (Variable definedVariable : definedVariables) {
+                    if (definedVariable.getIndex() >= catchIncomingsByVariable.size()) {
+                        continue;
+                    }
+                    List<Incoming> catchIncomings = catchIncomingsByVariable.get(definedVariable.getIndex());
+                    if (catchIncomings == null) {
+                        continue;
+                    }
+
+                    Incoming incoming = null;
+                    for (Iterator<Incoming> iter = catchIncomings.iterator(); iter.hasNext();) {
+                        if (iter.next().getValue() == definedVariable) {
+                            iter.remove();
+                            break;
+                        }
+                    }
+                    if (incoming == null) {
+                        continue;
+                    }
+
+                    Variable copy = program.createVariable();
+                    copy.setLabel(incoming.getPhi().getReceiver().getLabel());
+                    copy.setDebugName(incoming.getPhi().getReceiver().getDebugName());
+
+                    AssignInstruction copyInstruction = new AssignInstruction();
+                    copyInstruction.setReceiver(copy);
+                    copyInstruction.setAssignee(incoming.getValue());
+                    copyInstruction.setLocation(instruction.getLocation());
+
+                    incoming.setValue(copy);
+
+                    nextInstructions.add(copyInstruction);
                 }
+
+                if (!nextInstructions.isEmpty()) {
+                    instruction.insertNextAll(nextInstructions);
+                    nextInstructions.clear();
+                }
+            }
+        }
+
+        for (List<Incoming> remainingIncomings : catchIncomingsByVariable) {
+            if (remainingIncomings == null) {
+                continue;
+            }
+            for (Incoming incoming : remainingIncomings) {
+                BasicBlock block = incoming.getSource();
+
+                Variable copy = program.createVariable();
+                copy.setLabel(incoming.getPhi().getReceiver().getLabel());
+                copy.setDebugName(incoming.getPhi().getReceiver().getDebugName());
+                incoming.setValue(copy);
+
+                AssignInstruction copyInstruction = new AssignInstruction();
+                copyInstruction.setReceiver(copy);
+                copyInstruction.setAssignee(incoming.getValue());
+                copyInstruction.setLocation(block.getFirstInstruction().getLocation());
+
+                block.addFirst(copyInstruction);
             }
         }
     }

@@ -51,6 +51,7 @@ public class RemoteBuildStrategy implements BuildStrategy {
         request = new RemoteBuildRequest();
         request.optimizationLevel = TeaVMOptimizationLevel.ADVANCED;
         request.wasmVersion = WasmBinaryVersion.V_0x1;
+        request.longjmpSupported = true;
     }
 
     @Override
@@ -172,6 +173,11 @@ public class RemoteBuildStrategy implements BuildStrategy {
     @Override
     public void setHeapSize(int heapSize) {
         request.heapSize = heapSize;
+    }
+
+    @Override
+    public void setLongjmpSupported(boolean value) {
+        request.longjmpSupported = value;
     }
 
     @Override

@@ -32,6 +32,7 @@ public interface PlatformClassMetadata extends JSObject {
     PlatformClass getSuperclass();
 
     @JSProperty
+    @Unmanaged
     String getName();
 
     @JSProperty

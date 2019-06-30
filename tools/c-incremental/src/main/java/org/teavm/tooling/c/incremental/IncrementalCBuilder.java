@@ -63,6 +63,7 @@ public class IncrementalCBuilder {
     private String mainClass;
     private String[] classPath;
     private int minHeapSize = 32;
+    private boolean longjmpSupported = true;
     private boolean lineNumbersGenerated;
     private String targetPath;
     private String externalTool;
@@ -129,6 +130,10 @@ public class IncrementalCBuilder {
 
     public void setMainFunctionName(String mainFunctionName) {
         this.mainFunctionName = mainFunctionName;
+    }
+
+    public void setLongjmpSupported(boolean longjmpSupported) {
+        this.longjmpSupported = longjmpSupported;
     }
 
     public void addProgressHandler(ProgressHandler handler) {
@@ -327,6 +332,7 @@ public class IncrementalCBuilder {
         cTarget.setIncremental(true);
         cTarget.setMinHeapSize(minHeapSize * 1024 * 1024);
         cTarget.setLineNumbersGenerated(lineNumbersGenerated);
+        cTarget.setLongjmpUsed(longjmpSupported);
         vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
         vm.setCacheStatus(classSource);
         vm.addVirtualMethods(m -> true);

@@ -130,7 +130,7 @@
             </goals>
             <phase>process-classes</phase>
             <configuration>
-              <targetDirectory>${build.directory}/classes/teavm/devserver</targetDirectory>
+              <targetDirectory>${project.build.directory}/classes/teavm/devserver</targetDirectory>
               <targetFileName>deobfuscator.js</targetFileName>
               <minifying>true</minifying>
               <optimizationLevel>ADVANCED</optimizationLevel>

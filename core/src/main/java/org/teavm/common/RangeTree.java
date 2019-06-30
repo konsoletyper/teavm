@@ -96,7 +96,13 @@ public class RangeTree {
         });
         Deque<NodeImpl> stack = new ArrayDeque<>();
         stack.push(root);
+
+        Range lastRange = null;
         for (Range range : rangeList) {
+            if (lastRange != null && lastRange.left == range.left && lastRange.right == range.right) {
+                continue;
+            }
+
             NodeImpl current = new NodeImpl();
             current.start = range.left;
             current.end = range.right;
@@ -114,6 +120,7 @@ public class RangeTree {
                 ancestor.start = current.start;
             }
             stack.push(current);
+            lastRange = range;
         }
     }
 

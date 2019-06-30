@@ -61,6 +61,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
     private int heapSize = 32;
     private final List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
+    private boolean longjmpSupported = true;
     private TeaVMProgressListener progressListener;
     private Properties properties = new Properties();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
@@ -197,6 +198,11 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setLongjmpSupported(boolean longjmpSupported) {
+        this.longjmpSupported = longjmpSupported;
+    }
+
+    @Override
     public BuildResult build() throws BuildException {
         TeaVMTool tool = new TeaVMTool();
         tool.setProgressListener(progressListener);
@@ -222,6 +228,7 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setCacheDirectory(cacheDirectory != null ? new File(cacheDirectory) : null);
         tool.setWasmVersion(wasmVersion);
         tool.setMinHeapSize(heapSize);
+        tool.setLongjmpSupported(longjmpSupported);
 
         tool.getProperties().putAll(properties);
 

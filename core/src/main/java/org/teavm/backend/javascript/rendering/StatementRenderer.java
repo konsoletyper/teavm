@@ -1447,7 +1447,8 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     .softNewLine();
             boolean first = true;
             boolean defaultHandlerOccurred = false;
-            for (TryCatchStatement catchClause : sequence) {
+            for (int i = sequence.size() - 1; i >= 0; --i) {
+                TryCatchStatement catchClause = sequence.get(i);
                 if (!first) {
                     writer.ws().append("else");
                 }
