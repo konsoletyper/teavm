@@ -125,12 +125,9 @@ public class AstIO {
         int index = input.readShort();
         VariableType type = VariableType.values()[input.readByte()];
         VariableNode variable = new VariableNode(index, type);
-        int nameCount = input.readByte();
-        for (int i = 0; i < nameCount; ++i) {
-            variable.setName(input.readUTF());
-            if (variable.getName().isEmpty()) {
-                variable.setName(null);
-            }
+        variable.setName(input.readUTF());
+        if (variable.getName().isEmpty()) {
+            variable.setName(null);
         }
         return variable;
     }
@@ -818,7 +815,7 @@ public class AstIO {
                 BinaryExpr expr = new BinaryExpr();
                 expr.setOperation(binaryOperations[input.readByte()]);
                 byte valueType = input.readByte();
-                expr.setType(valueType > 0 ? OperationType.values()[valueType] : null);
+                expr.setType(valueType > 0 ? OperationType.values()[valueType - 1] : null);
                 expr.setFirstOperand(readExpr(input));
                 expr.setSecondOperand(readExpr(input));
                 return expr;
@@ -827,7 +824,7 @@ public class AstIO {
                 UnaryExpr expr = new UnaryExpr();
                 expr.setOperation(unaryOperations[input.readByte()]);
                 byte valueType = input.readByte();
-                expr.setType(valueType > 0 ? OperationType.values()[valueType] : null);
+                expr.setType(valueType > 0 ? OperationType.values()[valueType - 1] : null);
                 expr.setOperand(readExpr(input));
                 return expr;
             }
@@ -898,6 +895,7 @@ public class AstIO {
                 return parseInvocationExpr(InvocationType.DYNAMIC, input);
             case 17: {
                 QualificationExpr expr = new QualificationExpr();
+                expr.setQualified(readExpr(input));
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
                 expr.setField(new FieldReference(className, fieldName));
@@ -905,7 +903,6 @@ public class AstIO {
             }
             case 18: {
                 QualificationExpr expr = new QualificationExpr();
-                expr.setQualified(readExpr(input));
                 String className = symbolTable.at(input.readInt());
                 String fieldName = symbolTable.at(input.readInt());
                 expr.setField(new FieldReference(className, fieldName));

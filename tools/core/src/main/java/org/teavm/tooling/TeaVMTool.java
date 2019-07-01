@@ -326,10 +326,6 @@ public class TeaVMTool implements BaseTeaVMTool {
                 ? new DebugInformationBuilder() : null;
         javaScriptTarget.setDebugEmitter(debugEmitter);
 
-        if (incremental) {
-            javaScriptTarget.setAstCache(astCache);
-        }
-
         return javaScriptTarget;
     }
 
@@ -359,6 +355,7 @@ public class TeaVMTool implements BaseTeaVMTool {
 
                 if (targetType == TeaVMTargetType.JAVASCRIPT) {
                     astCache = new DiskRegularMethodNodeCache(cacheDirectory, symbolTable, fileTable, innerClassSource);
+                    javaScriptTarget.setAstCache(astCache);
                 }
                 try {
                     symbolTable.update();

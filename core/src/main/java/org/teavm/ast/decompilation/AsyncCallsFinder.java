@@ -28,8 +28,10 @@ class AsyncCallsFinder extends RecursiveVisitor {
 
     @Override
     public void visit(AssignmentStatement statement) {
-        InvocationExpr invocation = (InvocationExpr) statement.getRightValue();
-        asyncCalls.add(invocation.getMethod());
+        if (statement.getRightValue() instanceof InvocationExpr) {
+            InvocationExpr invocation = (InvocationExpr) statement.getRightValue();
+            asyncCalls.add(invocation.getMethod());
+        }
     }
 
     @Override
