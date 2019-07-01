@@ -128,7 +128,7 @@ public class DiskRegularMethodNodeCache implements MethodNodeCache {
 
     public void flush() throws IOException {
         for (MethodReference method : newMethods) {
-            File file = getMethodFile(method, true);
+            File file = getMethodFile(method, false);
             AstDependencyAnalyzer analyzer = new AstDependencyAnalyzer();
             RegularMethodNode node = cache.get(method).node;
             node.getBody().acceptVisitor(analyzer);
