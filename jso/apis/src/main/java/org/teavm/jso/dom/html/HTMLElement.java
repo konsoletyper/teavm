@@ -115,6 +115,9 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     int getScrollHeight();
 
     @JSProperty
+    int getOffsetWidth();
+
+    @JSProperty
     int getOffsetHeight();
 
     @JSProperty
