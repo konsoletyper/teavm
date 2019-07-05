@@ -16,6 +16,8 @@
 package org.teavm.model.lowlevel;
 
 import com.carrotsearch.hppc.IntHashSet;
+import com.carrotsearch.hppc.IntObjectHashMap;
+import com.carrotsearch.hppc.IntObjectMap;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -136,13 +138,15 @@ public class ExceptionHandlingShadowStackContributor {
 
     private int contributeToBasicBlock(BasicBlock block) {
         int[] currentJointSources = new int[program.variableCount()];
-        int[] jointReceiverMap = new int[program.variableCount()];
+        IntObjectMap<int[]> jointReceiverMaps = new IntObjectHashMap<>();
         Arrays.fill(currentJointSources, -1);
-        Arrays.fill(jointReceiverMap, -1);
+
         IntSet outgoingVariablesToRemove = new IntHashSet();
         IntSet variablesDefinedHere = new IntHashSet();
 
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+            int[] jointReceiverMap = new int[program.variableCount()];
+            Arrays.fill(jointReceiverMap, -1);
             for (Phi phi : tryCatch.getHandler().getPhis()) {
                 List<Variable> sourceVariables = phi.getIncomings().stream()
                         .filter(incoming -> incoming.getSource() == tryCatch.getProtectedBlock())
@@ -155,15 +159,20 @@ public class ExceptionHandlingShadowStackContributor {
                 for (Variable sourceVar : sourceVariables) {
                     BasicBlock sourceVarDefinedAt = variableDefinitionPlaces[sourceVar.getIndex()];
                     if (sourceVar.getIndex() < parameterCount
-                            || dom.dominates(sourceVarDefinedAt.getIndex(), block.getIndex())) {
+                            || (dom.dominates(sourceVarDefinedAt.getIndex(), block.getIndex())
+                            && block != sourceVarDefinedAt)) {
                         currentJointSources[phi.getReceiver().getIndex()] = sourceVar.getIndex();
-                        break;
+                        if (sourceVarDefinedAt != block) {
+                            break;
+                        }
                     }
                 }
                 for (Variable sourceVar : sourceVariables) {
                     jointReceiverMap[sourceVar.getIndex()] = phi.getReceiver().getIndex();
                 }
             }
+
+            jointReceiverMaps.put(tryCatch.getHandler().getIndex(), jointReceiverMap);
         }
 
         DefinitionExtractor defExtractor = new DefinitionExtractor();
@@ -235,17 +244,19 @@ public class ExceptionHandlingShadowStackContributor {
 
             insn.acceptVisitor(defExtractor);
             for (Variable definedVar : defExtractor.getDefinedVariables()) {
-                int jointReceiver = jointReceiverMap[definedVar.getIndex()];
-                if (jointReceiver >= 0) {
-                    int formerVar = currentJointSources[jointReceiver];
-                    if (formerVar >= 0) {
-                        if (variableDefinitionPlaces[formerVar] == initialBlock) {
-                            outgoingVariablesToRemove.add(formerVar);
+                for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                    int jointReceiver = jointReceiverMaps.get(tryCatch.getHandler().getIndex())[definedVar.getIndex()];
+                    if (jointReceiver >= 0) {
+                        int formerVar = currentJointSources[jointReceiver];
+                        if (formerVar >= 0) {
+                            if (variableDefinitionPlaces[formerVar] == initialBlock) {
+                                outgoingVariablesToRemove.add(formerVar);
+                            }
                         }
+                        currentJointSources[jointReceiver] = definedVar.getIndex();
                     }
-                    currentJointSources[jointReceiver] = definedVar.getIndex();
-                    variablesDefinedHere.add(definedVar.getIndex());
                 }
+                variablesDefinedHere.add(definedVar.getIndex());
             }
         }
 

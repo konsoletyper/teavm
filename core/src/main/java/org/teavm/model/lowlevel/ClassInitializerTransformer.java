@@ -16,11 +16,10 @@
 package org.teavm.model.lowlevel;
 
 import org.teavm.model.BasicBlock;
-import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
-import org.teavm.model.Phi;
 import org.teavm.model.Program;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.BranchingCondition;
@@ -30,66 +29,55 @@ import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
-import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.BasicBlockSplitter;
 import org.teavm.runtime.Allocator;
 
 public class ClassInitializerTransformer {
     public void transform(Program program) {
-        int[] basicBlockMap = new int[program.basicBlockCount()];
-        for (int i = 0; i < basicBlockMap.length; ++i) {
-            basicBlockMap[i] = i;
-        }
+        BasicBlockSplitter splitter = new BasicBlockSplitter(program);
 
-        for (int i = 0; i < basicBlockMap.length; ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            for (Instruction instruction : block) {
-                if (!(instruction instanceof InitClassInstruction)) {
-                    continue;
-                }
-                String className = ((InitClassInstruction) instruction).getClassName();
-                block = instruction.getBasicBlock();
+        int count = program.basicBlockCount();
+        for (int i = 0; i < count; ++i) {
+            BasicBlock next = program.basicBlockAt(i);
+            BasicBlock block;
+            while (next != null) {
+                block = next;
+                next = null;
+                for (Instruction instruction : block) {
+                    if (!(instruction instanceof InitClassInstruction)) {
+                        continue;
+                    }
+                    String className = ((InitClassInstruction) instruction).getClassName();
 
-                BasicBlock continueBlock = program.createBasicBlock();
-                while (instruction.getNext() != null) {
-                    Instruction toMove = instruction.getNext();
-                    toMove.delete();
-                    continueBlock.add(toMove);
-                }
-                continueBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
+                    BasicBlock continueBlock = splitter.split(block, instruction);
 
-                BasicBlock initBlock = program.createBasicBlock();
-                instruction.delete();
-                initBlock.add(instruction);
-                JumpInstruction jumpToContinue = new JumpInstruction();
-                jumpToContinue.setTarget(continueBlock);
-                initBlock.add(jumpToContinue);
+                    BasicBlock initBlock = program.createBasicBlock();
+                    instruction.delete();
+                    initBlock.add(instruction);
+                    JumpInstruction jumpToContinue = new JumpInstruction();
+                    jumpToContinue.setTarget(continueBlock);
+                    initBlock.add(jumpToContinue);
 
-                createInitCheck(program, block, className, continueBlock, initBlock);
+                    createInitCheck(program, block, className, continueBlock, initBlock, instruction.getLocation());
 
-                basicBlockMap[i] = continueBlock.getIndex();
-            }
-        }
-
-        for (int i = 0; i < basicBlockMap.length; ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            for (Phi phi : block.getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    int source = incoming.getSource().getIndex();
-                    BasicBlock mappedSource = program.basicBlockAt(basicBlockMap[source]);
-                    incoming.setSource(mappedSource);
+                    next = continueBlock;
+                    break;
                 }
             }
         }
+
+        splitter.fixProgram();
     }
 
     private void createInitCheck(Program program, BasicBlock block, String className, BasicBlock continueBlock,
-            BasicBlock initBlock) {
+            BasicBlock initBlock, TextLocation location) {
         Variable clsVariable = program.createVariable();
         Variable initializedVariable = program.createVariable();
 
         ClassConstantInstruction clsConstant = new ClassConstantInstruction();
         clsConstant.setReceiver(clsVariable);
         clsConstant.setConstant(ValueType.object(className));
+        clsConstant.setLocation(location);
         block.add(clsConstant);
 
         InvokeInstruction checkInitialized = new InvokeInstruction();
@@ -97,12 +85,14 @@ public class ClassInitializerTransformer {
         checkInitialized.setMethod(new MethodReference(Allocator.class, "isInitialized", Class.class, boolean.class));
         checkInitialized.setArguments(clsVariable);
         checkInitialized.setReceiver(initializedVariable);
+        checkInitialized.setLocation(location);
         block.add(checkInitialized);
 
         BranchingInstruction branching = new BranchingInstruction(BranchingCondition.NOT_EQUAL);
         branching.setOperand(initializedVariable);
         branching.setConsequent(continueBlock);
         branching.setAlternative(initBlock);
+        branching.setLocation(location);
         block.add(branching);
     }
 }
