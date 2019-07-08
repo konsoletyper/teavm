@@ -59,6 +59,8 @@ static timer_t teavm_queueTimer;
 
 #ifdef _MSC_VER
 static HANDLE teavm_queueTimer;
+int64_t teavm_unixTimeOffset;
+int64_t teavm_perfFrequency, teavm_perfInitTime;
 #endif
 
 void teavm_beforeInit() {
@@ -84,6 +86,12 @@ void teavm_beforeInit() {
     #endif
 
     #ifdef _MSC_VER
+        LARGE_INTEGER perf = { .QuadPart  = 0 };
+        QueryPerformanceFrequency(&perf);
+        teavm_perfFrequency = perf.QuadPart;
+        QueryPerformanceCounter(&perf);
+        teavm_perfInitTime = perf.QuadPart;
+
         teavm_queueTimer = CreateEvent(NULL, TRUE, FALSE, TEXT("TeaVM_eventQueue"));
 
         SYSTEMTIME unixEpochStart = {
@@ -185,8 +193,6 @@ void teavm_initHeap(int64_t heapSize) {
     teavm_gc_availableBytes = heapSize;
 }
 
-int64_t teavm_unixTimeOffset;
-
 int64_t teavm_currentTimeMillis() {
     SYSTEMTIME time;
     FILETIME fileTime;
@@ -195,13 +201,12 @@ int64_t teavm_currentTimeMillis() {
     uint64_t current = fileTime.dwLowDateTime | ((uint64_t) fileTime.dwHighDateTime << 32);
     return (int64_t) ((current - teavm_unixTimeOffset) / 10000);
 }
+
 int64_t teavm_currentTimeNano() {
-    SYSTEMTIME time;
-    FILETIME fileTime;
-    GetSystemTime(&time);
-    SystemTimeToFileTime(&time, &fileTime);
-    uint64_t current = fileTime.dwLowDateTime | ((uint64_t) fileTime.dwHighDateTime << 32);
-    return (int64_t) ((current - teavm_unixTimeOffset) * 100);
+    LARGE_INTEGER perf = { .QuadPart = 0 };
+    QueryPerformanceCounter(&perf);
+    int64_t dt = perf.QuadPart - teavm_perfInitTime;
+    return dt * INT64_C(1000000000) / teavm_perfFrequency;
 }
 #endif
 
