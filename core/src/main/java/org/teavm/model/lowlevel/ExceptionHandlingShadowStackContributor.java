@@ -141,7 +141,6 @@ public class ExceptionHandlingShadowStackContributor {
         IntObjectMap<int[]> jointReceiverMaps = new IntObjectHashMap<>();
         Arrays.fill(currentJointSources, -1);
 
-        IntSet outgoingVariablesToRemove = new IntHashSet();
         IntSet variablesDefinedHere = new IntHashSet();
 
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
@@ -173,6 +172,17 @@ public class ExceptionHandlingShadowStackContributor {
             }
 
             jointReceiverMaps.put(tryCatch.getHandler().getIndex(), jointReceiverMap);
+        }
+
+        for (Phi phi : block.getPhis()) {
+            Variable definedVar = phi.getReceiver();
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                int jointReceiver = jointReceiverMaps.get(tryCatch.getHandler().getIndex())[definedVar.getIndex()];
+                if (jointReceiver >= 0) {
+                    currentJointSources[jointReceiver] = definedVar.getIndex();
+                }
+            }
+            variablesDefinedHere.add(definedVar.getIndex());
         }
 
         DefinitionExtractor defExtractor = new DefinitionExtractor();
@@ -228,7 +238,7 @@ public class ExceptionHandlingShadowStackContributor {
                 callSites.add(callSite);
                 List<Instruction> pre = setLocation(getInstructionsBeforeCallSite(callSite), insn.getLocation());
                 List<Instruction> post = getInstructionsAfterCallSite(initialBlock, block, next, callSite,
-                        currentJointSources, outgoingVariablesToRemove, variablesDefinedHere);
+                        currentJointSources, variablesDefinedHere);
                 post = setLocation(post, insn.getLocation());
                 block.getLastInstruction().insertPreviousAll(pre);
                 block.addAll(post);
@@ -238,7 +248,6 @@ public class ExceptionHandlingShadowStackContributor {
                     break;
                 }
                 block = next;
-                outgoingVariablesToRemove.clear();
                 variablesDefinedHere.clear();
             }
 
@@ -247,12 +256,6 @@ public class ExceptionHandlingShadowStackContributor {
                 for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
                     int jointReceiver = jointReceiverMaps.get(tryCatch.getHandler().getIndex())[definedVar.getIndex()];
                     if (jointReceiver >= 0) {
-                        int formerVar = currentJointSources[jointReceiver];
-                        if (formerVar >= 0) {
-                            if (variableDefinitionPlaces[formerVar] == initialBlock) {
-                                outgoingVariablesToRemove.add(formerVar);
-                            }
-                        }
                         currentJointSources[jointReceiver] = definedVar.getIndex();
                     }
                 }
@@ -260,7 +263,7 @@ public class ExceptionHandlingShadowStackContributor {
             }
         }
 
-        fixOutgoingPhis(initialBlock, block, currentJointSources, outgoingVariablesToRemove, variablesDefinedHere);
+        fixOutgoingPhis(initialBlock, block, currentJointSources, variablesDefinedHere);
         for (BasicBlock blockToClear : blocksToClearHandlers) {
             blockToClear.getTryCatchBlocks().clear();
         }
@@ -321,8 +324,7 @@ public class ExceptionHandlingShadowStackContributor {
     }
 
     private List<Instruction> getInstructionsAfterCallSite(BasicBlock initialBlock, BasicBlock block, BasicBlock next,
-            CallSiteDescriptor callSite, int[] currentJointSources, IntSet outgoingVariablesToRemove,
-            IntSet variablesDefinedHere) {
+            CallSiteDescriptor callSite, int[] currentJointSources, IntSet variablesDefinedHere) {
         Program program = block.getProgram();
         List<Instruction> instructions = new ArrayList<>();
 
@@ -360,7 +362,7 @@ public class ExceptionHandlingShadowStackContributor {
                 switchInsn.getEntries().add(catchEntry);
             }
         }
-        fixOutgoingPhis(initialBlock, block, currentJointSources, outgoingVariablesToRemove, variablesDefinedHere);
+        fixOutgoingPhis(initialBlock, block, currentJointSources, variablesDefinedHere);
 
         if (!defaultExists) {
             switchInsn.setDefaultTarget(getDefaultExceptionHandler());
@@ -393,7 +395,7 @@ public class ExceptionHandlingShadowStackContributor {
     }
 
     private void fixOutgoingPhis(BasicBlock block, BasicBlock newBlock, int[] currentJointSources,
-            IntSet outgoingVariablesToRemove, IntSet variablesDefinedHere) {
+            IntSet variablesDefinedHere) {
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
             for (Phi phi : tryCatch.getHandler().getPhis()) {
                 int value = currentJointSources[phi.getReceiver().getIndex()];
@@ -403,13 +405,10 @@ public class ExceptionHandlingShadowStackContributor {
                 List<Incoming> additionalIncomings = new ArrayList<>();
                 for (int i = 0; i < phi.getIncomings().size(); i++) {
                     Incoming incoming = phi.getIncomings().get(i);
-                    if (incoming.getSource() != block) {
+                    if (incoming.getSource() != block || incoming.getSource() == newBlock) {
                         continue;
                     }
-                    if (outgoingVariablesToRemove.contains(incoming.getValue().getIndex())) {
-                        phi.getIncomings().remove(i--);
-                        break;
-                    } else if (incoming.getValue().getIndex() == value && incoming.getSource() != newBlock) {
+                    if (incoming.getValue().getIndex() == value) {
                         if (variablesDefinedHere.contains(value)) {
                             incoming.setSource(newBlock);
                         } else {
@@ -418,7 +417,8 @@ public class ExceptionHandlingShadowStackContributor {
                             incomingCopy.setValue(incoming.getValue());
                             additionalIncomings.add(incomingCopy);
                         }
-                        break;
+                    } else {
+                        phi.getIncomings().remove(i--);
                     }
                 }
 
