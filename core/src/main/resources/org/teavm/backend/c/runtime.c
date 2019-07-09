@@ -211,15 +211,19 @@ int64_t teavm_currentTimeNano() {
 #endif
 
 #ifdef _MSC_VER
-#define gmtime_r(a, b) gmtime_s(a, b)
-#define localtime_r(a, b) localtime_s(a, b)
+#undef gmtime_r
+#undef localtime_r
+#define gmtime_r(a, b) gmtime_s(b, a)
+#define localtime_r(a, b) localtime_s(b, a)
 #endif
 
 int32_t teavm_timeZoneOffset() {
     struct tm tm;
     time_t t = time(NULL);
-    time_t local = mktime(localtime_r(&t, &tm));
-    time_t utc = mktime(gmtime_r(&t, &tm));
+    localtime_r(&t, &tm);
+    time_t local = mktime(&tm);
+    gmtime_r(&t, &tm);
+    time_t utc = mktime(&tm);
     return (int32_t) (difftime(utc, local) / 60);
 }
 
@@ -361,15 +365,14 @@ char* teavm_stringToC(void* obj) {
     size_t sz = teavm_mbSize(javaChars, charArray->size);
     char* result = malloc(sz + 1);
 
-    int32_t j = 0;
     char* dst = result;
     mbstate_t state = {0};
     for (int32_t i = 0; i < charArray->size; ++i) {
-        size_t result = c16rtomb(dst, javaChars[i], &state);
-        if (result == (size_t) -1) {
+        size_t charResult = c16rtomb(dst, javaChars[i], &state);
+        if (charResult == (size_t) -1) {
             break;
         }
-        dst += result;
+        dst += charResult;
     }
     *dst = '\0';
     return result;
@@ -449,7 +452,6 @@ char* teavm_char16ToMb(char16_t* javaChars, int32_t length) {
     size_t sz = teavm_mbSize(javaChars, length);
     char* cchars = malloc(sz + 1);
 
-    int32_t j = 0;
     char* dst = cchars;
     mbstate_t state = {0};
     for (int32_t i = 0; i < length; ++i) {
@@ -548,7 +550,7 @@ TeaVM_StringList* teavm_appendString(TeaVM_StringList* list, char16_t* data, int
 }
 
 #ifndef TEAVM_WINDOWS_LOG
-void teavm_logchar(char16_t c) {
+void teavm_logchar(int32_t c) {
     putwchar(c);
 }
 #else

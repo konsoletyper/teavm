@@ -100,7 +100,7 @@ TeaVM_String* teavm_registerString(TeaVM_String* str) {
     if (teavm_stringHashtable[index] == NULL) {
         if (teavm_stringHashtableFill >= teavm_stringHashtableThreshold) {
             teavm_rehashStrings();
-            int32_t index = (uint32_t) hash % teavm_stringHashtableSize;
+            index = (uint32_t) hash % teavm_stringHashtableSize;
         }
         teavm_stringHashtableFill++;
     }

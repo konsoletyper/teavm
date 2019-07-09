@@ -178,7 +178,7 @@ static inline float teavm_getNaN() {
 
 typedef struct {
     int32_t size;
-    void* data[0];
+    void* data[1];
 } TeaVM_ResourceArray;
 
 typedef struct {
@@ -188,7 +188,7 @@ typedef struct {
 
 typedef struct {
     int32_t size;
-    TeaVM_ResourceMapEntry entries[0];
+    TeaVM_ResourceMapEntry entries[1];
 } TeaVM_ResourceMap;
 
 extern int32_t teavm_hashCode(TeaVM_String*);
@@ -332,6 +332,7 @@ extern TeaVM_StringList* teavm_appendString(TeaVM_StringList*, char16_t*, int32_
 
 extern int32_t teavm_file_homeDirectory(char16_t**);
 extern int32_t teavm_file_workDirectory(char16_t**);
+extern int32_t teavm_file_tempDirectory(char16_t**);
 extern int32_t teavm_file_isFile(char16_t*, int32_t);
 extern int32_t teavm_file_isDir(char16_t*, int32_t);
 extern int32_t teavm_file_canRead(char16_t*, int32_t);
@@ -352,6 +353,7 @@ extern int32_t teavm_file_tell(int64_t);
 extern int32_t teavm_file_read(int64_t, int8_t*, int32_t, int32_t);
 extern int32_t teavm_file_write(int64_t, int8_t*, int32_t, int32_t);
 extern int32_t teavm_file_isWindows();
+extern int32_t teavm_file_canonicalize(char16_t*, int32_t, char16_t**);
 
 #ifdef _MSC_VER
 extern int64_t teavm_unixTimeOffset;
