@@ -329,7 +329,6 @@ int32_t teavm_file_canonicalize(char16_t* path, int32_t pathSize, char16_t** res
 #endif
 
 #ifdef _MSC_VER
-#define WIN32_LEAN_AND_MEAN
 #include <Windows.h>
 
 static int32_t teavm_readEnv(char16_t** result, WCHAR const * name) {
