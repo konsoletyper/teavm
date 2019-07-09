@@ -22,14 +22,11 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import org.teavm.common.DisjointSet;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
@@ -102,14 +99,11 @@ public class GCShadowStackContributor {
         // If a variable is spilled to stack, then phi which takes this variable as input also spilled to stack
         // If all of phi inputs are spilled to stack, then we don't need to insert spilling instruction
         // for this phi.
-        List<Set<Phi>> destinationPhis = getDestinationPhis(program);
-        int[] inputCount = getInputCount(program);
-        boolean[] autoSpilled = new boolean[spilled.length];
-        for (int i = 0; i < spilled.length; ++i) {
-            findAutoSpilledPhis(spilled, destinationPhis, inputCount, autoSpilled, i);
-        }
+        Graph cfg = ProgramUtils.buildControlFlowGraph(program);
+        DominatorTree dom = GraphUtils.buildDominatorTree(cfg);
+        boolean[] autoSpilled = new SpilledPhisFinder(liveInInformation, dom, program).find();
 
-        List<Map<Instruction, int[]>> liveInStores = reduceGCRootStores(program, usedColors, liveInInformation,
+        List<Map<Instruction, int[]>> liveInStores = reduceGCRootStores(dom, program, usedColors, liveInInformation,
                 colors, autoSpilled);
         putLiveInGCRoots(program, liveInStores);
 
@@ -129,26 +123,6 @@ public class GCShadowStackContributor {
             }
         }
         return variableClasses.pack(program.variableCount());
-    }
-
-    private void findAutoSpilledPhis(boolean[] spilled, List<Set<Phi>> destinationPhis, int[] inputCount,
-            boolean[] autoSpilled, int i) {
-        if (!spilled[i]) {
-            return;
-        }
-        Set<Phi> phis = destinationPhis.get(i);
-        if (phis != null) {
-            for (Phi phi : destinationPhis.get(i)) {
-                int destination = phi.getReceiver().getIndex();
-                autoSpilled[destination] = --inputCount[destination] == 0;
-                if (!spilled[destination]) {
-                    spilled[destination] = true;
-                    if (i > destination) {
-                        findAutoSpilledPhis(spilled, destinationPhis, inputCount, autoSpilled, destination);
-                    }
-                }
-            }
-        }
     }
 
     private List<Map<Instruction, BitSet>> findCallSiteLiveIns(Program program, MethodReader method) {
@@ -243,41 +217,7 @@ public class GCShadowStackContributor {
         return affectedVariables;
     }
 
-    private List<Set<Phi>> getDestinationPhis(Program program) {
-        List<Set<Phi>> destinationPhis = new ArrayList<>();
-        destinationPhis.addAll(Collections.nCopies(program.variableCount(), null));
-
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            for (Phi phi : block.getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    Set<Phi> phis = destinationPhis.get(incoming.getValue().getIndex());
-                    if (phis == null) {
-                        phis = new LinkedHashSet<>();
-                        destinationPhis.set(incoming.getValue().getIndex(), phis);
-                    }
-                    phis.add(phi);
-                }
-            }
-        }
-
-        return destinationPhis;
-    }
-
-    private int[] getInputCount(Program program) {
-        int[] inputCount = new int[program.variableCount()];
-
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            for (Phi phi : block.getPhis()) {
-                inputCount[phi.getReceiver().getIndex()] = phi.getIncomings().size();
-            }
-        }
-
-        return inputCount;
-    }
-
-    private List<Map<Instruction, int[]>> reduceGCRootStores(Program program, int usedColors,
+    private List<Map<Instruction, int[]>> reduceGCRootStores(DominatorTree dom, Program program, int usedColors,
             List<Map<Instruction, BitSet>> liveInInformation, int[] colors, boolean[] autoSpilled) {
         class Step {
             private final int node;
@@ -292,9 +232,7 @@ public class GCShadowStackContributor {
             slotsToUpdate.add(new LinkedHashMap<>());
         }
 
-        Graph cfg = ProgramUtils.buildControlFlowGraph(program);
-        DominatorTree dom = GraphUtils.buildDominatorTree(cfg);
-        Graph domGraph = GraphUtils.buildDominatorGraph(dom, cfg.size());
+        Graph domGraph = GraphUtils.buildDominatorGraph(dom, program.basicBlockCount());
 
         Step[] stack = new Step[program.basicBlockCount() * 2];
         int head = 0;
@@ -374,7 +312,7 @@ public class GCShadowStackContributor {
             Instruction[] callSiteLocations = updatesByIndex.keySet().toArray(new Instruction[0]);
             ObjectIntMap<Instruction> instructionIndexes = getInstructionIndexes(block);
             Arrays.sort(callSiteLocations, Comparator.comparing(instructionIndexes::get));
-            for (Instruction callSiteLocation : updatesByIndex.keySet()) {
+            for (Instruction callSiteLocation : callSiteLocations) {
                 int[] updates = updatesByIndex.get(callSiteLocation);
                 storeLiveIns(block, callSiteLocation, updates);
             }
