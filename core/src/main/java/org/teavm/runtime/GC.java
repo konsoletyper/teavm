@@ -312,16 +312,16 @@ public final class GC {
                 if (!object.toAddress().isLessThan(currentRegionEnd)) {
                     currentRegionIndex = (int) ((object.toAddress().toLong() - heapAddress().toLong()) / regionSize());
                     Region currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
-                    if (currentRegion.start == 0) {
-                        do {
-                            if (++currentRegionIndex == regionsCount) {
-                                object = limit.toStructure();
-                                break loop;
-                            }
-                            currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
-                        } while (currentRegion.start == 0);
+                    while (currentRegion.start == 0) {
+                        if (++currentRegionIndex == regionsCount) {
+                            object = limit.toStructure();
+                            break loop;
+                        }
+                        currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
                     }
-                    currentRegionEnd = currentRegion.toAddress().add(regionSize());
+                    Address newRegionStart = heapAddress().add(currentRegionIndex * regionSize());
+                    object = newRegionStart.add(currentRegion.start - 1).toStructure();
+                    currentRegionEnd = newRegionStart.add(regionSize());
                 }
             } else {
                 if (lastFreeSpace != null) {
