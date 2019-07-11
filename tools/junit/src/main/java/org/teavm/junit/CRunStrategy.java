@@ -119,6 +119,11 @@ class CRunStrategy implements TestRunStrategy {
                 }
                 lines.add(line);
                 stdout.add(line);
+                if (lines.size() > 10000) {
+                    output.addAll(lines);
+                    process.destroy();
+                    return false;
+                }
             }
         } catch (IOException e) {
             // do nothing

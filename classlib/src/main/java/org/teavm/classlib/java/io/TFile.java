@@ -411,25 +411,37 @@ public class TFile implements Serializable, Comparable<TFile> {
     public boolean mkdirs() {
         String path = getCanonicalPathImpl();
 
-        int i = path.indexOf(separatorChar);
-        if (i < 0) {
+        if (path.indexOf(separatorChar) < 0) {
             return false;
         }
+        int i = path.length();
+
+        do {
+            VirtualFile file = fs().getFile(path.substring(0, i));
+            if (file.isDirectory()) {
+                break;
+            } else if (file.isFile()) {
+                return false;
+            }
+
+            i = path.lastIndexOf(separatorChar, i - 1);
+        } while (i >= 0);
+
         i++;
+
         while (i < path.length()) {
             int next = path.indexOf(separatorChar, i);
             if (next < 0) {
                 next = path.length();
             }
-
-            VirtualFile parent = fs().getFile(path.substring(0, i));
-            if (!parent.createDirectory(path.substring(i, next))) {
-                VirtualFile child = fs().getFile(path.substring(0, next));
-                if (!child.isDirectory()) {
-                    return false;
-                }
+            if (next == i + 1) {
+                break;
             }
 
+            VirtualFile file = fs().getFile(path.substring(0, i));
+            if (!file.createDirectory(path.substring(i, next))) {
+                return false;
+            }
             i = next + 1;
         }
 

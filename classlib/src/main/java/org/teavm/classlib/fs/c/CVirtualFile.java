@@ -36,7 +36,8 @@ public class CVirtualFile implements VirtualFile {
 
     @Override
     public String getName() {
-        return path.substring(path.lastIndexOf('/') + 1);
+        char separatorChar = fileSystem.isWindows() ? '\\' : '/';
+        return path.substring(path.lastIndexOf(separatorChar) + 1);
     }
 
     @Override
@@ -174,7 +175,10 @@ public class CVirtualFile implements VirtualFile {
         return CFileSystem.length(chars, chars.length);
     }
 
-    private static String constructPath(String parent, String child) {
-        return parent.endsWith("/") ? parent + child : parent + "/" + child;
+    private String constructPath(String parent, String child) {
+        char separatorChar = fileSystem.isWindows() ? '\\' : '/';
+        return !parent.isEmpty() && parent.charAt(parent.length() - 1) == separatorChar
+                ? parent + child
+                : parent + separatorChar + child;
     }
 }
