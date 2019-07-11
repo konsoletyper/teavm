@@ -417,8 +417,6 @@ public class ExceptionHandlingShadowStackContributor {
                             incomingCopy.setValue(incoming.getValue());
                             additionalIncomings.add(incomingCopy);
                         }
-                    } else {
-                        phi.getIncomings().remove(i--);
                     }
                 }
 
