@@ -760,8 +760,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             optimizations.add(new LoopInvariantMotion());
         }
         optimizations.add(new GlobalValueNumbering(optimizationLevel == TeaVMOptimizationLevel.SIMPLE));
+        optimizations.add(new RedundantNullCheckElimination());
         if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
-            optimizations.add(new RedundantNullCheckElimination());
             optimizations.add(new ConstantConditionElimination());
             optimizations.add(new RedundantJumpElimination());
             optimizations.add(new UnusedVariableElimination());

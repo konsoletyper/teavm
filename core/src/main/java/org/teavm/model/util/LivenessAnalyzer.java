@@ -48,8 +48,8 @@ public class LivenessAnalyzer {
     public void analyze(Program program) {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         DominatorTree dominatorTree = GraphUtils.buildDominatorTree(cfg);
-        liveVars = new BitSet[cfg.size()];
-        liveOutVars = new BitSet[cfg.size()];
+        liveVars = new BitSet[program.basicBlockCount()];
+        liveOutVars = new BitSet[program.basicBlockCount()];
         for (int i = 0; i < liveVars.length; ++i) {
             liveVars[i] = new BitSet(program.basicBlockCount());
             liveOutVars[i] = new BitSet(program.basicBlockCount());

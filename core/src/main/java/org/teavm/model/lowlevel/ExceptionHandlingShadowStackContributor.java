@@ -191,6 +191,17 @@ public class ExceptionHandlingShadowStackContributor {
         BasicBlock initialBlock = block;
 
         for (Instruction insn : block) {
+            insn.acceptVisitor(defExtractor);
+            for (Variable definedVar : defExtractor.getDefinedVariables()) {
+                for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                    int jointReceiver = jointReceiverMaps.get(tryCatch.getHandler().getIndex())[definedVar.getIndex()];
+                    if (jointReceiver >= 0) {
+                        currentJointSources[jointReceiver] = definedVar.getIndex();
+                    }
+                }
+                variablesDefinedHere.add(definedVar.getIndex());
+            }
+
             if (isCallInstruction(insn)) {
                 BasicBlock next;
                 boolean last = false;
@@ -249,17 +260,6 @@ public class ExceptionHandlingShadowStackContributor {
                 }
                 block = next;
                 variablesDefinedHere.clear();
-            }
-
-            insn.acceptVisitor(defExtractor);
-            for (Variable definedVar : defExtractor.getDefinedVariables()) {
-                for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-                    int jointReceiver = jointReceiverMaps.get(tryCatch.getHandler().getIndex())[definedVar.getIndex()];
-                    if (jointReceiver >= 0) {
-                        currentJointSources[jointReceiver] = definedVar.getIndex();
-                    }
-                }
-                variablesDefinedHere.add(definedVar.getIndex());
             }
         }
 

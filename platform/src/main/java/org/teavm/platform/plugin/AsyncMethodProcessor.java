@@ -39,6 +39,7 @@ import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.runtime.Fiber;
 
 public class AsyncMethodProcessor implements ClassHolderTransformer {
@@ -89,7 +90,13 @@ public class AsyncMethodProcessor implements ClassHolderTransformer {
 
         Program program = new Program();
         method.setProgram(program);
+
+        BasicBlock startBlock = program.createBasicBlock();
         BasicBlock block = program.createBasicBlock();
+
+        JumpInstruction jumpToBlock = new JumpInstruction();
+        jumpToBlock.setTarget(block);
+        startBlock.add(jumpToBlock);
 
         InvokeInstruction constructorInvocation = new InvokeInstruction();
         constructorInvocation.setType(InvocationType.SPECIAL);

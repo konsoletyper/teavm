@@ -15,6 +15,8 @@
  */
 package org.teavm.model.lowlevel;
 
+import com.carrotsearch.hppc.IntHashSet;
+import com.carrotsearch.hppc.IntSet;
 import java.util.function.BiConsumer;
 import java.util.function.Function;
 import org.teavm.model.BasicBlock;
@@ -32,6 +34,8 @@ import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
+import org.teavm.model.util.DominatorWalker;
+import org.teavm.model.util.DominatorWalkerCallback;
 import org.teavm.model.util.PhiUpdater;
 
 public class NullCheckInsertion {
@@ -42,23 +46,51 @@ public class NullCheckInsertion {
     }
 
     public void transformProgram(Program program, MethodReference methodReference) {
-        if (!characteristics.isManaged(methodReference)) {
+        if (!characteristics.isManaged(methodReference) || program.basicBlockCount() == 0) {
             return;
         }
 
-        InsertionVisitor visitor = new InsertionVisitor();
-        for (BasicBlock block : program.getBasicBlocks()) {
-            for (Instruction instruction : block) {
-                instruction.acceptVisitor(visitor);
-            }
-        }
+        InsertionVisitor visitor = new InsertionVisitor(program.variableCount());
+        new DominatorWalker(program).walk(visitor);
         if (visitor.changed) {
             new PhiUpdater().updatePhis(program, methodReference.parameterCount() + 1);
         }
     }
 
-    class InsertionVisitor extends AbstractInstructionVisitor {
+    class InsertionVisitor extends AbstractInstructionVisitor implements DominatorWalkerCallback<BlockNullness> {
         boolean changed;
+        boolean[] notNullVariables;
+        BlockNullness blockNullness;
+
+        InsertionVisitor(int variableCount) {
+            notNullVariables = new boolean[variableCount];
+            if (variableCount > 0) {
+                notNullVariables[0] = true;
+            }
+        }
+
+        @Override
+        public BlockNullness visit(BasicBlock block) {
+            blockNullness = new BlockNullness();
+
+            if (block.getExceptionVariable() != null) {
+                notNullVariables[block.getExceptionVariable().getIndex()] = true;
+                blockNullness.notNullVariables.add(block.getExceptionVariable().getIndex());
+            }
+
+            for (Instruction instruction : block) {
+                instruction.acceptVisitor(this);
+            }
+
+            return blockNullness;
+        }
+
+        @Override
+        public void endVisit(BasicBlock block, BlockNullness state) {
+            for (int variable : state.notNullVariables.toArray()) {
+                notNullVariables[variable] = false;
+            }
+        }
 
         @Override
         public void visit(RaiseInstruction insn) {
@@ -114,6 +146,13 @@ public class NullCheckInsertion {
                 return;
             }
 
+            if (notNullVariables[value.getIndex()]) {
+                return;
+            }
+
+            notNullVariables[value.getIndex()] = true;
+            blockNullness.notNullVariables.add(value.getIndex());
+
             NullCheckInstruction nullCheck = new NullCheckInstruction();
             nullCheck.setValue(value);
             nullCheck.setReceiver(value);
@@ -122,5 +161,9 @@ public class NullCheckInsertion {
             instruction.insertPrevious(nullCheck);
             changed = true;
         }
+    }
+
+    static class BlockNullness {
+        IntSet notNullVariables = new IntHashSet();
     }
 }
