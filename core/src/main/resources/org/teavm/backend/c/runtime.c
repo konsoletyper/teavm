@@ -466,7 +466,11 @@ char* teavm_char16ToMb(char16_t* javaChars, int32_t length) {
 }
 
 TeaVM_Array* teavm_parseArguments(int argc, char** argv) {
-    TeaVM_Array* array = teavm_allocateStringArray(max(argc - 1, 0));
+    int arraySize = argc - 1;
+    if (arraySize < 0) {
+        arraySize - 1;
+    }
+    TeaVM_Array* array = teavm_allocateStringArray(arraySize);
     TeaVM_String** arrayData = TEAVM_ARRAY_DATA(array, TeaVM_String*);
     for (int i = 1; i < argc; ++i) {
         arrayData[i - 1] = teavm_cToString(argv[i]);
