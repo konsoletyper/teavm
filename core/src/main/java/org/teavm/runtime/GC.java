@@ -322,6 +322,7 @@ public final class GC {
                     Address newRegionStart = heapAddress().add(currentRegionIndex * regionSize());
                     object = newRegionStart.add(currentRegion.start - 1).toStructure();
                     currentRegionEnd = newRegionStart.add(regionSize());
+                    continue;
                 }
             } else {
                 if (lastFreeSpace != null) {
