@@ -340,11 +340,20 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 expr.getOperand().acceptVisitor(this);
                 writer.print(")");
                 break;
-            case NULL_CHECK:
+            case NULL_CHECK: {
+                boolean needParenthesis = false;
+                if (needsCallSiteId()) {
+                    needParenthesis = true;
+                    withCallSite();
+                }
                 writer.print("teavm_nullCheck(");
                 expr.getOperand().acceptVisitor(this);
                 writer.print(")");
+                if (needParenthesis) {
+                    writer.print(")");
+                }
                 break;
+            }
             case INT_TO_BYTE:
                 writer.print("TEAVM_TO_BYTE(");
                 expr.getOperand().acceptVisitor(this);

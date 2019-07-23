@@ -50,6 +50,7 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.MonitorEnterInstruction;
 import org.teavm.model.instructions.MonitorExitInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.GraphColorer;
@@ -156,6 +157,7 @@ public class GCShadowStackContributor {
                         || insn instanceof ConstructInstruction || insn instanceof ConstructArrayInstruction
                         || insn instanceof ConstructMultiArrayInstruction
                         || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction
+                        || insn instanceof NullCheckInstruction
                         || insn instanceof MonitorEnterInstruction || insn instanceof MonitorExitInstruction) {
                     if (insn instanceof InvokeInstruction
                             && !characteristics.isManaged(((InvokeInstruction) insn).getMethod())) {
@@ -239,6 +241,7 @@ public class GCShadowStackContributor {
         Step start = new Step(0);
         Arrays.fill(start.slotStates, program.variableCount());
         stack[head++] = start;
+        int[] definitionClasses = getDefinitionClasses(program);
 
         while (head > 0) {
             Step step = stack[--head];
@@ -260,7 +263,8 @@ public class GCShadowStackContributor {
                     }
                 }
 
-                updatesByCallSite.put(callSiteLocation, compareStates(previousStates, states, autoSpilled));
+                int[] updates = compareStates(previousStates, states, autoSpilled, definitionClasses);
+                updatesByCallSite.put(callSiteLocation, updates);
                 previousStates = states;
                 states = states.clone();
             }
@@ -275,6 +279,22 @@ public class GCShadowStackContributor {
         return slotsToUpdate;
     }
 
+    private int[] getDefinitionClasses(Program program) {
+        DisjointSet disjointSet = new DisjointSet();
+        for (int i = 0; i < program.variableCount(); ++i) {
+            disjointSet.create();
+        }
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction instruction : block) {
+                if (instruction instanceof NullCheckInstruction) {
+                    NullCheckInstruction nullCheck = (NullCheckInstruction) instruction;
+                    disjointSet.union(nullCheck.getValue().getIndex(), nullCheck.getReceiver().getIndex());
+                }
+            }
+        }
+        return disjointSet.pack(program.variableCount());
+    }
+
     private List<Instruction> sortInstructions(Collection<Instruction> instructions, BasicBlock block) {
         ObjectIntMap<Instruction> indexes = new ObjectIntHashMap<>();
         int index = 0;
@@ -286,12 +306,21 @@ public class GCShadowStackContributor {
         return sortedInstructions;
     }
 
-    private static int[] compareStates(int[] oldStates, int[] newStates, boolean[] autoSpilled) {
+    private static int[] compareStates(int[] oldStates, int[] newStates, boolean[] autoSpilled,
+            int[] definitionClasses) {
         int[] comparison = new int[oldStates.length];
         Arrays.fill(comparison, -2);
 
         for (int i = 0; i < oldStates.length; ++i) {
-            if (oldStates[i] != newStates[i]) {
+            int oldState = oldStates[i];
+            int newState = newStates[i];
+            if (oldState >= 0 && oldState < definitionClasses.length) {
+                oldState = definitionClasses[oldState];
+            }
+            if (newState >= 0 && newState < definitionClasses.length) {
+                newState = definitionClasses[newState];
+            }
+            if (oldState != newState) {
                 comparison[i] = newStates[i];
             }
         }
