@@ -1217,6 +1217,10 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
         writer.println(";");
 
+        if (context.isLongjmp()) {
+            writer.println("TEAVM_UNREACHABLE");
+        }
+
         popLocation(statement.getLocation());
     }
 

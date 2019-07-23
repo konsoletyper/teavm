@@ -418,6 +418,17 @@ inline static void* teavm_nullCheck(void* o) {
     }
     return o;
 }
+
+#ifdef __GNUC__
+    #define TEAVM_UNREACHABLE __builtin_unreachable();
+#endif
+#ifdef _MSC_VER
+    #define TEAVM_UNREACHABLE __assume(0);
+#endif
+#ifndef TEAVM_UNREACHABLE
+    #define TEAVM_UNREACHABLE return;
+#endif
+
 #else
 #define TEAVM_JUMP_SUPPORTED 0
 #define TEAVM_JUMP_TO_FRAME(frame, id)
