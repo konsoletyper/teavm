@@ -414,7 +414,7 @@ int32_t teavm_file_createDirectory(char16_t* name, int32_t nameSize) {
 int32_t teavm_file_createFile(char16_t* name, int32_t nameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     #ifdef _WINDOWS_UWP
-        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE, 0, OPEN_EXISTING, NULL);
+        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE, FILE_SHARE_READ, OPEN_EXISTING, NULL);
     #else
         HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
     #endif
@@ -471,7 +471,7 @@ int64_t teavm_file_lastModified(char16_t* name, int32_t nameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     FILETIME modified;
     #ifdef _WINDOWS_UWP
-        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_READ, 0, OPEN_EXISTING, NULL);
+        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
     #else
         HANDLE fileHandle = CreateFileW(nativeName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     #endif
@@ -494,7 +494,7 @@ int32_t teavm_file_setLastModified(char16_t* name, int32_t nameSize, int64_t las
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
 
     #ifdef _WINDOWS_UWP
-        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE, 0, OPEN_EXISTING, NULL);
+        HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE, FILE_SHARE_READ, OPEN_EXISTING, NULL);
     #else
         HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
     #endif
@@ -531,7 +531,7 @@ int64_t teavm_file_open(char16_t* name, int32_t nameSize, int32_t mode) {
 
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     #ifdef _WINDOWS_UWP
-        HANDLE fileHandle = CreateFile2(nativeName, desiredAccess, 0, creationDisposition, NULL);
+        HANDLE fileHandle = CreateFile2(nativeName, desiredAccess, FILE_SHARE_READ, creationDisposition, NULL);
     #else
         HANDLE fileHandle = CreateFileW(nativeName, desiredAccess, 0, 0, creationDisposition,
          FILE_ATTRIBUTE_NORMAL, 0);
