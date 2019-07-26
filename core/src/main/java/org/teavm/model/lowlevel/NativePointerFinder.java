@@ -119,6 +119,7 @@ public class NativePointerFinder {
             return false;
         }
         String className = ((ValueType.Object) type).getClassName();
-        return characteristics.isStructure(className) || className.equals(Address.class.getName());
+        return characteristics.isStructure(className) || className.equals(Address.class.getName())
+                || characteristics.isFunction(className);
     }
 }
