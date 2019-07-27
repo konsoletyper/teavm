@@ -70,9 +70,9 @@
     <slf4j.version>1.7.7</slf4j.version>
     <jackson.version>2.6.2</jackson.version>
     <idea.version>2017.3.5</idea.version>
-    <asm.version>7.0</asm.version>
+    <asm.version>7.1</asm.version>
     <java.version>1.8</java.version>
-    <rhino.version>1.7.7</rhino.version>
+    <rhino.version>1.7.11</rhino.version>
 
     <teavm.test.incremental>false</teavm.test.incremental>
     <teavm.test.threads>1</teavm.test.threads>
