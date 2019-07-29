@@ -270,7 +270,7 @@ extern void teavm_waitFor(int64_t timeout);
 extern void teavm_interrupt();
 
 extern void teavm_outOfMemory();
-extern void teavm_printString(char*);
+extern void teavm_printString(char16_t*);
 extern void teavm_printInt(int32_t);
 
 extern TeaVM_Array* teavm_parseArguments(int, char**);

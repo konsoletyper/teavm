@@ -263,17 +263,64 @@ void teavm_interrupt() {
 
 #endif
 
+#ifndef TEAVM_WINDOWS_LOG
+    #define TEAVM_OUTPUT_STRING(s) fprintf(stderr, s)
+#else
+    #define  TEAVM_OUTPUT_STRING(s) OutputDebugStringW(L##s)
+#endif
+
 void teavm_outOfMemory() {
-    fprintf(stderr, "Application crashed due to lack of free memory\n");
-    exit(1);
+    TEAVM_OUTPUT_STRING("Application crashed due to lack of free memory\n");
+    abort();
 }
 
-void teavm_printString(char* s) {
-    fprintf(stderr, "%s", s);
+static char16_t* teavm_utf16ToUtf32(char16_t* source, char32_t* target) {
+    char16_t c = *source;
+    if (c & 0xFC00 == 0xD800) {
+        char16_t n = *(source + 1);
+        if (n & 0xFC00 == 0xDC00) {
+            *target = (((c & ~0xFC00) << 10) | (n & ~0xFC00)) + 0x10000;
+            return source + 2;
+        }
+    }
+    *target = c;
+    return source + 1;
+}
+
+void teavm_printString(char16_t* s) {
+    #ifndef TEAVM_WINDOWS_LOG
+        #ifdef _MSC_VER
+            fprintf(stderr, "%ls", s);
+        #else
+            int32_t cap = 128;
+            wchar_t* buf = malloc(sizeof(wchar_t) * cap);
+            wchar_t* out = buf;
+            int32_t sz = 0;
+            wchar_t c;
+            do {
+                s = teavm_utf16ToUtf32(s, out++);
+                if (++sz == cap) {
+                    cap *= 2;
+                    buf = realloc(buf, sizeof(wchar_t) * cap);
+                    out = buf + sz;
+                }
+            } while (c != '\0');
+            fprintf(stderr, "%ls", buf);
+            free(buf);
+        #endif
+    #else
+        OutputDebugStringW(s);
+    #endif
 }
 
 void teavm_printInt(int32_t i) {
-    fprintf(stderr, "%" PRId32, i);
+    #ifndef TEAVM_WINDOWS_LOG
+        fprintf(stderr, "%" PRId32, i);
+    #else
+        wchar_t str[10];
+        swprintf(str, 10, L"%d", i);
+        OutputDebugStringW(str);
+    #endif
 }
 
 int32_t teavm_hashCode(TeaVM_String* string) {
