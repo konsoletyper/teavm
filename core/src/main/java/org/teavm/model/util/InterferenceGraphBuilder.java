@@ -27,24 +27,10 @@ class InterferenceGraphBuilder {
         }
         UsageExtractor useExtractor = new UsageExtractor();
         DefinitionExtractor defExtractor = new DefinitionExtractor();
-        TransitionExtractor succExtractor = new TransitionExtractor();
-        List<List<Incoming>> outgoings = ProgramUtils.getPhiOutputs(program);
-        BitSet live = new BitSet();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
-            block.getLastInstruction().acceptVisitor(succExtractor);
 
-            BitSet liveOut = liveness.liveOut(i);
-            live.clear();
-            for (int j = 0; j < liveOut.length(); ++j) {
-                if (liveOut.get(j)) {
-                    live.set(j);
-                }
-            }
-
-            for (Incoming outgoing : outgoings.get(i)) {
-                live.set(outgoing.getValue().getIndex());
-            }
+            BitSet live = liveness.liveOut(i);
 
             for (Instruction insn = block.getLastInstruction(); insn != null; insn = insn.getPrevious()) {
                 insn.acceptVisitor(useExtractor);
@@ -67,18 +53,6 @@ class InterferenceGraphBuilder {
                 for (int j = 0; j <= paramCount; ++j) {
                     connect(nodes, j, live);
                 }
-            }
-
-            BitSet liveIn = liveness.liveIn(i);
-            live.clear();
-            for (int j = 0; j < liveOut.length(); ++j) {
-                if (liveIn.get(j)) {
-                    live.set(j);
-                }
-            }
-
-            for (Phi phi : block.getPhis()) {
-                live.set(phi.getReceiver().getIndex());
             }
 
             for (Phi phi : block.getPhis()) {

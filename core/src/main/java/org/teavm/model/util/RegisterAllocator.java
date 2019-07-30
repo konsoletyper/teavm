@@ -32,6 +32,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.ProgramReader;
+import org.teavm.model.TextLocation;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.JumpInstruction;
@@ -188,41 +189,22 @@ public class RegisterAllocator {
         DefinitionExtractor definitionExtractor = new DefinitionExtractor();
         List<Instruction> nextInstructions = new ArrayList<>();
         for (BasicBlock block : program.getBasicBlocks()) {
+            for (Phi phi : block.getPhis()) {
+                addExceptionHandlingCopies(catchIncomingsByVariable, phi.getReceiver(), block,
+                        program, block.getFirstInstruction().getLocation(), nextInstructions);
+            }
+
+            if (!nextInstructions.isEmpty()) {
+                block.addFirstAll(nextInstructions);
+                nextInstructions.clear();
+            }
+
             for (Instruction instruction : block) {
                 instruction.acceptVisitor(definitionExtractor);
                 Variable[] definedVariables = definitionExtractor.getDefinedVariables();
                 for (Variable definedVariable : definedVariables) {
-                    if (definedVariable.getIndex() >= catchIncomingsByVariable.size()) {
-                        continue;
-                    }
-                    List<Incoming> catchIncomings = catchIncomingsByVariable.get(definedVariable.getIndex());
-                    if (catchIncomings == null) {
-                        continue;
-                    }
-
-                    Incoming incoming = null;
-                    for (Iterator<Incoming> iter = catchIncomings.iterator(); iter.hasNext();) {
-                        if (iter.next().getValue() == definedVariable) {
-                            iter.remove();
-                            break;
-                        }
-                    }
-                    if (incoming == null) {
-                        continue;
-                    }
-
-                    Variable copy = program.createVariable();
-                    copy.setLabel(incoming.getPhi().getReceiver().getLabel());
-                    copy.setDebugName(incoming.getPhi().getReceiver().getDebugName());
-
-                    AssignInstruction copyInstruction = new AssignInstruction();
-                    copyInstruction.setReceiver(copy);
-                    copyInstruction.setAssignee(incoming.getValue());
-                    copyInstruction.setLocation(instruction.getLocation());
-
-                    incoming.setValue(copy);
-
-                    nextInstructions.add(copyInstruction);
+                    addExceptionHandlingCopies(catchIncomingsByVariable, definedVariable, block,
+                            program, instruction.getLocation(), nextInstructions);
                 }
 
                 if (!nextInstructions.isEmpty()) {
@@ -242,14 +224,44 @@ public class RegisterAllocator {
                 Variable copy = program.createVariable();
                 copy.setLabel(incoming.getPhi().getReceiver().getLabel());
                 copy.setDebugName(incoming.getPhi().getReceiver().getDebugName());
-                incoming.setValue(copy);
 
                 AssignInstruction copyInstruction = new AssignInstruction();
                 copyInstruction.setReceiver(copy);
                 copyInstruction.setAssignee(incoming.getValue());
                 copyInstruction.setLocation(block.getFirstInstruction().getLocation());
+                incoming.setValue(copy);
 
                 block.addFirst(copyInstruction);
+            }
+        }
+    }
+
+    private void addExceptionHandlingCopies(List<List<Incoming>> catchIncomingsByVariable, Variable definedVariable,
+            BasicBlock block, Program program, TextLocation location, List<Instruction> nextInstructions) {
+        if (definedVariable.getIndex() >= catchIncomingsByVariable.size()) {
+            return;
+        }
+        List<Incoming> catchIncomings = catchIncomingsByVariable.get(definedVariable.getIndex());
+        if (catchIncomings == null) {
+            return;
+        }
+
+        for (Iterator<Incoming> iter = catchIncomings.iterator(); iter.hasNext();) {
+            Incoming incoming = iter.next();
+            if (incoming.getSource() == block) {
+                Variable copy = program.createVariable();
+                copy.setLabel(incoming.getPhi().getReceiver().getLabel());
+                copy.setDebugName(incoming.getPhi().getReceiver().getDebugName());
+
+                AssignInstruction copyInstruction = new AssignInstruction();
+                copyInstruction.setReceiver(copy);
+                copyInstruction.setAssignee(incoming.getValue());
+                copyInstruction.setLocation(location);
+
+                incoming.setValue(copy);
+                nextInstructions.add(copyInstruction);
+
+                iter.remove();
             }
         }
     }

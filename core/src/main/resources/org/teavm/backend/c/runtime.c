@@ -276,9 +276,9 @@ void teavm_outOfMemory() {
 
 static char16_t* teavm_utf16ToUtf32(char16_t* source, char32_t* target) {
     char16_t c = *source;
-    if (c & 0xFC00 == 0xD800) {
+    if ((c & 0xFC00) == 0xD800) {
         char16_t n = *(source + 1);
-        if (n & 0xFC00 == 0xDC00) {
+        if ((n & 0xFC00) == 0xDC00) {
             *target = (((c & ~0xFC00) << 10) | (n & ~0xFC00)) + 0x10000;
             return source + 2;
         }

@@ -48,6 +48,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
+import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.JumpInstruction;
@@ -299,13 +300,24 @@ public class Decompiler {
         if (exceptionHandlers[block.getIndex()]) {
             return false;
         }
-        if (block.instructionCount() != 1 || block.getExceptionVariable() != null) {
+        if (block.getExceptionVariable() != null) {
             return false;
         }
         Instruction instruction = block.getLastInstruction();
-        return instruction instanceof JumpInstruction
-                || instruction instanceof BranchingInstruction
-                || instruction instanceof BinaryBranchingInstruction;
+        if (!(instruction instanceof JumpInstruction)
+                && !(instruction instanceof BranchingInstruction)
+                && !(instruction instanceof BinaryBranchingInstruction)) {
+            return false;
+        }
+
+        while (instruction.getPrevious() != null) {
+            instruction = instruction.getPrevious();
+            if (!(instruction instanceof AssignInstruction)) {
+                return false;
+            }
+        }
+
+        return true;
     }
 
     private void closeExpiredBookmarks(StatementGenerator generator, List<TryCatchBlock> tryCatchBlocks) {

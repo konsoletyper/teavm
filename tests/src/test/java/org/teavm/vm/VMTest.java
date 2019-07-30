@@ -90,6 +90,7 @@ public class VMTest {
         int a = 23;
         try {
             a = Integer.parseInt("not a number");
+            fail("Exception not thrown");
         } catch (NumberFormatException e) {
             // do nothing
         }
