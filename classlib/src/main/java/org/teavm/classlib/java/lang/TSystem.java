@@ -248,7 +248,7 @@ public final class TSystem extends TObject {
     }
 
     private static void gcLowLevel() {
-        GC.collectGarbage(0);
+        GC.collectGarbage();
     }
 
     public static void runFinalization() {

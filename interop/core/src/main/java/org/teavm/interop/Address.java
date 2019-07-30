@@ -89,4 +89,8 @@ public final class Address {
     public static native int sizeOf();
 
     public native Address add(Class<? extends Structure> type, int offset);
+
+    public long diff(Address that) {
+        return toLong() - that.toLong();
+    }
 }
