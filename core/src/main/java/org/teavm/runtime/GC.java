@@ -34,7 +34,7 @@ public final class GC {
     static int freeMemory = (int) availableBytes();
     static RuntimeReference firstWeakReference;
 
-    static RelocationBlock lastRelocationTarget;
+    static RelocationBlock lastRelocationBlock;
 
     static native Address gcStorageAddress();
 
@@ -65,76 +65,72 @@ public final class GC {
         currentChunkPointer = gcStorageAddress().toStructure();
         currentChunkPointer.value = currentChunk;
         freeChunks = 1;
-        getAvailableChunkIfPossible(0);
     }
 
     public static RuntimeObject alloc(int size) {
         FreeChunk current = currentChunk;
         Address next = current.toAddress().add(size);
         if (!next.add(Structure.sizeOf(FreeChunk.class)).isLessThan(currentChunkLimit)) {
-            getAvailableChunk(size);
+            getNextChunk(size);
             current = currentChunk;
-            next = currentChunk.toAddress().add(size);
+            next = current.toAddress().add(size);
         }
-        int freeSize = current.size;
-        freeSize -= size;
-        if (freeSize > 0) {
-            currentChunk = next.toStructure();
-            currentChunk.size = freeSize;
-        } else {
-            freeMemory -= size;
-            getAvailableChunkIfPossible(currentChunk.size + 1);
-        }
-        currentChunk.classReference = 0;
+        currentChunk = next.toStructure();
         freeMemory -= size;
+        MemoryTrace.allocate(current.toAddress(), size);
         return current.toAddress().toStructure();
     }
 
-    private static void getAvailableChunk(int size) {
-        if (getAvailableChunkIfPossible(size)) {
+    private static void getNextChunk(int size) {
+        if (getNextChunkIfPossible(size)) {
             return;
         }
         collectGarbage();
-        if (!getAvailableChunkIfPossible(size)) {
+        if (currentChunk.size < size && !getNextChunkIfPossible(size)) {
             ExceptionHandling.printStack();
             outOfMemory();
         }
     }
 
-    private static boolean getAvailableChunkIfPossible(int size) {
-        if (freeChunks == 0) {
-            return false;
-        }
+    private static boolean getNextChunkIfPossible(int size) {
         while (true) {
-            if (currentChunk.toAddress().add(size) == currentChunkLimit) {
-                break;
-            }
-            if (currentChunk.toAddress().add(size + Structure.sizeOf(FreeChunk.class)).isLessThan(currentChunkLimit)) {
-                break;
+            if (currentChunk.toAddress().isLessThan(currentChunkLimit)) {
+                currentChunk.classReference = 0;
+                currentChunk.size = (int) (currentChunkLimit.toLong() - currentChunk.toAddress().toLong());
             }
             if (--freeChunks == 0) {
                 return false;
             }
-            freeMemory -= currentChunk.size;
             currentChunkPointer = Structure.add(FreeChunkHolder.class, currentChunkPointer, 1);
             currentChunk = currentChunkPointer.value;
-            currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
+            if (currentChunk.size >= size) {
+                currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
+                break;
+            }
+            freeMemory -= currentChunk.size;
         }
         return true;
     }
 
     public static void collectGarbage() {
+        MemoryTrace.gcStarted();
         mark();
         processReferences();
         sweep();
+        MemoryTrace.sweepCompleted();
         defragment();
-        sortFreeChunks();
+        MemoryTrace.defragCompleted();
+        //sortFreeChunks();
         updateFreeMemory();
+        currentChunk = currentChunkPointer.value;
+        currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
     }
 
     private static void mark() {
+        MemoryTrace.initMark();
         firstWeakReference = null;
-        Allocator.fillZero(regionsAddress().toAddress(), regionMaxCount() * Structure.sizeOf(Region.class));
+        int regionsCount = (int) ((availableBytes() - 1) / regionSize()) + 1;
+        Allocator.fillZero(regionsAddress().toAddress(), regionsCount * Structure.sizeOf(Region.class));
 
         Address staticRoots = Mutator.getStaticGCRoots();
         int staticCount = staticRoots.getInt();
@@ -172,6 +168,7 @@ public final class GC {
                 continue;
             }
             object.classReference |= RuntimeObject.GC_MARKED;
+            MemoryTrace.mark(object.toAddress());
 
             long offset = object.toAddress().toLong() - heapAddress().toLong();
             Region region = Structure.add(Region.class, regionsAddress(), (int) (offset /  regionSize()));
@@ -211,9 +208,9 @@ public final class GC {
 
     private static void markWeakReference(RuntimeReference object) {
         if (object.queue != null) {
-            mark(object.queue);
+            enqueueMark(object.queue);
             if (object.next != null && object.object != null) {
-                mark(object.object);
+                enqueueMark(object);
             }
         }
         if (object.next == null && object.object != null) {
@@ -225,7 +222,7 @@ public final class GC {
     private static void markReferenceQueue(RuntimeReferenceQueue object) {
         RuntimeReference reference = object.first;
         while (reference != null) {
-            mark(reference);
+            enqueueMark(object);
             reference = reference.next;
         }
     }
@@ -238,9 +235,7 @@ public final class GC {
                 layout = layout.add(2);
                 int fieldOffset = layout.getShort();
                 RuntimeObject reference = object.toAddress().add(fieldOffset).getAddress().toStructure();
-                if (reference != null && !isMarked(reference)) {
-                    MarkQueue.enqueue(reference);
-                }
+                enqueueMark(reference);
             }
         }
     }
@@ -252,10 +247,14 @@ public final class GC {
         Address base = Address.align(array.toAddress().add(RuntimeArray.class, 1), Address.sizeOf());
         for (int i = 0; i < array.size; ++i) {
             RuntimeObject reference = base.getAddress().toStructure();
-            if (reference != null && !isMarked(reference)) {
-                MarkQueue.enqueue(reference);
-            }
+            enqueueMark(reference);
             base = base.add(Address.sizeOf());
+        }
+    }
+
+    private static void enqueueMark(RuntimeObject object) {
+        if (object != null && !isMarked(object)) {
+            MarkQueue.enqueue(object);
         }
     }
 
@@ -297,16 +296,23 @@ public final class GC {
             if (!object.toAddress().isLessThan(currentRegionEnd)) {
                 int currentRegionIndex = (int) ((object.toAddress().toLong() - heapAddress().toLong()) / regionSize());
                 Region currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
-                while (currentRegion.start == 0) {
-                    if (++currentRegionIndex == regionsCount) {
-                        object = limit.toStructure();
-                        break loop;
+                if (currentRegion.start == 0) {
+                    if (lastFreeSpace == null) {
+                        lastFreeSpace = object;
                     }
-                    currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
+
+                    do {
+                        if (++currentRegionIndex == regionsCount) {
+                            object = limit.toStructure();
+                            break loop;
+                        }
+                        currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
+                    } while (currentRegion.start == 0);
+
+                    Address newRegionStart = heapAddress().add(currentRegionIndex * regionSize());
+                    object = newRegionStart.add(currentRegion.start - 1).toStructure();
+                    currentRegionEnd = newRegionStart.add(regionSize());
                 }
-                Address newRegionStart = heapAddress().add(currentRegionIndex * regionSize());
-                object = newRegionStart.add(currentRegion.start - 1).toStructure();
-                currentRegionEnd = newRegionStart.add(regionSize());
             }
 
             int tag = object.classReference;
@@ -329,6 +335,7 @@ public final class GC {
                 if (lastFreeSpace != null) {
                     lastFreeSpace.classReference = 0;
                     lastFreeSpace.size = (int) (object.toAddress().toLong() - lastFreeSpace.toAddress().toLong());
+                    MemoryTrace.free(lastFreeSpace.toAddress(), lastFreeSpace.size);
                     freeChunkPtr.value = lastFreeSpace;
                     freeChunkPtr = Structure.add(FreeChunkHolder.class, freeChunkPtr, 1);
                     freeChunks++;
@@ -348,6 +355,7 @@ public final class GC {
             int freeSize = (int) (object.toAddress().toLong() - lastFreeSpace.toAddress().toLong());
             lastFreeSpace.classReference = 0;
             lastFreeSpace.size = freeSize;
+            MemoryTrace.free(lastFreeSpace.toAddress(), lastFreeSpace.size);
             freeChunkPtr.value = lastFreeSpace;
             freeChunkPtr = Structure.add(FreeChunkHolder.class, freeChunkPtr, 1);
             freeChunks++;
@@ -381,8 +389,8 @@ public final class GC {
                 RuntimeObject obj = stackRootsPtr.getAddress().toStructure();
                 if (!obj.toAddress().isLessThan(relocationThreshold)) {
                     obj.classReference |= RuntimeObject.GC_MARKED;
-                    stackRootsPtr = stackRootsPtr.add(Address.sizeOf());
                 }
+                stackRootsPtr = stackRootsPtr.add(Address.sizeOf());
             }
         }
     }
@@ -397,12 +405,14 @@ public final class GC {
         FreeChunk freeChunk = currentChunkPointer.value;
         FreeChunk object = freeChunk.toAddress().add(freeChunk.size).toStructure();
 
-        RelocationBlock relocationTarget = Structure.add(FreeChunkHolder.class, currentChunkPointer, freeChunks)
+        RelocationBlock relocationBlock = Structure.add(FreeChunkHolder.class, currentChunkPointer, freeChunks)
                 .toAddress().toStructure();
-        relocationTarget.start = freeChunk.toAddress();
-        relocationTarget.current = relocationTarget.start;
-        relocationTarget.end = limit;
-        RelocationBlock lastRelocationTarget = relocationTarget;
+        Address relocationTarget = freeChunk.toAddress();
+        relocationBlock.start = relocationTarget;
+        relocationBlock.end = limit;
+        relocationBlock.count = 0;
+        RelocationBlock lastRelocationBlock = relocationBlock;
+        int countInCurrentRelocationBlock = 0;
 
         Address relocations = Structure.add(FreeChunk.class, freeChunk, 1).toAddress();
         Address relocationsLimit = freeChunk.toAddress().add(freeChunk.size);
@@ -411,36 +421,43 @@ public final class GC {
         objects: while (object.toAddress().isLessThan(limit)) {
             int size = objectSize(object);
             if (object.classReference != 0) {
-                if ((object.classReference & RuntimeObject.GC_MARKED) != 0
-                        || !relocationTarget.start.isLessThan(object.toAddress())) {
-                    if (!lastWasLocked) {
-                        lastRelocationTarget.end = object.toAddress();
-                        lastRelocationTarget = Structure.add(RelocationBlock.class, lastRelocationTarget, 1);
-                        lastRelocationTarget.end = limit;
-                        lastWasLocked = true;
-                    }
-                    lastRelocationTarget.start = object.toAddress().add(size);
-                    lastRelocationTarget.current = lastRelocationTarget.start;
-                    object.classReference &= ~RuntimeObject.GC_MARKED;
-                } else {
-                    lastRelocationTarget.end = object.toAddress().add(size);
-                    lastWasLocked = false;
-
-                    Address nextRelocationTarget;
+                Address nextRelocationTarget = null;
+                boolean shouldRelocateObject = (object.classReference & RuntimeObject.GC_MARKED) == 0;
+                if (shouldRelocateObject) {
                     while (true) {
-                        nextRelocationTarget = relocationTarget.current.add(size);
-                        if (nextRelocationTarget.isLessThan(relocationTarget.end)) {
+                        nextRelocationTarget = relocationTarget.add(size);
+                        if (!relocationBlock.end.isLessThan(nextRelocationTarget)) {
                             break;
                         }
 
-                        relocationTarget = Structure.add(RelocationBlock.class, relocationTarget, 1);
-                        if (lastRelocationTarget.toAddress().isLessThan(relocationTarget.toAddress())) {
-                            break objects;
+                        RelocationBlock nextRelocationBlock = Structure.add(RelocationBlock.class, relocationBlock, 1);
+                        if (nextRelocationBlock.start == object.toAddress()) {
+                            shouldRelocateObject = false;
+                            break;
                         }
+                        relocationBlock.count = countInCurrentRelocationBlock;
+                        countInCurrentRelocationBlock = 0;
+                        relocationBlock = nextRelocationBlock;
+                        relocationTarget = relocationBlock.start;
                     }
+                }
+
+                if (!shouldRelocateObject) {
+                    if (!lastWasLocked) {
+                        lastRelocationBlock.end = object.toAddress();
+                        lastRelocationBlock = Structure.add(RelocationBlock.class, lastRelocationBlock, 1);
+                        lastRelocationBlock.end = limit;
+                        lastWasLocked = true;
+                    }
+                    lastRelocationBlock.start = object.toAddress().add(size);
+                    lastRelocationBlock.count = 0;
+                    object.classReference &= ~RuntimeObject.GC_MARKED;
+                } else {
+                    lastWasLocked = false;
 
                     while (!relocations.add(Structure.sizeOf(Relocation.class)).isLessThan(relocationsLimit)) {
                         if (--freeChunks == 0) {
+                            lastRelocationBlock.end = object.toAddress();
                             break objects;
                         }
                         freeChunkPointer = Structure.add(FreeChunkHolder.class, freeChunkPointer, 1);
@@ -452,35 +469,37 @@ public final class GC {
                     Relocation relocation = relocations.toStructure();
                     relocation.classBackup = object.classReference;
                     relocation.sizeBackup = object.size;
-                    relocation.newAddress = relocationTarget.current;
+                    relocation.newAddress = relocationTarget;
+                    countInCurrentRelocationBlock++;
                     relocations = relocations.add(Structure.sizeOf(Relocation.class));
 
                     long targetAddress = relocation.toAddress().toLong();
                     object.classReference = (int) (targetAddress >>> 33) | RuntimeObject.GC_MARKED;
                     object.size = (int) (targetAddress >> 1);
-                    relocationTarget.current = nextRelocationTarget;
+                    relocationTarget = nextRelocationTarget;
                 }
             } else {
                 lastWasLocked = false;
-                lastRelocationTarget.end = object.toAddress().add(object.size);
             }
             object = object.toAddress().add(size).toStructure();
         }
+
+        relocationBlock.count = countInCurrentRelocationBlock;
 
         while (object.toAddress().isLessThan(limit)) {
             int size = objectSize(object);
             if (object.classReference != 0) {
                 object.classReference &= ~RuntimeObject.GC_MARKED;
             } else {
-                lastRelocationTarget = Structure.add(RelocationBlock.class, lastRelocationTarget, 1);
-                lastRelocationTarget.start = object.toAddress();
-                lastRelocationTarget.current = lastRelocationTarget.start;
-                lastRelocationTarget.end = lastRelocationTarget.start.add(size);
+                lastRelocationBlock = Structure.add(RelocationBlock.class, lastRelocationBlock, 1);
+                lastRelocationBlock.start = object.toAddress();
+                lastRelocationBlock.count = 0;
+                lastRelocationBlock.end = lastRelocationBlock.start.add(size);
             }
             object = object.toAddress().add(size).toStructure();
         }
 
-        GC.lastRelocationTarget = lastRelocationTarget;
+        GC.lastRelocationBlock = lastRelocationBlock;
     }
 
     private static void updatePointersFromStaticRoots() {
@@ -633,47 +652,44 @@ public final class GC {
         FreeChunk freeChunk = currentChunkPointer.value;
         FreeChunk object = freeChunk.toAddress().add(freeChunk.size).toStructure();
 
-        RelocationBlock relocationTarget = Structure.add(FreeChunkHolder.class, currentChunkPointer, freeChunks)
+        RelocationBlock relocationBlock = Structure.add(FreeChunkHolder.class, currentChunkPointer, freeChunks)
                 .toAddress().toStructure();
-        Address currentTarget = relocationTarget.start;
+        int countInRelocationBlock = relocationBlock.count;
+        Address relocationTarget = relocationBlock.start;
 
         Address blockTarget = null;
         Address blockSource = null;
         int blockSize = 0;
 
-        objects: while (object.toAddress().isLessThan(limit)) {
+        while (object.toAddress().isLessThan(limit)) {
             int size = objectSize(object);
             if ((object.classReference & RuntimeObject.GC_MARKED) != 0) {
                 object.classReference &= ~RuntimeObject.GC_MARKED;
 
-                Address nextRelocationTarget;
-                while (true) {
-                    nextRelocationTarget = currentTarget.add(size);
-                    if (nextRelocationTarget.isLessThan(relocationTarget.end)) {
-                        break;
-                    }
-
+                while (countInRelocationBlock == 0) {
                     if (blockSize != 0) {
                         Allocator.moveMemoryBlock(blockSource, blockTarget, blockSize);
+                        MemoryTrace.move(blockSource, blockTarget, blockSize);
                         blockSource = null;
                         blockSize = 0;
                     }
 
-                    relocationTarget = Structure.add(RelocationBlock.class, relocationTarget, 1);
-                    if (lastRelocationTarget.toAddress().isLessThan(relocationTarget.toAddress())) {
-                        break objects;
-                    }
-                    currentTarget = relocationTarget.start;
+                    relocationBlock.start = relocationTarget;
+                    relocationBlock = Structure.add(RelocationBlock.class, relocationBlock, 1);
+                    countInRelocationBlock = relocationBlock.count;
+                    relocationTarget = relocationBlock.start;
                 }
 
                 if (blockSource == null) {
                     blockSource = object.toAddress();
-                    blockTarget = currentTarget;
+                    blockTarget = relocationTarget;
                 }
-                currentTarget = nextRelocationTarget;
+                relocationTarget = relocationTarget.add(size);
                 blockSize += size;
+                --countInRelocationBlock;
             } else if (blockSource != null) {
                 Allocator.moveMemoryBlock(blockSource, blockTarget, blockSize);
+                MemoryTrace.move(blockSource, blockTarget, blockSize);
                 blockSource = null;
                 blockSize = 0;
             }
@@ -681,8 +697,10 @@ public final class GC {
             object = object.toAddress().add(size).toStructure();
         }
 
+        relocationBlock.start = relocationTarget;
         if (blockSource != null) {
             Allocator.moveMemoryBlock(blockSource, blockTarget, blockSize);
+            MemoryTrace.move(blockSource, blockTarget, blockSize);
         }
     }
 
@@ -691,16 +709,16 @@ public final class GC {
         RelocationBlock relocationBlock = Structure.add(FreeChunkHolder.class, currentChunkPointer, freeChunks)
                 .toAddress().toStructure();
         freeChunks = 0;
-        while (!lastRelocationTarget.toAddress().isLessThan(relocationBlock.toAddress())) {
-            if (!relocationBlock.current.isLessThan(relocationBlock.end)) {
-                continue;
+        while (!lastRelocationBlock.toAddress().isLessThan(relocationBlock.toAddress())) {
+            if (relocationBlock.start.isLessThan(relocationBlock.end)) {
+                FreeChunk freeChunk = relocationBlock.start.toStructure();
+                freeChunk.size = (int) (relocationBlock.end.toLong() - relocationBlock.start.toLong());
+                freeChunk.classReference = 0;
+                MemoryTrace.assertFree(freeChunk.toAddress(), freeChunk.size);
+                freeChunkPointer.value = freeChunk;
+                freeChunkPointer = Structure.add(FreeChunkHolder.class, freeChunkPointer, 1);
+                freeChunks++;
             }
-            FreeChunk freeChunk = relocationBlock.current.toStructure();
-            freeChunk.size = (int) (relocationBlock.end.toLong() - relocationBlock.current.toLong());
-            freeChunk.classReference = 0;
-            freeChunkPointer.value = freeChunk;
-            freeChunkPointer = Structure.add(FreeChunkHolder.class, freeChunkPointer, 1);
-            freeChunks++;
             relocationBlock = Structure.add(RelocationBlock.class, relocationBlock, 1);
         }
     }
@@ -708,8 +726,6 @@ public final class GC {
     private static void sortFreeChunks() {
         currentChunkPointer = gcStorageAddress().toStructure();
         sortFreeChunks(0, freeChunks - 1);
-        currentChunk = currentChunkPointer.value;
-        currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
     }
 
     private static void updateFreeMemory() {

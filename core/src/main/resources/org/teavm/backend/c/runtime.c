@@ -23,6 +23,10 @@
 #endif
 
 void* teavm_gc_heapAddress = NULL;
+#ifdef TEAVM_MEMORY_TRACE
+    uint8_t* teavm_gc_heapMap = NULL;
+    uint8_t* teavm_gc_markMap = NULL;
+#endif
 
 TeaVM_StackFrame* teavm_stackTop = NULL;
 
@@ -107,37 +111,13 @@ void teavm_beforeInit() {
 }
 
 #ifdef __GNUC__
-void teavm_initHeap(int64_t heapSize) {
-    long workSize = (long) (heapSize / 16);
-    long regionsSize = (long) (heapSize / teavm_gc_regionSize);
 
-    long pageSize = sysconf(_SC_PAGE_SIZE);
-    int heapPages = (int) ((heapSize + pageSize + 1) / pageSize * pageSize);
-    int workPages = (int) ((workSize + pageSize + 1) / pageSize * pageSize);
-    int regionsPages = (int) ((regionsSize * 2 + pageSize + 1) / pageSize * pageSize);
+static void* teavm_virtualAlloc(int size) {
+    return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+}
 
-    teavm_gc_heapAddress = mmap(
-            NULL,
-            heapPages,
-            PROT_READ | PROT_WRITE,
-            MAP_PRIVATE | MAP_ANONYMOUS,
-            0, 0);
-    teavm_gc_gcStorageAddress = mmap(
-            NULL,
-            workPages,
-            PROT_READ | PROT_WRITE,
-            MAP_PRIVATE | MAP_ANONYMOUS,
-            0, 0);
-    teavm_gc_regionsAddress = mmap(
-            NULL,
-            regionsPages,
-            PROT_READ | PROT_WRITE,
-            MAP_PRIVATE | MAP_ANONYMOUS,
-            0, 0);
-
-    teavm_gc_gcStorageSize = (int) workSize;
-    teavm_gc_regionMaxCount = regionsSize;
-    teavm_gc_availableBytes = heapSize;
+static long teavm_pageSize() {
+    return sysconf(_SC_PAGE_SIZE);
 }
 
 int64_t teavm_currentTimeMillis() {
@@ -173,24 +153,10 @@ static void* teavm_virtualAlloc(int size) {
     #endif
 }
 
-void teavm_initHeap(int64_t heapSize) {
-    long workSize = (long) (heapSize / 16);
-    long regionsSize = (long) (heapSize / teavm_gc_regionSize);
-
+static long teavm_pageSize() {
     SYSTEM_INFO systemInfo;
     GetSystemInfo(&systemInfo);
-    long pageSize = systemInfo.dwPageSize;
-    int heapPages = (int) ((heapSize + pageSize + 1) / pageSize * pageSize);
-    int workPages = (int) ((workSize + pageSize + 1) / pageSize * pageSize);
-    int regionsPages = (int) ((regionsSize * 2 + pageSize + 1) / pageSize * pageSize);
-
-    teavm_gc_heapAddress = teavm_virtualAlloc(heapPages);
-    teavm_gc_gcStorageAddress = teavm_virtualAlloc(workPages);
-    teavm_gc_regionsAddress = teavm_virtualAlloc(regionsPages);
-
-    teavm_gc_gcStorageSize = (int) workSize;
-    teavm_gc_regionMaxCount = regionsSize;
-    teavm_gc_availableBytes = heapSize;
+    return systemInfo.dwPageSize;
 }
 
 int64_t teavm_currentTimeMillis() {
@@ -209,6 +175,31 @@ int64_t teavm_currentTimeNano() {
     return dt * INT64_C(1000000000) / teavm_perfFrequency;
 }
 #endif
+
+static int teavm_pageCount(int64_t size, int64_t pageSize) {
+    return (int) ((size + pageSize + 1) / pageSize * pageSize);
+}
+
+void teavm_initHeap(int64_t heapSize) {
+    long workSize = (long) (heapSize / 16);
+    long regionsSize = (long) (heapSize / teavm_gc_regionSize) + 1;
+    long pageSize = teavm_pageSize();
+
+    teavm_gc_heapAddress = teavm_virtualAlloc(teavm_pageCount(heapSize, pageSize));
+    teavm_gc_gcStorageAddress = teavm_virtualAlloc(teavm_pageCount(workSize, pageSize));
+    teavm_gc_regionsAddress = teavm_virtualAlloc(teavm_pageCount(regionsSize * 2, pageSize));
+
+    #ifdef TEAVM_MEMORY_TRACE
+        int64_t heapMapSize = heapSize / sizeof(void*);
+        teavm_gc_heapMap = teavm_virtualAlloc(teavm_pageCount(heapMapSize, pageSize));
+        memset(teavm_gc_heapMap, 0, heapMapSize);
+        teavm_gc_markMap = teavm_virtualAlloc(teavm_pageCount(heapMapSize, pageSize));
+    #endif
+
+    teavm_gc_gcStorageSize = (int) workSize;
+    teavm_gc_regionMaxCount = regionsSize;
+    teavm_gc_availableBytes = heapSize;
+}
 
 #ifdef _MSC_VER
 #undef gmtime_r
@@ -606,3 +597,263 @@ void teavm_logchar(int32_t c) {
 	OutputDebugStringW(buffer);
 }
 #endif
+
+#ifdef TEAVM_MEMORY_TRACE
+
+void teavm_gc_assertSize(int32_t size) {
+    if (size % sizeof(void*) != 0) {
+        abort();
+    }
+}
+
+#endif
+
+void teavm_gc_allocate(void* address, int32_t size) {
+    #ifdef TEAVM_MEMORY_TRACE
+        teavm_gc_assertAddress(address);
+        teavm_gc_assertSize(size);
+
+        size /= sizeof(void*);
+        uint8_t* map = teavm_gc_heapMap + (((char*) address - (char*) teavm_gc_heapAddress) / sizeof(void*));
+
+        if (*map != 0) {
+            fprintf(stderr, "[GC] trying allocate at memory in use at: %d\n",
+                    (int) ((char*) address - (char*) teavm_gc_heapAddress));
+            abort();
+        }
+        *map++ = 1;
+
+        for (int32_t i = 1; i < size; ++i) {
+            if (*map != 0) {
+                fprintf(stderr, "[GC] trying allocate at memory in use at: %d\n",
+                        (int) ((char*) address - (char*) teavm_gc_heapAddress));
+                abort();
+            }
+            *map++ = 2;
+        }
+    #endif
+}
+
+void teavm_gc_free(void* address, int32_t size) {
+    #ifdef TEAVM_MEMORY_TRACE
+        teavm_gc_assertAddress(address);
+        teavm_gc_assertSize(size);
+
+        int32_t offset = (int32_t) (((char*) address - (char*) teavm_gc_heapAddress) / sizeof(void*));
+        uint8_t* markMap = teavm_gc_markMap + offset;
+        size /= sizeof(void*);
+        for (int32_t i = 0; i < size; ++i) {
+            if (markMap[i] != 0) {
+                fprintf(stderr, "[GC] trying to release reachable object at: %d\n",
+                        (int) ((char*) address - (char*) teavm_gc_heapAddress));
+                abort();
+            }
+        }
+
+        uint8_t* map = teavm_gc_heapMap + offset;
+        memset(map, 0, size);
+    #endif
+}
+
+void teavm_gc_assertFree(void* address, int32_t size) {
+    #ifdef TEAVM_MEMORY_TRACE
+        teavm_gc_assertAddress(address);
+        teavm_gc_assertSize(size);
+
+        int32_t offset = (int32_t) (((char*) address - (char*) teavm_gc_heapAddress) / sizeof(void*));
+        uint8_t* map = teavm_gc_heapMap + offset;
+        size /= sizeof(void*);
+        for (int32_t i = 0; i < size; ++i) {
+            if (map[i] != 0) {
+                fprintf(stderr, "[GC] memory supposed to be free at: %d\n",
+                        (int) ((char*) address - (char*) teavm_gc_heapAddress));
+                abort();
+            }
+        }
+    #endif
+}
+
+void teavm_gc_initMark() {
+    #ifdef TEAVM_MEMORY_TRACE
+        memset(teavm_gc_markMap, 0, teavm_gc_availableBytes / sizeof(void*));
+    #endif
+}
+
+#ifdef TEAVM_MEMORY_TRACE
+int32_t teavm_gc_objectSize(void* address) {
+    TeaVM_Class* cls = TEAVM_CLASS_OF(address);
+    if (cls->itemType == NULL) {
+        return cls->size;
+    }
+
+    int32_t itemSize = cls->itemType->flags & 2 ? cls->itemType->size : sizeof(void*);
+    TeaVM_Array* array = (TeaVM_Array*) address;
+    char* size = TEAVM_ALIGN((void*) sizeof(TeaVM_Array), itemSize);
+    size += array->size * itemSize;
+    size = TEAVM_ALIGN(size, sizeof(void*));
+    return (int32_t) (intptr_t) size;
+}
+#endif
+
+void teavm_gc_mark(void* address) {
+    #ifdef TEAVM_MEMORY_TRACE
+        if (address < teavm_gc_heapAddress
+                || (char*) address >= (char*) teavm_gc_heapAddress + teavm_gc_availableBytes) {
+            return;
+        }
+
+        teavm_gc_assertAddress(address);
+
+        int32_t offset = (int32_t) (((char*) address - (char*) teavm_gc_heapAddress) / sizeof(void*));
+        uint8_t* map = teavm_gc_heapMap + offset;
+        uint8_t* markMap = teavm_gc_markMap + offset;
+
+        int32_t size = teavm_gc_objectSize(address);
+        teavm_gc_assertSize(size);
+        size /= sizeof(void*);
+
+        if (*map++ != 1 || *markMap != 0) {
+            fprintf(stderr, "[GC] assertion failed marking object at: %d\n", (int) ((char*) address - (char*) teavm_gc_heapAddress));
+            abort();
+        }
+        *markMap++ = 1;
+
+        for (int32_t i = 1; i < size; ++i) {
+            if (*map++ != 2 || *markMap != 0) {
+                abort();
+            }
+            *markMap++ = 1;
+        }
+    #endif
+}
+
+void teavm_gc_move(void* from, void* to, int32_t size) {
+    #ifdef TEAVM_MEMORY_TRACE
+        teavm_gc_assertAddress(from);
+        teavm_gc_assertAddress(to);
+        teavm_gc_assertSize(size);
+
+        uint8_t* mapFrom = teavm_gc_heapMap + (((char*) from - (char*) teavm_gc_heapAddress) / sizeof(void*));
+        uint8_t* mapTo = teavm_gc_heapMap + (((char*) to - (char*) teavm_gc_heapAddress) / sizeof(void*));
+        size /= sizeof(void*);
+
+        if (mapFrom > mapTo) {
+            for (int32_t i = 0; i < size; ++i) {
+                if (mapFrom[i] == 0 || mapTo[i] != 0) {
+                    fprintf(stderr, "[GC] assertion failed moving object from: %d to %d\n",
+                        (int) ((char*) from - (char*) teavm_gc_heapAddress), (int) ((char*) to - (char*) teavm_gc_heapAddress));
+                    abort();
+                }
+                mapTo[i] = mapFrom[i];
+                mapFrom[i] = 0;
+            }
+        } else {
+            for (int32_t i = size - 1; i >= 0; --i) {
+                if (mapFrom[i] == 0 || mapTo[i] != 0) {
+                    abort();
+                }
+                mapTo[i] = mapFrom[i];
+                mapFrom[i] = 0;
+            }
+        }
+    #endif
+}
+
+#ifdef TEAVM_MEMORY_TRACE
+    static FILE* teavm_gc_traceFile = NULL;
+
+    static void teavm_writeHeapMemory(char* name) {
+        #ifdef TEAVM_GC_LOG
+            if (teavm_gc_traceFile == NULL) {
+                teavm_gc_traceFile = fopen("teavm-gc-trace.txt", "w");
+            }
+            FILE* file = teavm_gc_traceFile;
+            fprintf(file, "%s:", name);
+
+            int32_t numbers = 4096;
+            int64_t mapSize = teavm_gc_availableBytes / sizeof(void*);
+            for (int i = 0; i < numbers; ++i) {
+                int64_t start = mapSize * i / numbers;
+                int64_t end = mapSize * (i + 1) / numbers;
+                int count = 0;
+                for (int j = start; j < end; ++j) {
+                    if (teavm_gc_heapMap[j] != 0) {
+                        count++;
+                    }
+                }
+                int rate = count * 4096 / (end - start);
+                fprintf(file, " %d", rate);
+            }
+            fprintf(file, "\n");
+            fflush(file);
+        #endif
+    }
+
+    void teavm_gc_checkHeapConsistency() {
+        TeaVM_Object* obj = teavm_gc_heapAddress;
+        while ((char*) obj < (char*) teavm_gc_heapAddress + teavm_gc_availableBytes) {
+            int32_t size;
+            if (obj->header == 0) {
+                size = obj->hash;
+                teavm_gc_assertFree(obj, size);
+            } else {
+                teavm_verify(obj);
+                TeaVM_Class* cls = TEAVM_CLASS_OF(obj);
+                if (cls->itemType != NULL) {
+                    if (!(cls->itemType->flags & 2)) {
+                        char* offset = NULL;
+                        offset += sizeof(TeaVM_Array);
+                        offset = TEAVM_ALIGN(offset, sizeof(void*));
+                        void** data = (void**)((char*)obj + (uintptr_t)offset);
+                        int32_t size = ((TeaVM_Array*)obj)->size;
+                        for (int32_t i = 0; i < size; ++i) {
+                            teavm_verify(data[i]);
+                        }
+                    }
+                } else {
+                    while (cls != NULL) {
+                        int32_t kind = (cls->flags >> 7) & 7;
+                        if (kind == 1) {
+
+                        } else if (kind == 2) {
+
+                        } else {
+                            int16_t* layout = cls->layout;
+                            if (layout != NULL) {
+                                int16_t size = *layout++;
+                                for (int32_t i = 0; i < size; ++i) {
+                                    void** ptr = (void**) ((char*) obj + *layout++);
+                                    teavm_verify(*ptr);
+                                }
+                            }
+                        }
+
+                        cls = cls->superclass;
+                    }
+                }
+                size = teavm_gc_objectSize(obj);
+            }
+            obj = (TeaVM_Object*) ((char*) obj + size);
+        }
+    }
+#endif
+
+void teavm_gc_gcStarted() {
+    #ifdef TEAVM_MEMORY_TRACE
+        teavm_writeHeapMemory("start");
+        teavm_gc_checkHeapConsistency();
+    #endif
+}
+
+void teavm_gc_sweepCompleted() {
+    #ifdef TEAVM_MEMORY_TRACE
+        teavm_writeHeapMemory("sweep");
+        teavm_gc_checkHeapConsistency();
+    #endif
+}
+
+void teavm_gc_defragCompleted() {
+    #ifdef TEAVM_MEMORY_TRACE
+        teavm_writeHeapMemory("defrag");
+    #endif
+}

@@ -19,7 +19,7 @@ import org.teavm.interop.Address;
 import org.teavm.interop.Structure;
 
 class RelocationBlock extends Structure {
+    int count;
     Address start;
-    Address current;
     Address end;
 }

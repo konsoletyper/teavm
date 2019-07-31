@@ -319,6 +319,16 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
     }
 
+    private void visitReference(Expr expr) {
+        if (context.isVmAssertions()) {
+            writer.print("TEAVM_VERIFY(");
+        }
+        expr.acceptVisitor(this);
+        if (context.isVmAssertions()) {
+            writer.print(")");
+        }
+    }
+
     @Override
     public void visit(UnaryExpr expr) {
         pushLocation(expr.getLocation());
@@ -337,7 +347,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                 break;
             case LENGTH:
                 writer.print("TEAVM_ARRAY_LENGTH(");
-                expr.getOperand().acceptVisitor(this);
+                visitReference(expr.getOperand());
                 writer.print(")");
                 break;
             case NULL_CHECK: {
@@ -347,7 +357,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
                     withCallSite();
                 }
                 writer.print("teavm_nullCheck(");
-                expr.getOperand().acceptVisitor(this);
+                visitReference(expr.getOperand());
                 writer.print(")");
                 if (needParenthesis) {
                     writer.print(")");
@@ -412,7 +422,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     public void visit(SubscriptExpr expr) {
         pushLocation(expr.getLocation());
         writer.print("TEAVM_ARRAY_AT(");
-        expr.getArray().acceptVisitor(this);
+        visitReference(expr.getArray());
         writer.print(", ").print(getArrayType(expr.getType())).print(", ");
         expr.getIndex().acceptVisitor(this);
         writer.print(")");
@@ -604,7 +614,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         } else {
             receiver = allocTemporaryVariable(CVariableType.PTR);
             writer.print("((").print(receiver).print(" = ");
-            arguments.get(0).acceptVisitor(this);
+            visitReference(arguments.get(0));
             writer.print("), ");
             closingParenthesis = true;
         }
@@ -811,8 +821,18 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         if (qualified != null) {
             ClassReader cls = context.getClassSource().get(field.getClassName());
             writer.print("TEAVM_FIELD(");
+
+            boolean shouldVerify = context.isVmAssertions()
+                    && context.getCharacteristics().isManaged(field.getClassName());
+            if (shouldVerify) {
+                writer.print("TEAVM_VERIFY(");
+            }
             qualified.acceptVisitor(this);
+            if (shouldVerify) {
+                writer.print(")");
+            }
             writer.print(", ");
+
             if (cls != null && isNative(cls)) {
                 InteropUtil.processInclude(cls.getAnnotations(), includes);
                 InteropUtil.printNativeReference(writer, cls);
@@ -919,7 +939,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     public void visit(InstanceOfExpr expr) {
         pushLocation(expr.getLocation());
         writer.print("teavm_instanceof(");
-        expr.getExpr().acceptVisitor(this);
+        visitReference(expr.getExpr());
         includes.includeType(expr.getType());
         writer.print(", ").print(names.forSupertypeFunction(expr.getType())).print(")");
         popLocation(expr.getLocation());
@@ -945,7 +965,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         }
 
         writer.print("teavm_checkcast(");
-        expr.getValue().acceptVisitor(this);
+        visitReference(expr.getValue());
         includes.includeType(expr.getTarget());
         writer.print(", ").print(names.forSupertypeFunction(expr.getTarget())).print(")");
 

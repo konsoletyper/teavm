@@ -45,12 +45,13 @@ public class GenerationContext {
     private BuildTarget buildTarget;
     private boolean incremental;
     private boolean longjmp;
+    private boolean vmAssertions;
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
             DependencyInfo dependencies, StringPool stringPool, NameProvider names, Diagnostics diagnostics,
             ClassReaderSource classSource, List<Intrinsic> intrinsics, List<Generator> generators,
             Predicate<MethodReference> asyncMethods, BuildTarget buildTarget, boolean incremental,
-            boolean longjmp) {
+            boolean longjmp, boolean vmAssertions) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
         this.dependencies = dependencies;
@@ -64,6 +65,7 @@ public class GenerationContext {
         this.buildTarget = buildTarget;
         this.incremental = incremental;
         this.longjmp = longjmp;
+        this.vmAssertions = vmAssertions;
     }
 
     public void addIntrinsic(Intrinsic intrinsic) {
@@ -130,5 +132,9 @@ public class GenerationContext {
 
     public boolean isLongjmp() {
         return longjmp;
+    }
+
+    public boolean isVmAssertions() {
+        return vmAssertions;
     }
 }

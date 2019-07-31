@@ -64,6 +64,7 @@ import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.backend.c.intrinsic.IntrinsicFactory;
 import org.teavm.backend.c.intrinsic.LongIntrinsic;
+import org.teavm.backend.c.intrinsic.MemoryTraceIntrinsic;
 import org.teavm.backend.c.intrinsic.MutatorIntrinsic;
 import org.teavm.backend.c.intrinsic.PlatformClassIntrinsic;
 import org.teavm.backend.c.intrinsic.PlatformClassMetadataIntrinsic;
@@ -340,6 +341,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         intrinsics.add(new PlatformClassIntrinsic());
         intrinsics.add(new PlatformClassMetadataIntrinsic());
         intrinsics.add(new GCIntrinsic());
+        intrinsics.add(new MemoryTraceIntrinsic());
         intrinsics.add(new MutatorIntrinsic());
         intrinsics.add(new ExceptionHandlingIntrinsic());
         intrinsics.add(new FunctionIntrinsic(characteristics, exportDependencyListener.getResolvedMethods()));
@@ -356,9 +358,11 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         generators.add(new ReferenceQueueGenerator());
 
         stringPool = new SimpleStringPool();
+        boolean vmAssertions = Boolean.parseBoolean(System.getProperty("teavm.c.vmAssertions", "false"));
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
                 controller.getDependencyInfo(), stringPool, nameProvider, controller.getDiagnostics(), classes,
-                intrinsics, generators, asyncMethods::contains, buildTarget, incremental, longjmpUsed);
+                intrinsics, generators, asyncMethods::contains, buildTarget, incremental, longjmpUsed,
+                vmAssertions);
 
         BufferedCodeWriter runtimeWriter = new BufferedCodeWriter(false);
         BufferedCodeWriter runtimeHeaderWriter = new BufferedCodeWriter(false);
@@ -370,6 +374,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
         if (longjmpUsed) {
             runtimeHeaderWriter.println("#define TEAVM_USE_SETJMP 1");
+        }
+        if (vmAssertions) {
+            runtimeHeaderWriter.println("#define TEAVM_MEMORY_TRACE 1");
         }
         emitResource(runtimeHeaderWriter, "runtime.h");
 

@@ -17,6 +17,7 @@ package org.teavm.model.lowlevel;
 
 import com.carrotsearch.hppc.ObjectByteHashMap;
 import com.carrotsearch.hppc.ObjectByteMap;
+import org.teavm.interop.Address;
 import org.teavm.interop.Function;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
@@ -81,6 +82,10 @@ public class Characteristics {
             isFunction.put(className, result);
         }
         return result != 0;
+    }
+
+    public boolean isManaged(String className) {
+        return !isStructure(className) && !isFunction(className) && !className.equals(Address.class.getName());
     }
 
     public boolean isManaged(MethodReference methodReference) {

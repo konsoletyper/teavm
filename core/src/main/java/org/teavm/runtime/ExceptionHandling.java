@@ -132,7 +132,6 @@ public final class ExceptionHandling {
         return size + 1;
     }
 
-    @Unmanaged
     public static void fillStackTrace(StackTraceElement[] target) {
         Address stackFrame = ShadowStack.getStackTop();
         int index = 0;

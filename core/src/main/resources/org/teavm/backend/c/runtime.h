@@ -75,12 +75,49 @@ typedef struct TeaVM_StackFrame {
 } TeaVM_StackFrame;
 
 extern void* teavm_gc_heapAddress;
-extern char *teavm_beforeClasses;
+extern void* teavm_gc_gcStorageAddress;
+extern int32_t teavm_gc_gcStorageSize;
+extern void* teavm_gc_regionsAddress;
+extern int32_t teavm_gc_regionSize;
+extern int32_t teavm_gc_regionMaxCount;
+extern int64_t teavm_gc_availableBytes;
+extern void*** teavm_gc_staticRoots;
+extern char* teavm_beforeClasses;
+
+#ifdef TEAVM_MEMORY_TRACE
+    extern uint8_t* teavm_gc_heapMap;
+    extern uint8_t* teavm_gc_markMap;
+#endif
 
 #define TEAVM_PACK_CLASS(cls) ((int32_t) ((uintptr_t) ((char*) (cls) - teavm_beforeClasses) >> 3))
 #define TEAVM_UNPACK_CLASS(cls) ((TeaVM_Class*) (teavm_beforeClasses + ((cls) << 3)))
 #define TEAVM_CLASS_OF(obj) (TEAVM_UNPACK_CLASS(((TeaVM_Object*) (obj))->header))
 #define TEAVM_AS(ptr, type) ((type*) (ptr))
+
+#ifdef TEAVM_MEMORY_TRACE
+    static inline void teavm_gc_assertAddress(void* address) {
+        if ((unsigned int) (uintptr_t) address % sizeof(void*) != 0) {
+            abort();
+        }
+    }
+
+    static inline void* teavm_verify(void* address) {
+        if (address >= teavm_gc_heapAddress
+                && (char*) address < (char*) teavm_gc_heapAddress + teavm_gc_availableBytes) {
+            teavm_gc_assertAddress(address);
+            uint8_t* map = teavm_gc_heapMap + (((char*) address - (char*) teavm_gc_heapAddress) / sizeof(void*));
+            if (*map != 1) {
+                abort();
+            }
+        }
+
+        return address;
+    }
+
+    #define TEAVM_VERIFY(ptr) teavm_verify(ptr)
+#else
+    #define TEAVM_VERIFY(ptr) ptr
+#endif
 
 #define TEAVM_VTABLE(obj, type) (TEAVM_AS(TEAVM_CLASS_OF(obj), type))
 #define TEAVM_METHOD(obj, type, method) (TEAVM_VTABLE(obj, type)->method)
@@ -180,14 +217,6 @@ static inline void* teavm_checkcast(void* obj, int32_t (*cls)(TeaVM_Class*)) {
 }
 
 extern TeaVM_StackFrame* teavm_stackTop;
-
-extern void* teavm_gc_gcStorageAddress;
-extern int32_t teavm_gc_gcStorageSize;
-extern void* teavm_gc_regionsAddress;
-extern int32_t teavm_gc_regionSize;
-extern int32_t teavm_gc_regionMaxCount;
-extern int64_t teavm_gc_availableBytes;
-extern void*** teavm_gc_staticRoots;
 
 extern double teavm_rand();
 
@@ -435,3 +464,13 @@ inline static void* teavm_nullCheck(void* o) {
 #endif
 
 extern void* teavm_catchException();
+
+extern void teavm_gc_allocate(void* address, int32_t size);
+extern void teavm_gc_free(void* address, int32_t size);
+extern void teavm_gc_assertFree(void* address, int32_t size);
+extern void teavm_gc_initMark();
+extern void teavm_gc_mark(void* address);
+extern void teavm_gc_move(void* from, void* to, int32_t size);
+extern void teavm_gc_gcStarted();
+extern void teavm_gc_sweepCompleted();
+extern void teavm_gc_defragCompleted();

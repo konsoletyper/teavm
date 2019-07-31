@@ -108,6 +108,15 @@ public class CodeGenerator {
 
     private void generateLocals(MethodNode methodNode, int[] temporaryCount, IntContainer spilledVariables) {
         int start = methodNode.getReference().parameterCount() + 1;
+
+        for (int i = 0; i < start; ++i) {
+            if (spilledVariables.contains(i)) {
+                VariableNode variableNode = methodNode.getVariables().get(i);
+                localsWriter.print("volatile ").printType(variableNode.getType()).print(" teavm_spill_")
+                        .print(String.valueOf(i)).println(";");
+            }
+        }
+
         for (int i = start; i < methodNode.getVariables().size(); ++i) {
             VariableNode variableNode = methodNode.getVariables().get(i);
             if (variableNode.getType() == null) {
