@@ -65,6 +65,7 @@ import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ConstructMultiArrayInstruction;
 import org.teavm.model.instructions.InstructionVisitor;
+import org.teavm.model.instructions.IsInstanceInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
