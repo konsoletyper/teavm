@@ -195,10 +195,11 @@ public abstract class LowLevelNameProvider {
                     sb.append('_');
                     break;
                 default:
-                    if ('a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || '0' <= c && c <= '9' && i != 0)
+                    if ('a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || '0' <= c && c <= '9' && i != 0) {
                         sb.append(c);
-                    else
-                        sb.append(String.format("U%04X", (int)c));
+                    } else {
+                        sb.append(String.format("U%04X", (int) c));
+                    }
                     break;
             }
         }
