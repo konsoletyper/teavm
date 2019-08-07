@@ -296,15 +296,15 @@ void teavm_printString(char16_t* s) {
             wchar_t* buf = malloc(sizeof(wchar_t) * cap);
             wchar_t* out = buf;
             int32_t sz = 0;
-            wchar_t c;
-            do {
+            while (*s != '\0') {
                 s = teavm_utf16ToUtf32(s, out++);
                 if (++sz == cap) {
                     cap *= 2;
                     buf = realloc(buf, sizeof(wchar_t) * cap);
                     out = buf + sz;
                 }
-            } while (c != '\0');
+            }
+            *out = '\0';
             fprintf(stderr, "%ls", buf);
             free(buf);
         #endif
