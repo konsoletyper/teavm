@@ -15,7 +15,11 @@
  */
 package org.teavm.vm;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import java.util.ArrayList;
+import java.util.List;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -31,6 +35,25 @@ public class RttiTest {
         checkImplements(new E(), true, false, false);
         checkImplements(new F(), false, true, true);
         checkImplements(new G(), true, true, false);
+    }
+
+    @Test
+    public void objectIsNotSupertypeOfPrimitive() {
+        assertFalse(Object.class.isAssignableFrom(int.class));
+    }
+
+    @Test
+    public void instanceOfObjectArray() {
+        List<Object> list = new ArrayList<>();
+        list.add("123");
+        list.add(new Object[0]);
+        list.add(new String[0]);
+        list.add(new int[0]);
+        StringBuilder sb = new StringBuilder();
+        for (Object item : list) {
+            sb.append(item instanceof Object[] ? 't' : 'f');
+        }
+        assertEquals("fttf", sb.toString());
     }
 
     private void checkImplements(Object o, boolean i, boolean j, boolean k) {

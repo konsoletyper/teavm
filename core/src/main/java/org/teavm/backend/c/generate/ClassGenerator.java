@@ -663,7 +663,7 @@ public class ClassGenerator {
             itemTypeExpr = "NULL";
         } else {
             parent = "NULL";
-            tag = 0;
+            tag = Integer.MAX_VALUE;
             sizeExpr = "sizeof(" + CodeWriter.strictTypeAsString(type) + ")";
             flags |= RuntimeClass.PRIMITIVE;
             flags = ClassGeneratorUtil.applyPrimitiveFlags(flags, type);
