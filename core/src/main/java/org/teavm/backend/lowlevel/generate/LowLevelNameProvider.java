@@ -191,10 +191,14 @@ public abstract class LowLevelNameProvider {
                 case '>':
                 case '<':
                 case '$':
+                case '_':
                     sb.append('_');
                     break;
                 default:
-                    sb.append(c);
+                    if ('a' <= c && c <= 'z' || 'A' <= c && c <= 'Z' || '0' <= c && c <= '9' && i != 0)
+                        sb.append(c);
+                    else
+                        sb.append(String.format("U%04X", (int)c));
                     break;
             }
         }
