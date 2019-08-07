@@ -312,12 +312,12 @@ public class TLong extends TNumber implements TComparable<TLong> {
     }
 
     public static int bitCount(long i) {
-        i = ((i & 0xAAAAAAAAAAAAAAAAL) >> 1)  + (i & 0x5555555555555555L);
-        i = ((i & 0xCCCCCCCCCCCCCCCCL) >> 2)  + (i & 0x3333333333333333L);
-        i = ((i & 0x3030303030303030L) >> 4)  + (i & 0x0303030303030303L);
-        i = ((i & 0x0700070007000700L) >> 8)  + (i & 0x0007000700070007L);
-        i = ((i & 0x000F0000000F0000L) >> 16) + (i & 0x0000000F0000000FL);
-        i = ((i & 0x0000001F00000000L) >> 32) + (i & 0x000000000000001FL);
+        i = ((i & 0xAAAAAAAAAAAAAAAAL) >>> 1)  + (i & 0x5555555555555555L);
+        i = ((i & 0xCCCCCCCCCCCCCCCCL) >>> 2)  + (i & 0x3333333333333333L);
+        i = ((i & 0x7070707070707070L) >>> 4)  + (i & 0x0707070707070707L);
+        i = ((i & 0x0F000F000F000F00L) >>> 8)  + (i & 0x000F000F000F000FL);
+        i = ((i & 0x001F0000001F0000L) >>> 16) + (i & 0x0000001F0000001FL);
+        i = ((i & 0x0000003F00000000L) >>> 32) + (i & 0x000000000000003FL);
         return (int) i;
     }
 

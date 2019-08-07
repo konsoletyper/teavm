@@ -52,4 +52,17 @@ public class LongTest {
         assertEquals(0xFFFFFFFFFFFFFFFFL, Long.reverse(0xFFFFFFFFFFFFFFFFL));
         assertEquals(0xF63BA00000000000L, Long.reverse(0x5DC6F));
     }
+
+    @Test
+    public void bitsCounted() {
+        assertEquals(39, Long.bitCount(2587208649207147453L));
+        assertEquals(0, Long.bitCount(0));
+        assertEquals(64, Long.bitCount(-1));
+        assertEquals(6, Long.bitCount(12345));
+        assertEquals(59, Long.bitCount(-12345));
+
+        for (int i = 0; i < 64; ++i) {
+            assertEquals(1, Long.bitCount(1L << i));
+        }
+    }
 }
