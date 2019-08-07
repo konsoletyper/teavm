@@ -33,6 +33,9 @@ function $rt_isAssignable(from, to) {
     if (from === to) {
         return true;
     }
+    if (to.$meta.item !== null) {
+        return from.$meta.item !== null && $rt_isAssignable(from.$meta.item, to.$meta.item);
+    }
     var supertypes = from.$meta.supertypes;
     for (var i = 0; i < supertypes.length; i = (i + 1) | 0) {
         if ($rt_isAssignable(supertypes[i], to)) {
