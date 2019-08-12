@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -37,43 +38,51 @@ public class DoubleTest {
         assertEquals(23, Double.parseDouble("23."), 1E-12);
         assertEquals(0.1, Double.parseDouble("0.1"), 0.001);
         assertEquals(0.1, Double.parseDouble(".1"), 0.001);
-    }
-
-    @Test
-    public void negativeParsed() {
+        assertEquals(0.1, Double.parseDouble(" .1"), 0.001);
+        assertEquals(0.1, Double.parseDouble(".1 "), 0.001);
         assertEquals(-23, Double.parseDouble("-23"), 1E-12);
-    }
-
-    @Test
-    public void zeroParsed() {
         assertEquals(0, Double.parseDouble("0.0"), 1E-12);
+        assertEquals(0, Double.parseDouble("0"), 1E-12);
+        assertEquals(0, Double.parseDouble("00"), 1E-12);
+        assertEquals(0, Double.parseDouble("0."), 1E-12);
+        assertEquals(0, Double.parseDouble(".0"), 1E-12);
         assertEquals(0, Double.parseDouble("23E-8000"), 1E-12);
         assertEquals(0, Double.parseDouble("00000"), 1E-12);
         assertEquals(0, Double.parseDouble("00000.0000"), 1E-12);
     }
 
     @Test
+    public void parsedWithError() {
+        checkIllegalFormat("");
+        checkIllegalFormat("  ");
+        checkIllegalFormat("a");
+        checkIllegalFormat(" a ");
+        checkIllegalFormat("-");
+        checkIllegalFormat("-.");
+        checkIllegalFormat(".");
+        checkIllegalFormat("1e-");
+        checkIllegalFormat("1e");
+    }
+
+    private void checkIllegalFormat(String string) {
+        try {
+            Double.parseDouble(string);
+            fail("Exception expected parsing string: " + string);
+        } catch (NumberFormatException e) {
+            // It's expected
+        }
+    }
+
+    @Test
     public void longBitsExtracted() {
         assertEquals(0x41E23456789ABCDEL, Double.doubleToLongBits(0x1.23456789ABCDEP+31));
-    }
-
-    @Test
-    public void longBitsExtracted2() {
         assertEquals(0x3FE1C28F5C28F5C3L >>> 3, Double.doubleToLongBits(0.555) >>> 3);
-    }
-
-    @Test
-    public void subNormalLongBitsExtracted() {
         assertEquals(0x00000056789ABCDEL, Double.doubleToLongBits(0x0.00056789ABCDEP-1022));
     }
 
     @Test
     public void longBitsPacked() {
         assertEquals(0x1.23456789ABCDEP+31, Double.longBitsToDouble(0x41E23456789ABCDEL), 0x1.0P-19);
-    }
-
-    @Test
-    public void subNormalLongBitsPacked() {
         assertEquals(0x0.00056789ABCDEP-1022, Double.longBitsToDouble(0x00000056789ABCDEL), 0x1.0P-19);
     }
 
