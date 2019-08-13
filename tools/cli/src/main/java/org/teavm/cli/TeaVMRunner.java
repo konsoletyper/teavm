@@ -322,6 +322,9 @@ public final class TeaVMRunner {
         if (commandLine.hasOption("no-longjmp")) {
             tool.setLongjmpSupported(false);
         }
+        if (commandLine.hasOption("heap-dump")) {
+            tool.setHeapDump(true);
+        }
     }
 
     private void parseHeap() {

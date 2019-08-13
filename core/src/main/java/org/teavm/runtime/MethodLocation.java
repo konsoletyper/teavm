@@ -15,12 +15,12 @@
  */
 package org.teavm.runtime;
 
-import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
-import org.teavm.interop.Unmanaged;
+import org.teavm.interop.c.Name;
+import org.teavm.interop.c.Native;
 
-@Unmanaged
-@StaticInit
+@Native
+@Name("TeaVM_MethodLocation")
 public class MethodLocation extends Structure {
     public StringPtr fileName;
     public StringPtr className;

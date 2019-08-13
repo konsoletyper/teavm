@@ -76,5 +76,7 @@ public interface BuildStrategy {
 
     void setLongjmpSupported(boolean value);
 
+    void setHeapDump(boolean heapDump);
+
     BuildResult build() throws BuildException;
 }

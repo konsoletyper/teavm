@@ -46,12 +46,13 @@ public class GenerationContext {
     private boolean incremental;
     private boolean longjmp;
     private boolean vmAssertions;
+    private boolean heapDump;
 
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
             DependencyInfo dependencies, StringPool stringPool, NameProvider names, Diagnostics diagnostics,
             ClassReaderSource classSource, List<Intrinsic> intrinsics, List<Generator> generators,
             Predicate<MethodReference> asyncMethods, BuildTarget buildTarget, boolean incremental,
-            boolean longjmp, boolean vmAssertions) {
+            boolean longjmp, boolean vmAssertions, boolean heapDump) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
         this.dependencies = dependencies;
@@ -66,6 +67,7 @@ public class GenerationContext {
         this.incremental = incremental;
         this.longjmp = longjmp;
         this.vmAssertions = vmAssertions;
+        this.heapDump = heapDump;
     }
 
     public void addIntrinsic(Intrinsic intrinsic) {
@@ -132,6 +134,10 @@ public class GenerationContext {
 
     public boolean isLongjmp() {
         return longjmp;
+    }
+
+    public boolean isHeapDump() {
+        return heapDump;
     }
 
     public boolean isVmAssertions() {

@@ -27,6 +27,53 @@
 
 #endif
 
+#ifndef TEAVM_MEMORY_TRACE
+    #define TEAVM_MEMORY_TRACE 0
+#endif
+
+#if TEAVM_MEMORY_TRACE
+    #ifndef TEAVM_HEAP_DUMP
+        #define TEAVM_HEAP_DUMP 1
+    #endif
+#endif
+
+#ifndef TEAVM_HEAP_DUMP
+    #define TEAVM_HEAP_DUMP 0
+#endif
+
+#define TEAVM_FIELD_TYPE_OBJECT 0
+#define TEAVM_FIELD_TYPE_ARRAY 1
+#define TEAVM_FIELD_TYPE_BOOLEAN 2
+#define TEAVM_FIELD_TYPE_BYTE 3
+#define TEAVM_FIELD_TYPE_CHAR 4
+#define TEAVM_FIELD_TYPE_SHORT 5
+#define TEAVM_FIELD_TYPE_INT 6
+#define TEAVM_FIELD_TYPE_LONG 7
+#define TEAVM_FIELD_TYPE_FLOAT 8
+#define TEAVM_FIELD_TYPE_DOUBLE 9
+
+typedef struct {
+    uint16_t offset;
+    uint8_t type;
+    char16_t* name;
+} TeaVM_FieldDescriptor;
+
+typedef struct {
+    uint32_t count;
+    TeaVM_FieldDescriptor data[65536];
+} TeaVM_FieldDescriptors;
+
+typedef struct {
+    unsigned char* offset;
+    uint8_t type;
+    char16_t* name;
+} TeaVM_StaticFieldDescriptor;
+
+typedef struct {
+    uint32_t count;
+    TeaVM_StaticFieldDescriptor data[65536];
+} TeaVM_StaticFieldDescriptors;
+
 typedef struct TeaVM_Object {
     int32_t header;
     int32_t hash;
@@ -54,6 +101,10 @@ typedef struct TeaVM_Class {
     void* enumValues;
     void* layout;
     TeaVM_Object* simpleName;
+    #if TEAVM_HEAP_DUMP
+        TeaVM_FieldDescriptors* fieldDescriptors;
+        TeaVM_StaticFieldDescriptors* staticFieldDescriptors;
+    #endif
 } TeaVM_Class;
 
 typedef struct TeaVM_String {
@@ -62,10 +113,52 @@ typedef struct TeaVM_String {
     int32_t hashCode;
 } TeaVM_String;
 
+#define TEAVM_HASHTABLE_ENTRIES 512
+
+typedef struct TeaVM_HashtableEntry {
+    TeaVM_String* data;
+    int32_t hash;
+    struct TeaVM_HashtableEntry* next;
+} TeaVM_HashtableEntry;
+
+typedef struct TeaVM_HashtableEntrySet {
+    TeaVM_HashtableEntry data[TEAVM_HASHTABLE_ENTRIES];
+    int32_t size;
+    struct TeaVM_HashtableEntrySet* next;
+} TeaVM_HashtableEntrySet;
+
+extern TeaVM_HashtableEntrySet* teavm_stringHashtableData;
+
+typedef struct {
+    TeaVM_String* value;
+} TeaVM_StringPtr;
+
+typedef struct TeaVM_MethodLocation {
+    TeaVM_String** fileName;
+    TeaVM_String** className;
+    TeaVM_String** methodName;
+} TeaVM_MethodLocation;
+
+typedef struct TeaVM_CallSiteLocation {
+    TeaVM_MethodLocation* method;
+    int32_t lineNumber;
+} TeaVM_CallSiteLocation;
+
+typedef struct TeaVM_ExceptionHandler {
+    int32_t id;
+    TeaVM_Class* exceptionClass;
+    struct TeaVM_ExceptionHandler* next;
+} TeaVM_ExceptionHandler;
+
+typedef struct TeaVM_CallSite {
+    TeaVM_ExceptionHandler* firstHandler;
+    TeaVM_CallSiteLocation* location;
+} TeaVM_CallSite;
+
 typedef struct TeaVM_StackFrame {
     struct TeaVM_StackFrame* next;
     #ifdef TEAVM_INCREMENTAL
-        void* callSites;
+        TeaVM_CallSite* callSites;
     #endif
     #ifdef TEAVM_USE_SETJMP
         jmp_buf* jmpTarget;
@@ -73,6 +166,13 @@ typedef struct TeaVM_StackFrame {
     int32_t size;
     int32_t callSiteId;
 } TeaVM_StackFrame;
+
+#ifndef TEAVM_INCREMENTAL
+    extern TeaVM_CallSite teavm_callSites[];
+    #define TEAVM_FIND_CALLSITE(id, frame) (teavm_callSites + id)
+#else
+    #define TEAVM_FIND_CALLSITE(id, frame) (((TeaVM_StackFrame*) (frame))->callSites + id)
+#endif
 
 extern void* teavm_gc_heapAddress;
 extern void* teavm_gc_gcStorageAddress;
@@ -84,7 +184,7 @@ extern int64_t teavm_gc_availableBytes;
 extern void*** teavm_gc_staticRoots;
 extern char* teavm_beforeClasses;
 
-#ifdef TEAVM_MEMORY_TRACE
+#if TEAVM_MEMORY_TRACE
     extern uint8_t* teavm_gc_heapMap;
     extern uint8_t* teavm_gc_markMap;
 #endif
@@ -94,7 +194,7 @@ extern char* teavm_beforeClasses;
 #define TEAVM_CLASS_OF(obj) (TEAVM_UNPACK_CLASS(((TeaVM_Object*) (obj))->header))
 #define TEAVM_AS(ptr, type) ((type*) (ptr))
 
-#ifdef TEAVM_MEMORY_TRACE
+#if TEAVM_MEMORY_TRACE
     static inline void teavm_gc_assertAddress(void* address) {
         if ((unsigned int) (uintptr_t) address % sizeof(void*) != 0) {
             abort();
@@ -475,3 +575,13 @@ extern void teavm_gc_gcStarted();
 extern void teavm_gc_sweepCompleted();
 extern void teavm_gc_defragCompleted();
 extern void teavm_gc_setDumpDirectory(const wchar_t* path);
+extern void teavm_gc_fixHeap();
+extern void teavm_gc_writeHeapDump();
+
+extern TeaVM_Class* teavm_classReferences[];
+extern TeaVM_Class* teavm_classClass;
+extern TeaVM_Class* teavm_objectClass;
+extern TeaVM_Class* teavm_stringClass;
+extern TeaVM_Class* teavm_charArrayClass;
+extern int32_t teavm_classReferencesCount;
+extern void teavm_initClasses();

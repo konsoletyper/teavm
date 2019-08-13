@@ -181,6 +181,11 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
+    public void setHeapDump(boolean heapDump) {
+        request.heapDump = heapDump;
+    }
+
+    @Override
     public BuildResult build() throws BuildException {
         RemoteBuildResponse response;
         try {

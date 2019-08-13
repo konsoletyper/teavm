@@ -661,6 +661,8 @@ public class ClassGenerator {
             tag = 0;
             sizeExpr = "0";
             itemTypeExpr = "NULL";
+            flags |= RuntimeClass.PRIMITIVE;
+            flags = ClassGeneratorUtil.applyPrimitiveFlags(flags, type);
         } else {
             parent = "NULL";
             tag = Integer.MAX_VALUE;
@@ -697,7 +699,167 @@ public class ClassGenerator {
         codeWriter.println(".superinterfaces = " + superinterfaces + ",");
         codeWriter.println(".layout = " + layout + ",");
         codeWriter.println(".enumValues = " + enumConstants + ",");
-        codeWriter.println(".init = " + initFunction);
+        codeWriter.print(".init = " + initFunction);
+
+        if (context.isHeapDump() && type instanceof ValueType.Object) {
+            ClassReader cls = context.getClassSource().get(((ValueType.Object) type).getClassName());
+            generateHeapDumpMetadata(cls);
+        }
+        codeWriter.println();
+    }
+
+    private void generateHeapDumpMetadata(ClassReader cls) {
+        List<HeapDumpField> fields = getHeapDumpFields(cls);
+        List<HeapDumpField> staticFields = getHeapDumpStaticFields(cls);
+        if (staticFields.isEmpty() && fields.isEmpty()) {
+            return;
+        }
+        codeWriter.println().println("#if TEAVM_HEAP_DUMP").indent();
+        if (!fields.isEmpty()) {
+            codeWriter.println(",");
+            codeWriter.println(".fieldDescriptors = (TeaVM_FieldDescriptors*) "
+                    + "&(struct { uint32_t count; TeaVM_FieldDescriptor data["
+                    + fields.size() + "]; }) {").indent();
+            generateHeapDumpFields(fields);
+            codeWriter.outdent().print("}");
+        }
+        if (!staticFields.isEmpty()) {
+            codeWriter.println(",");
+            codeWriter.println(".staticFieldDescriptors = (TeaVM_StaticFieldDescriptors*) "
+                    + "&(struct { uint32_t count; TeaVM_StaticFieldDescriptor data["
+                    + staticFields.size() + "]; }) {").indent();
+            generateHeapDumpFields(staticFields);
+            codeWriter.outdent().print("}");
+        }
+        codeWriter.println().outdent().println("#endif");
+    }
+
+    private void generateHeapDumpFields(List<HeapDumpField> fields) {
+        codeWriter.println(".count = " + fields.size() + ",");
+        codeWriter.println(".data = {").indent();
+        for (int i = 0; i < fields.size(); ++i) {
+            if (i > 0) {
+                codeWriter.println(",");
+            }
+            HeapDumpField field = fields.get(i);
+            codeWriter.print("{ .name = u");
+            StringPoolGenerator.generateSimpleStringLiteral(codeWriter, field.name);
+            codeWriter.print(", .offset = " + field.offset + ", .type = " + field.type + " }");
+        }
+        codeWriter.println().outdent().println("}");
+    }
+
+    private static final String TYPE_OBJECT = "TEAVM_FIELD_TYPE_OBJECT";
+
+    private List<HeapDumpField> getHeapDumpFields(ClassReader cls) {
+        List<HeapDumpField> fields = new ArrayList<>();
+        switch (cls.getName()) {
+            case "java.lang.Object":
+            case "java.lang.ref.ReferenceQueue":
+            case "java.lang.ref.WeakReference":
+            case "java.lang.ref.SoftReference":
+                break;
+            case "java.lang.Class":
+                fields.add(new HeapDumpField("name", "offsetof(TeaVM_Class, name)", TYPE_OBJECT));
+                fields.add(new HeapDumpField("simpleName", "offsetof(TeaVM_Class, simpleName)", TYPE_OBJECT));
+                break;
+            case "java.lang.ref.Reference":
+                fields.add(new HeapDumpField("referent", "offsetof(TeaVM_Reference, object)", TYPE_OBJECT));
+                fields.add(new HeapDumpField("queue", "offsetof(TeaVM_Reference, queue)", TYPE_OBJECT));
+                break;
+            default: {
+                for (FieldReader field : cls.getFields()) {
+                    if (field.hasModifier(ElementModifier.STATIC) || !isManaged(field)) {
+                        continue;
+                    }
+                    String className = context.getNames().forClass(cls.getName());
+                    String offset = "offsetof(" + className + ", "
+                            + context.getNames().forMemberField(field.getReference()) + ")";
+                    fields.add(new HeapDumpField(field.getName(), offset, typeForHeapDump(field.getType())));
+                }
+                break;
+            }
+        }
+        return fields;
+    }
+
+    private List<HeapDumpField> getHeapDumpStaticFields(ClassReader cls) {
+        List<HeapDumpField> fields = new ArrayList<>();
+        switch (cls.getName()) {
+            case "java.lang.Object":
+            case "java.lang.Class":
+            case "java.lang.ref.ReferenceQueue":
+            case "java.lang.ref.Reference":
+            case "java.lang.ref.WeakReference":
+            case "java.lang.ref.SoftReference":
+                break;
+            default: {
+                for (FieldReader field : cls.getFields()) {
+                    if (!field.hasModifier(ElementModifier.STATIC) || !isManaged(field)) {
+                        continue;
+                    }
+                    String offset = "(unsigned char*) &" + context.getNames().forStaticField(field.getReference());
+                    fields.add(new HeapDumpField(field.getName(), offset, typeForHeapDump(field.getType())));
+                }
+                break;
+            }
+        }
+        return fields;
+    }
+
+    private boolean isManaged(FieldReader field) {
+        ValueType type = field.getType();
+        return !(type instanceof ValueType.Object)
+                || context.getCharacteristics().isManaged(((ValueType.Object) type).getClassName());
+    }
+
+    static String typeForHeapDump(ValueType type) {
+        String result = "127";
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                    result = "TEAVM_FIELD_TYPE_BOOLEAN";
+                    break;
+                case BYTE:
+                    result = "TEAVM_FIELD_TYPE_BYTE";
+                    break;
+                case SHORT:
+                    result = "TEAVM_FIELD_TYPE_SHORT";
+                    break;
+                case CHARACTER:
+                    result = "TEAVM_FIELD_TYPE_CHAR";
+                    break;
+                case INTEGER:
+                    result = "TEAVM_FIELD_TYPE_INT";
+                    break;
+                case FLOAT:
+                    result = "TEAVM_FIELD_TYPE_FLOAT";
+                    break;
+                case LONG:
+                    result = "TEAVM_FIELD_TYPE_LONG";
+                    break;
+                case DOUBLE:
+                    result = "TEAVM_FIELD_TYPE_DOUBLE";
+                    break;
+            }
+        } else if (type instanceof ValueType.Array) {
+            result = "TEAVM_FIELD_TYPE_ARRAY";
+        } else {
+            result = "TEAVM_FIELD_TYPE_OBJECT";
+        }
+        return result;
+    }
+
+    static class HeapDumpField {
+        String name;
+        String offset;
+        String type;
+
+        HeapDumpField(String name, String offset, String type) {
+            this.name = name;
+            this.offset = offset;
+            this.type = type;
+        }
     }
 
     private void generateVirtualTableStructure(String className) {

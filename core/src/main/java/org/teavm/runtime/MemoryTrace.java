@@ -40,4 +40,6 @@ public class MemoryTrace {
     public static native void sweepCompleted();
 
     public static native void defragCompleted();
+
+    public static native void writeHeapDump();
 }

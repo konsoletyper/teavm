@@ -104,6 +104,7 @@ public class TeaVMTool {
     private int minHeapSize = 32 * (1 << 20);
     private ReferenceCache referenceCache;
     private boolean longjmpSupported = true;
+    private boolean heapDump;
 
     public File getTargetDirectory() {
         return targetDirectory;
@@ -253,6 +254,10 @@ public class TeaVMTool {
         this.longjmpSupported = longjmpSupported;
     }
 
+    public void setHeapDump(boolean heapDump) {
+        this.heapDump = heapDump;
+    }
+
     public void setProgressListener(TeaVMProgressListener progressListener) {
         this.progressListener = progressListener;
     }
@@ -328,6 +333,7 @@ public class TeaVMTool {
         cTarget.setMinHeapSize(minHeapSize);
         cTarget.setLineNumbersGenerated(debugInformationGenerated);
         cTarget.setLongjmpUsed(longjmpSupported);
+        cTarget.setHeapDump(heapDump);
         return cTarget;
     }
 

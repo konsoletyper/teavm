@@ -149,6 +149,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.longjmpSupported", defaultValue = "true")
     private boolean longjmpSupported;
 
+    @Parameter(property = "teavm.heapDump", defaultValue = "false")
+    private boolean heapDump;
+
     private void setupBuilder(BuildStrategy builder) throws MojoExecutionException {
         builder.setLog(new MavenTeaVMToolLog(getLog()));
         try {
@@ -281,6 +284,7 @@ public class TeaVMCompileMojo extends AbstractMojo {
             builder.setTargetType(targetType);
             builder.setWasmVersion(wasmVersion);
             builder.setLongjmpSupported(longjmpSupported);
+            builder.setHeapDump(heapDump);
             BuildResult result;
             result = builder.build();
             TeaVMProblemRenderer.describeProblems(result.getCallGraph(), result.getProblems(), toolLog);

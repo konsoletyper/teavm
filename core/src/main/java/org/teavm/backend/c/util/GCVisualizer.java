@@ -37,7 +37,7 @@ public final class GCVisualizer {
 
     public static void main(String[] args) throws IOException {
         if (args.length != 2) {
-            System.err.println("Two arguments (input, ouput) expected");
+            System.err.println("Two arguments (input, output) expected");
             System.exit(1);
         }
 

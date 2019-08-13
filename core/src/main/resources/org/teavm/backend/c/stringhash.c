@@ -5,22 +5,8 @@
 #include <uchar.h>
 #include <wchar.h>
 
-#define TEAVM_HASHTABLE_ENTRIES 512
-
-typedef struct TeaVM_HashtableEntry {
-    TeaVM_String* data;
-    int32_t hash;
-    struct TeaVM_HashtableEntry* next;
-} TeaVM_HashtableEntry;
-
-typedef struct TeaVM_HashtableEntrySet {
-    TeaVM_HashtableEntry data[TEAVM_HASHTABLE_ENTRIES];
-    int32_t size;
-    struct TeaVM_HashtableEntrySet* next;
-} TeaVM_HashtableEntrySet;
-
 static TeaVM_HashtableEntry** teavm_stringHashtable = NULL;
-static TeaVM_HashtableEntrySet* teavm_stringHashtableData = NULL;
+TeaVM_HashtableEntrySet* teavm_stringHashtableData = NULL;
 static int32_t teavm_stringHashtableSize = 0;
 static int32_t teavm_stringHashtableFill = 0;
 static int32_t teavm_stringHashtableThreshold = 0;
@@ -80,6 +66,9 @@ static void teavm_rehashStrings() {
 }
 
 TeaVM_String* teavm_registerString(TeaVM_String* str) {
+    str->parent.header = TEAVM_PACK_CLASS(teavm_stringClass);
+    str->characters->parent.header = TEAVM_PACK_CLASS(teavm_charArrayClass);
+
     if (teavm_stringHashtable == NULL) {
         teavm_stringHashtableSize = 256;
         teavm_updateStringHashtableThreshold();

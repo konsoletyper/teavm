@@ -39,7 +39,6 @@ import org.teavm.backend.c.generate.BufferedCodeWriter;
 import org.teavm.backend.c.generate.CallSiteGenerator;
 import org.teavm.backend.c.generate.ClassGenerator;
 import org.teavm.backend.c.generate.CodeGenerationVisitor;
-import org.teavm.backend.c.generate.CodeGeneratorUtil;
 import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generate.GenerationContext;
 import org.teavm.backend.c.generate.IncludeManager;
@@ -159,6 +158,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private boolean lineNumbersGenerated;
     private SimpleStringPool stringPool;
     private boolean longjmpUsed = true;
+    private boolean heapDump;
     private List<CallSiteDescriptor> callSites = new ArrayList<>();
 
     public void setMinHeapSize(int minHeapSize) {
@@ -175,6 +175,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     public void setLongjmpUsed(boolean longjmpUsed) {
         this.longjmpUsed = longjmpUsed;
+    }
+
+    public void setHeapDump(boolean heapDump) {
+        this.heapDump = heapDump;
     }
 
     public void setAstCache(MethodNodeCache astCache) {
@@ -239,6 +243,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 RuntimeClass.class, Address.class, int.class, RuntimeArray.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(GC.class, "fixHeap", void.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwException",
                 Throwable.class, void.class)).use();
@@ -362,7 +367,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
                 controller.getDependencyInfo(), stringPool, nameProvider, controller.getDiagnostics(), classes,
                 intrinsics, generators, asyncMethods::contains, buildTarget, incremental, longjmpUsed,
-                vmAssertions);
+                vmAssertions, vmAssertions || heapDump);
 
         BufferedCodeWriter runtimeWriter = new BufferedCodeWriter(false);
         BufferedCodeWriter runtimeHeaderWriter = new BufferedCodeWriter(false);
@@ -377,6 +382,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
         if (vmAssertions) {
             runtimeHeaderWriter.println("#define TEAVM_MEMORY_TRACE 1");
+        }
+        if (heapDump) {
+            runtimeHeaderWriter.println("#define TEAVM_HEAP_DUMP 1");
         }
         emitResource(runtimeHeaderWriter, "runtime.h");
 
@@ -404,6 +412,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         copyResource("references.c", buildTarget);
         copyResource("date.c", buildTarget);
         copyResource("file.c", buildTarget);
+        copyResource("heap.c", buildTarget);
         generateCallSites(buildTarget, context, classes.getClassNames());
         generateStrings(buildTarget, context);
 
@@ -508,44 +517,23 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private void generateCallSites(BuildTarget buildTarget, GenerationContext context,
             Collection<? extends String> classNames) throws IOException {
         BufferedCodeWriter writer = new BufferedCodeWriter(false);
-        BufferedCodeWriter headerWriter = new BufferedCodeWriter(false);
 
         IncludeManager includes = new SimpleIncludeManager(writer);
         includes.init("callsites.c");
-        includes.includePath("callsites.h");
 
-        headerWriter.println("#pragma once");
-        IncludeManager headerIncludes = new SimpleIncludeManager(headerWriter);
-        headerIncludes.init("callsites.h");
-        headerIncludes.includePath("runtime.h");
-        headerIncludes.includeClass(CallSiteGenerator.CALL_SITE);
-
-        if (incremental) {
-            generateIncrementalCallSites(context, headerWriter);
-        } else {
-            generateFastCallSites(context, writer, includes, headerWriter, classNames);
+        if (!incremental) {
+            generateFastCallSites(context, writer, includes, classNames);
         }
 
         OutputFileUtil.write(writer, "callsites.c", buildTarget);
-        OutputFileUtil.write(headerWriter, "callsites.h", buildTarget);
     }
 
     private void generateFastCallSites(GenerationContext context, CodeWriter writer, IncludeManager includes,
-            CodeWriter headerWriter, Collection<? extends String> classNames) {
-        String callSiteName = context.getNames().forClass(CallSiteGenerator.CALL_SITE);
-        headerWriter.println("extern " + callSiteName + " teavm_callSites[];");
-        headerWriter.println("#define TEAVM_FIND_CALLSITE(id, frame) (teavm_callSites + id)");
-
+            Collection<? extends String> classNames) {
         List<? extends CallSiteDescriptor> callSites = context.isLongjmp()
                 ? this.callSites
                 : CallSiteDescriptor.extract(context.getClassSource(), classNames);
         new CallSiteGenerator(context, writer, includes, "teavm_callSites").generate(callSites);
-    }
-
-    private void generateIncrementalCallSites(GenerationContext context, CodeWriter headerWriter) {
-        String callSiteName = context.getNames().forClass(CallSiteGenerator.CALL_SITE);
-        headerWriter.println("#define TEAVM_FIND_CALLSITE(id, frame) ((" + callSiteName
-                + "*) ((TeaVM_StackFrame*) (frame))->callSites + id)");
     }
 
     private void generateStrings(BuildTarget buildTarget, GenerationContext context) throws IOException {
@@ -709,6 +697,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         files.add("references.c");
         files.add("date.c");
         files.add("file.c");
+        files.add("heap.c");
 
         for (String className : classes.getClassNames()) {
             files.add(ClassGenerator.fileName(className) + ".c");
@@ -724,7 +713,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateArrayOfClassReferences(GenerationContext context, CodeWriter writer, IncludeManager includes,
             List<? extends ValueType> types) {
-        writer.print("static TeaVM_Class* teavm_classReferences[" + types.size() + "] = {").indent();
+        writer.print("TeaVM_Class* teavm_classReferences[" + types.size() + "] = {").indent();
         boolean first = true;
         for (ValueType type : types) {
             if (!first) {
@@ -740,6 +729,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             writer.println();
         }
         writer.outdent().println("};");
+
+        writer.println("int32_t teavm_classReferencesCount = " + types.size() + ";");
     }
 
     private void generateMain(GenerationContext context, CodeWriter writer, IncludeManager includes,
@@ -753,7 +744,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
         writer.println("teavm_beforeInit();");
         writer.println("teavm_initHeap(" + minHeapSize + ");");
-        generateVirtualTableHeaders(context, writer, types);
+        generateVirtualTableHeaders(context, writer);
         writer.println("teavm_initStringPool();");
         for (ValueType type : types) {
             includes.includeType(type);
@@ -798,23 +789,16 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
     }
 
-    private void generateVirtualTableHeaders(GenerationContext context, CodeWriter writer,
-            List<? extends ValueType> types) {
-        writer.println("teavm_beforeClasses = (char*) teavm_classReferences[0];");
-        writer.println("for (int i = 1; i < " + types.size() + "; ++i) {").indent();
-        writer.println("char* c = (char*) teavm_classReferences[i];");
-        writer.println("if (c < teavm_beforeClasses) teavm_beforeClasses = c;");
-        writer.outdent().println("}");
-        writer.println("teavm_beforeClasses -= 4096;");
-
-        String classClassName = context.getNames().forClassInstance(ValueType.object("java.lang.Class"));
-        writer.print("int32_t classHeader = TEAVM_PACK_CLASS(&" + classClassName + ") | ");
-        CodeGeneratorUtil.writeIntValue(writer, RuntimeObject.GC_MARKED);
-        writer.println(";");
-
-        writer.println("for (int i = 0; i < " + types.size() + "; ++i) {").indent();
-        writer.println("teavm_classReferences[i]->parent.header = classHeader;");
-        writer.outdent().println("}");
+    private void generateVirtualTableHeaders(GenerationContext context, CodeWriter writer) {
+        writer.println("teavm_classClass = (TeaVM_Class*) &" + context.getNames().forClassInstance(
+                ValueType.object("java.lang.Class")) + ";");
+        writer.println("teavm_objectClass = (TeaVM_Class*) &" + context.getNames().forClassInstance(
+                ValueType.object("java.lang.Object")) + ";");
+        writer.println("teavm_stringClass = (TeaVM_Class*) &" + context.getNames().forClassInstance(
+                ValueType.object("java.lang.String")) + ";");
+        writer.println("teavm_charArrayClass = (TeaVM_Class*) &" + context.getNames().forClassInstance(
+                ValueType.arrayOf(ValueType.CHARACTER)) + ";");
+        writer.println("teavm_initClasses();");
     }
 
     private void generateFiberStart(GenerationContext context, CodeWriter writer, IncludeManager includes) {

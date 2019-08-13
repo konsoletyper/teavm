@@ -13,14 +13,17 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.runtime;
+package org.teavm.backend.c.util.json;
 
-import org.teavm.interop.Structure;
-import org.teavm.interop.c.Name;
-import org.teavm.interop.c.Native;
+public class JsonObjectVisitor extends JsonVisitor {
+    private JsonPropertyVisitor propertyVisitor;
 
-@Native
-@Name("TeaVM_StringPtr")
-public class StringPtr extends Structure {
-    public String value;
+    public JsonObjectVisitor(JsonPropertyVisitor propertyVisitor) {
+        this.propertyVisitor = propertyVisitor;
+    }
+
+    @Override
+    public JsonVisitor object(JsonErrorReporter reporter) {
+        return propertyVisitor;
+    }
 }

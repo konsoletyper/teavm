@@ -333,6 +333,7 @@ public class IncrementalCBuilder {
         cTarget.setMinHeapSize(minHeapSize * 1024 * 1024);
         cTarget.setLineNumbersGenerated(lineNumbersGenerated);
         cTarget.setLongjmpUsed(longjmpSupported);
+        cTarget.setHeapDump(true);
         vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
         vm.setCacheStatus(classSource);
         vm.addVirtualMethods(m -> true);

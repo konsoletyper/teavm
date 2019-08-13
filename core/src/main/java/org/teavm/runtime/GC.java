@@ -16,6 +16,7 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Address;
+import org.teavm.interop.Export;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Structure;
@@ -124,6 +125,14 @@ public final class GC {
         updateFreeMemory();
         currentChunk = currentChunkPointer.value;
         currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
+    }
+
+    @Export(name = "teavm_gc_fixHeap")
+    public static void fixHeap() {
+        if (freeChunks > 0) {
+            currentChunk.classReference = 0;
+            currentChunk.size = (int) (currentChunkLimit.toLong() - currentChunk.toAddress().toLong());
+        }
     }
 
     private static void mark() {
