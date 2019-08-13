@@ -112,7 +112,7 @@ public class CoroutineTransformation {
         parameterCount = methodReference.parameterCount();
         returnType = methodReference.getReturnType();
         variableTypes.inferTypes(program, methodReference);
-        livenessAnalysis.analyze(program);
+        livenessAnalysis.analyze(program, methodReference.getDescriptor());
         splitter = new BasicBlockSplitter(program);
         int basicBlockCount = program.basicBlockCount();
         createSplitPrologue();

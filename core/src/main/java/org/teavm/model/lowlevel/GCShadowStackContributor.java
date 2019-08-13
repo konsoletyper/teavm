@@ -134,7 +134,7 @@ public class GCShadowStackContributor {
         List<Map<Instruction, BitSet>> liveInInformation = new ArrayList<>();
 
         LivenessAnalyzer livenessAnalyzer = new LivenessAnalyzer();
-        livenessAnalyzer.analyze(program);
+        livenessAnalyzer.analyze(program, method.getDescriptor());
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         UsageExtractor useExtractor = new UsageExtractor();
 

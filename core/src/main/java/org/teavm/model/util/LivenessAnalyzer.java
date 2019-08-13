@@ -18,6 +18,7 @@ package org.teavm.model.util;
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.IntStack;
+import java.util.Arrays;
 import java.util.BitSet;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
@@ -25,6 +26,7 @@ import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;
@@ -45,7 +47,11 @@ public class LivenessAnalyzer {
         return (BitSet) liveOutVars[block].clone();
     }
 
-    public void analyze(Program program) {
+    public void analyze(Program program, MethodDescriptor descriptor) {
+        analyze(program, descriptor.parameterCount() + 1);
+    }
+
+    public void analyze(Program program, int parameterCount) {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         DominatorTree dominatorTree = GraphUtils.buildDominatorTree(cfg);
         liveVars = new BitSet[program.basicBlockCount()];
@@ -58,32 +64,28 @@ public class LivenessAnalyzer {
         UsageExtractor usageExtractor = new UsageExtractor();
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         IntStack stack = new IntStack();
-        int[] definitions = new int[program.variableCount()];
+        IntSet[] definitionsBuilder = new IntSet[program.variableCount()];
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
 
             if (block.getExceptionVariable() != null) {
-                definitions[block.getExceptionVariable().getIndex()] = i;
+                addDefinition(definitionsBuilder, block.getExceptionVariable().getIndex(), i);
             }
 
             for (Instruction insn : block) {
                 insn.acceptVisitor(usageExtractor);
-                IntSet usedVars = new IntHashSet();
                 for (Variable var : usageExtractor.getUsedVariables()) {
                     stack.push(i);
                     stack.push(var.getIndex());
-                    usedVars.add(var.getIndex());
                 }
                 insn.acceptVisitor(defExtractor);
                 for (Variable var : defExtractor.getDefinedVariables()) {
-                    if (!usedVars.contains(var.getIndex())) {
-                        definitions[var.getIndex()] = i;
-                    }
+                    addDefinition(definitionsBuilder, var.getIndex(), i);
                 }
             }
 
             for (Phi phi : block.getPhis()) {
-                definitions[phi.getReceiver().getIndex()] = i;
+                addDefinition(definitionsBuilder, phi.getReceiver().getIndex(), i);
                 for (Incoming incoming : phi.getIncomings()) {
                     stack.push(incoming.getSource().getIndex());
                     stack.push(incoming.getValue().getIndex());
@@ -91,15 +93,39 @@ public class LivenessAnalyzer {
             }
         }
 
-        while (!stack.isEmpty()) {
+        int[][] definitions = new int[program.variableCount()][];
+        for (int i = 0; i < definitions.length; ++i) {
+            IntSet definitionsByVar = definitionsBuilder[i];
+            if (definitionsByVar == null) {
+                definitions[i] = new int[0];
+            } else {
+                definitions[i] = definitionsByVar.toArray();
+                Arrays.sort(definitions[i]);
+            }
+        }
+
+        worklist: while (!stack.isEmpty()) {
             int variable = stack.pop();
             int block = stack.pop();
             BitSet blockLiveVars = liveVars[block];
-            if (blockLiveVars.get(variable) || definitions[variable] == block
-                    || !dominatorTree.dominates(definitions[variable], block)) {
+            if (blockLiveVars.get(variable)) {
                 continue;
             }
-            liveVars[block].set(variable, true);
+
+            boolean hasDominatingDefinition = variable < parameterCount;
+            for (int definedAt : definitions[variable]) {
+                if (definedAt == block) {
+                    continue worklist;
+                }
+                if (!hasDominatingDefinition && dominatorTree.dominates(definedAt, block)) {
+                    hasDominatingDefinition = true;
+                }
+            }
+            if (!hasDominatingDefinition) {
+                continue;
+            }
+
+            blockLiveVars.set(variable, true);
             for (int pred : cfg.incomingEdges(block)) {
                 stack.push(pred);
                 stack.push(variable);
@@ -117,5 +143,14 @@ public class LivenessAnalyzer {
                 }
             }
         }
+    }
+
+    private static void addDefinition(IntSet[] definitions, int v, int block) {
+        IntSet definitionsByVar = definitions[v];
+        if (definitionsByVar == null) {
+            definitionsByVar = new IntHashSet();
+            definitions[v] = definitionsByVar;
+        }
+        definitionsByVar.add(block);
     }
 }

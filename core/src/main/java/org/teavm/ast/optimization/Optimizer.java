@@ -68,12 +68,15 @@ public class Optimizer {
 
     public void optimize(AsyncMethodNode method, AsyncProgramSplitter splitter, boolean friendlyToDebugger) {
         LivenessAnalyzer liveness = new LivenessAnalyzer();
-        liveness.analyze(splitter.getOriginalProgram());
+        liveness.analyze(splitter.getOriginalProgram(), method.getReference().getDescriptor());
 
         Graph cfg = ProgramUtils.buildControlFlowGraph(splitter.getOriginalProgram());
+        boolean[] preservedVars = new boolean[method.getVariables().size()];
+        for (int i = 0; i < splitter.size(); ++i) {
+            findEscapingLiveVars(liveness, cfg, splitter, i, preservedVars);
+        }
 
         for (int i = 0; i < splitter.size(); ++i) {
-            boolean[] preservedVars = new boolean[method.getVariables().size()];
             ReadWriteStatsBuilder stats = new ReadWriteStatsBuilder(method.getVariables().size());
             stats.analyze(splitter.getProgram(i));
             applyParametersToWriteStats(stats, method.getReference());
@@ -81,7 +84,6 @@ public class Optimizer {
             AsyncMethodPart part = method.getBody().get(i);
             BreakEliminator breakEliminator = new BreakEliminator();
             breakEliminator.eliminate(part.getStatement());
-            findEscapingLiveVars(liveness, cfg, splitter, i, preservedVars);
             OptimizingVisitor optimizer = new OptimizingVisitor(preservedVars, stats.writes, stats.reads,
                     stats.constants, friendlyToDebugger);
             part.getStatement().acceptVisitor(optimizer);

@@ -36,6 +36,7 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
@@ -95,7 +96,7 @@ public class EscapeAnalysis {
                 escapingVars[definitionClasses[i]] = true;
             }
         }
-        analyzePhis(program);
+        analyzePhis(program, methodReference.getDescriptor());
 
         propagateFields(program, visitor.fields);
         fields = packFields(visitor.fields);
@@ -114,9 +115,9 @@ public class EscapeAnalysis {
         return varFields != null ? varFields.clone() : null;
     }
 
-    private void analyzePhis(Program program) {
+    private void analyzePhis(Program program, MethodDescriptor methodDescriptor) {
         LivenessAnalyzer livenessAnalyzer = new LivenessAnalyzer();
-        livenessAnalyzer.analyze(program);
+        livenessAnalyzer.analyze(program, methodDescriptor);
 
         GraphBuilder graphBuilder = new GraphBuilder(program.variableCount());
         IntDeque queue = new IntArrayDeque();
