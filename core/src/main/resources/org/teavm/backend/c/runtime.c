@@ -257,7 +257,7 @@ void teavm_interrupt() {
 #ifndef TEAVM_WINDOWS_LOG
     #define TEAVM_OUTPUT_STRING(s) fprintf(stderr, s)
 #else
-    #define  TEAVM_OUTPUT_STRING(s) OutputDebugStringW(L##s)
+    #define TEAVM_OUTPUT_STRING(s) OutputDebugStringW(L##s)
 #endif
 
 void teavm_outOfMemory() {
@@ -600,6 +600,8 @@ void teavm_logchar(int32_t c) {
 
 #ifdef TEAVM_MEMORY_TRACE
 
+static wchar_t* teavm_gc_dumpDirectory = NULL;
+
 void teavm_gc_assertSize(int32_t size) {
     if (size % sizeof(void*) != 0) {
         abort();
@@ -759,13 +761,43 @@ void teavm_gc_move(void* from, void* to, int32_t size) {
     #endif
 }
 
-#ifdef TEAVM_MEMORY_TRACE
-    static FILE* teavm_gc_traceFile = NULL;
+static FILE* teavm_gc_traceFile = NULL;
 
+static FILE* teavm_gc_openDumpFile(wchar_t* name) {
+    wchar_t* fullName = name;
+    size_t fullNameLen = wcslen(name);
+    if (teavm_gc_dumpDirectory != NULL) {
+        size_t prefixLen = wcslen(teavm_gc_dumpDirectory);
+        size_t nameLen = fullNameLen;
+        fullNameLen = nameLen + prefixLen;
+        fullName = malloc((prefixLen + nameLen + 1) * sizeof(wchar_t));
+        memcpy(fullName, teavm_gc_dumpDirectory, prefixLen * sizeof(wchar_t));
+        memcpy(fullName + prefixLen, name, (nameLen + 1) * sizeof(wchar_t));
+    }
+
+    FILE* result;
+    #ifdef _MSC_VER
+        _wfopen_s(&result, fullName, L"w");
+    #else
+        size_t fullNameMbSize = 3 * (fullNameLen + 1) * sizeof(wchar_t);
+        char* fullNameMb = malloc(fullNameMbSize);
+        mbstate_t state = { 0 };
+        wcsrtombs(fullNameMb, fullName, fullNameMbSize, state);
+        result = fopen(fullNameMb, "w");
+    #endif
+
+    if (fullName != name) {
+        free(fullName);
+    }
+
+    return result;
+}
+
+#ifdef TEAVM_MEMORY_TRACE
     static void teavm_writeHeapMemory(char* name) {
         #ifdef TEAVM_GC_LOG
             if (teavm_gc_traceFile == NULL) {
-                teavm_gc_traceFile = fopen("teavm-gc-trace.txt", "w");
+                teavm_gc_traceFile = teavm_gc_openDumpFile(L"teavm-gc-trace.txt");
             }
             FILE* file = teavm_gc_traceFile;
             fprintf(file, "%s:", name);
@@ -855,5 +887,17 @@ void teavm_gc_sweepCompleted() {
 void teavm_gc_defragCompleted() {
     #ifdef TEAVM_MEMORY_TRACE
         teavm_writeHeapMemory("defrag");
+    #endif
+}
+
+void teavm_gc_setDumpDirectory(const wchar_t* path) {
+    #ifdef TEAVM_MEMORY_TRACE
+        if (teavm_gc_dumpDirectory != NULL) {
+            free(teavm_gc_dumpDirectory);
+        }
+        size_t pathLen = wcslen(path);
+        size_t bytesLen = sizeof(wchar_t) * (pathLen + 1);
+        teavm_gc_dumpDirectory = malloc(bytesLen);
+        memcpy(teavm_gc_dumpDirectory, path, bytesLen);
     #endif
 }

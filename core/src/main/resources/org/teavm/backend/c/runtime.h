@@ -474,3 +474,4 @@ extern void teavm_gc_move(void* from, void* to, int32_t size);
 extern void teavm_gc_gcStarted();
 extern void teavm_gc_sweepCompleted();
 extern void teavm_gc_defragCompleted();
+extern void teavm_gc_setDumpDirectory(const wchar_t* path);
