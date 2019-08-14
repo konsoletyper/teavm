@@ -27,7 +27,7 @@ import org.teavm.model.Program;
 import org.teavm.model.Variable;
 import org.teavm.model.util.AsyncProgramSplitter;
 import org.teavm.model.util.DefinitionExtractor;
-import org.teavm.model.util.LivenessAnalyzer;
+import org.teavm.model.util.NonSsaLivenessAnalyzer;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.model.util.UsageExtractor;
 
@@ -67,7 +67,7 @@ public class Optimizer {
     }
 
     public void optimize(AsyncMethodNode method, AsyncProgramSplitter splitter, boolean friendlyToDebugger) {
-        LivenessAnalyzer liveness = new LivenessAnalyzer();
+        NonSsaLivenessAnalyzer liveness = new NonSsaLivenessAnalyzer();
         liveness.analyze(splitter.getOriginalProgram(), method.getReference().getDescriptor());
 
         Graph cfg = ProgramUtils.buildControlFlowGraph(splitter.getOriginalProgram());
@@ -114,7 +114,7 @@ public class Optimizer {
         }
     }
 
-    private void findEscapingLiveVars(LivenessAnalyzer liveness, Graph cfg, AsyncProgramSplitter splitter,
+    private void findEscapingLiveVars(NonSsaLivenessAnalyzer liveness, Graph cfg, AsyncProgramSplitter splitter,
             int partIndex, boolean[] output) {
         Program originalProgram = splitter.getOriginalProgram();
         Program program = splitter.getProgram(partIndex);
