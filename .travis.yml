@@ -2,10 +2,10 @@ language: java
 sudo: false
 
 addons:
-  firefox: "53.0"
+  firefox: "67.0"
 
 jdk:
-  - oraclejdk8
+  - oraclejdk11
 
 cache:
   directories:
