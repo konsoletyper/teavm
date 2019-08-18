@@ -2,7 +2,7 @@ language: java
 sudo: false
 
 addons:
-  firefox: "53.0"
+  chrome: stable
 
 jdk:
   - oraclejdk11
@@ -46,14 +46,11 @@ script:
   - $MVN_CMD -e install -Dteavm.junit.optimized=false -Dteavm.junit.js.decodeStack=false -P with-idea -P with-cli -Dteavm.junit.js.runner=none -V
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 10
-  - firefox index.html &
-  - FIREFOX_PID=$!
+  - google-chrome-stable --headless --disable-gpu index.html &
+  - BROWSER_PID=$!
   - node start.js $BASE_PATH/tests/target/js-tests
   - node start.js $BASE_PATH/html4j/target/js-tests
-  - kill $FIREFOX_PID
+  - kill $BROWSER_PID
   - popd
   - rm -rf $BASE_PATH/tests/target/js-tests
   - rm -rf $BASE_PATH/html4j/target/js-tests
