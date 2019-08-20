@@ -192,7 +192,7 @@ class TestRunner {
 
             const resultPromises = [];
 
-            this.timeout = createRefreshableTimeoutPromise(10000);
+            this.timeout = createRefreshableTimeoutPromise(20000);
             for (let i = 0; i < suite.testCases.length; ++i) {
                 resultPromises.push(new Promise(resolve => {
                     this.pendingRequests[request.id + "-" + i] = resolve;

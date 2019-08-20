@@ -39,6 +39,11 @@ install:
   - npm config set prefix=$HOME/.node_modules
   - npm install
   - npm run build
+  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 index.html &
+  - BROWSER_PID=$!
+  - node start.js test
+  - node ./bin/test-chrome.js
+  - kill $BROWSER_PID
   - popd
   - rm -rf tools/idea/idea-artifacts/dependencies
 
