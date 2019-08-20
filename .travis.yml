@@ -54,6 +54,10 @@ script:
   - google-chrome-stable --headless --disable-gpu index.html &
   - BROWSER_PID=$!
   - node start.js $BASE_PATH/tests/target/js-tests
+  - retVal=$?
+  - if [ $retVal -ne 0 ]; then
+  -   node ./bin/log-chrome.js
+  - fi
   - node start.js $BASE_PATH/html4j/target/js-tests
   - kill $BROWSER_PID
   - popd
