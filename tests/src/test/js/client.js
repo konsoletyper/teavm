@@ -20,7 +20,7 @@ function tryConnect() {
     let ws = new WebSocket("ws://localhost:9090");
 
     ws.onopen = () => {
-        console.log("Connected established");
+        console.log("Connection established");
         listen(ws);
     };
 
@@ -30,6 +30,10 @@ function tryConnect() {
             tryConnect();
         }, 500);
     };
+
+    ws.onerror = err => {
+        console.log("Could not connect WebSocket", err);
+    }
 }
 
 function listen(ws) {
