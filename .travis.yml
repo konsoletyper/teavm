@@ -51,7 +51,7 @@ script:
   - $MVN_CMD -e install -Dteavm.junit.optimized=false -Dteavm.junit.js.decodeStack=false -P with-idea -P with-cli -Dteavm.junit.js.runner=none -V
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
-  - google-chrome-stable --headless --disable-gpu index.html &
+  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 index.html  &
   - BROWSER_PID=$!
   - node start.js $BASE_PATH/tests/target/js-tests
   - node start.js $BASE_PATH/html4j/target/js-tests
