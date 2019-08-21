@@ -211,4 +211,46 @@ public abstract class TDoubleBuffer extends TBuffer implements Comparable<TDoubl
     }
 
     public abstract TByteOrder order();
+
+    @Override
+    public final TDoubleBuffer mark() {
+        super.mark();
+        return this;
+    }
+
+    @Override
+    public final TDoubleBuffer reset() {
+        super.reset();
+        return this;
+    }
+
+    @Override
+    public final TDoubleBuffer clear() {
+        super.clear();
+        return this;
+    }
+
+    @Override
+    public final TDoubleBuffer flip() {
+        super.flip();
+        return this;
+    }
+
+    @Override
+    public final TDoubleBuffer rewind() {
+        super.rewind();
+        return this;
+    }
+
+    @Override
+    public TDoubleBuffer limit(int newLimit) {
+        super.limit(newLimit);
+        return this;
+    }
+
+    @Override
+    public TDoubleBuffer position(int newPosition) {
+        super.position(newPosition);
+        return this;
+    }
 }

@@ -210,4 +210,46 @@ public abstract class TShortBuffer extends TBuffer implements Comparable<TShortB
     }
 
     public abstract TByteOrder order();
+
+    @Override
+    public final TShortBuffer mark() {
+        super.mark();
+        return this;
+    }
+
+    @Override
+    public final TShortBuffer reset() {
+        super.reset();
+        return this;
+    }
+
+    @Override
+    public final TShortBuffer clear() {
+        super.clear();
+        return this;
+    }
+
+    @Override
+    public final TShortBuffer flip() {
+        super.flip();
+        return this;
+    }
+
+    @Override
+    public final TShortBuffer rewind() {
+        super.rewind();
+        return this;
+    }
+
+    @Override
+    public TShortBuffer limit(int newLimit) {
+        super.limit(newLimit);
+        return this;
+    }
+
+    @Override
+    public TShortBuffer position(int newPosition) {
+        super.position(newPosition);
+        return this;
+    }
 }

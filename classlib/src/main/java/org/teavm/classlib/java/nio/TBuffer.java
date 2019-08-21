@@ -34,7 +34,7 @@ public abstract class TBuffer {
         return position;
     }
 
-    public final TBuffer position(int newPosition) {
+    public TBuffer position(int newPosition) {
         if (newPosition < 0 || newPosition > limit) {
             throw new IllegalArgumentException("New position " + newPosition + " is outside of range [0;"
                     + limit + "]");
@@ -50,7 +50,7 @@ public abstract class TBuffer {
         return limit;
     }
 
-    public final TBuffer limit(int newLimit) {
+    public TBuffer limit(int newLimit) {
         if (newLimit < 0 || newLimit > capacity) {
             throw new IllegalArgumentException("New limit " + newLimit + " is outside of range [0;"
                     + capacity + "]");
@@ -65,12 +65,12 @@ public abstract class TBuffer {
         return this;
     }
 
-    public final TBuffer mark() {
+    public TBuffer mark() {
         mark = position;
         return this;
     }
 
-    public final TBuffer reset() {
+    public TBuffer reset() {
         if (mark < 0) {
             throw new TInvalidMarkException();
         }
@@ -78,21 +78,21 @@ public abstract class TBuffer {
         return this;
     }
 
-    public final TBuffer clear() {
+    public TBuffer clear() {
         position = 0;
         limit = capacity;
         mark = -1;
         return this;
     }
 
-    public final TBuffer flip() {
+    public TBuffer flip() {
         limit = position;
         position = 0;
         mark = -1;
         return this;
     }
 
-    public final TBuffer rewind() {
+    public TBuffer rewind() {
         mark = -1;
         position = 0;
         return this;

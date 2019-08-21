@@ -210,4 +210,46 @@ public abstract class TFloatBuffer extends TBuffer implements Comparable<TFloatB
     }
 
     public abstract TByteOrder order();
+
+    @Override
+    public final TFloatBuffer mark() {
+        super.mark();
+        return this;
+    }
+
+    @Override
+    public final TFloatBuffer reset() {
+        super.reset();
+        return this;
+    }
+
+    @Override
+    public final TFloatBuffer clear() {
+        super.clear();
+        return this;
+    }
+
+    @Override
+    public final TFloatBuffer flip() {
+        super.flip();
+        return this;
+    }
+
+    @Override
+    public final TFloatBuffer rewind() {
+        super.rewind();
+        return this;
+    }
+
+    @Override
+    public TFloatBuffer limit(int newLimit) {
+        super.limit(newLimit);
+        return this;
+    }
+
+    @Override
+    public TFloatBuffer position(int newPosition) {
+        super.position(newPosition);
+        return this;
+    }
 }

@@ -210,4 +210,46 @@ public abstract class TIntBuffer extends TBuffer implements Comparable<TIntBuffe
     }
 
     public abstract TByteOrder order();
+
+    @Override
+    public final TIntBuffer mark() {
+        super.mark();
+        return this;
+    }
+
+    @Override
+    public final TIntBuffer reset() {
+        super.reset();
+        return this;
+    }
+
+    @Override
+    public final TIntBuffer clear() {
+        super.clear();
+        return this;
+    }
+
+    @Override
+    public final TIntBuffer flip() {
+        super.flip();
+        return this;
+    }
+
+    @Override
+    public final TIntBuffer rewind() {
+        super.rewind();
+        return this;
+    }
+
+    @Override
+    public TIntBuffer limit(int newLimit) {
+        super.limit(newLimit);
+        return this;
+    }
+
+    @Override
+    public TIntBuffer position(int newPosition) {
+        super.position(newPosition);
+        return this;
+    }
 }
