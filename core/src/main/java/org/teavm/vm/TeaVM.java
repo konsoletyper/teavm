@@ -962,10 +962,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
                 for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
                     MethodDependencyInfo methodDep = dependencyAnalyzer.getMethod(method.getReference());
-                    if (methodDep == null) {
-                        cls.removeMethod(method);
-                    } else if (!methodDep.isUsed()) {
+                    if (methodDep == null || !methodDep.isUsed()) {
                         method.getModifiers().add(ElementModifier.ABSTRACT);
+                        method.getModifiers().remove(ElementModifier.NATIVE);
                         method.setProgram(null);
                     } else {
                         MethodReader methodReader = classReader.getMethod(method.getDescriptor());

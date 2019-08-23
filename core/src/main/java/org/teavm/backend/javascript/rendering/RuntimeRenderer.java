@@ -28,6 +28,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.vm.RenderingException;
@@ -174,7 +175,8 @@ public class RuntimeRenderer {
         if (cls == null) {
             return false;
         }
-        return cls.getMethod(STRING_INTERN_METHOD) != null;
+        MethodReader method = cls.getMethod(STRING_INTERN_METHOD);
+        return method != null && method.getProgram() != null;
     }
 
     private void renderRuntimeObjcls() throws IOException {
@@ -183,7 +185,8 @@ public class RuntimeRenderer {
 
     private void renderRuntimeThreads() throws IOException {
         ClassReader threadCls = classSource.get(THREAD_CLASS);
-        boolean threadUsed = threadCls != null && threadCls.getMethod(CURRENT_THREAD_METHOD) != null;
+        MethodReader currentThreadMethod = threadCls != null ? threadCls.getMethod(CURRENT_THREAD_METHOD) : null;
+        boolean threadUsed = currentThreadMethod != null && currentThreadMethod.getProgram() != null;
 
         writer.append("function $rt_getThread()").ws().append("{").indent().softNewLine();
         if (threadUsed) {
@@ -212,7 +215,8 @@ public class RuntimeRenderer {
 
     private void renderCreateStackTraceElement() throws IOException {
         ClassReader cls = classSource.get(STACK_TRACE_ELEM_INIT.getClassName());
-        boolean supported = cls != null && cls.getMethod(STACK_TRACE_ELEM_INIT.getDescriptor()) != null;
+        MethodReader stackTraceElemInit = cls != null ? cls.getMethod(STACK_TRACE_ELEM_INIT.getDescriptor()) : null;
+        boolean supported = stackTraceElemInit != null && stackTraceElemInit.getProgram() != null;
 
         writer.append("function $rt_createStackElement(")
                 .append("className,").ws()
@@ -235,7 +239,8 @@ public class RuntimeRenderer {
 
     private void renderSetStackTrace() throws IOException {
         ClassReader cls = classSource.get(SET_STACK_TRACE_METHOD.getClassName());
-        boolean supported = cls != null && cls.getMethod(SET_STACK_TRACE_METHOD.getDescriptor()) != null;
+        MethodReader setStackTrace = cls != null ? cls.getMethod(SET_STACK_TRACE_METHOD.getDescriptor()) : null;
+        boolean supported = setStackTrace != null && setStackTrace.getProgram() != null;
 
         writer.append("function $rt_setStack(e,").ws().append("stack)").ws().append("{").indent().softNewLine();
         if (supported) {

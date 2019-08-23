@@ -151,7 +151,7 @@ public class CodeServlet extends HttpServlet {
 
     public CodeServlet(String mainClass, String[] classPath) {
         this.mainClass = mainClass;
-        this.classPath = classPath.clone();
+        this.classPath = classSource != null ? classPath.clone() : new String[0];
 
         httpClient = new HttpClient();
         httpClient.setFollowRedirects(false);

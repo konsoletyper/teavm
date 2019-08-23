@@ -271,7 +271,7 @@ public class AsyncMethodFinder {
         }
     }
 
-    class AsyncInstructionReader extends AbstractInstructionReader {
+    static class AsyncInstructionReader extends AbstractInstructionReader {
         boolean async;
 
         @Override
