@@ -47,9 +47,13 @@ public class Linker {
             MethodReference methodRef = method.getReference();
             MethodDependencyInfo methodDep = dependency.getMethod(methodRef);
             if (methodDep == null || !methodDep.isUsed()) {
-                method.getModifiers().add(ElementModifier.ABSTRACT);
-                method.getModifiers().remove(ElementModifier.NATIVE);
-                method.setProgram(null);
+                if (method.hasModifier(ElementModifier.STATIC)) {
+                    cls.removeMethod(method);
+                } else {
+                    method.getModifiers().add(ElementModifier.ABSTRACT);
+                    method.getModifiers().remove(ElementModifier.NATIVE);
+                    method.setProgram(null);
+                }
             } else if (method.getProgram() != null) {
                 link(method.getReference(), method.getProgram());
             }
