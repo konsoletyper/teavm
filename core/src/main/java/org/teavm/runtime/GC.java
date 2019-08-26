@@ -219,7 +219,7 @@ public final class GC {
         if (object.queue != null) {
             enqueueMark(object.queue);
             if (object.next != null && object.object != null) {
-                enqueueMark(object);
+                enqueueMark(object.object);
             }
         }
         if (object.next == null && object.object != null) {
@@ -231,7 +231,7 @@ public final class GC {
     private static void markReferenceQueue(RuntimeReferenceQueue object) {
         RuntimeReference reference = object.first;
         while (reference != null) {
-            enqueueMark(object);
+            enqueueMark(reference);
             reference = reference.next;
         }
     }
