@@ -19,7 +19,6 @@ import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -632,15 +631,31 @@ public class Renderer implements RenderingManager {
         MethodDependencyInfo getNameMethod = context.getDependencyInfo().getMethod(
                 new MethodReference(Class.class, "getName", String.class));
         if (getNameMethod != null) {
-            classesRequiringName.addAll(Arrays.asList(getNameMethod.getVariable(0).getClassValueNode().getTypes()));
+            addClassesRequiringName(classesRequiringName, getNameMethod.getVariable(0).getClassValueNode().getTypes());
         }
         MethodDependencyInfo getSimpleNameMethod = context.getDependencyInfo().getMethod(
                 new MethodReference(Class.class, "getSimpleName", String.class));
         if (getSimpleNameMethod != null) {
-            classesRequiringName.addAll(Arrays.asList(
-                    getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes()));
+            addClassesRequiringName(classesRequiringName,
+                    getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes());
         }
         return classesRequiringName;
+    }
+
+    private void addClassesRequiringName(Set<String> target, String[] source) {
+        for (String typeName : source) {
+            if (typeName.startsWith("[")) {
+                if (!typeName.endsWith(";")) {
+                    continue;
+                }
+                int index = 0;
+                while (typeName.charAt(index) == '[') {
+                    ++index;
+                }
+                typeName = typeName.substring(index, typeName.length() - 1).replace('/', '.');
+            }
+            target.add(typeName);
+        }
     }
 
     private void collectMethodsToCopyFromInterfaces(ClassReader cls, List<MethodReference> targetList) {
