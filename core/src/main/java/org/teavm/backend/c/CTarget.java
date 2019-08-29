@@ -758,6 +758,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
         generateFiberStart(context, writer, includes);
 
+        writer.println("return 0;");
+
         writer.outdent().println("}");
     }
 
