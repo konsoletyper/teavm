@@ -976,7 +976,8 @@ public class ClassGenerator {
     private boolean needsInitializer(ClassReader cls) {
         return !context.getCharacteristics().isStaticInit(cls.getName())
                 && !context.getCharacteristics().isStructure(cls.getName())
-                && cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null;
+                && cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null
+                && context.getClassInitializerInfo().isDynamicInitializer(cls.getName());
     }
 
     private boolean tryDelegateToMethod(ClassHolder cls, MethodHolder method) {

@@ -26,6 +26,7 @@ import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
+import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.classes.VirtualTableProvider;
 import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.vm.BuildTarget;
@@ -43,6 +44,7 @@ public class GenerationContext {
     private Map<MethodReference, Intrinsic> intrinsicCache = new HashMap<>();
     private Predicate<MethodReference> asyncMethods;
     private BuildTarget buildTarget;
+    private ClassInitializerInfo classInitializerInfo;
     private boolean incremental;
     private boolean longjmp;
     private boolean vmAssertions;
@@ -51,8 +53,9 @@ public class GenerationContext {
     public GenerationContext(VirtualTableProvider virtualTableProvider, Characteristics characteristics,
             DependencyInfo dependencies, StringPool stringPool, NameProvider names, Diagnostics diagnostics,
             ClassReaderSource classSource, List<Intrinsic> intrinsics, List<Generator> generators,
-            Predicate<MethodReference> asyncMethods, BuildTarget buildTarget, boolean incremental,
-            boolean longjmp, boolean vmAssertions, boolean heapDump) {
+            Predicate<MethodReference> asyncMethods, BuildTarget buildTarget,
+            ClassInitializerInfo classInitializerInfo, boolean incremental, boolean longjmp, boolean vmAssertions,
+            boolean heapDump) {
         this.virtualTableProvider = virtualTableProvider;
         this.characteristics = characteristics;
         this.dependencies = dependencies;
@@ -64,6 +67,7 @@ public class GenerationContext {
         this.generators = new ArrayList<>(generators);
         this.asyncMethods = asyncMethods;
         this.buildTarget = buildTarget;
+        this.classInitializerInfo = classInitializerInfo;
         this.incremental = incremental;
         this.longjmp = longjmp;
         this.vmAssertions = vmAssertions;
@@ -126,6 +130,10 @@ public class GenerationContext {
 
     public BuildTarget getBuildTarget() {
         return buildTarget;
+    }
+
+    public ClassInitializerInfo getClassInitializerInfo() {
+        return classInitializerInfo;
     }
 
     public boolean isIncremental() {

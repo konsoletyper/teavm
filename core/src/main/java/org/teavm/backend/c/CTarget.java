@@ -366,7 +366,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         boolean vmAssertions = Boolean.parseBoolean(System.getProperty("teavm.c.vmAssertions", "false"));
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
                 controller.getDependencyInfo(), stringPool, nameProvider, controller.getDiagnostics(), classes,
-                intrinsics, generators, asyncMethods::contains, buildTarget, incremental, longjmpUsed,
+                intrinsics, generators, asyncMethods::contains, buildTarget,
+                controller.getClassInitializerInfo(), incremental, longjmpUsed,
                 vmAssertions, vmAssertions || heapDump);
 
         BufferedCodeWriter runtimeWriter = new BufferedCodeWriter(false);
@@ -752,7 +753,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
         writer.println("teavm_afterInitClasses();");
         generateStaticInitializerCalls(context, writer, includes, classes);
-        writer.println(context.getNames().forClassInitializer("java.lang.String") + "();");
+        if (context.getClassInitializerInfo().isDynamicInitializer("java.lang.String")) {
+            writer.println(context.getNames().forClassInitializer("java.lang.String") + "();");
+        }
         generateFiberStart(context, writer, includes);
 
         writer.outdent().println("}");
