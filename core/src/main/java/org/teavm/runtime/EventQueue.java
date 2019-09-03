@@ -16,6 +16,7 @@
 package org.teavm.runtime;
 
 import java.util.Arrays;
+import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 
@@ -125,9 +126,11 @@ public final class EventQueue {
     }
 
     @Import(name = "teavm_waitFor")
+    @RuntimeInclude("fiber.h")
     private static native void waitFor(long time);
 
     @Import(name = "teavm_interrupt")
+    @RuntimeInclude("fiber.h")
     private static native void interrupt();
 
     private static void ensureCapacity(int capacity) {

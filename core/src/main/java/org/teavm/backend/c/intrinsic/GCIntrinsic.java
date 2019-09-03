@@ -42,6 +42,8 @@ public class GCIntrinsic implements Intrinsic {
 
     @Override
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
+        context.includes().includePath("memory.h");
+        context.includes().includePath("heaptrace.h");
         context.writer().print("teavm_gc_").print(invocation.getMethod().getName());
     }
 }

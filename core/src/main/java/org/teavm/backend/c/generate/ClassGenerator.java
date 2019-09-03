@@ -271,6 +271,7 @@ public class ClassGenerator {
 
         String poolName = "strings_" + context.getNames().forClassInstance(type);
         StringPoolGenerator poolGenerator = new StringPoolGenerator(context, poolName);
+        includes.includePath("stringhash.h");
         poolGenerator.generate(codeWriter);
         poolGenerator.generateStringPoolHeaders(initWriter, includes);
     }

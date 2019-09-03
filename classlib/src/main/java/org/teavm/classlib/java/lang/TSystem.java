@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import java.util.Enumeration;
 import java.util.Properties;
+import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.fs.VirtualFileSystemProvider;
@@ -31,6 +32,7 @@ import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
+import org.teavm.interop.c.Include;
 import org.teavm.jso.browser.Performance;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.GC;
@@ -145,6 +147,7 @@ public final class TSystem extends TObject {
     private static native double currentTimeMillisWasm();
 
     @Import(name = "teavm_currentTimeMillis")
+    @RuntimeInclude("time.h")
     private static native long currentTimeMillisC();
 
     private static void initPropertiesIfNeeded() {
@@ -264,6 +267,7 @@ public final class TSystem extends TObject {
     }
 
     @Import(name = "teavm_currentTimeNano")
+    @Include("time.h")
     private static native long nanoTimeLowLevel();
 
     public static int identityHashCode(Object x) {

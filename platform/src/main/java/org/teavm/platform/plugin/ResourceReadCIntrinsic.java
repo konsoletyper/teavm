@@ -73,6 +73,7 @@ public class ResourceReadCIntrinsic implements Intrinsic {
     }
 
     private void applyForResourceMap(IntrinsicContext context, InvocationExpr invocation) {
+        context.includes().includePath("resource.h");
         switch (invocation.getMethod().getName()) {
             case "keys":
                 context.writer().print("teavm_resourceMapKeys((TeaVM_ResourceMap*) ");
@@ -97,6 +98,7 @@ public class ResourceReadCIntrinsic implements Intrinsic {
     }
 
     private void applyForResourceArray(IntrinsicContext context, InvocationExpr invocation) {
+        context.includes().includePath("resource.h");
         switch (invocation.getMethod().getName()) {
             case "size":
                 context.writer().print("((TeaVM_ResourceArray*) ");

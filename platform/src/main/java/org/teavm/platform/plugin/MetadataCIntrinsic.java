@@ -222,6 +222,7 @@ class MetadataCIntrinsic implements Generator {
             tableSize++;
         }
 
+        context.includes().includePath("resource.h");
         context.writerBefore().println("&(struct { int32_t size; TeaVM_ResourceMapEntry entries["
                 + bestTable.length + "]; }) {").indent();
         context.writerBefore().println(".size = " + bestTable.length + ",");

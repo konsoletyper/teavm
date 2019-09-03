@@ -70,6 +70,7 @@ public class DateTimeZoneProviderIntrinsic implements Intrinsic, WasmIntrinsic {
                 break;
             }
             case "getNativeOffset":
+                context.includes().includePath("time.h");
                 context.writer().print("teavm_timeZoneOffset()");
                 break;
         }

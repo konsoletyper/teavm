@@ -1,8 +1,11 @@
-#include "runtime.h"
+#include "file.h"
+#include "string.h"
+#include "time.h"
+#include "definitions.h"
 #include <stdlib.h>
 #include <errno.h>
 
-#ifdef __GNUC__
+#if TEAVM_UNIX
 #include <unistd.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -329,7 +332,7 @@ int32_t teavm_file_canonicalize(char16_t* path, int32_t pathSize, char16_t** res
 
 #endif
 
-#ifdef _MSC_VER
+#if TEAVM_WINDOWS
 #include <Windows.h>
 
 static int32_t teavm_readEnv(char16_t** result, WCHAR const * name) {
@@ -383,7 +386,7 @@ int32_t teavm_file_isDir(char16_t* name, int32_t nameSize) {
 
 static int32_t teavm_file_checkExistingFileAccess(char16_t* name, int32_t nameSize, DWORD desiredAccess) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
-    #ifdef _WINDOWS_UWP
+    #if TEAVM_WINDOWS_UWP
         HANDLE fileHandle = CreateFile2(nativeName, desiredAccess, FILE_SHARE_READ, OPEN_EXISTING, NULL);
     #else
         HANDLE fileHandle = CreateFileW(nativeName, desiredAccess, FILE_SHARE_READ, 0, OPEN_EXISTING,
@@ -413,7 +416,7 @@ int32_t teavm_file_createDirectory(char16_t* name, int32_t nameSize) {
 
 int32_t teavm_file_createFile(char16_t* name, int32_t nameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
-    #ifdef _WINDOWS_UWP
+    #if TEAVM_WINDOWS_UWP
         HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE, FILE_SHARE_READ, OPEN_EXISTING, NULL);
     #else
         HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE, 0, 0, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
@@ -470,7 +473,7 @@ int32_t teavm_file_setReadonly(char16_t* name, int32_t nameSize, int32_t readonl
 int64_t teavm_file_lastModified(char16_t* name, int32_t nameSize) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
     FILETIME modified;
-    #ifdef _WINDOWS_UWP
+    #if TEAVM_WINDOWS_UWP
         HANDLE fileHandle = CreateFile2(nativeName, GENERIC_READ, FILE_SHARE_READ, OPEN_EXISTING, NULL);
     #else
         HANDLE fileHandle = CreateFileW(nativeName, GENERIC_READ, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
@@ -493,7 +496,7 @@ int64_t teavm_file_lastModified(char16_t* name, int32_t nameSize) {
 int32_t teavm_file_setLastModified(char16_t* name, int32_t nameSize, int64_t lastModified) {
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
 
-    #ifdef _WINDOWS_UWP
+    #if TEAVM_WINDOWS_UWP
         HANDLE fileHandle = CreateFile2(nativeName, GENERIC_WRITE, FILE_SHARE_READ, OPEN_EXISTING, NULL);
     #else
         HANDLE fileHandle = CreateFileW(nativeName, GENERIC_WRITE, 0, 0, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
@@ -530,7 +533,7 @@ int64_t teavm_file_open(char16_t* name, int32_t nameSize, int32_t mode) {
     DWORD desiredAccess = (readable ? GENERIC_READ : 0) | (writable ? GENERIC_WRITE : 0);
 
     WCHAR* nativeName = teavm_file_convertPath(name, nameSize);
-    #ifdef _WINDOWS_UWP
+    #if TEAVM_WINDOWS_UWP
         HANDLE fileHandle = CreateFile2(nativeName, desiredAccess, FILE_SHARE_READ, creationDisposition, NULL);
     #else
         HANDLE fileHandle = CreateFileW(nativeName, desiredAccess, 0, 0, creationDisposition,

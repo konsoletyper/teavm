@@ -17,6 +17,7 @@ package org.teavm.backend.c.util;
 
 import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generate.IncludeManager;
+import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.interop.c.Include;
 import org.teavm.interop.c.Name;
 import org.teavm.interop.c.Native;
@@ -68,7 +69,13 @@ public final class InteropUtil {
     }
 
     public static void processInclude(AnnotationContainerReader container, IncludeManager includes) {
-        AnnotationReader annot = container.get(Include.class.getName());
+        AnnotationReader annot = container.get(RuntimeInclude.class.getName());
+        if (annot != null) {
+            includes.includePath(annot.getValue("value").getString());
+            return;
+        }
+
+        annot = container.get(Include.class.getName());
         if (annot == null) {
             return;
         }

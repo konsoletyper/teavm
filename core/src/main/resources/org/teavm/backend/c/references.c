@@ -1,4 +1,5 @@
-#include "runtime.h"
+#include "references.h"
+#include "core.h"
 
 int32_t teavm_reference_enqueue(TeaVM_Reference* reference) {
     TeaVM_ReferenceQueue* queue = reference->queue;

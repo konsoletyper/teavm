@@ -1,4 +1,4 @@
-#include "runtime.h"
+#include "stringhash.h"
 #include <string.h>
 #include <stdint.h>
 #include <stdlib.h>

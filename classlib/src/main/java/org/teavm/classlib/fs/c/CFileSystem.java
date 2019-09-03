@@ -19,6 +19,7 @@ import java.lang.ref.ReferenceQueue;
 import java.lang.ref.WeakReference;
 import java.util.HashMap;
 import java.util.Map;
+import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.classlib.fs.VirtualFile;
 import org.teavm.classlib.fs.VirtualFileSystem;
 import org.teavm.classlib.impl.c.Memory;
@@ -109,102 +110,127 @@ public class CFileSystem implements VirtualFileSystem {
     }
 
     @Import(name = "teavm_file_homeDirectory")
+    @RuntimeInclude("file.h")
     @Unmanaged
     public static native int homeDirectory(Address resultPtr);
 
     @Import(name = "teavm_file_tempDirectory")
+    @RuntimeInclude("file.h")
     @Unmanaged
     public static native int tempDirectory(Address resultPtr);
 
     @Import(name = "teavm_file_workDirectory")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native int workDirectory(Address resultPtr);
 
     @Import(name = "teavm_file_isDir")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean isDir(char[] name, int nameSize);
 
     @Import(name = "teavm_file_isFile")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean isFile(char[] name, int nameSize);
 
     @Import(name = "teavm_file_canRead")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean canRead(char[] name, int nameSize);
 
     @Import(name = "teavm_file_canWrite")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean canWrite(char[] name, int nameSize);
 
     @Import(name = "teavm_file_setReadonly")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean setReadonly(char[] name, int nameSize, boolean readonly);
 
     @Import(name = "teavm_file_listFiles")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native StringList listFiles(char[] name, int nameSize);
 
     @Import(name = "teavm_file_createDirectory")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean createDirectory(char[] name, int nameSize);
 
     @Import(name = "teavm_file_createFile")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native int createFile(char[] name, int nameSize);
 
     @Import(name = "teavm_file_delete")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean delete(char[] name, int nameSize);
 
     @Import(name = "teavm_file_rename")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean rename(char[] name, int nameSize, char[] newName, int newNameSize);
 
     @Import(name = "teavm_file_length")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native int length(char[] name, int nameSize);
 
     @Import(name = "teavm_file_lastModified")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native long lastModified(char[] name, int nameSize);
 
     @Import(name = "teavm_file_setLastModified")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean setLastModified(char[] name, int nameSize, long lastModified);
 
     @Import(name = "teavm_file_open")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native long open(char[] name, int nameSize, int mode);
 
     @Import(name = "teavm_file_close")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean close(long file);
 
     @Import(name = "teavm_file_flush")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean flush(long file);
 
     @Import(name = "teavm_file_seek")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean seek(long file, int where, int offset);
 
     @Import(name = "teavm_file_tell")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native int tell(long file);
 
     @Import(name = "teavm_file_read")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native int read(long file, byte[] data, int offset, int count);
 
     @Import(name = "teavm_file_write")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native int write(long file, byte[] data, int offset, int count);
 
     @Import(name = "teavm_file_isWindows")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native boolean isWindowsNative();
 
     @Import(name = "teavm_file_canonicalize")
+    @RuntimeInclude("file.h")
     @Unmanaged
     static native int canonicalizeNative(char[] name, int nameSize, Address resultPtr);
 }

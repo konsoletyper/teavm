@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import java.util.TimeZone;
+import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.lang.TSystem;
@@ -34,6 +35,7 @@ public class TDate implements TComparable<TDate> {
     }
 
     @Import(name = "teavm_date_init")
+    @RuntimeInclude("date.h")
     @NoSideEffects
     @Unmanaged
     private static native void initLowLevel();
@@ -69,6 +71,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_create")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native long initDateLowLevel(int year, int month, int date, int hrs, int min, int sec);
 
     public TDate(String s) {
@@ -92,6 +95,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_createUtc")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native long initUtcDateLowLevel(int year, int month, int date, int hrs, int min, int sec);
 
     @Deprecated
@@ -110,6 +114,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_parse")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native long parseLowLevel(String s);
 
     @Deprecated
@@ -123,6 +128,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_getYear")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native int getYearLowLevel(long date);
 
     @Deprecated
@@ -139,6 +145,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_setYear")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native long setYearLowLevel(long date, int year);
 
     @Deprecated
@@ -152,6 +159,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_getMonth")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native int getMonthLowLevel(long date);
 
     @Deprecated
@@ -168,6 +176,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_setMonth")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native long setMonthLowLevel(long date, int month);
 
     @Deprecated
@@ -181,6 +190,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_getDate")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native int getDateLowLevel(long date);
 
     @Deprecated
@@ -197,6 +207,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_setDate")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native int setDateLowLevel(long target, int date);
 
     @Deprecated
@@ -221,6 +232,8 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_getHours")
     @NoSideEffects
+    @Unmanaged
+    @RuntimeInclude("date.h")
     private static native int getHoursLowLevel(long date);
 
     @Deprecated
@@ -237,6 +250,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_setHours")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native int setHoursLowLevel(long date, int hours);
 
     @Deprecated
@@ -250,6 +264,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_getMinutes")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native int getMinutesLowLevel(long date);
 
     @Deprecated
@@ -266,6 +281,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_setMinutes")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native int setMinutesLowLevel(long date, int minutes);
 
     @Deprecated
@@ -279,6 +295,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_getSeconds")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native int getSecondsLowLevel(long date);
 
     @Deprecated
@@ -295,6 +312,7 @@ public class TDate implements TComparable<TDate> {
     @Import(name = "teavm_date_setSeconds")
     @NoSideEffects
     @Unmanaged
+    @RuntimeInclude("date.h")
     private static native int setSecondsLowLevel(long date, int seconds);
 
     public long getTime() {
@@ -343,6 +361,7 @@ public class TDate implements TComparable<TDate> {
 
     @Import(name = "teavm_date_format")
     @NoSideEffects
+    @RuntimeInclude("date.h")
     private static native String toStringLowLevel(long date);
 
     @Deprecated

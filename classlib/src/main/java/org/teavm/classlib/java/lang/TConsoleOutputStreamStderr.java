@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.lang;
 
 import java.io.IOException;
+import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.io.TOutputStream;
 import org.teavm.interop.Import;
@@ -42,5 +43,6 @@ class TConsoleOutputStreamStderr extends TOutputStream {
 
     @Unmanaged
     @Import(name = "teavm_logchar")
+    @RuntimeInclude("log.h")
     private static native void writeC(int b);
 }

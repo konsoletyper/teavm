@@ -139,6 +139,12 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     ));
     private static final MethodReference STRING_CONSTRUCTOR = new MethodReference(String.class,
             "<init>", char[].class, void.class);
+    private static final String[] RUNTIME_FILES = { "core.c", "core.h", "date.c", "date.h", "definitions.h",
+            "exceptions.h", "fiber.c", "fiber.h", "file.c", "file.h", "heapdump.c", "heapdump.h", "heaptrace.c",
+            "heaptrace.h", "log.c", "log.h", "memory.c", "memory.h", "references.c", "references.h",
+            "resource.c", "resource.h", "runtime.h", "stack.c", "stack.h", "string.c", "string.h",
+            "stringhash.c", "stringhash.h", "time.c", "time.h"
+    };
 
     private TeaVMTargetController controller;
     private ClassInitializerEliminator classInitializerEliminator;
@@ -370,24 +376,22 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 controller.getClassInitializerInfo(), incremental, longjmpUsed,
                 vmAssertions, vmAssertions || heapDump);
 
-        BufferedCodeWriter runtimeWriter = new BufferedCodeWriter(false);
-        BufferedCodeWriter runtimeHeaderWriter = new BufferedCodeWriter(false);
-        emitResource(runtimeWriter, "runtime.c");
+        BufferedCodeWriter specialWriter = new BufferedCodeWriter(false);
+        BufferedCodeWriter configHeaderWriter = new BufferedCodeWriter(false);
 
-        runtimeHeaderWriter.println("#pragma once");
+        configHeaderWriter.println("#pragma once");
         if (incremental) {
-            runtimeHeaderWriter.println("#define TEAVM_INCREMENTAL 1");
+            configHeaderWriter.println("#define TEAVM_INCREMENTAL 1");
         }
         if (longjmpUsed) {
-            runtimeHeaderWriter.println("#define TEAVM_USE_SETJMP 1");
+            configHeaderWriter.println("#define TEAVM_USE_SETJMP 1");
         }
         if (vmAssertions) {
-            runtimeHeaderWriter.println("#define TEAVM_MEMORY_TRACE 1");
+            configHeaderWriter.println("#define TEAVM_MEMORY_TRACE 1");
         }
         if (heapDump) {
-            runtimeHeaderWriter.println("#define TEAVM_HEAP_DUMP 1");
+            configHeaderWriter.println("#define TEAVM_HEAP_DUMP 1");
         }
-        emitResource(runtimeHeaderWriter, "runtime.h");
 
         ClassGenerator classGenerator = new ClassGenerator(context, tagRegistry, decompiler,
                 controller.getCacheStatus());
@@ -406,14 +410,13 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
 
         generateClasses(classes, classGenerator, buildTarget);
-        generateSpecialFunctions(context, runtimeWriter);
-        OutputFileUtil.write(runtimeWriter, "runtime.c", buildTarget);
-        OutputFileUtil.write(runtimeHeaderWriter, "runtime.h", buildTarget);
-        copyResource("stringhash.c", buildTarget);
-        copyResource("references.c", buildTarget);
-        copyResource("date.c", buildTarget);
-        copyResource("file.c", buildTarget);
-        copyResource("heap.c", buildTarget);
+
+        generateSpecialFunctions(context, specialWriter);
+        OutputFileUtil.write(configHeaderWriter, "config.h", buildTarget);
+        OutputFileUtil.write(specialWriter, "special.c", buildTarget);
+        for (String runtimeFile : RUNTIME_FILES) {
+            copyResource(runtimeFile, buildTarget);
+        }
         generateCallSites(buildTarget, context, classes.getClassNames());
         generateStrings(buildTarget, context);
 
@@ -550,7 +553,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
             headerWriter.println("extern TeaVM_String* teavm_stringPool[];");
             headerWriter.println("#define TEAVM_GET_STRING(i) teavm_stringPool[i]");
 
-            writer.println("#include \"strings.h\"");
+            includes.includePath("strings.h");
+            includes.includePath("stringhash.h");
             StringPoolGenerator poolGenerator = new StringPoolGenerator(context, "teavm_stringPool");
             poolGenerator.generate(writer);
             writer.println("void teavm_initStringPool() {").indent();
@@ -602,7 +606,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private void generateSpecialFunctions(GenerationContext context, CodeWriter writer) {
         IncludeManager includes = new SimpleIncludeManager(writer);
-        includes.init("runtime.c");
+        includes.init("special.c");
+        includes.includePath("core.h");
+        includes.includePath("string.h");
         generateThrowCCE(context, writer, includes);
         generateAllocateStringArray(context, writer, includes);
         generateAllocateCharArray(context, writer, includes);
@@ -691,14 +697,23 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     private List<String> getGeneratedFiles(ListableClassHolderSource classes, List<? extends ValueType> types) {
         List<String> files = new ArrayList<>();
-        files.add("runtime.c");
+        files.add("callsites.c");
+        files.add("core.c");
+        files.add("date.c");
+        files.add("fiber.c");
+        files.add("file.c");
+        files.add("heapdump.c");
+        files.add("heaptrace.c");
+        files.add("log.c");
+        files.add("memory.c");
+        files.add("references.c");
+        files.add("resource.c");
+        files.add("special.c");
+        files.add("stack.c");
+        files.add("string.c");
         files.add("stringhash.c");
         files.add("strings.c");
-        files.add("callsites.c");
-        files.add("references.c");
-        files.add("date.c");
-        files.add("file.c");
-        files.add("heap.c");
+        files.add("time.c");
 
         for (String className : classes.getClassNames()) {
             files.add(ClassGenerator.fileName(className) + ".c");

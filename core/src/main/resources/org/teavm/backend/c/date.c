@@ -1,4 +1,5 @@
-#include "runtime.h"
+#include "date.h"
+#include "definitions.h"
 
 #ifndef _XOPEN_SOURCE
 #define _XOPEN_SOURCE
@@ -12,12 +13,10 @@
 #define _GNU_SOURCE
 #endif
 
-#ifdef _MSC_VER
-#define timegm _mkgmtime
-#define localtime_r(a, b) localtime_s(b, a)
+#if TEAVM_WINDOWS
+    #define timegm _mkgmtime
+    #define localtime_r(a, b) localtime_s(b, a)
 #endif
-
-#include <time.h>
 
 static time_t teavm_epochStart;
 static struct tm teavm_epochStartTm;
@@ -99,7 +98,7 @@ int64_t teavm_date_createUtc(int32_t year, int32_t month, int32_t day, int32_t h
 }
 
 int64_t teavm_date_parse(char* s) {
-    #ifdef __GNUC__
+    #if TEAVM_UNIX
         struct tm t;
         strptime(s, teavm_date_defaultFormat, &t);
         time_t result = mktime(&t);

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2019 Alexey Andreev.
+ *  Copyright 2019 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,22 +13,15 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.runtime;
+package org.teavm.backend.c.intrinsic;
 
-import org.teavm.backend.c.intrinsic.RuntimeInclude;
-import org.teavm.interop.Import;
-import org.teavm.interop.StaticInit;
-import org.teavm.interop.Unmanaged;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-@Unmanaged
-@StaticInit
-public final class Console {
-    private Console() {
-    }
-
-    public static native void printString(String s);
-
-    @Import(name = "teavm_printInt")
-    @RuntimeInclude("log.h")
-    public static native void printInt(int n);
+@Retention(RetentionPolicy.CLASS)
+@Target(ElementType.METHOD)
+public @interface RuntimeInclude {
+    String value();
 }
