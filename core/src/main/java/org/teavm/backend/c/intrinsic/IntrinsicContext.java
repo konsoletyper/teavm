@@ -18,8 +18,8 @@ package org.teavm.backend.c.intrinsic;
 import org.teavm.ast.Expr;
 import org.teavm.backend.c.generate.CodeWriter;
 import org.teavm.backend.c.generate.IncludeManager;
-import org.teavm.backend.c.generate.NameProvider;
 import org.teavm.backend.c.generate.StringPool;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
@@ -42,6 +42,8 @@ public interface IntrinsicContext {
     String escapeFileName(String name);
 
     ClassReaderSource classes();
+
+    void importMethod(MethodReference method, boolean isStatic);
 
     boolean isIncremental();
 }

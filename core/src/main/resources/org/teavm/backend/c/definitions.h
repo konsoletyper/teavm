@@ -7,6 +7,7 @@
 
 #ifdef _MSC_VER
     #define alignas(n) __declspec(align(n))
+    #define restrict __restrict
     #pragma comment (lib,"uuid.lib")
     #pragma warning(disable:4116)
     #pragma warning(disable:4102)

@@ -16,6 +16,7 @@
 package org.teavm.backend.c.generate;
 
 import org.teavm.backend.c.util.InteropUtil;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ValueType;
 

@@ -33,6 +33,7 @@ import java.util.Set;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import org.teavm.backend.c.CTarget;
+import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.cache.InMemoryMethodNodeCache;
 import org.teavm.cache.InMemoryProgramCache;
 import org.teavm.cache.InMemorySymbolTable;
@@ -84,6 +85,7 @@ public class IncrementalCBuilder {
 
     private List<BuilderListener> listeners = new ArrayList<>();
     private final Set<ProgressHandler> progressHandlers = new LinkedHashSet<>();
+    private final CNameProvider nameProvider = new CNameProvider();
 
     private int lastReachedClasses;
     private final Object statusLock = new Object();
@@ -318,7 +320,7 @@ public class IncrementalCBuilder {
         classSource.setProvider(name -> PreOptimizingClassHolderSource.optimize(classPathMapper, name));
 
         long startTime = System.currentTimeMillis();
-        CTarget cTarget = new CTarget();
+        CTarget cTarget = new CTarget(nameProvider);
         cTarget.setAstCache(astCache);
 
         TeaVM vm = new TeaVMBuilder(cTarget)
@@ -356,6 +358,7 @@ public class IncrementalCBuilder {
 
     private void postBuild(TeaVM vm, long startTime) {
         needsExternalTool = false;
+        boolean hasErrors = false;
         if (!vm.wasCancelled()) {
             log.info("Recompiled stale methods: " + programCache.getPendingItemsCount());
             fireBuildComplete(vm);
@@ -368,6 +371,7 @@ public class IncrementalCBuilder {
                 reportCompilationComplete(true);
                 needsExternalTool = true;
             } else {
+                hasErrors = true;
                 log.info("Build complete with errors");
                 reportCompilationComplete(false);
             }
@@ -380,7 +384,9 @@ public class IncrementalCBuilder {
 
         astCache.discard();
         programCache.discard();
-        buildTarget.reset();
+        if (!vm.wasCancelled() && !hasErrors) {
+            buildTarget.reset();
+        }
         cancelRequested = false;
     }
 
@@ -407,6 +413,7 @@ public class IncrementalCBuilder {
 
         try {
             log.info("Running external tool");
+            long start = System.currentTimeMillis();
             ProcessBuilder pb = new ProcessBuilder(externalTool);
             if (externalToolWorkingDir != null) {
                 pb.directory(new File(externalToolWorkingDir));
@@ -424,6 +431,8 @@ public class IncrementalCBuilder {
             int code = process.waitFor();
             if (code != 0) {
                 log.error("External tool returned non-zero code: " + code);
+            } else {
+                log.info("External tool took " + (System.currentTimeMillis() - start) + " ms");
             }
         } catch (IOException e) {
             log.error("Could not start external tool", e);

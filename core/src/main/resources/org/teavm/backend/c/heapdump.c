@@ -2,10 +2,13 @@
 #include <stdio.h>
 #include <uchar.h>
 #include <stdint.h>
+#include <inttypes.h>
 #include <stdlib.h>
 #include "core.h"
 #include "memory.h"
 #include "heaptrace.h"
+#include "stack.h"
+#include "stringhash.h"
 
 #if TEAVM_HEAP_DUMP
     static char* teavm_hexChars = "0123456789abcdef";
@@ -176,7 +179,7 @@
 
                 if (cls->fieldDescriptors != NULL) {
                     fprintf(out, ",\"fields\":[");
-                    for (int j = 0; j < cls->fieldDescriptors->count; ++j) {
+                    for (unsigned j = 0; j < cls->fieldDescriptors->count; ++j) {
                         if (j > 0) {
                             fprintf(out, ",");
                         }
@@ -190,7 +193,7 @@
 
                 if (cls->staticFieldDescriptors != NULL) {
                     fprintf(out, ",\"staticFields\":[");
-                    for (int j = 0; j < cls->staticFieldDescriptors->count; ++j) {
+                    for (unsigned j = 0; j < cls->staticFieldDescriptors->count; ++j) {
                         if (j > 0) {
                             fprintf(out, ",");
                         }
@@ -202,7 +205,7 @@
                     fprintf(out, "]");
 
                     fprintf(out, ",\"data\":\"");
-                    for (int j = 0; j < cls->staticFieldDescriptors->count; ++j) {
+                    for (unsigned j = 0; j < cls->staticFieldDescriptors->count; ++j) {
                         TeaVM_StaticFieldDescriptor* field = &cls->staticFieldDescriptors->data[j];
                         teavm_gc_writeHeapDumpData(out, field->offset, teavm_gc_fieldTypeSize(field->type));
                     }
@@ -260,7 +263,7 @@
                 cls = classes[i];
                 if (cls->fieldDescriptors != NULL) {
                     TeaVM_FieldDescriptors* fieldDescriptors = cls->fieldDescriptors;
-                    for (int j = 0; j < fieldDescriptors->count; ++j) {
+                    for (unsigned j = 0; j < fieldDescriptors->count; ++j) {
                         TeaVM_FieldDescriptor* field = &fieldDescriptors->data[j];
                         teavm_gc_writeHeapDumpData(out, (unsigned char*) obj + field->offset,
                             teavm_gc_fieldTypeSize(field->type));

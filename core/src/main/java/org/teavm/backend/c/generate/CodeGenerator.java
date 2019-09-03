@@ -21,6 +21,7 @@ import org.teavm.ast.MethodNode;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
 import org.teavm.backend.c.analyze.VolatileDefinitionFinder;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
@@ -28,17 +29,24 @@ import org.teavm.model.lowlevel.CallSiteDescriptor;
 
 public class CodeGenerator {
     private GenerationContext context;
+    private ClassGenerationContext classContext;
     private CodeWriter writer;
     private CodeWriter localsWriter;
     private NameProvider names;
     private IncludeManager includes;
     private List<CallSiteDescriptor> callSites;
 
-    public CodeGenerator(GenerationContext context, CodeWriter writer, IncludeManager includes) {
-        this.context = context;
+    public CodeGenerator(ClassGenerationContext classContext, CodeWriter writer, IncludeManager includes) {
+        this.classContext = classContext;
+        this.context = classContext.getContext();
         this.writer = writer;
         this.names = context.getNames();
         this.includes = includes;
+        this.classContext = classContext;
+    }
+
+    public ClassGenerationContext getClassContext() {
+        return classContext;
     }
 
     public void setCallSites(List<CallSiteDescriptor> callSites) {
@@ -46,7 +54,7 @@ public class CodeGenerator {
     }
 
     public void generateMethod(RegularMethodNode methodNode) {
-        generateMethodSignature(writer, methodNode.getReference(),
+        generateMethodSignature(writer, names, methodNode.getReference(),
                 methodNode.getModifiers().contains(ElementModifier.STATIC), true);
 
         writer.print(" {").indent().println();
@@ -61,7 +69,7 @@ public class CodeGenerator {
     private CodeGenerationVisitor generateMethodBody(RegularMethodNode methodNode) {
         VolatileDefinitionFinder volatileDefinitions = new VolatileDefinitionFinder();
         volatileDefinitions.findVolatileDefinitions(methodNode.getBody());
-        CodeGenerationVisitor visitor = new CodeGenerationVisitor(context, writer, includes, callSites,
+        CodeGenerationVisitor visitor = new CodeGenerationVisitor(classContext, writer, includes, callSites,
                 volatileDefinitions);
         visitor.setAsync(context.isAsync(methodNode.getReference()));
         visitor.setCallingMethod(methodNode.getReference());
@@ -69,8 +77,8 @@ public class CodeGenerator {
         return visitor;
     }
 
-    public void generateMethodSignature(CodeWriter writer, MethodReference methodRef, boolean isStatic,
-            boolean withNames) {
+    public static void generateMethodSignature(CodeWriter writer, NameProvider names,
+            MethodReference methodRef, boolean isStatic, boolean withNames) {
         writer.printType(methodRef.getReturnType()).print(" ").print(names.forMethod(methodRef)).print("(");
 
         generateMethodParameters(writer, methodRef.getDescriptor(), isStatic, withNames);
@@ -78,7 +86,7 @@ public class CodeGenerator {
         writer.print(")");
     }
 
-    public void generateMethodParameters(CodeWriter writer, MethodDescriptor methodRef, boolean isStatic,
+    public static void generateMethodParameters(CodeWriter writer, MethodDescriptor methodRef, boolean isStatic,
             boolean withNames) {
         if (methodRef.parameterCount() == 0 && isStatic) {
             return;

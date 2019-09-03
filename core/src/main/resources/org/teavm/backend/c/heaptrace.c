@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <wctype.h>
-#include <uchar.h>
 
 #if TEAVM_WINDOWS
     #include <Windows.h>
@@ -192,7 +191,7 @@ void teavm_gc_move(void* from, void* to, int32_t size) {
 
 static FILE* teavm_gc_traceFile = NULL;
 
-static FILE* teavm_gc_openDumpFile(wchar_t* name) {
+FILE* teavm_gc_openDumpFile(wchar_t* name) {
     wchar_t* fullName = name;
     size_t fullNameLen = wcslen(name);
     if (teavm_gc_dumpDirectory != NULL) {

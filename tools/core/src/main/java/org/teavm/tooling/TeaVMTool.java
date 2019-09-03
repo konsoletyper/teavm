@@ -33,6 +33,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import org.teavm.backend.c.CTarget;
+import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
@@ -329,7 +330,7 @@ public class TeaVMTool {
     }
 
     private CTarget prepareCTarget() {
-        cTarget = new CTarget();
+        cTarget = new CTarget(new CNameProvider());
         cTarget.setMinHeapSize(minHeapSize);
         cTarget.setLineNumbersGenerated(debugInformationGenerated);
         cTarget.setLongjmpUsed(longjmpSupported);

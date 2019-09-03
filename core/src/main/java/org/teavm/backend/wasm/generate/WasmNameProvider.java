@@ -16,10 +16,6 @@
 package org.teavm.backend.wasm.generate;
 
 import org.teavm.backend.lowlevel.generate.LowLevelNameProvider;
-import org.teavm.model.ClassReaderSource;
 
-public class NameProvider extends LowLevelNameProvider {
-    public NameProvider(ClassReaderSource classSource) {
-        super(classSource);
-    }
+public class WasmNameProvider extends LowLevelNameProvider {
 }

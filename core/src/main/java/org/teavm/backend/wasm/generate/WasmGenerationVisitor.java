@@ -63,6 +63,7 @@ import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.binary.DataPrimitives;

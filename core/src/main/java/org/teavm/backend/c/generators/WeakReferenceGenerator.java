@@ -30,7 +30,7 @@ public class WeakReferenceGenerator implements Generator {
     public void generate(GeneratorContext context, MethodReference method) {
         switch (method.getName()) {
             case "<init>":
-                context.includes().includeClass(REFERENCE_INIT.getClassName());
+                context.importMethod(REFERENCE_INIT, false);
                 context.writer().print(context.names().forMethod(REFERENCE_INIT)).print("(")
                         .print(context.parameterName(0))
                         .println(");");

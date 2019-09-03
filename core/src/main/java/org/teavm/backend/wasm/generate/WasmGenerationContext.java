@@ -19,6 +19,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.generators.WasmMethodGenerator;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -156,7 +157,7 @@ public class WasmGenerationContext {
         return diagnostics;
     }
 
-    public class ImportedMethod {
+    public static class ImportedMethod {
         public final String name;
         public final String module;
 

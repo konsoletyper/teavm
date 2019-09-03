@@ -58,6 +58,7 @@ import org.junit.runner.notification.Failure;
 import org.junit.runner.notification.RunNotifier;
 import org.junit.runners.model.InitializationError;
 import org.teavm.backend.c.CTarget;
+import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.backend.javascript.JavaScriptTarget;
 import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.callgraph.CallGraph;
@@ -612,7 +613,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     }
 
     private CTarget createCTarget() {
-        CTarget cTarget = new CTarget();
+        CTarget cTarget = new CTarget(new CNameProvider());
         cTarget.setLineNumbersGenerated(Boolean.parseBoolean(System.getProperty(C_LINE_NUMBERS, "false")));
         return cTarget;
     }

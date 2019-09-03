@@ -109,7 +109,7 @@ public class MemoryCachedClassReaderSource implements ClassReaderSource, CacheSt
         freshClasses.clear();
     }
 
-    class Entry {
+    static class Entry {
         byte[] data;
         ClassReader reader;
     }

@@ -31,7 +31,7 @@ public class ReferenceQueueGenerator implements Generator {
     public void generate(GeneratorContext context, MethodReference method) {
         switch (method.getName()) {
             case "<init>":
-                context.includes().includeClass(OBJECT_INIT.getClassName());
+                context.importMethod(OBJECT_INIT, false);
                 context.writer().print(context.names().forMethod(OBJECT_INIT)).print("(")
                         .print(context.parameterName(0))
                         .println(");");

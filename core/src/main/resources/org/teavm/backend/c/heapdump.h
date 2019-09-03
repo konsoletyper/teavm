@@ -35,3 +35,5 @@ typedef struct {
     uint32_t count;
     TeaVM_StaticFieldDescriptor data[65536];
 } TeaVM_StaticFieldDescriptors;
+
+extern void teavm_gc_writeHeapDump();

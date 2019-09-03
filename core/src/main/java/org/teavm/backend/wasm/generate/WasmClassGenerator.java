@@ -24,6 +24,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.binary.DataArray;
 import org.teavm.backend.wasm.binary.DataPrimitives;

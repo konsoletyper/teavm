@@ -18,6 +18,7 @@ package org.teavm.backend.wasm.generate;
 import org.teavm.ast.RegularMethodNode;
 import org.teavm.ast.VariableNode;
 import org.teavm.ast.decompilation.Decompiler;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.model.WasmFunction;
 import org.teavm.backend.wasm.model.WasmLocal;

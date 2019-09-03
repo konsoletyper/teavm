@@ -1,5 +1,6 @@
 #pragma once
 #include <stdint.h>
+#include <stdio.h>
 #include "definitions.h"
 
 #if TEAVM_MEMORY_TRACE
@@ -19,3 +20,5 @@ extern void teavm_gc_defragCompleted();
 extern void teavm_gc_setDumpDirectory(const wchar_t* path);
 extern void teavm_gc_fixHeap();
 extern void teavm_gc_writeHeapDump();
+extern FILE* teavm_gc_openDumpFile(wchar_t* name);
+extern int32_t teavm_gc_objectSize(void* address);

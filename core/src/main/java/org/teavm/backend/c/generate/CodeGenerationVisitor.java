@@ -79,8 +79,10 @@ import org.teavm.backend.c.analyze.VolatileDefinitionFinder;
 import org.teavm.backend.c.intrinsic.Intrinsic;
 import org.teavm.backend.c.intrinsic.IntrinsicContext;
 import org.teavm.backend.c.util.InteropUtil;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
+import org.teavm.interop.DelegateTo;
 import org.teavm.interop.c.Char16;
 import org.teavm.interop.c.Variable;
 import org.teavm.model.AnnotationContainerReader;
@@ -89,6 +91,7 @@ import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
@@ -126,6 +129,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private static final Map<String, String> BUFFER_TYPES = new HashMap<>();
 
     private GenerationContext context;
+    private ClassGenerationContext classContext;
     private NameProvider names;
     private CodeWriter writer;
     private VolatileDefinitionFinder volatileDefinitions;
@@ -156,9 +160,10 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         BUFFER_TYPES.put(DoubleBuffer.class.getName(), "double");
     }
 
-    public CodeGenerationVisitor(GenerationContext context, CodeWriter writer, IncludeManager includes,
+    public CodeGenerationVisitor(ClassGenerationContext classContext, CodeWriter writer, IncludeManager includes,
             List<CallSiteDescriptor> callSites, VolatileDefinitionFinder volatileDefinitions) {
-        this.context = context;
+        this.classContext = classContext;
+        this.context = classContext.getContext();
         this.writer = writer;
         this.names = context.getNames();
         this.includes = includes;
@@ -553,7 +558,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             reference = method.getReference();
         }
 
-        includes.includeClass(reference.getClassName());
+        classContext.importMethod(reference, false);
         writer.print(names.forMethod(reference));
 
         writer.print("(" + receiver);
@@ -577,7 +582,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             }
 
             reference = method.getReference();
-            includes.includeClass(reference.getClassName());
+            if (!method.hasModifier(ElementModifier.NATIVE)
+                    || method.getAnnotations().get(DelegateTo.class.getName()) != null
+                    || context.getGenerator(reference) != null) {
+                classContext.importMethod(reference, method.hasModifier(ElementModifier.STATIC));
+            }
             writer.print(names.forMethod(reference));
 
             writer.print("(");
@@ -593,6 +602,14 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     }
 
     private void generateVirtualCall(MethodReference reference, List<? extends Expr> arguments) {
+        if (context.isIncremental()) {
+            generateIncrementalVirtualCall(reference.getDescriptor(), arguments);
+        } else {
+            generateNormalVirtualCall(reference, arguments);
+        }
+    }
+
+    private void generateNormalVirtualCall(MethodReference reference, List<? extends Expr> arguments) {
         VirtualTable vtable = context.getVirtualTableProvider().lookup(reference.getClassName());
         String vtableClass = null;
         if (vtable != null) {
@@ -614,7 +631,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         } else {
             receiver = allocTemporaryVariable(CVariableType.PTR);
             writer.print("((").print(receiver).print(" = ");
-            visitReference(arguments.get(0));
+            visitReference(receiverArg);
             writer.print("), ");
             closingParenthesis = true;
         }
@@ -630,6 +647,38 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             arguments.get(i).acceptVisitor(this);
         }
         writer.print(")");
+        if (closingParenthesis) {
+            writer.print(")");
+            freeTemporaryVariable(CVariableType.PTR);
+        }
+    }
+
+    private void generateIncrementalVirtualCall(MethodDescriptor descriptor, List<? extends Expr> arguments) {
+        Expr receiverArg = arguments.get(0);
+        boolean closingParenthesis = false;
+        String receiver;
+        if (receiverArg instanceof VariableExpr) {
+            receiver = getVariableName(((VariableExpr) receiverArg).getIndex());
+        } else {
+            receiver = allocTemporaryVariable(CVariableType.PTR);
+            writer.print("((").print(receiver).print(" = ");
+            visitReference(receiverArg);
+            writer.print("), ");
+            closingParenthesis = true;
+        }
+
+        writer.print("TEAVM_VC_METHOD(").print(receiver)
+                .print(", ").print(classContext.getVirtualMethodId(descriptor))
+                .print(", ").printType(descriptor.getResultType())
+                .print(", (");
+        CodeGenerator.generateMethodParameters(writer, descriptor, false, false);
+        writer.print("))(").print(receiver);
+        for (int i = 1; i < arguments.size(); ++i) {
+            writer.print(", ");
+            arguments.get(i).acceptVisitor(this);
+        }
+        writer.print(")");
+
         if (closingParenthesis) {
             writer.print(")");
             freeTemporaryVariable(CVariableType.PTR);
@@ -864,8 +913,6 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             needParenthesis = true;
             withCallSite();
         }
-        includes.includeClass(expr.getConstructedClass());
-        includes.includeClass(ALLOC_METHOD.getClassName());
         allocObject(expr.getConstructedClass());
         if (needParenthesis) {
             writer.print(")");
@@ -874,6 +921,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     }
 
     private void allocObject(String className) {
+        includes.includeClass(className);
+        classContext.importMethod(ALLOC_METHOD, true);
         writer.print(names.forMethod(ALLOC_METHOD)).print("(&")
                 .print(names.forClassInstance(ValueType.object(className)))
                 .print(")");
@@ -892,7 +941,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         ValueType type = ValueType.arrayOf(expr.getType());
         writer.print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(&")
                 .print(names.forClassInstance(type)).print(", ");
-        includes.includeClass(ALLOC_ARRAY_METHOD.getClassName());
+        classContext.importMethod(ALLOC_ARRAY_METHOD, true);
         includes.includeType(type);
         expr.getLength().acceptVisitor(this);
         writer.print(")");
@@ -916,7 +965,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
         writer.print(names.forMethod(ALLOC_MULTI_ARRAY_METHOD)).print("(&")
                 .print(names.forClassInstance(expr.getType())).print(", ");
-        includes.includeClass(ALLOC_ARRAY_METHOD.getClassName());
+        classContext.importMethod(ALLOC_MULTI_ARRAY_METHOD, true);
         includes.includeType(expr.getType());
 
         writer.print("(int32_t[]) {");
@@ -1227,7 +1276,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             withCallSite();
         }
 
-        includes.includeClass(THROW_EXCEPTION_METHOD.getClassName());
+        classContext.importMethod(THROW_EXCEPTION_METHOD, true);
         writer.print(names.forMethod(THROW_EXCEPTION_METHOD)).print("(");
         statement.getException().acceptVisitor(this);
         writer.print(")");
@@ -1333,8 +1382,9 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             withCallSite();
         }
 
-        includes.includeClass("java.lang.Object");
-        writer.print(names.forMethod(async ? MONITOR_ENTER : MONITOR_ENTER_SYNC)).print("(");
+        MethodReference methodRef = async ? MONITOR_ENTER : MONITOR_ENTER_SYNC;
+        classContext.importMethod(methodRef, true);
+        writer.print(names.forMethod(methodRef)).print("(");
         statement.getObjectRef().acceptVisitor(this);
         writer.print(")");
 
@@ -1356,8 +1406,9 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
             withCallSite();
         }
 
-        includes.includeClass("java.lang.Object");
-        writer.print(names.forMethod(async ? MONITOR_EXIT : MONITOR_EXIT_SYNC)).print("(");
+        MethodReference methodRef = async ? MONITOR_EXIT : MONITOR_EXIT_SYNC;
+        classContext.importMethod(methodRef, true);
+        writer.print(names.forMethod(methodRef)).print("(");
         statement.getObjectRef().acceptVisitor(this);
         writer.print(")");
 
@@ -1420,6 +1471,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         @Override
         public ClassReaderSource classes() {
             return context.getClassSource();
+        }
+
+        @Override
+        public void importMethod(MethodReference method, boolean isStatic) {
+            classContext.importMethod(method, isStatic);
         }
     };
 

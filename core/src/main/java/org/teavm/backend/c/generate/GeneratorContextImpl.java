@@ -19,21 +19,25 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.backend.c.generators.GeneratorContext;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodReference;
 
 class GeneratorContextImpl implements GeneratorContext {
     private GenerationContext context;
+    private ClassGenerationContext classContext;
     private CodeWriter bodyWriter;
     private CodeWriter writerBefore;
     private CodeWriter writerAfter;
     private IncludeManager includes;
     private List<FileGeneratorImpl> fileGenerators = new ArrayList<>();
 
-    public GeneratorContextImpl(GenerationContext context, CodeWriter bodyWriter,
+    public GeneratorContextImpl(ClassGenerationContext classContext, CodeWriter bodyWriter,
             CodeWriter writerBefore, CodeWriter writerAfter, IncludeManager includes) {
-        this.context = context;
+        this.context = classContext.getContext();
+        this.classContext = classContext;
         this.bodyWriter = bodyWriter;
         this.writerBefore = writerBefore;
         this.writerAfter = writerAfter;
@@ -93,6 +97,11 @@ class GeneratorContextImpl implements GeneratorContext {
     @Override
     public FileGenerator createSourceFile(String path) {
         return createFile(new BufferedCodeWriter(false), path);
+    }
+
+    @Override
+    public void importMethod(MethodReference method, boolean isStatic) {
+        classContext.importMethod(method, isStatic);
     }
 
     @Override

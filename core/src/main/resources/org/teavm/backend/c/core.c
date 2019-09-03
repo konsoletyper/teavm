@@ -9,6 +9,10 @@
 #include <time.h>
 #include <math.h>
 
+#if TEAVM_INCREMENTAL
+    #include "virtcall.h"
+#endif
+
 #if TEAVM_UNIX
     #include <locale.h>
 #endif
@@ -45,6 +49,9 @@ TeaVM_Array* teavm_parseArguments(int argc, char** argv) {
 
 void teavm_afterInitClasses() {
     teavm_initStaticGcRoots();
+    #if TEAVM_INCREMENTAL
+        teavm_vc_done();
+    #endif
 }
 
 TeaVM_Class* teavm_classClass;

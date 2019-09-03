@@ -31,12 +31,14 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
+import org.teavm.backend.lowlevel.generate.NameProvider;
+import org.teavm.backend.lowlevel.generate.NameProviderWithSpecialNames;
 import org.teavm.backend.wasm.binary.BinaryWriter;
-import org.teavm.backend.wasm.generate.NameProvider;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.generate.WasmDependencyListener;
 import org.teavm.backend.wasm.generate.WasmGenerationContext;
 import org.teavm.backend.wasm.generate.WasmGenerator;
+import org.teavm.backend.wasm.generate.WasmNameProvider;
 import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.generators.ArrayGenerator;
 import org.teavm.backend.wasm.generators.WasmMethodGenerator;
@@ -328,7 +330,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         ClassHierarchy hierarchy = new ClassHierarchy(classes);
         TagRegistry tagRegistry = new TagRegistry(classes, hierarchy);
         BinaryWriter binaryWriter = new BinaryWriter(256);
-        NameProvider names = new NameProvider(controller.getUnprocessedClassSource());
+        NameProvider names = new NameProviderWithSpecialNames(new WasmNameProvider(),
+                controller.getUnprocessedClassSource());
         WasmClassGenerator classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),
                 vtableProvider, tagRegistry, binaryWriter, names);
 

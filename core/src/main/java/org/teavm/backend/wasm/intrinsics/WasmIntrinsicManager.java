@@ -16,8 +16,8 @@
 package org.teavm.backend.wasm.intrinsics;
 
 import org.teavm.ast.Expr;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.wasm.binary.BinaryWriter;
-import org.teavm.backend.wasm.generate.NameProvider;
 import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;

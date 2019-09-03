@@ -22,6 +22,7 @@ import java.util.Map;
 import java.util.function.Predicate;
 import org.teavm.backend.c.generators.Generator;
 import org.teavm.backend.c.intrinsic.Intrinsic;
+import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.ClassReaderSource;

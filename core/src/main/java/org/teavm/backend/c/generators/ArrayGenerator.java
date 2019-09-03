@@ -89,7 +89,7 @@ public class ArrayGenerator implements Generator {
 
             String type = CodeWriter.strictTypeAsString(primitiveTypes[i]);
             context.writer().println("case " + primitives[i] + ":").indent();
-            context.includes().includeClass(methodRef.getClassName());
+            context.importMethod(methodRef, true);
             context.writer().println("return " + context.names().forMethod(methodRef) + "(TEAVM_ARRAY_AT(" + array
                     + ", " + type + ", " + index + "));");
             context.writer().outdent();
