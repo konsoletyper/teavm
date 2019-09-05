@@ -20,38 +20,50 @@ import org.teavm.classlib.fs.VirtualFileAccessor;
 
 public class CVirtualFileAccessor implements VirtualFileAccessor {
     private long file;
-    private int position;
 
-    public CVirtualFileAccessor(long file, int position) {
+    public CVirtualFileAccessor(long file) {
         this.file = file;
-        this.position = position;
     }
 
     @Override
-    public int read(int pos, byte[] buffer, int offset, int limit) throws IOException {
-        ensurePosition(pos);
-        int bytesRead = CFileSystem.read(file, buffer, offset, limit);
-        position += bytesRead;
-        return bytesRead;
+    public int read(byte[] buffer, int offset, int limit) throws IOException {
+        return CFileSystem.read(file, buffer, offset, limit);
     }
 
     @Override
-    public void write(int pos, byte[] buffer, int offset, int limit) throws IOException {
-        ensurePosition(pos);
+    public void write(byte[] buffer, int offset, int limit) throws IOException {
         int bytesWritten = CFileSystem.write(file, buffer, offset, limit);
         if (bytesWritten < limit) {
             throw new IOException();
         }
-        position += bytesWritten;
+    }
+
+    @Override
+    public int tell() throws IOException {
+        return CFileSystem.tell(file);
+    }
+
+    @Override
+    public void skip(int amount) throws IOException {
+        CFileSystem.seek(file, 0, amount);
+    }
+
+    @Override
+    public void seek(int target) throws IOException {
+        CFileSystem.seek(file, 0, target);
     }
 
     @Override
     public int size() throws IOException {
+        int current = CFileSystem.tell(file);
         if (!CFileSystem.seek(file, 2, 0)) {
             throw new IOException();
         }
-        position = CFileSystem.tell(file);
-        return position;
+        int result = CFileSystem.tell(file);
+        if (!CFileSystem.seek(file, 0, current)) {
+            throw new IOException();
+        }
+        return result;
     }
 
     @Override
@@ -59,11 +71,13 @@ public class CVirtualFileAccessor implements VirtualFileAccessor {
         if (!CFileSystem.seek(file, 2, 0)) {
             throw new IOException();
         }
-        position = CFileSystem.tell(file);
+        int position = CFileSystem.tell(file);
         if (position < size) {
             byte[] zeros = new byte[4096];
             while (position < size) {
-                write(position, zeros, 0, Math.min(zeros.length, size - position));
+                int bytesToWrite = Math.min(zeros.length, size - position);
+                write(zeros, 0, bytesToWrite);
+                position += bytesToWrite;
             }
         }
     }
@@ -81,15 +95,6 @@ public class CVirtualFileAccessor implements VirtualFileAccessor {
     public void flush() throws IOException {
         if (!CFileSystem.flush(file)) {
             throw new IOException();
-        }
-    }
-
-    private void ensurePosition(int pos) throws IOException {
-        if (position != pos) {
-            if (!CFileSystem.seek(file, 0, pos)) {
-                throw new IOException();
-            }
-            position = pos;
         }
     }
 }

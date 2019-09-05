@@ -58,19 +58,48 @@ public class InMemoryVirtualFile extends AbstractInMemoryVirtualFile {
         }
 
         return new VirtualFileAccessor() {
+            private int pos;
+
+            {
+                if (append) {
+                    pos = size;
+                }
+            }
+
             @Override
-            public int read(int pos, byte[] buffer, int offset, int limit) {
+            public int read(byte[] buffer, int offset, int limit) {
                 limit = Math.max(0, Math.min(size - pos, limit));
-                System.arraycopy(data, pos, buffer, offset, limit);
+                if (limit > 0) {
+                    System.arraycopy(data, pos, buffer, offset, limit);
+                    pos += limit;
+                }
                 return limit;
             }
 
             @Override
-            public void write(int pos, byte[] buffer, int offset, int limit) {
+            public void write(byte[] buffer, int offset, int limit) {
                 expandData(pos + limit);
                 System.arraycopy(buffer, offset, data, pos, limit);
-                size = pos + limit;
+                pos += limit;
+                if (pos > size) {
+                    size = pos;
+                }
                 modify();
+            }
+
+            @Override
+            public int tell() throws IOException {
+                return pos;
+            }
+
+            @Override
+            public void seek(int target) throws IOException {
+                pos = target;
+            }
+
+            @Override
+            public void skip(int amount) throws IOException {
+                pos += amount;
             }
 
             @Override

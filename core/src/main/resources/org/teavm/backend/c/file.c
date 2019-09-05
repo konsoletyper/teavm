@@ -566,7 +566,7 @@ int32_t teavm_file_flush(int64_t file) {
 }
 
 int32_t teavm_file_seek(int64_t file, int32_t where, int32_t offset) {
-  return SetFilePointer((HANDLE) file, offset, 0, where);
+  return SetFilePointer((HANDLE) file, offset, 0, where) != INVALID_SET_FILE_POINTER;
 }
 
 int32_t teavm_file_tell(int64_t file) {

@@ -18,9 +18,15 @@ package org.teavm.classlib.fs;
 import java.io.IOException;
 
 public interface VirtualFileAccessor {
-    int read(int pos, byte[] buffer, int offset, int limit) throws IOException;
+    int read(byte[] buffer, int offset, int limit) throws IOException;
 
-    void write(int pos, byte[] buffer, int offset, int limit) throws IOException;
+    void write(byte[] buffer, int offset, int limit) throws IOException;
+
+    int tell() throws IOException;
+
+    void seek(int target) throws IOException;
+
+    void skip(int amount) throws IOException;
 
     int size() throws IOException;
 

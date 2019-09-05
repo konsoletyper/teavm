@@ -24,8 +24,8 @@ import org.teavm.classlib.fs.VirtualFile;
 import org.teavm.classlib.fs.VirtualFileAccessor;
 
 public class TFileOutputStream extends OutputStream {
+    private static byte[] ONE_BYTE_BUFER = new byte[1];
     private VirtualFileAccessor accessor;
-    private int pos;
 
     public TFileOutputStream(TFile file) throws FileNotFoundException {
         this(file, false);
@@ -57,10 +57,6 @@ public class TFileOutputStream extends OutputStream {
         if (accessor == null) {
             throw new FileNotFoundException();
         }
-
-        if (append) {
-            pos = -1;
-        }
     }
 
     @Override
@@ -69,9 +65,8 @@ public class TFileOutputStream extends OutputStream {
         if (off < 0 || len < 0 || off > b.length - len) {
             throw new IndexOutOfBoundsException();
         }
-        ensurePos();
-        accessor.write(pos, b, off, len);
-        pos += len;
+        ensureOpened();
+        accessor.write(b, off, len);
     }
 
     @Override
@@ -90,22 +85,15 @@ public class TFileOutputStream extends OutputStream {
 
     @Override
     public void write(int b) throws IOException {
-        ensurePos();
-        byte[] buffer = { (byte) b };
-        accessor.write(pos, buffer, 0, 1);
-        pos++;
+        ensureOpened();
+        byte[] buffer = ONE_BYTE_BUFER;
+        buffer[0] = (byte) b;
+        accessor.write(buffer, 0, 1);
     }
 
     private void ensureOpened() throws IOException {
         if (accessor == null) {
             throw new IOException("This stream is already closed");
-        }
-    }
-
-    private void ensurePos() throws IOException {
-        ensureOpened();
-        if (pos < 0) {
-            pos = accessor.size();
         }
     }
 }

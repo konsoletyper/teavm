@@ -100,7 +100,7 @@ public class CVirtualFile implements VirtualFile {
         if (file == 0) {
             return null;
         }
-        return new CVirtualFileAccessor(file, append ? -1 : 0);
+        return new CVirtualFileAccessor(file);
     }
 
     @Override
