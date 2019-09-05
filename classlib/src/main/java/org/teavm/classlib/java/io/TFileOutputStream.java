@@ -24,7 +24,7 @@ import org.teavm.classlib.fs.VirtualFile;
 import org.teavm.classlib.fs.VirtualFileAccessor;
 
 public class TFileOutputStream extends OutputStream {
-    private static byte[] ONE_BYTE_BUFER = new byte[1];
+    private static final byte[] ONE_BYTE_BUFER = new byte[1];
     private VirtualFileAccessor accessor;
 
     public TFileOutputStream(TFile file) throws FileNotFoundException {
