@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.report;
+package org.teavm.tools.classlibcomparison;
 
 import java.util.Map;
 import org.objectweb.asm.*;
@@ -135,30 +135,9 @@ class JCLComparisonVisitor extends ClassVisitor {
     }
 
     @Override
-    public void visitSource(String source, String debug) {
-    }
-
-    @Override
-    public void visitOuterClass(String owner, String name, String desc) {
-    }
-
-    @Override
-    public AnnotationVisitor visitAnnotation(String desc, boolean visible) {
-        return null;
-    }
-
-    @Override
-    public void visitAttribute(Attribute attr) {
-    }
-
-    @Override
-    public void visitInnerClass(String name, String outerName, String innerName, int access) {
-    }
-
-    @Override
-    public void visitEnd() {
-        if (jclPackage != null && (jclClass == null || jclClass.status != JCLStatus.FOUND)) {
-            jclPackage.status = JCLStatus.PARTIAL;
+    public void visitNestHost(String nestHost) {
+        if (jclClass != null) {
+            jclClass.outer = nestHost.replace('/', '.');
         }
     }
 }

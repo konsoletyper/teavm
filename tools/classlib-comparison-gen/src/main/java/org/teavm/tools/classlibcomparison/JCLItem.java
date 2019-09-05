@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,9 +13,16 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.report;
+package org.teavm.tools.classlibcomparison;
 
-enum JCLItemType {
-    FIELD,
-    METHOD
+class JCLItem {
+    public final JCLItemType type;
+    public final String name;
+    public JCLVisibility visibility = JCLVisibility.PUBLIC;
+    public JCLStatus status;
+
+    public JCLItem(JCLItemType type, String name) {
+        this.type = type;
+        this.name = name;
+    }
 }

@@ -361,6 +361,13 @@
     </profile>
 
     <profile>
+      <id>with-classlib-comparison</id>
+      <modules>
+        <module>tools/classlib-comparison-gen</module>
+      </modules>
+    </profile>
+
+    <profile>
       <id>sign-artifacts</id>
       <build>
         <plugins>

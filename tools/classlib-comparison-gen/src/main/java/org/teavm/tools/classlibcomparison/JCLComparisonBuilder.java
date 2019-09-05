@@ -13,14 +13,31 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.report;
+package org.teavm.tools.classlibcomparison;
 
-import java.io.*;
-import java.net.URL;
-import java.net.URLDecoder;
-import java.util.*;
-import java.util.jar.JarEntry;
-import java.util.jar.JarInputStream;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Reader;
+import java.io.Writer;
+import java.net.URI;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.FileSystemNotFoundException;
+import java.nio.file.FileVisitResult;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
+import java.nio.file.attribute.BasicFileAttributes;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.apache.commons.io.IOUtils;
 import org.objectweb.asm.ClassReader;
 import org.objectweb.asm.Type;
@@ -28,11 +45,8 @@ import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 
 public class JCLComparisonBuilder {
-    private static final String JAR_PREFIX = "jar:file:";
-    private static final String JAR_SUFFIX = "!/java/lang/Object.class";
     private static final String CLASS_SUFFIX = ".class";
     private static final String TEMPLATE_PLACEHOLDER = "${CONTENT}";
-    private Set<String> packages = new HashSet<>();
     private ClassLoader classLoader = JCLComparisonBuilder.class.getClassLoader();
     private JCLComparisonVisitor visitor;
     private String outputDirectory;
@@ -45,10 +59,6 @@ public class JCLComparisonBuilder {
         this.classLoader = classLoader;
     }
 
-    public Set<String> getPackages() {
-        return packages;
-    }
-
     public String getOutputDirectory() {
         return outputDirectory;
     }
@@ -59,7 +69,7 @@ public class JCLComparisonBuilder {
 
     public static void main(String[] args) throws IOException {
         if (args.length == 0) {
-            System.err.println("Usage: package.name [package.name2 ...] [-output directory]");
+            System.err.println("Usage: -output <directory>");
             System.exit(1);
         }
         JCLComparisonBuilder builder = new JCLComparisonBuilder();
@@ -67,8 +77,6 @@ public class JCLComparisonBuilder {
         for (int i = 0; i < args.length; ++i) {
             if (args[i].equals("-output")) {
                 builder.setOutputDirectory(args[++i]);
-            } else {
-                builder.getPackages().add(args[i].replace('.', '/'));
             }
         }
 
@@ -90,7 +98,7 @@ public class JCLComparisonBuilder {
         copyResource("html/enum_obj.png");
         copyResource("html/annotation_obj.png");
         try (Writer out = new OutputStreamWriter(new FileOutputStream(new File(
-                outputDirectory, "jcl.html")), "UTF-8")) {
+                outputDirectory, "jcl.html")), StandardCharsets.UTF_8)) {
             generateHtml(out, packages);
         }
         File packagesDirectory = new File(outputDirectory, "packages");
@@ -115,47 +123,75 @@ public class JCLComparisonBuilder {
 
     private List<JCLPackage> buildModel() throws IOException {
         Map<String, JCLPackage> packageMap = new HashMap<>();
-        URL url = classLoader.getResource("java/lang/Object" + CLASS_SUFFIX);
-        String path = url.toString();
-        if (!path.startsWith(JAR_PREFIX) || !path.endsWith(JAR_SUFFIX)) {
-            throw new RuntimeException("Can't find JCL classes");
-        }
         ClasspathClassHolderSource classSource = new ClasspathClassHolderSource(classLoader, new ReferenceCache());
-        path = path.substring(JAR_PREFIX.length(), path.length() - JAR_SUFFIX.length());
-        File outDir = new File(outputDirectory).getParentFile();
-        if (!outDir.exists()) {
-            outDir.mkdirs();
+        visitor = new JCLComparisonVisitor(classSource, packageMap);
+        try {
+            Path p = Paths.get(URI.create("jrt:/modules/java.base/java/"));
+            Files.walkFileTree(p, new SimpleFileVisitor<>() {
+                @Override
+                public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) throws IOException {
+                    if (validateName(file.getFileName().toString())) {
+                        try (InputStream input = Files.newInputStream(file)) {
+                            compareClass(input);
+                        } catch (IOException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                    return FileVisitResult.CONTINUE;
+                }
+            });
+            System.out.println();
+        } catch (FileSystemNotFoundException ex) {
+            System.out.println("Could not read my modules (perhaps not Java 9?).");
         }
-        path = URLDecoder.decode(path, "UTF-8");
-        try (JarInputStream jar = new JarInputStream(new FileInputStream(path))) {
-            visitor = new JCLComparisonVisitor(classSource, packageMap);
-            while (true) {
-                JarEntry entry = jar.getNextJarEntry();
-                if (entry == null) {
-                    break;
+
+        for (JCLPackage pkg : packageMap.values()) {
+            for (JCLClass cls : pkg.classes.toArray(new JCLClass[0])) {
+                if (cls.outer != null) {
+                    removeInnerPrivateClasses(packageMap, pkg, cls.name);
                 }
-                if (validateName(entry.getName())) {
-                    compareClass(jar);
-                }
-                jar.closeEntry();
             }
         }
+
+        for (String packageName : packageMap.keySet().toArray(new String[0])) {
+            JCLPackage pkg = packageMap.get(packageName);
+            if (pkg.classes.stream().allMatch(cls -> cls.status == JCLStatus.MISSING)) {
+                packageMap.remove(packageName);
+            } else if (pkg.classes.stream().anyMatch(cls -> cls.status == JCLStatus.MISSING)) {
+                pkg.status = JCLStatus.PARTIAL;
+            }
+        }
+
         return new ArrayList<>(packageMap.values());
     }
 
+    private boolean removeInnerPrivateClasses(Map<String, JCLPackage> packageMap, JCLPackage pkg, String className) {
+        JCLClass cls = pkg.classes.stream().filter(c -> c.name.equals(className)).findFirst().orElse(null);
+        if (cls == null) {
+            return true;
+        }
+
+        if (cls.outer != null) {
+            String packageName = cls.outer.substring(0, cls.outer.lastIndexOf('.'));
+            JCLPackage outerPackage = packageMap.get(packageName);
+            if (outerPackage == null || removeInnerPrivateClasses(packageMap, outerPackage, cls.outer)) {
+                pkg.classes.remove(cls);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private void processModel(List<JCLPackage> packages) {
-        Collections.sort(packages, (o1, o2) -> o1.name.compareTo(o2.name));
+        packages.sort(Comparator.comparing(o -> o.name));
         for (JCLPackage pkg : packages) {
-            Collections.sort(pkg.classes, (o1, o2) -> o1.name.compareTo(o2.name));
+            pkg.classes.sort(Comparator.comparing(o -> o.name));
         }
     }
 
     private boolean validateName(String name) {
-        if (!name.endsWith(CLASS_SUFFIX)) {
-            return false;
-        }
-        int slashIndex = name.lastIndexOf('/');
-        return slashIndex >= 0 && packages.contains(name.substring(0, slashIndex));
+        return name.endsWith(CLASS_SUFFIX);
     }
 
     private void compareClass(InputStream input) throws IOException {
@@ -174,7 +210,8 @@ public class JCLComparisonBuilder {
 
     private void generateHtml(Writer out, List<JCLPackage> packages) throws IOException {
         String template;
-        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl.html"), "UTF-8")) {
+        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl.html"),
+                StandardCharsets.UTF_8)) {
             template = IOUtils.toString(reader);
         }
         int placeholderIndex = template.indexOf(TEMPLATE_PLACEHOLDER);
@@ -207,7 +244,8 @@ public class JCLComparisonBuilder {
 
     private void generatePackageHtml(Writer out, JCLPackage pkg) throws IOException {
         String template;
-        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl-class.html"), "UTF-8")) {
+        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl-class.html"),
+                StandardCharsets.UTF_8)) {
             template = IOUtils.toString(reader);
         }
         template = template.replace("${CLASSNAME}", pkg.name);
@@ -242,7 +280,8 @@ public class JCLComparisonBuilder {
 
     private void generateClassHtml(Writer out, JCLPackage pkg, JCLClass cls) throws IOException {
         String template;
-        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl-class.html"), "UTF-8")) {
+        try (Reader reader = new InputStreamReader(classLoader.getResourceAsStream("html/jcl-class.html"),
+                StandardCharsets.UTF_8)) {
             template = IOUtils.toString(reader);
         }
         template = template.replace("${CLASSNAME}", pkg.name + "." + cls.name);

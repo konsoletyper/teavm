@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2019 konsoletyper.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,11 +13,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.impl.report;
+package org.teavm.tools.classlibcomparison;
 
-enum JCLClassType {
-    CLASS,
-    INTERFACE,
-    ENUM,
-    ANNOTATION
+import java.util.ArrayList;
+import java.util.List;
+
+class JCLClass {
+    final String name;
+    JCLStatus status;
+    JCLVisibility visibility = JCLVisibility.PUBLIC;
+    JCLClassType type;
+    String outer;
+    final List<JCLItem> items = new ArrayList<>();
+
+    JCLClass(String name) {
+        this.name = name;
+    }
 }
