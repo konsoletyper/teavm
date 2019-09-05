@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm.model.expression;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -32,6 +33,11 @@ public class WasmCall extends WasmExpression {
 
     public WasmCall(String functionName) {
         this(functionName, false);
+    }
+
+    public WasmCall(String functionName, WasmExpression... arguments) {
+        this(functionName);
+        getArguments().addAll(Arrays.asList(arguments));
     }
 
     public String getFunctionName() {

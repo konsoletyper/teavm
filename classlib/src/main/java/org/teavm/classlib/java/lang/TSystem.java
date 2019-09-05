@@ -259,12 +259,17 @@ public final class TSystem extends TObject {
     }
 
     public static long nanoTime() {
-        if (PlatformDetector.isLowLevel()) {
+        if (PlatformDetector.isWebAssembly()) {
+            return (long) (nanoTimeWasm() * 1000000);
+        } else if (PlatformDetector.isLowLevel()) {
             return nanoTimeLowLevel();
         } else {
             return (long) (Performance.now() * 1000000);
         }
     }
+
+    @Import(module = "teavm", name = "nanoTime")
+    private static native double nanoTimeWasm();
 
     @Import(name = "teavm_currentTimeNano")
     @Include("time.h")

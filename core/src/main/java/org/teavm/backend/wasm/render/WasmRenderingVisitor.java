@@ -51,6 +51,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
+import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -591,6 +592,13 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         append(" align=" + expression.getAlignment());
         line(expression.getIndex());
         line(expression.getValue());
+        close();
+    }
+
+    @Override
+    public void visit(WasmMemoryGrow expression) {
+        open().append("memory.grow");
+        line(expression.getAmount());
         close();
     }
 

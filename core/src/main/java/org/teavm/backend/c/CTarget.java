@@ -151,7 +151,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private NullCheckInsertion nullCheckInsertion;
     private NullCheckTransformation nullCheckTransformation;
     private ExportDependencyListener exportDependencyListener = new ExportDependencyListener();
-    private int minHeapSize = 32 * 1024 * 1024;
+    private int minHeapSize = 4 * 1024 * 1024;
+    private int maxHeapSize = 128 * 1024 * 1024;
     private List<IntrinsicFactory> intrinsicFactories = new ArrayList<>();
     private List<GeneratorFactory> generatorFactories = new ArrayList<>();
     private Characteristics characteristics;
@@ -171,6 +172,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     public void setMinHeapSize(int minHeapSize) {
         this.minHeapSize = minHeapSize;
+    }
+
+    public void setMaxHeapSize(int maxHeapSize) {
+        this.maxHeapSize = maxHeapSize;
     }
 
     public void setIncremental(boolean incremental) {
@@ -252,6 +257,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "<clinit>", void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(GC.class, "fixHeap", void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(GC.class, "tryShrink", void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(GC.class, "collectGarbage", void.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwException",
                 Throwable.class, void.class)).use();
@@ -746,7 +753,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         writer.println("int " + mainFunctionName + "(int argc, char** argv) {").indent();
 
         writer.println("teavm_beforeInit();");
-        writer.println("teavm_initHeap(" + minHeapSize + ");");
+        writer.println("teavm_initHeap(" + minHeapSize + ", " + maxHeapSize + ");");
         generateVirtualTableHeaders(context, writer);
         writer.println("teavm_initStringPool();");
         for (ValueType type : types) {

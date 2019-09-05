@@ -82,7 +82,7 @@ public class WasmRenderer {
 
     public void renderMemory(WasmModule module) {
         visitor.lf();
-        visitor.open().append("memory (export \"memory\") " + module.getMemorySize()).close().lf();
+        visitor.open().append("memory (export \"memory\") " + module.getMinMemorySize()).close().lf();
     }
 
     public void renderData(WasmModule module) {

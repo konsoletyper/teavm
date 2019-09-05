@@ -41,6 +41,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
+import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -822,6 +823,13 @@ class WasmBinaryRenderingVisitor implements WasmExpressionVisitor {
         writer.writeByte(0x39);
         writer.writeByte(alignment(expression.getAlignment()));
         writer.writeLEB(expression.getOffset());
+    }
+
+    @Override
+    public void visit(WasmMemoryGrow expression) {
+        expression.getAmount().acceptVisitor(this);
+        writer.writeByte(0x40);
+        writer.writeByte(0);
     }
 
     private int alignment(int value) {

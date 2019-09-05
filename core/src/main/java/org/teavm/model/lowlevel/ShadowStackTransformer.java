@@ -38,6 +38,7 @@ public class ShadowStackTransformer {
     private Characteristics characteristics;
     private GCShadowStackContributor gcContributor;
     private boolean exceptionHandling;
+    private int callSiteIdGen;
 
     public ShadowStackTransformer(Characteristics characteristics, boolean exceptionHandling) {
         gcContributor = new GCShadowStackContributor(characteristics);
@@ -54,8 +55,12 @@ public class ShadowStackTransformer {
         boolean exceptions;
         if (exceptionHandling) {
             List<CallSiteDescriptor> callSites = new ArrayList<>();
-            exceptions = new ExceptionHandlingShadowStackContributor(characteristics, callSites,
-                    method.getReference(), program).contribute();
+            ExceptionHandlingShadowStackContributor exceptionContributor =
+                    new ExceptionHandlingShadowStackContributor(characteristics, callSites,
+                            method.getReference(), program);
+            exceptionContributor.callSiteIdGen = callSiteIdGen;
+            exceptions = exceptionContributor.contribute();
+            callSiteIdGen = exceptionContributor.callSiteIdGen;
             CallSiteDescriptor.save(callSites, program.getAnnotations());
         } else {
             exceptions = false;

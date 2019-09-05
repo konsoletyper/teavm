@@ -59,6 +59,7 @@ public class CallSiteBinaryGenerator {
     private BinaryWriter writer;
     private WasmClassGenerator classGenerator;
     private WasmStringPool stringPool;
+    private ObjectIntMap<String> stringIndirectPointerCache = new ObjectIntHashMap<>();
 
     public CallSiteBinaryGenerator(BinaryWriter writer, WasmClassGenerator classGenerator, WasmStringPool stringPool) {
         this.writer = writer;
@@ -132,15 +133,15 @@ public class CallSiteBinaryGenerator {
                     methodLocationCache.put(methodLocation, methodLocationAddress);
                     if (location.getFileName() != null) {
                         binaryMethodLocation.setAddress(METHOD_LOCATION_FILE,
-                                stringPool.getStringPointer(location.getFileName()));
+                                getStringIndirectPointer(location.getFileName()));
                     }
                     if (location.getClassName() != null) {
                         binaryMethodLocation.setAddress(METHOD_LOCATION_CLASS,
-                                stringPool.getStringPointer(location.getClassName()));
+                                getStringIndirectPointer(location.getClassName()));
                     }
                     if (location.getMethodName() != null) {
                         binaryMethodLocation.setAddress(METHOD_LOCATION_METHOD,
-                                stringPool.getStringPointer(location.getMethodName()));
+                                getStringIndirectPointer(location.getMethodName()));
                     }
                 }
 
@@ -151,6 +152,16 @@ public class CallSiteBinaryGenerator {
         }
 
         return firstCallSite;
+    }
+
+    private int getStringIndirectPointer(String str) {
+        int result = stringIndirectPointerCache.getOrDefault(str, -1);
+        if (result < 0) {
+            DataValue indirectValue = DataPrimitives.ADDRESS.createValue();
+            result = writer.append(indirectValue);
+            indirectValue.setAddress(0, stringPool.getStringPointer(str));
+        }
+        return result;
     }
 
     final static class MethodLocation {

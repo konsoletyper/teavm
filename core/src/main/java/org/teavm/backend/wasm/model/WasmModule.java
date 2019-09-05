@@ -22,7 +22,8 @@ import java.util.List;
 import java.util.Map;
 
 public class WasmModule {
-    private int memorySize;
+    private int minMemorySize;
+    private int maxMemorySize;
     private List<WasmMemorySegment> segments = new ArrayList<>();
     private Map<String, WasmFunction> functions = new LinkedHashMap<>();
     private Map<String, WasmFunction> readonlyFunctions = Collections.unmodifiableMap(functions);
@@ -60,12 +61,20 @@ public class WasmModule {
         return segments;
     }
 
-    public int getMemorySize() {
-        return memorySize;
+    public int getMinMemorySize() {
+        return minMemorySize;
     }
 
-    public void setMemorySize(int memorySize) {
-        this.memorySize = memorySize;
+    public void setMinMemorySize(int minMemorySize) {
+        this.minMemorySize = minMemorySize;
+    }
+
+    public int getMaxMemorySize() {
+        return maxMemorySize;
+    }
+
+    public void setMaxMemorySize(int maxMemorySize) {
+        this.maxMemorySize = maxMemorySize;
     }
 
     public WasmFunction getStartFunction() {

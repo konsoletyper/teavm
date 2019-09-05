@@ -24,12 +24,8 @@ import org.teavm.runtime.RuntimeObject;
 @StaticInit
 @Unmanaged
 public final class WasmRuntime {
-    public static Address stack = initStack();
-
     private WasmRuntime() {
     }
-
-    private static native Address initStack();
 
     public static int compare(int a, int b) {
         return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
@@ -78,6 +74,14 @@ public final class WasmRuntime {
         }
         value = ((value - 1) / alignment + 1) * alignment;
         return Address.fromInt(value);
+    }
+
+    public static int align(int value, int alignment) {
+        if (value == 0) {
+            return value;
+        }
+        value = ((value - 1) / alignment + 1) * alignment;
+        return value;
     }
 
     @Import(name = "print", module = "spectest")
@@ -252,20 +256,20 @@ public final class WasmRuntime {
     }
 
     public static Address allocStack(int size) {
-        Address result = stack.add(4);
-        stack = result.add((size << 2) + 4);
-        stack.putInt(size);
+        Address result = WasmHeap.stack.add(4);
+        WasmHeap.stack = result.add((size << 2) + 4);
+        WasmHeap.stack.putInt(size);
         return result;
     }
 
     public static Address getStackTop() {
-        return stack != initStack() ? stack : null;
+        return WasmHeap.stack != WasmHeap.stackAddress ? WasmHeap.stack : null;
     }
 
     public static Address getNextStackFrame(Address stackFrame) {
         int size = stackFrame.getInt() + 2;
         Address result = stackFrame.add(-size * 4);
-        if (result == initStack()) {
+        if (result == WasmHeap.stackAddress) {
             result = null;
         }
         return result;

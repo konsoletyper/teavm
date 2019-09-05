@@ -171,8 +171,13 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
-    public void setHeapSize(int heapSize) {
-        request.heapSize = heapSize;
+    public void setMinHeapSize(int minHeapSize) {
+        request.minHeapSize = minHeapSize;
+    }
+
+    @Override
+    public void setMaxHeapSize(int maxHeapSize) {
+        request.maxHeapSize = maxHeapSize;
     }
 
     @Override

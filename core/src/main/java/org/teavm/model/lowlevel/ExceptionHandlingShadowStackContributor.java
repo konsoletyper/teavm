@@ -76,6 +76,8 @@ public class ExceptionHandlingShadowStackContributor {
     private boolean hasExceptionHandlers;
     private int parameterCount;
 
+    public int callSiteIdGen;
+
     public ExceptionHandlingShadowStackContributor(Characteristics characteristics,
             List<CallSiteDescriptor> callSites, MethodReference method, Program program) {
         this.characteristics = characteristics;
@@ -246,7 +248,7 @@ public class ExceptionHandlingShadowStackContributor {
                 }
                 CallSiteLocation location = new CallSiteLocation(fileName, method.getClassName(), method.getName(),
                         lineNumber);
-                CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size(), location);
+                CallSiteDescriptor callSite = new CallSiteDescriptor(callSiteIdGen++, location);
                 callSites.add(callSite);
                 List<Instruction> pre = setLocation(getInstructionsBeforeCallSite(callSite), insn.getLocation());
                 List<Instruction> post = getInstructionsAfterCallSite(initialBlock, block, next, callSite,

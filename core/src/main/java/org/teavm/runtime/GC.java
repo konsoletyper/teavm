@@ -34,6 +34,7 @@ public final class GC {
     static int freeChunks;
     static int freeMemory = (int) availableBytes();
     static RuntimeReference firstWeakReference;
+    static FreeChunk lastChunk;
 
     static RelocationBlock lastRelocationBlock;
 
@@ -48,6 +49,12 @@ public final class GC {
     private static native int regionMaxCount();
 
     public static native long availableBytes();
+
+    public static native long minAvailableBytes();
+
+    public static native long maxAvailableBytes();
+
+    public static native void resizeHeap(long size);
 
     private static native int regionSize();
 
@@ -86,7 +93,7 @@ public final class GC {
         if (getNextChunkIfPossible(size)) {
             return;
         }
-        collectGarbage();
+        collectGarbageImpl(size);
         if (currentChunk.size < size && !getNextChunkIfPossible(size)) {
             ExceptionHandling.printStack();
             outOfMemory();
@@ -113,7 +120,13 @@ public final class GC {
         return true;
     }
 
+    @Export(name = "teavm_gc_collect")
     public static void collectGarbage() {
+        fixHeap();
+        collectGarbageImpl(0);
+    }
+
+    private static void collectGarbageImpl(int size) {
         MemoryTrace.gcStarted();
         mark();
         processReferences();
@@ -121,10 +134,34 @@ public final class GC {
         MemoryTrace.sweepCompleted();
         defragment();
         MemoryTrace.defragCompleted();
-        //sortFreeChunks();
         updateFreeMemory();
+        long minRequestedSize = 0;
+        if (!hasAvailableChunk(size)) {
+            minRequestedSize = computeMinRequestedSize(size);
+        }
+        resizeHeapIfNecessary(minRequestedSize);
         currentChunk = currentChunkPointer.value;
         currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
+    }
+
+    private static boolean hasAvailableChunk(int size) {
+        if (size == 0) {
+            return true;
+        }
+        FreeChunkHolder ptr = currentChunkPointer;
+        for (int i = 0; i < freeChunks; ++i) {
+            if (size <= ptr.value.size) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static long computeMinRequestedSize(int size) {
+        if (lastChunk.classReference == 0) {
+            size -= lastChunk.size;
+        }
+        return availableBytes() + size;
     }
 
     @Export(name = "teavm_gc_fixHeap")
@@ -132,6 +169,15 @@ public final class GC {
         if (freeChunks > 0) {
             currentChunk.classReference = 0;
             currentChunk.size = (int) (currentChunkLimit.toLong() - currentChunk.toAddress().toLong());
+        }
+    }
+
+    @Export(name = "teavm_gc_tryShrink")
+    public static void tryShrink() {
+        long availableBytes = availableBytes();
+        long occupiedMemory = availableBytes - freeMemory;
+        if (occupiedMemory < availableBytes / 4) {
+            collectGarbage();
         }
     }
 
@@ -295,8 +341,6 @@ public final class GC {
         FreeChunk object = heapAddress().toStructure();
         FreeChunk lastFreeSpace = null;
         long heapSize = availableBytes();
-        long reclaimedSpace = 0;
-        long maxFreeChunk = 0;
         int regionsCount = (int) ((heapSize - 1) / regionSize()) + 1;
         Address currentRegionEnd = null;
         Address limit = heapAddress().add(heapSize);
@@ -348,10 +392,6 @@ public final class GC {
                     freeChunkPtr.value = lastFreeSpace;
                     freeChunkPtr = Structure.add(FreeChunkHolder.class, freeChunkPtr, 1);
                     freeChunks++;
-                    reclaimedSpace += lastFreeSpace.size;
-                    if (maxFreeChunk < lastFreeSpace.size) {
-                        maxFreeChunk = lastFreeSpace.size;
-                    }
                     lastFreeSpace = null;
                 }
             }
@@ -366,12 +406,7 @@ public final class GC {
             lastFreeSpace.size = freeSize;
             MemoryTrace.free(lastFreeSpace.toAddress(), lastFreeSpace.size);
             freeChunkPtr.value = lastFreeSpace;
-            freeChunkPtr = Structure.add(FreeChunkHolder.class, freeChunkPtr, 1);
             freeChunks++;
-            reclaimedSpace += freeSize;
-            if (maxFreeChunk < freeSize) {
-                maxFreeChunk = freeSize;
-            }
         }
 
         currentChunkPointer = gcStorageAddress().toStructure();
@@ -425,6 +460,7 @@ public final class GC {
 
         Address relocations = Structure.add(FreeChunk.class, freeChunk, 1).toAddress();
         Address relocationsLimit = freeChunk.toAddress().add(freeChunk.size);
+        lastChunk = heapAddress().toStructure();
 
         boolean lastWasLocked = false;
         objects: while (object.toAddress().isLessThan(limit)) {
@@ -461,6 +497,7 @@ public final class GC {
                     lastRelocationBlock.start = object.toAddress().add(size);
                     lastRelocationBlock.count = 0;
                     object.classReference &= ~RuntimeObject.GC_MARKED;
+                    lastChunk = object;
                 } else {
                     lastWasLocked = false;
 
@@ -721,6 +758,9 @@ public final class GC {
         while (!lastRelocationBlock.toAddress().isLessThan(relocationBlock.toAddress())) {
             if (relocationBlock.start.isLessThan(relocationBlock.end)) {
                 FreeChunk freeChunk = relocationBlock.start.toStructure();
+                if (!freeChunk.toAddress().isLessThan(lastChunk.toAddress())) {
+                    lastChunk = freeChunk;
+                }
                 freeChunk.size = (int) (relocationBlock.end.toLong() - relocationBlock.start.toLong());
                 freeChunk.classReference = 0;
                 MemoryTrace.assertFree(freeChunk.toAddress(), freeChunk.size);
@@ -732,11 +772,6 @@ public final class GC {
         }
     }
 
-    private static void sortFreeChunks() {
-        currentChunkPointer = gcStorageAddress().toStructure();
-        sortFreeChunks(0, freeChunks - 1);
-    }
-
     private static void updateFreeMemory() {
         freeMemory = 0;
         FreeChunkHolder freeChunkPtr = currentChunkPointer;
@@ -746,63 +781,71 @@ public final class GC {
         }
     }
 
-    private static void sortFreeChunks(int lower, int upper) {
-        int start = lower;
-        int end = upper;
-        int mid = (lower + upper) / 2;
-
-        int midSize = getFreeChunk(mid).value.size;
-        int firstSize = getFreeChunk(lower).value.size;
-        int lastSize = getFreeChunk(upper).value.size;
-        if (midSize < firstSize) {
-            int tmp = firstSize;
-            firstSize = midSize;
-            midSize = tmp;
-        }
-        if (lastSize < firstSize) {
-            lastSize = firstSize;
-        }
-        if (midSize > lastSize) {
-            midSize = lastSize;
-        }
-
-        outer: while (true) {
-            while (true) {
-                if (lower == upper) {
-                    break outer;
-                }
-                if (getFreeChunk(lower).value.size <= midSize) {
-                    break;
-                }
-                ++lower;
-            }
-            while (true) {
-                if (lower == upper) {
-                    break outer;
-                }
-                if (getFreeChunk(upper).value.size > midSize) {
-                    break;
-                }
-                --upper;
-            }
-            FreeChunk tmp = getFreeChunk(lower).value;
-            getFreeChunk(lower).value = getFreeChunk(upper).value;
-            getFreeChunk(upper).value = tmp;
-        }
-
-        if (lower == end || upper == start) {
+    private static void resizeHeapConsistent(long newSize) {
+        long oldSize = availableBytes();
+        if (newSize == oldSize) {
             return;
         }
-        if (lower - start > 0) {
-            sortFreeChunks(start, lower);
-        }
-        if (end - lower - 1 > 0) {
-            sortFreeChunks(lower + 1, end);
+        if (newSize > oldSize) {
+            resizeHeap(newSize);
+            if (lastChunk.classReference == 0) {
+                lastChunk.size += (int) (newSize - oldSize);
+            } else {
+                int size = objectSize(lastChunk);
+                lastChunk = lastChunk.toAddress().add(size).toStructure();
+                lastChunk.classReference = 0;
+                lastChunk.size = (int) (newSize - oldSize);
+                Structure.add(FreeChunkHolder.class, currentChunkPointer, freeChunks).value = lastChunk;
+                freeChunks++;
+            }
+        } else {
+            long minimumSize = lastChunk.toAddress().toLong() - heapAddress().toLong();
+            if (lastChunk.classReference != 0) {
+                minimumSize += objectSize(lastChunk);
+            }
+            if (newSize < minimumSize) {
+                newSize = minimumSize;
+                if (newSize == oldSize) {
+                    return;
+                }
+            }
+            if (newSize == minimumSize) {
+                freeChunks--;
+            } else {
+                lastChunk.size -= (int) (oldSize - newSize);
+            }
+            resizeHeap(newSize);
         }
     }
 
-    private static FreeChunkHolder getFreeChunk(int index) {
-        return Structure.add(FreeChunkHolder.class, currentChunkPointer, index);
+    private static void resizeHeapIfNecessary(long requestedSize) {
+        long availableBytes = availableBytes();
+        long occupiedMemory = availableBytes - freeMemory;
+        if (requestedSize > availableBytes || occupiedMemory > availableBytes / 2) {
+            long newSize = max(requestedSize, (availableBytes - freeMemory) * 2);
+            newSize = min(newSize, maxAvailableBytes());
+            if (newSize != availableBytes) {
+                if (newSize % 8 != 0) {
+                    newSize += 8 - newSize % 8;
+                }
+                resizeHeapConsistent(newSize);
+            }
+        } else if (occupiedMemory < availableBytes / 4) {
+            long newSize = occupiedMemory * 3;
+            newSize = max(newSize, minAvailableBytes());
+            if (newSize % 8 != 0) {
+                newSize -= newSize % 8;
+            }
+            resizeHeapConsistent(newSize);
+        }
+    }
+
+    private static long min(long a, long b) {
+        return a < b ? a : b;
+    }
+
+    private static long max(long a, long b) {
+        return a > b ? a : b;
     }
 
     private static int objectSize(FreeChunk object) {

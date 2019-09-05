@@ -60,7 +60,13 @@ public class TeaVMCBuilderRunner {
                 .withLongOpt("min-heap")
                 .withArgName("size")
                 .hasArg()
-                .withDescription("Minimum heap size in bytes")
+                .withDescription("Minimum heap size in megabytes")
+                .create());
+        options.addOption(OptionBuilder
+                .withLongOpt("max-heap")
+                .withArgName("size")
+                .hasArg()
+                .withDescription("Minimum heap size in megabytes")
                 .create());
         options.addOption(OptionBuilder
                 .withLongOpt("no-longjmp")
@@ -173,6 +179,18 @@ public class TeaVMCBuilderRunner {
                 return;
             }
             builder.setMinHeapSize(size);
+        }
+
+        if (commandLine.hasOption("max-heap")) {
+            int size;
+            try {
+                size = Integer.parseInt(commandLine.getOptionValue("max-heap"));
+            } catch (NumberFormatException e) {
+                System.err.print("Wrong heap size");
+                printUsage();
+                return;
+            }
+            builder.setMaxHeapSize(size);
         }
     }
 

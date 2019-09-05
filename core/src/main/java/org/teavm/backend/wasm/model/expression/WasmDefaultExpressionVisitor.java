@@ -180,4 +180,9 @@ public class WasmDefaultExpressionVisitor implements WasmExpressionVisitor {
         expression.getIndex().acceptVisitor(this);
         expression.getValue().acceptVisitor(this);
     }
+
+    @Override
+    public void visit(WasmMemoryGrow expression) {
+        expression.getAmount().acceptVisitor(this);
+    }
 }

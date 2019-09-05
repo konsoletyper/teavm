@@ -63,7 +63,8 @@ import org.teavm.vm.TeaVMProgressListener;
 public class IncrementalCBuilder {
     private String mainClass;
     private String[] classPath;
-    private int minHeapSize = 32;
+    private int minHeapSize = 4;
+    private int maxHeapSize = 128;
     private boolean longjmpSupported = true;
     private boolean lineNumbersGenerated;
     private String targetPath;
@@ -108,6 +109,10 @@ public class IncrementalCBuilder {
 
     public void setMinHeapSize(int minHeapSize) {
         this.minHeapSize = minHeapSize;
+    }
+
+    public void setMaxHeapSize(int maxHeapSize) {
+        this.maxHeapSize = maxHeapSize;
     }
 
     public void setLineNumbersGenerated(boolean lineNumbersGenerated) {
@@ -333,6 +338,7 @@ public class IncrementalCBuilder {
 
         cTarget.setIncremental(true);
         cTarget.setMinHeapSize(minHeapSize * 1024 * 1024);
+        cTarget.setMaxHeapSize(maxHeapSize * 1024 * 1024);
         cTarget.setLineNumbersGenerated(lineNumbersGenerated);
         cTarget.setLongjmpUsed(longjmpSupported);
         cTarget.setHeapDump(true);

@@ -15,8 +15,6 @@
  */
 package org.teavm.backend.wasm.intrinsics;
 
-import java.util.ArrayList;
-import java.util.List;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmGeneratorUtil;
@@ -25,15 +23,12 @@ import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinary;
 import org.teavm.backend.wasm.model.expression.WasmFloatBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmFloatType;
-import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.model.MethodReference;
 
 public class WasmRuntimeIntrinsic implements WasmIntrinsic {
-    private List<WasmInt32Constant> stackExpressions = new ArrayList<>();
-
     @Override
     public boolean isApplicable(MethodReference methodReference) {
         if (!methodReference.getClassName().equals(WasmRuntime.class.getName())) {
@@ -49,12 +44,6 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
         }
     }
 
-    public void setStackAddress(int stackAddress) {
-        for (WasmInt32Constant constant : stackExpressions) {
-            constant.setValue(stackAddress);
-        }
-    }
-
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
         switch (invocation.getMethod().getName()) {
@@ -64,11 +53,6 @@ public class WasmRuntimeIntrinsic implements WasmIntrinsic {
             case "gt":
                 return comparison(WasmIntBinaryOperation.GT_SIGNED, WasmFloatBinaryOperation.GT,
                         invocation, manager);
-            case "initStack": {
-                WasmInt32Constant constant = new WasmInt32Constant(0);
-                stackExpressions.add(constant);
-                return constant;
-            }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().getName());
         }

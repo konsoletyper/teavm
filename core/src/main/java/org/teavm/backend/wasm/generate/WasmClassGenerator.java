@@ -621,7 +621,7 @@ public class WasmClassGenerator {
         return cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null;
     }
 
-    private class ClassBinaryData {
+    static class ClassBinaryData {
         ValueType type;
         int size;
         int alignment;

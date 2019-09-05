@@ -20,68 +20,160 @@ void* teavm_gc_gcStorageAddress = NULL;
 int32_t teavm_gc_gcStorageSize = INT32_C(0);
 void* teavm_gc_regionsAddress = NULL;
 int32_t teavm_gc_regionSize = INT32_C(32768);
-int32_t teavm_gc_regionMaxCount = INT32_C(0);
-int64_t teavm_gc_availableBytes = INT64_C(0);
+int32_t teavm_gc_regionMaxCount;
+int64_t teavm_gc_availableBytes;
+int64_t teavm_gc_minAvailableBytes;
+int64_t teavm_gc_maxAvailableBytes;
+static int64_t teavm_gc_pageSize;
 
 #if TEAVM_UNIX
-    static void* teavm_virtualAlloc(int size) {
-        return mmap(NULL, size, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
+    static void* teavm_virtualAlloc(int64_t size) {
+        return mmap(NULL, size, PROT_NONE, MAP_PRIVATE | MAP_ANONYMOUS, 0, 0);
     }
 
-    static long teavm_pageSize() {
+    static void teavm_virtualCommit(void* address, int64_t size) {
+        mprotect(address, size, PROT_READ | PROT_WRITE);
+    }
+
+    static void teavm_virtualUncommit(void* address, int64_t size) {
+        mprotect(address, size, PROT_NONE);
+    }
+
+    static int64_t teavm_pageSize() {
         return sysconf(_SC_PAGE_SIZE);
     }
 #endif
 
 #if TEAVM_WINDOWS
-    static void* teavm_virtualAlloc(int size) {
+    static void* teavm_virtualAlloc(int64_t size) {
         #if TEAVM_WINDOWS_UWP
             return VirtualAllocFromApp(
                     NULL,
                     size,
-                    MEM_RESERVE | MEM_COMMIT,
-                    PAGE_READWRITE
+                    MEM_RESERVE,
+                    PAGE_NOACCESS
             );
         #else
             return VirtualAlloc(
                     NULL,
                     size,
-                    MEM_RESERVE | MEM_COMMIT,
+                    MEM_RESERVE,
+                    PAGE_NOACCESS
+            );
+        #endif
+    }
+
+    static void teavm_virtualCommit(void* address, int64_t size) {
+        #if TEAVM_WINDOWS_UWP
+            VirtualAllocFromApp(
+                    address,
+                    size,
+                    MEM_COMMIT,
+                    PAGE_READWRITE
+            );
+        #else
+            VirtualAlloc(
+                    address,
+                    size,
+                    MEM_COMMIT,
                     PAGE_READWRITE
             );
         #endif
     }
 
-    static long teavm_pageSize() {
+    static void teavm_virtualUncommit(void* address, int64_t size) {
+        VirtualFree(address, size, MEM_DECOMMIT);
+    }
+
+    static int64_t teavm_pageSize() {
         SYSTEM_INFO systemInfo;
         GetSystemInfo(&systemInfo);
         return systemInfo.dwPageSize;
     }
 #endif
 
-static int teavm_pageCount(int64_t size, int64_t pageSize) {
-    return (int) ((size + pageSize + 1) / pageSize * pageSize);
+static int64_t teavm_pageCount(int64_t size) {
+    return (int64_t) ((size + teavm_gc_pageSize - 1) / teavm_gc_pageSize * teavm_gc_pageSize);
 }
 
-void teavm_initHeap(int64_t heapSize) {
-    long workSize = (long) (heapSize / 16);
-    long regionsSize = (long) (heapSize / teavm_gc_regionSize) + 1;
-    long pageSize = teavm_pageSize();
+static int32_t teavm_gc_calculateWorkSize(int64_t heapSize) {
+    return (int32_t) (heapSize / 16);
+}
 
-    teavm_gc_heapAddress = teavm_virtualAlloc(teavm_pageCount(heapSize, pageSize));
-    teavm_gc_gcStorageAddress = teavm_virtualAlloc(teavm_pageCount(workSize, pageSize));
-    teavm_gc_regionsAddress = teavm_virtualAlloc(teavm_pageCount(regionsSize * 2, pageSize));
+static int32_t teavm_gc_calculateRegionsSize(int64_t heapSize) {
+    return (int32_t) (heapSize / teavm_gc_regionSize) + 1;
+}
+
+void teavm_gc_resizeHeap(int64_t newSize) {
+    if (newSize == teavm_gc_availableBytes) {
+        return;
+    }
+
+    int32_t workSize = teavm_gc_calculateWorkSize(newSize);
+    int32_t regionsSize = teavm_gc_calculateRegionsSize(newSize);
+
+    int64_t newSizeAligned = teavm_pageCount(newSize);
+    int64_t oldSizeAligned = teavm_pageCount(teavm_gc_availableBytes);
+    int64_t newWorkSizeAligned = teavm_pageCount(workSize);
+    int64_t oldWorkSizeAligned = teavm_pageCount(teavm_gc_gcStorageSize);
+    int64_t newRegionsSizeAligned = teavm_pageCount(regionsSize * 2);
+    int64_t oldRegionsSizeAligned = teavm_pageCount(teavm_gc_regionMaxCount * 2);
+
+    if (newSize > teavm_gc_availableBytes) {
+        if (newSizeAligned > oldSizeAligned) {
+            teavm_virtualCommit((char*) teavm_gc_heapAddress + oldSizeAligned, newSizeAligned - oldSizeAligned);
+        }
+        if (newWorkSizeAligned > oldWorkSizeAligned) {
+            teavm_virtualCommit((char*) teavm_gc_gcStorageAddress + oldWorkSizeAligned,
+                    newWorkSizeAligned - oldWorkSizeAligned);
+        }
+        if (newRegionsSizeAligned > oldRegionsSizeAligned) {
+            teavm_virtualCommit((char*) teavm_gc_regionsAddress + oldRegionsSizeAligned,
+                newRegionsSizeAligned - oldRegionsSizeAligned);
+        }
+    } else {
+        if (newSizeAligned < oldSizeAligned) {
+            teavm_virtualUncommit((char*) teavm_gc_heapAddress + newSizeAligned, oldSizeAligned - newSizeAligned);
+        }
+        if (newWorkSizeAligned < oldWorkSizeAligned) {
+            teavm_virtualUncommit((char*) teavm_gc_gcStorageAddress + newWorkSizeAligned,
+                    oldWorkSizeAligned - newWorkSizeAligned);
+        }
+        if (newRegionsSizeAligned < oldRegionsSizeAligned) {
+            teavm_virtualUncommit((char*) teavm_gc_regionsAddress + newRegionsSizeAligned,
+                oldRegionsSizeAligned - newRegionsSizeAligned);
+        }
+    }
+
+    teavm_gc_gcStorageSize = workSize;
+    teavm_gc_regionMaxCount = regionsSize;
+    teavm_gc_availableBytes = newSize;
+}
+
+void teavm_initHeap(int64_t minHeap, int64_t maxHeap) {
+    teavm_gc_pageSize = teavm_pageSize();
+    int32_t workSize = teavm_gc_calculateWorkSize(maxHeap);
+    int32_t regionsSize = teavm_gc_calculateRegionsSize(maxHeap);
+
+    teavm_gc_heapAddress = teavm_virtualAlloc(teavm_pageCount(maxHeap));
+    teavm_gc_gcStorageAddress = teavm_virtualAlloc(teavm_pageCount(workSize));
+    teavm_gc_regionsAddress = teavm_virtualAlloc(teavm_pageCount(regionsSize * 2));
 
     #if TEAVM_MEMORY_TRACE
-        int64_t heapMapSize = heapSize / sizeof(void*);
-        teavm_gc_heapMap = teavm_virtualAlloc(teavm_pageCount(heapMapSize, pageSize));
+        int64_t heapMapSize = maxHeap / sizeof(void*);
+        teavm_gc_heapMap = teavm_virtualAlloc(teavm_pageCount(heapMapSize));
+        teavm_virtualCommit(teavm_gc_heapMap, teavm_pageCount(heapMapSize));
         memset(teavm_gc_heapMap, 0, heapMapSize);
-        teavm_gc_markMap = teavm_virtualAlloc(teavm_pageCount(heapMapSize, pageSize));
+        teavm_gc_markMap = teavm_virtualAlloc(teavm_pageCount(heapMapSize));
+        teavm_virtualCommit(teavm_gc_markMap, teavm_pageCount(heapMapSize));
     #endif
 
-    teavm_gc_gcStorageSize = (int) workSize;
-    teavm_gc_regionMaxCount = regionsSize;
-    teavm_gc_availableBytes = heapSize;
+    teavm_gc_minAvailableBytes = minHeap;
+    teavm_gc_maxAvailableBytes = maxHeap;
+    teavm_gc_gcStorageSize = 0;
+    teavm_gc_regionMaxCount = 0;
+    teavm_gc_availableBytes = 0;
+    teavm_gc_resizeHeap(minHeap);
 }
 
 typedef struct TeaVM_StaticGcRootDescriptor {

@@ -103,6 +103,11 @@ public final class ExceptionHandling {
         }
 
         if (stackFrame == null) {
+            stackFrame = ShadowStack.getStackTop();
+            while (stackFrame != null) {
+                ShadowStack.setExceptionHandlerId(stackFrame, ShadowStack.getCallSiteId(stackFrame) + 1);
+                stackFrame = ShadowStack.getNextStackFrame(stackFrame);
+            }
             printStack();
             abort();
         } else if (isJumpSupported()) {
@@ -134,6 +139,7 @@ public final class ExceptionHandling {
 
     public static void fillStackTrace(StackTraceElement[] target) {
         Address stackFrame = ShadowStack.getStackTop();
+        stackFrame = ShadowStack.getNextStackFrame(stackFrame);
         int index = 0;
         while (stackFrame != null && index < target.length) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);

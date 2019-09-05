@@ -102,7 +102,8 @@ public class TeaVMTool {
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
     private CTarget cTarget;
     private Set<File> generatedFiles = new HashSet<>();
-    private int minHeapSize = 32 * (1 << 20);
+    private int minHeapSize = 4 * (1 << 20);
+    private int maxHeapSize = 128 * (1 << 20);
     private ReferenceCache referenceCache;
     private boolean longjmpSupported = true;
     private boolean heapDump;
@@ -235,6 +236,10 @@ public class TeaVMTool {
         this.minHeapSize = minHeapSize;
     }
 
+    public void setMaxHeapSize(int maxHeapSize) {
+        this.maxHeapSize = maxHeapSize;
+    }
+
     public ClassLoader getClassLoader() {
         return classLoader;
     }
@@ -326,12 +331,14 @@ public class TeaVMTool {
         webAssemblyTarget.setWastEmitted(debugInformationGenerated);
         webAssemblyTarget.setVersion(wasmVersion);
         webAssemblyTarget.setMinHeapSize(minHeapSize);
+        webAssemblyTarget.setMinHeapSize(maxHeapSize);
         return webAssemblyTarget;
     }
 
     private CTarget prepareCTarget() {
         cTarget = new CTarget(new CNameProvider());
         cTarget.setMinHeapSize(minHeapSize);
+        cTarget.setMaxHeapSize(maxHeapSize);
         cTarget.setLineNumbersGenerated(debugInformationGenerated);
         cTarget.setLongjmpUsed(longjmpSupported);
         cTarget.setHeapDump(heapDump);

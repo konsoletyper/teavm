@@ -23,6 +23,7 @@ import org.teavm.backend.wasm.model.WasmLocal;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.FieldReference;
 
 public interface WasmIntrinsicManager {
     WasmExpression generate(Expr expr);
@@ -36,6 +37,8 @@ public interface WasmIntrinsicManager {
     NameProvider getNames();
 
     WasmLocal getTemporary(WasmType type);
+
+    int getStaticField(FieldReference field);
 
     void releaseTemporary(WasmLocal local);
 }

@@ -52,6 +52,7 @@ TeaVM.wasm = function() {
     function importDefaults(obj) {
         obj.teavm = {
             currentTimeMillis: currentTimeMillis,
+            nanoTime: function() { return performance.now(); },
             isnan: isNaN,
             teavm_getNaN: function() { return NaN; },
             isinf: function(n) { return !isFinite(n) },
