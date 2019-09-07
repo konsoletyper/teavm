@@ -7,6 +7,11 @@
 #include "memory.h"
 #include "exceptions.h"
 
+#if TEAVM_MEMORY_TRACE
+    #include "heaptrace.h"
+    #include <stdlib.h>
+#endif
+
 typedef struct TeaVM_Object {
     int32_t header;
     int32_t hash;

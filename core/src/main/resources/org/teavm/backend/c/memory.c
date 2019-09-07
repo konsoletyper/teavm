@@ -11,6 +11,10 @@
     #include <Windows.h>
 #endif
 
+#if TEAVM_MEMORY_TRACE
+    #include "heaptrace.h"
+#endif
+
 void* teavm_gc_heapAddress = NULL;
 void* teavm_gc_gcStorageAddress = NULL;
 int32_t teavm_gc_gcStorageSize = INT32_C(0);

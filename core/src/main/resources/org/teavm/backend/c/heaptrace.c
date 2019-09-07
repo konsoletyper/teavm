@@ -1,6 +1,7 @@
 #include "heaptrace.h"
 #include "core.h"
 #include "definitions.h"
+#include "memory.h"
 #include <string.h>
 #include <stdint.h>
 #include <inttypes.h>

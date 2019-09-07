@@ -26,6 +26,7 @@
 #ifdef __GNUC__
     #undef TEAVM_UNIX
     #define TEAVM_UNIX 1
+    #include <stdalign.h>
 #endif
 
 #ifndef TEAVM_USE_SETJMP

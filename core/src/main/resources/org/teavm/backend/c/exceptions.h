@@ -1,6 +1,7 @@
 #pragma once
 #include "definitions.h"
 #include <stdint.h>
+#include <stddef.h>
 
 #if TEAVM_USE_SETJMP
     #include <setjmp.h>
