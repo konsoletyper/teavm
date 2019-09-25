@@ -16,7 +16,6 @@
 package org.teavm.jso.dom.html;
 
 import org.teavm.jso.JSProperty;
-import org.w3c.dom.html.HTMLFormElement;
 
 public interface HTMLButtonElement extends HTMLElement {
     String TYPE_BUTTON = "button";
@@ -38,7 +37,7 @@ public interface HTMLButtonElement extends HTMLElement {
     void setDisabled(boolean disabled);
 
     @JSProperty
-    HTMLFormElement getForm();
+    HTMLElement getForm();
 
     @JSProperty
     String getName();

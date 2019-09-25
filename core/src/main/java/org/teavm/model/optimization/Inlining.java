@@ -16,56 +16,155 @@
 package org.teavm.model.optimization;
 
 import com.carrotsearch.hppc.IntArrayList;
+import com.carrotsearch.hppc.ObjectIntHashMap;
+import com.carrotsearch.hppc.ObjectIntMap;
+import com.carrotsearch.hppc.cursors.ObjectCursor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.BasicBlockReader;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
+import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
+import org.teavm.model.ProgramReader;
 import org.teavm.model.TryCatchBlock;
+import org.teavm.model.VariableReader;
 import org.teavm.model.analysis.ClassInference;
+import org.teavm.model.instructions.AbstractInstructionReader;
 import org.teavm.model.instructions.AssignInstruction;
-import org.teavm.model.instructions.BinaryBranchingInstruction;
-import org.teavm.model.instructions.BranchingInstruction;
-import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.ExitInstruction;
-import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
-import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.util.BasicBlockMapper;
-import org.teavm.model.util.InstructionTransitionExtractor;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.ProgramUtils;
+import org.teavm.model.util.TransitionExtractor;
+import org.teavm.runtime.Fiber;
 
 public class Inlining {
-    private static final int DEFAULT_THRESHOLD = 17;
-    private static final int MAX_DEPTH = 7;
     private IntArrayList depthsByBlock;
     private Set<Instruction> instructionsToSkip;
+    private ClassHierarchy hierarchy;
+    private ListableClassReaderSource classes;
+    private DependencyInfo dependencyInfo;
+    private InliningStrategy strategy;
+    private MethodUsageCounter usageCounter;
+    private Set<MethodReference> methodsUsedOnce = new HashSet<>();
+    private boolean devirtualization;
 
-    public void apply(Program program, MethodReference method, ClassReaderSource classes,
-            DependencyInfo dependencyInfo) {
+    public Inlining(ClassHierarchy hierarchy, DependencyInfo dependencyInfo, InliningStrategy strategy,
+            ListableClassReaderSource classes, Predicate<MethodReference> externalMethods,
+            boolean devirtualization) {
+        this.hierarchy = hierarchy;
+        this.classes = classes;
+        this.dependencyInfo = dependencyInfo;
+        this.strategy = strategy;
+        this.devirtualization = devirtualization;
+        usageCounter = new MethodUsageCounter(externalMethods);
+
+        for (String className : classes.getClassNames()) {
+            ClassReader cls = classes.get(className);
+            for (MethodReader method : cls.getMethods()) {
+                ProgramReader program = method.getProgram();
+                if (program != null) {
+                    usageCounter.currentMethod = method.getReference();
+                    for (BasicBlockReader block : program.getBasicBlocks()) {
+                        block.readAllInstructions(usageCounter);
+                    }
+                }
+            }
+        }
+
+        for (ObjectCursor<MethodReference> cursor : usageCounter.methodUsageCount.keys()) {
+            if (usageCounter.methodUsageCount.get(cursor.value) == 1) {
+                methodsUsedOnce.add(cursor.value);
+            }
+        }
+    }
+
+    public List<MethodReference> getOrder() {
+        List<MethodReference> order = new ArrayList<>();
+        Set<MethodReference> visited = new HashSet<>();
+        for (String className : classes.getClassNames()) {
+            ClassReader cls = classes.get(className);
+            for (MethodReader method : cls.getMethods()) {
+                if (method.getProgram() != null) {
+                    computeOrder(method.getReference(), order, visited);
+                }
+            }
+        }
+        Collections.reverse(order);
+        return order;
+    }
+
+    private void computeOrder(MethodReference method, List<MethodReference> order, Set<MethodReference> visited) {
+        if (!visited.add(method)) {
+            return;
+        }
+        Set<MethodReference> invokedMethods = usageCounter.methodDependencies.get(method);
+        if (invokedMethods != null) {
+            for (MethodReference invokedMethod : invokedMethods) {
+                computeOrder(invokedMethod, order, visited);
+            }
+        }
+        order.add(method);
+    }
+
+    public boolean hasUsages(MethodReference method) {
+        return usageCounter.methodUsageCount.getOrDefault(method, -1) != 0;
+    }
+
+    public void removeUsages(Program program) {
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction instruction : block) {
+                if (!(instruction instanceof InvokeInstruction)) {
+                    continue;
+                }
+
+                InvokeInstruction invoke = (InvokeInstruction) instruction;
+                if (invoke.getType() != InvocationType.SPECIAL) {
+                    continue;
+                }
+
+                int usageCount = usageCounter.methodUsageCount.getOrDefault(invoke.getMethod(), -1);
+                if (usageCount > 0) {
+                    usageCounter.methodUsageCount.put(invoke.getMethod(), usageCount - 1);
+                }
+            }
+        }
+    }
+
+    public void apply(Program program, MethodReference method) {
         depthsByBlock = new IntArrayList(program.basicBlockCount());
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             depthsByBlock.add(0);
         }
         instructionsToSkip = new HashSet<>();
 
-        while (applyOnce(program, classes)) {
-            devirtualize(program, method, dependencyInfo);
+        if (devirtualization) {
+            while (applyOnce(program, method)) {
+                devirtualize(program, method, dependencyInfo);
+            }
+        } else {
+            applyOnce(program, method);
         }
         depthsByBlock = null;
         instructionsToSkip = null;
@@ -73,8 +172,12 @@ public class Inlining {
         new UnreachableBasicBlockEliminator().optimize(program);
     }
 
-    private boolean applyOnce(Program program, ClassReaderSource classSource) {
-        List<PlanEntry> plan = buildPlan(program, classSource, 0);
+    private boolean applyOnce(Program program, MethodReference method) {
+        InliningStep step = strategy.start(method, program);
+        if (step == null) {
+            return false;
+        }
+        List<PlanEntry> plan = buildPlan(program, -1, step, method);
         if (plan.isEmpty()) {
             return false;
         }
@@ -89,6 +192,11 @@ public class Inlining {
     }
 
     private void execPlanEntry(Program program, PlanEntry planEntry, int offset) {
+        int usageCount = usageCounter.methodUsageCount.getOrDefault(planEntry.method, -1);
+        if (usageCount > 0) {
+            usageCounter.methodUsageCount.put(planEntry.method, usageCount - 1);
+        }
+
         BasicBlock block = program.basicBlockAt(planEntry.targetBlock + offset);
         InvokeInstruction invoke = (InvokeInstruction) planEntry.targetInstruction;
         BasicBlock splitBlock = program.createBasicBlock();
@@ -114,11 +222,6 @@ public class Inlining {
         splitBlock.getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(block, program));
 
         invoke.delete();
-        if (invoke.getInstance() == null || invoke.getMethod().getName().equals("<init>")) {
-            InitClassInstruction clinit = new InitClassInstruction();
-            clinit.setClassName(invoke.getMethod().getClassName());
-            block.add(clinit);
-        }
         JumpInstruction jumpToInlinedProgram = new JumpInstruction();
         jumpToInlinedProgram.setTarget(firstInlineBlock);
         block.add(jumpToInlinedProgram);
@@ -130,6 +233,16 @@ public class Inlining {
                 Instruction insn = blockToInline.getFirstInstruction();
                 insn.delete();
                 inlineBlock.add(insn);
+
+                if (insn instanceof InvokeInstruction) {
+                    InvokeInstruction invokeInsn = (InvokeInstruction) insn;
+                    if (invokeInsn.getType() == InvocationType.SPECIAL) {
+                        usageCount = usageCounter.methodUsageCount.getOrDefault(invokeInsn.getMethod(), -1);
+                        if (usageCount >= 0) {
+                            usageCounter.methodUsageCount.put(invokeInsn.getMethod(), usageCount + 1);
+                        }
+                    }
+                }
             }
 
             List<Phi> phis = new ArrayList<>(blockToInline.getPhis());
@@ -191,7 +304,7 @@ public class Inlining {
             }
         }
 
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
         Instruction splitLastInsn = splitBlock.getLastInstruction();
         if (splitLastInsn != null) {
             splitLastInsn.acceptVisitor(transitionExtractor);
@@ -210,24 +323,18 @@ public class Inlining {
         execPlan(program, planEntry.innerPlan, firstInlineBlock.getIndex());
     }
 
-    private List<PlanEntry> buildPlan(Program program, ClassReaderSource classSource, int depth) {
-        if (depth >= MAX_DEPTH) {
-            return Collections.emptyList();
-        }
+    private List<PlanEntry> buildPlan(Program program, int depth, InliningStep step, MethodReference method) {
         List<PlanEntry> plan = new ArrayList<>();
-        int ownComplexity = getComplexity(program);
         int originalDepth = depth;
 
+        ContextImpl context = new ContextImpl();
         for (BasicBlock block : program.getBasicBlocks()) {
             if (!block.getTryCatchBlocks().isEmpty()) {
                 continue;
             }
 
-            if (originalDepth == 0) {
+            if (originalDepth < 0) {
                 depth = depthsByBlock.get(block.getIndex());
-                if (depth >= MAX_DEPTH) {
-                    continue;
-                }
             }
 
             for (Instruction insn : block) {
@@ -243,29 +350,35 @@ public class Inlining {
                     continue;
                 }
 
-                MethodReader invokedMethod = getMethod(classSource, invoke.getMethod());
+                if (invoke.getMethod().getClassName().equals(Fiber.class.getName())
+                        != method.getClassName().equals(Fiber.class.getName())) {
+                    continue;
+                }
+
+                MethodReader invokedMethod = getMethod(invoke.getMethod());
                 if (invokedMethod == null || invokedMethod.getProgram() == null
-                        || invokedMethod.getProgram().basicBlockCount() == 0) {
+                        || invokedMethod.getProgram().basicBlockCount() == 0
+                        || invokedMethod.hasModifier(ElementModifier.SYNCHRONIZED)) {
                     instructionsToSkip.add(insn);
                     continue;
                 }
 
-                Program invokedProgram = ProgramUtils.copy(invokedMethod.getProgram());
-                int complexityThreshold = DEFAULT_THRESHOLD;
-                if (ownComplexity < DEFAULT_THRESHOLD) {
-                    complexityThreshold += DEFAULT_THRESHOLD;
-                }
-                if (getComplexity(invokedProgram) > complexityThreshold) {
+                context.depth = depth;
+                InliningStep innerStep = step.tryInline(invokedMethod.getReference(), invokedMethod.getProgram(),
+                        context);
+                if (innerStep == null) {
                     instructionsToSkip.add(insn);
                     continue;
                 }
+                Program invokedProgram = ProgramUtils.copy(invokedMethod.getProgram());
 
                 PlanEntry entry = new PlanEntry();
                 entry.targetBlock = block.getIndex();
                 entry.targetInstruction = insn;
                 entry.program = invokedProgram;
-                entry.innerPlan.addAll(buildPlan(invokedProgram, classSource, depth + 1));
+                entry.innerPlan.addAll(buildPlan(invokedProgram, depth + 1, innerStep, invokedMethod.getReference()));
                 entry.depth = depth;
+                entry.method = invokedMethod.getReference();
                 plan.add(entry);
             }
         }
@@ -274,41 +387,13 @@ public class Inlining {
         return plan;
     }
 
-    private MethodReader getMethod(ClassReaderSource classSource, MethodReference methodRef) {
-        ClassReader cls = classSource.get(methodRef.getClassName());
+    private MethodReader getMethod(MethodReference methodRef) {
+        ClassReader cls = classes.get(methodRef.getClassName());
         return cls != null ? cls.getMethod(methodRef.getDescriptor()) : null;
     }
 
-    private int getComplexity(Program program) {
-        int complexity = 0;
-        for (int i = 0; i < program.basicBlockCount(); ++i) {
-            BasicBlock block = program.basicBlockAt(i);
-            int nopCount = 0;
-            int invokeCount = 0;
-            for (Instruction insn : block) {
-                if (insn instanceof EmptyInstruction) {
-                    nopCount++;
-                } else if (insn instanceof InvokeInstruction) {
-                    InvokeInstruction invoke = (InvokeInstruction) insn;
-                    invokeCount += invoke.getArguments().size();
-                    if (invoke.getInstance() != null) {
-                        invokeCount++;
-                    }
-                }
-            }
-            complexity += block.instructionCount() - nopCount + invokeCount;
-            Instruction lastInsn = block.getLastInstruction();
-            if (lastInsn instanceof SwitchInstruction) {
-                complexity += 3;
-            } else if (lastInsn instanceof BinaryBranchingInstruction || lastInsn instanceof BranchingInstruction) {
-                complexity += 2;
-            }
-        }
-        return complexity;
-    }
-
     private void devirtualize(Program program, MethodReference method, DependencyInfo dependencyInfo) {
-        ClassInference inference = new ClassInference(dependencyInfo);
+        ClassInference inference = new ClassInference(dependencyInfo, hierarchy);
         inference.infer(program, method);
 
         for (BasicBlock block : program.getBasicBlocks()) {
@@ -341,8 +426,43 @@ public class Inlining {
     private class PlanEntry {
         int targetBlock;
         Instruction targetInstruction;
+        MethodReference method;
         Program program;
         int depth;
         final List<PlanEntry> innerPlan = new ArrayList<>();
+    }
+
+    static class MethodUsageCounter extends AbstractInstructionReader {
+        ObjectIntMap<MethodReference> methodUsageCount = new ObjectIntHashMap<>();
+        Map<MethodReference, Set<MethodReference>> methodDependencies = new LinkedHashMap<>();
+        Predicate<MethodReference> externalMethods;
+        MethodReference currentMethod;
+
+        MethodUsageCounter(Predicate<MethodReference> externalMethods) {
+            this.externalMethods = externalMethods;
+        }
+
+        @Override
+        public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
+                List<? extends VariableReader> arguments, InvocationType type) {
+            if (type == InvocationType.SPECIAL && !externalMethods.test(method)) {
+                methodUsageCount.put(method, methodUsageCount.get(method) + 1);
+                methodDependencies.computeIfAbsent(currentMethod, k -> new LinkedHashSet<>()).add(method);
+            }
+        }
+    }
+
+    class ContextImpl implements InliningContext {
+        int depth;
+
+        @Override
+        public boolean isUsedOnce(MethodReference method) {
+            return methodsUsedOnce.contains(method);
+        }
+
+        @Override
+        public int getDepth() {
+            return depth;
+        }
     }
 }

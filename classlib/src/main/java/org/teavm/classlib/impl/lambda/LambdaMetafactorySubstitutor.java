@@ -15,29 +15,41 @@
  */
 package org.teavm.classlib.impl.lambda;
 
+import java.util.ArrayList;
 import java.util.Arrays;
-import org.teavm.cache.NoCache;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import org.teavm.dependency.BootstrapMethodSubstitutor;
 import org.teavm.dependency.DynamicCallSite;
 import org.teavm.model.AccessLevel;
-import org.teavm.model.AnnotationHolder;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
+import org.teavm.model.MethodHandleType;
 import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 import org.teavm.model.PrimitiveType;
+import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
 import org.teavm.model.emit.ValueEmitter;
+import org.teavm.model.instructions.InvocationType;
 
 public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor {
     private static final int FLAG_SERIALIZABLE = 1;
     private static final int FLAG_MARKERS = 2;
     private static final int FLAG_BRIDGES = 4;
-    private int lambdaIndex;
+    private Map<MethodReference, Integer> lambdaIdsByMethod = new HashMap<>();
+    private Map<MethodDescriptor, MethodDescriptor> descriptorCache = new HashMap<>();
+    private List<String> fieldNameCache = new ArrayList<>();
 
     @Override
     public ValueEmitter substitute(DynamicCallSite callSite, ProgramEmitter callerPe) {
@@ -47,10 +59,24 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         ValueType[] instantiatedMethodType = callSite.getBootstrapArguments().get(2).getMethodType();
 
         String samName = ((ValueType.Object) callSite.getCalledMethod().getResultType()).getClassName();
-        ClassReaderSource classSource = callSite.getAgent().getClassSource();
-        ClassReader samClass = classSource.get(samName);
+        ClassHierarchy hierarchy = callSite.getAgent().getClassHierarchy();
+        ClassReader samClass = hierarchy.getClassSource().get(samName);
 
-        ClassHolder implementor = new ClassHolder("$$LAMBDA" + (lambdaIndex++) + "$$");
+        String key = callSite.getCaller().getClassName() + "$" + callSite.getCaller().getName();
+        ClassReaderSource classSource = callSite.getAgent().getClassSource();
+        ClassReader callerClass = classSource.get(callSite.getCaller().getClassName());
+        int id = 0;
+        for (MethodReader callerMethod : callerClass.getMethods()) {
+            if (callerMethod.getDescriptor().equals(callSite.getCaller().getDescriptor())) {
+                break;
+            }
+            ++id;
+        }
+
+        int subId = lambdaIdsByMethod.getOrDefault(callSite.getCaller(), 0);
+        ClassHolder implementor = new ClassHolder(key + "$lambda$_" + id + "_" + subId);
+        lambdaIdsByMethod.put(callSite.getCaller(), subId + 1);
+
         implementor.setLevel(AccessLevel.PUBLIC);
         if (samClass != null && samClass.hasModifier(ElementModifier.INTERFACE)) {
             implementor.setParent("java.lang.Object");
@@ -60,16 +86,15 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         }
 
         int capturedVarCount = callSite.getCalledMethod().parameterCount();
-        MethodHolder ctor = createConstructor(classSource, implementor,
-                Arrays.copyOfRange(invokedType, 0, capturedVarCount));
-        ctor.getAnnotations().add(new AnnotationHolder(NoCache.class.getName()));
-        createBridge(classSource, implementor, callSite.getCalledMethod().getName(), instantiatedMethodType,
-                samMethodType);
+        MethodHolder ctor = createConstructor(hierarchy, implementor,
+                Arrays.copyOfRange(invokedType, 0, capturedVarCount), callerPe.getCurrentLocation());
+        createBridge(hierarchy, implementor, callSite.getCalledMethod().getName(), instantiatedMethodType,
+                samMethodType, callerPe.getCurrentLocation());
 
         MethodHolder worker = new MethodHolder(callSite.getCalledMethod().getName(), instantiatedMethodType);
-        worker.getAnnotations().add(new AnnotationHolder(NoCache.class.getName()));
         worker.setLevel(AccessLevel.PUBLIC);
-        ProgramEmitter pe = ProgramEmitter.create(worker, callSite.getAgent().getClassSource());
+        ProgramEmitter pe = ProgramEmitter.create(worker, callSite.getAgent().getClassHierarchy());
+        pe.setCurrentLocation(callerPe.getCurrentLocation());
         ValueEmitter thisVar = pe.var(0, implementor);
         ValueEmitter[] arguments = new ValueEmitter[instantiatedMethodType.length - 1];
         for (int i = 0; i < arguments.length; ++i) {
@@ -79,7 +104,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         ValueType[] implementorSignature = getSignature(implMethod);
         ValueEmitter[] passedArguments = new ValueEmitter[implementorSignature.length - 1];
         for (int i = 0; i < capturedVarCount; ++i) {
-            passedArguments[i] = thisVar.getField("_" + i, invokedType[i]);
+            passedArguments[i] = thisVar.getField(fieldName(i), invokedType[i]);
         }
         for (int i = 0; i < instantiatedMethodType.length - 1; ++i) {
             passedArguments[i + capturedVarCount] = tryConvertArgument(arguments[i], instantiatedMethodType[i],
@@ -118,13 +143,23 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
                 int bridgeCount = callSite.getBootstrapArguments().get(bootstrapArgIndex++).getInt();
                 for (int i = 0; i < bridgeCount; ++i) {
                     ValueType[] bridgeType = callSite.getBootstrapArguments().get(bootstrapArgIndex++).getMethodType();
-                    createBridge(classSource, implementor, callSite.getCalledMethod().getName(), instantiatedMethodType,
-                            bridgeType);
+                    createBridge(hierarchy, implementor, callSite.getCalledMethod().getName(), instantiatedMethodType,
+                            bridgeType, callerPe.getCurrentLocation());
                 }
             }
         }
 
+        List<String> dependencies = new ArrayList<>();
+        dependencies.add(callSite.getCaller().getClassName());
+        dependencies.addAll(implementor.getInterfaces());
+        if (!implementor.getParent().equals("java.lang.Object")) {
+            dependencies.add(implementor.getParent());
+        }
+
         callSite.getAgent().submitClass(implementor);
+        callSite.getAgent().getIncrementalCache().addDependencies(implementor.getName(),
+                dependencies.toArray(new String[0]));
+
         return callerPe.construct(ctor.getOwnerName(), callSite.getArguments().toArray(new ValueEmitter[0]));
     }
 
@@ -142,13 +177,17 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
                 return null;
             case INVOKE_VIRTUAL:
             case INVOKE_INTERFACE:
-            case INVOKE_SPECIAL:
+            case INVOKE_SPECIAL: {
                 for (int i = 1; i < arguments.length; ++i) {
                     arguments[i] = arguments[i].cast(handle.getArgumentType(i - 1));
                 }
                 arguments[0] = arguments[0].cast(ValueType.object(handle.getClassName()));
-                return arguments[0].invokeVirtual(handle.getName(), handle.getValueType(),
+                InvocationType type = handle.getKind() == MethodHandleType.INVOKE_SPECIAL
+                        ? InvocationType.SPECIAL
+                        : InvocationType.VIRTUAL;
+                return arguments[0].invoke(type, handle.getName(), handle.getValueType(),
                         Arrays.copyOfRange(arguments, 1, arguments.length));
+            }
             case INVOKE_STATIC:
                 for (int i = 0; i < arguments.length; ++i) {
                     arguments[i] = arguments[i].cast(handle.getArgumentType(i));
@@ -174,7 +213,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
                 return arg;
             }
             arg = tryConvertArgument(arg, from, ValueType.primitive(toType));
-            return arg.getProgramEmitter().invoke(primitiveClass, "valueOf", ValueType.primitive(toType), arg);
+            return arg.getProgramEmitter().invoke(primitiveClass, "valueOf", to, arg);
         } else if (from instanceof ValueType.Object && to instanceof ValueType.Primitive) {
             String primitiveClass = ((ValueType.Object) from).getClassName();
             PrimitiveType fromType = getWrappedPrimitive(primitiveClass);
@@ -259,18 +298,22 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         }
     }
 
-    private MethodHolder createConstructor(ClassReaderSource classSource, ClassHolder implementor, ValueType[] types) {
+    private MethodHolder createConstructor(ClassHierarchy hierarchy, ClassHolder implementor, ValueType[] types,
+            TextLocation location) {
         ValueType[] signature = Arrays.copyOf(types, types.length + 1);
         signature[types.length] = ValueType.VOID;
-        MethodHolder ctor = new MethodHolder("<init>", signature);
+        MethodDescriptor descriptor = descriptorCache.computeIfAbsent(new MethodDescriptor("<init>", signature),
+                k -> k);
+        MethodHolder ctor = new MethodHolder(descriptor);
         ctor.setLevel(AccessLevel.PUBLIC);
 
-        ProgramEmitter pe = ProgramEmitter.create(ctor, classSource);
+        ProgramEmitter pe = ProgramEmitter.create(ctor, hierarchy);
+        pe.setCurrentLocation(location);
         ValueEmitter thisVar = pe.var(0, implementor);
         thisVar.invokeSpecial(implementor.getParent(), "<init>");
 
         for (int i = 0; i < types.length; ++i) {
-            FieldHolder field = new FieldHolder("_" + i);
+            FieldHolder field = new FieldHolder(fieldName(i));
             field.setLevel(AccessLevel.PRIVATE);
             field.setType(types[i]);
             implementor.addField(field);
@@ -282,17 +325,29 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         return ctor;
     }
 
-    private void createBridge(ClassReaderSource classSource, ClassHolder implementor, String name, ValueType[] types,
-            ValueType[] bridgeTypes) {
+    private String fieldName(int index) {
+        if (index >= fieldNameCache.size()) {
+            fieldNameCache.addAll(Collections.nCopies(index - fieldNameCache.size() + 1, null));
+        }
+        String result = fieldNameCache.get(index);
+        if (result == null) {
+            result = "_" + index;
+            fieldNameCache.set(index, result);
+        }
+        return result;
+    }
+
+    private void createBridge(ClassHierarchy hierarchy, ClassHolder implementor, String name, ValueType[] types,
+            ValueType[] bridgeTypes, TextLocation location) {
         if (Arrays.equals(types, bridgeTypes)) {
             return;
         }
 
         MethodHolder bridge = new MethodHolder(name, bridgeTypes);
-        bridge.getAnnotations().add(new AnnotationHolder(NoCache.class.getName()));
         bridge.setLevel(AccessLevel.PUBLIC);
         bridge.getModifiers().add(ElementModifier.BRIDGE);
-        ProgramEmitter pe = ProgramEmitter.create(bridge, classSource);
+        ProgramEmitter pe = ProgramEmitter.create(bridge, hierarchy);
+        pe.setCurrentLocation(location);
         ValueEmitter thisVar = pe.var(0, implementor);
         ValueEmitter[] arguments = new ValueEmitter[bridgeTypes.length - 1];
         for (int i = 0; i < arguments.length; ++i) {
@@ -308,7 +363,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
             arguments[i] = arguments[i].cast(type);
         }
 
-        ValueEmitter result = thisVar.invokeVirtual(name, types[types.length - 1], arguments);
+        ValueEmitter result = thisVar.invokeSpecial(name, types[types.length - 1], arguments);
         if (result != null) {
             if (!types[types.length - 1].equals(bridgeTypes[bridgeTypes.length - 1])) {
                 result = result.cast(bridgeTypes[bridgeTypes.length - 1]);

@@ -335,18 +335,21 @@ public class ByteBufferTest {
         byte[] receiver = new byte[4];
         try {
             buffer.get(receiver, 0, 5);
+            fail("Error expected");
         } catch (IndexOutOfBoundsException e) {
             assertThat(receiver, is(new byte[4]));
             assertThat(buffer.position(), is(0));
         }
         try {
             buffer.get(receiver, -1, 3);
+            fail("Error expected");
         } catch (IndexOutOfBoundsException e) {
             assertThat(receiver, is(new byte[4]));
             assertThat(buffer.position(), is(0));
         }
         try {
             buffer.get(receiver, 6, 3);
+            fail("Error expected");
         } catch (IndexOutOfBoundsException e) {
             assertThat(receiver, is(new byte[4]));
             assertThat(buffer.position(), is(0));

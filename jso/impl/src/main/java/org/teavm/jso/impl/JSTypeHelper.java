@@ -34,7 +34,12 @@ class JSTypeHelper {
     }
 
     public boolean isJavaScriptClass(String className) {
-        return knownJavaScriptClasses.computeIfAbsent(className, k -> examineIfJavaScriptClass(className));
+        Boolean isJsClass = knownJavaScriptClasses.get(className);
+        if (isJsClass == null) {
+            isJsClass = examineIfJavaScriptClass(className);
+            knownJavaScriptClasses.put(className, isJsClass);
+        }
+        return isJsClass;
     }
 
     public boolean isJavaScriptImplementation(String className) {

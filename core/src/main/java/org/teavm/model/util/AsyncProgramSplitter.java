@@ -40,6 +40,7 @@ import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.MonitorEnterInstruction;
@@ -50,6 +51,7 @@ public class AsyncProgramSplitter {
     private ClassReaderSource classSource;
     private Set<MethodReference> asyncMethods;
     private Program program;
+    private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
 
     public AsyncProgramSplitter(ClassReaderSource classSource, Set<MethodReference> asyncMethods) {
         this.classSource = classSource;
@@ -82,8 +84,14 @@ public class AsyncProgramSplitter {
             for (Instruction insn : sourceBlock) {
                 if (insn instanceof InvokeInstruction) {
                     InvokeInstruction invoke = (InvokeInstruction) insn;
-                    if (!asyncMethods.contains(findRealMethod(invoke.getMethod()))) {
-                        continue;
+                    if (invoke.getType() == InvocationType.VIRTUAL) {
+                        if (!isAsyncMethod(findRealMethod(invoke.getMethod()))) {
+                            continue;
+                        }
+                    } else {
+                        if (!asyncMethods.contains(findRealMethod(invoke.getMethod()))) {
+                            continue;
+                        }
                     }
                 } else if (insn instanceof InitClassInstruction) {
                     if (!isSplittingClassInitializer(((InitClassInstruction) insn).getClassName())) {
@@ -162,7 +170,7 @@ public class AsyncProgramSplitter {
                     queue.add(next);
                 }
             }
-            InstructionTransitionExtractor successorExtractor = new InstructionTransitionExtractor();
+            TransitionExtractor successorExtractor = new TransitionExtractor();
             sourceBlock.getLastInstruction().acceptVisitor(successorExtractor);
             for (BasicBlock successor : successorExtractor.getTargets()) {
                 BasicBlock targetSuccessor = targetBlock.getProgram().basicBlockAt(successor.getIndex());
@@ -204,7 +212,7 @@ public class AsyncProgramSplitter {
             return false;
         }
 
-        MethodReader method = cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID));
+        MethodReader method = cls.getMethod(CLINIT_METHOD);
         return method != null && asyncMethods.contains(method.getReference());
     }
 
@@ -225,6 +233,33 @@ public class AsyncProgramSplitter {
             }
         }
         return method;
+    }
+
+    private boolean isAsyncMethod(MethodReference method) {
+        if (asyncMethods.isEmpty()) {
+            return false;
+        }
+        if (asyncMethods.contains(method)) {
+            return true;
+        }
+
+        ClassReader cls = classSource.get(method.getClassName());
+        if (cls == null) {
+            return false;
+        }
+
+        if (cls.getParent() != null) {
+            if (isAsyncMethod(new MethodReference(cls.getParent(), method.getDescriptor()))) {
+                return true;
+            }
+        }
+        for (String itf : cls.getInterfaces()) {
+            if (isAsyncMethod(new MethodReference(itf, method.getDescriptor()))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private Program createStubCopy(Program program) {

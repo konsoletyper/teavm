@@ -43,7 +43,7 @@ final class ExprOptimizer {
                 case LESS:
                     return Expr.binary(BinaryOperation.GREATER_OR_EQUALS, binary.getType(), a, b, expr.getLocation());
                 case LESS_OR_EQUALS:
-                    return Expr.binary(BinaryOperation.GREATER, binary.getType(), a, b);
+                    return Expr.binary(BinaryOperation.GREATER, binary.getType(), a, b, expr.getLocation());
                 case GREATER:
                     return Expr.binary(BinaryOperation.LESS_OR_EQUALS, binary.getType(), a, b, expr.getLocation());
                 case GREATER_OR_EQUALS:

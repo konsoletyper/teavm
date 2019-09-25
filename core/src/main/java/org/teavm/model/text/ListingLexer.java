@@ -62,6 +62,13 @@ class ListingLexer {
             case -1:
                 token = ListingToken.EOF;
                 break;
+            case '\r':
+                token = ListingToken.EOL;
+                nextChar();
+                if (c == '\n') {
+                    nextChar();
+                }
+                break;
             case '\n':
                 token = ListingToken.EOL;
                 nextChar();

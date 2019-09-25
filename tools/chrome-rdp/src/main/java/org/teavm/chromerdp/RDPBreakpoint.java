@@ -15,38 +15,35 @@
  */
 package org.teavm.chromerdp;
 
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
+import org.teavm.common.Promise;
 import org.teavm.debugging.javascript.JavaScriptBreakpoint;
 import org.teavm.debugging.javascript.JavaScriptLocation;
 
-public class RDPBreakpoint implements JavaScriptBreakpoint {
-    volatile String chromeId;
+class RDPBreakpoint implements JavaScriptBreakpoint {
     ChromeRDPDebugger debugger;
-    private JavaScriptLocation location;
-    AtomicInteger referenceCount = new AtomicInteger();
-    final Object updateMonitor = new Object();
-    AtomicBoolean updating = new AtomicBoolean(true);
+    RDPNativeBreakpoint nativeBreakpoint;
+    Promise<Void> destroyPromise;
 
-    RDPBreakpoint(ChromeRDPDebugger debugger, JavaScriptLocation location) {
+    RDPBreakpoint(ChromeRDPDebugger debugger) {
         this.debugger = debugger;
-        this.location = location;
     }
 
     @Override
     public JavaScriptLocation getLocation() {
-        return location;
+        return nativeBreakpoint.getLocation();
     }
 
     @Override
-    public void destroy() {
-        if (debugger != null) {
-            debugger.destroyBreakpoint(this);
+    public Promise<Void> destroy() {
+        if (destroyPromise == null) {
+            destroyPromise = debugger.destroyBreakpoint(this);
+            debugger = null;
         }
+        return destroyPromise;
     }
 
     @Override
     public boolean isValid() {
-        return chromeId != null && debugger != null && debugger.isAttached();
+        return nativeBreakpoint != null && nativeBreakpoint.isValid();
     }
 }

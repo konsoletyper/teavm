@@ -15,8 +15,9 @@
  */
 package org.teavm.model.instructions;
 
-import java.util.ArrayList;
+import java.util.AbstractList;
 import java.util.List;
+import java.util.function.UnaryOperator;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Variable;
@@ -25,7 +26,7 @@ public class InvokeInstruction extends Instruction {
     private InvocationType type;
     private MethodReference method;
     private Variable instance;
-    private List<Variable> arguments = new ArrayList<>();
+    private Variable[] arguments;
     private Variable receiver;
 
     public InvocationType getType() {
@@ -44,8 +45,20 @@ public class InvokeInstruction extends Instruction {
         this.instance = instance;
     }
 
-    public List<Variable> getArguments() {
-        return arguments;
+    public List<? extends Variable> getArguments() {
+        return argumentList;
+    }
+
+    public void replaceArguments(UnaryOperator<Variable> f) {
+        if (arguments != null) {
+            for (int i = 0; i < arguments.length; ++i) {
+                arguments[i] = f.apply(arguments[i]);
+            }
+        }
+    }
+
+    public void setArguments(Variable... arguments) {
+        this.arguments = arguments.length > 0 ? arguments.clone() : null;
     }
 
     public MethodReference getMethod() {
@@ -68,4 +81,19 @@ public class InvokeInstruction extends Instruction {
     public void acceptVisitor(InstructionVisitor visitor) {
         visitor.visit(this);
     }
+
+    private List<? extends Variable> argumentList = new AbstractList<Variable>() {
+        @Override
+        public Variable get(int index) {
+            if (arguments == null) {
+                throw new IndexOutOfBoundsException();
+            }
+            return arguments[index];
+        }
+
+        @Override
+        public int size() {
+            return arguments != null ? arguments.length : 0;
+        }
+    };
 }

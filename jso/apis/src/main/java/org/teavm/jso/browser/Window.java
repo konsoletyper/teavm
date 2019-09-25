@@ -41,7 +41,6 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
 
     @JSProperty
     public abstract int getScreenY();
-
     @JSProperty
     public abstract Location getLocation();
 
@@ -181,4 +180,13 @@ public abstract class Window implements JSObject, WindowEventTarget, StorageProv
 
     @JSBody(params = "uri", script = "return decodeURIComponent(uri);")
     public static native String decodeURIComponent(String uri);
+
+    @JSProperty
+    public abstract double getDevicePixelRatio();
+
+    @JSBody(params = "s", script = "return window.atob(s);")
+    public static native String atob(String s);
+
+    @JSBody(params = "s", script = "return window.btoa(s);")
+    public static native String btoa(String s);
 }

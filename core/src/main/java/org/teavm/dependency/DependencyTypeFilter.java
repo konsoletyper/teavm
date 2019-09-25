@@ -15,6 +15,12 @@
  */
 package org.teavm.dependency;
 
+import java.util.BitSet;
+
 public interface DependencyTypeFilter {
     boolean match(DependencyType type);
+
+    default int[] tryExtract(BitSet types) {
+        return null;
+    }
 }

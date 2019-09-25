@@ -256,4 +256,46 @@ public abstract class TByteBuffer extends TBuffer implements TComparable<TByteBu
     public abstract TFloatBuffer asFloatBuffer();
 
     public abstract TDoubleBuffer asDoubleBuffer();
+
+    @Override
+    public final TByteBuffer mark() {
+        super.mark();
+        return this;
+    }
+
+    @Override
+    public final TByteBuffer reset() {
+        super.reset();
+        return this;
+    }
+
+    @Override
+    public final TByteBuffer clear() {
+        super.clear();
+        return this;
+    }
+
+    @Override
+    public final TByteBuffer flip() {
+        super.flip();
+        return this;
+    }
+
+    @Override
+    public final TByteBuffer rewind() {
+        super.rewind();
+        return this;
+    }
+
+    @Override
+    public TByteBuffer limit(int newLimit) {
+        super.limit(newLimit);
+        return this;
+    }
+
+    @Override
+    public TByteBuffer position(int newPosition) {
+        super.position(newPosition);
+        return this;
+    }
 }

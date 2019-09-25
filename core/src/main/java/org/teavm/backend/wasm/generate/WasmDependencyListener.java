@@ -18,32 +18,30 @@ package org.teavm.backend.wasm.generate;
 import org.teavm.dependency.AbstractDependencyListener;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Export;
 import org.teavm.model.AnnotationReader;
-import org.teavm.model.CallLocation;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 
 public class WasmDependencyListener extends AbstractDependencyListener implements ClassHolderTransformer {
     @Override
-    public void classReached(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className) {
         for (MethodReader reader : agent.getClassSource().get(className).getMethods()) {
             AnnotationReader annotation = reader.getAnnotations().get(Export.class.getName());
             if (annotation != null) {
-                agent.linkMethod(reader.getReference(), null).use();
+                agent.linkMethod(reader.getReference()).use();
             }
         }
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         AnnotationReader delegateAnnot = method.getMethod().getAnnotations().get(DelegateTo.class.getName());
         if (delegateAnnot != null) {
             String delegateMethodName = delegateAnnot.getValue("value").getString();
@@ -51,7 +49,9 @@ public class WasmDependencyListener extends AbstractDependencyListener implement
             for (MethodReader delegate : cls.getMethods()) {
                 if (delegate.getName().equals(delegateMethodName)) {
                     if (delegate != method.getMethod()) {
-                        agent.linkMethod(delegate.getReference(), location).use();
+                        MethodDependency dep = agent.linkMethod(delegate.getReference());
+                        dep.use();
+                        method.addLocationListener(dep::addLocation);
                     }
                 }
             }
@@ -59,7 +59,7 @@ public class WasmDependencyListener extends AbstractDependencyListener implement
     }
 
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         for (MethodHolder method : cls.getMethods()) {
             AnnotationReader delegateAnnot = method.getAnnotations().get(DelegateTo.class.getName());
             if (delegateAnnot != null) {

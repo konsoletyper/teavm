@@ -22,7 +22,7 @@ public class TCloneNotSupportedException extends TException {
         super();
     }
 
-    public TCloneNotSupportedException(TString message) {
+    public TCloneNotSupportedException(String message) {
         super(message);
     }
 }

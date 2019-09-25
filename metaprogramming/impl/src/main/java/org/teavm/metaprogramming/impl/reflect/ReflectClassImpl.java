@@ -265,9 +265,8 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
                 if (candidate == null) {
                     candidate = method;
                 } else {
-                    boolean moreSpecial = context.getClassSource()
-                            .isSuperType(candidate.getResultType(), method.getResultType())
-                            .orElse(false);
+                    boolean moreSpecial = context.getHierarchy().isSuperType(candidate.getResultType(),
+                            method.getResultType(), false);
                     if (moreSpecial) {
                         candidate = method;
                     }
@@ -335,14 +334,19 @@ public class ReflectClassImpl<T> implements ReflectClass<T> {
     @Override
     public ReflectField[] getFields() {
         if (fieldsCache == null) {
-            Set<String> visited = new HashSet<>();
-            fieldsCache = context.getClassSource()
-                    .getAncestors(classReader.getName())
-                    .flatMap(cls -> cls.getFields().stream().filter(fld -> fld.getLevel() == AccessLevel.PUBLIC))
-                    .filter(fld -> visited.add(fld.getName()))
-                    .map(fld -> context.getClass(ValueType.object(fld.getOwnerName()))
-                            .getDeclaredField(fld.getName()))
-                    .toArray(ReflectField[]::new);
+            resolve();
+            if (classReader == null) {
+                fieldsCache = new ReflectField[0];
+            } else {
+                Set<String> visited = new HashSet<>();
+                fieldsCache = context
+                  .getClassSource()
+                  .getAncestors(classReader.getName())
+                  .flatMap(cls -> cls.getFields().stream().filter(fld -> fld.getLevel() == AccessLevel.PUBLIC))
+                  .filter(fld -> visited.add(fld.getName()))
+                  .map(fld -> context.getClass(ValueType.object(fld.getOwnerName())).getDeclaredField(fld.getName()))
+                  .toArray(ReflectField[]::new);
+            }
         }
         return fieldsCache.clone();
     }

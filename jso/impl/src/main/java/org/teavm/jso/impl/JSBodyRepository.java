@@ -28,5 +28,4 @@ class JSBodyRepository {
     public final Set<MethodReference> inlineMethods = new HashSet<>();
     public final Map<MethodReference, MethodReference> callbackCallees = new HashMap<>();
     public final Map<MethodReference, Set<MethodReference>> callbackMethods = new HashMap<>();
-    public final Map<MethodReference, Set<MethodReference>> callbackMethodsDeps = new HashMap<>();
 }

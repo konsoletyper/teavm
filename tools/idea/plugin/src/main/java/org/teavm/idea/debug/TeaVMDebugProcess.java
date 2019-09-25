@@ -16,7 +16,10 @@
 package org.teavm.idea.debug;
 
 import com.intellij.debugger.ui.breakpoints.JavaLineBreakpointType;
+import com.intellij.execution.ui.ExecutionConsole;
 import com.intellij.icons.AllIcons;
+import com.intellij.openapi.application.Application;
+import com.intellij.openapi.application.ApplicationManager;
 import com.intellij.openapi.extensions.ExtensionPoint;
 import com.intellij.openapi.extensions.Extensions;
 import com.intellij.openapi.util.Key;
@@ -49,6 +52,7 @@ public class TeaVMDebugProcess extends XDebugProcess {
     private final int port;
     private ChromeRDPServer debugServer;
     ConcurrentMap<Breakpoint, XBreakpoint<?>> breakpointMap = new ConcurrentHashMap<>();
+    public ExecutionConsole console;
 
     public TeaVMDebugProcess(@NotNull XDebugSession session, int port) {
         super(session);
@@ -102,7 +106,8 @@ public class TeaVMDebugProcess extends XDebugProcess {
     private Debugger initDebugger() {
         debugServer = new ChromeRDPServer();
         debugServer.setPort(port);
-        ChromeRDPDebugger chromeDebugger = new ChromeRDPDebugger();
+        Application application = ApplicationManager.getApplication();
+        ChromeRDPDebugger chromeDebugger = new ChromeRDPDebugger(application::invokeLater);
         debugServer.setExchangeConsumer(chromeDebugger);
         editorsProvider = new TeaVMDebuggerEditorsProvider();
 
@@ -187,5 +192,11 @@ public class TeaVMDebugProcess extends XDebugProcess {
     @Override
     public XBreakpointHandler<?>[] getBreakpointHandlers() {
         return breakpointHandlers.toArray(new XBreakpointHandler<?>[0]);
+    }
+
+    @NotNull
+    @Override
+    public ExecutionConsole createConsole() {
+        return console != null ? console : super.createConsole();
     }
 }

@@ -52,6 +52,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import java.util.Arrays;
@@ -326,9 +327,11 @@ public class VectorTest {
         Enumeration<Object> orgNum = tVector.elements();
         Enumeration<Object> cnum = v.elements();
 
+        int index = 0;
         while (orgNum.hasMoreElements()) {
             assertTrue("Not enough elements copied", cnum.hasMoreElements());
-            assertTrue("Vector cloned improperly, elements do not match", orgNum.nextElement() == cnum.nextElement());
+            assertSame("Vector cloned improperly, element " + index++ + " does not match",
+                    orgNum.nextElement(), cnum.nextElement());
         }
         assertTrue("Not enough elements copied", !cnum.hasMoreElements());
     }
@@ -805,20 +808,6 @@ public class VectorTest {
 
         try {
             myVector.removeRange(0, -1);
-            fail("Should throw IndexOutOfBoundsException");
-        } catch (IndexOutOfBoundsException e) {
-            // Excepted
-        }
-
-        try {
-            myVector.removeRange(1, 0);
-            fail("Should throw IndexOutOfBoundsException");
-        } catch (IndexOutOfBoundsException e) {
-            // Excepted
-        }
-
-        try {
-            myVector.removeRange(2, 1);
             fail("Should throw IndexOutOfBoundsException");
         } catch (IndexOutOfBoundsException e) {
             // Excepted

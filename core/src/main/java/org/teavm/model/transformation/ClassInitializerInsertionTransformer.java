@@ -22,20 +22,27 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
+import org.teavm.model.analysis.ClassInitializerInfo;
 import org.teavm.model.instructions.InitClassInstruction;
 
 public class ClassInitializerInsertionTransformer {
     private static final MethodDescriptor clinitDescriptor = new MethodDescriptor("<clinit>", void.class);
     private ClassReaderSource classes;
+    private ClassInitializerInfo classInitializerInfo;
 
-    public ClassInitializerInsertionTransformer(ClassReaderSource classes) {
+    public ClassInitializerInsertionTransformer(ClassReaderSource classes, ClassInitializerInfo classInitializerInfo) {
         this.classes = classes;
+        this.classInitializerInfo = classInitializerInfo;
     }
 
     public void apply(MethodReader method, Program program) {
+        if (program.basicBlockCount() == 0) {
+            return;
+        }
         ClassReader cls = classes.get(method.getOwnerName());
-        boolean hasClinit = cls.getMethod(clinitDescriptor) != null;
-        if (needsClinitCall(method) && hasClinit) {
+        boolean hasClinit = cls.getMethod(clinitDescriptor) != null
+                && classInitializerInfo.isDynamicInitializer(cls.getName());
+        if (hasClinit && needsClinitCall(method)) {
             BasicBlock entryBlock = program.basicBlockAt(0);
             InitClassInstruction initInsn = new InitClassInstruction();
             initInsn.setClassName(method.getOwnerName());

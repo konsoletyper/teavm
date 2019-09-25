@@ -21,18 +21,24 @@ import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
-import org.teavm.common.CachedMapper;
-import org.teavm.common.Mapper;
+import java.util.function.Function;
+import org.teavm.common.CachedFunction;
 import org.teavm.model.ClassHolder;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.ReferenceCache;
+import org.teavm.vm.spi.ElementFilter;
 
-public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, ClassDateProvider {
+public class ClasspathResourceMapper implements Function<String, ClassHolder>, ClassDateProvider {
     private static final String PACKAGE_PREFIX = "packagePrefix.";
     private static final String CLASS_PREFIX = "classPrefix.";
-    private Mapper<String, ClassHolder> innerMapper;
+    private Function<String, ClassHolder> innerMapper;
     private List<Transformation> transformations = new ArrayList<>();
     private ClassRefsRenamer renamer;
     private ClassLoader classLoader;
     private Map<String, ModificationDate> modificationDates = new HashMap<>();
+    private ReferenceCache referenceCache;
+    private List<ElementFilter> elementFilters = new ArrayList<>();
 
     private static class Transformation {
         String packageName;
@@ -41,8 +47,10 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
         String classPrefix = "";
     }
 
-    public ClasspathResourceMapper(ClassLoader classLoader, Mapper<String, ClassHolder> innerMapper) {
-        this.innerMapper = innerMapper;
+    public ClasspathResourceMapper(ClassLoader classLoader, ReferenceCache referenceCache,
+            Function<String, ClassHolder> provider) {
+        this.innerMapper = provider;
+        this.referenceCache = referenceCache;
         try {
             Enumeration<URL> resources = classLoader.getResources("META-INF/teavm.properties");
             Map<String, Transformation> transformationMap = new HashMap<>();
@@ -58,16 +66,23 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
         } catch (IOException e) {
             throw new RuntimeException("Error reading resources", e);
         }
-        renamer = new ClassRefsRenamer(new CachedMapper<>(classNameMapper));
+        renamer = new ClassRefsRenamer(referenceCache, new CachedFunction<>(classNameMapper));
+
+        for (ElementFilter elementFilter : ServiceLoader.load(ElementFilter.class)) {
+            elementFilters.add(elementFilter);
+        }
+
         this.classLoader = classLoader;
     }
 
-    public ClasspathResourceMapper(Properties properties, Mapper<String, ClassHolder> innerMapper) {
+    public ClasspathResourceMapper(Properties properties, ReferenceCache referenceCache,
+            Function<String, ClassHolder> innerMapper) {
         this.innerMapper = innerMapper;
+        this.referenceCache = referenceCache;
         Map<String, Transformation> transformationMap = new HashMap<>();
         loadProperties(properties, transformationMap);
         transformations.addAll(transformationMap.values());
-        renamer = new ClassRefsRenamer(new CachedMapper<>(classNameMapper));
+        renamer = new ClassRefsRenamer(referenceCache, new CachedFunction<>(classNameMapper));
     }
 
     private void loadProperties(Properties properties, Map<String, Transformation> cache) {
@@ -97,13 +112,45 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
     }
 
     @Override
-    public ClassHolder map(String name) {
+    public ClassHolder apply(String name) {
+        for (ElementFilter filter : elementFilters) {
+            if (!filter.acceptClass(name)) {
+                return null;
+            }
+        }
+
+        ClassHolder cls = find(name);
+
+        if (cls != null) {
+            for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
+                for (ElementFilter filter : elementFilters) {
+                    if (!filter.acceptMethod(method.getReference())) {
+                        cls.removeMethod(method);
+                        break;
+                    }
+                }
+            }
+
+            for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
+                for (ElementFilter filter : elementFilters) {
+                    if (!filter.acceptField(field.getReference())) {
+                        cls.removeField(field);
+                        break;
+                    }
+                }
+            }
+        }
+
+        return cls;
+    }
+
+    private ClassHolder find(String name) {
         for (Transformation transformation : transformations) {
             if (name.startsWith(transformation.packageName)) {
                 int index = name.lastIndexOf('.');
                 String className = name.substring(index + 1);
                 String packageName = index > 0 ? name.substring(0, index) : "";
-                ClassHolder classHolder = innerMapper.map(transformation.packagePrefix + packageName
+                ClassHolder classHolder = innerMapper.apply(transformation.packagePrefix + packageName
                         + "." + transformation.classPrefix + className);
                 if (classHolder != null) {
                     classHolder = renamer.rename(classHolder);
@@ -111,7 +158,7 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
                 return classHolder;
             }
         }
-        return innerMapper.map(name);
+        return innerMapper.apply(name);
     }
 
     private String renameClass(String name) {
@@ -121,15 +168,16 @@ public class ClasspathResourceMapper implements Mapper<String, ClassHolder>, Cla
                 String className = name.substring(index + 1);
                 String packageName = name.substring(0, index);
                 if (className.startsWith(transformation.classPrefix)) {
-                    return packageName.substring(transformation.packagePrefix.length()) + "."
+                    String newName = packageName.substring(transformation.packagePrefix.length()) + "."
                             + className.substring(transformation.classPrefix.length());
+                    return referenceCache.getCached(newName);
                 }
             }
         }
         return name;
     }
 
-    private Mapper<String, String> classNameMapper = this::renameClass;
+    private Function<String, String> classNameMapper = this::renameClass;
 
     @Override
     public Date getModificationDate(String className) {

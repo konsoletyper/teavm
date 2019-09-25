@@ -16,7 +16,6 @@
 package org.teavm.idea.jps;
 
 import static org.teavm.idea.jps.remote.TeaVMBuilderAssistant.REMOTE_PORT;
-import java.io.IOException;
 import java.rmi.NotBoundException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
@@ -27,17 +26,19 @@ import org.jetbrains.jps.builders.BuildOutputConsumer;
 import org.jetbrains.jps.builders.BuildRootDescriptor;
 import org.jetbrains.jps.builders.DirtyFilesHolder;
 import org.jetbrains.jps.incremental.CompileContext;
-import org.jetbrains.jps.incremental.ProjectBuildException;
 import org.jetbrains.jps.incremental.TargetBuilder;
 import org.jetbrains.jps.incremental.messages.BuildMessage;
 import org.jetbrains.jps.incremental.messages.CompilerMessage;
-import org.teavm.idea.jps.model.TeaVMBuildStrategy;
 import org.teavm.idea.jps.remote.TeaVMBuilderAssistant;
-import org.teavm.idea.jps.remote.TeaVMRemoteBuildService;
+import org.teavm.tooling.builder.BuildException;
+import org.teavm.tooling.builder.BuildStrategy;
+import org.teavm.tooling.builder.InProcessBuildStrategy;
+import org.teavm.tooling.builder.RemoteBuildStrategy;
+import org.teavm.tooling.daemon.RemoteBuildService;
 
 public class TeaVMBuilder extends TargetBuilder<BuildRootDescriptor, TeaVMBuildTarget> {
     private TeaVMBuilderAssistant assistant;
-    private TeaVMRemoteBuildService buildService;
+    private RemoteBuildService buildService;
 
     public TeaVMBuilder() {
         super(Collections.singletonList(TeaVMBuildTargetType.INSTANCE));
@@ -52,11 +53,11 @@ public class TeaVMBuilder extends TargetBuilder<BuildRootDescriptor, TeaVMBuildT
             }
         }
 
-        String daemonPortString = System.getProperty(TeaVMRemoteBuildService.REMOTE_PORT);
+        String daemonPortString = System.getProperty(RemoteBuildService.REMOTE_PORT);
         if (daemonPortString != null) {
             try {
                 Registry registry = LocateRegistry.getRegistry(Integer.parseInt(daemonPortString));
-                buildService = (TeaVMRemoteBuildService) registry.lookup(TeaVMRemoteBuildService.ID);
+                buildService = (RemoteBuildService) registry.lookup(RemoteBuildService.ID);
             } catch (NumberFormatException | RemoteException | NotBoundException e) {
                 e.printStackTrace();
             }
@@ -66,19 +67,32 @@ public class TeaVMBuilder extends TargetBuilder<BuildRootDescriptor, TeaVMBuildT
     @Override
     public void build(@NotNull TeaVMBuildTarget target,
             @NotNull DirtyFilesHolder<BuildRootDescriptor, TeaVMBuildTarget> holder,
-            @NotNull BuildOutputConsumer outputConsumer, @NotNull CompileContext context) throws ProjectBuildException,
-            IOException {
+            @NotNull BuildOutputConsumer outputConsumer, @NotNull CompileContext context) {
         if (assistant == null) {
             context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.WARNING,
                     "No TeaVM builder assistant available. Diagnostic messages will be less informative"));
         }
 
-        TeaVMBuildStrategy buildStrategy = buildService != null
-                ? new RemoteBuildStrategy(buildService)
-                : new InProcessBuildStrategy(context);
-        TeaVMBuild build = new TeaVMBuild(context, assistant, buildStrategy, outputConsumer);
+        try {
+            BuildStrategy buildStrategy = buildService != null
+                    ? new RemoteBuildStrategy(buildService)
+                    : createInProcessBuilder();
+            TeaVMBuild build = new TeaVMBuild(context, assistant, buildStrategy, outputConsumer, buildService != null);
 
-        build.perform(target.getModule(), target);
+            build.perform(target.getModule(), target);
+        } catch (BuildException e) {
+            context.processMessage(new CompilerMessage("TeaVM", e.getCause()));
+        } catch (Exception e) {
+            context.processMessage(new CompilerMessage("TeaVM", e));
+        }
+    }
+
+    private BuildStrategy createInProcessBuilder() {
+        return new InProcessBuildStrategy((urls, innerClassLoader) -> {
+            RenamingClassLoader loader = new RenamingClassLoader(urls, innerClassLoader);
+            loader.rename("org/objectweb/asm/", "org/teavm/asm/");
+            return loader;
+        });
     }
 
     @NotNull

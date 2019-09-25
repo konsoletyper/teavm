@@ -33,11 +33,11 @@ public abstract class PlatformQueue<T> implements JSObject {
 
     abstract PlatformObject shift();
 
-    public final void add(T e) {
+    public void add(T e) {
         push(wrap(e));
     }
 
-    public final T remove() {
+    public T remove() {
         return unwrap(shift());
     }
 

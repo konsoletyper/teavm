@@ -22,7 +22,7 @@ public class TNegativeArraySizeException extends TRuntimeException {
         super();
     }
 
-    public TNegativeArraySizeException(TString message) {
+    public TNegativeArraySizeException(String message) {
         super(message);
     }
 }

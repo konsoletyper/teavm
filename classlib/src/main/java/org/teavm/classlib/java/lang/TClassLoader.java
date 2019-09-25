@@ -19,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.classlib.impl.Base64Impl;
+import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
@@ -68,6 +69,7 @@ public abstract class TClassLoader extends TObject {
     private static native String resourceToString(JSObject resource);
 
     @InjectedBy(ClassLoaderNativeGenerator.class)
+    @NoSideEffects
     private static native ResourceContainer supplyResources();
 
     interface ResourceContainer extends JSObject {

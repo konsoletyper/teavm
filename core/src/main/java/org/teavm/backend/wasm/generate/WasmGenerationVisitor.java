@@ -63,6 +63,8 @@ import org.teavm.ast.UnaryExpr;
 import org.teavm.ast.UnwrapArrayExpr;
 import org.teavm.ast.VariableExpr;
 import org.teavm.ast.WhileStatement;
+import org.teavm.backend.lowlevel.generate.NameProvider;
+import org.teavm.backend.wasm.WasmHeap;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.binary.DataPrimitives;
@@ -110,18 +112,17 @@ import org.teavm.backend.wasm.render.WasmTypeInference;
 import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Address;
 import org.teavm.model.FieldReference;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
-import org.teavm.model.classes.TagRegistry;
-import org.teavm.model.classes.VirtualTableEntry;
+import org.teavm.model.classes.VirtualTable;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.ShadowStack;
 
 class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
-    private static FieldReference tagField = new FieldReference(RuntimeClass.class.getName(), "tag");
     private static final int SWITCH_TABLE_THRESHOLD = 256;
     private WasmGenerationContext context;
     private WasmClassGenerator classGenerator;
@@ -184,7 +185,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                     default:
                         Class<?> type = convertType(expr.getType());
                         MethodReference method = new MethodReference(WasmRuntime.class, "remainder", type, type, type);
-                        WasmCall call = new WasmCall(WasmMangling.mangleMethod(method), false);
+                        WasmCall call = new WasmCall(context.names.forMethod(method), false);
 
                         accept(expr.getFirstOperand());
                         call.getArguments().add(result);
@@ -238,7 +239,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             case COMPARE: {
                 Class<?> type = convertType(expr.getType());
                 MethodReference method = new MethodReference(WasmRuntime.class, "compare", type, type, int.class);
-                WasmCall call = new WasmCall(WasmMangling.mangleMethod(method), false);
+                WasmCall call = new WasmCall(context.names.forMethod(method), false);
 
                 accept(expr.getFirstOperand());
                 call.getArguments().add(result);
@@ -690,7 +691,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                 break;
         }
 
-        int base = classGenerator.getClassSize(RuntimeArray.class.getName());
+        int base = BinaryWriter.align(classGenerator.getClassSize(RuntimeArray.class.getName()), 1 << size);
         array = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, array, new WasmInt32Constant(base));
         if (size != 0) {
             index = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, index,
@@ -813,7 +814,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private void translateSwitchToWasmSwitch(SwitchStatement statement, WasmExpression condition,
             WasmBlock initialWrapper, WasmBlock defaultTarget, WasmBlock[] targets, int min, int max) {
-        if (min > 0) {
+        if (min != 0) {
             condition = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB, condition,
                     new WasmInt32Constant(min));
         }
@@ -911,10 +912,12 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         if (expr.getType() == InvocationType.STATIC || expr.getType() == InvocationType.SPECIAL) {
-            String methodName = WasmMangling.mangleMethod(expr.getMethod());
+            MethodReader method = context.getClassSource().resolve(expr.getMethod());
+            MethodReference reference = method != null ? method.getReference() : expr.getMethod();
+            String methodName = context.names.forMethod(reference);
 
             WasmCall call = new WasmCall(methodName);
-            if (context.getImportedMethod(expr.getMethod()) != null) {
+            if (context.getImportedMethod(reference) != null) {
                 call.setImported(true);
             }
             for (Expr argument : expr.getArguments()) {
@@ -930,7 +933,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             block.getBody().add(new WasmSetLocal(tmp, allocateObject(expr.getMethod().getClassName(),
                     expr.getLocation())));
 
-            String methodName = WasmMangling.mangleMethod(expr.getMethod());
+            String methodName = context.names.forMethod(expr.getMethod());
             WasmCall call = new WasmCall(methodName);
             call.getArguments().add(new WasmGetLocal(tmp));
             for (Expr argument : expr.getArguments()) {
@@ -944,23 +947,31 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
             result = block;
         } else {
+            MethodReference reference = expr.getMethod();
             accept(expr.getArguments().get(0));
             WasmExpression instance = result;
             WasmBlock block = new WasmBlock(false);
-            block.setType(WasmGeneratorUtil.mapType(expr.getMethod().getReturnType()));
+            block.setType(WasmGeneratorUtil.mapType(reference.getReturnType()));
 
             WasmLocal instanceVar = getTemporary(WasmType.INT32);
             block.getBody().add(new WasmSetLocal(instanceVar, instance));
             instance = new WasmGetLocal(instanceVar);
 
             int vtableOffset = classGenerator.getClassSize(RuntimeClass.class.getName());
-            VirtualTableEntry vtableEntry = context.getVirtualTableProvider().lookup(expr.getMethod());
-            if (vtableEntry == null) {
+            VirtualTable vtable = context.getVirtualTableProvider().lookup(reference.getClassName());
+            if (vtable != null) {
+                vtable = vtable.findMethodContainer(reference.getDescriptor());
+            }
+            if (vtable == null) {
                 result = new WasmUnreachable();
                 return;
             }
+            int vtableIndex = vtable.getMethods().indexOf(reference.getDescriptor());
+            if (vtable.getParent() != null) {
+                vtableIndex += vtable.getParent().size();
+            }
             WasmExpression methodIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    getReferenceToClass(instance), new WasmInt32Constant(vtableEntry.getIndex() * 4 + vtableOffset));
+                    getReferenceToClass(instance), new WasmInt32Constant(vtableIndex * 4 + vtableOffset));
             methodIndex = new WasmLoadInt32(4, methodIndex, WasmInt32Subtype.INT32);
 
             WasmIndirectCall call = new WasmIndirectCall(methodIndex);
@@ -1005,7 +1016,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
                     + "Mutator.allocStack");
         }
 
-        int offset = classGenerator.getFieldOffset(new FieldReference(WasmRuntime.class.getName(), "stack"));
+        int offset = classGenerator.getFieldOffset(new FieldReference(WasmHeap.class.getName(), "stack"));
         WasmExpression oldValue = new WasmGetLocal(stackVariable);
         oldValue = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB, oldValue,
                 new WasmInt32Constant(4));
@@ -1200,7 +1211,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     private WasmExpression allocateObject(String className, TextLocation location) {
         int tag = classGenerator.getClassPointer(ValueType.object(className));
-        String allocName = WasmMangling.mangleMethod(new MethodReference(Allocator.class, "allocate",
+        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class));
         WasmCall call = new WasmCall(allocName);
         call.getArguments().add(new WasmInt32Constant(tag));
@@ -1213,7 +1224,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         ValueType type = expr.getType();
 
         int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
-        String allocName = WasmMangling.mangleMethod(new MethodReference(Allocator.class, "allocateArray",
+        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocateArray",
                 RuntimeClass.class, int.class, Address.class));
         WasmCall call = new WasmCall(allocName);
         call.getArguments().add(new WasmInt32Constant(classPointer));
@@ -1243,7 +1254,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         }
 
         int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
-        String allocName = WasmMangling.mangleMethod(new MethodReference(Allocator.class, "allocateMultiArray",
+        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocateMultiArray",
                 RuntimeClass.class, Address.class, int.class, RuntimeArray.class));
         WasmCall call = new WasmCall(allocName);
         call.getArguments().add(new WasmInt32Constant(classPointer));
@@ -1268,60 +1279,29 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(InstanceOfExpr expr) {
+        classGenerator.getClassPointer(expr.getType());
+
         accept(expr.getExpr());
 
-        if (expr.getType() instanceof ValueType.Object) {
-            ValueType.Object cls = (ValueType.Object) expr.getType();
-            List<TagRegistry.Range> ranges = context.getTagRegistry().getRanges(cls.getClassName());
-            ranges.sort(Comparator.comparingInt(range -> range.lower));
+        WasmBlock block = new WasmBlock(false);
+        block.setType(WasmType.INT32);
+        block.setLocation(expr.getLocation());
 
-            WasmBlock block = new WasmBlock(false);
-            block.setType(WasmType.INT32);
-            block.setLocation(expr.getLocation());
+        WasmLocal objectVar = getTemporary(WasmType.INT32);
+        block.getBody().add(new WasmSetLocal(objectVar, result));
 
-            WasmLocal tagVar = getTemporary(WasmType.INT32);
-            int tagOffset = classGenerator.getFieldOffset(tagField);
-            WasmExpression tagPtr = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
-                    getReferenceToClass(result), new WasmInt32Constant(tagOffset));
-            block.getBody().add(new WasmSetLocal(tagVar, new WasmLoadInt32(4, tagPtr, WasmInt32Subtype.INT32)));
+        WasmBranch ifNull = new WasmBranch(new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ,
+                new WasmGetLocal(objectVar), new WasmInt32Constant(0)), block);
+        ifNull.setResult(new WasmInt32Constant(0));
+        block.getBody().add(new WasmDrop(ifNull));
 
-            WasmExpression lowerThanMinCond = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_SIGNED,
-                    new WasmGetLocal(tagVar), new WasmInt32Constant(ranges.get(0).lower));
-            WasmBranch lowerThanMin = new WasmBranch(lowerThanMinCond, block);
-            lowerThanMin.setResult(new WasmInt32Constant(0));
-            block.getBody().add(new WasmDrop(lowerThanMin));
+        WasmCall supertypeCall = new WasmCall(context.names.forSupertypeFunction(expr.getType()));
+        WasmExpression classRef = new WasmLoadInt32(4, result, WasmInt32Subtype.INT32);
+        classRef = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classRef, new WasmInt32Constant(3));
+        supertypeCall.getArguments().add(classRef);
+        block.getBody().add(supertypeCall);
 
-            WasmExpression upperThanMaxCond = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.GT_SIGNED,
-                    new WasmGetLocal(tagVar), new WasmInt32Constant(ranges.get(ranges.size() - 1).upper));
-            WasmBranch upperThanMax = new WasmBranch(upperThanMaxCond, block);
-            upperThanMax.setResult(new WasmInt32Constant(0));
-            block.getBody().add(new WasmDrop(upperThanMax));
-
-            for (int i = 1; i < ranges.size(); ++i) {
-                WasmExpression upperThanExcluded = new WasmIntBinary(WasmIntType.INT32,
-                        WasmIntBinaryOperation.GT_SIGNED, new WasmGetLocal(tagVar),
-                        new WasmInt32Constant(ranges.get(i - 1).upper));
-                WasmConditional conditional = new WasmConditional(upperThanExcluded);
-                WasmExpression lowerThanExcluded = new WasmIntBinary(WasmIntType.INT32,
-                        WasmIntBinaryOperation.LT_SIGNED, new WasmGetLocal(tagVar),
-                        new WasmInt32Constant(ranges.get(i).lower));
-
-                WasmBranch branch = new WasmBranch(lowerThanExcluded, block);
-                branch.setResult(new WasmInt32Constant(0));
-                conditional.getThenBlock().getBody().add(new WasmDrop(branch));
-
-                block.getBody().add(conditional);
-            }
-
-            block.getBody().add(new WasmInt32Constant(1));
-            releaseTemporary(tagVar);
-
-            result = block;
-        } else if (expr.getType() instanceof ValueType.Array) {
-            throw new UnsupportedOperationException();
-        } else {
-            throw new AssertionError();
-        }
+        result = block;
     }
 
     @Override
@@ -1344,7 +1324,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(InitClassStatement statement) {
         if (classGenerator.hasClinit(statement.getClassName())) {
-            result = new WasmCall(WasmMangling.mangleInitializer(statement.getClassName()));
+            result = new WasmCall(context.names.forClassInitializer(statement.getClassName()));
             result.setLocation(statement.getLocation());
         } else {
             result = null;
@@ -1377,10 +1357,12 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
 
     @Override
     public void visit(MonitorEnterStatement statement) {
+        result = emptyStatement(statement.getLocation());
     }
 
     @Override
     public void visit(MonitorExitStatement statement) {
+        result = emptyStatement(statement.getLocation());
     }
 
     private WasmExpression negate(WasmExpression expr) {
@@ -1407,7 +1389,7 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
             }
         }
 
-        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.XOR, expr, new WasmInt32Constant(1));
+        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ, expr, new WasmInt32Constant(0));
     }
 
     private boolean isOne(WasmExpression expression) {
@@ -1545,6 +1527,26 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         public Diagnostics getDiagnostics() {
             return context.getDiagnostics();
         }
+
+        @Override
+        public NameProvider getNames() {
+            return context.names;
+        }
+
+        @Override
+        public WasmLocal getTemporary(WasmType type) {
+            return WasmGenerationVisitor.this.getTemporary(type);
+        }
+
+        @Override
+        public void releaseTemporary(WasmLocal local) {
+            WasmGenerationVisitor.this.releaseTemporary(local);
+        }
+
+        @Override
+        public int getStaticField(FieldReference field) {
+            return classGenerator.getFieldOffset(field);
+        }
     };
 
     private WasmLocal getTemporary(WasmType type) {
@@ -1566,5 +1568,11 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         WasmExpression classIndex = new WasmLoadInt32(4, instance, WasmInt32Subtype.INT32);
         return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL, classIndex,
                 new WasmInt32Constant(3));
+    }
+
+    private WasmExpression emptyStatement(TextLocation location) {
+        WasmDrop drop = new WasmDrop(new WasmInt32Constant(0));
+        drop.setLocation(location);
+        return drop;
     }
 }

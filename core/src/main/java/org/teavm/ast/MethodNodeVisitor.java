@@ -19,6 +19,4 @@ public interface MethodNodeVisitor {
     void visit(RegularMethodNode methodNode);
 
     void visit(AsyncMethodNode methodNode);
-
-    void visit(NativeMethodNode methodNode);
 }

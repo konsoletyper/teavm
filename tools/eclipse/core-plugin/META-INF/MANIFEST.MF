@@ -46,7 +46,7 @@ Bundle-ClassPath: .,
  lib/websocket-common-9.2.1.v20140609.jar,
  lib/websocket-server-9.2.1.v20140609.jar,
  lib/websocket-servlet-9.2.1.v20140609.jar,
- lib/hppc-0.6.1.jar
+ lib/hppc-0.7.3.jar
 Bundle-ActivationPolicy: lazy
 Export-Package: org.teavm.ast,
  org.teavm.ast.cache,

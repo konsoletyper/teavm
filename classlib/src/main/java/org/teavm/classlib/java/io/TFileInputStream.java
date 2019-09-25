@@ -23,9 +23,8 @@ import org.teavm.classlib.fs.VirtualFile;
 import org.teavm.classlib.fs.VirtualFileAccessor;
 
 public class TFileInputStream extends InputStream {
+    private static final byte[] ONE_BYTE_BUFFER = new byte[1];
     private VirtualFileAccessor accessor;
-    private int pos;
-    private boolean eof;
 
     public TFileInputStream(TFile file) throws FileNotFoundException {
         VirtualFile virtualFile = file.findVirtualFile();
@@ -33,7 +32,7 @@ public class TFileInputStream extends InputStream {
             throw new FileNotFoundException();
         }
 
-        accessor = virtualFile.createAccessor();
+        accessor = virtualFile.createAccessor(true, false, false);
         if (accessor == null) {
             throw new FileNotFoundException();
         }
@@ -52,16 +51,9 @@ public class TFileInputStream extends InputStream {
         if (len == 0) {
             return 0;
         }
-        if (eof) {
-            return -1;
-        }
         ensureOpened();
-        int result = accessor.read(pos, b, off, len);
-        pos += result;
-        if (pos == accessor.size()) {
-            eof = true;
-        }
-        return result;
+        int result = accessor.read(b, off, len);
+        return result > 0 ? result : -1;
     }
 
     @Override
@@ -70,46 +62,36 @@ public class TFileInputStream extends InputStream {
             throw new IOException("Value must be positive: " + n);
         }
         ensureOpened();
-        if (eof) {
-            return 0;
+        int last = accessor.tell();
+        accessor.skip((int) n - 1);
+        if (accessor.read(ONE_BYTE_BUFFER, 0, 1) < 1) {
+            int position = accessor.size();
+            accessor.seek(position);
+            return position - last;
         }
-        int newPos = Math.max(pos, Math.min(accessor.size(), pos + (int) n));
-        int result = newPos - pos;
-        pos = newPos;
-        if (result == 0) {
-            eof = true;
-        }
-        return result;
+        return n;
     }
 
     @Override
     public int available() throws IOException {
         ensureOpened();
-        if (eof) {
-            return 0;
-        }
-        return Math.max(0, accessor.size() - pos);
+        return Math.max(0, accessor.size() - accessor.tell());
     }
 
     @Override
     public void close() throws IOException {
+        if (accessor != null) {
+            accessor.close();
+        }
         accessor = null;
     }
 
     @Override
     public int read() throws IOException {
         ensureOpened();
-        if (eof) {
-            return -1;
-        }
-        byte[] buffer = new byte[1];
-        int read = accessor.read(pos, buffer, 0, 1);
-        if (read == 0) {
-            eof = true;
-        } else {
-            pos++;
-        }
-        return !eof ? buffer[0] : -1;
+        byte[] buffer = ONE_BYTE_BUFFER;
+        int read = accessor.read(buffer, 0, 1);
+        return read != 0 ? buffer[0] : -1;
     }
 
     private void ensureOpened() throws IOException {

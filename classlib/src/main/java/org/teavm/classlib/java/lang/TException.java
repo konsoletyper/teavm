@@ -22,11 +22,11 @@ public class TException extends TThrowable {
         super();
     }
 
-    public TException(TString message, TThrowable cause) {
+    public TException(String message, TThrowable cause) {
         super(message, cause);
     }
 
-    public TException(TString message) {
+    public TException(String message) {
         super(message);
     }
 

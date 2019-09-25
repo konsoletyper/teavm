@@ -15,20 +15,20 @@
  */
 package org.teavm.parsing.resource;
 
-import org.teavm.common.CachedMapper;
-import org.teavm.common.Mapper;
+import java.util.function.Function;
+import org.teavm.common.CachedFunction;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderSource;
 
 public class MapperClassHolderSource implements ClassHolderSource {
-    private Mapper<String, ClassHolder> mapper;
+    private Function<String, ClassHolder> mapper;
 
-    public MapperClassHolderSource(Mapper<String, ClassHolder> mapper) {
-        this.mapper = new CachedMapper<>(mapper);
+    public MapperClassHolderSource(Function<String, ClassHolder> mapper) {
+        this.mapper = new CachedFunction<>(mapper);
     }
 
     @Override
     public ClassHolder get(String name) {
-        return mapper.map(name);
+        return mapper.apply(name);
     }
 }

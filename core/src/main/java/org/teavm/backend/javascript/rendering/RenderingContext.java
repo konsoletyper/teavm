@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.javascript.rendering;
 
+import java.io.IOException;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayDeque;
@@ -25,11 +26,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
+import java.util.function.Predicate;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
+import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.backend.javascript.spi.Injector;
 import org.teavm.common.ServiceRepository;
 import org.teavm.debugging.information.DebugInformationEmitter;
+import org.teavm.dependency.DependencyInfo;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
@@ -39,6 +43,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
+import org.teavm.model.analysis.ClassInitializerInfo;
 
 public class RenderingContext {
     private final DebugInformationEmitter debugEmitter;
@@ -48,17 +53,21 @@ public class RenderingContext {
     private ServiceRepository services;
     private Properties properties;
     private NamingStrategy naming;
+    private DependencyInfo dependencyInfo;
+    private Predicate<MethodReference> virtualPredicate;
     private final Deque<LocationStackEntry> locationStack = new ArrayDeque<>();
     private final Map<String, Integer> stringPoolMap = new HashMap<>();
     private final List<String> stringPool = new ArrayList<>();
     private final List<String> readonlyStringPool = Collections.unmodifiableList(stringPool);
     private final Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
     private boolean minifying;
+    private ClassInitializerInfo classInitializerInfo;
 
     public RenderingContext(DebugInformationEmitter debugEmitter,
             ClassReaderSource initialClassSource, ListableClassReaderSource classSource,
             ClassLoader classLoader, ServiceRepository services, Properties properties,
-            NamingStrategy naming) {
+            NamingStrategy naming, DependencyInfo dependencyInfo,
+            Predicate<MethodReference> virtualPredicate, ClassInitializerInfo classInitializerInfo) {
         this.debugEmitter = debugEmitter;
         this.initialClassSource = initialClassSource;
         this.classSource = classSource;
@@ -66,6 +75,9 @@ public class RenderingContext {
         this.services = services;
         this.properties = properties;
         this.naming = naming;
+        this.dependencyInfo = dependencyInfo;
+        this.virtualPredicate = virtualPredicate;
+        this.classInitializerInfo = classInitializerInfo;
     }
 
     public ClassReaderSource getInitialClassSource() {
@@ -92,12 +104,24 @@ public class RenderingContext {
         return naming;
     }
 
+    public DependencyInfo getDependencyInfo() {
+        return dependencyInfo;
+    }
+
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
     }
 
     public DebugInformationEmitter getDebugEmitter() {
         return debugEmitter;
+    }
+
+    public boolean isVirtual(MethodReference method) {
+        return virtualPredicate.test(method);
+    }
+
+    public boolean isDynamicInitializer(String className) {
+        return classInitializerInfo.isDynamicInitializer(className);
     }
 
     public void pushLocation(TextLocation location) {
@@ -141,73 +165,122 @@ public class RenderingContext {
         return readonlyStringPool;
     }
 
-    public String constantToString(Object cst) {
+    public void constantToString(SourceWriter writer, Object cst) throws IOException {
         if (cst == null) {
-            return "null";
+            writer.append("null");
         }
         if (cst instanceof ValueType) {
             ValueType type = (ValueType) cst;
-            return naming.getNameForFunction("$rt_cls") + "(" + typeToClsString(type) + ")";
+            writer.appendFunction("$rt_cls").append("(");
+            typeToClsString(writer, type);
+            writer.append(")");
         } else if (cst instanceof String) {
             String string = (String) cst;
             int index = lookupString(string);
-            return naming.getNameForFunction("$rt_s") + "(" + index + ")";
+            writer.appendFunction("$rt_s").append("(" + index + ")");
         } else if (cst instanceof Long) {
             long value = (Long) cst;
             if (value == 0) {
-                return "Long_ZERO";
+                writer.append("Long_ZERO");
             } else if ((int) value == value) {
-                return "Long_fromInt(" + value + ")";
+                writer.append("Long_fromInt(" + value + ")");
             } else {
-                return "new Long(" + (value & 0xFFFFFFFFL) + ", " + (value >>> 32) + ")";
+                writer.append("new Long(" + (value & 0xFFFFFFFFL) + ", " + (value >>> 32) + ")");
             }
         } else if (cst instanceof Character) {
-            return Integer.toString((Character) cst);
+            writer.append(Integer.toString((Character) cst));
         } else if (cst instanceof Boolean) {
-            return (Boolean) cst ? "1" : "0";
-        } else {
-            return cst.toString();
+            writer.append((Boolean) cst ? "1" : "0");
+        } else if (cst instanceof Integer) {
+            int value = (Integer) cst;
+            if (value < 0) {
+                writer.append("(");
+                writer.append(Integer.toString(value));
+                writer.append(")");
+            } else {
+                writer.append(Integer.toString(value));
+            }
+        } else if (cst instanceof Byte) {
+            int value = (Byte) cst;
+            if (value < 0) {
+                writer.append("(");
+                writer.append(Integer.toString(value));
+                writer.append(")");
+            } else {
+                writer.append(Integer.toString(value));
+            }
+        } else if (cst instanceof Short) {
+            int value = (Short) cst;
+            if (value < 0) {
+                writer.append("(");
+                writer.append(Integer.toString(value));
+                writer.append(")");
+            } else {
+                writer.append(Integer.toString(value));
+            }
+        } else if (cst instanceof Double) {
+            double value = (Double) cst;
+            if (value < 0) {
+                writer.append("(");
+                writer.append(Double.toString(value));
+                writer.append(")");
+            } else {
+                writer.append(Double.toString(value));
+            }
+        } else if (cst instanceof Float) {
+            float value = (Float) cst;
+            if (value < 0) {
+                writer.append("(");
+                writer.append(Double.toString((double) value));
+                writer.append(")");
+            } else {
+                writer.append(Double.toString((double) value));
+            }
         }
     }
 
-    public String typeToClsString(ValueType type) {
+    public void typeToClsString(SourceWriter writer, ValueType type) throws IOException {
         int arrayCount = 0;
         while (type instanceof ValueType.Array) {
             arrayCount++;
             type = ((ValueType.Array) type).getItemType();
         }
-        String value;
+
+        for (int i = 0; i < arrayCount; ++i) {
+            writer.append("$rt_arraycls(");
+        }
+
         if (type instanceof ValueType.Object) {
             ValueType.Object objType = (ValueType.Object) type;
-            value = naming.getNameFor(objType.getClassName());
+            writer.appendClass(objType.getClassName());
         } else if (type instanceof ValueType.Void) {
-            value = "$rt_voidcls()";
+            writer.append("$rt_voidcls()");
         } else if (type instanceof ValueType.Primitive) {
             ValueType.Primitive primitiveType = (ValueType.Primitive) type;
             switch (primitiveType.getKind()) {
                 case BOOLEAN:
-                    value = "$rt_booleancls()";
+                    writer.append("$rt_booleancls()");
                     break;
                 case CHARACTER:
-                    value = "$rt_charcls()";
+                    writer.append("$rt_charcls()");
                     break;
                 case BYTE:
-                    value = "$rt_bytecls()";
+                    writer.append("$rt_bytecls()");
                     break;
                 case SHORT:
-                    value = "$rt_shortcls()";
+                    writer.append("$rt_shortcls()");
                     break;
                 case INTEGER:
-                    value = "$rt_intcls()";
+                    writer.append("$rt_intcls()");
                     break;
                 case LONG:
-                    value = "$rt_longcls()";
+                    writer.append("$rt_longcls()");
                     break;
                 case FLOAT:
-                    value = "$rt_floatcls()";
+                    writer.append("$rt_floatcls()");
                     break;
                 case DOUBLE:
-                    value = "$rt_doublecls()";
+                    writer.append("$rt_doublecls()");
                     break;
                 default:
                     throw new IllegalArgumentException("The type is not renderable");
@@ -217,9 +290,8 @@ public class RenderingContext {
         }
 
         for (int i = 0; i < arrayCount; ++i) {
-            value = "$rt_arraycls(" + value + ")";
+            writer.append(")");
         }
-        return value;
     }
 
     public String pointerName() {

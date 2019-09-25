@@ -15,13 +15,85 @@
  */
 package org.teavm.parsing;
 
-import java.util.*;
-import org.objectweb.asm.*;
-import org.objectweb.asm.tree.*;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
-import org.teavm.model.util.InstructionTransitionExtractor;
-import org.teavm.model.util.ProgramUtils;
+import java.util.ArrayDeque;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Deque;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import org.objectweb.asm.AnnotationVisitor;
+import org.objectweb.asm.Attribute;
+import org.objectweb.asm.Handle;
+import org.objectweb.asm.Label;
+import org.objectweb.asm.MethodVisitor;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.tree.AbstractInsnNode;
+import org.objectweb.asm.tree.InsnList;
+import org.objectweb.asm.tree.LabelNode;
+import org.objectweb.asm.tree.LineNumberNode;
+import org.objectweb.asm.tree.LocalVariableNode;
+import org.objectweb.asm.tree.MethodNode;
+import org.objectweb.asm.tree.TryCatchBlockNode;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.FieldReference;
+import org.teavm.model.Instruction;
+import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHandle;
+import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
+import org.teavm.model.RuntimeConstant;
+import org.teavm.model.TextLocation;
+import org.teavm.model.TryCatchBlock;
+import org.teavm.model.ValueType;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.ArrayElementType;
+import org.teavm.model.instructions.ArrayLengthInstruction;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.BinaryBranchingCondition;
+import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BranchingCondition;
+import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.CastIntegerDirection;
+import org.teavm.model.instructions.CastIntegerInstruction;
+import org.teavm.model.instructions.CastNumberInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
+import org.teavm.model.instructions.CloneArrayInstruction;
+import org.teavm.model.instructions.ConstructArrayInstruction;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.ConstructMultiArrayInstruction;
+import org.teavm.model.instructions.DoubleConstantInstruction;
+import org.teavm.model.instructions.EmptyInstruction;
+import org.teavm.model.instructions.ExitInstruction;
+import org.teavm.model.instructions.FloatConstantInstruction;
+import org.teavm.model.instructions.GetElementInstruction;
+import org.teavm.model.instructions.GetFieldInstruction;
+import org.teavm.model.instructions.IntegerConstantInstruction;
+import org.teavm.model.instructions.IntegerSubtype;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.IsInstanceInstruction;
+import org.teavm.model.instructions.JumpInstruction;
+import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
+import org.teavm.model.instructions.MonitorExitInstruction;
+import org.teavm.model.instructions.NegateInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.instructions.NumericOperandType;
+import org.teavm.model.instructions.PutElementInstruction;
+import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.SwitchInstruction;
+import org.teavm.model.instructions.SwitchTableEntry;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
+import org.teavm.model.util.TransitionExtractor;
 
 public class ProgramParser {
     private ReferenceCache referenceCache;
@@ -42,7 +114,6 @@ public class ProgramParser {
     private List<BasicBlock> basicBlocks = new ArrayList<>();
     private int minLocal;
     private Program program;
-    private String currentClassName;
     private Map<Integer, List<LocalVariableNode>> localVariableMap = new HashMap<>();
     private Map<Instruction, Map<Integer, String>> variableDebugNames = new HashMap<>();
 
@@ -86,9 +157,8 @@ public class ProgramParser {
         this.fileName = fileName;
     }
 
-    public Program parse(MethodNode method, String className) {
+    public Program parse(MethodNode method) {
         program = new Program();
-        this.currentClassName = className;
         InsnList instructions = method.instructions;
         if (instructions.size() == 0) {
             return program;
@@ -114,8 +184,6 @@ public class ProgramParser {
         while (program.variableCount() <= signatureVars) {
             program.createVariable();
         }
-        program.basicBlockAt(0).getTryCatchBlocks().addAll(ProgramUtils.copyTryCatches(
-                program.basicBlockAt(1), program));
         return program;
     }
 
@@ -250,7 +318,7 @@ public class ProgramParser {
                 if (block != null) {
                     TryCatchBlock tryCatch = new TryCatchBlock();
                     if (tryCatchNode.type != null) {
-                        tryCatch.setExceptionType(tryCatchNode.type.replace('/', '.'));
+                        tryCatch.setExceptionType(referenceCache.getCached(tryCatchNode.type.replace('/', '.')));
                     }
                     tryCatch.setHandler(getBasicBlock(labelIndexes.get(tryCatchNode.handler.getLabel())));
                     tryCatch.getHandler().setExceptionVariable(program.variableAt(minLocal + method.maxLocals));
@@ -288,7 +356,7 @@ public class ProgramParser {
                 Map<Integer, String> debugNames = new HashMap<>();
                 variableDebugNames.put(builtInstructions.get(0), debugNames);
                 for (LocalVariableNode localVar : localVarNodes) {
-                    debugNames.put(localVar.index + minLocal, localVar.name);
+                    debugNames.put(localVar.index + minLocal, referenceCache.getCached(localVar.name));
                 }
                 accumulatedDebugNames.putAll(debugNames);
             }
@@ -315,7 +383,7 @@ public class ProgramParser {
         if (lastInsn == null) {
             return false;
         }
-        InstructionTransitionExtractor extractor = new InstructionTransitionExtractor();
+        TransitionExtractor extractor = new TransitionExtractor();
         lastInsn.acceptVisitor(extractor);
         return extractor.getTargets() != null;
     }
@@ -363,7 +431,7 @@ public class ProgramParser {
     }
 
     // TODO: invokedynamic support (a great task, involving not only parser, but every layer of TeaVM)
-    private MethodVisitor methodVisitor = new MethodVisitor(Opcodes.ASM5) {
+    private MethodVisitor methodVisitor = new MethodVisitor(Opcodes.ASM7) {
         @Override
         public void visitVarInsn(int opcode, int local) {
             switch (opcode) {
@@ -403,7 +471,7 @@ public class ProgramParser {
                     String cls = type.replace('/', '.');
                     ConstructInstruction insn = new ConstructInstruction();
                     insn.setReceiver(getVariable(pushSingle()));
-                    insn.setType(cls);
+                    insn.setType(referenceCache.getCached(cls));
                     addInstruction(insn);
                     break;
                 }
@@ -531,7 +599,7 @@ public class ProgramParser {
             } else if (value instanceof Type) {
                 Type type = (Type) value;
                 if (type.getSort() == Type.METHOD) {
-                    return new RuntimeConstant(MethodDescriptor.parseSignature(type.getDescriptor()));
+                    return new RuntimeConstant(parseSignature(type.getDescriptor()));
                 } else {
                     return new RuntimeConstant(referenceCache.parseValueTypeCached(type.getDescriptor()));
                 }
@@ -582,11 +650,11 @@ public class ProgramParser {
                     if (instance == -1) {
                         InvokeInstruction insn = new InvokeInstruction();
                         insn.setType(InvocationType.SPECIAL);
-                        insn.setMethod(referenceCache.getCached(new MethodReference(ownerCls, method)));
+                        insn.setMethod(referenceCache.getCached(ownerCls, method));
                         if (result >= 0) {
                             insn.setReceiver(getVariable(result));
                         }
-                        insn.getArguments().addAll(Arrays.asList(args));
+                        insn.setArguments(args);
                         addInstruction(insn);
                     } else {
                         InvokeInstruction insn = new InvokeInstruction();
@@ -595,12 +663,12 @@ public class ProgramParser {
                         } else {
                             insn.setType(InvocationType.VIRTUAL);
                         }
-                        insn.setMethod(referenceCache.getCached(new MethodReference(ownerCls, method)));
+                        insn.setMethod(referenceCache.getCached(ownerCls, method));
                         if (result >= 0) {
                             insn.setReceiver(getVariable(result));
                         }
                         insn.setInstance(getVariable(instance));
-                        insn.getArguments().addAll(Arrays.asList(args));
+                        insn.setArguments(args);
                         addInstruction(insn);
                     }
                     break;
@@ -654,7 +722,7 @@ public class ProgramParser {
                 pushConstant((Double) cst);
             } else if (cst instanceof String) {
                 StringConstantInstruction insn = new StringConstantInstruction();
-                insn.setConstant((String) cst);
+                insn.setConstant(referenceCache.getCached((String) cst));
                 insn.setReceiver(getVariable(pushSingle()));
                 addInstruction(insn);
             } else if (cst instanceof Type) {
@@ -1729,38 +1797,43 @@ public class ProgramParser {
         }
     };
 
-    private static MethodHandle parseHandle(Handle handle) {
+    private MethodHandle parseHandle(Handle handle) {
+        String owner = referenceCache.getCached(handle.getOwner().replace('/', '.'));
+        String name = referenceCache.getCached(handle.getName());
         switch (handle.getTag()) {
             case Opcodes.H_GETFIELD:
-                return MethodHandle.fieldGetter(handle.getOwner().replace('/', '.'), handle.getName(),
-                        ValueType.parse(handle.getDesc()));
+                return MethodHandle.fieldGetter(owner, name,
+                        referenceCache.getCached(ValueType.parse(handle.getDesc())));
             case Opcodes.H_GETSTATIC:
-                return MethodHandle.staticFieldGetter(handle.getOwner().replace('/', '.'), handle.getName(),
-                        ValueType.parse(handle.getDesc()));
+                return MethodHandle.staticFieldGetter(owner, name,
+                        referenceCache.getCached(ValueType.parse(handle.getDesc())));
             case Opcodes.H_PUTFIELD:
-                return MethodHandle.fieldSetter(handle.getOwner().replace('/', '.'), handle.getName(),
-                        ValueType.parse(handle.getDesc()));
+                return MethodHandle.fieldSetter(owner, name,
+                        referenceCache.getCached(ValueType.parse(handle.getDesc())));
             case Opcodes.H_PUTSTATIC:
-                return MethodHandle.staticFieldSetter(handle.getOwner().replace('/', '.'), handle.getName(),
-                        ValueType.parse(handle.getDesc()));
+                return MethodHandle.staticFieldSetter(owner, name,
+                        referenceCache.getCached(ValueType.parse(handle.getDesc())));
             case Opcodes.H_INVOKEVIRTUAL:
-                return MethodHandle.virtualCaller(handle.getOwner().replace('/', '.'), handle.getName(),
-                        MethodDescriptor.parseSignature(handle.getDesc()));
+                return MethodHandle.virtualCaller(owner, name, parseSignature(handle.getDesc()));
             case Opcodes.H_INVOKESTATIC:
-                return MethodHandle.staticCaller(handle.getOwner().replace('/', '.'), handle.getName(),
-                        MethodDescriptor.parseSignature(handle.getDesc()));
+                return MethodHandle.staticCaller(owner, name, parseSignature(handle.getDesc()));
             case Opcodes.H_INVOKESPECIAL:
-                return MethodHandle.specialCaller(handle.getOwner().replace('/', '.'), handle.getName(),
-                        MethodDescriptor.parseSignature(handle.getDesc()));
+                return MethodHandle.specialCaller(owner, name, parseSignature(handle.getDesc()));
             case Opcodes.H_NEWINVOKESPECIAL:
-                return MethodHandle.constructorCaller(handle.getOwner().replace('/', '.'), handle.getName(),
-                        MethodDescriptor.parseSignature(handle.getDesc()));
+                return MethodHandle.constructorCaller(owner, name, parseSignature(handle.getDesc()));
             case Opcodes.H_INVOKEINTERFACE:
-                return MethodHandle.interfaceCaller(handle.getOwner().replace('/', '.'), handle.getName(),
-                        MethodDescriptor.parseSignature(handle.getDesc()));
+                return MethodHandle.interfaceCaller(owner, name, parseSignature(handle.getDesc()));
             default:
                 throw new IllegalArgumentException("Unknown handle tag: " + handle.getTag());
         }
+    }
+
+    private ValueType[] parseSignature(String desc) {
+        ValueType[] signature = MethodDescriptor.parseSignature(desc);
+        for (int i = 0; i < signature.length; ++i) {
+            signature[i] = referenceCache.getCached(signature[i]);
+        }
+        return signature;
     }
 
     private static ValueType getPrimitiveTypeField(String fieldName) {

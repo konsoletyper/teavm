@@ -18,21 +18,25 @@ package org.teavm.debugging.information;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.common.RecordArray;
 import org.teavm.common.RecordArrayBuilder;
+import org.teavm.model.ReferenceCache;
 
 class DebugInformationReader {
     private InputStream input;
     private int lastNumber;
+    private ReferenceCache referenceCache;
 
-    public DebugInformationReader(InputStream input) {
+    DebugInformationReader(InputStream input, ReferenceCache referenceCache) {
         this.input = input;
+        this.referenceCache = referenceCache;
     }
 
     public DebugInformation read() throws IOException {
-        DebugInformation debugInfo = new DebugInformation();
+        DebugInformation debugInfo = new DebugInformation(referenceCache);
         debugInfo.fileNames = readStrings();
         debugInfo.classNames = readStrings();
         debugInfo.fields = readStrings();
@@ -68,6 +72,8 @@ class DebugInformationReader {
         for (int i = 0; i < count; ++i) {
             DebugInformation.ClassMetadata cls = new DebugInformation.ClassMetadata();
             classes.add(cls);
+            cls.id = i;
+            cls.jsName = readNullableString();
             cls.parentId = readUnsignedNumber() - 1;
             if (cls.parentId.equals(-1)) {
                 cls.parentId = null;
@@ -322,7 +328,16 @@ class DebugInformationReader {
     }
 
     private String readString() throws IOException {
-        byte[] bytes = new byte[readUnsignedNumber()];
+        return readStringChars(readUnsignedNumber());
+    }
+
+    private String readNullableString() throws IOException {
+        int size = readUnsignedNumber();
+        return size > 0 ? readStringChars(size - 1) : null;
+    }
+
+    private String readStringChars(int size) throws IOException {
+        byte[] bytes = new byte[size];
         int pos = 0;
         while (pos < bytes.length) {
             int read = input.read(bytes, pos, bytes.length - pos);
@@ -331,6 +346,6 @@ class DebugInformationReader {
             }
             pos += read;
         }
-        return new String(bytes, "UTF-8");
+        return new String(bytes, StandardCharsets.UTF_8);
     }
 }

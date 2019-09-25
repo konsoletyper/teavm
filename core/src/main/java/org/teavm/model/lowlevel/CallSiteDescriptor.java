@@ -16,7 +16,19 @@
 package org.teavm.model.lowlevel;
 
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
+import java.util.stream.Collectors;
+import org.teavm.model.AnnotationContainer;
+import org.teavm.model.AnnotationContainerReader;
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.MethodReader;
+import org.teavm.model.Program;
 
 public class CallSiteDescriptor {
     private int id;
@@ -38,5 +50,87 @@ public class CallSiteDescriptor {
 
     public List<ExceptionHandlerDescriptor> getHandlers() {
         return handlers;
+    }
+
+    public static void save(Collection<? extends CallSiteDescriptor> descriptors, AnnotationContainer annotations) {
+        List<AnnotationValue> descriptorsValue = new ArrayList<>();
+        for (CallSiteDescriptor descriptor : descriptors) {
+            AnnotationHolder descriptorAnnot = new AnnotationHolder(CallSiteDescriptorAnnot.class.getName());
+            descriptorAnnot.getValues().put("id", new AnnotationValue(descriptor.id));
+            descriptorAnnot.getValues().put("location", new AnnotationValue(descriptor.location.save()));
+            List<AnnotationValue> handlersValue = descriptor.handlers.stream()
+                    .map(h -> new AnnotationValue(h.save()))
+                    .collect(Collectors.toList());
+            descriptorAnnot.getValues().put("handlers", new AnnotationValue(handlersValue));
+            descriptorsValue.add(new AnnotationValue(descriptorAnnot));
+        }
+
+        AnnotationHolder descriptorsAnnot = new AnnotationHolder(CallSiteDescriptorsAnnot.class.getName());
+        descriptorsAnnot.getValues().put("value", new AnnotationValue(descriptorsValue));
+        annotations.add(descriptorsAnnot);
+    }
+
+    public static Collection<? extends CallSiteDescriptor> load(AnnotationContainerReader annotations) {
+        AnnotationReader descriptorsAnnot = annotations.get(CallSiteDescriptorsAnnot.class.getName());
+        if (descriptorsAnnot == null) {
+            return Collections.emptyList();
+        }
+
+        List<CallSiteDescriptor> descriptors = new ArrayList<>();
+        for (AnnotationValue descriptorValue : descriptorsAnnot.getValue("value").getList()) {
+            AnnotationReader descriptorAnnot = descriptorValue.getAnnotation();
+            int id = descriptorAnnot.getValue("id").getInt();
+            CallSiteLocation location = CallSiteLocation.load(descriptorAnnot.getValue("location").getAnnotation());
+            List<ExceptionHandlerDescriptor> handlers = descriptorAnnot.getValue("handlers").getList().stream()
+                    .map(a -> ExceptionHandlerDescriptor.load(a.getAnnotation()))
+                    .collect(Collectors.toList());
+            CallSiteDescriptor descriptor = new CallSiteDescriptor(id, location);
+            descriptor.getHandlers().addAll(handlers);
+            descriptors.add(descriptor);
+        }
+
+        return descriptors;
+    }
+
+    public static List<? extends CallSiteDescriptor> extract(Program program) {
+        List<CallSiteDescriptor> result = new ArrayList<>();
+        extractTo(load(program.getAnnotations()), result);
+        return result;
+    }
+
+    public static List<? extends CallSiteDescriptor> extract(ClassReaderSource classes,
+            Collection<? extends String> classNames) {
+        List<CallSiteDescriptor> result = new ArrayList<>();
+        for (String className : classNames) {
+            ClassReader cls = classes.get(className);
+            if (cls == null) {
+                continue;
+            }
+            for (MethodReader method : cls.getMethods()) {
+                if (method.getProgram() != null) {
+                    extractTo(load(method.getProgram().getAnnotations()), result);
+                }
+            }
+        }
+        return result;
+    }
+
+    private static void extractTo(Collection<? extends CallSiteDescriptor> descriptors,
+            List<CallSiteDescriptor> result) {
+        for (CallSiteDescriptor descriptor : descriptors) {
+            if (descriptor.id >= result.size()) {
+                result.addAll(Collections.nCopies(descriptor.id - result.size() + 1, null));
+            }
+            result.set(descriptor.id, descriptor);
+        }
+    }
+
+    static AnnotationValue saveNullableString(String s) {
+        return new AnnotationValue(s != null ? "1" + s : "0");
+    }
+
+    static String loadNullableString(AnnotationValue value) {
+        String s = value.getString();
+        return s.startsWith("0") ? null : s.substring(1);
     }
 }

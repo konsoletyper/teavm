@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
+
 public class TFilterOutputStream extends TOutputStream {
     protected TOutputStream out;
 
@@ -23,22 +25,22 @@ public class TFilterOutputStream extends TOutputStream {
     }
 
     @Override
-    public void write(int b) throws TIOException {
+    public void write(int b) throws IOException {
         out.write(b);
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() throws IOException {
         try {
             out.flush();
-        } catch (TIOException e) {
+        } catch (IOException e) {
             // do nothing
         }
         out.close();
     }
 
     @Override
-    public void flush() throws TIOException {
+    public void flush() throws IOException {
         out.flush();
     }
 }

@@ -16,7 +16,11 @@
 package org.teavm.classlib.fs;
 
 public interface VirtualFileSystem {
-    VirtualFile getRootFile();
-
     String getUserDir();
+
+    VirtualFile getFile(String path);
+
+    boolean isWindows();
+
+    String canonicalize(String path);
 }

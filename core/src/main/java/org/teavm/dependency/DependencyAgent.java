@@ -16,6 +16,7 @@
 package org.teavm.dependency;
 
 import java.util.Collection;
+import org.teavm.cache.IncrementalDependencyRegistration;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.common.ServiceRepository;
 import org.teavm.diagnostics.Diagnostics;
@@ -52,16 +53,20 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
         analyzer.submitMethod(method, program);
     }
 
-    public MethodDependency linkMethod(MethodReference methodRef, CallLocation callLocation) {
-        return analyzer.linkMethod(methodRef, callLocation);
+    public MethodDependency linkMethod(MethodReference methodRef) {
+        return analyzer.linkMethod(methodRef);
     }
 
-    public ClassDependency linkClass(String className, CallLocation callLocation) {
-        return analyzer.linkClass(className, callLocation);
+    public MethodDependency linkMethod(String className, MethodDescriptor descriptor) {
+        return analyzer.linkMethod(className, descriptor);
     }
 
-    public FieldDependency linkField(FieldReference fieldRef, CallLocation callLocation) {
-        return analyzer.linkField(fieldRef, callLocation);
+    public ClassDependency linkClass(String className) {
+        return analyzer.linkClass(className);
+    }
+
+    public FieldDependency linkField(FieldReference fieldRef) {
+        return analyzer.linkField(fieldRef);
     }
 
     public Diagnostics getDiagnostics() {
@@ -75,12 +80,16 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
 
     @Override
     public ClassReaderSource getClassSource() {
-        return analyzer.getClassSource();
+        return analyzer.agentClassSource;
     }
 
     @Override
     public ClassLoader getClassLoader() {
         return analyzer.getClassLoader();
+    }
+
+    public ClassHierarchy getClassHierarchy() {
+        return analyzer.getClassHierarchy();
     }
 
     @Override
@@ -121,5 +130,13 @@ public class DependencyAgent implements DependencyInfo, ServiceRepository {
     @Override
     public CallGraph getCallGraph() {
         return analyzer.getCallGraph();
+    }
+
+    public IncrementalDependencyRegistration getIncrementalCache() {
+        return analyzer.incrementalCache;
+    }
+
+    void cleanup() {
+        analyzer = null;
     }
 }

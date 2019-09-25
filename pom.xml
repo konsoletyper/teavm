@@ -13,12 +13,13 @@
     WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
     See the License for the specific language governing permissions and
     limitations under the License.
---><project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+-->
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
   <modelVersion>4.0.0</modelVersion>
 
   <groupId>org.teavm</groupId>
   <artifactId>teavm</artifactId>
-  <version>0.6.0-SNAPSHOT</version>
+  <version>0.7.0-SNAPSHOT</version>
   <packaging>pom</packaging>
 
   <name>TeaVM</name>
@@ -65,15 +66,16 @@
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <sonatypeOssDistMgmtSnapshotsUrl>https://oss.sonatype.org/content/repositories/snapshots/</sonatypeOssDistMgmtSnapshotsUrl>
     <html4j.version>1.5</html4j.version>
-    <jetty.version>9.2.1.v20140609</jetty.version>
+    <jetty.version>9.4.14.v20181114</jetty.version>
     <slf4j.version>1.7.7</slf4j.version>
-    <selenium.version>2.47.2</selenium.version>
     <jackson.version>2.6.2</jackson.version>
-    <idea.version>2016.3.4</idea.version>
+    <idea.version>2017.3.5</idea.version>
+    <asm.version>7.1</asm.version>
+    <java.version>1.8</java.version>
+    <rhino.version>1.7.11</rhino.version>
 
     <teavm.test.incremental>false</teavm.test.incremental>
     <teavm.test.threads>1</teavm.test.threads>
-    <teavm.test.selenium/>
     <teavm.test.skip>true</teavm.test.skip>
   </properties>
 
@@ -87,10 +89,12 @@
     <module>jso/impl</module>
     <module>html4j</module>
     <module>platform</module>
+    <module>tools/c-incremental</module>
     <module>tools/core</module>
     <module>tools/maven</module>
     <module>tools/chrome-rdp</module>
     <module>tools/junit</module>
+    <module>tools/devserver</module>
     <module>tests</module>
     <module>extras-slf4j</module>
     <module>metaprogramming/impl</module>
@@ -131,8 +135,13 @@
       </dependency>
       <dependency>
         <groupId>org.ow2.asm</groupId>
-        <artifactId>asm-debug-all</artifactId>
-        <version>5.2</version>
+        <artifactId>asm-commons</artifactId>
+        <version>${asm.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.ow2.asm</groupId>
+        <artifactId>asm-util</artifactId>
+        <version>${asm.version}</version>
       </dependency>
       <dependency>
         <groupId>org.apache.maven</groupId>
@@ -170,19 +179,19 @@
         <version>${jetty.version}</version>
       </dependency>
       <dependency>
+        <groupId>org.eclipse.jetty</groupId>
+        <artifactId>jetty-client</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>org.eclipse.jetty.websocket</groupId>
+        <artifactId>websocket-client</artifactId>
+        <version>${jetty.version}</version>
+      </dependency>
+      <dependency>
         <groupId>org.slf4j</groupId>
         <artifactId>slf4j-api</artifactId>
         <version>${slf4j.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.seleniumhq.selenium</groupId>
-        <artifactId>selenium-java</artifactId>
-        <version>${selenium.version}</version>
-      </dependency>
-      <dependency>
-        <groupId>org.seleniumhq.selenium</groupId>
-        <artifactId>selenium-remote-driver</artifactId>
-        <version>${selenium.version}</version>
       </dependency>
       <dependency>
         <groupId>com.fasterxml.jackson.core</groupId>
@@ -194,6 +203,11 @@
         <artifactId>jackson-databind</artifactId>
         <version>${jackson.version}</version>
       </dependency>
+      <dependency>
+        <groupId>org.mozilla</groupId>
+        <artifactId>rhino</artifactId>
+        <version>${rhino.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
@@ -203,16 +217,16 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-compiler-plugin</artifactId>
-          <version>2.5.1</version>
+          <version>3.8.0</version>
           <configuration>
-            <source>1.8</source>
-            <target>1.8</target>
+            <source>${java.version}</source>
+            <target>${java.version}</target>
           </configuration>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-javadoc-plugin</artifactId>
-          <version>2.9.1</version>
+          <version>3.0.1</version>
           <executions>
             <execution>
               <id>build-javadoc</id>
@@ -220,6 +234,9 @@
                 <goal>jar</goal>
               </goals>
               <phase>post-integration-test</phase>
+              <configuration>
+                <quiet>true</quiet>
+              </configuration>
             </execution>
           </executions>
           <configuration>
@@ -230,7 +247,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-source-plugin</artifactId>
-          <version>2.2.1</version>
+          <version>3.0.1</version>
           <executions>
             <execution>
               <id>attach-sources</id>
@@ -244,7 +261,7 @@
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-surefire-plugin</artifactId>
-          <version>2.17</version>
+          <version>2.21.0</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
@@ -271,14 +288,14 @@
           </configuration>
         </plugin>
         <plugin>
-          <groupId>org.apache.felix</groupId>
-          <artifactId>maven-bundle-plugin</artifactId>
-          <version>2.5.3</version>
+          <groupId>org.apache.maven.plugins</groupId>
+          <artifactId>maven-jar-plugin</artifactId>
+          <version>3.0.2</version>
         </plugin>
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
-          <artifactId>maven-jar-plugin</artifactId>
-          <version>2.6</version>
+          <artifactId>maven-shade-plugin</artifactId>
+          <version>3.1.1</version>
         </plugin>
       </plugins>
     </pluginManagement>
@@ -340,6 +357,13 @@
       <id>with-eclipse</id>
       <modules>
         <module>tools/eclipse</module>
+      </modules>
+    </profile>
+
+    <profile>
+      <id>with-classlib-comparison</id>
+      <modules>
+        <module>tools/classlib-comparison-gen</module>
       </modules>
     </profile>
 

@@ -15,8 +15,8 @@
  */
 package org.teavm.model.util;
 
+import com.carrotsearch.hppc.IntIntHashMap;
 import com.carrotsearch.hppc.IntIntMap;
-import com.carrotsearch.hppc.IntIntOpenHashMap;
 import org.teavm.common.GraphSplittingBackend;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Program;
@@ -31,7 +31,7 @@ public class ProgramNodeSplittingBackend implements GraphSplittingBackend {
     @Override
     public int[] split(int[] domain, int[] nodes) {
         int[] copies = new int[nodes.length];
-        IntIntMap map = new IntIntOpenHashMap();
+        IntIntMap map = new IntIntHashMap();
         for (int i = 0; i < nodes.length; ++i) {
             int node = nodes[i];
             BasicBlock block = program.basicBlockAt(node);

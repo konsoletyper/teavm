@@ -20,11 +20,11 @@ public class TInternalError extends TVirtualMachineError {
     public TInternalError() {
     }
 
-    public TInternalError(TString message) {
+    public TInternalError(String message) {
         super(message);
     }
 
-    public TInternalError(TString message, TThrowable cause) {
+    public TInternalError(String message, TThrowable cause) {
         super(message, cause);
     }
 

@@ -20,8 +20,6 @@ import java.io.StringWriter;
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
-import java.util.Map;
-import java.util.WeakHashMap;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.MethodDependency;
 import org.teavm.diagnostics.Diagnostics;
@@ -41,7 +39,8 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 
 class UsageGenerator {
-    private static Map<DependencyAgent, Integer> suffixGenerator = new WeakHashMap<>();
+    private int suffix;
+    private int ownSuffix;
     private DependencyAgent agent;
     private MethodModel model;
     private MethodDependency methodDep;
@@ -52,14 +51,15 @@ class UsageGenerator {
     private boolean annotationErrorReported;
     private MethodDependency nameDependency;
 
-    UsageGenerator(DependencyAgent agent, MethodModel model, MethodDependency methodDep, CallLocation location,
-            MetaprogrammingClassLoader classLoader) {
+    UsageGenerator(DependencyAgent agent, MethodModel model, MethodDependency methodDep,
+            MetaprogrammingClassLoader classLoader, int suffix) {
         this.agent = agent;
         this.diagnostics = agent.getDiagnostics();
         this.model = model;
         this.methodDep = methodDep;
-        this.location = location;
+        this.location = new CallLocation(methodDep.getReference());
         this.classLoader = classLoader;
+        this.suffix = suffix;
     }
 
     void installProxyEmitter() {
@@ -88,24 +88,29 @@ class UsageGenerator {
     }
 
     private MethodDependency installAdditionalDependencies() {
-        MethodDependency nameDep = agent.linkMethod(new MethodReference(Class.class, "getName", String.class),
-                location);
+        MethodDependency nameDep = agent.linkMethod(new MethodReference(Class.class, "getName", String.class));
+        nameDep.addLocation(location);
         nameDep.getVariable(0).propagate(agent.getType(Class.class.getName()));
         nameDep.getThrown().connect(methodDep.getThrown());
         nameDep.use();
 
         MethodDependency equalsDep = agent.linkMethod(new MethodReference(String.class, "equals", Object.class,
-                boolean.class), location);
+                boolean.class));
+        equalsDep.addLocation(location);
         nameDep.getResult().connect(equalsDep.getVariable(0));
         equalsDep.getVariable(1).propagate(agent.getType("java.lang.String"));
         equalsDep.getThrown().connect(methodDep.getThrown());
         equalsDep.use();
 
-        MethodDependency hashCodeDep = agent.linkMethod(new MethodReference(String.class, "hashCode", int.class),
-                location);
+        MethodDependency hashCodeDep = agent.linkMethod(new MethodReference(String.class, "hashCode", int.class));
+        hashCodeDep.addLocation(location);
+        hashCodeDep.getVariable(0).propagate(agent.getType("java.lang.String"));
         nameDep.getResult().connect(hashCodeDep.getVariable(0));
         hashCodeDep.getThrown().connect(methodDep.getThrown());
         hashCodeDep.use();
+
+        agent.linkMethod(new MethodReference(Object.class, "hashCode", int.class));
+        agent.linkMethod(new MethodReference(Object.class, "equals", Object.class, boolean.class));
 
         return nameDep;
     }
@@ -123,14 +128,16 @@ class UsageGenerator {
             return;
         }
 
-        implRef = buildMethodReference();
-        model.getUsages().put(type, implRef);
+        String suffix = getSuffix();
+        implRef = buildMethodReference(suffix);
         MetaprogrammingImpl.templateMethod = model.getMetaMethod();
         VariableContext varContext = new TopLevelVariableContext(diagnostics);
         MetaprogrammingImpl.generator = new CompositeMethodGenerator(varContext);
         MetaprogrammingImpl.varContext = varContext;
         MetaprogrammingImpl.returnType = model.getMethod().getReturnType();
         MetaprogrammingImpl.generator.location = location != null ? location.getSourceLocation() : null;
+        MetaprogrammingImpl.proxySuffixGenerators.clear();
+        MetaprogrammingImpl.suffix = suffix;
 
         for (int i = 0; i <= model.getMetaParameterCount(); ++i) {
             MetaprogrammingImpl.generator.getProgram().createVariable();
@@ -146,23 +153,10 @@ class UsageGenerator {
             }
         }
 
+        MetaprogrammingImpl.unsupportedCase = false;
+
         try {
             proxyMethod.invoke(null, proxyArgs);
-            MetaprogrammingImpl.close();
-            Program program = MetaprogrammingImpl.generator.getProgram();
-            //new BoxingEliminator().optimize(program);
-
-            ClassHolder cls = new ClassHolder(implRef.getClassName());
-            cls.setLevel(AccessLevel.PUBLIC);
-            cls.setParent("java.lang.Object");
-
-            MethodHolder method = new MethodHolder(implRef.getDescriptor());
-            method.setLevel(AccessLevel.PUBLIC);
-            method.getModifiers().add(ElementModifier.STATIC);
-            method.setProgram(program);
-            cls.addMethod(method);
-
-            agent.submitClass(cls);
         } catch (IllegalAccessException | InvocationTargetException e) {
             StringWriter writer = new StringWriter();
             e.printStackTrace(new PrintWriter(writer));
@@ -170,7 +164,30 @@ class UsageGenerator {
                     model.getMetaMethod());
         }
 
-        MethodDependency implMethod = agent.linkMethod(implRef, location);
+        MetaprogrammingImpl.close();
+        if (MetaprogrammingImpl.unsupportedCase) {
+            return;
+        }
+
+        model.getUsages().put(type, implRef);
+        Program program = MetaprogrammingImpl.generator.getProgram();
+        //new BoxingEliminator().optimize(program);
+
+        ClassHolder cls = new ClassHolder(implRef.getClassName());
+        cls.setLevel(AccessLevel.PUBLIC);
+        cls.setParent("java.lang.Object");
+
+        MethodHolder method = new MethodHolder(implRef.getDescriptor());
+        method.setLevel(AccessLevel.PUBLIC);
+        method.getModifiers().add(ElementModifier.STATIC);
+        method.setProgram(program);
+        cls.addMethod(method);
+
+        agent.submitClass(cls);
+        agent.getIncrementalCache().setNoCache(cls.getName());
+
+        MethodDependency implMethod = agent.linkMethod(implRef);
+        implMethod.addLocation(location);
         for (int i = 0; i < implRef.parameterCount(); ++i) {
             methodDep.getVariable(i + 1).connect(implMethod.getVariable(i + 1));
         }
@@ -186,7 +203,7 @@ class UsageGenerator {
         implMethod.getThrown().connect(methodDep.getThrown());
         implMethod.use();
 
-        agent.linkClass(implRef.getClassName(), location);
+        agent.linkClass(implRef.getClassName());
     }
 
     private ValueType findClass(String name) {
@@ -212,9 +229,9 @@ class UsageGenerator {
         }
     }
 
-    private MethodReference buildMethodReference() {
+    private MethodReference buildMethodReference(String suffix) {
         if (model.getClassParameterIndex() < 0) {
-            return new MethodReference(model.getMethod().getClassName() + "$PROXY$" + getSuffix(),
+            return new MethodReference(model.getMethod().getClassName() + "$PROXY$" + suffix,
                     model.getMethod().getDescriptor());
         }
 
@@ -225,14 +242,12 @@ class UsageGenerator {
         }
         signature[i] = model.getMethod().getReturnType();
 
-        return new MethodReference(model.getMethod().getClassName() + "$PROXY$" + getSuffix(),
+        return new MethodReference(model.getMethod().getClassName() + "$PROXY$" + suffix,
                 model.getMethod().getName(), signature);
     }
 
-    private int getSuffix() {
-        int suffix = suffixGenerator.getOrDefault(agent, 0);
-        suffixGenerator.put(agent, suffix + 1);
-        return suffix;
+    private String getSuffix() {
+        return suffix + "_" + ownSuffix++;
     }
 
     private Method getJavaMethod(ClassLoader classLoader, MethodReference ref) throws ReflectiveOperationException {
@@ -318,7 +333,7 @@ class UsageGenerator {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(new MethodReference(boxed, "valueOf", primitive, boxed));
-        insn.getArguments().add(var);
+        insn.setArguments(var);
         var = program.createVariable();
         insn.setReceiver(var);
 

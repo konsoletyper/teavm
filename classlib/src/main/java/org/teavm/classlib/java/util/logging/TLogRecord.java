@@ -21,17 +21,17 @@ import org.teavm.classlib.java.lang.*;
 public class TLogRecord extends TObject implements TSerializable {
     private static long sequenceNumberGenerator;
     private TLevel level;
-    private TString loggerName;
-    private TString message;
+    private String loggerName;
+    private String message;
     private long millis;
     private Object[] parameters;
     private long sequenceNumber;
-    private TString sourceClassName;
-    private TString sourceMethodName;
+    private String sourceClassName;
+    private String sourceMethodName;
     private long threadID;
     private TThrowable thrown;
 
-    public TLogRecord(TLevel level, TString msg) {
+    public TLogRecord(TLevel level, String msg) {
         this.level = level;
         this.message = msg;
         this.millis = TSystem.currentTimeMillis();
@@ -47,19 +47,19 @@ public class TLogRecord extends TObject implements TSerializable {
         this.level = level;
     }
 
-    public TString getLoggerName() {
+    public String getLoggerName() {
         return loggerName;
     }
 
-    public void setLoggerName(TString loggerName) {
+    public void setLoggerName(String loggerName) {
         this.loggerName = loggerName;
     }
 
-    public TString getMessage() {
+    public String getMessage() {
         return message;
     }
 
-    public void setMessage(TString message) {
+    public void setMessage(String message) {
         this.message = message;
     }
 
@@ -87,19 +87,19 @@ public class TLogRecord extends TObject implements TSerializable {
         this.sequenceNumber = sequenceNumber;
     }
 
-    public TString getSourceClassName() {
+    public String getSourceClassName() {
         return sourceClassName;
     }
 
-    public void setSourceClassName(TString sourceClassName) {
+    public void setSourceClassName(String sourceClassName) {
         this.sourceClassName = sourceClassName;
     }
 
-    public TString getSourceMethodName() {
+    public String getSourceMethodName() {
         return sourceMethodName;
     }
 
-    public void setSourceMethodName(TString sourceMethodName) {
+    public void setSourceMethodName(String sourceMethodName) {
         this.sourceMethodName = sourceMethodName;
     }
 

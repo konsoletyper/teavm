@@ -15,26 +15,27 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
 import org.teavm.classlib.java.lang.TObject;
 
 public abstract class TOutputStream extends TObject implements TCloseable, TFlushable {
-    public abstract void write(int b) throws TIOException;
+    public abstract void write(int b) throws IOException;
 
-    public void write(byte[] b) throws TIOException {
+    public void write(byte[] b) throws IOException {
         write(b, 0, b.length);
     }
 
-    public void write(byte[] b, int off, int len) throws TIOException {
+    public void write(byte[] b, int off, int len) throws IOException {
         for (int i = 0; i < len; ++i) {
             write(b[off++]);
         }
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() throws IOException {
     }
 
     @Override
-    public void flush() throws TIOException {
+    public void flush() throws IOException {
     }
 }

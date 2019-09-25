@@ -25,6 +25,7 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;
+import org.teavm.model.analysis.NullnessInformationBuilder.Nullness;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.InstructionVariableMapper;
 import org.teavm.model.util.PhiUpdater;
@@ -33,24 +34,26 @@ public class NullnessInformation {
     private Program program;
     private BitSet synthesizedVariables;
     private PhiUpdater phiUpdater;
-    private BitSet notNullVariables;
-    private BitSet nullVariables;
+    private Nullness[] nullnessArray;
 
-    NullnessInformation(Program program, BitSet synthesizedVariables, PhiUpdater phiUpdater, BitSet notNullVariables,
-            BitSet nullVariables) {
+    NullnessInformation(Program program, BitSet synthesizedVariables, PhiUpdater phiUpdater,
+            Nullness[] nullnessArray) {
         this.program = program;
         this.synthesizedVariables = synthesizedVariables;
         this.phiUpdater = phiUpdater;
-        this.notNullVariables = notNullVariables;
-        this.nullVariables = nullVariables;
+        this.nullnessArray = nullnessArray;
     }
 
     public boolean isNotNull(Variable variable) {
-        return notNullVariables.get(variable.getIndex());
+        return nullnessArray[variable.getIndex()] == Nullness.NOT_NULL;
     }
 
     public boolean isNull(Variable variable) {
-        return nullVariables.get(variable.getIndex());
+        return nullnessArray[variable.getIndex()] == Nullness.NULL;
+    }
+
+    public boolean isSynthesized(Variable variable) {
+        return synthesizedVariables.get(variable.getIndex());
     }
 
     public void dispose() {
@@ -89,7 +92,6 @@ public class NullnessInformation {
     public static NullnessInformation build(Program program, MethodDescriptor methodDescriptor) {
         NullnessInformationBuilder builder = new NullnessInformationBuilder(program, methodDescriptor);
         builder.build();
-        return new NullnessInformation(program, builder.synthesizedVariables, builder.phiUpdater,
-                builder.notNullVariables, builder.nullVariables);
+        return new NullnessInformation(program, builder.synthesizedVariables, builder.phiUpdater, builder.statuses);
     }
 }

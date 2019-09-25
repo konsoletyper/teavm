@@ -26,5 +26,5 @@ public interface ProgramReader {
 
     VariableReader variableAt(int index);
 
-    MethodReference getMethodReference();
+    AnnotationContainerReader getAnnotations();
 }

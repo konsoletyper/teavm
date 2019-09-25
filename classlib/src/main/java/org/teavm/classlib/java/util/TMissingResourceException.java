@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.util;
 
 import org.teavm.classlib.java.lang.TRuntimeException;
-import org.teavm.classlib.java.lang.TString;
 
 public class TMissingResourceException extends TRuntimeException {
     private static final long serialVersionUID = 6730397307327337970L;
@@ -24,7 +23,7 @@ public class TMissingResourceException extends TRuntimeException {
     private String key;
 
     public TMissingResourceException(String s, String className, String key) {
-        super(TString.wrap(s));
+        super(s);
         this.className = className;
         this.key = key;
     }

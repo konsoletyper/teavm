@@ -305,4 +305,46 @@ public abstract class TCharBuffer extends TBuffer implements Comparable<TCharBuf
     }
 
     public abstract TByteOrder order();
+
+    @Override
+    public final TCharBuffer mark() {
+        super.mark();
+        return this;
+    }
+
+    @Override
+    public final TCharBuffer reset() {
+        super.reset();
+        return this;
+    }
+
+    @Override
+    public final TCharBuffer clear() {
+        super.clear();
+        return this;
+    }
+
+    @Override
+    public final TCharBuffer flip() {
+        super.flip();
+        return this;
+    }
+
+    @Override
+    public final TCharBuffer rewind() {
+        super.rewind();
+        return this;
+    }
+
+    @Override
+    public TCharBuffer limit(int newLimit) {
+        super.limit(newLimit);
+        return this;
+    }
+
+    @Override
+    public TCharBuffer position(int newPosition) {
+        super.position(newPosition);
+        return this;
+    }
 }

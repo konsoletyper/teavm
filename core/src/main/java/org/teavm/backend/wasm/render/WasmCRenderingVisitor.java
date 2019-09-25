@@ -51,6 +51,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
+import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -308,12 +309,24 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
 
     @Override
     public void visit(WasmFloat32Constant expression) {
-        value = CExpression.relocatable(Float.toHexString(expression.getValue()) + "F");
+        if (Float.isInfinite(expression.getValue())) {
+            value = CExpression.relocatable(expression.getValue() < 0 ? "-INFINITY" : "INFINITY");
+        } else if (Float.isNaN(expression.getValue())) {
+            value = CExpression.relocatable("NAN");
+        } else {
+            value = CExpression.relocatable(Float.toHexString(expression.getValue()) + "F");
+        }
     }
 
     @Override
     public void visit(WasmFloat64Constant expression) {
-        value = CExpression.relocatable(Double.toHexString(expression.getValue()));
+        if (Double.isInfinite(expression.getValue())) {
+            value = CExpression.relocatable(expression.getValue() < 0 ? "-INFINITY" : "INFINITY");
+        } else if (Double.isNaN(expression.getValue())) {
+            value = CExpression.relocatable("NAN");
+        } else {
+            value = CExpression.relocatable(Double.toHexString(expression.getValue()));
+        }
     }
 
     @Override
@@ -630,21 +643,27 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         if (type != null && expression.getSourceType() != expression.getTargetType()) {
             switch (expression.getTargetType()) {
                 case INT32:
-                    if (expression.isSigned()) {
+                    if (expression.getSourceType() == WasmType.FLOAT32 && expression.isReinterpret()) {
+                        result.setText("reinterpret_float32(" + operand.getText() + ")");
+                    } else if (expression.isSigned()) {
                         result.setText("(int32_t) " + operand.getText());
                     } else {
                         result.setText("(uint32_t) " + operand.getText());
                     }
                     break;
                 case INT64:
-                    if (expression.isSigned()) {
+                    if (expression.getSourceType() == WasmType.FLOAT64 && expression.isReinterpret()) {
+                        result.setText("reinterpret_float64(" + operand.getText() + ")");
+                    } else if (expression.isSigned()) {
                         result.setText("(int64_t) " + operand.getText());
                     } else {
                         result.setText("(uint64_t) " + operand.getText());
                     }
                     break;
                 case FLOAT32:
-                    if (expression.getSourceType() == WasmType.FLOAT64) {
+                    if (expression.getSourceType() == WasmType.INT32 && expression.isReinterpret()) {
+                        result.setText("reinterpret_int32(" + operand.getText() + ")");
+                    } else if (expression.getSourceType() == WasmType.FLOAT64) {
                         result.setText("(float) " + operand.getText());
                     } else if (expression.isSigned()) {
                         result.setText("(float) (int64_t) " + operand.getText());
@@ -653,7 +672,9 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
                     }
                     break;
                 case FLOAT64:
-                    if (expression.getSourceType() == WasmType.FLOAT32) {
+                    if (expression.getSourceType() == WasmType.INT64 && expression.isReinterpret()) {
+                        result.setText("reinterpret_int64(" + operand.getText() + ")");
+                    } else if (expression.getSourceType() == WasmType.FLOAT32) {
                         result.setText("(double) " + operand.getText());
                     } else if (expression.isSigned()) {
                         result.setText("(double) (int64_t) " + operand.getText());
@@ -1010,6 +1031,26 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         value = result;
     }
 
+    @Override
+    public void visit(WasmMemoryGrow expression) {
+        CExpression result = new CExpression();
+
+        requiredType = WasmType.INT32;
+        expression.getAmount().acceptVisitor(this);
+        CExpression amount = value;
+
+        if (amount.getLines().isEmpty()) {
+            result.addLine("wasm_heap_size += 65536 * (" + amount.getText() + ");", expression.getLocation());
+        } else {
+            result.addLine("wasm_heap_size += 65536 * (" + amount.getText(), expression.getLocation());
+            result.getLines().addAll(amount.getLines());
+            result.addLine(");", expression.getLocation());
+        }
+
+        result.addLine("wasm_heap = realloc(wasm_heap, wasm_heap_size);");
+        value = result;
+    }
+
     private CExpression checkAddress(CExpression index) {
         if (!memoryAccessChecked) {
             return index;
@@ -1024,7 +1065,7 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         } else {
             var = index.getText();
         }
-        checked.addLine("assert(" + var + " < " + module.getMemorySize() * 65536 + ");");
+        checked.addLine("assert(" + var + " < " + module.getMinMemorySize() * 65536 + ");");
         checked.setText(var);
         checked.setRelocatable(index.isRelocatable());
 

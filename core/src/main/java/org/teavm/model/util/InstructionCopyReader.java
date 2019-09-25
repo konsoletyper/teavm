@@ -411,9 +411,11 @@ public class InstructionCopyReader implements InstructionReader {
         insnCopy.setType(type);
         insnCopy.setInstance(instance != null ? copyVar(instance) : null);
         insnCopy.setReceiver(receiver != null ? copyVar(receiver) : null);
-        for (VariableReader arg : arguments) {
-            insnCopy.getArguments().add(copyVar(arg));
+        Variable[] argsCopy = new Variable[arguments.size()];
+        for (int i = 0; i < argsCopy.length; ++i) {
+            argsCopy[i] = copyVar(arguments.get(i));
         }
+        insnCopy.setArguments(argsCopy);
         copy = insnCopy;
         copy.setLocation(location);
     }

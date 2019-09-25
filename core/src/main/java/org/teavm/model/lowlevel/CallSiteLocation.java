@@ -16,6 +16,9 @@
 package org.teavm.model.lowlevel;
 
 import java.util.Objects;
+import org.teavm.model.AnnotationHolder;
+import org.teavm.model.AnnotationReader;
+import org.teavm.model.AnnotationValue;
 
 public class CallSiteLocation {
     private String fileName;
@@ -62,5 +65,22 @@ public class CallSiteLocation {
     @Override
     public int hashCode() {
         return Objects.hash(fileName, className, methodName, lineNumber);
+    }
+
+    public AnnotationReader save() {
+        AnnotationHolder annotation = new AnnotationHolder(CallSiteLocationAnnot.class.getName());
+        annotation.getValues().put("fileName", CallSiteDescriptor.saveNullableString(fileName));
+        annotation.getValues().put("className", CallSiteDescriptor.saveNullableString(className));
+        annotation.getValues().put("methodName", CallSiteDescriptor.saveNullableString(methodName));
+        annotation.getValues().put("lineNumber", new AnnotationValue(lineNumber));
+        return annotation;
+    }
+
+    public static CallSiteLocation load(AnnotationReader reader) {
+        return new CallSiteLocation(
+                CallSiteDescriptor.loadNullableString(reader.getValue("fileName")),
+                CallSiteDescriptor.loadNullableString(reader.getValue("className")),
+                CallSiteDescriptor.loadNullableString(reader.getValue("methodName")),
+                reader.getValue("lineNumber").getInt());
     }
 }

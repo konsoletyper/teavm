@@ -15,57 +15,77 @@
  */
 package org.teavm.chromerdp;
 
-import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import org.teavm.chromerdp.data.RemoteObjectDTO;
+import org.teavm.common.Promise;
 import org.teavm.debugging.javascript.JavaScriptValue;
 import org.teavm.debugging.javascript.JavaScriptVariable;
 
-public class RDPValue implements JavaScriptValue {
-    private AtomicReference<String> representation = new AtomicReference<>();
-    private AtomicReference<String> className = new AtomicReference<>();
-    private String typeName;
+class RDPValue implements JavaScriptValue {
     private ChromeRDPDebugger debugger;
     private String objectId;
-    private Map<String, ? extends JavaScriptVariable> properties;
+    private Promise<Map<String, ? extends JavaScriptVariable>> properties;
     private boolean innerStructure;
+    private Promise<String> className;
+    private Promise<String> representation;
+    private final String defaultRepresentation;
+    private final String typeName;
+    RemoteObjectDTO getter;
 
-    public RDPValue(ChromeRDPDebugger debugger, String representation, String typeName, String objectId,
+    RDPValue(ChromeRDPDebugger debugger, String representation, String typeName, String objectId,
             boolean innerStructure) {
-        this.representation.set(representation == null && objectId == null ? "" : representation);
-        this.typeName = typeName;
         this.debugger = debugger;
         this.objectId = objectId;
         this.innerStructure = innerStructure;
-        properties = objectId != null ? new RDPScope(debugger, objectId)
-                : Collections.<String, RDPLocalVariable>emptyMap();
+        this.typeName = typeName;
+        defaultRepresentation = representation;
     }
 
     @Override
-    public String getRepresentation() {
-        if (representation.get() == null) {
-            representation.compareAndSet(null, debugger.getRepresentation(objectId));
-        }
-        return representation.get();
-    }
-
-    @Override
-    public String getClassName() {
-        if (className.get() == null) {
+    public Promise<String> getRepresentation() {
+        if (representation == null) {
             if (objectId != null) {
-                String computedClassName = debugger.getClassName(objectId);
-                className.compareAndSet(null, computedClassName != null ? computedClassName : "@Object");
+                representation = defaultRepresentation != null
+                        ? Promise.of(defaultRepresentation)
+                        : debugger.getRepresentation(objectId);
             } else {
-                className.compareAndSet(null, "@" + typeName);
+                representation = Promise.of(defaultRepresentation != null ? defaultRepresentation : "");
             }
         }
-        return className.get();
+        return representation;
     }
 
-    @SuppressWarnings("unchecked")
     @Override
-    public Map<String, JavaScriptVariable> getProperties() {
-        return (Map<String, JavaScriptVariable>) properties;
+    public Promise<String> getClassName() {
+        if (className == null) {
+            if (objectId == null) {
+                className = Promise.of("@" + typeName);
+            } else {
+                className = debugger.getClassName(objectId).then(c -> c != null ? c : "@Object");
+            }
+        }
+        return className;
+    }
+
+    @Override
+    public Promise<Map<String, ? extends JavaScriptVariable>> getProperties() {
+        if (properties == null) {
+            if (getter == null) {
+                properties = debugger.createScope(objectId);
+            } else {
+                properties = debugger.invokeGetter(getter.getObjectId(), objectId).then(value -> {
+                    if (value == null) {
+                        value = new RDPValue(debugger, "null", "null", null, false);
+                    }
+                    Map<String, RDPLocalVariable> map = new HashMap<>();
+                    map.put("<value>", new RDPLocalVariable("<value>", value));
+                    map.put("<function>", new RDPLocalVariable("<function>", debugger.mapValue(getter)));
+                    return map;
+                });
+            }
+        }
+        return properties;
     }
 
     @Override

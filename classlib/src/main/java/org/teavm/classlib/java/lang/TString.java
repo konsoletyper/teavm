@@ -15,7 +15,9 @@
  */
 package org.teavm.classlib.java.lang;
 
+import java.util.Iterator;
 import java.util.Locale;
+import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.io.TUnsupportedEncodingException;
 import org.teavm.classlib.java.nio.TByteBuffer;
@@ -25,16 +27,15 @@ import org.teavm.classlib.java.nio.charset.impl.TUTF8Charset;
 import org.teavm.classlib.java.util.TArrays;
 import org.teavm.classlib.java.util.TComparator;
 import org.teavm.classlib.java.util.TFormatter;
-import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TLocale;
-import org.teavm.classlib.java.util.TMap;
 import org.teavm.classlib.java.util.regex.TPattern;
+import org.teavm.dependency.PluggableDependency;
+import org.teavm.interop.NoSideEffects;
 
 public class TString extends TObject implements TSerializable, TComparable<TString>, TCharSequence {
     public static final TComparator<TString> CASE_INSENSITIVE_ORDER = (o1, o2) -> o1.compareToIgnoreCase(o2);
     private char[] characters;
     private transient int hashCode;
-    private static TMap<TString, TString> pool = new THashMap<>();
 
     public TString() {
         this.characters = new char[0];
@@ -411,8 +412,9 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     }
 
     public boolean contains(TCharSequence s) {
+        int sz = length() - s.length();
         outer:
-        for (int i = 0; i < length(); ++i) {
+        for (int i = 0; i <= sz; ++i) {
             for (int j = 0; j < s.length(); ++j) {
                 if (charAt(i + j) != s.charAt(j)) {
                     continue outer;
@@ -423,8 +425,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return false;
     }
 
-    public TString replace(TCharSequence target, TCharSequence replacement) {
-        TStringBuilder sb = new TStringBuilder();
+    public String replace(TCharSequence target, TCharSequence replacement) {
+        StringBuilder sb = new StringBuilder();
         int sz = length() - target.length();
         int i = 0;
         outer:
@@ -439,7 +441,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
             i += target.length() - 1;
         }
         sb.append(substring(i));
-        return TString.wrap(sb.toString());
+        return sb.toString();
     }
 
     public TString trim() {
@@ -467,8 +469,8 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return array;
     }
 
-    public static TString valueOf(TObject obj) {
-        return obj != null ? TString.wrap(obj.toString()) : TString.wrap("null");
+    public static String valueOf(Object obj) {
+        return obj != null ? obj.toString() : "null";
     }
 
     public static TString valueOf(char[] data) {
@@ -487,28 +489,28 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return valueOf(data, offset, count);
     }
 
-    public static TString valueOf(boolean b) {
-        return b ? TString.wrap("true") : TString.wrap("false");
+    public static String valueOf(boolean b) {
+        return b ? "true" : "false";
     }
 
-    public static TString valueOf(char c) {
-        return new TString(new char[] { c });
+    public static String valueOf(char c) {
+        return new String(new char[] { c });
     }
 
-    public static TString valueOf(int i) {
-        return TString.wrap(new TStringBuilder().append(i).toString());
+    public static String valueOf(int i) {
+        return new TStringBuilder().append(i).toString();
     }
 
-    public static TString valueOf(long l) {
-        return TString.wrap(new TStringBuilder().append(l).toString());
+    public static String valueOf(long l) {
+        return new TStringBuilder().append(l).toString();
     }
 
-    public static TString valueOf(float f) {
-        return TString.wrap(new TStringBuilder().append(f).toString());
+    public static String valueOf(float f) {
+        return new TStringBuilder().append(f).toString();
     }
 
-    public static TString valueOf(double d) {
-        return TString.wrap(new TStringBuilder().append(d).toString());
+    public static String valueOf(double d) {
+        return new TStringBuilder().append(d).toString();
     }
 
     @Override
@@ -578,10 +580,6 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return hashCode;
     }
 
-    public static TString wrap(String str) {
-        return (TString) (Object) str;
-    }
-
     public TString toLowerCase() {
         if (isEmpty()) {
             return this;
@@ -628,14 +626,10 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         return toUpperCase();
     }
 
-    public TString intern() {
-        TString interned = pool.get(this);
-        if (interned == null) {
-            interned = this;
-            pool.put(interned, interned);
-        }
-        return interned;
-    }
+    @GeneratedBy(StringNativeGenerator.class)
+    @PluggableDependency(StringNativeGenerator.class)
+    @NoSideEffects
+    public native TString intern();
 
     public boolean matches(String regex) {
         return TPattern.matches(regex, this.toString());
@@ -663,5 +657,49 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
 
     public static String format(Locale l, String format, Object... args) {
         return new TFormatter(l).format(format, args).toString();
+    }
+
+    public static String join(CharSequence delimiter, CharSequence... elements) {
+        if (elements.length == 0) {
+            return "";
+        }
+        int resultLength = 0;
+        for (CharSequence element : elements) {
+            resultLength += element.length();
+        }
+        resultLength += elements.length * delimiter.length();
+
+        char[] chars = new char[resultLength];
+        int index = 0;
+        CharSequence firstElement = elements[0];
+        for (int i = 0; i < firstElement.length(); ++i) {
+            chars[index++] = firstElement.charAt(i);
+        }
+        for (int i = 1; i < elements.length; ++i) {
+            for (int j = 0; j < delimiter.length(); ++j) {
+                chars[index++] = delimiter.charAt(j);
+            }
+            CharSequence element = elements[i];
+            for (int j = 0; j < element.length(); ++j) {
+                chars[index++] = element.charAt(j);
+            }
+        }
+
+        return new String(chars);
+    }
+
+    public static String join(CharSequence delimiter, Iterable<? extends CharSequence> elements) {
+        Iterator<? extends CharSequence> iter = elements.iterator();
+        if (!iter.hasNext()) {
+            return "";
+        }
+
+        StringBuilder sb = new StringBuilder();
+        sb.append(iter.next());
+        while (iter.hasNext()) {
+            sb.append(delimiter);
+            sb.append(iter.next());
+        }
+        return sb.toString();
     }
 }

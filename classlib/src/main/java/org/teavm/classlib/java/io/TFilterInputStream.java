@@ -15,6 +15,8 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
+
 public class TFilterInputStream extends TInputStream {
     protected volatile TInputStream in;
 
@@ -23,12 +25,12 @@ public class TFilterInputStream extends TInputStream {
     }
 
     @Override
-    public int available() throws TIOException {
+    public int available() throws IOException {
         return in.available();
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() throws IOException {
         in.close();
     }
 
@@ -43,27 +45,27 @@ public class TFilterInputStream extends TInputStream {
     }
 
     @Override
-    public int read() throws TIOException {
+    public int read() throws IOException {
         return in.read();
     }
 
     @Override
-    public int read(byte[] buffer) throws TIOException {
+    public int read(byte[] buffer) throws IOException {
         return read(buffer, 0, buffer.length);
     }
 
     @Override
-    public int read(byte[] buffer, int offset, int count) throws TIOException {
+    public int read(byte[] buffer, int offset, int count) throws IOException {
         return in.read(buffer, offset, count);
     }
 
     @Override
-    public synchronized void reset() throws TIOException {
+    public synchronized void reset() throws IOException {
         in.reset();
     }
 
     @Override
-    public long skip(long count) throws TIOException {
+    public long skip(long count) throws IOException {
         return in.skip(count);
     }
 }

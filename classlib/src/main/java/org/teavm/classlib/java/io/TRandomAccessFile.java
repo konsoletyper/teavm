@@ -29,9 +29,10 @@ import org.teavm.classlib.java.lang.TIndexOutOfBoundsException;
 import org.teavm.classlib.java.lang.TNullPointerException;
 
 public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
+    private static final byte[] ONE_BYTE_BUFFER = new byte[1];
     private boolean readOnly;
+    private boolean autoFlush;
     private VirtualFileAccessor accessor;
-    private int pos;
     private byte[] buff;
 
     public TRandomAccessFile(String name, String mode) throws FileNotFoundException {
@@ -44,8 +45,10 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
                 readOnly = true;
                 break;
             case "rw":
+                break;
             case "rwd":
             case "rws":
+                autoFlush = true;
                 break;
             default:
                 throw new IllegalArgumentException("Invalid mode: " + mode);
@@ -56,10 +59,11 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
             throw new FileNotFoundException();
         }
 
-        accessor = virtualFile.createAccessor();
+        accessor = virtualFile.createAccessor(true, !readOnly, false);
         if (accessor == null) {
             throw new FileNotFoundException();
         }
+        buff = new byte[16];
     }
 
     @Override
@@ -72,13 +76,9 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
         if (off < 0 || len < 0 || off + len > b.length) {
             throw new IndexOutOfBoundsException();
         }
-        if (pos >= accessor.size()) {
-            return -1;
-        }
         ensureOpened();
-        int result = accessor.read(pos, b, off, len);
-        pos += result;
-        return result;
+        int result = accessor.read(b, off, len);
+        return result >  0 ? result : -1;
     }
 
     public int read(byte[] b) throws IOException {
@@ -88,8 +88,7 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
     public int read() throws IOException {
         ensureOpened();
         byte[] buffer = new byte[1];
-        int read = accessor.read(pos, buffer, 0, 1);
-        pos += read;
+        int read = accessor.read(buffer, 0, 1);
         return read > 0 ? buffer[0] : -1;
     }
 
@@ -130,20 +129,24 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
     public int skipBytes(int n) throws IOException {
         ensureOpened();
 
-        int newPos = Math.max(pos, Math.min(accessor.size(), pos));
-        int result = newPos - pos;
-        pos = newPos;
-        return result;
+        int last = accessor.tell();
+        accessor.skip(n - 1);
+        if (accessor.read(ONE_BYTE_BUFFER, 0, 1) < 1) {
+            int position = accessor.size();
+            accessor.seek(position);
+            return position - last;
+        }
+        return n;
     }
 
     public long getFilePointer() throws IOException {
         ensureOpened();
-        return pos;
+        return accessor.tell();
     }
 
     public void seek(long pos) throws IOException {
         ensureOpened();
-        this.pos = (int) pos;
+        accessor.seek((int) pos);
     }
 
     public long length() throws IOException {
@@ -281,20 +284,16 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
 
     @Override
     public void write(int b) throws IOException {
-        if (readOnly) {
-            throw new IOException("This instance is read-only");
-        }
         ensureOpened();
         byte[] buffer = { (byte) b };
-        accessor.write(pos, buffer, 0, 1);
-        pos++;
+        accessor.write(buffer, 0, 1);
+        if (autoFlush) {
+            accessor.flush();
+        }
     }
 
     @Override
     public void write(byte[] b) throws IOException {
-        if (readOnly) {
-            throw new IOException("This instance is read-only");
-        }
         write(b, 0, b.length);
     }
 
@@ -305,8 +304,10 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
             throw new IndexOutOfBoundsException();
         }
         ensureOpened();
-        accessor.write(pos, b, off, len);
-        pos += len;
+        accessor.write(b, off, len);
+        if (autoFlush) {
+            accessor.flush();
+        }
     }
 
     @Override
@@ -456,7 +457,7 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
         return new String(out, 0, s);
     }
 
-    static int writeShortToBuffer(int val, byte[] buffer, int offset) throws TIOException {
+    static int writeShortToBuffer(int val, byte[] buffer, int offset) {
         buffer[offset++] = (byte) (val >> 8);
         buffer[offset++] = (byte) val;
         return offset;
@@ -478,7 +479,7 @@ public class TRandomAccessFile implements DataInput, DataOutput, Closeable {
         return utfCount;
     }
 
-    static int writeUTFBytesToBuffer(String str, byte[] buffer, int offset) throws IOException {
+    static int writeUTFBytesToBuffer(String str, byte[] buffer, int offset) {
         int length = str.length();
         for (int i = 0; i < length; i++) {
             int charValue = str.charAt(i);

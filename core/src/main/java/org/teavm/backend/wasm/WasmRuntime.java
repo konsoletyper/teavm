@@ -19,16 +19,13 @@ import org.teavm.interop.Address;
 import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
+import org.teavm.runtime.RuntimeObject;
 
 @StaticInit
 @Unmanaged
 public final class WasmRuntime {
-    public static Address stack = initStack();
-
     private WasmRuntime() {
     }
-
-    private static native Address initStack();
 
     public static int compare(int a, int b) {
         return gt(a, b) ? 1 : lt(a, b) ? -1 : 0;
@@ -79,8 +76,25 @@ public final class WasmRuntime {
         return Address.fromInt(value);
     }
 
+    public static int align(int value, int alignment) {
+        if (value == 0) {
+            return value;
+        }
+        value = ((value - 1) / alignment + 1) * alignment;
+        return value;
+    }
+
     @Import(name = "print", module = "spectest")
     public static native void print(int a);
+
+    @Import(name = "logString", module = "teavm")
+    public static native void printString(String s);
+
+    @Import(name = "logInt", module = "teavm")
+    public static native void printInt(int i);
+
+    @Import(name = "logOutOfMemory", module = "teavm")
+    public static native void printOutOfMemory();
 
     public static void fillZero(Address address, int count) {
         int start = address.toInt();
@@ -129,6 +143,7 @@ public final class WasmRuntime {
     public static void moveMemoryBlock(Address source, Address target, int count) {
         if (count < 8) {
             slowMemoryMove(source, target, count);
+            return;
         }
         int diff = source.toInt() - target.toInt();
         if (diff == 0) {
@@ -202,24 +217,21 @@ public final class WasmRuntime {
             }
 
             while (alignedSourceEnd.toInt() > alignedSourceStart.toInt()) {
-                alignedTargetEnd.putInt(alignedSourceEnd.getInt());
                 alignedSourceEnd = alignedSourceEnd.add(-4);
                 alignedTargetEnd = alignedTargetEnd.add(-4);
+                alignedTargetEnd.putInt(alignedSourceEnd.getInt());
             }
 
             switch (source.toInt() - alignedSourceStart.toInt()) {
-                case 0:
-                    alignedTargetStart.putInt(alignedSourceStart.getInt());
-                    break;
                 case 1:
-                    alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
-                    alignedTargetStart.add(1).putByte(alignedSourceStart.add(1).getByte());
+                    alignedTargetStart.add(-2).putShort(alignedSourceStart.add(-2).getShort());
+                    alignedTargetStart.add(-3).putByte(alignedSourceStart.add(-3).getByte());
                     break;
                 case 2:
-                    alignedTargetStart.add(2).putShort(alignedSourceStart.add(2).getShort());
+                    alignedTargetStart.add(-2).putShort(alignedSourceStart.add(-2).getShort());
                     break;
                 case 3:
-                    alignedTargetStart.add(3).putByte(alignedSourceStart.add(3).getByte());
+                    alignedTargetStart.add(-1).putByte(alignedSourceStart.add(-1).getByte());
                     break;
             }
         }
@@ -233,8 +245,8 @@ public final class WasmRuntime {
                 source = source.add(1);
             }
         } else {
-            source.add(count);
-            target.add(count);
+            source = source.add(count);
+            target = target.add(count);
             while (count-- > 0) {
                 target = target.add(-1);
                 source = source.add(-1);
@@ -244,20 +256,20 @@ public final class WasmRuntime {
     }
 
     public static Address allocStack(int size) {
-        Address result = stack.add(4);
-        stack = result.add((size << 2) + 4);
-        stack.putInt(size);
+        Address result = WasmHeap.stack.add(4);
+        WasmHeap.stack = result.add((size << 2) + 4);
+        WasmHeap.stack.putInt(size);
         return result;
     }
 
     public static Address getStackTop() {
-        return stack != initStack() ? stack : null;
+        return WasmHeap.stack != WasmHeap.stackAddress ? WasmHeap.stack : null;
     }
 
     public static Address getNextStackFrame(Address stackFrame) {
         int size = stackFrame.getInt() + 2;
         Address result = stackFrame.add(-size * 4);
-        if (result == initStack()) {
+        if (result == WasmHeap.stackAddress) {
             result = null;
         }
         return result;
@@ -283,5 +295,98 @@ public final class WasmRuntime {
 
     public static void setExceptionHandlerId(Address stackFrame, int id) {
         getExceptionHandlerPtr(stackFrame).putInt(id);
+    }
+
+    private static int hashCode(RuntimeString string) {
+        int hashCode = 0;
+        int length = string.characters.length;
+        Address chars = Address.ofData(string.characters);
+        for (int i = 0; i < length; ++i) {
+            hashCode = 31 * hashCode + chars.getChar();
+            chars = chars.add(2);
+        }
+        return hashCode;
+    }
+
+    private static boolean equals(RuntimeString first, RuntimeString second) {
+        if (first.characters.length != second.characters.length) {
+            return false;
+        }
+
+        Address firstChars = Address.ofData(first.characters);
+        Address secondChars = Address.ofData(second.characters);
+        int length = first.characters.length;
+        for (int i = 0; i < length; ++i) {
+            if (firstChars.getChar() != secondChars.getChar()) {
+                return false;
+            }
+            firstChars = firstChars.add(2);
+            secondChars = secondChars.add(2);
+        }
+        return true;
+    }
+
+    public static String[] resourceMapKeys(Address map) {
+        String[] result = new String[resourceMapSize(map)];
+        fillResourceMapKeys(map, result);
+        return result;
+    }
+
+    private static int resourceMapSize(Address map) {
+        int result = 0;
+        int sz = map.getInt();
+        Address data = contentStart(map);
+        for (int i = 0; i < sz; ++i) {
+            if (data.getAddress() != null) {
+                result++;
+            }
+            data = data.add(Address.sizeOf() * 2);
+        }
+
+        return result;
+    }
+
+    private static void fillResourceMapKeys(Address map, String[] target) {
+        int sz = map.getInt();
+        Address data = contentStart(map);
+        Address targetData = Address.ofData(target);
+        for (int i = 0; i < sz; ++i) {
+            Address entry = data.getAddress();
+            if (entry != null) {
+                targetData.putAddress(entry);
+                targetData = targetData.add(Address.sizeOf());
+            }
+            data = data.add(Address.sizeOf());
+        }
+    }
+
+    private static Address contentStart(Address resource) {
+        return resource.add(Address.sizeOf());
+    }
+
+    public static Address lookupResource(Address map, String string) {
+        RuntimeString runtimeString = Address.ofObject(string).toStructure();
+        int hashCode = hashCode(runtimeString);
+        int sz = map.getInt();
+        Address content = contentStart(map);
+        for (int i = 0; i < sz; ++i) {
+            int index = (hashCode + i) % sz;
+            if (index < 0) {
+                index += sz;
+            }
+            Address entry = content.add(index * Address.sizeOf() * 2);
+            Address key = entry.getAddress();
+            if (key == null) {
+                return null;
+            }
+            if (equals(key.toStructure(), runtimeString)) {
+                return entry;
+            }
+        }
+        return null;
+    }
+
+    static class RuntimeString extends RuntimeObject {
+        char[] characters;
     }
 }

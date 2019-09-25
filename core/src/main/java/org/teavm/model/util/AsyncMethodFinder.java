@@ -22,15 +22,10 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import org.teavm.backend.javascript.spi.InjectedBy;
 import org.teavm.callgraph.CallGraph;
 import org.teavm.callgraph.CallGraphNode;
 import org.teavm.callgraph.CallSite;
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.interop.Async;
-import org.teavm.interop.SuppressSyncErrors;
-import org.teavm.interop.Sync;
-import org.teavm.model.CallLocation;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.ListableClassReaderSource;
@@ -40,6 +35,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ProgramReader;
 import org.teavm.model.VariableReader;
 import org.teavm.model.instructions.AbstractInstructionReader;
+import org.teavm.runtime.Fiber;
 
 public class AsyncMethodFinder {
     private Set<MethodReference> asyncMethods = new HashSet<>();
@@ -47,12 +43,11 @@ public class AsyncMethodFinder {
     private Set<MethodReference> readonlyAsyncMethods = Collections.unmodifiableSet(asyncMethods);
     private Set<MethodReference> readonlyAsyncFamilyMethods = Collections.unmodifiableSet(asyncFamilyMethods.keySet());
     private CallGraph callGraph;
-    private Diagnostics diagnostics;
     private ListableClassReaderSource classSource;
+    private boolean hasAsyncMethods;
 
-    public AsyncMethodFinder(CallGraph callGraph, Diagnostics diagnostics) {
+    public AsyncMethodFinder(CallGraph callGraph) {
         this.callGraph = callGraph;
-        this.diagnostics = diagnostics;
     }
 
     public Set<MethodReference> getAsyncMethods() {
@@ -65,6 +60,7 @@ public class AsyncMethodFinder {
 
     public void find(ListableClassReaderSource classSource) {
         this.classSource = classSource;
+        hasAsyncMethods = findAsyncMethods();
         for (String clsName : classSource.getClassNames()) {
             ClassReader cls = classSource.get(clsName);
             for (MethodReader method : cls.getMethods()) {
@@ -76,7 +72,7 @@ public class AsyncMethodFinder {
                 }
             }
         }
-        if (hasAsyncMethods()) {
+        if (hasAsyncMethods) {
             for (String clsName : classSource.getClassNames()) {
                 ClassReader cls = classSource.get(clsName);
                 for (MethodReader method : cls.getMethods()) {
@@ -105,7 +101,7 @@ public class AsyncMethodFinder {
         }
     }
 
-    private boolean hasAsyncMethods() {
+    private boolean findAsyncMethods() {
         boolean result = false;
         loop: for (String clsName : classSource.getClassNames()) {
             ClassReader cls = classSource.get(clsName);
@@ -124,6 +120,10 @@ public class AsyncMethodFinder {
         return result && method != null;
     }
 
+    public boolean hasAsyncMethods() {
+        return hasAsyncMethods;
+    }
+
     private boolean hasMonitor(MethodReader method) {
         if (method.hasModifier(ElementModifier.SYNCHRONIZED)) {
             return true;
@@ -140,6 +140,10 @@ public class AsyncMethodFinder {
     }
 
     private void add(MethodReference methodRef, CallStack stack) {
+        if (methodRef.getClassName().equals(Fiber.class.getName())) {
+            return;
+        }
+
         if (!asyncMethods.add(methodRef)) {
             return;
         }
@@ -155,23 +159,15 @@ public class AsyncMethodFinder {
         if (method == null) {
             return;
         }
-        if (method.getAnnotations().get(Sync.class.getName()) != null
-                || method.getAnnotations().get(InjectedBy.class.getName()) != null) {
-            if (method.getAnnotations().get(SuppressSyncErrors.class.getName()) == null) {
-                diagnostics.error(new CallLocation(methodRef), "Method {{m0}} is claimed to be "
-                        + "synchronous, but it is has invocations of asynchronous methods:" 
-                        + stack.toString(), methodRef);
-                return;
-            } else {
-                diagnostics.warning(new CallLocation(methodRef), "Error as Warning because "
-                        + " Method {{m0}} has @SuppressSyncErrors annotation. Method {{m0}} "
-                        + "is claimed to be synchronous, but it is has invocations of "
-                        + "asynchronous methods:" + stack.toString(), methodRef);
-            }
+
+        if (!hasAsyncMethods && methodRef.getClassName().equals("java.lang.Object")
+                && (methodRef.getName().equals("monitorEnter") || methodRef.getName().equals("monitorExit"))) {
+            return;
         }
         for (CallSite callSite : node.getCallerCallSites()) {
-            MethodReference nextMethod = callSite.getCaller().getMethod();
-            add(nextMethod, new CallStack(nextMethod, stack));
+            for (CallGraphNode caller : callSite.getCallers()) {
+                add(caller.getMethod(), new CallStack(caller.getMethod(), stack));
+            }
         }
     }
 
@@ -202,7 +198,7 @@ public class AsyncMethodFinder {
         if (cls == null) {
             return;
         }
-        for (MethodReference overriddenMethod : findOverriddenMethods(cls, methodRef)) {
+        for (MethodReference overriddenMethod : findOverriddenMethods(cls, methodRef.getDescriptor())) {
             addOverriddenToFamily(overriddenMethod);
         }
     }
@@ -225,7 +221,7 @@ public class AsyncMethodFinder {
         if (cls == null) {
             return false;
         }
-        for (MethodReference overriddenMethod : findOverriddenMethods(cls, methodRef)) {
+        for (MethodReference overriddenMethod : findOverriddenMethods(cls, methodRef.getDescriptor())) {
             if (addToFamily(overriddenMethod)) {
                 return true;
             }
@@ -233,49 +229,49 @@ public class AsyncMethodFinder {
         return false;
     }
 
-    private Set<MethodReference> findOverriddenMethods(ClassReader cls, MethodReference methodRef) {
+    private Set<MethodReference> findOverriddenMethods(ClassReader cls, MethodDescriptor methodDesc) {
         List<String> parents = new ArrayList<>();
         if (cls.getParent() != null) {
             parents.add(cls.getParent());
         }
         parents.addAll(cls.getInterfaces());
 
-        Set<MethodReference> visited = new HashSet<>();
+        Set<String> visited = new HashSet<>();
         Set<MethodReference> overridden = new HashSet<>();
         for (String parent : parents) {
-            findOverriddenMethods(new MethodReference(parent, methodRef.getDescriptor()), overridden, visited);
+            findOverriddenMethods(parent, methodDesc, overridden, visited);
         }
         return overridden;
     }
 
-    private void findOverriddenMethods(MethodReference methodRef, Set<MethodReference> result,
-            Set<MethodReference> visited) {
-        if (!visited.add(methodRef)) {
+    private void findOverriddenMethods(String className, MethodDescriptor methodDesc, Set<MethodReference> result,
+            Set<String> visited) {
+        if (!visited.add(className)) {
             return;
         }
-        if (methodRef.getName().equals("<init>") || methodRef.getName().equals("<clinit>")) {
+        if (methodDesc.getName().equals("<init>") || methodDesc.getName().equals("<clinit>")) {
             return;
         }
-        ClassReader cls = classSource.get(methodRef.getClassName());
+        ClassReader cls = classSource.get(className);
         if (cls == null) {
             return;
         }
-        MethodReader method = cls.getMethod(methodRef.getDescriptor());
+        MethodReader method = cls.getMethod(methodDesc);
         if (method != null) {
             if (!method.hasModifier(ElementModifier.STATIC) && !method.hasModifier(ElementModifier.FINAL)) {
-                result.add(methodRef);
+                result.add(method.getReference());
             }
         } else {
             if (cls.getParent() != null) {
-                findOverriddenMethods(new MethodReference(cls.getParent(), methodRef.getDescriptor()), result, visited);
+                findOverriddenMethods(cls.getParent(), methodDesc, result, visited);
             }
             for (String iface : cls.getInterfaces()) {
-                findOverriddenMethods(new MethodReference(iface, methodRef.getDescriptor()), result, visited);
+                findOverriddenMethods(iface, methodDesc, result, visited);
             }
         }
     }
 
-    class AsyncInstructionReader extends AbstractInstructionReader {
+    static class AsyncInstructionReader extends AbstractInstructionReader {
         boolean async;
 
         @Override

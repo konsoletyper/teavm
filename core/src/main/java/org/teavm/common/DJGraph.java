@@ -15,7 +15,7 @@
  */
 package org.teavm.common;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
@@ -114,10 +114,6 @@ public class DJGraph {
         }
     }
 
-    public DominatorTree getDomTree() {
-        return domTree;
-    }
-
     public MutableDirectedGraph getCfg() {
         return cfg;
     }
@@ -136,7 +132,17 @@ public class DJGraph {
     }
 
     public boolean isDomEdge(int i, int j) {
-        return domTree.immediateDominatorOf(mergeRoot[j]) == mergeRoot[i];
+        return immediateDominatorOf(j) == mergeRoot[i];
+    }
+
+    public int immediateDominatorOf(int node) {
+        int dom = domTree.immediateDominatorOf(mergeRoot[node]);
+        return dom >= 0 ? mergeRoot[dom] : dom;
+    }
+
+    public int commonDominatorOf(int a, int b) {
+        int dom = domTree.commonDominatorOf(mergeRoot[a], mergeRoot[b]);
+        return dom >= 0 ? mergeRoot[dom] : dom;
     }
 
     public boolean isJoinEdge(int i, int j) {
@@ -199,7 +205,7 @@ public class DJGraph {
 
     public int collapse(int[] nodes) {
         // Replace nodes with their classes and find common dominator among them
-        IntSet set = new IntOpenHashSet();
+        IntSet set = new IntHashSet();
         int top = nodes[0];
         for (int node : nodes) {
             node = mergeRoot[node];

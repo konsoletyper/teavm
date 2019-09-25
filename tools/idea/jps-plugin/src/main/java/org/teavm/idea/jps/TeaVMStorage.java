@@ -25,6 +25,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStreamWriter;
 import java.io.Reader;
 import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.jetbrains.jps.incremental.storage.StorageOwner;
@@ -39,7 +40,7 @@ public class TeaVMStorage implements StorageOwner {
         this.file = file;
         if (file.exists()) {
             participatingFiles = new ArrayList<>();
-            try (Reader innerReader = new InputStreamReader(new FileInputStream(file), "UTF-8");
+            try (Reader innerReader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8);
                     BufferedReader reader = new BufferedReader(innerReader)) {
                 while (true) {
                     String line = reader.readLine();
@@ -82,7 +83,7 @@ public class TeaVMStorage implements StorageOwner {
     }
 
     @Override
-    public void clean() throws IOException {
+    public void clean() {
         file.delete();
         participatingFiles = null;
     }
@@ -95,7 +96,7 @@ public class TeaVMStorage implements StorageOwner {
                     file.delete();
                 }
             } else {
-                try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), "UTF-8");
+                try (Writer innerWriter = new OutputStreamWriter(new FileOutputStream(file), StandardCharsets.UTF_8);
                         BufferedWriter writer = new BufferedWriter(innerWriter)) {
                     for (Entry participatingFile : participatingFiles) {
                         writer.append(participatingFile.path + ":" + participatingFile.timestamp);

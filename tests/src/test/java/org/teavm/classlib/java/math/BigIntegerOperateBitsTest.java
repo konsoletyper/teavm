@@ -214,10 +214,9 @@ public class BigIntegerOperateBitsTest {
         byte[] rBytes = {-2, 127, -57, -101, 1, 75, -90, -46, -92, -4, 14, 92, -26};
         BigInteger aNumber = new BigInteger(aSign, aBytes);
         BigInteger result = aNumber.clearBit(number);
-        byte[] resBytes = new byte[rBytes.length];
-        resBytes = result.toByteArray();
+        byte[] resBytes = result.toByteArray();
         for (int i = 0; i < resBytes.length; i++) {
-            assertTrue(resBytes[i] == rBytes[i]);
+            assertEquals("Byte " + i, rBytes[i], resBytes[i]);
         }
         assertEquals("incorrect sign", -1, result.signum());
     }

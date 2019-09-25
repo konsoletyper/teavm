@@ -1,0 +1,29 @@
+var @this as this
+$start
+    @init := 'qwe'
+    @n := null
+    @xInit := 0
+    goto $head
+$head
+    @a := phi @init from $start, @b from $bodyEnd
+    @x := phi @xInit from $start, @xUpdate from $bodyEnd
+    @twenty := 20
+    @xCmp := @x compareTo @twenty as int
+    if @xCmp == 0 then goto $exit else goto $body
+$body
+    @ten := 10
+    @cmp := @x compareTo @ten as int
+    if @cmp == 0 then goto $update else goto $bodyEnd
+$update
+    goto $bodyEnd
+$bodyEnd
+    @b := phi @a from $body, @n from $update
+    @one := 1
+    @xUpdate := @x + @one as int
+    goto $head
+$exit
+    return
+
+
+// NULLABLE a
+// NULLABLE b

@@ -18,37 +18,13 @@ package org.teavm.callgraph;
 import java.util.Collection;
 import org.teavm.model.MethodReference;
 
-/**
- * Represents a method with information about what methods does it call and what method do call the method.
- * @author Alexey Andreev
- */
 public interface CallGraphNode {
-    /**
-     * Returns reference to entire call graph.
-     *
-     * @return graph
-     */
     CallGraph getGraph();
 
-    /**
-     * Returns the method that this node represents.
-     *
-     * @return method
-     */
     MethodReference getMethod();
 
-    /**
-     * Returns immutable collection of all call sites that are in the method.
-     *
-     * @return call site
-     */
     Collection<? extends CallSite> getCallSites();
 
-    /**
-     * Returns immutable collection of all call sites that call this method.
-     *
-     * @return call sites
-     */
     Collection<? extends CallSite> getCallerCallSites();
 
     Collection<? extends FieldAccessSite> getFieldAccessSites();

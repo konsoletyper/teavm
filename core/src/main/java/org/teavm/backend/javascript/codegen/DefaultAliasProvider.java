@@ -15,6 +15,8 @@
  */
 package org.teavm.backend.javascript.codegen;
 
+import com.carrotsearch.hppc.ObjectIntHashMap;
+import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
@@ -24,33 +26,55 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class DefaultAliasProvider implements AliasProvider {
-    private final Map<String, String> classAliases = new HashMap<>();
-    private final Set<String> knownAliases = new HashSet<>();
-    private final Set<String> knownVirtualAliases = new HashSet<>();
+    int topLevelAliasLimit;
+    private final Map<String, ScopedName> classAliases = new HashMap<>();
+    private final Set<String> knownAliases = new HashSet<>(200, 0.5f);
+    private final ObjectIntMap<String> knowAliasesCounter = new ObjectIntHashMap<>();
+    private final Set<String> knownScopedAliases = new HashSet<>(200, 0.5f);
+    private final ObjectIntMap<String> knowScopedAliasesCounter = new ObjectIntHashMap<>();
+    private final Set<String> knownVirtualAliases = new HashSet<>(200, 0.5f);
+    private final ObjectIntMap<String> knowVirtualAliasesCounter = new ObjectIntHashMap<>();
+
+    public DefaultAliasProvider(int topLevelAliasLimit) {
+        this.topLevelAliasLimit = topLevelAliasLimit;
+    }
 
     @Override
-    public String getClassAlias(String cls) {
-        return classAliases.computeIfAbsent(cls, key -> {
-            StringBuilder alias = new StringBuilder();
-            int lastIndex = 0;
-            while (true) {
-                int index = cls.indexOf('.', lastIndex);
-                if (index == -1) {
-                    if (lastIndex > 0) {
-                        alias.append("_");
-                    }
-                    alias.append(cls.substring(lastIndex));
-                    break;
-                } else {
-                    if (index > lastIndex) {
-                        alias.append(cls.charAt(lastIndex));
-                    }
-                    lastIndex = index + 1;
-                }
-            }
+    public ScopedName getClassAlias(String cls) {
+        return classAliases.computeIfAbsent(cls, key -> makeUniqueTopLevel(suggestAliasForClass(key)));
+    }
 
-            return makeUnique(knownAliases, alias.toString());
-        });
+    private static String suggestAliasForClass(String cls) {
+        StringBuilder alias = new StringBuilder();
+        int lastIndex = 0;
+        while (true) {
+            int index = cls.indexOf('.', lastIndex);
+            if (index == -1) {
+                if (lastIndex > 0) {
+                    alias.append("_");
+                }
+                alias.append(cls.substring(lastIndex));
+                break;
+            } else {
+                if (index > lastIndex) {
+                    alias.append(cls.charAt(lastIndex));
+                }
+                lastIndex = index + 1;
+            }
+        }
+
+        for (int i = 1; i < alias.length(); ++i) {
+            char c = alias.charAt(i);
+            if (!Character.isJavaIdentifierPart(c)) {
+                alias.setCharAt(i, '_');
+            }
+        }
+
+        if (!Character.isJavaIdentifierStart(alias.charAt(0))) {
+            alias.setCharAt(0, '_');
+        }
+
+        return alias.toString();
     }
 
     @Override
@@ -67,32 +91,32 @@ public class DefaultAliasProvider implements AliasProvider {
                 alias = "$" + alias;
                 break;
         }
-        return makeUnique(knownVirtualAliases, alias);
+        return makeUnique(knownVirtualAliases, knowVirtualAliasesCounter, alias);
     }
 
     @Override
-    public String getStaticMethodAlias(MethodReference method) {
-        String alias = method.getDescriptor().getName();
-        switch (alias) {
+    public ScopedName getStaticMethodAlias(MethodReference method) {
+        String suggested = method.getDescriptor().getName();
+        switch (suggested) {
             case "<init>":
-                alias = "_init_";
+                suggested = "_init_";
                 break;
             case "<clinit>":
-                alias = "_clinit_";
+                suggested = "_clinit_";
                 break;
         }
 
-        return makeUnique(knownAliases, getClassAlias(method.getClassName()) + "_" + alias);
+        return makeUniqueTopLevel(getClassAlias(method.getClassName()).value + "_" + suggested);
     }
 
     @Override
     public String getFieldAlias(FieldReference field) {
-        return makeUnique(knownVirtualAliases, "$" + field.getFieldName());
+        return makeUnique(knownVirtualAliases, knowVirtualAliasesCounter, "$" + field.getFieldName());
     }
 
     @Override
-    public String getStaticFieldAlias(FieldReference field) {
-        return makeUnique(knownAliases, getClassAlias(field.getClassName()) + "_" + field.getFieldName());
+    public ScopedName getStaticFieldAlias(FieldReference field) {
+        return makeUniqueTopLevel(getClassAlias(field.getClassName()).value + "_" + field.getFieldName());
     }
 
     @Override
@@ -100,12 +124,34 @@ public class DefaultAliasProvider implements AliasProvider {
         return name;
     }
 
-    private String makeUnique(Set<String> knowAliases, String alias) {
+    @Override
+    public ScopedName getClassInitAlias(String className) {
+        return makeUniqueTopLevel(suggestAliasForClass(className) + "_$callClinit");
+    }
+
+    @Override
+    public String getScopeAlias() {
+        return makeUnique(knownAliases, knowAliasesCounter, "$java");
+    }
+
+    private ScopedName makeUniqueTopLevel(String suggested) {
+        if (knownAliases.size() < topLevelAliasLimit) {
+            return new ScopedName(false, makeUnique(knownAliases, knowAliasesCounter, suggested));
+        } else {
+            return new ScopedName(true, makeUnique(knownScopedAliases, knowScopedAliasesCounter, suggested));
+        }
+    }
+
+    private String makeUnique(Set<String> knowAliases, ObjectIntMap<String> indexMap, String alias) {
         String uniqueAlias = alias;
-        int index = 1;
+        int index = indexMap.get(alias);
+        if (index > 0) {
+            uniqueAlias = alias + index++;
+        }
         while (!knowAliases.add(uniqueAlias)) {
             uniqueAlias = alias + index++;
         }
+        indexMap.put(alias, index);
         return uniqueAlias;
     }
 }

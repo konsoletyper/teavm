@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.teavm</groupId>
     <artifactId>teavm</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
   </parent>
   <artifactId>teavm-tests</artifactId>
 
@@ -50,13 +50,6 @@
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
-      <artifactId>teavm-jso-apis</artifactId>
-      <version>${project.version}</version>
-      <classifier>tests</classifier>
-      <scope>compile</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.teavm</groupId>
       <artifactId>teavm-metaprogramming-impl</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -75,6 +68,27 @@
       <groupId>org.teavm</groupId>
       <artifactId>teavm-junit</artifactId>
       <version>${project.version}</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.carrotsearch</groupId>
+      <artifactId>hppc</artifactId>
+      <version>0.7.3</version>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-util</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.ow2.asm</groupId>
+      <artifactId>asm-commons</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mozilla</groupId>
+      <artifactId>rhino</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>

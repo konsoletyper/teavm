@@ -211,4 +211,46 @@ public abstract class TLongBuffer extends TBuffer implements Comparable<TLongBuf
     }
 
     public abstract TByteOrder order();
+
+    @Override
+    public final TLongBuffer mark() {
+        super.mark();
+        return this;
+    }
+
+    @Override
+    public final TLongBuffer reset() {
+        super.reset();
+        return this;
+    }
+
+    @Override
+    public final TLongBuffer clear() {
+        super.clear();
+        return this;
+    }
+
+    @Override
+    public final TLongBuffer flip() {
+        super.flip();
+        return this;
+    }
+
+    @Override
+    public final TLongBuffer rewind() {
+        super.rewind();
+        return this;
+    }
+
+    @Override
+    public TLongBuffer limit(int newLimit) {
+        super.limit(newLimit);
+        return this;
+    }
+
+    @Override
+    public TLongBuffer position(int newPosition) {
+        super.position(newPosition);
+        return this;
+    }
 }

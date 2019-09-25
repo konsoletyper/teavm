@@ -474,14 +474,12 @@ public class PatternTest {
 
     @Test
     public void testCompileRanges() {
-        String[] correctTestPatterns = { "[^]*abb]*", "[^a-d[^m-p]]*abb",
-                "[a-d\\d]*abb", "[abc]*abb", "[a-e&&[de]]*abb", "[^abc]*abb",
-                "[a-e&&[^de]]*abb", "[a-z&&[^m-p]]*abb", "[a-d[m-p]]*abb",
+        String[] correctTestPatterns = { "[^]*abb]*",
+                "[a-d\\d]*abb", "[a-z&&[^m-p]]*abb", "[a-d[m-p]]*abb",
                 "[a-zA-Z]*abb", "[+*?]*abb", "[^+*?]*abb" };
 
-        String[] inputSecuence = { "kkkk", "admpabb", "abcabcd124654abb",
-                "abcabccbacababb", "dededededededeedabb", "gfdhfghgdfghabb",
-                "accabacbcbaabb", "acbvfgtyabb", "adbcacdbmopabcoabb",
+        String[] inputSecuence = { "kkkk", "abcabcd124654abb",
+                "acbvfgtyabb", "adbcacdbmopabcoabb",
                 "jhfkjhaSDFGHJkdfhHNJMjkhfabb", "+*??+*abb", "sdfghjkabb" };
 
         for (int i = 0; i < correctTestPatterns.length; i++) {
@@ -490,9 +488,8 @@ public class PatternTest {
                     inputSecuence[i]));
         }
 
-        String[] wrongInputSecuence = { "]", "admpkk", "abcabcd124k654abb",
-                "abwcabccbacababb", "abababdeababdeabb", "abcabcacbacbabb",
-                "acdcbecbaabb", "acbotyabb", "adbcaecdbmopabcoabb",
+        String[] wrongInputSecuence = { "]", "abcabcd124k654abb",
+                "acbotyabb", "adbcaecdbmopabcoabb",
                 "jhfkjhaSDFGHJk;dfhHNJMjkhfabb", "+*?a?+*abb", "sdf+ghjkabb" };
 
         for (int i = 0; i < correctTestPatterns.length; i++) {

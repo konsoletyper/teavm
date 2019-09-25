@@ -21,23 +21,44 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import org.teavm.ast.InvocationExpr;
+import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.binary.BinaryWriter;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsic;
 import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
+import org.teavm.backend.wasm.model.WasmLocal;
+import org.teavm.backend.wasm.model.WasmType;
+import org.teavm.backend.wasm.model.expression.WasmBlock;
+import org.teavm.backend.wasm.model.expression.WasmBranch;
+import org.teavm.backend.wasm.model.expression.WasmCall;
+import org.teavm.backend.wasm.model.expression.WasmDrop;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
+import org.teavm.backend.wasm.model.expression.WasmGetLocal;
+import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
 import org.teavm.backend.wasm.model.expression.WasmInt64Subtype;
+import org.teavm.backend.wasm.model.expression.WasmIntBinary;
+import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
+import org.teavm.backend.wasm.model.expression.WasmSetLocal;
+import org.teavm.interop.Address;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.platform.metadata.Resource;
+import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.ResourceMap;
 
 public class ResourceReadIntrinsic implements WasmIntrinsic {
+    private static final MethodReference LOOKUP_METHOD = new MethodReference(WasmRuntime.class,
+            "lookupResource", Address.class, String.class, Address.class);
+    private static final MethodReference KEYS_METHOD = new MethodReference(WasmRuntime.class,
+            "resourceMapKeys", Address.class, String[].class);
+
     private ClassReaderSource classSource;
     private ClassLoader classLoader;
     private Map<String, StructureDescriptor> typeDescriptorCache = new HashMap<>();
@@ -54,6 +75,12 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
+        if (invocation.getMethod().getClassName().equals(ResourceMap.class.getName())) {
+            return applyForResourceMap(manager, invocation);
+        } else if (invocation.getMethod().getClassName().equals(ResourceArray.class.getName())) {
+            return applyForResourceArray(manager, invocation);
+        }
+
         StructureDescriptor typeDescriptor = getTypeDescriptor(invocation.getMethod().getClassName());
         PropertyDescriptor property = typeDescriptor.layout.get(invocation.getMethod());
 
@@ -80,6 +107,67 @@ public class ResourceReadIntrinsic implements WasmIntrinsic {
         }
 
         return new WasmLoadInt32(4, base, WasmInt32Subtype.INT32, property.offset);
+    }
+
+    private WasmExpression applyForResourceArray(WasmIntrinsicManager manager, InvocationExpr invocation) {
+        switch (invocation.getMethod().getName()) {
+            case "get": {
+                WasmExpression map = manager.generate(invocation.getArguments().get(0));
+                WasmExpression index = manager.generate(invocation.getArguments().get(1));
+                WasmExpression offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SHL,
+                        index, new WasmInt32Constant(2));
+                WasmExpression address = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
+                        map, offset);
+                return new WasmLoadInt32(4, address, WasmInt32Subtype.INT32, 4);
+            }
+            case "size":
+                return new WasmLoadInt32(4, manager.generate(invocation.getArguments().get(0)),
+                        WasmInt32Subtype.INT32, 0);
+            default:
+                throw new AssertionError();
+        }
+    }
+
+    private WasmExpression applyForResourceMap(WasmIntrinsicManager manager, InvocationExpr invocation) {
+        switch (invocation.getMethod().getName()) {
+            case "keys": {
+                WasmExpression map = manager.generate(invocation.getArguments().get(0));
+                WasmCall call = new WasmCall(manager.getNames().forMethod(KEYS_METHOD));
+                call.getArguments().add(map);
+                return call;
+            }
+            case "has": {
+                WasmExpression map = manager.generate(invocation.getArguments().get(0));
+                WasmExpression key = manager.generate(invocation.getArguments().get(1));
+                WasmCall call = new WasmCall(manager.getNames().forMethod(LOOKUP_METHOD));
+                call.getArguments().add(map);
+                call.getArguments().add(key);
+                return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.NE, call,
+                        new WasmInt32Constant(0));
+            }
+            case "get": {
+                WasmBlock block = new WasmBlock(false);
+                block.setType(WasmType.INT32);
+
+                WasmExpression map = manager.generate(invocation.getArguments().get(0));
+                WasmExpression key = manager.generate(invocation.getArguments().get(1));
+                WasmCall call = new WasmCall(manager.getNames().forMethod(LOOKUP_METHOD));
+                call.getArguments().add(map);
+                call.getArguments().add(key);
+                WasmLocal entryVar = manager.getTemporary(WasmType.INT32);
+                block.getBody().add(new WasmSetLocal(entryVar, call));
+
+                WasmBranch ifNull = new WasmBranch(new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.EQ,
+                        new WasmGetLocal(entryVar), new WasmInt32Constant(0)), block);
+                ifNull.setResult(new WasmInt32Constant(0));
+                block.getBody().add(new WasmDrop(ifNull));
+
+                block.getBody().add(new WasmLoadInt32(4, new WasmGetLocal(entryVar), WasmInt32Subtype.INT32, 4));
+                return block;
+            }
+            default:
+                throw new AssertionError();
+        }
     }
 
     private StructureDescriptor getTypeDescriptor(String className) {

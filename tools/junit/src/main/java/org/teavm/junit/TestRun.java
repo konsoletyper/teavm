@@ -18,24 +18,23 @@ package org.teavm.junit;
 import java.io.File;
 import java.lang.reflect.Method;
 import org.junit.runner.Description;
-import org.teavm.model.MethodReference;
 
 class TestRun {
     private File baseDirectory;
     private Method method;
-    private MethodReference reference;
     private Description description;
-    private TestRunCallback callback;
     private String fileName;
+    private RunKind kind;
+    private TestRunCallback callback;
 
-    TestRun(File baseDirectory, Method method, MethodReference reference, Description description, String fileName,
+    TestRun(File baseDirectory, Method method, Description description, String fileName, RunKind kind,
             TestRunCallback callback) {
         this.baseDirectory = baseDirectory;
         this.method = method;
-        this.reference = reference;
         this.description = description;
-        this.callback = callback;
         this.fileName = fileName;
+        this.kind = kind;
+        this.callback = callback;
     }
 
     public File getBaseDirectory() {
@@ -46,19 +45,19 @@ class TestRun {
         return method;
     }
 
-    public MethodReference getReference() {
-        return reference;
-    }
-
     public Description getDescription() {
         return description;
     }
 
-    public TestRunCallback getCallback() {
-        return callback;
-    }
-
     public String getFileName() {
         return fileName;
+    }
+
+    public RunKind getKind() {
+        return kind;
+    }
+
+    public TestRunCallback getCallback() {
+        return callback;
     }
 }

@@ -80,6 +80,7 @@ public class TConstructor<T> extends TAccessibleObject implements TMember {
             sb.append(' ');
         }
         sb.append(declaringClass.getName().toString()).append('(');
+        TClass<?>[] parameterTypes = getParameterTypes();
         for (int i = 0; i < parameterTypes.length; ++i) {
             if (i > 0) {
                 sb.append(',');

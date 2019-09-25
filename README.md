@@ -5,6 +5,8 @@ TeaVM
 [![Maven Central](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin/badge.svg)](https://maven-badges.herokuapp.com/maven-central/org.teavm/teavm-maven-plugin) 
 [![Bintray](https://api.bintray.com/packages/konsoletyper/teavm/teavm-dev/images/download.svg)](https://bintray.com/konsoletyper/teavm/teavm-dev/_latestVersion)
 [![Gitter chat](https://img.shields.io/badge/gitter-join%20chat-green.svg)](https://gitter.im/teavm/Lobby)
+[![Code Quality: Java](https://img.shields.io/lgtm/grade/java/g/konsoletyper/teavm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/konsoletyper/teavm/context:java)
+[![Total Alerts](https://img.shields.io/lgtm/alerts/g/konsoletyper/teavm.svg?logo=lgtm&logoWidth=18)](https://lgtm.com/projects/g/konsoletyper/teavm/alerts)
 
 See documentation at the [project web site](http://teavm.org/).
 
@@ -35,6 +37,12 @@ You may want to access new features and don't want to wait until stable release 
       <url>https://dl.bintray.com/konsoletyper/teavm</url>
     </repository>
   </repositories>
+  <pluginRepositories>
+    <pluginRepository>
+      <id>teavm-dev</id>
+      <url>https://dl.bintray.com/konsoletyper/teavm</url>
+    </pluginRepository>
+  </pluginRepositories>
 ```
 
 IDEA plugin is also available in preview builds. You need to add corresponding repository manually to IDEA. Open *Settings* -> *Plugins* -> *Browse repositories...* -> *Manage repositories...*, click *Add* button and enter `http://teavm.org/idea/dev/teavmRepository.xml`. Then get back to *Browse repositories* and pick TeaVM plugin from list. 

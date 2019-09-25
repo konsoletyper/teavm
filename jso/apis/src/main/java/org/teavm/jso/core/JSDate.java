@@ -15,63 +15,80 @@
  */
 package org.teavm.jso.core;
 
+import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSMethod;
 import org.teavm.jso.JSObject;
 
 public abstract class JSDate implements JSObject {
     @JSBody(script = "return new Date();")
+    @NoSideEffects
     public static native JSDate create();
 
     @JSBody(params = "millis", script = "return new Date(millis);")
+    @NoSideEffects
     public static native JSDate create(double millis);
 
     @JSBody(params = { "year", "month" }, script = "return new Date(year, month);")
+    @NoSideEffects
     public static native JSDate create(int year, int month);
 
     @JSBody(params = { "year", "month", "day" }, script = "return new Date(year, month, day);")
+    @NoSideEffects
     public static native JSDate create(int year, int month, int day);
 
     @JSBody(params = { "year", "month", "day", "hour" }, script = "return new Date(year, month, day, hour);")
+    @NoSideEffects
     public static native JSDate create(int year, int month, int day, int hour);
 
     @JSBody(params = { "year", "month", "day", "hour", "minute" },
             script = "return new Date(year, month, day, hour, minute);")
+    @NoSideEffects
     public static native JSDate create(int year, int month, int day, int hour, int minute);
 
     @JSBody(params = { "year", "month", "day", "hour", "minute", "second" },
             script = "return new Date(year, month, day, hour, minute, second);")
+    @NoSideEffects
     public static native JSDate create(int year, int month, int day, int hour, int minute, int second);
 
     @JSBody(params = { "year", "month", "day", "hour", "minute", "second", "millisecond" },
             script = "return new Date(year, month, day, hour, minute, second, millisecond);")
+    @NoSideEffects
     public static native JSDate create(int year, int month, int day, int hour, int minute, int second, int millisecond);
 
     @JSBody(params = {}, script = "return Date.now();")
+    @NoSideEffects
     public static native double now();
 
     @JSBody(params = "stringValue", script = "return Date.parse(stringValue);")
+    @NoSideEffects
     public static native double parse(String stringValue);
 
     @JSBody(params = { "year", "month" }, script = "return Date.UTC(year, month);")
+    @NoSideEffects
     public static native double UTC(int year, int month);
 
     @JSBody(params = { "year", "month", "day" }, script = "return Date.UTC(year, month, day);")
+    @NoSideEffects
     public static native double UTC(int year, int month, int day);
 
     @JSBody(params = { "year", "month", "day", "hour" }, script = "return Date.UTC(year, month, day, hour);")
+    @NoSideEffects
     public static native double UTC(int year, int month, int day, int hour);
 
     @JSBody(params = { "year", "month", "day", "hour", "minute" },
             script = "return Date.UTC(year, month, day, hour, minute);")
+    @NoSideEffects
     public static native double UTC(int year, int month, int day, int hour, int minute);
 
     @JSBody(params = { "year", "month", "day", "hour", "minute", "second" },
             script = "return Date.UTC(year, month, day, hour, minute, second);")
+    @NoSideEffects
     public static native double UTC(int year, int month, int day, int hour, int minute, int second);
 
     @JSBody(params = { "year", "month", "day", "hour", "minute", "second", "millisecond" },
             script = "return Date.UTC(year, month, day, hour, minute, second, millisecond);")
+    @NoSideEffects
     public static native double UTC(int year, int month, int day, int hour, int minute, int second, int millisecond);
 
     public abstract int getDate();

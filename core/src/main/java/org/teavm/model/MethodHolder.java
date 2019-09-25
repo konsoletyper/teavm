@@ -15,12 +15,20 @@
  */
 package org.teavm.model;
 
+import java.util.Objects;
+import java.util.function.Function;
+
 public class MethodHolder extends MemberHolder implements MethodReader {
     private MethodDescriptor descriptor;
+    private GenericTypeParameter[] typeParameters;
+    private GenericValueType genericReturnType;
+    private GenericValueType[] genericParameterTypes;
     private ClassHolder owner;
     private Program program;
+    private Function<MethodHolder, Program> programSupplier;
     private AnnotationValue annotationDefault;
     private AnnotationContainer[] parameterAnnotations;
+    private MethodReference reference;
 
     public MethodHolder(MethodDescriptor descriptor) {
         super(descriptor.getName());
@@ -38,6 +46,40 @@ public class MethodHolder extends MemberHolder implements MethodReader {
     @Override
     public ValueType getResultType() {
         return descriptor.getResultType();
+    }
+
+    @Override
+    public GenericValueType getGenericResultType() {
+        return genericReturnType;
+    }
+
+    @Override
+    public int genericParameterCount() {
+        return genericParameterTypes != null ? genericParameterTypes.length : 0;
+    }
+
+    @Override
+    public GenericValueType genericParameterType(int index) {
+        return genericParameterTypes != null ? genericParameterTypes[index] : null;
+    }
+
+    public void setGenericSignature(GenericValueType returnType, GenericValueType[] parameterTypes) {
+        genericReturnType = Objects.requireNonNull(returnType);
+        genericParameterTypes = parameterTypes.clone();
+    }
+
+    public void removeGenericSignature() {
+        genericReturnType = null;
+        genericParameterTypes = null;
+    }
+
+    @Override
+    public GenericTypeParameter[] getTypeParameters() {
+        return typeParameters != null ? typeParameters.clone() : new GenericTypeParameter[0];
+    }
+
+    public void setTypeParameters(GenericTypeParameter[] typeParameters) {
+        this.typeParameters = typeParameters != null ? typeParameters.clone() : null;
     }
 
     @Override
@@ -80,6 +122,7 @@ public class MethodHolder extends MemberHolder implements MethodReader {
     }
 
     void setOwner(ClassHolder owner) {
+        reference = null;
         this.owner = owner;
     }
 
@@ -90,22 +133,43 @@ public class MethodHolder extends MemberHolder implements MethodReader {
 
     @Override
     public MethodReference getReference() {
-        return owner != null ? new MethodReference(owner.getName(), descriptor) : null;
+        if (owner == null) {
+            return null;
+        }
+        if (reference == null) {
+            reference = new MethodReference(owner.getName(), descriptor);
+        }
+        return reference;
+    }
+
+    public void updateReference(ReferenceCache cache) {
+        MethodReference reference = getReference();
+        if (reference != null) {
+            this.reference = cache.getCached(reference);
+        }
     }
 
     @Override
     public Program getProgram() {
+        if (program == null && programSupplier != null) {
+            program = programSupplier.apply(this);
+            programSupplier = null;
+        }
         return program;
     }
 
     public void setProgram(Program program) {
-        if (this.program != null) {
-            this.program.setMethod(null);
-        }
         this.program = program;
-        if (this.program != null) {
-            this.program.setMethod(this);
-        }
+        this.programSupplier = null;
+    }
+
+    public boolean hasProgram() {
+        return program != null || programSupplier != null;
+    }
+
+    public void setProgramSupplier(Function<MethodHolder, Program> programSupplier) {
+        this.program = null;
+        this.programSupplier = programSupplier;
     }
 
     @Override

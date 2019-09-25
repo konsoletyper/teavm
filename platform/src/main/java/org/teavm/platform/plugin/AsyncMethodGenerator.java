@@ -19,22 +19,22 @@ import java.io.IOException;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.backend.javascript.spi.Generator;
 import org.teavm.backend.javascript.spi.GeneratorContext;
+import org.teavm.backend.javascript.spi.VirtualMethodContributor;
+import org.teavm.backend.javascript.spi.VirtualMethodContributorContext;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
+import org.teavm.interop.AsyncCallback;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
-import org.teavm.platform.async.AsyncCallback;
 
-public class AsyncMethodGenerator implements Generator, DependencyPlugin {
-    private static final MethodReference completeMethod = new MethodReference(AsyncCallback.class, "complete",
-            Object.class, void.class);
-    private static final MethodReference errorMethod = new MethodReference(AsyncCallback.class, "error",
-            Throwable.class, void.class);
+public class AsyncMethodGenerator implements Generator, DependencyPlugin, VirtualMethodContributor {
+    private static final MethodDescriptor completeMethod = new MethodDescriptor("complete", Object.class, void.class);
+    private static final MethodDescriptor errorMethod = new MethodDescriptor("error", Throwable.class, void.class);
 
     @Override
     public void generate(GeneratorContext context, SourceWriter writer, MethodReference methodRef) throws IOException {
@@ -51,13 +51,13 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         writer.outdent().append("}").softNewLine();
 
         writer.append("var callback").ws().append("=").ws().append("function()").ws().append("{};").softNewLine();
-        writer.append("callback.").appendMethod(completeMethod.getDescriptor()).ws().append("=").ws()
+        writer.append("callback.").appendMethod(completeMethod).ws().append("=").ws()
                 .append("function(val)").ws().append("{").indent().softNewLine();
         writer.append("thread.attribute").ws().append('=').ws().append("val;").softNewLine();
         writer.append("$rt_setThread(javaThread);").softNewLine();
         writer.append("thread.resume();").softNewLine();
         writer.outdent().append("};").softNewLine();
-        writer.append("callback.").appendMethod(errorMethod.getDescriptor()).ws().append("=").ws()
+        writer.append("callback.").appendMethod(errorMethod).ws().append("=").ws()
                 .append("function(e)").ws().append("{").indent().softNewLine();
         writer.append("thread.attribute").ws().append('=').ws().append("$rt_exception(e);").softNewLine();
         writer.append("$rt_setThread(javaThread);").softNewLine();
@@ -77,7 +77,7 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         }
         writer.append("callback);").softNewLine();
         writer.outdent().append("}").ws().append("catch($e)").ws().append("{").indent().softNewLine();
-        writer.append("callback.").appendMethod(errorMethod.getDescriptor()).append("($rt_exception($e));")
+        writer.append("callback.").appendMethod(errorMethod).append("($rt_exception($e));")
                 .softNewLine();
         writer.outdent().append("}").softNewLine();
         writer.outdent().append("});").softNewLine();
@@ -94,10 +94,11 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         MethodReference ref = method.getReference();
         MethodReference asyncRef = getAsyncReference(ref);
-        MethodDependency asyncMethod = agent.linkMethod(asyncRef, location);
+        MethodDependency asyncMethod = agent.linkMethod(asyncRef);
+        method.addLocationListener(asyncMethod::addLocation);
         int paramCount = ref.parameterCount();
         for (int i = 0; i <= paramCount; ++i) {
             method.getVariable(i).connect(asyncMethod.getVariable(i));
@@ -105,21 +106,33 @@ public class AsyncMethodGenerator implements Generator, DependencyPlugin {
         asyncMethod.getVariable(paramCount + 1).propagate(agent.getType(AsyncCallbackWrapper.class.getName()));
 
         MethodDependency completeMethod = agent.linkMethod(
-                new MethodReference(AsyncCallbackWrapper.class, "complete", Object.class, void.class), null);
+                new MethodReference(AsyncCallbackWrapper.class, "complete", Object.class, void.class));
         if (method.getResult() != null) {
-            completeMethod.getVariable(1).connect(method.getResult(), type -> agent.getClassSource()
-                    .isSuperType(ref.getReturnType(), ValueType.object(type.getName())).orElse(false));
+            completeMethod.getVariable(1).connect(method.getResult(), type -> agent.getClassHierarchy()
+                    .isSuperType(ref.getReturnType(), ValueType.object(type.getName()), false));
         }
         completeMethod.use();
 
         MethodDependency errorMethod = agent.linkMethod(new MethodReference(AsyncCallbackWrapper.class, "error",
-                Throwable.class, void.class), null);
+                Throwable.class, void.class));
         errorMethod.getVariable(1).connect(method.getThrown());
         errorMethod.use();
 
         agent.linkMethod(new MethodReference(AsyncCallbackWrapper.class, "create",
-                AsyncCallback.class, AsyncCallbackWrapper.class), null).use();
+                AsyncCallback.class, AsyncCallbackWrapper.class)).use();
 
         asyncMethod.use();
+    }
+
+    @Override
+    public boolean isVirtual(VirtualMethodContributorContext context, MethodReference methodRef) {
+        ClassReader cls = context.getClassSource().get(methodRef.getClassName());
+        if (cls == null) {
+            return false;
+        }
+        if (!cls.getInterfaces().contains(AsyncCallback.class.getName())) {
+            return false;
+        }
+        return methodRef.getDescriptor().equals(completeMethod) || methodRef.getDescriptor().equals(errorMethod);
     }
 }

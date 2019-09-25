@@ -26,7 +26,8 @@ import org.teavm.metaprogramming.impl.model.MethodDescriber;
 import org.teavm.metaprogramming.impl.model.MethodModel;
 import org.teavm.metaprogramming.impl.optimization.Optimizations;
 import org.teavm.metaprogramming.impl.reflect.ReflectContext;
-import org.teavm.model.CallLocation;
+import org.teavm.model.ClassReader;
+import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 import org.teavm.model.emit.ProgramEmitter;
@@ -45,22 +46,43 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
 
         MetaprogrammingImpl.classLoader = proxyClassLoader;
         MetaprogrammingImpl.classSource = agent.getClassSource();
+        MetaprogrammingImpl.hierarchy = agent.getClassHierarchy();
+        MetaprogrammingImpl.incrementalDependencies = agent.getIncrementalCache();
         MetaprogrammingImpl.agent = agent;
-        MetaprogrammingImpl.reflectContext = new ReflectContext(agent.getClassSource(), proxyClassLoader);
+        MetaprogrammingImpl.reflectContext = new ReflectContext(agent.getClassHierarchy(), proxyClassLoader);
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency methodDep, CallLocation location) {
+    public void complete() {
+        MetaprogrammingImpl.classLoader = null;
+        MetaprogrammingImpl.classSource = null;
+        MetaprogrammingImpl.hierarchy = null;
+        MetaprogrammingImpl.incrementalDependencies = null;
+        MetaprogrammingImpl.agent = null;
+        MetaprogrammingImpl.reflectContext = null;
+    }
+
+    @Override
+    public void methodReached(DependencyAgent agent, MethodDependency methodDep) {
         MethodModel proxy = describer.getMethod(methodDep.getReference());
         if (proxy != null && installedProxies.add(proxy)) {
-            new UsageGenerator(agent, proxy, methodDep, location, proxyClassLoader).installProxyEmitter();
+            agent.getIncrementalCache().setNoCache(methodDep.getReference());
+            ClassReader cls = agent.getClassSource().get(methodDep.getMethod().getOwnerName());
+            int index = 0;
+            for (MethodReader method : cls.getMethods()) {
+                if (method.getDescriptor().equals(methodDep.getMethod().getDescriptor())) {
+                    break;
+                }
+                ++index;
+            }
+            new UsageGenerator(agent, proxy, methodDep, proxyClassLoader, index).installProxyEmitter();
         }
     }
 
     @Override
     public void completing(DependencyAgent agent) {
         for (MethodModel model : describer.getKnownMethods()) {
-            ProgramEmitter pe = ProgramEmitter.create(model.getMethod().getDescriptor(), agent.getClassSource());
+            ProgramEmitter pe = ProgramEmitter.create(model.getMethod().getDescriptor(), agent.getClassHierarchy());
 
             ValueEmitter[] paramVars = new ValueEmitter[model.getMetaParameterCount()];
             int offset = model.isStatic() ? 1 : 0;
@@ -69,7 +91,7 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             }
 
             if (model.getUsages().size() == 1) {
-                emitSingleUsage(model, pe, agent, paramVars);
+                emitSingleUsage(model, pe, paramVars);
             } else if (model.getUsages().isEmpty()) {
                 if (model.getMethod().getReturnType() == ValueType.VOID) {
                     pe.exit();
@@ -79,11 +101,12 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             } else {
                 emitMultipleUsage(model, pe, agent, paramVars);
             }
+
+            agent.submitMethod(model.getMethod(), new Optimizations().apply(pe.getProgram(), model.getMethod()));
         }
     }
 
-    private void emitSingleUsage(MethodModel model, ProgramEmitter pe, DependencyAgent agent,
-            ValueEmitter[] paramVars) {
+    private void emitSingleUsage(MethodModel model, ProgramEmitter pe, ValueEmitter[] paramVars) {
         MethodReference usage = model.getUsages().values().stream().findFirst().orElse(null);
         ValueEmitter result = pe.invoke(usage, paramVars);
         if (usage.getReturnType() == ValueType.VOID) {
@@ -92,8 +115,6 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
             assert result != null : "Expected non-null result at " + model.getMethod();
             result.returnValue();
         }
-
-        agent.submitMethod(model.getMethod(), new Optimizations().apply(pe.getProgram(), model.getMethod()));
     }
 
     private void emitMultipleUsage(MethodModel model, ProgramEmitter pe, DependencyAgent agent,
@@ -131,7 +152,5 @@ public class MetaprogrammingDependencyListener extends AbstractDependencyListene
                 pe.constantNull(Object.class).returnValue();
             }
         });
-
-        agent.submitMethod(model.getMethod(), new Optimizations().apply(pe.getProgram(), model.getMethod()));
     }
 }

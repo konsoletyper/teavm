@@ -15,26 +15,33 @@
  */
 package org.teavm.vm;
 
+import org.teavm.dependency.ClassSourcePacker;
+import org.teavm.dependency.DependencyAnalyzerFactory;
+import org.teavm.dependency.PreciseDependencyAnalyzer;
 import org.teavm.interop.PlatformMarker;
-import org.teavm.model.ClassHolderSource;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 
 public class TeaVMBuilder {
     TeaVMTarget target;
-    ClassHolderSource classSource;
+    ClassReaderSource classSource;
     ClassLoader classLoader;
+    ReferenceCache referenceCache = new ReferenceCache();
+    DependencyAnalyzerFactory dependencyAnalyzerFactory = PreciseDependencyAnalyzer::new;
+    ClassSourcePacker classSourcePacker = (src, names) -> src;
 
     public TeaVMBuilder(TeaVMTarget target) {
         this.target = target;
         classLoader = TeaVMBuilder.class.getClassLoader();
-        classSource = !isBootstrap() ? new ClasspathClassHolderSource(classLoader) : name -> null;
+        classSource = !isBootstrap() ? new ClasspathClassHolderSource(classLoader, referenceCache) : name -> null;
     }
 
-    public ClassHolderSource getClassSource() {
+    public ClassReaderSource getClassSource() {
         return classSource;
     }
 
-    public TeaVMBuilder setClassSource(ClassHolderSource classSource) {
+    public TeaVMBuilder setClassSource(ClassReaderSource classSource) {
         this.classSource = classSource;
         return this;
     }
@@ -45,6 +52,25 @@ public class TeaVMBuilder {
 
     public TeaVMBuilder setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
+        return this;
+    }
+
+    public DependencyAnalyzerFactory getDependencyAnalyzerFactory() {
+        return dependencyAnalyzerFactory;
+    }
+
+    public TeaVMBuilder setDependencyAnalyzerFactory(DependencyAnalyzerFactory dependencyAnalyzerFactory) {
+        this.dependencyAnalyzerFactory = dependencyAnalyzerFactory;
+        return this;
+    }
+
+    public TeaVMBuilder setReferenceCache(ReferenceCache referenceCache) {
+        this.referenceCache = referenceCache;
+        return this;
+    }
+
+    public TeaVMBuilder setClassSourcePacker(ClassSourcePacker classSourcePacker) {
+        this.classSourcePacker = classSourcePacker;
         return this;
     }
 

@@ -38,6 +38,7 @@ import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.util.PhiUpdater;
@@ -96,32 +97,26 @@ public class ScalarReplacement implements MethodOptimization {
                 }
 
                 FieldReference[] fields = escapeAnalysis.getFields(phi.getReceiver().getIndex());
-                if (fields == null) {
-                    continue;
-                }
+                if (fields != null) {
+                    for (FieldReference field : fields) {
+                        Phi phiReplacement = new Phi();
+                        phiReplacement.setReceiver(fieldMappings.get(phi.getReceiver().getIndex()).get(field));
 
-                for (FieldReference field : fields) {
-                    boolean allIncomingsInitialized = true;
-                    for (Incoming incoming : phi.getIncomings()) {
-                        if (fieldMappings.get(incoming.getValue().getIndex()).get(field) == null) {
-                            allIncomingsInitialized = false;
+                        for (Incoming incoming : phi.getIncomings()) {
+                            Incoming incomingReplacement = new Incoming();
+                            incomingReplacement.setSource(incoming.getSource());
+                            incomingReplacement.setValue(fieldMappings.get(incoming.getValue().getIndex()).get(field));
+                            phiReplacement.getIncomings().add(incomingReplacement);
                         }
-                    }
 
-                    if (!allIncomingsInitialized) {
+                        additionalPhis.add(phiReplacement);
+                    }
+                } else {
+                    boolean isClass = phi.getIncomings().stream()
+                            .anyMatch(incoming -> escapeAnalysis.getFields(incoming.getValue().getIndex()) != null);
+                    if (!isClass) {
                         continue;
                     }
-                    Phi phiReplacement = new Phi();
-                    phiReplacement.setReceiver(fieldMappings.get(phi.getReceiver().getIndex()).get(field));
-
-                    for (Incoming incoming : phi.getIncomings()) {
-                        Incoming incomingReplacement = new Incoming();
-                        incomingReplacement.setSource(incoming.getSource());
-                        incomingReplacement.setValue(fieldMappings.get(incoming.getValue().getIndex()).get(field));
-                        phiReplacement.getIncomings().add(incomingReplacement);
-                    }
-
-                    additionalPhis.add(phiReplacement);
                 }
                 block.getPhis().remove(i--);
             }
@@ -163,6 +158,11 @@ public class ScalarReplacement implements MethodOptimization {
         }
 
         @Override
+        public void visit(NullCheckInstruction insn) {
+            transfer(insn, insn.getValue(), insn.getReceiver());
+        }
+
+        @Override
         public void visit(GetFieldInstruction insn) {
             if (insn.getInstance() != null && !escapeAnalysis.escapes(insn.getInstance().getIndex())) {
                 Variable var = fieldMappings.get(insn.getInstance().getIndex()).get(insn.getField());
@@ -188,20 +188,24 @@ public class ScalarReplacement implements MethodOptimization {
 
         @Override
         public void visit(AssignInstruction insn) {
-            if (escapeAnalysis.escapes(insn.getAssignee().getIndex())) {
+            transfer(insn, insn.getAssignee(), insn.getReceiver());
+        }
+
+        private void transfer(Instruction insn, Variable from, Variable to) {
+            if (escapeAnalysis.escapes(from.getIndex())) {
                 return;
             }
 
-            FieldReference[] fields = escapeAnalysis.getFields(insn.getReceiver().getIndex());
+            FieldReference[] fields = escapeAnalysis.getFields(to.getIndex());
             if (fields == null) {
                 return;
             }
             for (FieldReference field : fields) {
-                Variable assignee = fieldMappings.get(insn.getAssignee().getIndex()).get(field);
+                Variable assignee = fieldMappings.get(from.getIndex()).get(field);
                 if (assignee == null) {
                     continue;
                 }
-                Variable receiver = fieldMappings.get(insn.getReceiver().getIndex()).get(field);
+                Variable receiver = fieldMappings.get(to.getIndex()).get(field);
                 AssignInstruction assignment = new AssignInstruction();
                 assignment.setReceiver(receiver);
                 assignment.setAssignee(assignee);

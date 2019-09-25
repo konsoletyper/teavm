@@ -18,11 +18,19 @@ package org.teavm.model;
 public interface MethodReader extends MemberReader {
     ValueType getResultType();
 
+    GenericTypeParameter[] getTypeParameters();
+
+    GenericValueType getGenericResultType();
+
     int parameterCount();
 
     ValueType[] getSignature();
 
     ValueType parameterType(int index);
+
+    int genericParameterCount();
+
+    GenericValueType genericParameterType(int index);
 
     ValueType[] getParameterTypes();
 

@@ -18,39 +18,13 @@ package org.teavm.classlib.java.net;
 import org.teavm.classlib.java.lang.TException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TNullPointerException;
-import org.teavm.classlib.java.lang.TString;
 import org.teavm.interop.Rename;
 
-/**
- * A {@code URISyntaxException} will be thrown if some information could not be parsed
- * while creating a URI.
- */
 public class TURISyntaxException extends TException {
-
-    private static final long serialVersionUID = 2137979680897488891L;
-
-    private TString input;
-
+    private String input;
     private int index;
 
-    /**
-     * Constructs a new {@code URISyntaxException} instance containing the
-     * string that caused the exception, a description of the problem and the
-     * index at which the error occurred.
-     *
-     * @param input
-     *            the string that caused the exception.
-     * @param reason
-     *            the reason why the exception occurred.
-     * @param index
-     *            the position where the exception occurred.
-     * @throws NullPointerException
-     *             if one of the arguments {@code input} or {@code reason} is
-     *             {@code null}.
-     * @throws IllegalArgumentException
-     *             if the value for {@code index} is lesser than {@code -1}.
-     */
-    public TURISyntaxException(TString input, TString reason, int index) {
+    public TURISyntaxException(String input, String reason, int index) {
         super(reason);
 
         if (input == null || reason == null) {
@@ -65,19 +39,7 @@ public class TURISyntaxException extends TException {
         this.index = index;
     }
 
-    /**
-     * Constructs a new {@code URISyntaxException} instance containing the
-     * string that caused the exception and a description of the problem.
-     *
-     *@param input
-     *            the string that caused the exception.
-     * @param reason
-     *            the reason why the exception occurred.
-     * @throws NullPointerException
-     *             if one of the arguments {@code input} or {@code reason} is
-     *             {@code null}.
-     */
-    public TURISyntaxException(TString input, TString reason) {
+    public TURISyntaxException(String input, String reason) {
         super(reason);
 
         if (input == null || reason == null) {
@@ -88,45 +50,21 @@ public class TURISyntaxException extends TException {
         index = -1;
     }
 
-    /**
-     * Gets the index at which the syntax error was found or {@code -1} if the
-     * index is unknown/unavailable.
-     *
-     * @return the index of the syntax error.
-     */
     public int getIndex() {
         return index;
     }
 
-    /**
-     * Gets a description of the syntax error.
-     *
-     * @return the string describing the syntax error.
-     */
-    public TString getReason() {
-        return TString.wrap(super.getMessage());
+    public String getReason() {
+        return super.getMessage();
     }
 
-    /**
-     * Gets the initial string that contains an invalid syntax.
-     *
-     * @return the string that caused the exception.
-     */
-    public TString getInput() {
+    public String getInput() {
         return input;
     }
 
-    /**
-     * Gets a description of the exception, including the reason, the string
-     * that caused the syntax error and the position of the syntax error if
-     * available.
-     *
-     * @return a sting containing information about the exception.
-     * @see java.lang.Throwable#getMessage()
-     */
     @Override
     @Rename("getMessage")
-    public TString getMessage0() {
-        return TString.wrap("");
+    public String getMessage0() {
+        return "";
     }
 }

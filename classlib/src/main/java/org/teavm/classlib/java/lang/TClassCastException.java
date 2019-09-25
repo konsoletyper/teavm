@@ -22,7 +22,7 @@ public class TClassCastException extends TRuntimeException {
         super();
     }
 
-    public TClassCastException(TString message) {
+    public TClassCastException(String message) {
         super(message);
     }
 }

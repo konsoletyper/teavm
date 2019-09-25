@@ -22,10 +22,7 @@ import org.teavm.backend.javascript.spi.GeneratorContext;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyNode;
 import org.teavm.dependency.DependencyPlugin;
-import org.teavm.dependency.FieldDependency;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
-import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
 
 public class SystemNativeGenerator implements Generator, DependencyPlugin {
@@ -38,28 +35,14 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
             case "currentTimeMillis":
                 generateCurrentTimeMillis(writer);
                 break;
-            case "setOut":
-                writer.appendStaticField(new FieldReference("java.lang.System", "out"))
-                        .ws().append('=').ws().append(context.getParameterName(1)).append(";").softNewLine();
-                break;
-            case "setErr":
-                writer.appendStaticField(new FieldReference("java.lang.System", "err"))
-                        .ws().append('=').ws().append(context.getParameterName(1)).append(";").softNewLine();
-                break;
         }
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         switch (method.getReference().getName()) {
             case "doArrayCopy":
-                achieveArrayCopy(method);
-                break;
-            case "setOut":
-                achieveSetOut(agent, method);
-                break;
-            case "setErr":
-                achieveSetErr(agent, method);
+                reachArrayCopy(method);
                 break;
         }
     }
@@ -84,23 +67,12 @@ public class SystemNativeGenerator implements Generator, DependencyPlugin {
     }
 
     private void generateCurrentTimeMillis(SourceWriter writer) throws IOException {
-        writer.append(writer.getNaming().getNameFor("java.lang.System")).append("_$callClinit();").softNewLine();
         writer.append("return Long_fromNumber(new Date().getTime());").softNewLine();
     }
 
-    private void achieveArrayCopy(MethodDependency method) {
+    private void reachArrayCopy(MethodDependency method) {
         DependencyNode src = method.getVariable(1);
         DependencyNode dest = method.getVariable(3);
         src.getArrayItem().connect(dest.getArrayItem());
-    }
-
-    private void achieveSetErr(DependencyAgent agent, MethodDependency method) {
-        FieldDependency fieldDep = agent.linkField(new FieldReference("java.lang.System", "err"), null);
-        method.getVariable(1).connect(fieldDep.getValue());
-    }
-
-    private void achieveSetOut(DependencyAgent agent, MethodDependency method) {
-        FieldDependency fieldDep = agent.linkField(new FieldReference("java.lang.System", "out"), null);
-        method.getVariable(1).connect(fieldDep.getValue());
     }
 }

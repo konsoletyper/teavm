@@ -23,7 +23,7 @@ class BuildTimeResourceGetter implements BuildTimeResourceMethod {
     }
 
     @Override
-    public Object invoke(BuildTimeResourceProxy proxy, Object[] args) throws Throwable {
+    public Object invoke(BuildTimeResourceProxy proxy, Object[] args) {
         return proxy.data[index];
     }
 }

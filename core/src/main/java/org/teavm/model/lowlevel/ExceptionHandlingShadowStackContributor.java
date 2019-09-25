@@ -15,6 +15,10 @@
  */
 package org.teavm.model.lowlevel;
 
+import com.carrotsearch.hppc.IntHashSet;
+import com.carrotsearch.hppc.IntObjectHashMap;
+import com.carrotsearch.hppc.IntObjectMap;
+import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -49,6 +53,9 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
+import org.teavm.model.instructions.MonitorEnterInstruction;
+import org.teavm.model.instructions.MonitorExitInstruction;
+import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
@@ -59,7 +66,7 @@ import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.ShadowStack;
 
 public class ExceptionHandlingShadowStackContributor {
-    private ManagedMethodRepository managedMethodRepository;
+    private Characteristics characteristics;
     private List<CallSiteDescriptor> callSites;
     private BasicBlock defaultExceptionHandler;
     private MethodReference method;
@@ -67,10 +74,13 @@ public class ExceptionHandlingShadowStackContributor {
     private DominatorTree dom;
     private BasicBlock[] variableDefinitionPlaces;
     private boolean hasExceptionHandlers;
+    private int parameterCount;
 
-    public ExceptionHandlingShadowStackContributor(ManagedMethodRepository managedMethodRepository,
+    public int callSiteIdGen;
+
+    public ExceptionHandlingShadowStackContributor(Characteristics characteristics,
             List<CallSiteDescriptor> callSites, MethodReference method, Program program) {
-        this.managedMethodRepository = managedMethodRepository;
+        this.characteristics = characteristics;
         this.callSites = callSites;
         this.method = method;
         this.program = program;
@@ -78,6 +88,7 @@ public class ExceptionHandlingShadowStackContributor {
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         dom = GraphUtils.buildDominatorTree(cfg);
         variableDefinitionPlaces = ProgramUtils.getVariableDefinitionPlaces(program);
+        parameterCount = method.parameterCount() + 1;
     }
 
     public boolean contribute() {
@@ -130,10 +141,14 @@ public class ExceptionHandlingShadowStackContributor {
 
     private int contributeToBasicBlock(BasicBlock block) {
         int[] currentJointSources = new int[program.variableCount()];
-        int[] jointReceiverMap = new int[program.variableCount()];
+        IntObjectMap<int[]> jointReceiverMaps = new IntObjectHashMap<>();
         Arrays.fill(currentJointSources, -1);
 
+        IntSet variablesDefinedHere = new IntHashSet();
+
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+            int[] jointReceiverMap = new int[program.variableCount()];
+            Arrays.fill(jointReceiverMap, -1);
             for (Phi phi : tryCatch.getHandler().getPhis()) {
                 List<Variable> sourceVariables = phi.getIncomings().stream()
                         .filter(incoming -> incoming.getSource() == tryCatch.getProtectedBlock())
@@ -145,31 +160,67 @@ public class ExceptionHandlingShadowStackContributor {
 
                 for (Variable sourceVar : sourceVariables) {
                     BasicBlock sourceVarDefinedAt = variableDefinitionPlaces[sourceVar.getIndex()];
-                    if (dom.dominates(sourceVarDefinedAt.getIndex(), block.getIndex())) {
+                    if (sourceVar.getIndex() < parameterCount
+                            || (dom.dominates(sourceVarDefinedAt.getIndex(), block.getIndex())
+                            && block != sourceVarDefinedAt)) {
                         currentJointSources[phi.getReceiver().getIndex()] = sourceVar.getIndex();
-                        break;
+                        if (sourceVarDefinedAt != block) {
+                            break;
+                        }
                     }
                 }
                 for (Variable sourceVar : sourceVariables) {
                     jointReceiverMap[sourceVar.getIndex()] = phi.getReceiver().getIndex();
                 }
             }
+
+            jointReceiverMaps.put(tryCatch.getHandler().getIndex(), jointReceiverMap);
+        }
+
+        for (Phi phi : block.getPhis()) {
+            Variable definedVar = phi.getReceiver();
+            for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                int jointReceiver = jointReceiverMaps.get(tryCatch.getHandler().getIndex())[definedVar.getIndex()];
+                if (jointReceiver >= 0) {
+                    currentJointSources[jointReceiver] = definedVar.getIndex();
+                }
+            }
+            variablesDefinedHere.add(definedVar.getIndex());
         }
 
         DefinitionExtractor defExtractor = new DefinitionExtractor();
         List<BasicBlock> blocksToClearHandlers = new ArrayList<>();
         blocksToClearHandlers.add(block);
+        BasicBlock initialBlock = block;
 
         for (Instruction insn : block) {
+            insn.acceptVisitor(defExtractor);
+            for (Variable definedVar : defExtractor.getDefinedVariables()) {
+                for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+                    int jointReceiver = jointReceiverMaps.get(tryCatch.getHandler().getIndex())[definedVar.getIndex()];
+                    if (jointReceiver >= 0) {
+                        currentJointSources[jointReceiver] = definedVar.getIndex();
+                    }
+                }
+                variablesDefinedHere.add(definedVar.getIndex());
+            }
+
             if (isCallInstruction(insn)) {
                 BasicBlock next;
                 boolean last = false;
-                if (insn instanceof RaiseInstruction) {
+                if (isSpecialCallInstruction(insn)) {
+                    next = null;
+                    while (insn.getNext() != null) {
+                        Instruction nextInsn = insn.getNext();
+                        nextInsn.delete();
+                    }
+                    last = true;
+                } else if (insn instanceof RaiseInstruction) {
                     InvokeInstruction raise = new InvokeInstruction();
                     raise.setMethod(new MethodReference(ExceptionHandling.class, "throwException", Throwable.class,
                             void.class));
                     raise.setType(InvocationType.SPECIAL);
-                    raise.getArguments().add(((RaiseInstruction) insn).getException());
+                    raise.setArguments(((RaiseInstruction) insn).getException());
                     raise.setLocation(insn.getLocation());
                     insn.replace(raise);
                     insn = raise;
@@ -192,12 +243,16 @@ public class ExceptionHandlingShadowStackContributor {
 
                 String fileName = insn.getLocation() != null ? insn.getLocation().getFileName() : null;
                 int lineNumber = insn.getLocation() != null ? insn.getLocation().getLine() : -1;
+                if (fileName != null) {
+                    fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
+                }
                 CallSiteLocation location = new CallSiteLocation(fileName, method.getClassName(), method.getName(),
                         lineNumber);
-                CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size(), location);
+                CallSiteDescriptor callSite = new CallSiteDescriptor(callSiteIdGen++, location);
                 callSites.add(callSite);
                 List<Instruction> pre = setLocation(getInstructionsBeforeCallSite(callSite), insn.getLocation());
-                List<Instruction> post = getInstructionsAfterCallSite(block, next, callSite, currentJointSources);
+                List<Instruction> post = getInstructionsAfterCallSite(initialBlock, block, next, callSite,
+                        currentJointSources, variablesDefinedHere);
                 post = setLocation(post, insn.getLocation());
                 block.getLastInstruction().insertPreviousAll(pre);
                 block.addAll(post);
@@ -207,15 +262,11 @@ public class ExceptionHandlingShadowStackContributor {
                     break;
                 }
                 block = next;
-            }
-
-            insn.acceptVisitor(defExtractor);
-            for (Variable definedVar : defExtractor.getDefinedVariables()) {
-                int jointReceiver = jointReceiverMap[definedVar.getIndex()];
-                currentJointSources[jointReceiver] = definedVar.getIndex();
+                variablesDefinedHere.clear();
             }
         }
 
+        fixOutgoingPhis(initialBlock, block, currentJointSources, variablesDefinedHere);
         for (BasicBlock blockToClear : blocksToClearHandlers) {
             blockToClear.getTryCatchBlocks().clear();
         }
@@ -224,14 +275,36 @@ public class ExceptionHandlingShadowStackContributor {
     }
 
     private boolean isCallInstruction(Instruction insn) {
+        return isCallInstruction(characteristics, insn);
+    }
+
+    public static boolean isCallInstruction(Characteristics characteristics, Instruction insn) {
         if (insn instanceof InitClassInstruction || insn instanceof ConstructInstruction
                 || insn instanceof ConstructArrayInstruction || insn instanceof ConstructMultiArrayInstruction
-                || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction) {
+                || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction
+                || insn instanceof MonitorEnterInstruction || insn instanceof MonitorExitInstruction
+                || insn instanceof NullCheckInstruction) {
             return true;
         } else if (insn instanceof InvokeInstruction) {
-            return managedMethodRepository.isManaged(((InvokeInstruction) insn).getMethod());
+            return isManagedMethodCall(characteristics, ((InvokeInstruction) insn).getMethod());
         }
         return false;
+    }
+
+    public static boolean isManagedMethodCall(Characteristics characteristics, MethodReference method) {
+        if (characteristics.isManaged(method)) {
+            return true;
+        }
+        return method.getClassName().equals(ExceptionHandling.class.getName())
+                && method.getName().startsWith("throw");
+    }
+
+    private boolean isSpecialCallInstruction(Instruction insn) {
+        if (!(insn instanceof InvokeInstruction)) {
+            return false;
+        }
+        MethodReference method = ((InvokeInstruction) insn).getMethod();
+        return method.getClassName().equals(ExceptionHandling.class.getName()) && method.getName().startsWith("throw");
     }
 
     private List<Instruction> setLocation(List<Instruction> instructions, TextLocation location) {
@@ -255,14 +328,14 @@ public class ExceptionHandlingShadowStackContributor {
         InvokeInstruction registerInsn = new InvokeInstruction();
         registerInsn.setMethod(new MethodReference(ShadowStack.class, "registerCallSite", int.class, void.class));
         registerInsn.setType(InvocationType.SPECIAL);
-        registerInsn.getArguments().add(idVariable);
+        registerInsn.setArguments(idVariable);
         instructions.add(registerInsn);
 
         return instructions;
     }
 
-    private List<Instruction> getInstructionsAfterCallSite(BasicBlock block, BasicBlock next,
-            CallSiteDescriptor callSite, int[] currentJointSources) {
+    private List<Instruction> getInstructionsAfterCallSite(BasicBlock initialBlock, BasicBlock block, BasicBlock next,
+            CallSiteDescriptor callSite, int[] currentJointSources, IntSet variablesDefinedHere) {
         Program program = block.getProgram();
         List<Instruction> instructions = new ArrayList<>();
 
@@ -299,26 +372,19 @@ public class ExceptionHandlingShadowStackContributor {
                 catchEntry.setCondition(handler.getId());
                 switchInsn.getEntries().add(catchEntry);
             }
-
-            for (Phi phi : tryCatch.getHandler().getPhis()) {
-                int value = currentJointSources[phi.getReceiver().getIndex()];
-                if (value < 0) {
-                    continue;
-                }
-                for (Incoming incoming : phi.getIncomings()) {
-                    if (incoming.getValue().getIndex() == value) {
-                        incoming.setSource(block);
-                        break;
-                    }
-                }
-            }
         }
+        fixOutgoingPhis(initialBlock, block, currentJointSources, variablesDefinedHere);
 
         if (!defaultExists) {
             switchInsn.setDefaultTarget(getDefaultExceptionHandler());
         }
 
-        if (switchInsn.getEntries().size() == 1) {
+        if (switchInsn.getEntries().isEmpty()) {
+            instructions.clear();
+            JumpInstruction jump = new JumpInstruction();
+            jump.setTarget(switchInsn.getDefaultTarget());
+            instructions.add(jump);
+        } else if (switchInsn.getEntries().size() == 1) {
             SwitchTableEntry entry = switchInsn.getEntries().get(0);
 
             IntegerConstantInstruction singleTestConstant = new IntegerConstantInstruction();
@@ -337,6 +403,37 @@ public class ExceptionHandlingShadowStackContributor {
         }
 
         return instructions;
+    }
+
+    private void fixOutgoingPhis(BasicBlock block, BasicBlock newBlock, int[] currentJointSources,
+            IntSet variablesDefinedHere) {
+        for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
+            for (Phi phi : tryCatch.getHandler().getPhis()) {
+                int value = currentJointSources[phi.getReceiver().getIndex()];
+                if (value < 0) {
+                    continue;
+                }
+                List<Incoming> additionalIncomings = new ArrayList<>();
+                for (int i = 0; i < phi.getIncomings().size(); i++) {
+                    Incoming incoming = phi.getIncomings().get(i);
+                    if (incoming.getSource() != block || incoming.getSource() == newBlock) {
+                        continue;
+                    }
+                    if (incoming.getValue().getIndex() == value) {
+                        if (variablesDefinedHere.contains(value)) {
+                            incoming.setSource(newBlock);
+                        } else {
+                            Incoming incomingCopy = new Incoming();
+                            incomingCopy.setSource(newBlock);
+                            incomingCopy.setValue(incoming.getValue());
+                            additionalIncomings.add(incomingCopy);
+                        }
+                    }
+                }
+
+                phi.getIncomings().addAll(additionalIncomings);
+            }
+        }
     }
 
     private BasicBlock getDefaultExceptionHandler() {

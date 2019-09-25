@@ -23,15 +23,16 @@ import org.teavm.model.*;
 import org.teavm.model.instructions.*;
 
 public class TypeInferer {
-    VariableType[] types;
+    private static InferenceKind[] typesByOrdinal = InferenceKind.values();
+    InferenceType[] types;
     GraphBuilder builder;
     GraphBuilder arrayElemBuilder;
 
     public void inferTypes(ProgramReader program, MethodReference method) {
         int sz = program.variableCount();
-        types = new VariableType[sz];
+        types = new InferenceType[sz];
 
-        types[0] = VariableType.OBJECT;
+        types[0] = new InferenceType(InferenceKind.OBJECT, 0);
         for (int i = 0; i < method.parameterCount(); ++i) {
             ValueType param = method.parameterType(i);
             types[i + 1] = convert(param);
@@ -43,7 +44,7 @@ public class TypeInferer {
             BasicBlockReader block = program.basicBlockAt(i);
 
             if (block.getExceptionVariable() != null) {
-                types[block.getExceptionVariable().getIndex()] = VariableType.OBJECT;
+                types[block.getExceptionVariable().getIndex()] = new InferenceType(InferenceKind.OBJECT, 0);
             }
 
             block.readAllInstructions(reader);
@@ -54,133 +55,131 @@ public class TypeInferer {
             }
         }
 
-        IntegerStack stack = new IntegerStack(sz);
+        IntegerStack stack = new IntegerStack(sz * 2);
         Graph graph = builder.build();
         Graph arrayElemGraph = arrayElemBuilder.build();
-        for (int i = 0; i < sz; ++i) {
-            if ((i >= graph.size() || graph.incomingEdgesCount(i) == 0)
-                    && (i >= arrayElemGraph.size() || arrayElemGraph.incomingEdgesCount(i) == 0)) {
+        for (int i = 0; i < graph.size(); ++i) {
+            if (types[i] != null && graph.outgoingEdgesCount(i) > 0) {
+                stack.push(types[i].kind.ordinal());
+                stack.push(types[i].degree);
                 stack.push(i);
+                types[i] = null;
             }
         }
 
-        boolean[] visited = new boolean[sz];
         while (!stack.isEmpty()) {
             int node = stack.pop();
-            if (visited[node]) {
+            int degree = stack.pop();
+            InferenceKind kind = typesByOrdinal[stack.pop()];
+            if (types[node] != null) {
                 continue;
             }
-            visited[node] = true;
-            if (types[node] == null) {
-                for (int pred : graph.incomingEdges(node)) {
-                    if (types[pred] != null) {
-                        types[node] = types[pred];
-                        break;
-                    }
+            types[node] = new InferenceType(kind, degree);
+
+            for (int successor : graph.outgoingEdges(node)) {
+                if (types[successor] == null) {
+                    stack.push(kind.ordinal());
+                    stack.push(degree);
+                    stack.push(successor);
                 }
             }
-            if (types[node] == null) {
-                for (int pred : arrayElemGraph.incomingEdges(node)) {
-                    if (types[pred] != null) {
-                        types[node] = convertFromArray(types[pred]);
-                        break;
-                    }
-                }
-            }
-            for (int succ : graph.outgoingEdges(node)) {
-                if (!visited[succ]) {
-                    stack.push(succ);
-                }
-            }
-            for (int succ : arrayElemGraph.outgoingEdges(node)) {
-                if (!visited[succ]) {
-                    stack.push(succ);
+            for (int successor : arrayElemGraph.outgoingEdges(node)) {
+                if (types[successor] == null) {
+                    stack.push(kind.ordinal());
+                    stack.push(degree - 1);
+                    stack.push(successor);
                 }
             }
         }
     }
 
     public VariableType typeOf(int variableIndex) {
-        return types[variableIndex];
-    }
-
-    VariableType convert(ValueType type) {
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
+        InferenceType result = types[variableIndex];
+        if (result == null) {
+            return VariableType.OBJECT;
+        }
+        if (result.degree == 0) {
+            switch (result.kind) {
                 case BYTE:
                 case SHORT:
-                case CHARACTER:
-                case INTEGER:
+                case CHAR:
+                case INT:
                     return VariableType.INT;
+                case LONG:
+                    return VariableType.LONG;
                 case FLOAT:
                     return VariableType.FLOAT;
                 case DOUBLE:
                     return VariableType.DOUBLE;
-                case LONG:
-                    return VariableType.LONG;
+                case OBJECT:
+                    break;
             }
-        } else if (type instanceof ValueType.Array) {
-            ValueType item = ((ValueType.Array) type).getItemType();
-            return convertArray(item);
-        }
-        return VariableType.OBJECT;
-    }
-
-    VariableType convertFromArray(VariableType type) {
-        switch (type) {
-            case BYTE_ARRAY:
-            case SHORT_ARRAY:
-            case CHAR_ARRAY:
-            case INT_ARRAY:
-                return VariableType.INT;
-            case LONG_ARRAY:
-                return VariableType.LONG;
-            case FLOAT_ARRAY:
-                return VariableType.FLOAT;
-            case DOUBLE_ARRAY:
-                return VariableType.DOUBLE;
-            default:
-                return VariableType.OBJECT;
-        }
-    }
-
-    VariableType convert(NumericOperandType type) {
-        switch (type) {
-            case INT:
-                return VariableType.INT;
-            case LONG:
-                return VariableType.LONG;
-            case FLOAT:
-                return VariableType.FLOAT;
-            case DOUBLE:
-                return VariableType.DOUBLE;
-            default:
-                throw new AssertionError();
-        }
-    }
-
-    VariableType convertArray(ValueType type) {
-        if (type instanceof ValueType.Primitive) {
-            switch (((ValueType.Primitive) type).getKind()) {
-                case BOOLEAN:
+            return VariableType.OBJECT;
+        } else if (result.degree == 1) {
+            switch (result.kind) {
                 case BYTE:
                     return VariableType.BYTE_ARRAY;
                 case SHORT:
                     return VariableType.SHORT_ARRAY;
-                case CHARACTER:
+                case CHAR:
                     return VariableType.CHAR_ARRAY;
-                case INTEGER:
+                case INT:
                     return VariableType.INT_ARRAY;
+                case LONG:
+                    return VariableType.LONG_ARRAY;
                 case FLOAT:
                     return VariableType.FLOAT_ARRAY;
                 case DOUBLE:
                     return VariableType.DOUBLE_ARRAY;
-                case LONG:
-                    return VariableType.LONG_ARRAY;
+                case OBJECT:
+                    break;
             }
         }
         return VariableType.OBJECT_ARRAY;
+    }
+
+    InferenceType convert(ValueType type) {
+        int degree = 0;
+        while (type instanceof ValueType.Array) {
+            ++degree;
+            type = ((ValueType.Array) type).getItemType();
+        }
+
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                    return new InferenceType(InferenceKind.BYTE, degree);
+                case SHORT:
+                    return new InferenceType(InferenceKind.SHORT, degree);
+                case CHARACTER:
+                    return new InferenceType(InferenceKind.CHAR, degree);
+                case INTEGER:
+                    return new InferenceType(InferenceKind.INT, degree);
+                case FLOAT:
+                    return new InferenceType(InferenceKind.FLOAT, degree);
+                case DOUBLE:
+                    return new InferenceType(InferenceKind.DOUBLE, degree);
+                case LONG:
+                    return new InferenceType(InferenceKind.LONG, degree);
+            }
+        }
+        return new InferenceType(InferenceKind.OBJECT, degree);
+    }
+
+    InferenceKind convert(NumericOperandType type) {
+        switch (type) {
+            case INT:
+                return InferenceKind.INT;
+            case LONG:
+                return InferenceKind.LONG;
+            case FLOAT:
+                return InferenceKind.FLOAT;
+            case DOUBLE:
+                return InferenceKind.DOUBLE;
+            default:
+                throw new AssertionError();
+        }
     }
 
     InstructionReader reader = new AbstractInstructionReader() {
@@ -191,12 +190,7 @@ public class TypeInferer {
 
         @Override
         public void stringConstant(VariableReader receiver, String cst) {
-            types[receiver.getIndex()] = VariableType.OBJECT;
-        }
-
-        @Override
-        public void nullConstant(VariableReader receiver) {
-            types[receiver.getIndex()] = VariableType.OBJECT;
+            types[receiver.getIndex()] = new InferenceType(InferenceKind.OBJECT, 0);
         }
 
         @Override
@@ -206,17 +200,17 @@ public class TypeInferer {
 
         @Override
         public void negate(VariableReader receiver, VariableReader operand, NumericOperandType type) {
-            types[receiver.getIndex()] = convert(type);
+            types[receiver.getIndex()] = new InferenceType(convert(type), 0);
         }
 
         @Override
         public void longConstant(VariableReader receiver, long cst) {
-            types[receiver.getIndex()] = VariableType.LONG;
+            types[receiver.getIndex()] = new InferenceType(InferenceKind.LONG, 0);
         }
 
         @Override
         public void isInstance(VariableReader receiver, VariableReader value, ValueType type) {
-            types[receiver.getIndex()] = VariableType.INT;
+            types[receiver.getIndex()] = new InferenceType(InferenceKind.BYTE, 0);
         }
 
         @Override
@@ -238,7 +232,7 @@ public class TypeInferer {
 
         @Override
         public void integerConstant(VariableReader receiver, int cst) {
-            types[receiver.getIndex()] = VariableType.INT;
+            types[receiver.getIndex()] = new InferenceType(InferenceKind.INT, 0);
         }
 
         @Override
@@ -255,12 +249,12 @@ public class TypeInferer {
 
         @Override
         public void floatConstant(VariableReader receiver, float cst) {
-            types[receiver.getIndex()] = VariableType.FLOAT;
+            types[receiver.getIndex()] = new InferenceType(InferenceKind.FLOAT, 0);
         }
 
         @Override
         public void doubleConstant(VariableReader receiver, double cst) {
-            types[receiver.getIndex()] = VariableType.DOUBLE;
+            types[receiver.getIndex()] = new InferenceType(InferenceKind.DOUBLE, 0);
         }
 
         @Override
@@ -276,7 +270,7 @@ public class TypeInferer {
 
         @Override
         public void create(VariableReader receiver, String type) {
-            types[receiver.getIndex()] = VariableType.OBJECT;
+            types[receiver.getIndex()] =  new InferenceType(InferenceKind.OBJECT, 0);
         }
 
         @Override
@@ -286,19 +280,19 @@ public class TypeInferer {
 
         @Override
         public void classConstant(VariableReader receiver, ValueType cst) {
-            types[receiver.getIndex()] = VariableType.OBJECT;
+            types[receiver.getIndex()] =  new InferenceType(InferenceKind.OBJECT, 0);
         }
 
         @Override
         public void cast(VariableReader receiver, VariableReader value, IntegerSubtype type,
                 CastIntegerDirection targetType) {
-            types[receiver.getIndex()] = VariableType.INT;
+            types[receiver.getIndex()] =  new InferenceType(InferenceKind.BYTE, 0);
         }
 
         @Override
         public void cast(VariableReader receiver, VariableReader value, NumericOperandType sourceType,
                 NumericOperandType targetType) {
-            types[receiver.getIndex()] = convert(targetType);
+            types[receiver.getIndex()] = new InferenceType(convert(targetType), 0);
         }
 
         @Override
@@ -311,10 +305,10 @@ public class TypeInferer {
                 NumericOperandType type) {
             switch (op) {
                 case COMPARE:
-                    types[receiver.getIndex()] = VariableType.INT;
+                    types[receiver.getIndex()] = new InferenceType(InferenceKind.INT, 0);
                     break;
                 default:
-                    types[receiver.getIndex()] = convert(type);
+                    types[receiver.getIndex()] = new InferenceType(convert(type), 0);
                     break;
             }
         }
@@ -326,7 +320,28 @@ public class TypeInferer {
 
         @Override
         public void arrayLength(VariableReader receiver, VariableReader array) {
-            types[receiver.getIndex()] = VariableType.INT;
+            types[receiver.getIndex()] = new InferenceType(InferenceKind.INT, 0);
         }
     };
+
+    enum InferenceKind {
+        BYTE,
+        SHORT,
+        CHAR,
+        INT,
+        LONG,
+        FLOAT,
+        DOUBLE,
+        OBJECT,
+    }
+
+    static class InferenceType {
+        final InferenceKind kind;
+        final int degree;
+
+        InferenceType(InferenceKind kind, int degree) {
+            this.kind = kind;
+            this.degree = degree;
+        }
+    }
 }

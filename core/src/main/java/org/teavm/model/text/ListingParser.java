@@ -713,9 +713,9 @@ public class ListingParser {
                         lexer.getIndex());
             }
             insn.setInstance(arguments.get(0));
-            insn.getArguments().addAll(arguments.subList(1, arguments.size()));
+            insn.setArguments(arguments.subList(1, arguments.size()).toArray(new Variable[0]));
         } else {
-            insn.getArguments().addAll(arguments);
+            insn.setArguments(arguments.toArray(new Variable[0]));
         }
 
         addInstruction(insn);

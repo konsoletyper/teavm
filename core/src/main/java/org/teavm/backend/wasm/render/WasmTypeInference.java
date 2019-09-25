@@ -42,6 +42,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
+import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -207,6 +208,11 @@ public class WasmTypeInference implements WasmExpressionVisitor {
     @Override
     public void visit(WasmStoreFloat64 expression) {
         result = null;
+    }
+
+    @Override
+    public void visit(WasmMemoryGrow expression) {
+        result = WasmType.INT32;
     }
 
     private static WasmType map(WasmIntType type) {

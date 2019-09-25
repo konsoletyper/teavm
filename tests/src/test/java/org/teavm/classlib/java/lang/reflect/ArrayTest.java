@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.lang.reflect;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import java.lang.reflect.Array;
 import org.junit.Test;
@@ -35,5 +36,21 @@ public class ArrayTest {
         Object instance = Array.newInstance(int.class, 15);
         assertEquals(int[].class, instance.getClass());
         assertEquals(15, Array.getLength(instance));
+    }
+
+    @Test
+    public void setWorks() {
+        Object array = Array.newInstance(String.class, 2);
+        Array.set(array, 0, "foo");
+        Array.set(array, 1, "bar");
+        assertArrayEquals(new String[] { "foo", "bar" }, (String[]) array);
+    }
+
+    @Test
+    public void setPrimitiveWorks() {
+        Object array = Array.newInstance(int.class, 2);
+        Array.set(array, 0, 23);
+        Array.set(array, 1, 42);
+        assertArrayEquals(new int[] { 23, 42 }, (int[]) array);
     }
 }

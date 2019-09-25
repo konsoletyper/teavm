@@ -15,16 +15,16 @@
  */
 package org.teavm.tooling;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.OutputStreamWriter;
-import java.io.StringWriter;
 import java.io.Writer;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -32,28 +32,29 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Properties;
 import java.util.Set;
-import org.apache.commons.io.IOUtils;
+import org.teavm.backend.c.CTarget;
+import org.teavm.backend.c.generate.CNameProvider;
 import org.teavm.backend.javascript.JavaScriptTarget;
-import org.teavm.backend.javascript.rendering.RenderingManager;
 import org.teavm.backend.wasm.WasmTarget;
 import org.teavm.backend.wasm.render.WasmBinaryVersion;
-import org.teavm.cache.DiskCachedClassHolderSource;
+import org.teavm.cache.AlwaysStaleCacheStatus;
+import org.teavm.cache.CacheStatus;
+import org.teavm.cache.DiskCachedClassReaderSource;
+import org.teavm.cache.DiskMethodNodeCache;
 import org.teavm.cache.DiskProgramCache;
-import org.teavm.cache.DiskRegularMethodNodeCache;
+import org.teavm.cache.EmptyProgramCache;
 import org.teavm.cache.FileSymbolTable;
 import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.information.DebugInformationBuilder;
 import org.teavm.dependency.DependencyInfo;
+import org.teavm.dependency.FastDependencyAnalyzer;
+import org.teavm.dependency.PreciseDependencyAnalyzer;
 import org.teavm.diagnostics.ProblemProvider;
 import org.teavm.model.ClassHolderSource;
 import org.teavm.model.ClassHolderTransformer;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
-import org.teavm.model.MethodDescriptor;
-import org.teavm.model.MethodReader;
-import org.teavm.model.MethodReference;
 import org.teavm.model.PreOptimizingClassHolderSource;
-import org.teavm.model.ProgramReader;
+import org.teavm.model.ReferenceCache;
 import org.teavm.parsing.ClasspathClassHolderSource;
 import org.teavm.tooling.sources.SourceFileProvider;
 import org.teavm.tooling.sources.SourceFilesCopier;
@@ -64,46 +65,53 @@ import org.teavm.vm.TeaVMBuilder;
 import org.teavm.vm.TeaVMOptimizationLevel;
 import org.teavm.vm.TeaVMProgressListener;
 import org.teavm.vm.TeaVMTarget;
-import org.teavm.vm.spi.AbstractRendererListener;
 
-public class TeaVMTool implements BaseTeaVMTool {
+public class TeaVMTool {
     private File targetDirectory = new File(".");
     private TeaVMTargetType targetType = TeaVMTargetType.JAVASCRIPT;
     private String targetFileName = "";
     private boolean minifying = true;
+    private int maxTopLevelNames = 10000;
     private String mainClass;
-    private RuntimeCopyOperation runtime = RuntimeCopyOperation.SEPARATE;
+    private String entryPointName = "main";
     private Properties properties = new Properties();
     private boolean debugInformationGenerated;
     private boolean sourceMapsFileGenerated;
     private boolean sourceFilesCopied;
     private boolean incremental;
     private File cacheDirectory = new File("./teavm-cache");
-    private List<ClassHolderTransformer> transformers = new ArrayList<>();
+    private List<String> transformers = new ArrayList<>();
     private List<String> classesToPreserve = new ArrayList<>();
     private TeaVMToolLog log = new EmptyTeaVMToolLog();
     private ClassLoader classLoader = TeaVMTool.class.getClassLoader();
-    private DiskCachedClassHolderSource cachedClassSource;
+    private DiskCachedClassReaderSource cachedClassSource;
     private DiskProgramCache programCache;
-    private DiskRegularMethodNodeCache astCache;
+    private DiskMethodNodeCache astCache;
     private FileSymbolTable symbolTable;
     private FileSymbolTable fileTable;
+    private FileSymbolTable variableTable;
     private boolean cancelled;
     private TeaVMProgressListener progressListener;
     private TeaVM vm;
+    private boolean fastDependencyAnalysis;
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.SIMPLE;
     private List<SourceFileProvider> sourceFileProviders = new ArrayList<>();
     private DebugInformationBuilder debugEmitter;
     private JavaScriptTarget javaScriptTarget;
     private WasmTarget webAssemblyTarget;
     private WasmBinaryVersion wasmVersion = WasmBinaryVersion.V_0x1;
+    private CTarget cTarget;
     private Set<File> generatedFiles = new HashSet<>();
+    private int minHeapSize = 4 * (1 << 20);
+    private int maxHeapSize = 128 * (1 << 20);
+    private ReferenceCache referenceCache;
+    private boolean longjmpSupported = true;
+    private boolean heapDump;
 
     public File getTargetDirectory() {
         return targetDirectory;
     }
 
-    @Override
     public void setTargetDirectory(File targetDirectory) {
         this.targetDirectory = targetDirectory;
     }
@@ -120,16 +128,18 @@ public class TeaVMTool implements BaseTeaVMTool {
         return minifying;
     }
 
-    @Override
     public void setMinifying(boolean minifying) {
         this.minifying = minifying;
+    }
+
+    public void setMaxTopLevelNames(int maxTopLevelNames) {
+        this.maxTopLevelNames = maxTopLevelNames;
     }
 
     public boolean isIncremental() {
         return incremental;
     }
 
-    @Override
     public void setIncremental(boolean incremental) {
         this.incremental = incremental;
     }
@@ -142,19 +152,14 @@ public class TeaVMTool implements BaseTeaVMTool {
         this.mainClass = mainClass;
     }
 
-    public RuntimeCopyOperation getRuntime() {
-        return runtime;
-    }
-
-    public void setRuntime(RuntimeCopyOperation runtime) {
-        this.runtime = runtime;
+    public void setEntryPointName(String entryPointName) {
+        this.entryPointName = entryPointName;
     }
 
     public boolean isDebugInformationGenerated() {
         return debugInformationGenerated;
     }
 
-    @Override
     public void setDebugInformationGenerated(boolean debugInformationGenerated) {
         this.debugInformationGenerated = debugInformationGenerated;
     }
@@ -171,7 +176,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         return sourceMapsFileGenerated;
     }
 
-    @Override
     public void setSourceMapsFileGenerated(boolean sourceMapsFileGenerated) {
         this.sourceMapsFileGenerated = sourceMapsFileGenerated;
     }
@@ -180,18 +184,15 @@ public class TeaVMTool implements BaseTeaVMTool {
         return sourceFilesCopied;
     }
 
-    @Override
     public void setSourceFilesCopied(boolean sourceFilesCopied) {
         this.sourceFilesCopied = sourceFilesCopied;
     }
 
-    @Override
     public Properties getProperties() {
         return properties;
     }
 
-    @Override
-    public List<ClassHolderTransformer> getTransformers() {
+    public List<String> getTransformers() {
         return transformers;
     }
 
@@ -203,7 +204,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         return log;
     }
 
-    @Override
     public void setLog(TeaVMToolLog log) {
         this.log = log;
     }
@@ -224,11 +224,26 @@ public class TeaVMTool implements BaseTeaVMTool {
         this.optimizationLevel = optimizationLevel;
     }
 
+    public boolean isFastDependencyAnalysis() {
+        return fastDependencyAnalysis;
+    }
+
+    public void setFastDependencyAnalysis(boolean fastDependencyAnalysis) {
+        this.fastDependencyAnalysis = fastDependencyAnalysis;
+    }
+
+    public void setMinHeapSize(int minHeapSize) {
+        this.minHeapSize = minHeapSize;
+    }
+
+    public void setMaxHeapSize(int maxHeapSize) {
+        this.maxHeapSize = maxHeapSize;
+    }
+
     public ClassLoader getClassLoader() {
         return classLoader;
     }
 
-    @Override
     public void setClassLoader(ClassLoader classLoader) {
         this.classLoader = classLoader;
     }
@@ -239,6 +254,14 @@ public class TeaVMTool implements BaseTeaVMTool {
 
     public void setWasmVersion(WasmBinaryVersion wasmVersion) {
         this.wasmVersion = wasmVersion;
+    }
+
+    public void setLongjmpSupported(boolean longjmpSupported) {
+        this.longjmpSupported = longjmpSupported;
+    }
+
+    public void setHeapDump(boolean heapDump) {
+        this.heapDump = heapDump;
     }
 
     public void setProgressListener(TeaVMProgressListener progressListener) {
@@ -270,34 +293,9 @@ public class TeaVMTool implements BaseTeaVMTool {
             return Collections.emptyList();
         }
 
-        Set<String> resources = new HashSet<>();
-        ClassReaderSource classSource = vm.getDependencyClassSource();
-        InstructionLocationReader reader = new InstructionLocationReader(resources);
-        for (MethodReference methodRef : vm.getMethods()) {
-            ClassReader cls = classSource.get(methodRef.getClassName());
-            if (cls == null) {
-                continue;
-            }
-
-            MethodReader method = cls.getMethod(methodRef.getDescriptor());
-            if (method == null) {
-                continue;
-            }
-
-            ProgramReader program = method.getProgram();
-            if (program == null) {
-                continue;
-            }
-
-            for (int i = 0; i < program.basicBlockCount(); ++i) {
-                program.basicBlockAt(i).readAllInstructions(reader);
-            }
-        }
-
-        return resources;
+        return InstructionLocationReader.extractUsedResources(vm);
     }
 
-    @Override
     public void addSourceFileProvider(SourceFileProvider sourceFileProvider) {
         sourceFileProviders.add(sourceFileProvider);
     }
@@ -308,6 +306,8 @@ public class TeaVMTool implements BaseTeaVMTool {
                 return prepareJavaScriptTarget();
             case WEBASSEMBLY:
                 return prepareWebAssemblyTarget();
+            case C:
+                return prepareCTarget();
         }
         throw new IllegalStateException("Unknown target type: " + targetType);
     }
@@ -315,14 +315,11 @@ public class TeaVMTool implements BaseTeaVMTool {
     private TeaVMTarget prepareJavaScriptTarget() {
         javaScriptTarget = new JavaScriptTarget();
         javaScriptTarget.setMinifying(minifying);
+        javaScriptTarget.setTopLevelNameLimit(maxTopLevelNames);
 
         debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
-                ? new DebugInformationBuilder() : null;
+                ? new DebugInformationBuilder(referenceCache) : null;
         javaScriptTarget.setDebugEmitter(debugEmitter);
-
-        if (incremental) {
-            javaScriptTarget.setAstCache(astCache);
-        }
 
         return javaScriptTarget;
     }
@@ -333,67 +330,92 @@ public class TeaVMTool implements BaseTeaVMTool {
         webAssemblyTarget.setCEmitted(debugInformationGenerated);
         webAssemblyTarget.setWastEmitted(debugInformationGenerated);
         webAssemblyTarget.setVersion(wasmVersion);
+        webAssemblyTarget.setMinHeapSize(minHeapSize);
+        webAssemblyTarget.setMinHeapSize(maxHeapSize);
         return webAssemblyTarget;
+    }
+
+    private CTarget prepareCTarget() {
+        cTarget = new CTarget(new CNameProvider());
+        cTarget.setMinHeapSize(minHeapSize);
+        cTarget.setMaxHeapSize(maxHeapSize);
+        cTarget.setLineNumbersGenerated(debugInformationGenerated);
+        cTarget.setLongjmpUsed(longjmpSupported);
+        cTarget.setHeapDump(heapDump);
+        return cTarget;
     }
 
     public void generate() throws TeaVMToolException {
         try {
             cancelled = false;
-            log.info("Building JavaScript file");
+            log.info("Running TeaVM");
+            referenceCache = new ReferenceCache();
             TeaVMBuilder vmBuilder = new TeaVMBuilder(prepareTarget());
+            CacheStatus cacheStatus;
+            vmBuilder.setReferenceCache(referenceCache);
             if (incremental) {
                 cacheDirectory.mkdirs();
                 symbolTable = new FileSymbolTable(new File(cacheDirectory, "symbols"));
                 fileTable = new FileSymbolTable(new File(cacheDirectory, "files"));
-                ClasspathClassHolderSource innerClassSource = new ClasspathClassHolderSource(classLoader);
+                variableTable = new FileSymbolTable(new File(cacheDirectory, "variables"));
+                ClasspathClassHolderSource innerClassSource = new ClasspathClassHolderSource(classLoader,
+                        referenceCache);
                 ClassHolderSource classSource = new PreOptimizingClassHolderSource(innerClassSource);
-                cachedClassSource = new DiskCachedClassHolderSource(cacheDirectory, symbolTable, fileTable,
-                        classSource, innerClassSource);
-                programCache = new DiskProgramCache(cacheDirectory, symbolTable, fileTable, innerClassSource);
-
-                if (targetType == TeaVMTargetType.JAVASCRIPT) {
-                    astCache = new DiskRegularMethodNodeCache(cacheDirectory, symbolTable, fileTable, innerClassSource);
+                cachedClassSource = new DiskCachedClassReaderSource(cacheDirectory, referenceCache, symbolTable,
+                        fileTable, variableTable, classSource, innerClassSource);
+                programCache = new DiskProgramCache(cacheDirectory, referenceCache, symbolTable, fileTable,
+                        variableTable);
+                if (incremental && targetType == TeaVMTargetType.JAVASCRIPT) {
+                    astCache = new DiskMethodNodeCache(cacheDirectory, referenceCache, symbolTable, fileTable,
+                            variableTable);
+                    javaScriptTarget.setAstCache(astCache);
                 }
                 try {
                     symbolTable.update();
                     fileTable.update();
+                    variableTable.update();
                 } catch (IOException e) {
                     log.info("Cache is missing");
                 }
                 vmBuilder.setClassLoader(classLoader).setClassSource(cachedClassSource);
+                cacheStatus = cachedClassSource;
             } else {
                 vmBuilder.setClassLoader(classLoader).setClassSource(new PreOptimizingClassHolderSource(
-                        new ClasspathClassHolderSource(classLoader)));
+                        new ClasspathClassHolderSource(classLoader, referenceCache)));
+                cacheStatus = AlwaysStaleCacheStatus.INSTANCE;
             }
+
+            vmBuilder.setDependencyAnalyzerFactory(fastDependencyAnalysis
+                    ? FastDependencyAnalyzer::new
+                    : PreciseDependencyAnalyzer::new);
+
             vm = vmBuilder.build();
             if (progressListener != null) {
                 vm.setProgressListener(progressListener);
             }
 
             vm.setProperties(properties);
-            vm.setProgramCache(programCache);
-            vm.setIncremental(incremental);
-            vm.setOptimizationLevel(optimizationLevel);
+            vm.setProgramCache(incremental ? programCache : EmptyProgramCache.INSTANCE);
+            vm.setCacheStatus(cacheStatus);
+            vm.setOptimizationLevel(!fastDependencyAnalysis && !incremental
+                    ? optimizationLevel
+                    : TeaVMOptimizationLevel.SIMPLE);
+            if (incremental) {
+                vm.addVirtualMethods(m -> true);
+            }
 
             vm.installPlugins();
-            for (ClassHolderTransformer transformer : transformers) {
+            for (ClassHolderTransformer transformer : resolveTransformers(classLoader)) {
                 vm.add(transformer);
             }
             if (mainClass != null) {
-                MethodDescriptor mainMethodDesc = new MethodDescriptor("main", String[].class, void.class);
-                vm.entryPoint("main", new MethodReference(mainClass, mainMethodDesc))
-                        .withValue(1, "[java.lang.String")
-                        .withArrayValue(1, "java.lang.String")
-                        .async();
+                vm.entryPoint(mainClass, entryPointName != null ? entryPointName : "main");
             }
             for (String className : classesToPreserve) {
                 vm.preserveType(className);
             }
             targetDirectory.mkdirs();
 
-            if (runtime == RuntimeCopyOperation.MERGED) {
-                javaScriptTarget.add(runtimeInjector);
-            }
             BuildTarget buildTarget = new DirectoryBuildTarget(targetDirectory);
             String outputName = getResolvedTargetFileName();
             vm.build(buildTarget, outputName);
@@ -408,10 +430,8 @@ public class TeaVMTool implements BaseTeaVMTool {
                 log.info("Output file successfully built");
             } else if (problemProvider.getSevereProblems().isEmpty()) {
                 log.info("Output file built with warnings");
-                TeaVMProblemRenderer.describeProblems(vm, log);
             } else {
                 log.info("Output file built with errors");
-                TeaVMProblemRenderer.describeProblems(vm, log);
             }
 
             File outputFile = new File(targetDirectory, outputName);
@@ -419,7 +439,7 @@ public class TeaVMTool implements BaseTeaVMTool {
 
             if (targetType == TeaVMTargetType.JAVASCRIPT) {
                 try (OutputStream output = new FileOutputStream(new File(targetDirectory, outputName), true)) {
-                    try (Writer writer = new OutputStreamWriter(output, "UTF-8")) {
+                    try (Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
                         additionalJavaScriptOutput(writer);
                     }
                 }
@@ -433,6 +453,7 @@ public class TeaVMTool implements BaseTeaVMTool {
                 cachedClassSource.flush();
                 symbolTable.flush();
                 fileTable.flush();
+                variableTable.flush();
                 log.info("Cache updated");
             }
 
@@ -449,6 +470,8 @@ public class TeaVMTool implements BaseTeaVMTool {
                     return "classes.js";
                 case WEBASSEMBLY:
                     return "classes.wasm";
+                case C:
+                    return "classes.c";
                 default:
                     return "classes";
             }
@@ -457,10 +480,6 @@ public class TeaVMTool implements BaseTeaVMTool {
     }
 
     private void additionalJavaScriptOutput(Writer writer) throws IOException {
-        if (mainClass != null) {
-            writer.append("main = $rt_mainStarter(main);\n");
-        }
-
         if (debugInformationGenerated) {
             assert debugEmitter != null;
             DebugInformation debugInfo = debugEmitter.getDebugInformation();
@@ -477,7 +496,8 @@ public class TeaVMTool implements BaseTeaVMTool {
             String sourceMapsFileName = getResolvedTargetFileName() + ".map";
             writer.append("\n//# sourceMappingURL=").append(sourceMapsFileName);
             File sourceMapsFile = new File(targetDirectory, sourceMapsFileName);
-            try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(sourceMapsFile), "UTF-8")) {
+            try (Writer sourceMapsOut = new OutputStreamWriter(new FileOutputStream(sourceMapsFile),
+                    StandardCharsets.UTF_8)) {
                 debugInfo.writeAsSourceMaps(sourceMapsOut, "src", getResolvedTargetFileName());
             }
             generatedFiles.add(sourceMapsFile);
@@ -486,10 +506,6 @@ public class TeaVMTool implements BaseTeaVMTool {
         if (sourceFilesCopied) {
             copySourceFiles();
             log.info("Source files successfully written");
-        }
-
-        if (runtime == RuntimeCopyOperation.SEPARATE) {
-            resourceToFile("org/teavm/backend/javascript/runtime.js", "runtime.js");
         }
     }
 
@@ -519,29 +535,40 @@ public class TeaVMTool implements BaseTeaVMTool {
         copier.copy(new File(targetDirectory, "src"));
     }
 
-    private AbstractRendererListener runtimeInjector = new AbstractRendererListener() {
-        @Override
-        public void begin(RenderingManager manager, BuildTarget buildTarget) throws IOException {
-            StringWriter writer = new StringWriter();
-            resourceToWriter("org/teavm/backend/javascript/runtime.js", writer);
-            writer.close();
-            manager.getWriter().append(writer.toString()).newLine();
+    private List<ClassHolderTransformer> resolveTransformers(ClassLoader classLoader) {
+        List<ClassHolderTransformer> transformerInstances = new ArrayList<>();
+        if (transformers == null) {
+            return transformerInstances;
         }
-    };
-
-    private void resourceToFile(String resource, String fileName) throws IOException {
-        try (InputStream input = TeaVMTool.class.getClassLoader().getResourceAsStream(resource)) {
-            File outputFile = new File(targetDirectory, fileName);
-            try (OutputStream output = new BufferedOutputStream(new FileOutputStream(outputFile))) {
-                IOUtils.copy(new BufferedInputStream(input), output);
+        for (String transformerName : transformers) {
+            Class<?> transformerRawType;
+            try {
+                transformerRawType = Class.forName(transformerName, true, classLoader);
+            } catch (ClassNotFoundException e) {
+                log.error("Transformer not found: " + transformerName, e);
+                continue;
             }
-            generatedFiles.add(outputFile);
+            if (!ClassHolderTransformer.class.isAssignableFrom(transformerRawType)) {
+                log.error("Transformer " + transformerName + " is not subtype of "
+                        + ClassHolderTransformer.class.getName());
+                continue;
+            }
+            Class<? extends ClassHolderTransformer> transformerType = transformerRawType.asSubclass(
+                    ClassHolderTransformer.class);
+            Constructor<? extends ClassHolderTransformer> ctor;
+            try {
+                ctor = transformerType.getConstructor();
+            } catch (NoSuchMethodException e) {
+                log.error("Transformer " + transformerName + " has no default constructor");
+                continue;
+            }
+            try {
+                ClassHolderTransformer transformer = ctor.newInstance();
+                transformerInstances.add(transformer);
+            } catch (InstantiationException | IllegalAccessException | InvocationTargetException e) {
+                log.error("Error instantiating transformer " + transformerName, e);
+            }
         }
-    }
-
-    private void resourceToWriter(String resource, Writer writer) throws IOException {
-        try (InputStream input = TeaVMTool.class.getClassLoader().getResourceAsStream(resource)) {
-            IOUtils.copy(new BufferedInputStream(input), writer, "UTF-8");
-        }
+        return transformerInstances;
     }
 }

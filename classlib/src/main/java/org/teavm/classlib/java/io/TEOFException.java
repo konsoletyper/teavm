@@ -15,16 +15,16 @@
  */
 package org.teavm.classlib.java.io;
 
-import org.teavm.classlib.java.lang.TString;
+import java.io.IOException;
 
-public class TEOFException extends TIOException {
+public class TEOFException extends IOException {
     private static final long serialVersionUID = 3045477060413545010L;
 
     public TEOFException() {
         super();
     }
 
-    public TEOFException(TString message) {
+    public TEOFException(String message) {
         super(message);
     }
 }

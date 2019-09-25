@@ -1,0 +1,25 @@
+cmake_minimum_required(VERSION 3.9)
+project(run_test C)
+
+set(CMAKE_C_STANDARD 11)
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR})
+
+if (NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
+
+if (NOT WIN32)
+    set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -g")
+    set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -O3")
+endif()
+
+file(GLOB_RECURSE TEAVM_GEN_SOURCES ${PROJECT_SOURCE_DIR}/**.c)
+file(GLOB_RECURSE CMAKE_BUILD_SOURCES ${CMAKE_BINARY_DIR}/**.c)
+list(REMOVE_ITEM TEAVM_GEN_SOURCES ${PROJECT_SOURCE_DIR}/all.c ${CMAKE_BUILD_SOURCES})
+add_executable(run_test ${TEAVM_GEN_SOURCES})
+
+if (WIN32)
+  target_link_libraries(run_test)
+else()
+  target_link_libraries(run_test m rt)
+endif()

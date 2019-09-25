@@ -15,31 +15,13 @@
  */
 package org.teavm.callgraph;
 
+import java.util.Collection;
 import org.teavm.model.TextLocation;
 
-/**
- * <p>Call site that represents exact place in the code that calls a method.</p>.
- * @author Alexey Andreev
- */
 public interface CallSite {
-    /**
-     * <p>Gets location of the call site</p>.
-     *
-     * @return location of the call site or <code>null</code> if no debug information found for this call site.
-     */
-    TextLocation getLocation();
+    Collection<? extends TextLocation> getLocations(CallGraphNode caller);
 
-    /**
-     * <p>Gets a method that this call site invokes.</p>
-     *
-     * @return a node that represent methods being called
-     */
-    CallGraphNode getCallee();
+    Collection<? extends CallGraphNode> getCalledMethods();
 
-    /**
-     * <p>Gets a method that contains this call site.</p>
-     *
-     * @return a node that represents methods's caller
-     */
-    CallGraphNode getCaller();
+    Collection<? extends CallGraphNode> getCallers();
 }

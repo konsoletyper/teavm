@@ -16,13 +16,14 @@
 package org.teavm.classlib.impl.tz;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 
 public class TimeZoneCache {
     public void write(OutputStream output, Collection<StorableDateTimeZone> timeZones) throws IOException {
-        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, "UTF-8"));
+        BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(output, StandardCharsets.UTF_8));
         StringBuilder sb = new StringBuilder();
         for (StorableDateTimeZone timeZone : timeZones) {
             writer.append(timeZone.getID()).append(' ');
@@ -36,7 +37,7 @@ public class TimeZoneCache {
 
     public Map<String, StorableDateTimeZone> read(InputStream input) throws IOException {
         Map<String, StorableDateTimeZone> result = new HashMap<>();
-        BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"));
+        BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8));
         List<String> aliasLines = new ArrayList<>();
         while (true) {
             String line = reader.readLine();

@@ -16,15 +16,18 @@
 package org.teavm.dependency;
 
 public class DependencyTestData {
-    public void virtualCall() {
+    private DependencyTestData() {
+    }
+
+    public static void virtualCall() {
         MetaAssertions.assertTypes(getI(0).foo(), String.class, Integer.class, Class.class);
     }
 
-    public void instanceOf() {
+    public static void instanceOf() {
         MetaAssertions.assertTypes((String) getI(0).foo(), String.class);
     }
 
-    public void catchException() throws Exception {
+    public static void catchException() throws Exception {
         try {
             throw createException(0);
         } catch (IndexOutOfBoundsException e) {
@@ -34,7 +37,7 @@ public class DependencyTestData {
         }
     }
 
-    public void propagateException() {
+    public static void propagateException() {
         try {
             catchException();
         } catch (Throwable e) {
@@ -42,12 +45,12 @@ public class DependencyTestData {
         }
     }
 
-    public void arrays() {
+    public static void arrays() {
         Object[] array = { new String("123"), new Integer(123), String.class };
         MetaAssertions.assertTypes(array[0], String.class, Integer.class, Class.class);
     }
 
-    public void arraysPassed() {
+    public static void arraysPassed() {
         Object[] array = new Object[3];
         fillArray(array);
         MetaAssertions.assertTypes(array[0], String.class, Integer.class, Class.class);
@@ -58,7 +61,7 @@ public class DependencyTestData {
         MetaAssertions.assertTypes(array2[0], Long.class, RuntimeException.class);
     }
 
-    public void arraysRetrieved() {
+    public static void arraysRetrieved() {
         Object[] array = createArray();
         MetaAssertions.assertTypes(array[0], String.class, Integer.class, Class.class);
 
@@ -70,24 +73,24 @@ public class DependencyTestData {
 
     static Object[] staticArrayField;
 
-    private Object[] createArray() {
+    private static Object[] createArray() {
         Object[] array = new Object[3];
         fillArray(array);
         return array;
     }
 
-    private void fillArray(Object[] array) {
+    private static void fillArray(Object[] array) {
         array[0] = "123";
         array[1] = 123;
         array[2] = String.class;
     }
 
-    private void fillStaticArray() {
+    private static void fillStaticArray() {
         staticArrayField[0] = 42L;
         staticArrayField[0] = new RuntimeException();
     }
 
-    private I getI(int index) {
+    private static I getI(int index) {
         switch (index) {
             case 0:
                 return new A();
@@ -98,7 +101,7 @@ public class DependencyTestData {
         }
     }
 
-    private Exception createException(int index) {
+    private static Exception createException(int index) {
         switch (index) {
             case 0:
                 throw new IndexOutOfBoundsException();
@@ -115,21 +118,21 @@ public class DependencyTestData {
         Object foo();
     }
 
-    class A implements I {
+    static class A implements I {
         @Override
         public Object foo() {
             return "123";
         }
     }
 
-    class B implements I {
+    static class B implements I {
         @Override
         public Object foo() {
             return Object.class;
         }
     }
 
-    class C implements I {
+    static class C implements I {
         @Override
         public Object foo() {
             return 123;

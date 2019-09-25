@@ -15,9 +15,10 @@
  */
 package org.teavm.classlib.impl.unicode;
 
-import org.teavm.classlib.impl.FirstDayOfWeekMetadataGenerator;
-import org.teavm.classlib.impl.MinimalDaysInFirstWeekMetadataGenerator;
-import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.IntResource;
+import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.StringResource;
 
 public final class CLDRHelper {
     private CLDRHelper() {
@@ -41,49 +42,42 @@ public final class CLDRHelper {
         return country;
     }
 
-    @MetadataProvider(LikelySubtagsMetadataGenerator.class)
     private static native ResourceMap<StringResource> getLikelySubtagsMap();
 
     public static String[] resolveEras(String language, String country) {
         return resolveDateFormatSymbols(getErasMap(), language, country);
     }
 
-    @MetadataProvider(DateSymbolsMetadataGenerator.class)
     private static native ResourceMap<ResourceArray<StringResource>> getErasMap();
 
     public static String[] resolveAmPm(String language, String country) {
         return resolveDateFormatSymbols(getAmPmMap(), language, country);
     }
 
-    @MetadataProvider(DateSymbolsMetadataGenerator.class)
     private static native ResourceMap<ResourceArray<StringResource>> getAmPmMap();
 
     public static String[] resolveMonths(String language, String country) {
         return resolveDateFormatSymbols(getMonthMap(), language, country);
     }
 
-    @MetadataProvider(DateSymbolsMetadataGenerator.class)
     private static native ResourceMap<ResourceArray<StringResource>> getMonthMap();
 
     public static String[] resolveShortMonths(String language, String country) {
         return resolveDateFormatSymbols(getShortMonthMap(), language, country);
     }
 
-    @MetadataProvider(DateSymbolsMetadataGenerator.class)
     private static native ResourceMap<ResourceArray<StringResource>> getShortMonthMap();
 
     public static String[] resolveWeekdays(String language, String country) {
         return resolveDateFormatSymbols(getWeekdayMap(), language, country);
     }
 
-    @MetadataProvider(DateSymbolsMetadataGenerator.class)
     private static native ResourceMap<ResourceArray<StringResource>> getWeekdayMap();
 
     public static String[] resolveShortWeekdays(String language, String country) {
         return resolveDateFormatSymbols(getShortWeekdayMap(), language, country);
     }
 
-    @MetadataProvider(DateSymbolsMetadataGenerator.class)
     private static native ResourceMap<ResourceArray<StringResource>> getShortWeekdayMap();
 
     private static String[] resolveDateFormatSymbols(ResourceMap<ResourceArray<StringResource>> map, String language,
@@ -127,67 +121,54 @@ public final class CLDRHelper {
         return timeZones.get(territory).getValue();
     }
 
-    @MetadataProvider(TimeZoneLocalizationGenerator.class)
     public static native ResourceMap<TimeZoneLocalization> getTimeZoneLocalizationMap();
 
-    @MetadataProvider(LanguageMetadataGenerator.class)
     public static native ResourceMap<ResourceMap<StringResource>> getLanguagesMap();
 
-    @MetadataProvider(CountryMetadataGenerator.class)
     public static native ResourceMap<ResourceMap<StringResource>> getCountriesMap();
 
-    @MetadataProvider(DefaultLocaleMetadataGenerator.class)
     public static native StringResource getDefaultLocale();
 
-    @MetadataProvider(AvailableLocalesMetadataGenerator.class)
     public static native ResourceArray<StringResource> getAvailableLocales();
 
-    @MetadataProvider(MinimalDaysInFirstWeekMetadataGenerator.class)
     public static native ResourceMap<IntResource> getMinimalDaysInFirstWeek();
 
-    @MetadataProvider(FirstDayOfWeekMetadataGenerator.class)
     public static native ResourceMap<IntResource> getFirstDayOfWeek();
 
     public static DateFormatCollection resolveDateFormats(String language, String country) {
         return resolveDateFormats(getDateFormatMap(), language, country);
     }
 
-    @MetadataProvider(DateFormatMetadataGenerator.class)
     private static native ResourceMap<DateFormatCollection> getDateFormatMap();
 
     public static DateFormatCollection resolveTimeFormats(String language, String country) {
         return resolveDateFormats(getTimeFormatMap(), language, country);
     }
 
-    @MetadataProvider(DateFormatMetadataGenerator.class)
     private static native ResourceMap<DateFormatCollection> getTimeFormatMap();
 
     public static DateFormatCollection resolveDateTimeFormats(String language, String country) {
         return resolveDateFormats(getDateTimeFormatMap(), language, country);
     }
 
-    @MetadataProvider(DateFormatMetadataGenerator.class)
     private static native ResourceMap<DateFormatCollection> getDateTimeFormatMap();
 
     public static String resolveNumberFormat(String language, String country) {
         return resolveFormatSymbols(getNumberFormatMap(), language, country);
     }
 
-    @MetadataProvider(NumberFormatMetadataGenerator.class)
     private static native ResourceMap<StringResource> getNumberFormatMap();
 
     public static String resolvePercentFormat(String language, String country) {
         return resolveFormatSymbols(getPercentFormatMap(), language, country);
     }
 
-    @MetadataProvider(NumberFormatMetadataGenerator.class)
     private static native ResourceMap<StringResource> getPercentFormatMap();
 
     public static String resolveCurrencyFormat(String language, String country) {
         return resolveFormatSymbols(getCurrencyFormatMap(), language, country);
     }
 
-    @MetadataProvider(NumberFormatMetadataGenerator.class)
     private static native ResourceMap<StringResource> getCurrencyFormatMap();
 
     private static DateFormatCollection resolveDateFormats(ResourceMap<DateFormatCollection> map,
@@ -210,7 +191,6 @@ public final class CLDRHelper {
                 : map.get("root");
     }
 
-    @MetadataProvider(DecimalMetadataGenerator.class)
     private static native ResourceMap<DecimalData> getDecimalDataMap();
 
     public static CurrencyLocalization resolveCurrency(String language, String country, String currency) {
@@ -231,6 +211,5 @@ public final class CLDRHelper {
         return null;
     }
 
-    @MetadataProvider(CurrencyLocalizationMetadataGenerator.class)
     private static native ResourceMap<ResourceMap<CurrencyLocalization>> getCurrencyMap();
 }

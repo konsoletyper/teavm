@@ -179,8 +179,8 @@ public class WasmBinaryRenderer {
 
         section.writeByte(1);
         section.writeByte(1);
-        section.writeLEB(module.getMemorySize());
-        section.writeLEB(module.getMemorySize());
+        section.writeLEB(module.getMinMemorySize());
+        section.writeLEB(module.getMaxMemorySize());
 
         writeSection(SECTION_MEMORY, "memory", section.getData());
     }
@@ -333,7 +333,7 @@ public class WasmBinaryRenderer {
 
         WasmBinaryWriter functionsSubsection = new WasmBinaryWriter();
         Collection<WasmFunction> functions = module.getFunctions().values();
-
+        functions = functions.stream().filter(f -> f.getImportName() == null).collect(Collectors.toList());
         functionsSubsection.writeLEB(functions.size());
 
         for (WasmFunction function : functions) {

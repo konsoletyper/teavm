@@ -17,7 +17,7 @@ package org.teavm.parsing;
 
 import java.util.Arrays;
 import java.util.Map;
-import org.teavm.common.Mapper;
+import java.util.function.Function;
 import org.teavm.interop.Remove;
 import org.teavm.interop.Rename;
 import org.teavm.interop.Superclass;
@@ -28,63 +28,41 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReference;
+import org.teavm.model.GenericTypeParameter;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHandle;
 import org.teavm.model.MethodHolder;
-import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.RuntimeConstant;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
-import org.teavm.model.instructions.ArrayLengthInstruction;
-import org.teavm.model.instructions.AssignInstruction;
-import org.teavm.model.instructions.BinaryBranchingInstruction;
-import org.teavm.model.instructions.BinaryInstruction;
-import org.teavm.model.instructions.BranchingInstruction;
+import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.CastInstruction;
-import org.teavm.model.instructions.CastIntegerInstruction;
-import org.teavm.model.instructions.CastNumberInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
-import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ConstructMultiArrayInstruction;
-import org.teavm.model.instructions.DoubleConstantInstruction;
-import org.teavm.model.instructions.EmptyInstruction;
-import org.teavm.model.instructions.ExitInstruction;
-import org.teavm.model.instructions.FloatConstantInstruction;
-import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
 import org.teavm.model.instructions.InitClassInstruction;
-import org.teavm.model.instructions.InstructionVisitor;
-import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.IsInstanceInstruction;
-import org.teavm.model.instructions.JumpInstruction;
-import org.teavm.model.instructions.LongConstantInstruction;
-import org.teavm.model.instructions.MonitorEnterInstruction;
-import org.teavm.model.instructions.MonitorExitInstruction;
-import org.teavm.model.instructions.NegateInstruction;
-import org.teavm.model.instructions.NullCheckInstruction;
-import org.teavm.model.instructions.NullConstantInstruction;
-import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
-import org.teavm.model.instructions.RaiseInstruction;
-import org.teavm.model.instructions.StringConstantInstruction;
-import org.teavm.model.instructions.SwitchInstruction;
-import org.teavm.model.instructions.UnwrapArrayInstruction;
 
-public class ClassRefsRenamer implements InstructionVisitor {
-    private Mapper<String, String> classNameMapper;
+public class ClassRefsRenamer extends AbstractInstructionVisitor {
+    private ReferenceCache referenceCache;
+    private Function<String, String> classNameMapper;
 
-    public ClassRefsRenamer(Mapper<String, String> classNameMapper) {
+    public ClassRefsRenamer(ReferenceCache referenceCache, Function<String, String> classNameMapper) {
+        this.referenceCache = referenceCache;
         this.classNameMapper = classNameMapper;
     }
 
     public ClassHolder rename(ClassHolder cls) {
-        ClassHolder renamedCls = new ClassHolder(classNameMapper.map(cls.getName()));
+        ClassHolder renamedCls = new ClassHolder(classNameMapper.apply(cls.getName()));
         renamedCls.getModifiers().addAll(cls.getModifiers());
         renamedCls.setLevel(cls.getLevel());
         String parent = cls.getParent();
@@ -95,7 +73,7 @@ public class ClassRefsRenamer implements InstructionVisitor {
                 parent = null;
             }
         }
-        renamedCls.setParent(parent != null ? classNameMapper.map(parent) : null);
+        renamedCls.setParent(parent != null ? classNameMapper.apply(parent) : null);
         if (renamedCls.getName().equals(renamedCls.getParent())) {
             renamedCls.setParent(null);
         }
@@ -109,15 +87,26 @@ public class ClassRefsRenamer implements InstructionVisitor {
             renamedCls.addField(rename(field));
         }
         if (cls.getOwnerName() != null) {
-            renamedCls.setOwnerName(classNameMapper.map(cls.getOwnerName()));
+            renamedCls.setOwnerName(classNameMapper.apply(cls.getOwnerName()));
         }
         rename(cls.getAnnotations(), renamedCls.getAnnotations());
         for (String iface : cls.getInterfaces()) {
-            String mappedIfaceName = classNameMapper.map(iface);
+            String mappedIfaceName = classNameMapper.apply(iface);
             if (!mappedIfaceName.equals(renamedCls.getName())) {
                 renamedCls.getInterfaces().add(mappedIfaceName);
             }
         }
+
+        GenericValueType.Object genericParent = cls.getGenericParent();
+        if (genericParent != null) {
+            renamedCls.setGenericParent((GenericValueType.Object) rename(genericParent));
+        }
+        for (GenericValueType.Object genericInterface : cls.getGenericInterfaces()) {
+            renamedCls.getGenericInterfaces().add((GenericValueType.Object) rename(genericInterface));
+        }
+
+        renamedCls.setGenericParameters(cls.getGenericParameters());
+
         return renamedCls;
     }
 
@@ -131,13 +120,47 @@ public class ClassRefsRenamer implements InstructionVisitor {
         for (int i = 0; i < signature.length; ++i) {
             signature[i] = rename(signature[i]);
         }
-        MethodHolder renamedMethod = new MethodHolder(methodName, signature);
+        MethodHolder renamedMethod = new MethodHolder(referenceCache.getCached(
+                new MethodDescriptor(methodName, signature)));
         renamedMethod.getModifiers().addAll(method.getModifiers());
         renamedMethod.setLevel(method.getLevel());
         renamedMethod.setProgram(method.getProgram());
         rename(method.getAnnotations(), renamedMethod.getAnnotations());
         rename(renamedMethod.getProgram());
+
+        renamedMethod.setTypeParameters(rename(method.getTypeParameters()));
+        GenericValueType genericResultType = method.getGenericResultType();
+        if (genericResultType != null) {
+            genericResultType = rename(method.getGenericResultType());
+        }
+        GenericValueType[] genericParameters = new GenericValueType[method.genericParameterCount()];
+        for (int i = 0; i < genericParameters.length; ++i) {
+            genericParameters[i] = rename(method.genericParameterType(i));
+        }
+        if (genericResultType != null) {
+            renamedMethod.setGenericSignature(genericResultType, genericParameters);
+        }
+
         return renamedMethod;
+    }
+
+    private GenericTypeParameter[] rename(GenericTypeParameter[] typeParameters) {
+        for (int i = 0; i < typeParameters.length; ++i) {
+            typeParameters[i] = rename(typeParameters[i]);
+        }
+        return typeParameters;
+    }
+
+    private GenericTypeParameter rename(GenericTypeParameter typeParameter) {
+        GenericValueType.Reference classBound = typeParameter.getClassBound();
+        if (classBound != null) {
+            classBound = (GenericValueType.Reference) rename(classBound);
+        }
+        GenericValueType.Reference[] interfaceBounds = typeParameter.getInterfaceBounds();
+        for (int j = 0; j < interfaceBounds.length; ++j) {
+            interfaceBounds[j] = (GenericValueType.Reference) rename(interfaceBounds[j]);
+        }
+        return new GenericTypeParameter(typeParameter.getName(), classBound, interfaceBounds);
     }
 
     public FieldHolder rename(FieldHolder field) {
@@ -147,16 +170,61 @@ public class ClassRefsRenamer implements InstructionVisitor {
         renamedField.setType(rename(field.getType()));
         renamedField.setInitialValue(field.getInitialValue());
         rename(field.getAnnotations(), renamedField.getAnnotations());
+
+        GenericValueType genericType = field.getGenericType();
+        if (genericType != null) {
+            renamedField.setGenericType(rename(genericType));
+        }
+
         return renamedField;
     }
 
     private ValueType rename(ValueType type) {
         if (type instanceof ValueType.Array) {
             ValueType itemType = ((ValueType.Array) type).getItemType();
-            return ValueType.arrayOf(rename(itemType));
+            return referenceCache.getCached(ValueType.arrayOf(rename(itemType)));
         } else if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
-            return ValueType.object(classNameMapper.map(className));
+            return referenceCache.getCached(ValueType.object(classNameMapper.apply(className)));
+        } else {
+            return type;
+        }
+    }
+
+    private GenericValueType rename(GenericValueType type) {
+        if (type instanceof GenericValueType.Array) {
+            GenericValueType itemType = ((GenericValueType.Array) type).getItemType();
+            return referenceCache.getCached(new GenericValueType.Array(rename(itemType)));
+        } else if (type instanceof GenericValueType.Object) {
+            GenericValueType.Object object = (GenericValueType.Object) type;
+            String className = classNameMapper.apply(object.getClassName());
+            GenericValueType.Object parent = object.getParent();
+            if (parent != null) {
+                parent = (GenericValueType.Object) rename(parent);
+            }
+            GenericValueType.Argument[] arguments = object.getArguments();
+            for (int i = 0; i < arguments.length; ++i) {
+                GenericValueType.Argument argument = arguments[i];
+                GenericValueType.Reference value = argument.getValue();
+                if (value != null) {
+                    value = (GenericValueType.Reference) rename(value);
+                }
+                switch (argument.getKind()) {
+                    case INVARIANT:
+                        arguments[i] = GenericValueType.Argument.invariant(value);
+                        break;
+                    case COVARIANT:
+                        arguments[i] = GenericValueType.Argument.covariant(value);
+                        break;
+                    case CONTRAVARIANT:
+                        arguments[i] = GenericValueType.Argument.contravariant(value);
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+            return referenceCache.getCached(new GenericValueType.Object(parent, className, arguments));
         } else {
             return type;
         }
@@ -182,31 +250,31 @@ public class ClassRefsRenamer implements InstructionVisitor {
     private MethodHandle rename(MethodHandle handle) {
         switch (handle.getKind()) {
             case GET_FIELD:
-                return MethodHandle.fieldGetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.fieldGetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.getValueType()));
             case GET_STATIC_FIELD:
-                return MethodHandle.staticFieldGetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.staticFieldGetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.getValueType()));
             case PUT_FIELD:
-                return MethodHandle.fieldSetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.fieldSetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.getValueType()));
             case PUT_STATIC_FIELD:
-                return MethodHandle.staticFieldSetter(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.staticFieldSetter(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.getValueType()));
             case INVOKE_VIRTUAL:
-                return MethodHandle.virtualCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.virtualCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.signature()));
             case INVOKE_STATIC:
-                return MethodHandle.staticCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.staticCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.signature()));
             case INVOKE_SPECIAL:
-                return MethodHandle.specialCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.specialCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.signature()));
             case INVOKE_CONSTRUCTOR:
-                return MethodHandle.constructorCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.constructorCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.signature()));
             case INVOKE_INTERFACE:
-                return MethodHandle.interfaceCaller(classNameMapper.map(handle.getClassName()), handle.getName(),
+                return MethodHandle.interfaceCaller(classNameMapper.apply(handle.getClassName()), handle.getName(),
                         rename(handle.signature()));
             default:
                 break;
@@ -224,7 +292,7 @@ public class ClassRefsRenamer implements InstructionVisitor {
     }
 
     private AnnotationHolder rename(AnnotationHolder annot) {
-        AnnotationHolder renamedAnnot = new AnnotationHolder(classNameMapper.map(annot.getType()));
+        AnnotationHolder renamedAnnot = new AnnotationHolder(classNameMapper.apply(annot.getType()));
         for (Map.Entry<String, AnnotationValue> entry : annot.getValues().entrySet()) {
             renamedAnnot.getValues().put(entry.getKey(), entry.getValue());
         }
@@ -239,14 +307,10 @@ public class ClassRefsRenamer implements InstructionVisitor {
             }
             for (TryCatchBlock tryCatch : basicBlock.getTryCatchBlocks()) {
                 if (tryCatch.getExceptionType() != null) {
-                    tryCatch.setExceptionType(classNameMapper.map(tryCatch.getExceptionType()));
+                    tryCatch.setExceptionType(classNameMapper.apply(tryCatch.getExceptionType()));
                 }
             }
         }
-    }
-
-    @Override
-    public void visit(EmptyInstruction insn) {
     }
 
     @Override
@@ -255,76 +319,8 @@ public class ClassRefsRenamer implements InstructionVisitor {
     }
 
     @Override
-    public void visit(NullConstantInstruction insn) {
-    }
-
-    @Override
-    public void visit(IntegerConstantInstruction insn) {
-    }
-
-    @Override
-    public void visit(LongConstantInstruction insn) {
-    }
-
-    @Override
-    public void visit(FloatConstantInstruction insn) {
-    }
-
-    @Override
-    public void visit(DoubleConstantInstruction insn) {
-    }
-
-    @Override
-    public void visit(StringConstantInstruction insn) {
-    }
-
-    @Override
-    public void visit(BinaryInstruction insn) {
-    }
-
-    @Override
-    public void visit(NegateInstruction insn) {
-    }
-
-    @Override
-    public void visit(AssignInstruction insn) {
-    }
-
-    @Override
     public void visit(CastInstruction insn) {
         insn.setTargetType(rename(insn.getTargetType()));
-    }
-
-    @Override
-    public void visit(CastNumberInstruction insn) {
-    }
-
-    @Override
-    public void visit(CastIntegerInstruction insn) {
-    }
-
-    @Override
-    public void visit(BranchingInstruction insn) {
-    }
-
-    @Override
-    public void visit(BinaryBranchingInstruction insn) {
-    }
-
-    @Override
-    public void visit(JumpInstruction insn) {
-    }
-
-    @Override
-    public void visit(SwitchInstruction insn) {
-    }
-
-    @Override
-    public void visit(ExitInstruction insn) {
-    }
-
-    @Override
-    public void visit(RaiseInstruction insn) {
     }
 
     @Override
@@ -334,7 +330,7 @@ public class ClassRefsRenamer implements InstructionVisitor {
 
     @Override
     public void visit(ConstructInstruction insn) {
-        insn.setType(classNameMapper.map(insn.getType()));
+        insn.setType(classNameMapper.apply(insn.getType()));
     }
 
     @Override
@@ -344,44 +340,36 @@ public class ClassRefsRenamer implements InstructionVisitor {
 
     @Override
     public void visit(GetFieldInstruction insn) {
-        String className = classNameMapper.map(insn.getField().getClassName());
-        insn.setField(new FieldReference(className, insn.getField().getFieldName()));
+        String className = classNameMapper.apply(insn.getField().getClassName());
+        insn.setField(referenceCache.getCached(new FieldReference(className, insn.getField().getFieldName())));
+        insn.setFieldType(rename(insn.getFieldType()));
     }
 
     @Override
     public void visit(PutFieldInstruction insn) {
-        String className = classNameMapper.map(insn.getField().getClassName());
-        insn.setField(new FieldReference(className, insn.getField().getFieldName()));
+        String className = classNameMapper.apply(insn.getField().getClassName());
+        if (className != insn.getField().getClassName()) {
+            insn.setField(referenceCache.getCached(new FieldReference(className, insn.getField().getFieldName())));
+        }
+        insn.setFieldType(rename(insn.getFieldType()));
     }
-
-    @Override
-    public void visit(ArrayLengthInstruction insn) {
-    }
-
-    @Override
-    public void visit(CloneArrayInstruction insn) {
-    }
-
-    @Override
-    public void visit(GetElementInstruction insn) {
-    }
-
-    @Override
-    public void visit(PutElementInstruction insn) {
-    }
-
-    @Override
-    public void visit(UnwrapArrayInstruction insn) {
-    }
-
     @Override
     public void visit(InvokeInstruction insn) {
-        String className = classNameMapper.map(insn.getMethod().getClassName());
+        String className = classNameMapper.apply(insn.getMethod().getClassName());
         ValueType[] signature = insn.getMethod().getSignature();
+        boolean changed = true;
         for (int i = 0; i < signature.length; ++i) {
-            signature[i] = rename(signature[i]);
+            ValueType type = signature[i];
+            ValueType newType = rename(type);
+            if (newType != null) {
+                changed = true;
+            }
+            signature[i] = newType;
         }
-        insn.setMethod(new MethodReference(className, new MethodDescriptor(insn.getMethod().getName(), signature)));
+        if (changed) {
+            insn.setMethod(referenceCache.getCached(className,
+                    new MethodDescriptor(insn.getMethod().getName(), signature)));
+        }
     }
 
     @Override
@@ -403,18 +391,6 @@ public class ClassRefsRenamer implements InstructionVisitor {
 
     @Override
     public void visit(InitClassInstruction insn) {
-        insn.setClassName(classNameMapper.map(insn.getClassName()));
-    }
-
-    @Override
-    public void visit(NullCheckInstruction insn) {
-    }
-
-    @Override
-    public void visit(MonitorEnterInstruction insn) {
-    }
-
-    @Override
-    public void visit(MonitorExitInstruction insn) {
+        insn.setClassName(classNameMapper.apply(insn.getClassName()));
     }
 }

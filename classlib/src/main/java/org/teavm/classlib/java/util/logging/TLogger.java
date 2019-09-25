@@ -15,35 +15,38 @@
  */
 package org.teavm.classlib.java.util.logging;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.classlib.java.lang.TInteger;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.classlib.java.lang.TString;
-import org.teavm.classlib.java.lang.TStringBuilder;
 import org.teavm.classlib.java.lang.TThrowable;
 import org.teavm.classlib.java.util.THashMap;
 import org.teavm.classlib.java.util.TMap;
 import org.teavm.jso.JSBody;
 
 public class TLogger {
-    public static final TString GLOBAL_LOGGER_NAME = TString.wrap("global");
-    private static TMap<TString, TLogger> loggerCache = new THashMap<>();
-    private TString name;
+    public static final String GLOBAL_LOGGER_NAME = "global";
+    private static TMap<String, TLogger> loggerCache = new THashMap<>();
+    private String name;
     private TLogger parent;
 
-    TLogger(TString name) {
+    TLogger(String name) {
         this.name = name;
     }
 
-    public static TLogger getLogger(TString name) {
+    public static TLogger getGlobal() {
+        return getLogger(GLOBAL_LOGGER_NAME);
+    }
+
+    public static TLogger getLogger(String name) {
         TLogger logger = loggerCache.get(name);
         if (logger == null) {
             logger = new TLogger(name);
             int dotIndex = name.lastIndexOf('.');
             if (dotIndex >= 0) {
-                TString parentName = name.substring(0, dotIndex);
+                String parentName = name.substring(0, dotIndex);
                 logger.parent = getLogger(parentName);
             } else if (!name.isEmpty()) {
-                logger.parent = getLogger(TString.wrap(""));
+                logger.parent = getLogger("");
             }
             loggerCache.put(name, logger);
         }
@@ -55,21 +58,31 @@ public class TLogger {
     }
 
     public void log(TLogRecord record) {
-        TString message = format(record.getMessage(), record.getParameters());
-        if (record.getLevel().intValue() >= TLevel.SEVERE.intValue()) {
-            error(message);
-        } else if (record.getLevel().intValue() >= TLevel.WARNING.intValue()) {
-            warn(message);
+        String message = format(record.getMessage(), record.getParameters());
+        if (PlatformDetector.isLowLevel()) {
+            System.out.print("[");
+            System.out.print(record.getLevel().getName());
+            System.out.print("] ");
+            System.out.println(message);
+            if (record.getThrown() != null) {
+                record.getThrown().printStackTrace(System.out);
+            }
         } else {
-            info(message);
+            if (record.getLevel().intValue() >= TLevel.SEVERE.intValue()) {
+                error(message);
+            } else if (record.getLevel().intValue() >= TLevel.WARNING.intValue()) {
+                warn(message);
+            } else {
+                infoImpl(message);
+            }
         }
     }
 
-    private TString format(TString message, Object[] params) {
+    private String format(String message, Object[] params) {
         if (params == null) {
             return message;
         }
-        TStringBuilder sb = new TStringBuilder();
+        StringBuilder sb = new StringBuilder();
         int index = 0;
         while (index < message.length()) {
             int next = message.indexOf('{', index);
@@ -88,17 +101,17 @@ public class TLogger {
             }
             int paramIndex = TInteger.parseInt(message.substring(paramStart, next));
             if (paramIndex >= params.length) {
-                sb.append(message.substring(index, next));
+                sb.append(message, index, next);
                 index = next;
                 continue;
             }
-            sb.append(TObject.wrap(params[paramIndex]));
+            sb.append(params[paramIndex]);
             index = next + 1;
         }
-        return TString.wrap(sb.toString());
+        return sb.toString();
     }
 
-    private static int digits(int from, TString message) {
+    private static int digits(int from, String message) {
         while (from < message.length()) {
             int c = message.charAt(from++);
             if (c <= '0' || c >= '9') {
@@ -108,49 +121,53 @@ public class TLogger {
         return -1;
     }
 
-    public void log(TLevel level, TString msg, Object[] params) {
+    public void log(TLevel level, String msg, Object[] params) {
         TLogRecord record = new TLogRecord(level, msg);
         record.setParameters(params);
         log(record);
     }
 
-    public void log(TLevel level, TString msg) {
+    public void log(TLevel level, String msg) {
         log(new TLogRecord(level, msg));
     }
 
-    public void log(TLevel level, TString msg, TObject param1) {
+    public void log(TLevel level, String msg, TObject param1) {
         TLogRecord record = new TLogRecord(level, msg);
         record.setParameters(new Object[] { param1 });
         log(record);
     }
 
-    public void log(TLevel level, TString msg, TThrowable thrown) {
+    public void log(TLevel level, String msg, TThrowable thrown) {
         TLogRecord record = new TLogRecord(level, msg);
         record.setThrown(thrown);
         log(record);
     }
 
-    public void severe(TString msg) {
+    public void severe(String msg) {
         log(TLevel.SEVERE, msg);
     }
 
-    public void warning(TString msg) {
+    public void warning(String msg) {
         log(TLevel.WARNING, msg);
     }
 
-    public void config(TString msg) {
+    public void info(String msg) {
+        log(TLevel.INFO, msg);
+    }
+
+    public void config(String msg) {
         log(TLevel.CONFIG, msg);
     }
 
-    public void fine(TString msg) {
+    public void fine(String msg) {
         log(TLevel.FINE, msg);
     }
 
-    public void finer(TString msg) {
+    public void finer(String msg) {
         log(TLevel.FINER, msg);
     }
 
-    public void finest(TString msg) {
+    public void finest(String msg) {
         log(TLevel.FINEST, msg);
     }
 
@@ -158,7 +175,7 @@ public class TLogger {
         return true;
     }
 
-    public TString getName() {
+    public String getName() {
         return name;
     }
 
@@ -174,17 +191,17 @@ public class TLogger {
             + "if (console) {"
                 + "console.info(message);"
             + "}")
-    public static native void info(TString message);
+    private static native void infoImpl(String message);
 
     @JSBody(params = "message", script = ""
             + "if (console) {"
                 + "console.warn(message);"
             + "}")
-    private static native void warn(TString message);
+    private static native void warn(String message);
 
     @JSBody(params = "message", script = ""
             + "if (console) {"
                 + "console.error(message);"
             + "}")
-    private static native void error(TString message);
+    private static native void error(String message);
 }

@@ -20,6 +20,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.Collection;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -29,7 +30,7 @@ import org.teavm.platform.metadata.MetadataGeneratorContext;
 import org.teavm.platform.metadata.ResourceMap;
 
 public class TimeZoneGenerator implements MetadataGenerator {
-    public static final String TIMEZONE_DB_VERSION = "2017b";
+    public static final String TIMEZONE_DB_VERSION = "2019b";
     public static final String TIMEZONE_DB_PATH = "org/teavm/classlib/impl/tz/tzdata" + TIMEZONE_DB_VERSION + ".zip";
 
     public static void compile(ZoneInfoCompiler compiler, ClassLoader classLoader) {
@@ -50,11 +51,13 @@ public class TimeZoneGenerator implements MetadataGenerator {
                         case "northamerica":
                         case "pacificnew":
                         case "southamerica":
-                            compiler.parseDataFile(new BufferedReader(new InputStreamReader(zip, "UTF-8")), false);
+                            compiler.parseDataFile(new BufferedReader(
+                                    new InputStreamReader(zip, StandardCharsets.UTF_8)), false);
                             break;
                         case "backward":
                         case "backzone":
-                            compiler.parseDataFile(new BufferedReader(new InputStreamReader(zip, "UTF-8")), true);
+                            compiler.parseDataFile(new BufferedReader(
+                                    new InputStreamReader(zip, StandardCharsets.UTF_8)), true);
                             break;
                     }
                 }

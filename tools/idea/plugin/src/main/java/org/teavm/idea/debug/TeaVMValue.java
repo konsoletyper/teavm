@@ -18,13 +18,15 @@ package org.teavm.idea.debug;
 import com.intellij.util.PlatformIcons;
 import com.intellij.xdebugger.frame.XCompositeNode;
 import com.intellij.xdebugger.frame.XNamedValue;
-import com.intellij.xdebugger.frame.XValueChildrenList;
 import com.intellij.xdebugger.frame.XValueNode;
 import com.intellij.xdebugger.frame.XValuePlace;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import javax.swing.Icon;
 import org.jetbrains.annotations.NotNull;
+import org.teavm.common.Promise;
 import org.teavm.debugging.Value;
 import org.teavm.debugging.Variable;
 
@@ -41,41 +43,52 @@ public class TeaVMValue extends XNamedValue {
     @Override
     public void computePresentation(@NotNull XValueNode node, @NotNull XValuePlace place) {
         Icon icon = root ? PlatformIcons.VARIABLE_ICON : PlatformIcons.FIELD_ICON;
-        String representation = innerValue.getRepresentation();
-        if (representation == null) {
-            representation = "null";
-        }
-        if (Objects.equals(innerValue.getType(), "java.lang.String")) {
-            representation = getStringRepresentation();
-        }
-        node.setPresentation(icon, innerValue.getType(), representation, !innerValue.getProperties().isEmpty());
+        innerValue.getRepresentation()
+                .then(representation -> representation != null ? representation : "null")
+                .thenVoid(representation -> {
+                    innerValue.getType().thenVoid(type -> {
+                        if (Objects.equals(type, "java.lang.String")) {
+                            getStringRepresentation().thenVoid(str -> node.setPresentation(icon, type, str, true));
+                        } else {
+                            node.setPresentation(icon, type, representation, innerValue.hasInnerStructure());
+                        }
+                    });
+                });
+
     }
 
-    private String getStringRepresentation() {
-        Variable charactersProperty = innerValue.getProperties().get("characters");
-        if (charactersProperty != null) {
-            Variable dataProperty = charactersProperty.getValue().getProperties().get("data");
-            if (dataProperty != null) {
-                Value dataValue = dataProperty.getValue();
-                int[] indexes = dataValue.getProperties().keySet().stream()
+    private Promise<String> getStringRepresentation() {
+        return innerValue.getProperties().thenAsync(properties -> {
+            Variable charactersProperty = properties.get("characters");
+            if (charactersProperty == null) {
+                return errorString();
+            }
+            return charactersProperty.getValue().getProperties().thenAsync(dataValueProperties -> {
+                int[] indexes = dataValueProperties.keySet().stream()
                         .filter(t -> isDigits(t))
                         .mapToInt(Integer::parseInt)
                         .toArray();
                 int maxIndex = Math.min(Arrays.stream(indexes).max().orElse(-1) + 1, 256);
                 char[] chars = new char[maxIndex];
+                List<Promise<Void>> promises = new ArrayList<>();
                 for (int i = 0; i < maxIndex; ++i) {
-                    Variable charProperty = dataValue.getProperties().get(Integer.toString(i));
+                    Variable charProperty = dataValueProperties.get(Integer.toString(i));
                     if (charProperty != null) {
-                        String charRepr = charProperty.getValue().getRepresentation();
-                        if (isDigits(charRepr)) {
-                            chars[i] = (char) Integer.parseInt(charRepr);
-                        }
+                        int index = i;
+                        promises.add(charProperty.getValue().getRepresentation().thenVoid(charRepr -> {
+                            if (isDigits(charRepr)) {
+                                chars[index] = (char) Integer.parseInt(charRepr);
+                            }
+                        }));
                     }
                 }
-                return new String(chars);
-            }
-        }
-        return "<could not calculate string value>";
+                return Promise.allVoid(promises).thenAsync(v -> Promise.of(new String(chars)));
+            });
+        });
+    }
+
+    private Promise<String> errorString() {
+        return Promise.of("<could not calculate string value>");
     }
 
     private static boolean isDigits(String str) {
@@ -90,10 +103,6 @@ public class TeaVMValue extends XNamedValue {
 
     @Override
     public void computeChildren(@NotNull XCompositeNode node) {
-        XValueChildrenList children = new XValueChildrenList();
-        for (Variable variable : innerValue.getProperties().values()) {
-            children.add(TeaVMStackFrame.createValueNode(variable.getName(), false, variable.getValue()));
-        }
-        node.addChildren(children, true);
+        TeaVMStackFrame.computeChildrenImpl(node, innerValue.getProperties(), false);
     }
 }

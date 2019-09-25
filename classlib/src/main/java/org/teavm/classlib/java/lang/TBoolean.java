@@ -27,7 +27,7 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
         this.value = value;
     }
 
-    public TBoolean(TString value) {
+    public TBoolean(String value) {
         this.value = parseBoolean(value);
     }
 
@@ -49,8 +49,8 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
         return 0;
     }
 
-    public static boolean parseBoolean(TString s) {
-        return s != null && s.toLowerCase().equals(TString.wrap("true"));
+    public static boolean parseBoolean(String s) {
+        return s != null && s.toLowerCase().equals("true");
     }
 
     public boolean booleanValue() {
@@ -61,7 +61,7 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
         return value ? TRUE : FALSE;
     }
 
-    public static TBoolean valueOf(TString value) {
+    public static TBoolean valueOf(String value) {
         return valueOf(parseBoolean(value));
     }
 
@@ -87,8 +87,8 @@ public class TBoolean extends TObject implements TSerializable, TComparable<TBoo
         return obj instanceof TBoolean && ((TBoolean) obj).value == value;
     }
 
-    public static boolean getBoolean(TString key) {
-        String stringValue = key != null ? TSystem.getProperty((String) (Object) key) : null;
-        return stringValue != null && valueOf(TString.wrap(stringValue)).booleanValue();
+    public static boolean getBoolean(String key) {
+        String stringValue = key != null ? TSystem.getProperty(key) : null;
+        return stringValue != null && valueOf(stringValue).booleanValue();
     }
 }

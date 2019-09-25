@@ -32,51 +32,45 @@ import org.teavm.backend.wasm.intrinsics.WasmIntrinsicManager;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.common.ServiceRepository;
-import org.teavm.model.CallLocation;
-import org.teavm.model.ListableClassReaderSource;
-import org.teavm.model.MethodReader;
+import org.teavm.model.ClassReaderSource;
 import org.teavm.model.MethodReference;
 import org.teavm.platform.metadata.MetadataGenerator;
-import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.Resource;
+import org.teavm.platform.metadata.ResourceArray;
+import org.teavm.platform.metadata.ResourceMap;
 
-public class MetadataIntrinsic implements WasmIntrinsic {
-    private ListableClassReaderSource classSource;
+class MetadataIntrinsic implements WasmIntrinsic {
+    private ClassReaderSource classSource;
     private ClassLoader classLoader;
     private ServiceRepository services;
     private Properties properties;
     private Map<ResourceTypeDescriptor, DataStructure> resourceTypeCache = new HashMap<>();
+    private MethodReference constructor;
+    private MethodReference targetMethod;
+    private MetadataGenerator generator;
 
-    public MetadataIntrinsic(ListableClassReaderSource classSource, ClassLoader classLoader,
-            ServiceRepository services, Properties properties) {
+    MetadataIntrinsic(ClassReaderSource classSource, ClassLoader classLoader,
+            ServiceRepository services, Properties properties, MethodReference constructor,
+            MethodReference targetMethod, MetadataGenerator generator) {
         this.classSource = classSource;
         this.classLoader = classLoader;
         this.services = services;
         this.properties = properties;
+        this.constructor = constructor;
+        this.targetMethod = targetMethod;
+        this.generator = generator;
     }
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
-        MethodReader method = classSource.resolve(methodReference);
-        if (method == null) {
-            return false;
-        }
-
-        return method.getAnnotations().get(MetadataProvider.class.getName()) != null;
+        return methodReference.equals(constructor);
     }
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
-        MethodReader method = classSource.resolve(invocation.getMethod());
-        MetadataGenerator generator = MetadataUtils.createMetadataGenerator(classLoader, method,
-                new CallLocation(invocation.getMethod()), manager.getDiagnostics());
-        if (generator == null) {
-            return new WasmInt32Constant(0);
-        }
-
         DefaultMetadataGeneratorContext metadataContext = new DefaultMetadataGeneratorContext(classSource,
                 classLoader, properties, services);
-        Resource resource = generator.generateMetadata(metadataContext, invocation.getMethod());
+        Resource resource = generator.generateMetadata(metadataContext, targetMethod);
         int address = writeValue(manager.getBinaryWriter(), manager.getStringPool(), resource);
 
         return new WasmInt32Constant(address);
@@ -85,6 +79,22 @@ public class MetadataIntrinsic implements WasmIntrinsic {
     private int writeValue(BinaryWriter writer, WasmStringPool stringPool, Object value) {
         if (value instanceof String) {
             return stringPool.getStringPointer((String) value);
+        } else if (value instanceof Boolean) {
+            DataValue dataValue = DataPrimitives.BYTE.createValue();
+            dataValue.setByte(0, (Boolean) value ? (byte) 1 : 0);
+            return writer.append(dataValue);
+        } else if (value instanceof Integer) {
+            DataValue dataValue = DataPrimitives.INT.createValue();
+            dataValue.setInt(0, (Integer) value);
+            return writer.append(dataValue);
+        } else if (value instanceof Long) {
+            DataValue dataValue = DataPrimitives.LONG.createValue();
+            dataValue.setLong(0, (Long) value);
+            return writer.append(dataValue);
+        } else if (value instanceof ResourceMap) {
+            return writeResource(writer, stringPool, (ResourceMap<?>) value);
+        } else if (value instanceof ResourceArray) {
+            return writeResource(writer, stringPool, (ResourceArray<?>) value);
         } else if (value instanceof ResourceTypeDescriptorProvider && value instanceof Resource) {
             return writeResource(writer, stringPool, (ResourceTypeDescriptorProvider) value);
         } else {
@@ -107,6 +117,90 @@ public class MetadataIntrinsic implements WasmIntrinsic {
         }
 
         return address;
+    }
+
+    private int writeResource(BinaryWriter writer, WasmStringPool stringPool, ResourceMap<?> resourceMap) {
+        String[] keys = resourceMap.keys();
+        int tableSize = keys.length * 2;
+        int maxTableSize = Math.min(keys.length * 5 / 2, tableSize + 10);
+
+        String[] bestTable = null;
+        int bestCollisionRatio = 0;
+        while (tableSize <= maxTableSize) {
+            String[] table = new String[tableSize];
+            int maxCollisionRatio = 0;
+            for (String key : keys) {
+                int hashCode = key.hashCode();
+                int collisionRatio = 0;
+                while (true) {
+                    int index = mod(hashCode++, table.length);
+                    if (table[index] == null) {
+                        table[index] = key;
+                        break;
+                    }
+                    collisionRatio++;
+                }
+                maxCollisionRatio = Math.max(maxCollisionRatio, collisionRatio);
+            }
+
+            if (bestTable == null || bestCollisionRatio > maxCollisionRatio) {
+                bestCollisionRatio = maxCollisionRatio;
+                bestTable = table;
+            }
+
+            tableSize++;
+        }
+
+
+        DataValue sizeValue = DataPrimitives.ADDRESS.createValue();
+        int start = writer.append(sizeValue);
+        sizeValue.setAddress(0, bestTable.length);
+
+        DataValue[] keyValues = new DataValue[bestTable.length];
+        DataValue[] valueValues = new DataValue[bestTable.length];
+        for (int i = 0; i < bestTable.length; ++i) {
+            DataValue keyValue = DataPrimitives.ADDRESS.createValue();
+            DataValue valueValue = DataPrimitives.ADDRESS.createValue();
+            writer.append(keyValue);
+            writer.append(valueValue);
+            keyValues[i] = keyValue;
+            valueValues[i] = valueValue;
+        }
+        for (int i = 0; i < bestTable.length; ++i) {
+            String key = bestTable[i];
+            if (key != null) {
+                keyValues[i].setAddress(0, stringPool.getStringPointer(key));
+                valueValues[i].setAddress(0, writeValue(writer, stringPool, resourceMap.get(key)));
+            }
+        }
+
+        return start;
+    }
+
+    private int writeResource(BinaryWriter writer, WasmStringPool stringPool, ResourceArray<?> resourceArray) {
+        DataValue sizeValue = DataPrimitives.ADDRESS.createValue();
+        int start = writer.append(sizeValue);
+        sizeValue.setAddress(0, resourceArray.size());
+
+        DataValue[] arrayValues = new DataValue[resourceArray.size()];
+        for (int i = 0; i < resourceArray.size(); ++i) {
+            arrayValues[i] = DataPrimitives.ADDRESS.createValue();
+            writer.append(arrayValues[i]);
+        }
+
+        for (int i = 0; i < resourceArray.size(); ++i) {
+            arrayValues[i].setAddress(0, writeValue(writer, stringPool, resourceArray.get(i)));
+        }
+
+        return start;
+    }
+
+    private static int mod(int a, int b) {
+        a %= b;
+        if (a < 0) {
+            a += b;
+        }
+        return a;
     }
 
     private void writeValueTo(BinaryWriter writer, WasmStringPool stringPool, Class<?> type, DataValue target,
@@ -134,6 +228,10 @@ public class MetadataIntrinsic implements WasmIntrinsic {
             target.setAddress(index, address);
         } else if (value == null) {
             target.setAddress(index, 0);
+        } else if (value instanceof ResourceMap) {
+            target.setAddress(index, writeResource(writer, stringPool, (ResourceMap<?>) value));
+        } else if (value instanceof ResourceArray) {
+            target.setAddress(index, writeResource(writer, stringPool, (ResourceArray<?>) value));
         } else {
             throw new IllegalArgumentException("Don't know how to write resource: " + value);
         }

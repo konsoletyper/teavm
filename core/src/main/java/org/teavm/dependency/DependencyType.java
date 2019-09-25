@@ -19,6 +19,7 @@ public class DependencyType {
     private DependencyAnalyzer dependencyAnalyzer;
     private String name;
     int index;
+    boolean subtypeExists;
 
     DependencyType(DependencyAnalyzer dependencyAnalyzer, String name, int index) {
         this.dependencyAnalyzer = dependencyAnalyzer;

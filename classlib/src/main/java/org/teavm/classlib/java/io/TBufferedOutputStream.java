@@ -16,6 +16,8 @@
 
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
+
 public class TBufferedOutputStream extends TFilterOutputStream {
     protected byte[] buf;
     protected int count;
@@ -34,13 +36,13 @@ public class TBufferedOutputStream extends TFilterOutputStream {
     }
 
     @Override
-    public void flush() throws TIOException {
+    public void flush() throws IOException {
         flushInternal();
         out.flush();
     }
 
     @Override
-    public void write(byte[] buffer, int offset, int length) throws TIOException {
+    public void write(byte[] buffer, int offset, int length) throws IOException {
         byte[] internalBuffer = buf;
 
         if (internalBuffer != null && length >= internalBuffer.length) {
@@ -62,7 +64,7 @@ public class TBufferedOutputStream extends TFilterOutputStream {
         }
 
         if (internalBuffer == null) {
-            throw new TIOException();
+            throw new IOException();
         }
 
         // flush the internal buffer first if we have not enough space left
@@ -76,7 +78,7 @@ public class TBufferedOutputStream extends TFilterOutputStream {
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() throws IOException {
         if (buf == null) {
             return;
         }
@@ -89,10 +91,10 @@ public class TBufferedOutputStream extends TFilterOutputStream {
     }
 
     @Override
-    public void write(int oneByte) throws TIOException {
+    public void write(int oneByte) throws IOException {
         byte[] internalBuffer = buf;
         if (internalBuffer == null) {
-            throw new TIOException();
+            throw new IOException();
         }
 
         if (count == internalBuffer.length) {
@@ -102,7 +104,7 @@ public class TBufferedOutputStream extends TFilterOutputStream {
         internalBuffer[count++] = (byte) oneByte;
     }
 
-    private void flushInternal() throws TIOException {
+    private void flushInternal() throws IOException {
         if (count > 0) {
             out.write(buf, 0, count);
             count = 0;

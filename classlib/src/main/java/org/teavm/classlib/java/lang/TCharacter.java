@@ -18,8 +18,9 @@ package org.teavm.classlib.java.lang;
 import org.teavm.classlib.impl.unicode.UnicodeHelper;
 import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
+import org.teavm.interop.Unmanaged;
+import org.teavm.interop.c.Include;
 import org.teavm.platform.Platform;
-import org.teavm.platform.metadata.MetadataProvider;
 import org.teavm.platform.metadata.StringResource;
 
 public class TCharacter extends TObject implements TComparable<TCharacter> {
@@ -242,7 +243,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return toLowerCaseSystem(codePoint);
     }
 
-    @Import(module = "runtime", name = "tolower")
+    @Import(module = "teavm", name = "towlower")
+    @Include("wctype.h")
+    @Unmanaged
     private static native int toLowerCaseSystem(int codePoint);
 
     public static char toUpperCase(char ch) {
@@ -258,7 +261,9 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return toUpperCaseSystem(codePoint);
     }
 
-    @Import(module = "runtime", name = "toupper")
+    @Import(module = "teavm", name = "towupper")
+    @Include("wctype.h")
+    @Unmanaged
     private static native int toUpperCaseSystem(int codePoint);
 
     public static int digit(char ch, int radix) {
@@ -317,7 +322,6 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return digitMapping;
     }
 
-    @MetadataProvider(CharacterMetadataGenerator.class)
     private static native StringResource obtainDigitMapping();
 
     private static UnicodeHelper.Range[] getClasses() {
@@ -327,7 +331,6 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
         return classMapping;
     }
 
-    @MetadataProvider(CharacterMetadataGenerator.class)
     private static native StringResource obtainClasses();
 
     public static int toChars(int codePoint, char[] dst, int dstIndex) {

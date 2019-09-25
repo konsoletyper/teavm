@@ -27,6 +27,7 @@ import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmIntBinary;
 import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
 import org.teavm.backend.wasm.model.expression.WasmIntType;
+import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.MethodReference;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.runtime.CallSite;
@@ -50,12 +51,15 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
         }
         switch (methodReference.getName()) {
             case "findCallSiteById":
+            case "isJumpSupported":
+            case "jumpToFrame":
+            case "abort":
                 return true;
         }
         return false;
     }
 
-    public void postProcess(List<CallSiteDescriptor> callSites) {
+    public void postProcess(List<? extends CallSiteDescriptor> callSites) {
         int address = callSiteBinaryGenerator.writeCallSites(callSites);
         for (WasmInt32Constant constant : constants) {
             constant.setValue(address);
@@ -64,15 +68,29 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
 
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
-        WasmInt32Constant constant = new WasmInt32Constant(0);
-        constant.setLocation(invocation.getLocation());
-        constants.add(constant);
+        switch (invocation.getMethod().getName()) {
+            case "findCallSiteById": {
+                WasmInt32Constant constant = new WasmInt32Constant(0);
+                constant.setLocation(invocation.getLocation());
+                constants.add(constant);
 
-        int callSiteSize = classGenerator.getClassSize(CallSite.class.getName());
-        WasmExpression id = manager.generate(invocation.getArguments().get(0));
-        WasmExpression offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL,
-                id, new WasmInt32Constant(callSiteSize));
+                int callSiteSize = classGenerator.getClassSize(CallSite.class.getName());
+                WasmExpression id = manager.generate(invocation.getArguments().get(0));
+                WasmExpression offset = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.MUL,
+                        id, new WasmInt32Constant(callSiteSize));
 
-        return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, constant, offset);
+                return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, constant, offset);
+            }
+
+            case "isJumpSupported":
+                return new WasmInt32Constant(0);
+
+            case "jumpToFrame":
+            case "abort":
+                return new WasmUnreachable();
+
+            default:
+                throw new IllegalArgumentException("Unknown method: " + invocation.getMethod());
+        }
     }
 }

@@ -1,0 +1,73 @@
+#include "runtime.h"
+#include "time.h"
+#include "fiber.h"
+#include "string.h"
+#include "definitions.h"
+#include <string.h>
+#include <stdint.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+
+#if TEAVM_INCREMENTAL
+    #include "virtcall.h"
+#endif
+
+#if TEAVM_UNIX
+    #include <locale.h>
+#endif
+
+#if TEAVM_WINDOWS
+    #include <Windows.h>
+#endif
+
+char *teavm_beforeClasses;
+
+double teavm_rand() {
+    return rand() / ((double) RAND_MAX + 1);
+}
+
+void teavm_beforeInit() {
+    srand((unsigned int) time(NULL));
+
+    #if TEAVM_UNIX
+        setlocale (LC_ALL, "");
+    #endif
+
+    teavm_initFiber();
+    teavm_initTime();
+}
+
+TeaVM_Array* teavm_parseArguments(int argc, char** argv) {
+    TeaVM_Array* array = teavm_allocateStringArray(argc > 0 ? argc - 1 : 0);
+    TeaVM_String** arrayData = TEAVM_ARRAY_DATA(array, TeaVM_String*);
+    for (int i = 1; i < argc; ++i) {
+        arrayData[i - 1] = teavm_cToString(argv[i]);
+    }
+    return array;
+}
+
+void teavm_afterInitClasses() {
+    teavm_initStaticGcRoots();
+    #if TEAVM_INCREMENTAL
+        teavm_vc_done();
+    #endif
+}
+
+TeaVM_Class* teavm_classClass;
+TeaVM_Class* teavm_objectClass;
+TeaVM_Class* teavm_stringClass;
+TeaVM_Class* teavm_charArrayClass;
+
+void teavm_initClasses() {
+    teavm_beforeClasses = (char*) teavm_classReferences[0];
+    for (int i = 1; i < teavm_classReferencesCount; ++i) {
+        char* c = (char*) teavm_classReferences[i];
+        if (c < teavm_beforeClasses) teavm_beforeClasses = c;
+    }
+    teavm_beforeClasses -= 4096;
+    int32_t classHeader = TEAVM_PACK_CLASS(teavm_classClass) | (int32_t) INT32_C(0x80000000);
+    for (int i = 0; i < teavm_classReferencesCount; ++i) {
+        teavm_classReferences[i]->parent.header = classHeader;
+    }
+}

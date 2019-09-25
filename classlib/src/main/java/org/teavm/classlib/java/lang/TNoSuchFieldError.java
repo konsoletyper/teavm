@@ -22,7 +22,7 @@ public class TNoSuchFieldError extends TIncompatibleClassChangeError {
         super();
     }
 
-    public TNoSuchFieldError(TString message) {
+    public TNoSuchFieldError(String message) {
         super(message);
     }
 }

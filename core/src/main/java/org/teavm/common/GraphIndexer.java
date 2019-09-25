@@ -15,9 +15,9 @@
  */
 package org.teavm.common;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntArrayList;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
-import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -157,7 +157,8 @@ public class GraphIndexer {
                     List<WeightedNode> succList = new ArrayList<>(successors.length);
                     IntegerArray orderedSuccessors = new IntegerArray(successors.length);
                     if (terminalNodes.size() > 0) {
-                        IntSet loopNodes = IntOpenHashSet.from(findNaturalLoop(node, terminalNodes.getAll()));
+                        int[] loopNodeList = findNaturalLoop(node, terminalNodes.getAll());
+                        IntSet loopNodes = IntHashSet.from(loopNodeList);
                         for (int succ : successors) {
                             if (loopNodes.contains(succ)) {
                                 succList.add(new WeightedNode(succ, priorities[succ], weights[succ]));
@@ -168,10 +169,10 @@ public class GraphIndexer {
                             orderedSuccessors.add(wnode.index);
                         }
 
-                        IntSet outerSuccessors = new IntOpenHashSet(successors.length);
+                        IntSet outerSuccessors = new IntHashSet(successors.length);
                         succList.clear();
-                        for (IntCursor loopNode : loopNodes) {
-                            for (int succ : graph.outgoingEdges(loopNode.value)) {
+                        for (int loopNode : loopNodeList) {
+                            for (int succ : graph.outgoingEdges(loopNode)) {
                                 if (!loopNodes.contains(succ)) {
                                     if (outerSuccessors.add(succ)) {
                                         succList.add(new WeightedNode(succ, priorities[succ], weights[succ]));
@@ -205,8 +206,10 @@ public class GraphIndexer {
     }
 
     private int[] findNaturalLoop(int head, int[] terminals) {
-        IntSet loop = new IntOpenHashSet();
+        IntSet loop = new IntHashSet();
+        IntArrayList loopList = new IntArrayList();
         loop.add(head);
+        loopList.add(head);
         IntegerStack stack = new IntegerStack(1);
         for (int pred : terminals) {
             stack.push(pred);
@@ -216,11 +219,12 @@ public class GraphIndexer {
             if (!loop.add(node)) {
                 continue;
             }
+            loopList.add(node);
             for (int pred : graph.incomingEdges(node)) {
                 stack.push(pred);
             }
         }
-        return loop.toArray();
+        return loopList.toArray();
     }
 
     public int nodeAt(int index) {

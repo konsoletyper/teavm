@@ -16,7 +16,11 @@
 package org.teavm.runtime;
 
 import org.teavm.interop.Address;
+import org.teavm.interop.StaticInit;
+import org.teavm.interop.Unmanaged;
 
+@Unmanaged
+@StaticInit
 final class MarkQueue {
     private MarkQueue() {
     }

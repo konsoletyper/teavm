@@ -125,8 +125,8 @@ public class SystemTest {
         System.err.println("err overridden");
         System.err.flush();
 
-        assertEquals("err overridden\n", new String(err.toByteArray()));
-        assertEquals("out overridden\n", new String(out.toByteArray()));
+        assertEquals("err overridden" + System.lineSeparator(), new String(err.toByteArray()));
+        assertEquals("out overridden" + System.lineSeparator(), new String(out.toByteArray()));
     }
 
     @Test

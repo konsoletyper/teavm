@@ -20,7 +20,6 @@ import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InvocationExpr;
 import org.teavm.backend.wasm.WasmRuntime;
 import org.teavm.backend.wasm.generate.WasmClassGenerator;
-import org.teavm.backend.wasm.generate.WasmMangling;
 import org.teavm.backend.wasm.model.WasmType;
 import org.teavm.backend.wasm.model.expression.WasmCall;
 import org.teavm.backend.wasm.model.expression.WasmConversion;
@@ -42,6 +41,7 @@ import org.teavm.backend.wasm.model.expression.WasmStoreInt64;
 import org.teavm.interop.Address;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.runtime.RuntimeArray;
 
 public class AddressIntrinsic implements WasmIntrinsic {
     private WasmClassGenerator classGenerator;
@@ -154,19 +154,46 @@ public class AddressIntrinsic implements WasmIntrinsic {
             case "align": {
                 MethodReference delegate = new MethodReference(WasmRuntime.class.getName(),
                         invocation.getMethod().getDescriptor());
-                WasmCall call = new WasmCall(WasmMangling.mangleMethod(delegate));
+                WasmCall call = new WasmCall(manager.getNames().forMethod(delegate));
                 call.getArguments().addAll(invocation.getArguments().stream()
                         .map(arg -> manager.generate(arg))
                         .collect(Collectors.toList()));
                 return call;
             }
-            case "isLessThan": {
+            case "isLessThan":
                 return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.LT_UNSIGNED,
                         manager.generate(invocation.getArguments().get(0)),
                         manager.generate(invocation.getArguments().get(1)));
+            case "ofData": {
+                ValueType.Array type = (ValueType.Array) invocation.getMethod().parameterType(0);
+                int alignment = getAlignment(type.getItemType());
+                int start = WasmClassGenerator.align(classGenerator.getClassSize(RuntimeArray.class.getName()),
+                        alignment);
+                return new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD,
+                        manager.generate(invocation.getArguments().get(0)), new WasmInt32Constant(start));
             }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());
         }
+    }
+
+    private static int getAlignment(ValueType type) {
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                    return 1;
+                case SHORT:
+                case CHARACTER:
+                    return 2;
+                case INTEGER:
+                case FLOAT:
+                    return 4;
+                case LONG:
+                case DOUBLE:
+                    return 8;
+            }
+        }
+        return 4;
     }
 }

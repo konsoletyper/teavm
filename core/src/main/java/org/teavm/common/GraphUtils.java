@@ -67,6 +67,43 @@ public final class GraphUtils {
         return result.getAll();
     }
 
+    public static Graph removeLoops(Graph graph) {
+        int sz = graph.size();
+        int[] stack = new int[sz * 2];
+        int stackSize = 0;
+        byte[] state = new byte[sz];
+        for (int i = 0; i < sz; ++i) {
+            if (graph.incomingEdgesCount(i) == 0) {
+                stack[stackSize++] = i;
+            }
+        }
+        GraphBuilder builder = new GraphBuilder(graph.size());
+        while (stackSize > 0) {
+            int node = stack[--stackSize];
+            switch (state[node]) {
+                case NONE:
+                    state[node] = VISITING;
+                    stack[stackSize++] = node;
+                    for (int next : graph.outgoingEdges(node)) {
+                        switch (state[next]) {
+                            case NONE:
+                                stack[stackSize++] = next;
+                                builder.addEdge(node, next);
+                                break;
+                            case VISITED:
+                                builder.addEdge(node, next);
+                                break;
+                        }
+                    }
+                    break;
+                case VISITING:
+                    state[node] = VISITED;
+                    break;
+            }
+        }
+        return builder.build();
+    }
+
     public static boolean isIrreducible(Graph graph) {
         DominatorTree dom = buildDominatorTree(graph);
         int[] backEdges = findBackEdges(graph);

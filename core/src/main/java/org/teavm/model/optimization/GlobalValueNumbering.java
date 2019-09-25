@@ -15,6 +15,8 @@
  */
 package org.teavm.model.optimization;
 
+import com.carrotsearch.hppc.ObjectIntHashMap;
+import com.carrotsearch.hppc.ObjectIntMap;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +31,7 @@ import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
@@ -38,34 +41,27 @@ import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
 import org.teavm.model.instructions.CastNumberInstruction;
-import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
-import org.teavm.model.instructions.ConstructInstruction;
 import org.teavm.model.instructions.ConstructMultiArrayInstruction;
 import org.teavm.model.instructions.DoubleConstantInstruction;
-import org.teavm.model.instructions.EmptyInstruction;
 import org.teavm.model.instructions.ExitInstruction;
 import org.teavm.model.instructions.FloatConstantInstruction;
 import org.teavm.model.instructions.GetElementInstruction;
 import org.teavm.model.instructions.GetFieldInstruction;
-import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InstructionVisitor;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.IsInstanceInstruction;
-import org.teavm.model.instructions.JumpInstruction;
 import org.teavm.model.instructions.LongConstantInstruction;
 import org.teavm.model.instructions.MonitorEnterInstruction;
 import org.teavm.model.instructions.MonitorExitInstruction;
 import org.teavm.model.instructions.NegateInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
-import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.NumericOperandType;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
-import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.ProgramUtils;
@@ -74,6 +70,9 @@ public class GlobalValueNumbering implements MethodOptimization {
     private Map<String, KnownValue> knownValues = new HashMap<>();
     private boolean eliminate;
     private int[] map;
+    private int[] replaceMap;
+    private boolean[] deletedVars;
+    private ObjectIntMap<Number> constantIndexes = new ObjectIntHashMap<>();
     private Number[] numericConstants;
     private Number evaluatedConstant;
     private int receiver;
@@ -104,10 +103,14 @@ public class GlobalValueNumbering implements MethodOptimization {
         domTree = GraphUtils.buildDominatorTree(cfg);
         Graph dom = GraphUtils.buildDominatorGraph(domTree, cfg.size());
         map = new int[program.variableCount()];
+        replaceMap = new int[program.variableCount()];
         numericConstants = new Number[program.variableCount()];
         for (int i = 0; i < map.length; ++i) {
             map[i] = i;
+            replaceMap[i] = i;
         }
+        deletedVars = new boolean[program.variableCount()];
+        preprocessConstants();
         List<List<Incoming>> outgoings = ProgramUtils.getPhiOutputs(program);
 
         int[] stack = new int[cfg.size() * 2];
@@ -163,7 +166,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                 }
             }
             for (Incoming incoming : outgoings.get(v)) {
-                int value = map[incoming.getValue().getIndex()];
+                int value = replaceMap[incoming.getValue().getIndex()];
                 incoming.setValue(program.variableAt(value));
             }
 
@@ -172,7 +175,7 @@ public class GlobalValueNumbering implements MethodOptimization {
             }
         }
         for (int i = 0; i < map.length; ++i) {
-            if (map[i] != i) {
+            if (deletedVars[i]) {
                 program.deleteVariable(i);
             }
         }
@@ -182,7 +185,19 @@ public class GlobalValueNumbering implements MethodOptimization {
         return affected;
     }
 
+    private void preprocessConstants() {
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction instruction : block) {
+                instruction.acceptVisitor(constantPreprocessor);
+            }
+        }
+    }
+
     private void bind(int var, String value) {
+        bind(var, value, false);
+    }
+
+    private void bind(int var, String value, boolean noReplace) {
         String name = program.variableAt(map[var]).getDebugName();
         if (name == null || namesPreserved) {
             name = "";
@@ -202,8 +217,12 @@ public class GlobalValueNumbering implements MethodOptimization {
         }
         if (known != null && domTree.dominates(known.location, currentBlockIndex) && known.value != var
                 && namesCompatible) {
-            eliminate = true;
             map[var] = known.value;
+            if (!noReplace) {
+                replaceMap[var] = known.value;
+                deletedVars[var] = true;
+                eliminate = true;
+            }
             if (!name.isEmpty()) {
                 program.variableAt(known.value).setDebugName(name);
                 knownValues.put(name + ":" + value, known);
@@ -219,50 +238,49 @@ public class GlobalValueNumbering implements MethodOptimization {
         }
     }
 
-    private InstructionVisitor optimizer = new InstructionVisitor() {
-        @Override
-        public void visit(EmptyInstruction insn) {
-        }
-
-        @Override
-        public void visit(ClassConstantInstruction insn) {
-        }
-
-        @Override
-        public void visit(NullConstantInstruction insn) {
+    private InstructionVisitor constantPreprocessor = new AbstractInstructionVisitor() {
+        private void setConstant(int index, Number value) {
+            numericConstants[index] = value;
+            int knownIndex = constantIndexes.getOrDefault(value, -1);
+            if (knownIndex < 0) {
+                constantIndexes.put(value, index);
+            } else {
+                map[index] = knownIndex;
+            }
         }
 
         @Override
         public void visit(IntegerConstantInstruction insn) {
-            numericConstants[insn.getReceiver().getIndex()] = insn.getConstant();
+            setConstant(insn.getReceiver().getIndex(), insn.getConstant());
         }
 
         @Override
         public void visit(LongConstantInstruction insn) {
-            numericConstants[insn.getReceiver().getIndex()] = insn.getConstant();
+            setConstant(insn.getReceiver().getIndex(), insn.getConstant());
         }
 
         @Override
         public void visit(FloatConstantInstruction insn) {
-            numericConstants[insn.getReceiver().getIndex()] = insn.getConstant();
+            setConstant(insn.getReceiver().getIndex(), insn.getConstant());
         }
 
         @Override
         public void visit(DoubleConstantInstruction insn) {
-            numericConstants[insn.getReceiver().getIndex()] = insn.getConstant();
+            setConstant(insn.getReceiver().getIndex(), insn.getConstant());
         }
+    };
 
-        @Override
-        public void visit(StringConstantInstruction insn) {
-        }
-
+    private InstructionVisitor optimizer = new AbstractInstructionVisitor() {
         @Override
         public void visit(BinaryInstruction insn) {
             int a = map[insn.getFirstOperand().getIndex()];
+            int p = replaceMap[insn.getFirstOperand().getIndex()];
             int b = map[insn.getSecondOperand().getIndex()];
-            insn.setFirstOperand(program.variableAt(a));
-            insn.setSecondOperand(program.variableAt(b));
+            int q = replaceMap[insn.getSecondOperand().getIndex()];
+            insn.setFirstOperand(program.variableAt(p));
+            insn.setSecondOperand(program.variableAt(q));
             boolean commutative = false;
+            boolean noReplace = false;
             String value;
             switch (insn.getOperation()) {
                 case ADD:
@@ -284,6 +302,7 @@ public class GlobalValueNumbering implements MethodOptimization {
                     break;
                 case COMPARE:
                     value = "$";
+                    noReplace = true;
                     break;
                 case AND:
                     value = "&";
@@ -501,7 +520,8 @@ public class GlobalValueNumbering implements MethodOptimization {
         @Override
         public void visit(NegateInstruction insn) {
             int a = map[insn.getOperand().getIndex()];
-            insn.setOperand(program.variableAt(a));
+            int p = replaceMap[insn.getOperand().getIndex()];
+            insn.setOperand(program.variableAt(p));
             bind(insn.getReceiver().getIndex(), "-@" + a);
 
             Number value = numericConstants[a];
@@ -541,20 +561,23 @@ public class GlobalValueNumbering implements MethodOptimization {
                 insn.getAssignee().setLabel(insn.getReceiver().getLabel());
             }
             map[insn.getReceiver().getIndex()] = map[insn.getAssignee().getIndex()];
+            replaceMap[insn.getReceiver().getIndex()] = replaceMap[insn.getAssignee().getIndex()];
             eliminate = true;
         }
 
         @Override
         public void visit(CastInstruction insn) {
             int a = map[insn.getValue().getIndex()];
-            insn.setValue(program.variableAt(a));
+            int p = replaceMap[insn.getValue().getIndex()];
+            insn.setValue(program.variableAt(p));
             bind(insn.getReceiver().getIndex(), "@" + a + "::" + insn.getTargetType());
         }
 
         @Override
         public void visit(CastNumberInstruction insn) {
             int a = map[insn.getValue().getIndex()];
-            insn.setValue(program.variableAt(a));
+            int p = replaceMap[insn.getValue().getIndex()];
+            insn.setValue(program.variableAt(p));
             bind(insn.getReceiver().getIndex(), "@" + a + "::" + insn.getTargetType());
 
             Number value = numericConstants[a];
@@ -581,7 +604,8 @@ public class GlobalValueNumbering implements MethodOptimization {
         @Override
         public void visit(CastIntegerInstruction insn) {
             int a = map[insn.getValue().getIndex()];
-            insn.setValue(program.variableAt(a));
+            int p = replaceMap[insn.getValue().getIndex()];
+            insn.setValue(program.variableAt(p));
             bind(insn.getReceiver().getIndex(), "@" + a + "::" + insn.getTargetType() + " " + insn.getDirection());
 
             Number value = numericConstants[a];
@@ -611,56 +635,48 @@ public class GlobalValueNumbering implements MethodOptimization {
 
         @Override
         public void visit(BranchingInstruction insn) {
-            int a = map[insn.getOperand().getIndex()];
+            int a = replaceMap[insn.getOperand().getIndex()];
             insn.setOperand(program.variableAt(a));
         }
 
         @Override
         public void visit(BinaryBranchingInstruction insn) {
-            int a = map[insn.getFirstOperand().getIndex()];
-            int b = map[insn.getSecondOperand().getIndex()];
+            int a = replaceMap[insn.getFirstOperand().getIndex()];
+            int b = replaceMap[insn.getSecondOperand().getIndex()];
             insn.setFirstOperand(program.variableAt(a));
             insn.setSecondOperand(program.variableAt(b));
         }
 
         @Override
-        public void visit(JumpInstruction insn) {
-        }
-
-        @Override
         public void visit(SwitchInstruction insn) {
-            int a = map[insn.getCondition().getIndex()];
+            int a = replaceMap[insn.getCondition().getIndex()];
             insn.setCondition(program.variableAt(a));
         }
 
         @Override
         public void visit(ExitInstruction insn) {
             if (insn.getValueToReturn() != null) {
-                int a = map[insn.getValueToReturn().getIndex()];
+                int a = replaceMap[insn.getValueToReturn().getIndex()];
                 insn.setValueToReturn(program.variableAt(a));
             }
         }
 
         @Override
         public void visit(RaiseInstruction insn) {
-            int a = map[insn.getException().getIndex()];
+            int a = replaceMap[insn.getException().getIndex()];
             insn.setException(program.variableAt(a));
         }
 
         @Override
         public void visit(ConstructArrayInstruction insn) {
-            int a = map[insn.getSize().getIndex()];
+            int a = replaceMap[insn.getSize().getIndex()];
             insn.setSize(program.variableAt(a));
-        }
-
-        @Override
-        public void visit(ConstructInstruction insn) {
         }
 
         @Override
         public void visit(ConstructMultiArrayInstruction insn) {
             for (int i = 0; i < insn.getDimensions().size(); ++i) {
-                int a = map[insn.getDimensions().get(i).getIndex()];
+                int a = replaceMap[insn.getDimensions().get(i).getIndex()];
                 insn.getDimensions().set(i, program.variableAt(a));
             }
         }
@@ -668,7 +684,7 @@ public class GlobalValueNumbering implements MethodOptimization {
         @Override
         public void visit(GetFieldInstruction insn) {
             if (insn.getInstance() != null) {
-                int instance = map[insn.getInstance().getIndex()];
+                int instance = replaceMap[insn.getInstance().getIndex()];
                 insn.setInstance(program.variableAt(instance));
             }
         }
@@ -676,58 +692,60 @@ public class GlobalValueNumbering implements MethodOptimization {
         @Override
         public void visit(PutFieldInstruction insn) {
             if (insn.getInstance() != null) {
-                int instance = map[insn.getInstance().getIndex()];
+                int instance = replaceMap[insn.getInstance().getIndex()];
                 insn.setInstance(program.variableAt(instance));
             }
-            int val = map[insn.getValue().getIndex()];
+            int val = replaceMap[insn.getValue().getIndex()];
             insn.setValue(program.variableAt(val));
         }
 
         @Override
         public void visit(ArrayLengthInstruction insn) {
             int a = map[insn.getArray().getIndex()];
-            insn.setArray(program.variableAt(a));
+            int p = replaceMap[insn.getArray().getIndex()];
+            insn.setArray(program.variableAt(p));
             bind(insn.getReceiver().getIndex(), "@" + a + ".length");
         }
 
         @Override
         public void visit(CloneArrayInstruction insn) {
-            int a = map[insn.getArray().getIndex()];
+            int a = replaceMap[insn.getArray().getIndex()];
             insn.setArray(program.variableAt(a));
         }
 
         @Override
         public void visit(UnwrapArrayInstruction insn) {
             int a = map[insn.getArray().getIndex()];
-            insn.setArray(program.variableAt(a));
+            int p = replaceMap[insn.getArray().getIndex()];
+            insn.setArray(program.variableAt(p));
             bind(insn.getReceiver().getIndex(), "@" + a + ".data");
         }
 
         @Override
         public void visit(GetElementInstruction insn) {
-            int a = map[insn.getArray().getIndex()];
+            int a = replaceMap[insn.getArray().getIndex()];
             insn.setArray(program.variableAt(a));
-            int index = map[insn.getIndex().getIndex()];
+            int index = replaceMap[insn.getIndex().getIndex()];
             insn.setIndex(program.variableAt(index));
         }
 
         @Override
         public void visit(PutElementInstruction insn) {
-            int a = map[insn.getArray().getIndex()];
+            int a = replaceMap[insn.getArray().getIndex()];
             insn.setArray(program.variableAt(a));
-            int index = map[insn.getIndex().getIndex()];
+            int index = replaceMap[insn.getIndex().getIndex()];
             insn.setIndex(program.variableAt(index));
-            int val = map[insn.getValue().getIndex()];
+            int val = replaceMap[insn.getValue().getIndex()];
             insn.setValue(program.variableAt(val));
         }
 
         @Override
         public void visit(InvokeInstruction insn) {
             if (insn.getInstance() != null) {
-                int instance = map[insn.getInstance().getIndex()];
+                int instance = replaceMap[insn.getInstance().getIndex()];
                 insn.setInstance(program.variableAt(instance));
             }
-            insn.getArguments().replaceAll(mapper);
+            insn.replaceArguments(mapper);
         }
 
         @Override
@@ -736,35 +754,33 @@ public class GlobalValueNumbering implements MethodOptimization {
             insn.getArguments().replaceAll(mapper);
         }
 
-        private UnaryOperator<Variable> mapper = var -> program.variableAt(map[var.getIndex()]);
+        private UnaryOperator<Variable> mapper = var -> program.variableAt(replaceMap[var.getIndex()]);
 
         @Override
         public void visit(IsInstanceInstruction insn) {
             int val = map[insn.getValue().getIndex()];
-            insn.setValue(program.variableAt(val));
+            int p = replaceMap[insn.getValue().getIndex()];
+            insn.setValue(program.variableAt(p));
             bind(insn.getReceiver().getIndex(), "@" + val + " :? " + insn.getType());
-        }
-
-        @Override
-        public void visit(InitClassInstruction insn) {
         }
 
         @Override
         public void visit(NullCheckInstruction insn) {
             int val = map[insn.getValue().getIndex()];
-            insn.setValue(program.variableAt(val));
+            int p = replaceMap[insn.getValue().getIndex()];
+            insn.setValue(program.variableAt(p));
             bind(insn.getReceiver().getIndex(), "nullCheck @" + val);
         }
 
         @Override
         public void visit(MonitorEnterInstruction insn) {
-            int val = map[insn.getObjectRef().getIndex()];
+            int val = replaceMap[insn.getObjectRef().getIndex()];
             insn.setObjectRef(program.variableAt(val));
         }
 
         @Override
         public void visit(MonitorExitInstruction insn) {
-            int val = map[insn.getObjectRef().getIndex()];
+            int val = replaceMap[insn.getObjectRef().getIndex()];
             insn.setObjectRef(program.variableAt(val));
         }
     };

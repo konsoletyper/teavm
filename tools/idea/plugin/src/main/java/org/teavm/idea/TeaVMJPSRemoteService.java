@@ -99,8 +99,7 @@ public class TeaVMJPSRemoteService extends UnicastRemoteObject implements Applic
     }
 
     @Override
-    public TeaVMElementLocation getMethodLocation(String className, String methodName, String methodDesc)
-            throws RemoteException {
+    public TeaVMElementLocation getMethodLocation(String className, String methodName, String methodDesc) {
         TeaVMElementLocation[] resultHolder = new TeaVMElementLocation[1];
 
         ApplicationManager.getApplication().runReadAction(() -> {

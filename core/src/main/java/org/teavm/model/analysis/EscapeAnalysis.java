@@ -17,7 +17,7 @@ package org.teavm.model.analysis;
 
 import com.carrotsearch.hppc.IntArrayDeque;
 import com.carrotsearch.hppc.IntDeque;
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -36,10 +36,10 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
+import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
-import org.teavm.model.TryCatchBlock;
 import org.teavm.model.ValueType;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AbstractInstructionVisitor;
@@ -64,7 +64,6 @@ import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.DefinitionExtractor;
-import org.teavm.model.util.InstructionTransitionExtractor;
 import org.teavm.model.util.LivenessAnalyzer;
 import org.teavm.model.util.UsageExtractor;
 
@@ -97,7 +96,7 @@ public class EscapeAnalysis {
                 escapingVars[definitionClasses[i]] = true;
             }
         }
-        analyzePhis(program);
+        analyzePhis(program, methodReference.getDescriptor());
 
         propagateFields(program, visitor.fields);
         fields = packFields(visitor.fields);
@@ -116,9 +115,9 @@ public class EscapeAnalysis {
         return varFields != null ? varFields.clone() : null;
     }
 
-    private void analyzePhis(Program program) {
+    private void analyzePhis(Program program, MethodDescriptor methodDescriptor) {
         LivenessAnalyzer livenessAnalyzer = new LivenessAnalyzer();
-        livenessAnalyzer.analyze(program);
+        livenessAnalyzer.analyze(program, methodDescriptor);
 
         GraphBuilder graphBuilder = new GraphBuilder(program.variableCount());
         IntDeque queue = new IntArrayDeque();
@@ -134,6 +133,16 @@ public class EscapeAnalysis {
                     if (usedVars.get(assign.getAssignee().getIndex())) {
                         queue.addLast(definitionClasses[assign.getAssignee().getIndex()]);
                     }
+                } else if (insn instanceof NullCheckInstruction) {
+                    NullCheckInstruction nullCheck = (NullCheckInstruction) insn;
+                    if (usedVars.get(nullCheck.getValue().getIndex())) {
+                        queue.addLast(definitionClasses[nullCheck.getValue().getIndex()]);
+                    }
+                } else if (insn instanceof UnwrapArrayInstruction) {
+                    UnwrapArrayInstruction unwrapArray = (UnwrapArrayInstruction) insn;
+                    if (usedVars.get(unwrapArray.getArray().getIndex())) {
+                        queue.addLast(definitionClasses[unwrapArray.getArray().getIndex()]);
+                    }
                 }
 
                 insn.acceptVisitor(useExtractor);
@@ -147,7 +156,7 @@ public class EscapeAnalysis {
             }
 
             // If incoming variables of phi functions live after phi, mark them as escaping
-            IntSet sharedIncomingVars = new IntOpenHashSet();
+            IntSet sharedIncomingVars = new IntHashSet();
             for (Phi phi : block.getPhis()) {
                 if (escapes(phi.getReceiver().getIndex())) {
                     queue.addLast(definitionClasses[phi.getReceiver().getIndex()]);
@@ -163,7 +172,7 @@ public class EscapeAnalysis {
         }
         Graph graph = graphBuilder.build();
 
-        IntSet visited = new IntOpenHashSet();
+        IntSet visited = new IntHashSet();
         while (!queue.isEmpty()) {
             int var = queue.removeFirst();
             if (visited.add(var)) {
@@ -179,17 +188,7 @@ public class EscapeAnalysis {
     }
 
     private BitSet getUsedVarsInBlock(LivenessAnalyzer liveness, BasicBlock block) {
-        BitSet usedVars = new BitSet();
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
-        block.getLastInstruction().acceptVisitor(transitionExtractor);
-        for (BasicBlock successor : transitionExtractor.getTargets()) {
-            usedVars.or(liveness.liveIn(successor.getIndex()));
-        }
-        for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
-            usedVars.or(liveness.liveIn(tryCatch.getHandler().getIndex()));
-        }
-
-        return usedVars;
+        return liveness.liveOut(block.getIndex());
     }
 
     private void propagateFields(Program program, List<Set<FieldReference>> fields) {
@@ -205,20 +204,35 @@ public class EscapeAnalysis {
 
         GraphBuilder graphBuilder = new GraphBuilder(program.variableCount());
         for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction insn : block) {
+                if (insn instanceof AssignInstruction) {
+                    AssignInstruction assign = (AssignInstruction) insn;
+                    graphBuilder.addEdge(assign.getReceiver().getIndex(), assign.getAssignee().getIndex());
+                } else if (insn instanceof NullCheckInstruction) {
+                    NullCheckInstruction nullCheck = (NullCheckInstruction) insn;
+                    graphBuilder.addEdge(nullCheck.getReceiver().getIndex(), nullCheck.getValue().getIndex());
+                } else if (insn instanceof UnwrapArrayInstruction) {
+                    UnwrapArrayInstruction unwrapArray = (UnwrapArrayInstruction) insn;
+                    graphBuilder.addEdge(unwrapArray.getReceiver().getIndex(), unwrapArray.getArray().getIndex());
+                }
+            }
             for (Phi phi : block.getPhis()) {
                 for (Incoming incoming : phi.getIncomings()) {
                     graphBuilder.addEdge(phi.getReceiver().getIndex(), incoming.getValue().getIndex());
-                    Set<FieldReference> receiverFields = fields.get(phi.getReceiver().getIndex());
-                    if (receiverFields != null) {
-                        for (FieldReference field : receiverFields) {
-                            queue.add(new Task(phi.getReceiver().getIndex(), field));
-                        }
-                        receiverFields.clear();
-                    }
                 }
             }
         }
         Graph graph = graphBuilder.build();
+
+        for (int i = 0; i < program.variableCount(); ++i) {
+            Set<FieldReference> receiverFields = fields.get(i);
+            if (receiverFields != null) {
+                for (FieldReference field : receiverFields) {
+                    queue.add(new Task(i, field));
+                }
+                receiverFields.clear();
+            }
+        }
 
         while (!queue.isEmpty()) {
             Task task = queue.remove();
@@ -263,13 +277,13 @@ public class EscapeAnalysis {
         return packedFields;
     }
 
-    private static class InstructionEscapeVisitor extends AbstractInstructionVisitor {
+    static class InstructionEscapeVisitor extends AbstractInstructionVisitor {
         DisjointSet definitionClasses;
         boolean[] escapingVars;
         List<Set<FieldReference>> fields;
         Map<FieldReference, ValueType> fieldTypes = new HashMap<>();
 
-        public InstructionEscapeVisitor(int variableCount) {
+        InstructionEscapeVisitor(int variableCount) {
             fields = new ArrayList<>(Collections.nCopies(variableCount, null));
             definitionClasses = new DisjointSet();
             for (int i = 0; i < variableCount; ++i) {

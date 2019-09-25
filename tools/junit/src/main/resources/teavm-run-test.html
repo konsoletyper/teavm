@@ -1,53 +1,27 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <title>TeaVM JUnit test</title>
-    <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
-  </head>
-  <body>
-    <script type="text/javascript" src="runtime.js"></script>
-    <script type="text/javascript" src="test.js"></script>
-    <script type="text/javascript">
-      $rt_startThread(function() {
-        var thread = $rt_nativeThread();
-        var instance;
-        var ptr = 0;
-        var message;
-        if (thread.isResuming()) {
-          ptr = thread.pop();
-          instance = thread.pop();
-        }
-        loop: while (true) {
-          switch (ptr) {
-            case 0:
-              try {
-                runTest();
-              } catch (e) {
-                message = buildErrorMessage(e);
-                break loop;
-              }
-              if (thread.isSuspending()) {
-                thread.push(instance);
-                thread.push(ptr);
-                return;
-              }
-              message = "OK";
-              break loop;
-          }
-        }
-        document.body.appendChild(document.createTextNode(message));
-      });
+<head>
+  <title>TeaVM JUnit test</title>
+  <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
+</head>
+<body>
+<script type="text/javascript" src="test.js"></script>
+<script type="text/javascript">
+    main([], function(result) {
+        var message = result instanceof Error ? buildErrorMessage(result) : "OK";
+        document.body.appendChild(document.createTextNode(message))
+    });
 
-      function buildErrorMessage(e) {
-        var stack = e.stack;
+    function buildErrorMessage(e) {
+        var stack = "";
         if (e.$javaException && e.$javaException.constructor.$meta) {
-          stack = e.$javaException.constructor.$meta.name + ": ";
-          var exceptionMessage = extractException(e.$javaException);
-          stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
+            stack = e.$javaException.constructor.$meta.name + ": ";
+            stack += e.$javaException.getMessage() || "";
+            stack += "\n";
         }
-        stack += "\n" + stack;
+        stack += e.stack;
         return stack;
-      }
-    </script>
-  </body>
+    }
+</script>
+</body>
 </html>

@@ -39,7 +39,16 @@ public interface TeaVMTarget {
 
     void contributeDependencies(DependencyAnalyzer dependencyAnalyzer);
 
-    void afterOptimizations(Program program, MethodReader method, ListableClassReaderSource classSource);
+    default void analyzeBeforeOptimizations(ListableClassReaderSource classSource) {
+    }
+
+    void beforeOptimizations(Program program, MethodReader method);
+
+    void afterOptimizations(Program program, MethodReader method);
 
     void emit(ListableClassHolderSource classes, BuildTarget buildTarget, String outputName) throws IOException;
+
+    String[] getPlatformTags();
+
+    boolean isAsyncSupported();
 }

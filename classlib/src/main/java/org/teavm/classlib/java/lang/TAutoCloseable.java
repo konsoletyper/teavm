@@ -16,5 +16,5 @@
 package org.teavm.classlib.java.lang;
 
 public interface TAutoCloseable {
-    void close() throws TException;
+    void close() throws Exception;
 }

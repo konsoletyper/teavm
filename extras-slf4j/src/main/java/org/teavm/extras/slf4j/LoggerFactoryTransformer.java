@@ -16,21 +16,28 @@
 package org.teavm.extras.slf4j;
 
 import org.slf4j.LoggerFactory;
-import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.*;
+import org.teavm.model.ClassHierarchy;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.ClassReader;
+import org.teavm.model.FieldHolder;
+import org.teavm.model.FieldReader;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReader;
 import org.teavm.model.util.ModelUtils;
 
 public class LoggerFactoryTransformer implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         if (!cls.getName().equals(LoggerFactory.class.getName())) {
             return;
         }
-        substitute(cls, innerSource);
+        substitute(cls, context.getHierarchy());
     }
 
-    private void substitute(ClassHolder cls, ClassReaderSource classSource) {
-        ClassReader subst = classSource.get(TeaVMLoggerFactorySubstitution.class.getName());
+    private void substitute(ClassHolder cls, ClassHierarchy hierarchy) {
+        ClassReader subst = hierarchy.getClassSource().get(TeaVMLoggerFactorySubstitution.class.getName());
         for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
             cls.removeField(field);
         }

@@ -15,25 +15,29 @@
  */
 package org.teavm.chromerdp;
 
-import java.util.Collections;
 import java.util.Map;
-import org.teavm.debugging.javascript.*;
+import org.teavm.common.Promise;
+import org.teavm.debugging.javascript.JavaScriptCallFrame;
+import org.teavm.debugging.javascript.JavaScriptDebugger;
+import org.teavm.debugging.javascript.JavaScriptLocation;
+import org.teavm.debugging.javascript.JavaScriptValue;
+import org.teavm.debugging.javascript.JavaScriptVariable;
 
-public class RDPCallFrame implements JavaScriptCallFrame {
-    private JavaScriptDebugger debugger;
+class RDPCallFrame implements JavaScriptCallFrame {
+    private ChromeRDPDebugger debugger;
     private String chromeId;
     private JavaScriptLocation location;
-    private Map<String, JavaScriptVariable> variables;
+    private Promise<Map<String, ? extends JavaScriptVariable>> variables;
     private JavaScriptValue thisObject;
     private JavaScriptValue closure;
+    private String scopeId;
 
-    public RDPCallFrame(JavaScriptDebugger debugger, String chromeId, JavaScriptLocation location,
-            Map<String, ? extends JavaScriptVariable> variables, JavaScriptValue thisObject,
-            JavaScriptValue closure) {
+    RDPCallFrame(ChromeRDPDebugger debugger, String chromeId, JavaScriptLocation location, String scopeId,
+            JavaScriptValue thisObject, JavaScriptValue closure) {
         this.debugger = debugger;
         this.chromeId = chromeId;
         this.location = location;
-        this.variables = Collections.unmodifiableMap(variables);
+        this.scopeId = scopeId;
         this.thisObject = thisObject;
         this.closure = closure;
     }
@@ -48,7 +52,10 @@ public class RDPCallFrame implements JavaScriptCallFrame {
     }
 
     @Override
-    public Map<String, JavaScriptVariable> getVariables() {
+    public Promise<Map<String, ? extends JavaScriptVariable>> getVariables() {
+        if (variables == null) {
+            variables = debugger.createScope(scopeId);
+        }
         return variables;
     }
 

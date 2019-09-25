@@ -18,14 +18,18 @@ package org.teavm.vm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNotSame;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Supplier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.Async;
+import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.JSBody;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
-import org.teavm.platform.async.AsyncCallback;
 
 @RunWith(TeaVMTestRunner.class)
 public class VMTest {
@@ -36,6 +40,16 @@ public class VMTest {
         assertEquals(3, array[0].length);
         assertEquals(int[][].class, array.getClass());
         assertEquals(int[].class, array[0].getClass());
+    }
+
+    @Test
+    public void catchExceptionFromLambda() {
+        try {
+            Runnable r = () -> throwException();
+            r.run();
+        } catch (Throwable e) {
+            e.printStackTrace();
+        }
     }
 
     @Test
@@ -76,6 +90,7 @@ public class VMTest {
         int a = 23;
         try {
             a = Integer.parseInt("not a number");
+            fail("Exception not thrown");
         } catch (NumberFormatException e) {
             // do nothing
         }
@@ -104,19 +119,19 @@ public class VMTest {
     @Test
     public void catchFinally() {
         StringBuilder sb = new StringBuilder();
+        List<String> a = Arrays.asList("a", "b");
+        if (a.isEmpty()) {
+            return;
+        }
         try {
-            if (Integer.parseInt("invalid") > 0) {
-                sb.append("err1;");
-            } else {
-                sb.append("err2;");
+            for (String b : a) {
+                if (b.length() < 3) {
+                    sb.append(b);
+                }
             }
-            sb.append("err3");
-        } catch (NumberFormatException e) {
-            sb.append("catch;");
         } finally {
             sb.append("finally;");
         }
-        assertEquals("catch;finally;", sb.toString());
     }
 
     @Test
@@ -163,6 +178,16 @@ public class VMTest {
     }
 
     @Test
+    public void stringConcat() {
+        assertEquals("(23)", surroundWithParentheses(23));
+        assertEquals("(42)", surroundWithParentheses(42));
+    }
+
+    private String surroundWithParentheses(int value) {
+        return "(" + value + ")";
+    }
+
+    @Test
     public void variableReadInCatchBlock() {
         int n = foo();
         try {
@@ -173,7 +198,7 @@ public class VMTest {
             n += foo() * 5;
         } catch (RuntimeException e) {
             assertEquals(RuntimeException.class, e.getClass());
-            assertEquals(n, 22);
+            assertEquals(22, n);
         }
     }
 
@@ -282,6 +307,12 @@ public class VMTest {
         assertEquals("default,A;default,B;overridden,C;", sb.toString());
     }
 
+    @Test
+    public void clinitReadsState() {
+        initCount = 23;
+        assertEquals(23, ReadingStateInClinit.state);
+    }
+
     interface WithDefaultMethod {
         default String foo() {
             return "default";
@@ -320,6 +351,10 @@ public class VMTest {
     private static native int[] createArray();
 
     static int initCount;
+
+    private static class ReadingStateInClinit {
+        public static final int state = initCount;
+    }
 
     private static class AsyncClinitClass {
         static String state = "";
@@ -441,7 +476,6 @@ public class VMTest {
         assertEquals("foo", b[0]);
     }
 
-
     @Test
     public void stringConstantsInBaseClass() {
         new DerivedClassWithConstantFields();
@@ -452,5 +486,34 @@ public class VMTest {
     }
 
     static class DerivedClassWithConstantFields extends BaseClassWithConstantFields {
+    }
+
+    interface ScriptExecutionWrapper {
+        Object wrap(Supplier<Object> execution);
+    }
+
+    @Test
+    public void uncaughtExceptionRethrown() {
+        boolean exceptionCaught = false;
+        try {
+            try {
+                throw new NullPointerException("ok");
+            } catch (IndexOutOfBoundsException e) {
+                fail("Should not get there");
+            }
+            fail("Should not get there");
+        } catch (NullPointerException e) {
+            assertEquals("ok", e.getMessage());
+            exceptionCaught = true;
+        }
+        assertTrue("Exception was not caught", exceptionCaught);
+    }
+
+    @Test
+    public void arrayMonitor() throws InterruptedException {
+        int[] array = { 1, 2, 3 };
+        synchronized (array) {
+            array.wait(1);
+        }
     }
 }

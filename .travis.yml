@@ -2,16 +2,15 @@ language: java
 sudo: false
 
 addons:
-  firefox: "53.0"
+  chrome: stable
 
 jdk:
-  - oraclejdk8
+  - oraclejdk11
 
 cache:
   directories:
-  - $HOME/.m2
+  - $HOME/mvn_repo
   - $HOME/.node_modules
-  - $HOME/.chromium_dist
 branches:
   only:
     - master
@@ -20,8 +19,9 @@ branches:
     - /^dev-.+/
 
 before_install:
+  - export MVN_CMD="mvn -Dmaven.repo.local=$HOME/mvn_repo -B"
   - nvm install 7
-  - OLD_VERSION=`mvn help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
+  - OLD_VERSION=`$MVN_CMD help:evaluate -Dexpression=project.version 2>/dev/null | grep -Ev "(^\[|Download)"`
   - BASE_VERSION=${OLD_VERSION%-SNAPSHOT}
   - NEW_VERSION=${BASE_VERSION}-dev-`printf %d $TRAVIS_BUILD_NUMBER`
   - ECLIPSE_VERSION=${BASE_VERSION}.dev_`printf %d $TRAVIS_BUILD_NUMBER`
@@ -30,37 +30,50 @@ before_install:
   - export BASE_VERSION
   - echo "Building version $NEW_VERSION"
   - ./set-version.sh $NEW_VERSION $ECLIPSE_VERSION
+  - rm -rf $HOME/.phpenv
+  - rm -rf $HOME/.rvm
+  - rm -rf $HOME/.m2
 
 install:
-  - mvn install -Dteavm.build.all=false -P with-idea -P with-eclipse -P with-cli -DskipTests=true -Dmaven.javadoc.skip=true -B -V
   - pushd tests/src/test/js
   - npm config set prefix=$HOME/.node_modules
   - npm install
   - npm run build
+  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 index.html &
+  - BROWSER_PID=$!
+  - node start.js test
+  - node ./bin/test-chrome.js
+  - kill $BROWSER_PID
   - popd
+  - rm -rf tools/idea/idea-artifacts/dependencies
 
 script:
-  - mvn -e test -Dteavm.junit.optimized=false -Dteavm.junit.js.runner=none
+  - $MVN_CMD -e install -Dteavm.junit.optimized=false -Dteavm.junit.js.decodeStack=false -P with-idea -P with-cli -Dteavm.junit.js.runner=none -V
   - BASE_PATH=`pwd`
   - pushd tests/src/test/js
-  - "export DISPLAY=:99.0"
-  - "sh -e /etc/init.d/xvfb start"
-  - sleep 10
-  - firefox index.html &
-  - FIREFOX_PID=$!
+  - google-chrome-stable --headless --disable-gpu --remote-debugging-port=9222 index.html  &
+  - BROWSER_PID=$!
   - node start.js $BASE_PATH/tests/target/js-tests
   - node start.js $BASE_PATH/html4j/target/js-tests
-  - kill $FIREFOX_PID
+  - kill $BROWSER_PID
   - popd
+  - rm -rf $BASE_PATH/tests/target/js-tests
+  - rm -rf $BASE_PATH/html4j/target/js-tests
+  - du -sh $HOME/.[!.]* /home/travis/* | sort -h
+  - df
 
 after_success: >
    if [[ "${TRAVIS_PULL_REQUEST:-unknown}" == "false" && $TRAVIS_BRANCH == dev-* ]] ; then
      export NEW_VERSION
-     export TEAVM_FTP_HOST
-     export TEAVM_FTP_LOGIN
-     export TEAVM_FTP_PASSWORD
-     mvn deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml -P deploy-to-bintray -P with-idea && \
-     ./upload-files.sh
+     export FTP_HOST
+     export FTP_PORT
+     export FTP_USER
+     export FTP_PATH
+     export SSH_KEY
+     mv -f $HOME/built_artifacts_backup $HOME/mvn_repo/org/teavm
+     $MVN_CMD deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml \
+       -P deploy-to-bintray -P with-idea -P !download-dependencies && \
+       ./upload-files.sh
    fi
-after_script:
-  - rm -rf $HOME/.m2/repository/org/teavm
+before_cache:
+  - mv -f $HOME/mvn_repo/org/teavm $HOME/built_artifacts_backup

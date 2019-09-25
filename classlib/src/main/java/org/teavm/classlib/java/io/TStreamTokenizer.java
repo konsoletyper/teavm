@@ -234,8 +234,7 @@ public class TStreamTokenizer {
                 }
             }
             peekChar = currentChar;
-            sval = forceLowercase ? word.toString().toLowerCase() : word
-                    .toString();
+            sval = forceLowercase ? word.toString().toLowerCase() : word.toString();
             ttype = TT_WORD;
             return ttype;
         }

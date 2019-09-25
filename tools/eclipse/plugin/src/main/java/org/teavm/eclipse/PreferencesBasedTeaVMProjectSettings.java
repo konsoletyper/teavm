@@ -32,7 +32,6 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
     public static final String MAIN_CLASS = "mainClass";
     public static final String TARGET_DIRECTORY = "targetDirectory";
     public static final String TARGET_FILE_NAME = "targetFileName";
-    public static final String RUNTIME = "runtime";
     public static final String MINIFYING = "minifying";
     public static final String INCREMENTAL = "incremental";
     public static final String CACHE_DIRECTORY = "cacheDirectory";
@@ -155,7 +154,6 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         private String mainClass;
         private String targetDirectory;
         private String targetFileName;
-        private TeaVMRuntimeMode runtimeMode = TeaVMRuntimeMode.SEPARATE;
         private boolean incremental;
         private String cacheDirectory;
         private boolean sourceMapsGenerated;
@@ -220,16 +218,6 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
         @Override
         public void setTargetFileName(String targetFileName) {
             this.targetFileName = targetFileName;
-        }
-
-        @Override
-        public TeaVMRuntimeMode getRuntimeMode() {
-            return runtimeMode;
-        }
-
-        @Override
-        public void setRuntimeMode(TeaVMRuntimeMode runtimeMode) {
-            this.runtimeMode = runtimeMode;
         }
 
         @Override
@@ -332,7 +320,6 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             mainClass = preferences.get(MAIN_CLASS, "");
             targetDirectory = preferences.get(TARGET_DIRECTORY, "");
             targetFileName = preferences.get(TARGET_FILE_NAME, "");
-            runtimeMode = TeaVMRuntimeMode.valueOf(preferences.get(RUNTIME, TeaVMRuntimeMode.SEPARATE.name()));
             incremental = preferences.getBoolean(INCREMENTAL, false);
             cacheDirectory = preferences.get(CACHE_DIRECTORY, "");
             sourceMapsGenerated = preferences.getBoolean(SOURCE_MAPS, true);
@@ -357,7 +344,6 @@ public class PreferencesBasedTeaVMProjectSettings implements TeaVMProjectSetting
             preferences.put(MAIN_CLASS, mainClass);
             preferences.put(TARGET_DIRECTORY, targetDirectory);
             preferences.put(TARGET_FILE_NAME, targetFileName);
-            preferences.put(RUNTIME, runtimeMode.name());
             preferences.putBoolean(INCREMENTAL, incremental);
             preferences.put(CACHE_DIRECTORY, cacheDirectory);
             preferences.putBoolean(SOURCE_MAPS, sourceMapsGenerated);

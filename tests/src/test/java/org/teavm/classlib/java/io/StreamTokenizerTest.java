@@ -287,7 +287,7 @@ public class StreamTokenizerTest {
     public void test_toString() throws IOException {
         setTest("ABC Hello World");
         st.nextToken();
-        assertTrue("toString failed." + st.toString(), st.toString().equals("Token[ABC], line 1"));
+        assertEquals("toString failed.", "Token[ABC], line 1", st.toString());
 
         // Regression test for HARMONY-4070
         byte[] data = new byte[] { (byte) '-' };

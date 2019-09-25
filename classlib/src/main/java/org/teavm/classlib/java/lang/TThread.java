@@ -15,25 +15,29 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.PlatformDetector;
 import org.teavm.interop.Async;
+import org.teavm.interop.AsyncCallback;
 import org.teavm.platform.Platform;
 import org.teavm.platform.PlatformRunnable;
-import org.teavm.platform.async.AsyncCallback;
+import org.teavm.runtime.EventQueue;
+import org.teavm.runtime.Fiber;
 
 public class TThread extends TObject implements TRunnable {
-    private static TThread mainThread = new TThread(TString.wrap("main"));
+    private static TThread mainThread = new TThread("main");
     private static TThread currentThread = mainThread;
     private static long nextId = 1;
     private static int activeCount = 1;
     private long id;
     private int priority;
+    private boolean daemon;
     private long timeSliceStart;
     private int yieldCount;
     private final Object finishedLock = new Object();
     private boolean interruptedFlag;
     public TThreadInterruptHandler interruptHandler;
 
-    private TString name;
+    private String name;
     private boolean alive = true;
     TRunnable target;
 
@@ -41,7 +45,7 @@ public class TThread extends TObject implements TRunnable {
         this(null, null);
     }
 
-    public TThread(TString name) {
+    public TThread(String name) {
         this(null, name);
     }
 
@@ -49,27 +53,37 @@ public class TThread extends TObject implements TRunnable {
         this(target, null);
     }
 
-    public TThread(TRunnable target, TString name) {
+    public TThread(TRunnable target, String name) {
         this.name = name;
         this.target = target;
         id = nextId++;
     }
 
     public void start() {
-        Platform.startThread(() -> {
-            try {
-                activeCount++;
-                setCurrentThread(TThread.this);
-                TThread.this.run();
-            } finally {
-                synchronized (finishedLock) {
-                    finishedLock.notifyAll();
-                }
-                alive = false;
-                activeCount--;
-                setCurrentThread(mainThread);
+        if (PlatformDetector.isLowLevel()) {
+            boolean daemon = this.daemon;
+            if (!daemon) {
+                Fiber.userThreadCount++;
             }
-        });
+            EventQueue.offer(() -> Fiber.start(this::runThread, daemon));
+        } else {
+            Platform.startThread(this::runThread);
+        }
+    }
+
+    private void runThread() {
+        try {
+            activeCount++;
+            setCurrentThread(TThread.this);
+            TThread.this.run();
+        } finally {
+            synchronized (finishedLock) {
+                finishedLock.notifyAll();
+            }
+            alive = false;
+            activeCount--;
+            setCurrentThread(mainThread);
+        }
     }
 
     static void setCurrentThread(TThread thread) {
@@ -94,8 +108,16 @@ public class TThread extends TObject implements TRunnable {
         return currentThread;
     }
 
-    public TString getName() {
+    public String getName() {
         return name;
+    }
+
+    public final boolean isDaemon() {
+        return daemon;
+    }
+
+    public final void setDaemon(boolean daemon) {
+        this.daemon = daemon;
     }
 
     public final void join(long millis, int nanos) throws InterruptedException {
@@ -130,10 +152,17 @@ public class TThread extends TObject implements TRunnable {
     static native void switchContext(TThread thread);
 
     private static void switchContext(final TThread thread, final AsyncCallback<Void> callback) {
-        Platform.postpone(() -> {
-            setCurrentThread(thread);
-            callback.complete(null);
-        });
+        if (PlatformDetector.isLowLevel()) {
+            EventQueue.offer(() -> {
+                setCurrentThread(thread);
+                callback.complete(null);
+            });
+        } else {
+            Platform.postpone(() -> {
+                setCurrentThread(thread);
+                callback.complete(null);
+            });
+        }
     }
 
     public void interrupt() {
@@ -174,21 +203,30 @@ public class TThread extends TObject implements TRunnable {
     @Async
     public static native void sleep(long millis) throws TInterruptedException;
 
-    private static void sleep(long millis, final AsyncCallback<Void> callback) {
-        final TThread current = currentThread();
-        int intMillis = millis < Integer.MAX_VALUE ? (int) millis : Integer.MAX_VALUE;
+    private static void sleep(long millis, AsyncCallback<Void> callback) {
+        TThread current = currentThread();
         SleepHandler handler = new SleepHandler(current, callback);
-        handler.scheduleId = Platform.schedule(handler, intMillis);
-        current.interruptHandler = handler;
+        if (PlatformDetector.isLowLevel()) {
+            if (current.interruptedFlag) {
+                handler.interrupted();
+            } else {
+                handler.scheduleId = EventQueue.offer(handler, System.currentTimeMillis() + millis);
+                current.interruptHandler = handler;
+            }
+        } else {
+            int intMillis = millis < Integer.MAX_VALUE ? (int) millis : Integer.MAX_VALUE;
+            handler.scheduleId = Platform.schedule(handler, intMillis);
+            current.interruptHandler = handler;
+        }
     }
 
-    private static class SleepHandler implements PlatformRunnable, TThreadInterruptHandler {
+    static class SleepHandler implements PlatformRunnable, EventQueue.Event, TThreadInterruptHandler {
         private TThread thread;
         private AsyncCallback<Void> callback;
         private boolean isInterrupted;
         int scheduleId;
 
-        public SleepHandler(TThread thread, AsyncCallback<Void> callback) {
+        SleepHandler(TThread thread, AsyncCallback<Void> callback) {
             this.thread = thread;
             this.callback = callback;
         }
@@ -197,8 +235,13 @@ public class TThread extends TObject implements TRunnable {
         public void interrupted() {
             thread.interruptedFlag = false;
             isInterrupted = true;
-            Platform.killSchedule(scheduleId);
-            Platform.postpone(() -> callback.error(new TInterruptedException()));
+            if (PlatformDetector.isLowLevel()) {
+                EventQueue.kill(scheduleId);
+                EventQueue.offer(() -> callback.error(new TInterruptedException()));
+            } else {
+                Platform.killSchedule(scheduleId);
+                Platform.postpone(() -> callback.error(new TInterruptedException()));
+            }
         }
 
         @Override
@@ -221,5 +264,9 @@ public class TThread extends TObject implements TRunnable {
 
     public TStackTraceElement[] getStackTrace() {
         return new TStackTraceElement[0];
+    }
+
+    public TClassLoader getContextClassLoader() {
+        return TClassLoader.getSystemClassLoader();
     }
 }

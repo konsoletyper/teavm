@@ -17,7 +17,6 @@ package org.teavm.idea.ui;
 
 import com.intellij.openapi.module.Module;
 import com.intellij.openapi.options.Configurable;
-import com.intellij.openapi.options.ConfigurationException;
 import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.Nullable;
@@ -60,7 +59,7 @@ public class TeaVMConfigurable implements Configurable {
     }
 
     @Override
-    public void apply() throws ConfigurationException {
+    public void apply() {
         panel.save(configuration);
     }
 

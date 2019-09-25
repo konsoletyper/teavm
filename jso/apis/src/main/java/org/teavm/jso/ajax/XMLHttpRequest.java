@@ -90,4 +90,9 @@ public abstract class XMLHttpRequest implements JSObject {
 
     @JSBody(script = "return new XMLHttpRequest();")
     public static native XMLHttpRequest create();
+
+    public abstract void abort();
+
+    @JSProperty
+    public abstract String getResponseURL();
 }

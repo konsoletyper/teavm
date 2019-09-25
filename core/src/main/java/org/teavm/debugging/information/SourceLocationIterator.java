@@ -24,6 +24,7 @@ public class SourceLocationIterator {
     private GeneratedLocation location;
     private int fileId = -1;
     private int line = -1;
+    private boolean endReached;
 
     SourceLocationIterator(DebugInformation debugInformation) {
         this.debugInformation = debugInformation;
@@ -33,7 +34,7 @@ public class SourceLocationIterator {
     }
 
     public boolean isEndReached() {
-        return fileIndex >= debugInformation.fileMapping.size() && lineIndex >= debugInformation.lineMapping.size();
+        return endReached;
     }
 
     private void read() {
@@ -55,8 +56,10 @@ public class SourceLocationIterator {
             nextFileRecord();
         } else if (lineIndex < debugInformation.lineMapping.size()) {
             nextLineRecord();
-        } else {
+        } else if (endReached) {
             throw new IllegalStateException("End already reached");
+        } else {
+            endReached = true;
         }
     }
 

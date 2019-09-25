@@ -22,29 +22,34 @@ import java.awt.Font;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import javax.swing.JPanel;
+import javax.swing.border.EmptyBorder;
 import org.teavm.idea.debug.TeaVMDebugConfiguration;
 
 class TeaVMDebugSettingsPanel extends JPanel {
     private final JBTextField portField = new JBTextField();
 
     public TeaVMDebugSettingsPanel() {
+        setBorder(new EmptyBorder(10, 10, 10, 10));
+
         GridBagConstraints labelConstraints = new GridBagConstraints();
-        labelConstraints.gridwidth = GridBagConstraints.REMAINDER;
         labelConstraints.anchor = GridBagConstraints.BASELINE_LEADING;
-        labelConstraints.weightx = 1;
+        labelConstraints.weightx = 0;
         labelConstraints.weighty = 1;
         labelConstraints.insets.left = 5;
         labelConstraints.insets.right = 5;
 
-        GridBagConstraints descriptionConstraints = (GridBagConstraints) labelConstraints.clone();
-        descriptionConstraints.fill = GridBagConstraints.BOTH;
-        descriptionConstraints.anchor = GridBagConstraints.BASELINE_LEADING;
-        descriptionConstraints.insets.top = 3;
+        GridBagConstraints fieldConstraints = (GridBagConstraints) labelConstraints.clone();
+
+        fieldConstraints.gridwidth = GridBagConstraints.REMAINDER;
+        fieldConstraints.weightx = 1;
+        fieldConstraints.weighty = 1;
+        fieldConstraints.fill = GridBagConstraints.BOTH;
+        fieldConstraints.anchor = GridBagConstraints.BASELINE_LEADING;
 
         setLayout(new GridBagLayout());
 
         add(bold(new JBLabel("Listen port:")), labelConstraints);
-        add(portField);
+        add(portField, fieldConstraints);
     }
 
     public void load(TeaVMDebugConfiguration runConfiguration) {

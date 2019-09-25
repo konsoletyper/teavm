@@ -38,6 +38,7 @@ public class ListingBuilder {
             }
             sb.append(prefix).append("var @").append(stringifier.getVariableLabel(i));
             sb.append(" as ").append(var.getDebugName());
+            sb.append(" // " + var.getIndex());
             sb.append('\n');
         }
         for (int i = 0; i < program.basicBlockCount(); ++i) {

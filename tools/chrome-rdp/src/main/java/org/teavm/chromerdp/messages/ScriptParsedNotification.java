@@ -15,12 +15,13 @@
  */
 package org.teavm.chromerdp.messages;
 
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ScriptParsedNotification {
     private String scriptId;
     private String url;
+    private int executionContextId;
 
     public String getScriptId() {
         return scriptId;
@@ -36,5 +37,13 @@ public class ScriptParsedNotification {
 
     public void setUrl(String url) {
         this.url = url;
+    }
+
+    public int getExecutionContextId() {
+        return executionContextId;
+    }
+
+    public void setExecutionContextId(int executionContextId) {
+        this.executionContextId = executionContextId;
     }
 }

@@ -110,6 +110,9 @@ public class TeaVMMavenImporter extends MavenImporter {
         }
 
         TeaVMJpsConfiguration configuration = facet.getConfiguration().getState();
+        if (justCreated) {
+            configuration.setSkipped(true);
+        }
 
         for (Element child : source.getChildren()) {
             switch (child.getName()) {

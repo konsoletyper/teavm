@@ -44,27 +44,20 @@
       <groupId>org.teavm</groupId>
       <artifactId>teavm-tooling</artifactId>
       <version>${teavm.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-devserver</artifactId>
+      <version>${teavm.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm</groupId>
+      <artifactId>teavm-classlib</artifactId>
+      <version>${teavm.version}</version>
     </dependency>
     <dependency>
       <groupId>org.teavm</groupId>
       <artifactId>teavm-chrome-rdp</artifactId>
-      <version>${teavm.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>org.teavm</groupId>
-      <artifactId>teavm-metaprogramming-impl</artifactId>
       <version>${teavm.version}</version>
     </dependency>
   </dependencies>
@@ -101,7 +94,7 @@
               <target>
                 <mkdir dir="${basedir}/dependencies/"/>
                 <get src="https://plugins.jetbrains.com/plugin/download?updateId=42362"
-                     dest="${basedir}/dependencies/scala.zip"/>
+                     dest="${basedir}/dependencies/scala.zip" skipexisting="true"/>
                 <unzip src="${basedir}/dependencies/scala.zip" dest="${basedir}/dependencies"/>
               </target>
             </configuration>
@@ -115,7 +108,7 @@
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
         <artifactId>maven-shade-plugin</artifactId>
-        <version>3.0.0</version>
+        <version>3.1.1</version>
         <executions>
           <execution>
             <phase>package</phase>
@@ -128,18 +121,38 @@
                   <exclude>com.jetbrains.intellij.idea:ideaIC:zip:*</exclude>
                 </excludes>
               </atrifactSet>
-              <relocations>
-                <relocation>
-                  <pattern>org.objectweb.asm</pattern>
-                  <shadedPattern>org.teavm.asm</shadedPattern>
-                </relocation>
-                <relocation>
-                  <pattern>org.objectweb.asm</pattern>
-                  <shadedPattern>org.teavm.asm</shadedPattern>
-                </relocation>
-              </relocations>
               <createDependencyReducedPom>false</createDependencyReducedPom>
               <outputFile>dependencies/teavm.jar</outputFile>
+              <relocations>
+                <relocation>
+                  <pattern>com.google.gson</pattern>
+                  <shadedPattern>org.teavm.shade.gson</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>com.jcraft.jzlib</pattern>
+                  <shadedPattern>org.teavm.shade.jzlib</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.eclipse.jetty</pattern>
+                  <shadedPattern>org.teavm.shade.jetty</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.joda.time</pattern>
+                  <shadedPattern>org.teavm.shade.jodatime</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.objectweb.asm</pattern>
+                  <shadedPattern>org.teavm.shade.jetty.asm</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.slf4j</pattern>
+                  <shadedPattern>org.teavm.shade.slf4j</shadedPattern>
+                </relocation>
+                <relocation>
+                  <pattern>org.apache.commons</pattern>
+                  <shadedPattern>org.teavm.apachecommons</shadedPattern>
+                </relocation>
+              </relocations>
             </configuration>
           </execution>
         </executions>
@@ -270,6 +283,17 @@
             <configuration>
               <file>dependencies/idea/lib/jps-builders.jar</file>
               <artifactId>jps-builders</artifactId>
+            </configuration>
+          </execution>
+          <execution>
+            <id>jps-builders-6</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <file>dependencies/idea/lib/jps-builders-6.jar</file>
+              <artifactId>jps-builders-6</artifactId>
             </configuration>
           </execution>
           <execution>

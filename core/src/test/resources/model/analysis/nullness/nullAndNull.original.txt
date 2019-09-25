@@ -1,0 +1,17 @@
+var @this as this
+
+$start
+    @a := invokeStatic `Foo.get()LFoo;`
+    @b := invokeStatic `Foo.get2()LFoo;`
+    if @a === null then goto $ifANull else goto $join
+$ifANull
+    @tmp := @a
+    if @b === null then goto $ifBNull else goto $join
+$ifBNull
+    @p := @a
+    @q := @b
+    return
+$join
+    @u := @a
+    @v := @b
+    return

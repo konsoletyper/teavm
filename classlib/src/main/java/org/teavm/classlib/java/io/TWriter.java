@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
 import org.teavm.classlib.java.lang.TAppendable;
 import org.teavm.classlib.java.lang.TCharSequence;
 
@@ -33,13 +34,13 @@ public abstract class TWriter implements TAppendable, TCloseable, TFlushable {
         this.lock = lock;
     }
 
-    public void write(char[] buf) throws TIOException {
+    public void write(char[] buf) throws IOException {
         write(buf, 0, buf.length);
     }
 
-    public abstract void write(char[] buf, int offset, int count) throws TIOException;
+    public abstract void write(char[] buf, int offset, int count) throws IOException;
 
-    public void write(int oneChar) throws TIOException {
+    public void write(int oneChar) throws IOException {
         synchronized (lock) {
             char[] oneCharArray = new char[1];
             oneCharArray[0] = (char) oneChar;
@@ -47,11 +48,11 @@ public abstract class TWriter implements TAppendable, TCloseable, TFlushable {
         }
     }
 
-    public void write(String str) throws TIOException {
+    public void write(String str) throws IOException {
         write(str, 0, str.length());
     }
 
-    public void write(String str, int offset, int count) throws TIOException {
+    public void write(String str, int offset, int count) throws IOException {
         if (count < 0) {
             throw new StringIndexOutOfBoundsException();
         }
@@ -63,19 +64,19 @@ public abstract class TWriter implements TAppendable, TCloseable, TFlushable {
     }
 
     @Override
-    public TWriter append(char c) throws TIOException {
+    public TWriter append(char c) throws IOException {
         write(c);
         return this;
     }
 
     @Override
-    public TWriter append(TCharSequence csq) throws TIOException {
+    public TWriter append(TCharSequence csq) throws IOException {
         write(csq != null ? csq.toString() : "null");
         return this;
     }
 
     @Override
-    public TWriter append(TCharSequence csq, int start, int end) throws TIOException {
+    public TWriter append(TCharSequence csq, int start, int end) throws IOException {
         write(csq != null ? csq.subSequence(start, end).toString() : "null");
         return this;
     }

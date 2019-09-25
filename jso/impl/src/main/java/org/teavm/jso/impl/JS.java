@@ -36,6 +36,34 @@ final class JS {
     public static native JSObject arrayData(Object array);
 
     @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native byte[] dataToByteArray(JSObject obj);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native char[] dataToCharArray(JSObject obj);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native short[] dataToShortArray(JSObject obj);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native int[] dataToIntArray(JSObject obj);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native float[] dataToFloatArray(JSObject obj);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native double[] dataToDoubleArray(JSObject obj);
+
+    @InjectedBy(JSNativeGenerator.class)
+    @PluggableDependency(JSNativeGenerator.class)
+    public static native JSObject[] dataToArray(JSObject obj);
+
+    @InjectedBy(JSNativeGenerator.class)
     public static native JSObject wrap(byte value);
 
     @InjectedBy(JSNativeGenerator.class)

@@ -15,16 +15,16 @@
  */
 package org.teavm.classlib.java.io;
 
-import org.teavm.classlib.java.lang.TString;
+import java.io.IOException;
 
-public class TUTFDataFormatException extends TIOException {
+public class TUTFDataFormatException extends IOException {
     private static final long serialVersionUID = -6383472574962319733L;
 
     public TUTFDataFormatException() {
         super();
     }
 
-    public TUTFDataFormatException(TString message) {
+    public TUTFDataFormatException(String message) {
         super(message);
     }
 }

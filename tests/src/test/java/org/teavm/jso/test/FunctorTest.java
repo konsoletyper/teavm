@@ -83,6 +83,12 @@ public class FunctorTest {
         assertEquals("q,w", function.foo("q", "w"));
     }
 
+    @Test
+    public void castToFunctor() {
+        JSBiFunction f = getBiFunctionAsObject().cast();
+        assertEquals(23042, f.foo(23, 42));
+    }
+
     @JSBody(params = { "f", "a", "b" }, script = "return '(' + f(a, b) + ')';")
     private static native String testMethod(JSBiFunction f, int a, int b);
 
@@ -94,6 +100,12 @@ public class FunctorTest {
                 + "return a * 1000 + b;"
             + "};")
     private static native JSBiFunction getBiFunction();
+
+    @JSBody(script = ""
+            + "return function(a, b) {"
+            + "return a * 1000 + b;"
+            + "};")
+    private static native JSObject getBiFunctionAsObject();
 
     @JSBody(script = ""
             + "return function(a, b) {"

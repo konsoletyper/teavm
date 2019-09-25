@@ -15,8 +15,6 @@
  */
 package org.teavm.junit;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.LinkedBlockingQueue;
@@ -40,7 +38,7 @@ class TestRunner {
     public void init() {
         latch = new CountDownLatch(numThreads);
         for (int i = 0; i < numThreads; ++i) {
-            new Thread(() -> {
+            Thread thread = new Thread(() -> {
                 strategy.beforeThread();
                 while (!stopped || !taskQueue.isEmpty()) {
                     Runnable task;
@@ -55,7 +53,10 @@ class TestRunner {
                 }
                 strategy.afterThread();
                 latch.countDown();
-            }).start();
+            });
+            thread.setDaemon(true);
+            thread.setName("teavm-test-runner-" + i);
+            thread.start();
         }
     }
 
@@ -86,25 +87,7 @@ class TestRunner {
 
     private void runImpl(TestRun run) {
         try {
-            String result = strategy.runTest(run);
-            if (result == null) {
-                run.getCallback().complete();
-                return;
-            }
-            ObjectMapper mapper = new ObjectMapper();
-            ObjectNode resultObject = (ObjectNode) mapper.readTree(result);
-            String status = resultObject.get("status").asText();
-            switch (status) {
-                case "ok":
-                    run.getCallback().complete();
-                    break;
-                case "exception": {
-                    String stack = resultObject.get("stack").asText();
-                    String exception = resultObject.has("exception") ? resultObject.get("exception").asText() : null;
-                    run.getCallback().error(new AssertionError(exception + "\n" + stack));
-                    break;
-                }
-            }
+            strategy.runTest(run);
         } catch (Exception e) {
             run.getCallback().error(e);
         }

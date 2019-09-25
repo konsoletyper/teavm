@@ -15,9 +15,9 @@
  */
 package org.teavm.chromerdp.messages;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.databind.JsonNode;
 import java.util.List;
-import org.codehaus.jackson.JsonNode;
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
 import org.teavm.chromerdp.data.CallFrameDTO;
 
 @JsonIgnoreProperties(ignoreUnknown = true)

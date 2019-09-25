@@ -1,45 +1,27 @@
-function main(callback) {
-    $rt_startThread(function () {
-        var thread = $rt_nativeThread();
-        var instance;
-        var ptr = 0;
-        var message;
-        if (thread.isResuming()) {
-            ptr = thread.pop();
-            instance = thread.pop();
+var $rt_decodeStack;
+
+function runMain(stackDecoder, callback) {
+    $rt_decodeStack = stackDecoder;
+    main([], function(result) {
+        var message = {};
+        if (result instanceof Error) {
+            makeErrorMessage(message, result);
+        } else {
+            message.status = "ok";
         }
-        loop: while (true) {
-            switch (ptr) {
-                case 0:
-                    try {
-                        runTest();
-                    } catch (e) {
-                        message = {};
-                        makeErrorMessage(message, e);
-                        break loop;
-                    }
-                    if (thread.isSuspending()) {
-                        thread.push(instance);
-                        thread.push(ptr);
-                        return;
-                    }
-                    message = {};
-                    message.status = "ok";
-                    break loop;
-            }
-        }
-        callback.complete(JSON.stringify(message));
+        callback.complete(message);
     });
 
     function makeErrorMessage(message, e) {
         message.status = "exception";
-        var stack = e.stack;
-        if (e.$javaException && e.$javaException.constructor.$meta) {
-            message.exception = e.$javaException.constructor.$meta.name;
-            message.stack = e.$javaException.constructor.$meta.name + ": ";
-            var exceptionMessage = extractException(e.$javaException);
-            message.stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
+        if (e.$javaException) {
+            message.className = e.$javaException.constructor.name;
+            message.message = e.$javaException.getMessage();
+        } else {
+            message.className = Object.getPrototypeOf(e).name;
+            message.message = e.message;
         }
-        message.stack += "\n" + stack;
+        message.exception = e;
+        message.stack = e.stack;
     }
 }

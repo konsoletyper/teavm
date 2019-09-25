@@ -189,10 +189,11 @@ public class FileOutputStreamTest {
         f = new File(System.getProperty("user.home"), "output.tst");
         fos = new FileOutputStream(f.getPath());
         fos.write(fileString.getBytes());
+        fos.close();
         fis = new FileInputStream(f.getPath());
         byte[] rbytes = new byte[4000];
         fis.read(rbytes, 0, fileString.length());
-        assertTrue("Incorrect string returned", new String(rbytes, 0, fileString.length()).equals(fileString));
+        assertEquals("Incorrect string returned", fileString, new String(rbytes, 0, fileString.length()));
     }
 
     @Test
@@ -200,10 +201,11 @@ public class FileOutputStreamTest {
         f = new File(System.getProperty("user.home"), "output.tst");
         fos = new FileOutputStream(f.getPath());
         fos.write(fileString.getBytes(), 0, fileString.length());
+        fos.close();
         fis = new FileInputStream(f.getPath());
         byte[] rbytes = new byte[4000];
         fis.read(rbytes, 0, fileString.length());
-        assertTrue("Incorrect bytes written", new String(rbytes, 0, fileString.length()).equals(fileString));
+        assertEquals("Incorrect bytes written", fileString, new String(rbytes, 0, fileString.length()));
 
         // Regression test for HARMONY-285
         File file = new File("FileOutputStream.tmp");
@@ -224,6 +226,7 @@ public class FileOutputStreamTest {
         f = new File(System.getProperty("user.home"), "output.tst");
         fos = new FileOutputStream(f.getPath());
         fos.write('t');
+        fos.close();
         fis = new FileInputStream(f.getPath());
         assertEquals("Incorrect char written", 't', fis.read());
     }

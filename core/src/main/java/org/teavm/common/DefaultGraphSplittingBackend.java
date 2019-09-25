@@ -15,8 +15,8 @@
  */
 package org.teavm.common;
 
+import com.carrotsearch.hppc.IntIntHashMap;
 import com.carrotsearch.hppc.IntIntMap;
-import com.carrotsearch.hppc.IntIntOpenHashMap;
 
 public class DefaultGraphSplittingBackend implements GraphSplittingBackend {
     private MutableDirectedGraph graph;
@@ -48,7 +48,7 @@ public class DefaultGraphSplittingBackend implements GraphSplittingBackend {
     @Override
     public int[] split(int[] domain, int[] nodes) {
         int[] copies = new int[nodes.length];
-        IntIntMap map = new IntIntOpenHashMap();
+        IntIntMap map = new IntIntHashMap();
         for (int i = 0; i < nodes.length; ++i) {
             copies[i] = index++;
             map.put(nodes[i], copies[i] + 1);

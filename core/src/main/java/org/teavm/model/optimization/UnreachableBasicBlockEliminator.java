@@ -22,14 +22,14 @@ import org.teavm.model.Incoming;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.TryCatchBlock;
-import org.teavm.model.util.InstructionTransitionExtractor;
+import org.teavm.model.util.TransitionExtractor;
 
 public class UnreachableBasicBlockEliminator {
     public void optimize(Program program) {
         if (program.basicBlockCount() == 0) {
             return;
         }
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
         boolean[] reachable = new boolean[program.basicBlockCount()];
         IntegerStack stack = new IntegerStack(program.basicBlockCount());
         stack.push(0);

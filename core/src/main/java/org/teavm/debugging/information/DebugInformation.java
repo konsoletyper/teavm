@@ -22,6 +22,7 @@ import org.teavm.common.RecordArray;
 import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ReferenceCache;
 
 public class DebugInformation {
     String[] fileNames;
@@ -47,8 +48,18 @@ public class DebugInformation {
     RecordArray[] lineCallSites;
     RecordArray[] controlFlowGraphs;
     List<ClassMetadata> classesMetadata;
+    Map<String, ClassMetadata> classMetadataByJsName;
     RecordArray methodEntrances;
     MethodTree methodTree;
+    ReferenceCache referenceCache;
+
+    public DebugInformation() {
+        this(new ReferenceCache());
+    }
+
+    public DebugInformation(ReferenceCache referenceCache) {
+        this.referenceCache = referenceCache;
+    }
 
     public String[] getFilesNames() {
         return fileNames.clone();
@@ -81,13 +92,13 @@ public class DebugInformation {
     public MethodDescriptor[] getMethods() {
         MethodDescriptor[] descriptors = new MethodDescriptor[methods.length];
         for (int i = 0; i < descriptors.length; ++i) {
-            descriptors[i] = MethodDescriptor.parse(methods[i]);
+            descriptors[i] = referenceCache.parseDescriptorCached(methods[i]);
         }
         return descriptors;
     }
 
     public MethodDescriptor getMethod(int methodId) {
-        return MethodDescriptor.parse(methods[methodId]);
+        return referenceCache.parseDescriptorCached(methods[methodId]);
     }
 
     public MethodReference[] getExactMethods() {
@@ -114,7 +125,8 @@ public class DebugInformation {
         long item = exactMethods[index];
         int classIndex = (int) (item >>> 32);
         int methodIndex = (int) item;
-        return new MethodReference(classNames[classIndex], MethodDescriptor.parse(methods[methodIndex]));
+        return referenceCache.getCached(classNames[classIndex], referenceCache.parseDescriptorCached(
+                methods[methodIndex]));
     }
 
     public int getExactMethodId(int classNameId, int methodId) {
@@ -185,7 +197,7 @@ public class DebugInformation {
         if (method == null) {
             return null;
         }
-        return new MethodReference(className, MethodDescriptor.parse(method));
+        return referenceCache.getCached(className, referenceCache.parseDescriptorCached(method));
     }
 
     public MethodReference getMethodAt(int line, int column) {
@@ -268,6 +280,11 @@ public class DebugInformation {
             classIndex = cls.parentId;
         }
         return null;
+    }
+
+    public String getClassNameByJsName(String className) {
+        ClassMetadata cls = classMetadataByJsName.get(className);
+        return cls != null ? classNames[cls.id] : null;
     }
 
     public DebuggerCallSite getCallSite(GeneratedLocation location) {
@@ -401,7 +418,11 @@ public class DebugInformation {
     }
 
     public static DebugInformation read(InputStream input) throws IOException {
-        DebugInformationReader reader = new DebugInformationReader(input);
+        return read(input, new ReferenceCache());
+    }
+
+    public static DebugInformation read(InputStream input, ReferenceCache referenceCache) throws IOException {
+        DebugInformationReader reader = new DebugInformationReader(input, referenceCache);
         return reader.read();
     }
 
@@ -411,6 +432,7 @@ public class DebugInformation {
         rebuildEntrances();
         rebuildMethodTree();
         rebuildLineCallSites();
+        rebuildClassMap();
     }
 
     void rebuildMaps() {
@@ -594,6 +616,15 @@ public class DebugInformation {
         return new GeneratedLocation(record.get(0), record.get(1));
     }
 
+    private void rebuildClassMap() {
+        classMetadataByJsName = new HashMap<>();
+        for (DebugInformation.ClassMetadata cls : classesMetadata) {
+            if (cls.jsName != null) {
+                classMetadataByJsName.put(cls.jsName, cls);
+            }
+        }
+    }
+
     private int binarySearchLocation(RecordArray array, int row, int column) {
         int l = 0;
         int u = array.size() - 1;
@@ -640,11 +671,12 @@ public class DebugInformation {
     }
 
     static class ClassMetadata {
+        int id;
         Integer parentId;
         Map<Integer, Integer> fieldMap = new HashMap<>();
         int[] methods;
+        String jsName;
     }
-
 
     class MethodTree {
         int[] data;
@@ -661,8 +693,8 @@ public class DebugInformation {
                 long item = exactMethods[data[start + i]];
                 int classIndex = (int) (item >>> 32);
                 int methodIndex = (int) item;
-                references[i] = new MethodReference(classNames[classIndex],
-                        MethodDescriptor.parse(methods[methodIndex]));
+                references[i] = referenceCache.getCached(classNames[classIndex],
+                        referenceCache.parseDescriptorCached(methods[methodIndex]));
             }
             return references;
         }

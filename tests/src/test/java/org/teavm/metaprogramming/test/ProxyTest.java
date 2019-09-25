@@ -20,6 +20,7 @@ import static org.junit.Assert.assertNull;
 import static org.teavm.metaprogramming.Metaprogramming.emit;
 import static org.teavm.metaprogramming.Metaprogramming.exit;
 import static org.teavm.metaprogramming.Metaprogramming.proxy;
+import static org.teavm.metaprogramming.Metaprogramming.unsupportedCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -43,6 +44,10 @@ public class ProxyTest {
     @Meta
     private static native <T> T createProxy(Class<T> proxyType, String add);
     private static <T> void createProxy(ReflectClass<T> proxyType, Value<String> add) {
+        if (proxyType.getAnnotation(MetaprogrammingClass.class) == null) {
+            unsupportedCase();
+            return;
+        }
         Value<T> proxy = proxy(proxyType, (instance, method, args) -> {
             String name = method.getName();
             exit(() -> name + add.get());
@@ -64,6 +69,10 @@ public class ProxyTest {
     @Meta
     private static native <T> T createProxyWithDefaultReturnValue(Class<T> proxyType, StringBuilder sb);
     private static <T> void createProxyWithDefaultReturnValue(ReflectClass<T> proxyType, Value<StringBuilder> sb) {
+        if (proxyType.getAnnotation(MetaprogrammingClass.class) == null) {
+            unsupportedCase();
+            return;
+        }
         Value<T> proxy = proxy(proxyType, (instance, method, args) -> {
             String name = method.getName();
             emit(() -> sb.get().append(name + ";"));
@@ -80,6 +89,11 @@ public class ProxyTest {
     @Meta
     private static native <T> T createProxyWithBoxedParameters(Class<T> proxyType);
     private static <T> void createProxyWithBoxedParameters(ReflectClass<T> proxyType) {
+        if (proxyType.getAnnotation(MetaprogrammingClass.class) == null) {
+            unsupportedCase();
+            return;
+        }
+
         Value<T> proxy = proxy(proxyType, (instance, method, args) -> {
             Value<StringBuilder> result = emit(() -> new StringBuilder());
 
@@ -99,12 +113,14 @@ public class ProxyTest {
         exit(() -> proxy.get());
     }
 
+    @MetaprogrammingClass
     interface A {
         String foo();
 
         String bar();
     }
 
+    @MetaprogrammingClass
     interface B {
         String foo();
 
@@ -113,6 +129,7 @@ public class ProxyTest {
         void baz();
     }
 
+    @MetaprogrammingClass
     interface C {
         String foo(boolean a, byte b, char c, short d, int e, long f, String g);
     }

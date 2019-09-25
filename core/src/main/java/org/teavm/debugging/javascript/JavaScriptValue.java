@@ -16,13 +16,14 @@
 package org.teavm.debugging.javascript;
 
 import java.util.Map;
+import org.teavm.common.Promise;
 
 public interface JavaScriptValue {
-    String getRepresentation();
+    Promise<String> getRepresentation();
 
-    String getClassName();
+    Promise<String> getClassName();
 
-    Map<String, JavaScriptVariable> getProperties();
+    Promise<Map<String, ? extends JavaScriptVariable>> getProperties();
 
     boolean hasInnerStructure();
 

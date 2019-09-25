@@ -19,9 +19,15 @@ import java.util.Collection;
 import java.util.Set;
 
 public interface ClassReader extends ElementReader {
+    GenericTypeParameter[] getGenericParameters();
+
     String getParent();
 
     Set<String> getInterfaces();
+
+    GenericValueType.Object getGenericParent();
+
+    Set<GenericValueType.Object> getGenericInterfaces();
 
     MethodReader getMethod(MethodDescriptor method);
 

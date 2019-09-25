@@ -15,11 +15,11 @@
  */
 package org.teavm.platform.plugin;
 
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReference;
@@ -31,15 +31,15 @@ import org.teavm.platform.metadata.Resource;
 
 public class StringAmplifierTransformer implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         for (MethodHolder method : cls.getMethods()) {
             if (method.getProgram() != null) {
-                transformProgram(innerSource, method.getProgram());
+                transformProgram(context.getHierarchy(), method.getProgram());
             }
         }
     }
 
-    private void transformProgram(ClassReaderSource classSource, Program program) {
+    private void transformProgram(ClassHierarchy hierarchy, Program program) {
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Instruction instruction : block) {
                 if (!(instruction instanceof InvokeInstruction)) {
@@ -53,14 +53,14 @@ public class StringAmplifierTransformer implements ClassHolderTransformer {
 
                 MethodReference method = invoke.getMethod();
                 String owningClass = method.getClassName();
-                if (classSource.isSuperType(Resource.class.getName(), owningClass).orElse(false)) {
+                if (hierarchy.isSuperType(Resource.class.getName(), owningClass, false)) {
                     if (method.getReturnType().isObject(String.class)) {
                         Variable var = program.createVariable();
                         InvokeInstruction amplifyInstruction = new InvokeInstruction();
                         amplifyInstruction.setMethod(new MethodReference(StringAmplifier.class, "amplify",
                                 String.class, String.class));
                         amplifyInstruction.setType(InvocationType.SPECIAL);
-                        amplifyInstruction.getArguments().add(var);
+                        amplifyInstruction.setArguments(var);
                         amplifyInstruction.setReceiver(invoke.getReceiver());
                         amplifyInstruction.setLocation(invoke.getLocation());
 

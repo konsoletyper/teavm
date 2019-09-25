@@ -15,14 +15,13 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
 import org.teavm.classlib.java.io.TBufferedInputStream;
-import org.teavm.classlib.java.io.TIOException;
 import org.teavm.classlib.java.io.TInputStream;
-import org.teavm.classlib.java.io.TOutputStream;
-import org.teavm.classlib.java.io.TOutputStreamWriter;
 import org.teavm.classlib.java.io.TPrintStream;
-import org.teavm.classlib.java.io.TWriter;
-import org.teavm.classlib.java.lang.TString;
 
 public class TProperties extends THashtable<Object, Object> {
     /**
@@ -139,17 +138,17 @@ public class TProperties extends THashtable<Object, Object> {
             }
             if (property.length() > 40) {
                 buffer.append(property.substring(0, 37));
-                buffer.append("..."); //$NON-NLS-1$
+                buffer.append("...");
             } else {
                 buffer.append(property);
             }
-            out.println(TString.wrap(buffer.toString()));
+            out.println(buffer.toString());
             buffer.setLength(0);
         }
     }
 
     @SuppressWarnings("fallthrough")
-    public synchronized void load(TInputStream in) throws TIOException {
+    public synchronized void load(TInputStream in) throws IOException {
         if (in == null) {
             throw new NullPointerException();
         }
@@ -339,10 +338,10 @@ public class TProperties extends THashtable<Object, Object> {
     }
 
     @Deprecated
-    public void save(TOutputStream out, String comment) {
+    public void save(OutputStream out, String comment) {
         try {
             store(out, comment);
-        } catch (TIOException e) {
+        } catch (IOException e) {
             // do nothing
         }
     }
@@ -351,8 +350,8 @@ public class TProperties extends THashtable<Object, Object> {
         return put(name, value);
     }
 
-    public synchronized void store(TOutputStream out, String comments) throws TIOException {
-        TOutputStreamWriter writer = new TOutputStreamWriter(out, "ISO8859_1");
+    public synchronized void store(OutputStream out, String comments) throws IOException {
+        OutputStreamWriter writer = new OutputStreamWriter(out, "ISO8859_1");
         if (comments != null) {
             writeComments(writer, comments);
         }
@@ -374,7 +373,7 @@ public class TProperties extends THashtable<Object, Object> {
         writer.flush();
     }
 
-    private void writeComments(TWriter writer, String comments) throws TIOException {
+    private void writeComments(Writer writer, String comments) throws IOException {
         writer.write('#');
         char[] chars = comments.toCharArray();
         for (int index = 0; index < chars.length; index++) {

@@ -15,33 +15,108 @@
  */
 package org.teavm.debugging;
 
+import java.util.HashMap;
 import java.util.Map;
-import java.util.concurrent.atomic.AtomicReference;
+import org.teavm.common.Promise;
+import org.teavm.debugging.information.DebugInformation;
 import org.teavm.debugging.javascript.JavaScriptValue;
+import org.teavm.debugging.javascript.JavaScriptVariable;
 
 public class Value {
     private Debugger debugger;
+    private DebugInformation debugInformation;
     private JavaScriptValue jsValue;
-    private AtomicReference<PropertyMap> properties = new AtomicReference<>();
+    private Promise<Map<String, Variable>> properties;
+    private Promise<String> type;
 
-    Value(Debugger debugger, JavaScriptValue jsValue) {
+    Value(Debugger debugger, DebugInformation debugInformation, JavaScriptValue jsValue) {
         this.debugger = debugger;
+        this.debugInformation = debugInformation;
         this.jsValue = jsValue;
     }
 
-    public String getRepresentation() {
+    private static boolean isNumeric(String str) {
+        for (int i = 0; i < str.length(); ++i) {
+            char c = str.charAt(i);
+            if (c < '0' || c > '9') {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    public Promise<String> getRepresentation() {
         return jsValue.getRepresentation();
     }
 
-    public String getType() {
-        return jsValue.getClassName();
+    public Promise<String> getType() {
+        if (type == null) {
+            type = jsValue.getClassName().then(className -> {
+                if (className.startsWith("a/")) {
+                    className = className.substring(2);
+                    String origClassName = className;
+                    int degree = 0;
+                    while (className.endsWith("[]")) {
+                        className = className.substring(0, className.length() - 2);
+                        ++degree;
+                    }
+                    String javaClassName = debugInformation.getClassNameByJsName(className);
+                    if (javaClassName != null) {
+                        if (degree > 0) {
+                            StringBuilder sb = new StringBuilder(javaClassName);
+                            for (int i = 0; i < degree; ++i) {
+                                sb.append("[]");
+                            }
+                            javaClassName = sb.toString();
+                        }
+                        className = javaClassName;
+                    } else {
+                        className = origClassName;
+                    }
+                }
+                return className;
+            });
+        }
+        return type;
     }
 
-    public Map<String, Variable> getProperties() {
-        if (properties.get() == null) {
-            properties.compareAndSet(null, new PropertyMap(jsValue.getClassName(), jsValue.getProperties(), debugger));
+    public Promise<Map<String, Variable>> getProperties() {
+        if (properties == null) {
+            properties = jsValue.getProperties().thenAsync(jsVariables -> {
+                return getType().thenAsync(className -> {
+                    if (!className.startsWith("@") && className.endsWith("[]") && jsVariables.containsKey("data")) {
+                        return jsVariables.get("data").getValue().getProperties()
+                                .then(arrayData -> fillArray(arrayData));
+                    }
+                    Map<String, Variable> vars = new HashMap<>();
+                    for (Map.Entry<String, ? extends JavaScriptVariable> entry : jsVariables.entrySet()) {
+                        JavaScriptVariable jsVar = entry.getValue();
+                        String name;
+                        name = debugger.mapField(className, entry.getKey());
+                        if (name == null) {
+                            continue;
+                        }
+                        Value value = new Value(debugger, debugInformation, jsVar.getValue());
+                        vars.put(name, new Variable(name, value));
+                    }
+                    return Promise.of(vars);
+                });
+            });
         }
-        return properties.get();
+        return properties;
+    }
+
+    private Map<String, Variable> fillArray(Map<String, ? extends JavaScriptVariable> jsVariables) {
+        Map<String, Variable> vars = new HashMap<>();
+        for (Map.Entry<String, ? extends JavaScriptVariable> entry : jsVariables.entrySet()) {
+            JavaScriptVariable jsVar = entry.getValue();
+            if (!isNumeric(entry.getKey())) {
+                continue;
+            }
+            Value value = new Value(debugger, debugInformation, jsVar.getValue());
+            vars.put(entry.getKey(), new Variable(entry.getKey(), value));
+        }
+        return vars;
     }
 
     public boolean hasInnerStructure() {

@@ -15,8 +15,8 @@
  */
 package org.teavm.parsing;
 
+import com.carrotsearch.hppc.IntIntHashMap;
 import com.carrotsearch.hppc.IntIntMap;
-import com.carrotsearch.hppc.IntIntOpenHashMap;
 import java.lang.reflect.Array;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -42,6 +42,8 @@ import org.teavm.model.ElementHolder;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReference;
+import org.teavm.model.GenericTypeParameter;
+import org.teavm.model.GenericValueType;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
@@ -57,26 +59,29 @@ import org.teavm.model.util.PhiUpdater;
 import org.teavm.model.util.ProgramUtils;
 
 public class Parser {
+    private static final int DECL_CLASS = 0;
+    private static final int DECL_METHOD = 1;
+    private static final int DECL_FIELD = 2;
     private ReferenceCache referenceCache;
 
     public Parser(ReferenceCache referenceCache) {
         this.referenceCache = referenceCache;
     }
 
-    public MethodHolder parseMethod(MethodNode node, String className, String fileName) {
-        MethodNode nodeWithoutJsr = new MethodNode(Opcodes.ASM5, node.access, node.name, node.desc, node.signature,
+    public MethodHolder parseMethod(MethodNode node, String fileName) {
+        MethodNode nodeWithoutJsr = new MethodNode(Opcodes.ASM7, node.access, node.name, node.desc, node.signature,
                 node.exceptions.toArray(new String[0]));
         JSRInlinerAdapter adapter = new JSRInlinerAdapter(nodeWithoutJsr, node.access, node.name, node.desc,
                 node.signature, node.exceptions.toArray(new String[0]));
         node.accept(adapter);
         node = nodeWithoutJsr;
         ValueType[] signature = MethodDescriptor.parseSignature(node.desc);
-        MethodHolder method = new MethodHolder(node.name, signature);
-        parseModifiers(node.access, method);
+        MethodHolder method = new MethodHolder(referenceCache.getCached(new MethodDescriptor(node.name, signature)));
+        parseModifiers(node.access, method, DECL_METHOD);
 
         ProgramParser programParser = new ProgramParser(referenceCache);
         programParser.setFileName(fileName);
-        Program program = programParser.parse(node, className);
+        Program program = programParser.parse(node);
         new UnreachableBasicBlockEliminator().optimize(program);
         PhiUpdater phiUpdater = new PhiUpdater();
         Variable[] argumentMapping = applySignature(program, method.getParameterTypes());
@@ -98,7 +103,47 @@ public class Parser {
                     node.visibleParameterAnnotations != null ? node.visibleParameterAnnotations[i] : null,
                     node.invisibleParameterAnnotations != null ? node.invisibleParameterAnnotations[i] : null);
         }
+
+        if (node.signature != null) {
+            parseMethodGenericSignature(node.signature, method);
+        }
+
         return method;
+    }
+
+    private void parseMethodGenericSignature(String signature, MethodHolder method) {
+        GenericValueType.ParsePosition position = new GenericValueType.ParsePosition();
+
+        List<GenericTypeParameter> typeParameters = new ArrayList<>();
+        String elementName = "method '" + method.getDescriptor() + "'";
+        if (signature.charAt(position.index) == '<') {
+            parseTypeParameters(signature, typeParameters, position, elementName);
+        }
+
+        List<GenericValueType> parameters = new ArrayList<>();
+        if (signature.charAt(position.index) != '(') {
+            throw couldNotParseSignature(elementName, signature);
+        }
+        position.index++;
+        while (signature.charAt(position.index) != ')') {
+            GenericValueType parameter = GenericValueType.parse(signature, position);
+            if (parameter == null) {
+                throw couldNotParseSignature(elementName, signature);
+            }
+            parameters.add(parameter);
+        }
+        position.index++;
+        GenericValueType returnType = GenericValueType.parse(signature, position);
+        if (returnType == null) {
+            throw couldNotParseSignature(elementName, signature);
+        }
+
+        if (position.index < signature.length() && signature.charAt(position.index) != '^') {
+            throw couldNotParseSignature(elementName, signature);
+        }
+
+        method.setTypeParameters(typeParameters.toArray(new GenericTypeParameter[0]));
+        method.setGenericSignature(returnType, parameters.toArray(new GenericValueType[0]));
     }
 
     private static void applyDebugNames(Program program, PhiUpdater phiUpdater, ProgramParser parser,
@@ -157,7 +202,7 @@ public class Parser {
         Step[] stack = new Step[program.basicBlockCount()];
         int top = 0;
 
-        IntIntOpenHashMap entryVarMap = new IntIntOpenHashMap();
+        IntIntHashMap entryVarMap = new IntIntHashMap();
         for (int i = 0; i < argumentMapping.length; ++i) {
             Variable arg = argumentMapping[i];
             if (arg != null) {
@@ -169,7 +214,7 @@ public class Parser {
         while (top > 0) {
             Step step = stack[--top];
             int node = step.node;
-            IntIntMap varMap = new IntIntOpenHashMap(step.varMap);
+            IntIntMap varMap = new IntIntHashMap(step.varMap);
             BasicBlock block = program.basicBlockAt(node);
 
             for (Phi phi : block.getPhis()) {
@@ -180,7 +225,7 @@ public class Parser {
                 }
             }
 
-            result[node] = new IntIntOpenHashMap(varMap);
+            result[node] = new IntIntHashMap(varMap);
 
             for (Instruction insn : block) {
                 insn.acceptVisitor(defExtractor);
@@ -193,7 +238,7 @@ public class Parser {
             }
 
             for (int successor : dom.outgoingEdges(node)) {
-                stack[top++] = new Step(successor, new IntIntOpenHashMap(varMap));
+                stack[top++] = new Step(successor, new IntIntHashMap(varMap));
             }
         }
 
@@ -226,26 +271,36 @@ public class Parser {
     }
 
     public ClassHolder parseClass(ClassNode node) {
-        ClassHolder cls = new ClassHolder(node.name.replace('/', '.'));
-        parseModifiers(node.access, cls);
+        ClassHolder cls = new ClassHolder(referenceCache.getCached(node.name.replace('/', '.')));
+        parseModifiers(node.access, cls, DECL_CLASS);
         if (node.superName != null) {
-            cls.setParent(node.superName.replace('/', '.'));
+            cls.setParent(referenceCache.getCached(node.superName.replace('/', '.')));
         }
         if (cls.getName().equals("java.lang.Object")) {
             cls.setParent(null);
         }
         if (node.interfaces != null) {
             for (String iface : node.interfaces) {
-                cls.getInterfaces().add(iface.replace('/', '.'));
+                cls.getInterfaces().add(referenceCache.getCached(iface.replace('/', '.')));
             }
         }
+
+        if (node.signature != null) {
+            parseSignature(cls, node.signature);
+        }
+
         for (Object obj : node.fields) {
             FieldNode fieldNode = (FieldNode) obj;
-            cls.addField(parseField(fieldNode));
+            FieldHolder field = parseField(fieldNode);
+            cls.addField(field);
+            field.updateReference(referenceCache);
         }
-        String fullFileName = node.name.substring(0, node.name.lastIndexOf('/') + 1) + node.sourceFile;
+        String fullFileName = referenceCache.getCached(node.name.substring(0, node.name.lastIndexOf('/') + 1)
+                + node.sourceFile);
         for (MethodNode methodNode : node.methods) {
-            cls.addMethod(parseMethod(methodNode, node.name, fullFileName));
+            MethodHolder method = parseMethod(methodNode, fullFileName);
+            cls.addMethod(method);
+            method.updateReference(referenceCache);
         }
         if (node.outerClass != null) {
             cls.setOwnerName(node.outerClass.replace('/', '.'));
@@ -259,16 +314,101 @@ public class Parser {
         return cls;
     }
 
+    private void parseSignature(ClassHolder cls, String signature) {
+        GenericValueType.ParsePosition position = new GenericValueType.ParsePosition();
+        List<GenericTypeParameter> typeParameters = new ArrayList<>();
+
+        String elementName = "class '" + cls.getName() + "'";
+        if (signature.charAt(position.index) == '<') {
+            parseTypeParameters(signature, typeParameters, position, elementName);
+        }
+
+        cls.setGenericParameters(typeParameters.toArray(new GenericTypeParameter[0]));
+
+        GenericValueType.Object supertype = GenericValueType.parseObject(signature, position);
+        if (supertype == null) {
+            throw couldNotParseSignature(elementName, signature);
+        }
+        cls.setGenericParent(supertype);
+
+        List<GenericValueType.Object> interfaces = new ArrayList<>();
+        while (position.index < signature.length()) {
+            GenericValueType.Object itf = GenericValueType.parseObject(signature, position);
+            if (itf == null) {
+                throw couldNotParseSignature(elementName, signature);
+            }
+            interfaces.add(itf);
+        }
+
+        cls.getGenericInterfaces().addAll(interfaces);
+    }
+
+    private void parseTypeParameters(String signature, List<GenericTypeParameter> typeParameters,
+            GenericValueType.ParsePosition position, String elementName) {
+        position.index++;
+        do {
+            if (position.index >= signature.length()) {
+                throw couldNotParseSignature(elementName, signature);
+            }
+            int next = signature.indexOf(':', position.index);
+            if (next < 0 || next == position.index) {
+                throw couldNotParseSignature(elementName, signature);
+            }
+            String name = signature.substring(position.index, next);
+            position.index = next;
+
+            List<GenericValueType.Reference> bounds = new ArrayList<>();
+            while (true) {
+                if (position.index >= signature.length()) {
+                    throw couldNotParseSignature(elementName, signature);
+                }
+                char c = signature.charAt(position.index);
+                if (c != ':') {
+                    break;
+                }
+                position.index++;
+                if (bounds.isEmpty() && signature.charAt(position.index) == ':') {
+                    bounds.add(null);
+                } else {
+                    GenericValueType.Reference bound = GenericValueType.parseReference(signature, position);
+                    if (bound == null) {
+                        throw couldNotParseSignature(elementName, signature);
+                    }
+                    bounds.add(bound);
+                }
+            }
+
+            typeParameters.add(new GenericTypeParameter(name, bounds.get(0),
+                    bounds.subList(1, bounds.size()).toArray(new GenericValueType.Reference[0])));
+        } while (signature.charAt(position.index) != '>');
+
+        position.index++;
+    }
+
+    private IllegalArgumentException couldNotParseSignature(String forElement, String signature) {
+        return new IllegalArgumentException("Could not parse class signature '" + signature + "' for " + forElement);
+    }
+
     public FieldHolder parseField(FieldNode node) {
-        FieldHolder field = new FieldHolder(node.name);
-        field.setType(ValueType.parse(node.desc));
+        FieldHolder field = new FieldHolder(referenceCache.getCached(node.name));
+        field.setType(referenceCache.getCached(ValueType.parse(node.desc)));
         field.setInitialValue(node.value);
-        parseModifiers(node.access, field);
+        parseModifiers(node.access, field, DECL_FIELD);
         parseAnnotations(field.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
+
+        if (node.signature != null) {
+            GenericValueType.ParsePosition position = new GenericValueType.ParsePosition();
+            GenericValueType type = GenericValueType.parse(node.signature, position);
+            if (type == null || position.index < node.signature.length()) {
+                throw couldNotParseSignature("field '" + field.getReference() + "'", node.signature);
+            }
+            field.setGenericType(type);
+        }
+
         return field;
     }
 
-    public void parseModifiers(int access, ElementHolder member) {
+    public void parseModifiers(int access, ElementHolder member, int type) {
         if ((access & Opcodes.ACC_PRIVATE) != 0) {
             member.setLevel(AccessLevel.PRIVATE);
         } else if ((access & Opcodes.ACC_PROTECTED) != 0) {
@@ -284,7 +424,9 @@ public class Parser {
             member.getModifiers().add(ElementModifier.ANNOTATION);
         }
         if ((access & Opcodes.ACC_BRIDGE) != 0) {
-            member.getModifiers().add(ElementModifier.BRIDGE);
+            if (type == DECL_METHOD) {
+                member.getModifiers().add(ElementModifier.BRIDGE);
+            }
         }
         if ((access & Opcodes.ACC_DEPRECATED) != 0) {
             member.getModifiers().add(ElementModifier.DEPRECATED);
@@ -307,23 +449,28 @@ public class Parser {
         if ((access & Opcodes.ACC_STRICT) != 0) {
             member.getModifiers().add(ElementModifier.STRICT);
         }
-        if ((access & Opcodes.ACC_SUPER) != 0) {
-            member.getModifiers().add(ElementModifier.SUPER);
-        }
         if ((access & Opcodes.ACC_SYNCHRONIZED) != 0) {
-            member.getModifiers().add(ElementModifier.SYNCHRONIZED);
+            if (type == DECL_METHOD) {
+                member.getModifiers().add(ElementModifier.SYNCHRONIZED);
+            }
         }
         if ((access & Opcodes.ACC_SYNTHETIC) != 0) {
             member.getModifiers().add(ElementModifier.SYNTHETIC);
         }
         if ((access & Opcodes.ACC_TRANSIENT) != 0) {
-            member.getModifiers().add(ElementModifier.TRANSIENT);
+            if (type == DECL_FIELD) {
+                member.getModifiers().add(ElementModifier.TRANSIENT);
+            }
         }
         if ((access & Opcodes.ACC_VARARGS) != 0) {
-            member.getModifiers().add(ElementModifier.VARARGS);
+            if (type == DECL_FIELD) {
+                member.getModifiers().add(ElementModifier.VARARGS);
+            }
         }
         if ((access & Opcodes.ACC_VOLATILE) != 0) {
-            member.getModifiers().add(ElementModifier.VOLATILE);
+            if (type == DECL_FIELD) {
+                member.getModifiers().add(ElementModifier.VOLATILE);
+            }
         }
     }
 
@@ -348,7 +495,7 @@ public class Parser {
                 continue;
             }
 
-            AnnotationHolder annot = new AnnotationHolder(desc);
+            AnnotationHolder annot = new AnnotationHolder(referenceCache.getCached(desc));
             parseAnnotationValues(annot, annotNode.values);
             annotations.add(annot);
         }
@@ -369,10 +516,11 @@ public class Parser {
         if (value instanceof String[]) {
             String[] enumInfo = (String[]) value;
             ValueType.Object object = (ValueType.Object) ValueType.parse(enumInfo[0]);
-            return new AnnotationValue(new FieldReference(object.getClassName(), enumInfo[1]));
+            return new AnnotationValue(referenceCache.getCached(new FieldReference(object.getClassName(),
+                    enumInfo[1])));
         } else if (value instanceof Type) {
             Type cls = (Type) value;
-            return new AnnotationValue(ValueType.parse(cls.getDescriptor()));
+            return new AnnotationValue(referenceCache.getCached(ValueType.parse(cls.getDescriptor())));
         } else if (value instanceof List<?>) {
             List<?> originalList = (List<?>) value;
             List<AnnotationValue> resultList = new ArrayList<>();
@@ -382,7 +530,7 @@ public class Parser {
             return new AnnotationValue(resultList);
         } else if (value instanceof AnnotationNode) {
             AnnotationNode annotNode = (AnnotationNode) value;
-            ValueType.Object object = (ValueType.Object) ValueType.parse(annotNode.desc);
+            ValueType.Object object = (ValueType.Object) referenceCache.getCached(ValueType.parse(annotNode.desc));
             AnnotationHolder annotation = new AnnotationHolder(object.getClassName());
             parseAnnotationValues(annotation, annotNode.values);
             return new AnnotationValue(annotation);

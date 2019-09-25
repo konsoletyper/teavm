@@ -48,6 +48,8 @@
                 <item>dep-pom.xml</item>
                 <item>clean</item>
                 <item>package</item>
+                <item>-Dmaven.repo.local=${settings.localRepository}</item>
+                <item>-B</item>
               </arguments>
             </configuration>
           </execution>

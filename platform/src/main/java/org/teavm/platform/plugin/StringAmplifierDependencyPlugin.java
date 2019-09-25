@@ -18,11 +18,10 @@ package org.teavm.platform.plugin;
 import org.teavm.dependency.DependencyAgent;
 import org.teavm.dependency.DependencyPlugin;
 import org.teavm.dependency.MethodDependency;
-import org.teavm.model.CallLocation;
 
 public class StringAmplifierDependencyPlugin implements DependencyPlugin {
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         method.getResult().propagate(agent.getType("java.lang.String"));
     }
 }

@@ -27,10 +27,10 @@ import java.util.Map;
 import org.teavm.classlib.java.net.THttpURLConnection;
 import org.teavm.classlib.java.net.TURL;
 import org.teavm.interop.Async;
+import org.teavm.interop.AsyncCallback;
 import org.teavm.jso.ajax.XMLHttpRequest;
 import org.teavm.jso.typedarrays.ArrayBuffer;
 import org.teavm.jso.typedarrays.Int8Array;
-import org.teavm.platform.async.AsyncCallback;
 
 public class TXHRURLConnection extends THttpURLConnection {
     private XMLHttpRequest xhr;

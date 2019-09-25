@@ -22,7 +22,7 @@ public class TArithmeticException extends TRuntimeException {
         super();
     }
 
-    public TArithmeticException(TString message) {
+    public TArithmeticException(String message) {
         super(message);
     }
 }

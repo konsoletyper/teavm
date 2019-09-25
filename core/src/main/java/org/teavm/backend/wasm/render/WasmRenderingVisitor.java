@@ -51,6 +51,7 @@ import org.teavm.backend.wasm.model.expression.WasmLoadFloat32;
 import org.teavm.backend.wasm.model.expression.WasmLoadFloat64;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt64;
+import org.teavm.backend.wasm.model.expression.WasmMemoryGrow;
 import org.teavm.backend.wasm.model.expression.WasmReturn;
 import org.teavm.backend.wasm.model.expression.WasmSetLocal;
 import org.teavm.backend.wasm.model.expression.WasmStoreFloat32;
@@ -323,7 +324,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                         break;
                     case FLOAT32:
                     case FLOAT64:
-                        name = expression.isSigned() ? "convert_s" : "convert_u";
+                        if (expression.isReinterpret()) {
+                            name = "reinterpret";
+                        } else {
+                            name = expression.isSigned() ? "convert_s" : "convert_u";
+                        }
                         break;
                 }
                 break;
@@ -336,7 +341,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                         break;
                     case FLOAT32:
                     case FLOAT64:
-                        name = expression.isSigned() ? "convert_s" : "convert_u";
+                        if (expression.isReinterpret()) {
+                            name = "reinterpret";
+                        } else {
+                            name = expression.isSigned() ? "convert_s" : "convert_u";
+                        }
                         break;
                 }
                 break;
@@ -344,7 +353,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                 switch (expression.getTargetType()) {
                     case INT32:
                     case INT64:
-                        name = expression.isSigned() ? "trunc_s" : "trunc_u";
+                        if (expression.isReinterpret()) {
+                            name = "reinterpret";
+                        } else {
+                            name = expression.isSigned() ? "trunc_s" : "trunc_u";
+                        }
                         break;
                     case FLOAT32:
                         break;
@@ -357,7 +370,11 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
                 switch (expression.getTargetType()) {
                     case INT32:
                     case INT64:
-                        name = expression.isSigned() ? "trunc_s" : "trunc_u";
+                        if (expression.isReinterpret()) {
+                            name = "reinterpret";
+                        } else {
+                            name = expression.isSigned() ? "trunc_s" : "trunc_u";
+                        }
                         break;
                     case FLOAT32:
                         name = "demote";
@@ -575,6 +592,13 @@ class WasmRenderingVisitor implements WasmExpressionVisitor {
         append(" align=" + expression.getAlignment());
         line(expression.getIndex());
         line(expression.getValue());
+        close();
+    }
+
+    @Override
+    public void visit(WasmMemoryGrow expression) {
+        open().append("memory.grow");
+        line(expression.getAmount());
         close();
     }
 

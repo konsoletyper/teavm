@@ -476,7 +476,7 @@ public class OutputStreamWriterTest {
             assertEquals("invalid conversion 4", "\u001b$B$($(\u001b(B", new String(bout.toByteArray(), "ISO8859_1"));
         } catch (UnsupportedEncodingException e) {
             // Can't test missing converter
-            System.out.println(e);
+            e.printStackTrace();
         }
     }
 

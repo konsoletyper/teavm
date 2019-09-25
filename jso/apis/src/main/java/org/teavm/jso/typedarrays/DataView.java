@@ -20,23 +20,23 @@ import org.teavm.jso.JSBody;
 public abstract class DataView extends ArrayBufferView {
     public abstract byte getInt8(int byteOffset);
 
-    public abstract short getUInt8(int byteOffset);
+    public abstract short getUint8(int byteOffset);
 
     public abstract short getInt16(int byteOffset);
 
     public abstract short getInt16(int byteOffset, boolean littleEndian);
 
-    public abstract int getUInt16(int byteOffset);
+    public abstract int getUint16(int byteOffset);
 
-    public abstract int getUInt16(int byteOffset, boolean littleEndian);
+    public abstract int getUint16(int byteOffset, boolean littleEndian);
 
     public abstract int getInt32(int byteOffset);
 
     public abstract int getInt32(int byteOffset, boolean littleEndian);
 
-    public abstract int getUInt32(int byteOffset);
+    public abstract int getUint32(int byteOffset);
 
-    public abstract int getUInt32(int byteOffset, boolean littleEndian);
+    public abstract int getUint32(int byteOffset, boolean littleEndian);
 
     public abstract float getFloat32(int byteOffset);
 
@@ -48,23 +48,23 @@ public abstract class DataView extends ArrayBufferView {
 
     public abstract void setInt8(int byteOffset, int value);
 
-    public abstract void setUInt8(int byteOffset, int value);
+    public abstract void setUint8(int byteOffset, int value);
 
     public abstract void setInt16(int byteOffset, int value);
 
     public abstract void setInt16(int byteOffset, int value, boolean littleEndian);
 
-    public abstract void setUInt16(int byteOffset, int value);
+    public abstract void setUint16(int byteOffset, int value);
 
-    public abstract void setUInt16(int byteOffset, int value, boolean littleEndian);
+    public abstract void setUint16(int byteOffset, int value, boolean littleEndian);
 
     public abstract void setInt32(int byteOffset, int value);
 
     public abstract void setInt32(int byteOffset, int value, boolean littleEndian);
 
-    public abstract void setUInt32(int byteOffset, int value);
+    public abstract void setUint32(int byteOffset, int value);
 
-    public abstract void setUInt32(int byteOffset, int value, boolean littleEndian);
+    public abstract void setUint32(int byteOffset, int value, boolean littleEndian);
 
     public abstract void setFloat32(int byteOffset, float value);
 
@@ -77,6 +77,12 @@ public abstract class DataView extends ArrayBufferView {
     @JSBody(params = "buffer", script = "return new DataView(buffer);")
     public static native DataView create(ArrayBuffer buffer);
 
-    @JSBody(params = {"buffer", "offset", "length"}, script = "return new DataView(buffer, offset, length);")
+    @JSBody(params = "buffer", script = "return new DataView(buffer);")
+    public static native DataView create(ArrayBufferView buffer);
+
+    @JSBody(params = { "buffer", "offset", "length" }, script = "return new DataView(buffer, offset, length);")
     public static native DataView create(ArrayBuffer buffer, int offset, int length);
+
+    @JSBody(params = { "buffer", "offset" }, script = "return new DataView(buffer, offset);")
+    public static native DataView create(ArrayBuffer buffer, int offset);
 }

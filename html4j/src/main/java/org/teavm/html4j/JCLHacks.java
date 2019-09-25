@@ -15,13 +15,24 @@
  */
 package org.teavm.html4j;
 
-import org.teavm.diagnostics.Diagnostics;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.model.AccessLevel;
+import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHolder;
+import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodHolder;
+import org.teavm.model.MethodReference;
+import org.teavm.model.Program;
+import org.teavm.model.Variable;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
 
 public class JCLHacks implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         if (cls.getName().equals("java.lang.Thread")) {
             installThreadMethods(cls);
         }

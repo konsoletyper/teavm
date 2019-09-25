@@ -15,16 +15,16 @@
  */
 package org.teavm.dependency;
 
-import org.teavm.model.CallLocation;
-
 public interface DependencyListener {
     void started(DependencyAgent agent);
 
-    void classReached(DependencyAgent agent, String className, CallLocation location);
+    void classReached(DependencyAgent agent, String className);
 
-    void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location);
+    void methodReached(DependencyAgent agent, MethodDependency method);
 
-    void fieldReached(DependencyAgent agent, FieldDependency field, CallLocation location);
+    void fieldReached(DependencyAgent agent, FieldDependency field);
 
     void completing(DependencyAgent agent);
+
+    void complete();
 }

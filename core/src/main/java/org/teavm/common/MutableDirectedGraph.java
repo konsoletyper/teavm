@@ -15,7 +15,7 @@
  */
 package org.teavm.common;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
@@ -56,8 +56,8 @@ public class MutableDirectedGraph implements Graph {
     public void addEdge(int from, int to) {
         int max = Math.max(from, to);
         while (max >= successors.size()) {
-            successors.add(new IntOpenHashSet(1));
-            predecessors.add(new IntOpenHashSet(1));
+            successors.add(new IntHashSet(1));
+            predecessors.add(new IntHashSet(1));
         }
         successors.get(from).add(to);
         predecessors.get(to).add(from);
@@ -67,16 +67,16 @@ public class MutableDirectedGraph implements Graph {
         if (from >= successors.size() || to >= successors.size()) {
             return;
         }
-        successors.get(from).removeAllOccurrences(to);
-        predecessors.get(to).removeAllOccurrences(from);
+        successors.get(from).removeAll(to);
+        predecessors.get(to).removeAll(from);
     }
 
     public void detachNode(int node) {
         for (IntCursor succ : successors.get(node)) {
-            predecessors.get(succ.value).removeAllOccurrences(node);
+            predecessors.get(succ.value).removeAll(node);
         }
         for (IntCursor pred : predecessors.get(node)) {
-            successors.get(pred.value).removeAllOccurrences(node);
+            successors.get(pred.value).removeAll(node);
         }
         predecessors.get(node).clear();
         successors.get(node).clear();

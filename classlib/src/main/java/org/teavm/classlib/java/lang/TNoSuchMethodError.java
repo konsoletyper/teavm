@@ -22,7 +22,7 @@ public class TNoSuchMethodError extends TIncompatibleClassChangeError {
         super();
     }
 
-    public TNoSuchMethodError(TString message) {
+    public TNoSuchMethodError(String message) {
         super(message);
     }
 }

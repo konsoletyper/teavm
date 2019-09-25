@@ -18,12 +18,6 @@ package org.teavm.classlib.java.util;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
-/**
- *
- * @author Alexey Andreev
- * @param <K>
- * @param <V>
- */
 public interface TMap<K, V> {
     interface Entry<K1, V1> {
         K1 getKey();
@@ -42,6 +36,10 @@ public interface TMap<K, V> {
     boolean containsValue(Object value);
 
     V get(Object key);
+
+    default V getOrDefault(K key, V defaultValue) {
+        return containsKey(key) ? get(key) : defaultValue;
+    }
 
     V put(K key, V value);
 
@@ -72,6 +70,15 @@ public interface TMap<K, V> {
         } else {
             return null;
         }
+    }
+
+    default V putIfAbsent(K key, V value) {
+        V v = get(key);
+        if (v == null) {
+            v = put(key, value);
+        }
+
+        return v;
     }
 
     default V computeIfAbsent(K key, Function<? super K, ? extends V> mappingFunction) {

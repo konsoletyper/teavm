@@ -35,4 +35,14 @@ public class TWeakReference<T> extends TReference<T> {
     public void clear() {
         value = null;
     }
+
+    @Override
+    public boolean isEnqueued() {
+        return false;
+    }
+
+    @Override
+    public boolean enqueue() {
+        return true;
+    }
 }

@@ -16,6 +16,7 @@
 package org.teavm.model.emit;
 
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReader;
@@ -46,18 +47,20 @@ import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.instructions.SwitchInstruction;
-import org.teavm.model.util.InstructionTransitionExtractor;
+import org.teavm.model.util.TransitionExtractor;
 
 public final class ProgramEmitter {
     private Program program;
     private BasicBlock block;
     ClassReaderSource classSource;
+    ClassHierarchy hierarchy;
     private TextLocation currentLocation;
 
-    private ProgramEmitter(Program program, BasicBlock block, ClassReaderSource classSource) {
+    private ProgramEmitter(Program program, BasicBlock block, ClassHierarchy hierarchy) {
         this.program = program;
         this.block = block;
-        this.classSource = classSource;
+        this.classSource = hierarchy.getClassSource();
+        this.hierarchy = hierarchy;
     }
 
     public Program getProgram() {
@@ -172,7 +175,7 @@ public final class ProgramEmitter {
     }
 
     public ValueEmitter getField(FieldReference field, ValueType type) {
-        FieldReader resolvedField = classSource.resolve(field);
+        FieldReader resolvedField = hierarchy.resolve(field);
         if (resolvedField != null) {
             field = resolvedField.getReference();
         }
@@ -195,7 +198,7 @@ public final class ProgramEmitter {
     }
 
     public ProgramEmitter setField(FieldReference field, ValueEmitter value) {
-        FieldReader resolvedField = classSource.resolve(field);
+        FieldReader resolvedField = hierarchy.resolve(field);
         if (resolvedField != null) {
             field = resolvedField.getReference();
         }
@@ -218,7 +221,7 @@ public final class ProgramEmitter {
 
     public ValueEmitter invoke(MethodReference method, ValueEmitter... arguments) {
         for (int i = 0; i < method.parameterCount(); ++i) {
-            if (!classSource.isSuperType(method.parameterType(i), arguments[i].getType()).orElse(true)) {
+            if (!hierarchy.isSuperType(method.parameterType(i), arguments[i].getType(), true)) {
                 throw new EmitException("Argument " + i + " of type " + arguments[i].getType() + " is "
                         + "not compatible with method " + method);
             }
@@ -233,9 +236,12 @@ public final class ProgramEmitter {
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(method);
         insn.setReceiver(result);
-        for (ValueEmitter arg : arguments) {
-            insn.getArguments().add(arg.variable);
+        Variable[] insnArguments = new Variable[arguments.length];
+        for (int i = 0; i < insnArguments.length; ++i) {
+            insnArguments[i] = arguments[i].variable;
         }
+        insn.setArguments(insnArguments);
+
         addInstruction(insn);
         return result != null ? var(result, method.getReturnType()) : null;
     }
@@ -257,9 +263,11 @@ public final class ProgramEmitter {
         insn.setType(InvocationType.SPECIAL);
         insn.setMethod(method);
         insn.setReceiver(result);
-        for (ValueEmitter arg : arguments) {
-            insn.getArguments().add(arg.variable);
+        Variable[] insnArguments = new Variable[arguments.length];
+        for (int i = 0; i < insnArguments.length; ++i) {
+            insnArguments[i] = arguments[i].variable;
         }
+        insn.setArguments(insnArguments);
         addInstruction(insn);
         return result != null ? var(result, resultType) : null;
     }
@@ -387,13 +395,13 @@ public final class ProgramEmitter {
         block.add(insn);
     }
 
-    public static ProgramEmitter create(MethodHolder method, ClassReaderSource classSource) {
+    public static ProgramEmitter create(MethodHolder method, ClassHierarchy classSource) {
         ProgramEmitter pe = create(method.getDescriptor(), classSource);
         method.setProgram(pe.getProgram());
         return pe;
     }
 
-    public static ProgramEmitter create(MethodDescriptor method, ClassReaderSource classSource) {
+    public static ProgramEmitter create(MethodDescriptor method, ClassHierarchy classSource) {
         Program program = new Program();
         BasicBlock zeroBlock = program.createBasicBlock();
         BasicBlock block = program.createBasicBlock();
@@ -467,7 +475,7 @@ public final class ProgramEmitter {
         if (insn == null) {
             return false;
         }
-        InstructionTransitionExtractor extractor = new InstructionTransitionExtractor();
+        TransitionExtractor extractor = new TransitionExtractor();
         insn.acceptVisitor(extractor);
         return extractor.getTargets() != null;
     }
@@ -483,7 +491,7 @@ public final class ProgramEmitter {
         return new StringBuilderEmitter(this);
     }
 
-    public static ProgramEmitter create(Program program, ClassReaderSource classSource) {
+    public static ProgramEmitter create(Program program, ClassHierarchy classSource) {
         return new ProgramEmitter(program, null, classSource);
     }
 }

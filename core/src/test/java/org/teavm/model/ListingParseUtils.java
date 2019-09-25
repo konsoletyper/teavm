@@ -18,6 +18,7 @@ package org.teavm.model;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import org.junit.Assert;
 import org.teavm.model.text.ListingParseException;
 import org.teavm.model.text.ListingParser;
@@ -29,7 +30,7 @@ public final class ListingParseUtils {
     public static Program parseFromResource(String resourceName) {
         ClassLoader classLoader = ListingParseUtils.class.getClassLoader();
         try (InputStream input = classLoader.getResourceAsStream(resourceName);
-                InputStreamReader reader = new InputStreamReader(input, "UTF-8")) {
+                InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
             return new ListingParser().parse(reader);
         } catch (IOException e) {
             throw new RuntimeException(e);
@@ -49,7 +50,7 @@ public final class ListingParseUtils {
     private static Location offsetToLocation(int offset, InputStream input) throws IOException {
         int row = 0;
         int column = 0;
-        try (InputStreamReader reader = new InputStreamReader(input, "UTF-8")) {
+        try (InputStreamReader reader = new InputStreamReader(input, StandardCharsets.UTF_8)) {
             for (int i = 0; i < offset; ++i) {
                 int c = reader.read();
                 if (c == '\n') {

@@ -57,14 +57,15 @@ public class WasmRenderer {
         visitor.open().append("module");
         renderTypes(module);
 
+        int functionIndex = 0;
         for (WasmFunction function : module.getFunctions().values()) {
             if (function.getImportName() != null) {
-                lf().render(function);
+                lf().append(";; function #" + functionIndex++).lf().render(function);
             }
         }
         for (WasmFunction function : module.getFunctions().values()) {
             if (function.getImportName() == null) {
-                lf().render(function);
+                lf().append(";; function #" + functionIndex++).lf().render(function);
             }
         }
 
@@ -81,7 +82,7 @@ public class WasmRenderer {
 
     public void renderMemory(WasmModule module) {
         visitor.lf();
-        visitor.open().append("memory (export \"memory\") " + module.getMemorySize()).close().lf();
+        visitor.open().append("memory (export \"memory\") " + module.getMinMemorySize()).close().lf();
     }
 
     public void renderData(WasmModule module) {

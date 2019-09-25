@@ -19,28 +19,23 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class ReferenceCache {
-    private Map<MethodReference, MethodReference> referenceCache = new HashMap<>();
+    private Map<String, Map<MethodDescriptor, MethodReference>> referenceCache = new HashMap<>();
     private Map<FieldReference, FieldReference> fieldRefenceCache = new HashMap<>();
     private Map<MethodDescriptor, MethodDescriptor> descriptorCache = new HashMap<>();
     private Map<ValueType, ValueType> valueTypeCache = new HashMap<>();
-    private Map<String, String> classCache = new HashMap<>();
-    private Map<String, MethodReference> referenceParseCache = new HashMap<>();
+    private Map<GenericValueType, GenericValueType> genericValueTypeCache = new HashMap<>();
+    private Map<String, String> stringCache = new HashMap<>();
     private Map<String, MethodDescriptor> descriptorParseCache = new HashMap<>();
     private Map<String, ValueType> valueTypeParseCache = new HashMap<>();
 
     public MethodReference getCached(MethodReference reference) {
-        MethodReference result = referenceCache.get(reference);
-        if (result == null) {
-            MethodDescriptor descriptor = getCached(reference.getDescriptor());
-            String className = getCached(reference.getClassName());
-            if (descriptor != reference.getDescriptor() || className != reference.getClassName()) {
-                result = new MethodReference(className, descriptor);
-            } else {
-                result = reference;
-            }
-            referenceCache.put(result, result);
-        }
-        return result;
+        return getCached(reference.getClassName(), reference.getDescriptor());
+    }
+
+    public MethodReference getCached(String className, MethodDescriptor descriptor) {
+        return referenceCache
+                .computeIfAbsent(className, key -> new HashMap<>())
+                .computeIfAbsent(getCached(descriptor), key -> new MethodReference(className, key));
     }
 
     public MethodDescriptor getCached(MethodDescriptor descriptor) {
@@ -108,20 +103,72 @@ public class ReferenceCache {
         return result;
     }
 
-    public String getCached(String className) {
-        String result = classCache.get(className);
-        if (result == null) {
-            result = className;
-            classCache.put(result, result);
+    public GenericValueType getCached(GenericValueType valueType) {
+        if (valueType instanceof GenericValueType.Primitive
+                || valueType instanceof GenericValueType.Variable
+                || valueType instanceof GenericValueType.Void) {
+            return valueType;
         }
+
+        GenericValueType result = genericValueTypeCache.get(valueType);
+        if (result == null) {
+            result = valueType;
+            if (result instanceof GenericValueType.Object) {
+                GenericValueType.Object objectType = (GenericValueType.Object) result;
+                String className = objectType.getClassName();
+                String cachedClassName = getCached(className);
+
+                boolean changed = false;
+                GenericValueType.Argument[] arguments = objectType.getArguments();
+                for (int i = 0; i < arguments.length; ++i) {
+                    GenericValueType.Argument argument = arguments[i];
+                    if (argument.getValue() != null) {
+                        GenericValueType.Reference cachedValue = (GenericValueType.Reference) getCached(
+                                argument.getValue());
+                        if (cachedValue != argument.getValue()) {
+                            changed = true;
+                            switch (argument.getKind()) {
+                                case COVARIANT:
+                                    argument = GenericValueType.Argument.covariant(cachedValue);
+                                    break;
+                                case CONTRAVARIANT:
+                                    argument = GenericValueType.Argument.contravariant(cachedValue);
+                                    break;
+                                case INVARIANT:
+                                    argument = GenericValueType.Argument.invariant(cachedValue);
+                                    break;
+                            }
+                            arguments[i] = argument;
+                        }
+                    }
+                }
+
+                GenericValueType.Object parent = objectType.getParent();
+                GenericValueType.Object cachedParent = parent != null
+                        ? (GenericValueType.Object) getCached(parent)
+                        : null;
+
+                if (changed || className != cachedClassName || parent != cachedParent) {
+                    result = new GenericValueType.Object(parent, className, arguments);
+                }
+            } else if (result instanceof GenericValueType.Array) {
+                GenericValueType item = ((GenericValueType.Array) result).getItemType();
+                GenericValueType cachedItem = getCached(item);
+                if (item != cachedItem) {
+                    result = new GenericValueType.Array(cachedItem);
+                }
+            }
+            genericValueTypeCache.put(result, result);
+        }
+
         return result;
     }
 
-    public MethodReference parseReferenceCached(String value) {
-        MethodReference result = referenceParseCache.get(value);
+    public String getCached(String s) {
+        String result = stringCache.get(s);
         if (result == null) {
-            result = getCached(MethodReference.parse(value));
-            referenceParseCache.put(value, result);
+            result = s;
+            stringCache.put(result, result);
         }
         return result;
     }

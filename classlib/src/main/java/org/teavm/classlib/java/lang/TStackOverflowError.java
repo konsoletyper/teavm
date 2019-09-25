@@ -31,17 +31,13 @@
  */
 package org.teavm.classlib.java.lang;
 
-/**
- *
- * @author Sergey Kapralov
- */
 public class TStackOverflowError extends TVirtualMachineError {
     
     public TStackOverflowError() {
         super();
     }
 
-    public TStackOverflowError(TString string) {
+    public TStackOverflowError(String string) {
         super(string);
     }
 }

@@ -29,4 +29,10 @@ public class ThrowableTest {
         assertTrue(e.getCause() instanceof RuntimeException);
         assertEquals("OK", e.getCause().getMessage());
     }
+
+    @Test
+    public void toStringWorks() {
+        assertEquals("java.lang.RuntimeException: fail", new RuntimeException("fail").toString());
+        assertEquals("java.lang.RuntimeException", new RuntimeException().toString());
+    }
 }

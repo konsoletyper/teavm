@@ -179,8 +179,7 @@ public class InstructionReadVisitor implements InstructionVisitor {
 
     @Override
     public void visit(InvokeInstruction insn) {
-        reader.invoke(insn.getReceiver(), insn.getInstance(), insn.getMethod(),
-                Collections.unmodifiableList(insn.getArguments()), insn.getType());
+        reader.invoke(insn.getReceiver(), insn.getInstance(), insn.getMethod(), insn.getArguments(), insn.getType());
     }
 
     @Override

@@ -15,13 +15,23 @@
  */
 package org.teavm.junit;
 
-import org.junit.Test;
-import org.teavm.diagnostics.Diagnostics;
+import static org.teavm.junit.TeaVMTestRunner.JUNIT3_AFTER;
+import static org.teavm.junit.TeaVMTestRunner.JUNIT3_BASE_CLASS;
+import static org.teavm.junit.TeaVMTestRunner.JUNIT3_BEFORE;
+import static org.teavm.junit.TeaVMTestRunner.JUNIT4_AFTER;
+import static org.teavm.junit.TeaVMTestRunner.JUNIT4_BEFORE;
+import static org.teavm.junit.TeaVMTestRunner.JUNIT4_TEST;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
+import org.teavm.model.ClassHolderTransformerContext;
+import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodHolder;
@@ -36,12 +46,12 @@ import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
 class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
-    private String runnerClassName;
     private MethodReference testMethod;
+    private String testClassName;
 
-    TestEntryPointTransformer(String runnerClassName, MethodReference testMethod) {
-        this.runnerClassName = runnerClassName;
+    TestEntryPointTransformer(MethodReference testMethod, String testClassName) {
         this.testMethod = testMethod;
+        this.testClassName = testClassName;
     }
 
     @Override
@@ -50,41 +60,92 @@ class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
     }
 
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         if (cls.getName().equals(TestEntryPoint.class.getName())) {
             for (MethodHolder method : cls.getMethods()) {
-                if (method.getName().equals("createRunner")) {
-                    method.setProgram(generateRunnerProgram(method, innerSource));
-                    method.getModifiers().remove(ElementModifier.NATIVE);
-                } else if (method.getName().equals("launchTest")) {
-                    method.setProgram(generateLaunchProgram(method, innerSource));
-                    method.getModifiers().remove(ElementModifier.NATIVE);
+                switch (method.getName()) {
+                    case "launchTest":
+                        method.setProgram(generateLaunchProgram(method, context.getHierarchy()));
+                        method.getModifiers().remove(ElementModifier.NATIVE);
+                        break;
+                    case "before":
+                        method.setProgram(generateBeforeProgram(method, context.getHierarchy()));
+                        method.getModifiers().remove(ElementModifier.NATIVE);
+                        break;
+                    case "after":
+                        method.setProgram(generateAfterProgram(method, context.getHierarchy()));
+                        method.getModifiers().remove(ElementModifier.NATIVE);
+                        break;
                 }
             }
         }
     }
 
-    private Program generateRunnerProgram(MethodHolder method, ClassReaderSource innerSource) {
-        ProgramEmitter pe = ProgramEmitter.create(method, innerSource);
-        pe.construct(runnerClassName).returnValue();
+    private Program generateBeforeProgram(MethodHolder method, ClassHierarchy hierarchy) {
+        ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
+        ValueEmitter testCaseInitVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
+        pe.when(testCaseInitVar.isNull())
+                .thenDo(() -> {
+                    pe.setField(TestEntryPoint.class, "testCase",
+                            pe.construct(testClassName).cast(Object.class));
+                });
+        ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
+
+        if (hierarchy.isSuperType(JUNIT3_BASE_CLASS, testMethod.getClassName(), false)) {
+            testCaseVar.cast(ValueType.object(JUNIT3_BASE_CLASS)).invokeVirtual(JUNIT3_BEFORE);
+        }
+
+        List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testMethod.getClassName());
+        Collections.reverse(classes);
+        classes.stream()
+                .flatMap(cls -> cls.getMethods().stream())
+                .filter(m -> m.getAnnotations().get(JUNIT4_BEFORE) != null)
+                .forEach(m -> testCaseVar.cast(ValueType.object(m.getOwnerName())).invokeVirtual(m.getReference()));
+
+        pe.exit();
         return pe.getProgram();
     }
 
-    private Program generateLaunchProgram(MethodHolder method, ClassReaderSource innerSource) {
-        ProgramEmitter pe = ProgramEmitter.create(method, innerSource);
+    private Program generateAfterProgram(MethodHolder method, ClassHierarchy hierarchy) {
+        ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
         ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
-        pe.when(testCaseVar.isNull())
-            .thenDo(() -> {
-                pe.setField(TestEntryPoint.class, "testCase",
-                        pe.construct(testMethod.getClassName()).cast(Object.class));
-            });
+
+        List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testMethod.getClassName());
+        classes.stream()
+                .flatMap(cls -> cls.getMethods().stream())
+                .filter(m -> m.getAnnotations().get(JUNIT4_AFTER) != null)
+                .forEach(m -> testCaseVar.cast(ValueType.object(m.getOwnerName())).invokeVirtual(m.getReference()));
+
+        if (hierarchy.isSuperType(JUNIT3_BASE_CLASS, testMethod.getClassName(), false)) {
+            testCaseVar.cast(ValueType.object(JUNIT3_BASE_CLASS)).invokeVirtual(JUNIT3_AFTER);
+        }
+
+        pe.exit();
+        return pe.getProgram();
+    }
+
+    private List<ClassReader> collectSuperClasses(ClassReaderSource classSource, String className) {
+        List<ClassReader> result = new ArrayList<>();
+        while (className != null && !className.equals(JUNIT3_BASE_CLASS)) {
+            ClassReader cls = classSource.get(className);
+            if (cls == null) {
+                break;
+            }
+            result.add(cls);
+            className = cls.getParent();
+        }
+        return result;
+    }
+
+    private Program generateLaunchProgram(MethodHolder method, ClassHierarchy hierarchy) {
+        ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
         pe.getField(TestEntryPoint.class, "testCase", Object.class)
                 .cast(ValueType.object(testMethod.getClassName()))
                 .invokeSpecial(testMethod);
 
-        MethodReader testMethodReader = innerSource.resolve(testMethod);
-        AnnotationReader testAnnotation = testMethodReader.getAnnotations().get(Test.class.getName());
-        AnnotationValue throwsValue = testAnnotation.getValue("expected");
+        MethodReader testMethodReader = hierarchy.getClassSource().resolve(testMethod);
+        AnnotationReader testAnnotation = testMethodReader.getAnnotations().get(JUNIT4_TEST);
+        AnnotationValue throwsValue = testAnnotation != null ? testAnnotation.getValue("expected") : null;
         if (throwsValue != null) {
             BasicBlock handler = pe.getProgram().createBasicBlock();
             TryCatchBlock tryCatch = new TryCatchBlock();

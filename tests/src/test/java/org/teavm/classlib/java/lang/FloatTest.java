@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -25,52 +26,64 @@ import org.teavm.junit.TeaVMTestRunner;
 public class FloatTest {
     @Test
     public void parsed() {
-        assertEquals(23, Double.parseDouble("23"), 1E-12);
-        assertEquals(23, Double.parseDouble("23.0"), 1E-12);
-        assertEquals(23, Double.parseDouble("23E0"), 1E-12);
-        assertEquals(23, Double.parseDouble("2.30000E1"), 1E-12);
-        assertEquals(23, Double.parseDouble("0.23E2"), 1E-12);
-        assertEquals(23, Double.parseDouble("0.000023E6"), 1E-12);
-        assertEquals(23, Double.parseDouble("00230000e-4"), 1E-12);
-        assertEquals(23, Double.parseDouble("2300000000000000000000e-20"), 1E-12);
-        assertEquals(23, Double.parseDouble("2300000000000000000000e-20"), 1E-12);
+        assertEquals(23, Float.parseFloat("23"), 1E-12F);
+        assertEquals(23, Float.parseFloat("23.0"), 1E-12F);
+        assertEquals(23, Float.parseFloat("23E0"), 1E-12F);
+        assertEquals(23, Float.parseFloat("2.30000E1"), 1E-12F);
+        assertEquals(23, Float.parseFloat("0.23E2"), 1E-12F);
+        assertEquals(23, Float.parseFloat("0.000023E6"), 1E-12F);
+        assertEquals(23, Float.parseFloat("00230000e-4"), 1E-12F);
+        assertEquals(23, Float.parseFloat("2300000000000000000000e-20"), 1E-12F);
+        assertEquals(23, Float.parseFloat("2300000000000000000000e-20"), 1E-12F);
+        assertEquals(23, Float.parseFloat("2300000000000000000000e-20"), 1E-12F);
+        assertEquals(23, Float.parseFloat("23."), 1E-12F);
+        assertEquals(0.1F, Float.parseFloat("0.1"), 0.001F);
+        assertEquals(0.1F, Float.parseFloat(".1"), 0.001F);
+        assertEquals(0.1F, Float.parseFloat(" .1"), 0.001F);
+        assertEquals(0.1F, Float.parseFloat(".1 "), 0.001F);
+        assertEquals(-23, Float.parseFloat("-23"), 1E-12F);
+        assertEquals(0, Float.parseFloat("0.0"), 1E-12F);
+        assertEquals(0, Float.parseFloat("0"), 1E-12F);
+        assertEquals(0, Float.parseFloat("00"), 1E-12F);
+        assertEquals(0, Float.parseFloat(".0"), 1E-12F);
+        assertEquals(0, Float.parseFloat("0."), 1E-12F);
+        assertEquals(0, Float.parseFloat("23E-8000"), 1E-12F);
+        assertEquals(0, Float.parseFloat("00000"), 1E-12F);
+        assertEquals(0, Float.parseFloat("00000.0000"), 1E-12F);
     }
 
     @Test
-    public void negativeParsed() {
-        assertEquals(-23, Double.parseDouble("-23"), 1E-12);
+    public void parsedWithError() {
+        checkIllegalFormat("");
+        checkIllegalFormat("  ");
+        checkIllegalFormat("a");
+        checkIllegalFormat(" a ");
+        checkIllegalFormat("-");
+        checkIllegalFormat("-.");
+        checkIllegalFormat(".");
+        checkIllegalFormat("1e-");
+        checkIllegalFormat("1e");
     }
 
-    @Test
-    public void zeroParsed() {
-        assertEquals(0, Double.parseDouble("0.0"), 1E-12);
-        assertEquals(0, Double.parseDouble("23E-8000"), 1E-12);
-        assertEquals(0, Double.parseDouble("00000"), 1E-12);
-        assertEquals(0, Double.parseDouble("00000.0000"), 1E-12);
+    private void checkIllegalFormat(String string) {
+        try {
+            Float.parseFloat(string);
+            fail("Exception expected parsing string: " + string);
+        } catch (NumberFormatException e) {
+            // It's expected
+        }
     }
 
     @Test
     public void floatBitsExtracted() {
         assertEquals(0x4591A2B4, Float.floatToIntBits(0x1.234567p+12f));
-    }
-
-    @Test
-    public void floatBitsExtracted2() {
         assertEquals(0x800000, Float.floatToIntBits((float) Math.pow(2, -126)));
-    }
-
-    @Test
-    public void subNormalFloatBitsExtracted() {
         assertEquals(0x000092, Float.floatToIntBits(0x0.000123p-126f));
     }
 
     @Test
     public void floatBitsPacked() {
         assertEquals(0x1.234567p+12f, Float.intBitsToFloat(0x4591A2B4), 1e7);
-    }
-
-    @Test
-    public void subNormalFloatBitsPacked() {
         assertEquals(0x0.000123p-126f, Float.intBitsToFloat(0x000092), 0x000008p-126);
     }
 

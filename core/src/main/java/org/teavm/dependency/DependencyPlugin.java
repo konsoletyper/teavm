@@ -15,8 +15,6 @@
  */
 package org.teavm.dependency;
 
-import org.teavm.model.CallLocation;
-
 public interface DependencyPlugin {
-    void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location);
+    void methodReached(DependencyAgent agent, MethodDependency method);
 }

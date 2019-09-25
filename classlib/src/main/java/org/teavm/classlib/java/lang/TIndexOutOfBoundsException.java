@@ -22,7 +22,7 @@ public class TIndexOutOfBoundsException extends TRuntimeException {
         super();
     }
 
-    public TIndexOutOfBoundsException(TString message) {
+    public TIndexOutOfBoundsException(String message) {
         super(message);
     }
 }

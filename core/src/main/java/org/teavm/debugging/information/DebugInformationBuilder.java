@@ -21,6 +21,7 @@ import org.teavm.common.RecordArray;
 import org.teavm.common.RecordArrayBuilder;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
+import org.teavm.model.ReferenceCache;
 
 public class DebugInformationBuilder implements DebugInformationEmitter {
     private LocationProvider locationProvider;
@@ -46,6 +47,11 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private List<ClassMetadata> classesMetadata = new ArrayList<>();
     private List<RecordArrayBuilder> cfgs = new ArrayList<>();
     private int currentLine;
+    private ReferenceCache referenceCache;
+
+    public DebugInformationBuilder(ReferenceCache referenceCache) {
+        this.referenceCache = referenceCache;
+    }
 
     public LocationProvider getLocationProvider() {
         return locationProvider;
@@ -177,14 +183,17 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     }
 
     @Override
-    public void addClass(String className, String parentName) {
+    public void addClass(String jsName, String className, String parentName) {
         int classIndex = classes.index(className);
         int parentIndex = classes.index(parentName);
         while (classIndex >= classesMetadata.size()) {
             classesMetadata.add(new ClassMetadata());
         }
         currentClassMetadata = classIndex;
-        classesMetadata.get(currentClassMetadata).parentIndex = parentIndex;
+
+        ClassMetadata metadata = classesMetadata.get(classIndex);
+        metadata.parentIndex = parentIndex;
+        metadata.jsName = jsName;
     }
 
     @Override
@@ -260,7 +269,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
 
     public DebugInformation getDebugInformation() {
         if (debugInformation == null) {
-            debugInformation = new DebugInformation();
+            debugInformation = new DebugInformation(referenceCache);
 
             debugInformation.fileNames = files.getItems();
             debugInformation.classNames = classes.getItems();
@@ -288,15 +297,15 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
 
             List<DebugInformation.ClassMetadata> builtMetadata = new ArrayList<>(classes.list.size());
             for (int i = 0; i < classes.list.size(); ++i) {
-                if (i >= classesMetadata.size()) {
-                    builtMetadata.add(new DebugInformation.ClassMetadata());
-                } else {
+                DebugInformation.ClassMetadata mappedMetadata = new DebugInformation.ClassMetadata();
+                mappedMetadata.id = i;
+                if (i < classesMetadata.size()) {
                     ClassMetadata origMetadata = classesMetadata.get(i);
-                    DebugInformation.ClassMetadata mappedMetadata = new DebugInformation.ClassMetadata();
+                    mappedMetadata.jsName = origMetadata.jsName;
                     mappedMetadata.fieldMap.putAll(origMetadata.fieldMap);
                     mappedMetadata.parentId = origMetadata.parentIndex >= 0 ? origMetadata.parentIndex : null;
-                    builtMetadata.add(mappedMetadata);
                 }
+                builtMetadata.add(mappedMetadata);
             }
             debugInformation.classesMetadata = builtMetadata;
 
@@ -340,6 +349,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
 
     static class ClassMetadata {
         int parentIndex;
+        String jsName;
         Map<Integer, Integer> fieldMap = new HashMap<>();
     }
 }

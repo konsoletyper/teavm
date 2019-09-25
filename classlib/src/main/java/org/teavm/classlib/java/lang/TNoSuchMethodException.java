@@ -19,7 +19,7 @@ public class TNoSuchMethodException extends TReflectiveOperationException {
     public TNoSuchMethodException() {
     }
 
-    public TNoSuchMethodException(TString message) {
+    public TNoSuchMethodException(String message) {
         super(message);
     }
 }

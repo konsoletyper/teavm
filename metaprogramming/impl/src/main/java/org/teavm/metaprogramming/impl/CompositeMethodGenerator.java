@@ -406,7 +406,7 @@ public class CompositeMethodGenerator {
         InvokeInstruction insn = new InvokeInstruction();
         insn.setMethod(new MethodReference(wrapper, "valueOf", primitive, wrapper));
         insn.setType(InvocationType.SPECIAL);
-        insn.getArguments().add(var);
+        insn.setArguments(var);
         var = program.createVariable();
         insn.setReceiver(var);
         add(insn);
@@ -851,7 +851,7 @@ public class CompositeMethodGenerator {
             insn.setReceiver(var(receiver));
             insn.setMethod(method);
             insn.setType(type);
-            insn.getArguments().addAll(arguments.stream().map(this::var).collect(Collectors.toList()));
+            insn.setArguments(arguments.stream().map(this::var).toArray(Variable[]::new));
             add(insn);
         }
 
@@ -932,7 +932,7 @@ public class CompositeMethodGenerator {
                     insn.setType(Modifier.isStatic(reflectMethod.getModifiers()) ? InvocationType.SPECIAL
                             : InvocationType.VIRTUAL);
                     insn.setMethod(reflectMethod.method.getReference());
-                    emitArguments(var(arguments.get(1)), reflectMethod, insn.getArguments());
+                    insn.setArguments(emitArguments(var(arguments.get(1)), reflectMethod));
                     add(insn);
 
                     if (receiver != null) {
@@ -964,7 +964,7 @@ public class CompositeMethodGenerator {
                     insn.setInstance(constructInsn.getReceiver());
                     insn.setType(InvocationType.SPECIAL);
                     insn.setMethod(reflectMethod.method.getReference());
-                    emitArguments(var(arguments.get(0)), reflectMethod, insn.getArguments());
+                    insn.setArguments(emitArguments(var(arguments.get(0)), reflectMethod));
                     add(insn);
 
                     return true;
@@ -1054,14 +1054,14 @@ public class CompositeMethodGenerator {
             }
         }
 
-        private void emitArguments(Variable argumentsVar, ReflectMethodImpl reflectMethod,
-                List<Variable> arguments) {
+        private Variable[] emitArguments(Variable argumentsVar, ReflectMethodImpl reflectMethod) {
             UnwrapArrayInstruction unwrapInsn = new UnwrapArrayInstruction(ArrayElementType.OBJECT);
             unwrapInsn.setArray(argumentsVar);
             unwrapInsn.setReceiver(program.createVariable());
             add(unwrapInsn);
             argumentsVar = unwrapInsn.getReceiver();
 
+            Variable[] arguments = new Variable[reflectMethod.getParameterCount()];
             for (int i = 0; i < reflectMethod.getParameterCount(); ++i) {
                 IntegerConstantInstruction indexInsn = new IntegerConstantInstruction();
                 indexInsn.setConstant(i);
@@ -1074,9 +1074,10 @@ public class CompositeMethodGenerator {
                 extractArgInsn.setReceiver(program.createVariable());
                 add(extractArgInsn);
 
-                arguments.add(unbox(extractArgInsn.getReceiver(),
-                        reflectMethod.method.parameterType(i)));
+                arguments[i] = unbox(extractArgInsn.getReceiver(), reflectMethod.method.parameterType(i));
             }
+
+            return arguments;
         }
 
         private Variable unwrapArray(ValueType type, Variable array) {

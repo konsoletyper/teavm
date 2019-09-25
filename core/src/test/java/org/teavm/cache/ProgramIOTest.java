@@ -21,14 +21,11 @@ import static org.junit.Assert.assertThat;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import org.junit.Test;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.Instruction;
 import org.teavm.model.Program;
+import org.teavm.model.ReferenceCache;
 import org.teavm.model.ValueType;
 import org.teavm.model.instructions.*;
 
@@ -161,7 +158,8 @@ public class ProgramIOTest {
     private Program inputOutput(Program program) {
         InMemorySymbolTable symbolTable = new InMemorySymbolTable();
         InMemorySymbolTable fileTable = new InMemorySymbolTable();
-        ProgramIO programIO = new ProgramIO(symbolTable, fileTable);
+        InMemorySymbolTable variableTable = new InMemorySymbolTable();
+        ProgramIO programIO = new ProgramIO(new ReferenceCache(), symbolTable, fileTable, variableTable);
         try (ByteArrayOutputStream output = new ByteArrayOutputStream()) {
             programIO.write(program, output);
             try (ByteArrayInputStream input = new ByteArrayInputStream(output.toByteArray())) {
@@ -169,27 +167,6 @@ public class ProgramIOTest {
             }
         } catch (IOException e) {
             throw new AssertionError("This exception should not be thrown", e);
-        }
-    }
-
-    private static class InMemorySymbolTable implements SymbolTable {
-        private List<String> symbols = new ArrayList<>();
-        private Map<String, Integer> indexes = new HashMap<>();
-
-        @Override
-        public String at(int index) {
-            return symbols.get(index);
-        }
-
-        @Override
-        public int lookup(String symbol) {
-            Integer index = indexes.get(symbol);
-            if (index == null) {
-                index = symbols.size();
-                symbols.add(symbol);
-                indexes.put(symbol, index);
-            }
-            return index;
         }
     }
 }

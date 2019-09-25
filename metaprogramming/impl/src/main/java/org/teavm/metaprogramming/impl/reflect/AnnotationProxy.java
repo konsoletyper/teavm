@@ -25,8 +25,8 @@ import java.util.List;
 import java.util.Map;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.AnnotationValue;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
-import org.teavm.model.ClassReaderSource;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -34,25 +34,25 @@ import org.teavm.model.ValueType;
 
 class AnnotationProxy implements InvocationHandler {
     private ClassLoader classLoader;
-    private ClassReaderSource classSource;
+    private ClassHierarchy hierarchy;
     private AnnotationReader reader;
     private Class<?> annotationType;
     private Map<String, Object> cache = new HashMap<>();
 
-    AnnotationProxy(ClassLoader classLoader, ClassReaderSource classSource, AnnotationReader reader,
+    AnnotationProxy(ClassLoader classLoader, ClassHierarchy hierarchy, AnnotationReader reader,
             Class<?> annotationType) {
         this.classLoader = classLoader;
-        this.classSource = classSource;
+        this.hierarchy = hierarchy;
         this.reader = reader;
         this.annotationType = annotationType;
     }
 
     @Override
-    public Object invoke(Object proxy, Method method, Object[] args) throws Throwable {
+    public Object invoke(Object proxy, Method method, Object[] args) {
         if (method.getName().equals("annotationType")) {
              return annotationType;
         } else {
-            ClassReader cls = classSource.get(reader.getType());
+            ClassReader cls = hierarchy.getClassSource().get(reader.getType());
             return cache.computeIfAbsent(method.getName(), name -> {
                 MethodDescriptor desc = new MethodDescriptor(name, ValueType.parse(method.getReturnType()));
                 MethodReader methodReader = cls.getMethod(desc);
@@ -102,13 +102,13 @@ class AnnotationProxy implements InvocationHandler {
             return result;
         } else if (type.isObject(Class.class)) {
             return convertClass(value.getJavaClass());
-        } else if (classSource.isSuperType(ValueType.parse(Enum.class), type).orElse(false)) {
+        } else if (hierarchy.isSuperType(ValueType.parse(Enum.class), type, false)) {
             FieldReference fieldRef = value.getEnumValue();
             Class<?> enumClass = Class.forName(fieldRef.getClassName(), true, classLoader);
             return enumClass.getField(fieldRef.getFieldName()).get(null);
-        } else if (classSource.isSuperType(ValueType.parse(Annotation.class), type).orElse(false)) {
+        } else if (hierarchy.isSuperType(ValueType.parse(Annotation.class), type, false)) {
             Class<?> annotType = convertClass(type);
-            AnnotationProxy handler = new AnnotationProxy(classLoader, classSource, value.getAnnotation(), annotType);
+            AnnotationProxy handler = new AnnotationProxy(classLoader, hierarchy, value.getAnnotation(), annotType);
             return Proxy.newProxyInstance(classLoader, new Class<?>[] { annotType }, handler);
         }
 

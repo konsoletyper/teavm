@@ -15,29 +15,24 @@
  */
 package org.teavm.classlib.java.lang;
 
+import org.teavm.classlib.impl.text.DoubleAnalyzer;
+import org.teavm.classlib.impl.text.FloatAnalyzer;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.util.TArrays;
 
 class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequence {
-    private static float[] powersOfTen = { 1E1f, 1E2f, 1E4f, 1E8f, 1E16f, 1E32f };
-    private static double[] doublePowersOfTen = { 1E1, 1E2, 1E4, 1E8, 1E16, 1E32, 1E64, 1E128, 1E256 };
-    private static float[] negPowersOfTen = { 1E-1f, 1E-2f, 1E-4f, 1E-8f, 1E-16f, 1E-32f };
-    private static double[] negDoublePowersOfTen = { 1E-1, 1E-2, 1E-4, 1E-8, 1E-16, 1E-32,
-            1E-64, 1E-128, 1E-256 };
-    private static int[] intPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
-            1000000000 };
-    private static long[] longPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
-            1000000000, 10000000000L, 100000000000L, 1000000000000L, 10000000000000L, 100000000000000L,
-            1000000000000000L, 10000000000000000L, 100000000000000000L, 1000000000000000000L };
-    private static final long[] longLogPowersOfTen = { 1, 10, 100, 10000, 100000000, 10000000000000000L, };
-    private static final int FLOAT_DECIMAL_PRECISION = 7;
-    private static final int DOUBLE_DECIMAL_PRECISION = 16;
-    private static final float FLOAT_DECIMAL_FACTOR = 1E6f;
-    private static final double DOUBLE_DECIMAL_FACTOR = 1E15;
-    private static final int FLOAT_MAX_EXPONENT = 38;
-    private static final int DOUBLE_MAX_EXPONENT = 308;
-    private static final int FLOAT_MAX_POS = 1000000;
-    private static final long DOUBLE_MAX_POS = 1000000000000000L;
+    static class Constants {
+        static int[] intPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
+                1000000000 };
+        static long[] longPowersOfTen = { 1, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
+                1000000000, 10000000000L, 100000000000L, 1000000000000L, 10000000000000L, 100000000000000L,
+                1000000000000000L, 10000000000000000L, 100000000000000000L, 1000000000000000000L };
+        static final long[] longLogPowersOfTen = { 1, 10, 100, 10000, 100000000, 10000000000000000L, };
+
+        static final DoubleAnalyzer.Result doubleAnalysisResult = new DoubleAnalyzer.Result();
+        static final FloatAnalyzer.Result floatAnalysisResult = new FloatAnalyzer.Result();
+    }
+
     char[] buffer;
     private int length;
 
@@ -61,16 +56,16 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         length = value.length();
     }
 
-    protected TAbstractStringBuilder append(TString string) {
+    protected TAbstractStringBuilder append(String string) {
         return insert(length, string);
     }
 
-    protected TAbstractStringBuilder insert(int index, TString string) {
+    protected TAbstractStringBuilder insert(int index, String string) {
         if (index < 0 || index > length) {
             throw new TStringIndexOutOfBoundsException();
         }
         if (string == null) {
-            string = TString.wrap("null");
+            string = "null";
         } else if (string.isEmpty()) {
             return this;
         }
@@ -225,54 +220,21 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             buffer[target++] = 'y';
             return this;
         }
-        // Get absolute value
-        boolean negative = false;
+
+        FloatAnalyzer.Result number = Constants.floatAnalysisResult;
+        FloatAnalyzer.analyze(value, number);
+        int mantissa = number.mantissa;
+        int exp = number.exponent;
+        boolean negative = number.sign;
+        int intPart = 1;
         int sz = 1; // Decimal point always included
-        if (value < 0) {
+        if (negative) {
             negative = true;
-            value = -value;
             ++sz; // including '-' sign of mantissa
         }
 
-        // Split into decimal mantissa and decimal exponent
-        int exp = 0;
-        int mantissa = 0;
-        int intPart = 1;
-        int digits = 0;
-        if (value >= 1) {
-            int bit = 32;
-            exp = 0;
-            float digit = 1;
-            for (int i = powersOfTen.length - 1; i >= 0; --i) {
-                if ((exp | bit) <= FLOAT_MAX_EXPONENT && powersOfTen[i] * digit <= value) {
-                    digit *= powersOfTen[i];
-                    exp |= bit;
-                }
-                bit >>= 1;
-            }
-            mantissa = (int) ((value / (digit / FLOAT_DECIMAL_FACTOR)) + 0.5f);
-        } else {
-            int bit = 32;
-            exp = 0;
-            float digit = 1;
-            for (int i = negPowersOfTen.length - 1; i >= 0; --i) {
-                if ((exp | bit) <= 38 && negPowersOfTen[i] * digit * 10 > value) {
-                    digit *= negPowersOfTen[i];
-                    exp |= bit;
-                }
-                bit >>= 1;
-            }
-            exp = -exp;
-            mantissa = (int) (((value * FLOAT_MAX_POS) / digit) + 0.5f);
-
-            while (mantissa >= 10000000) {
-                mantissa /= 10;
-                exp--;
-            }
-        }
-
         // Remove trailing zeros
-        digits = FLOAT_DECIMAL_PRECISION;
+        int digits = FloatAnalyzer.PRECISION;
         int zeros = trailingDecimalZeros(mantissa);
         if (zeros > 0) {
             digits -= zeros;
@@ -285,7 +247,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 digits = Math.max(digits, intPart + 1);
                 exp = 0;
             } else if (exp < 0) {
-                mantissa /= intPowersOfTen[-exp];
+                mantissa /= Constants.intPowersOfTen[-exp];
                 digits -= exp;
                 exp = 0;
             }
@@ -312,7 +274,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         if (negative) {
             buffer[target++] = '-';
         }
-        int pos = FLOAT_MAX_POS;
+        int pos = FloatAnalyzer.MAX_POS;
         for (int i = 0; i < digits; ++i) {
             int intDigit;
             if (pos > 0) {
@@ -384,54 +346,22 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
             buffer[target++] = 'y';
             return this;
         }
+
+        DoubleAnalyzer.Result number = Constants.doubleAnalysisResult;
+        DoubleAnalyzer.analyze(value, number);
+        long mantissa = number.mantissa;
+        int exp = number.exponent;
+        boolean negative = number.sign;
+        int intPart = 1;
+
         // Get absolute value
-        boolean negative = false;
         int sz = 1; // Decimal point always included
-        if (value < 0) {
-            negative = true;
-            value = -value;
+        if (negative) {
             ++sz; // including '-' sign of mantissa
         }
 
-        // Split into decimal mantissa and decimal exponent
-        int exp = 0;
-        long mantissa = 0;
-        int intPart = 1;
-        int digits = 0;
-        if (value >= 1) {
-            int bit = 256;
-            exp = 0;
-            double digit = 1;
-            for (int i = doublePowersOfTen.length - 1; i >= 0; --i) {
-                if ((exp | bit) <= DOUBLE_MAX_EXPONENT && doublePowersOfTen[i] * digit <= value) {
-                    digit *= doublePowersOfTen[i];
-                    exp |= bit;
-                }
-                bit >>= 1;
-            }
-            mantissa = (long) (((value / digit) * DOUBLE_DECIMAL_FACTOR) + 0.5);
-        } else {
-            int bit = 256;
-            exp = 0;
-            double digit = 1;
-            for (int i = negDoublePowersOfTen.length - 1; i >= 0; --i) {
-                if ((exp | bit) <= DOUBLE_MAX_EXPONENT && negDoublePowersOfTen[i] * digit * 10 > value) {
-                    digit *= negDoublePowersOfTen[i];
-                    exp |= bit;
-                }
-                bit >>= 1;
-            }
-            exp = -exp;
-            mantissa = (long) (((value * DOUBLE_MAX_POS) / digit) + 0.5);
-
-            while (mantissa >= 10000000000000000L) {
-                mantissa /= 10;
-                exp--;
-            }
-        }
-
         // Remove trailing zeros
-        digits = DOUBLE_DECIMAL_PRECISION;
+        int digits = DoubleAnalyzer.DECIMAL_PRECISION;
         int zeros = trailingDecimalZeros(mantissa);
         if (zeros > 0) {
             digits -= zeros;
@@ -444,7 +374,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 digits = Math.max(digits, intPart + 1);
                 exp = 0;
             } else if (exp < 0) {
-                mantissa /= longPowersOfTen[-exp];
+                mantissa /= Constants.longPowersOfTen[-exp];
                 digits -= exp;
                 exp = 0;
             }
@@ -474,7 +404,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         if (negative) {
             buffer[target++] = '-';
         }
-        long pos = DOUBLE_MAX_POS;
+        long pos = DoubleAnalyzer.DOUBLE_MAX_POS;
         for (int i = 0; i < digits; ++i) {
             int intDigit;
             if (pos > 0) {
@@ -537,10 +467,10 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         long zeros = 1;
         int result = 0;
         int bit = 16;
-        for (int i = longLogPowersOfTen.length - 1; i >= 0; --i) {
-            if (n % (zeros * longLogPowersOfTen[i]) == 0) {
+        for (int i = Constants.longLogPowersOfTen.length - 1; i >= 0; --i) {
+            if (n % (zeros * Constants.longLogPowersOfTen[i]) == 0) {
                 result |= bit;
-                zeros *= longLogPowersOfTen[i];
+                zeros *= Constants.longLogPowersOfTen[i];
             }
             bit >>>= 1;
         }
@@ -572,7 +502,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     protected TAbstractStringBuilder insert(int index, TObject obj) {
-        return insert(index, TString.wrap(obj != null ? obj.toString() : "null"));
+        return insert(index, obj != null ? obj.toString() : "null");
     }
 
     protected TAbstractStringBuilder append(boolean b) {
@@ -580,7 +510,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
     }
 
     protected TAbstractStringBuilder insert(int index, boolean b) {
-        return insert(index, b ? TString.wrap("true") : TString.wrap("false"));
+        return insert(index, b ? "true" : "false");
     }
 
     public void ensureCapacity(int capacity) {
@@ -676,7 +606,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
 
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         if (srcBegin > srcEnd) {
-            throw new TIndexOutOfBoundsException(TString.wrap("Index out of bounds"));
+            throw new IndexOutOfBoundsException("Index out of bounds");
         }
         while (srcBegin < srcEnd) {
             dst[dstBegin++] = buffer[srcBegin++];

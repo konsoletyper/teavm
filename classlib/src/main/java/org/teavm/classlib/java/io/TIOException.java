@@ -15,26 +15,22 @@
  */
 package org.teavm.classlib.java.io;
 
-import org.teavm.classlib.java.lang.TException;
-import org.teavm.classlib.java.lang.TString;
-import org.teavm.classlib.java.lang.TThrowable;
-
-public class TIOException extends TException {
+public class TIOException extends Exception {
     private static final long serialVersionUID = 3626109154700059455L;
 
     public TIOException() {
         super();
     }
 
-    public TIOException(TString message, TThrowable cause) {
+    public TIOException(String message, Throwable cause) {
         super(message, cause);
     }
 
-    public TIOException(TString message) {
+    public TIOException(String message) {
         super(message);
     }
 
-    public TIOException(TThrowable cause) {
+    public TIOException(Throwable cause) {
         super(cause);
     }
 }

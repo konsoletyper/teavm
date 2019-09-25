@@ -19,20 +19,14 @@ import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 
 public class VirtualTableEntry {
-    private VirtualTable virtualTable;
     private MethodDescriptor method;
     MethodReference implementor;
     private int index;
 
-    VirtualTableEntry(VirtualTable virtualTable, MethodDescriptor method, MethodReference implementor, int index) {
-        this.virtualTable = virtualTable;
+    VirtualTableEntry(MethodDescriptor method, MethodReference implementor, int index) {
         this.method = method;
         this.implementor = implementor;
         this.index = index;
-    }
-
-    public VirtualTable getVirtualTable() {
-        return virtualTable;
     }
 
     public MethodDescriptor getMethod() {

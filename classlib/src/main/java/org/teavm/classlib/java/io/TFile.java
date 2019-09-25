@@ -31,10 +31,10 @@ import org.teavm.classlib.java.util.TRandom;
 public class TFile implements Serializable, Comparable<TFile> {
     private String path;
 
-    public static final char separatorChar = '/';
-    public static final String separator = "/";
-    public static final char pathSeparatorChar = ':';
-    public static final String pathSeparator = ":";
+    public static final char separatorChar = fs().isWindows() ? '\\' : '/';
+    public static final String separator = String.valueOf(separatorChar);
+    public static final char pathSeparatorChar = fs().isWindows() ? ';' : ':';
+    public static final String pathSeparator = String.valueOf(pathSeparatorChar);
 
     private static int counter;
 
@@ -56,7 +56,13 @@ public class TFile implements Serializable, Comparable<TFile> {
     public TFile(URI uri) {
         // check pre-conditions
         checkURI(uri);
-        this.path = fixSlashes(uri.getPath());
+        String path = uri.getPath();
+        if (fs().isWindows() && path.startsWith("/") && path.length() >= 4) {
+            if (isDriveLetter(path.charAt(1)) && path.charAt(2) == ':' && path.charAt(3) == '/') {
+                path = path.substring(1);
+            }
+        }
+        this.path = fixSlashes(path);
     }
 
     private void checkURI(URI uri) {
@@ -134,9 +140,8 @@ public class TFile implements Serializable, Comparable<TFile> {
             if (path.charAt(0) != separatorChar) {
                 result.append(separator);
             }
-        } else if (path.charAt(0) == separatorChar) {
-            result.append(result.substring(0, length - 2));
-
+        } else if (fs().isWindows() && path.charAt(0) == separatorChar) {
+            result.setLength(3);
         }
         result.append(path);
 
@@ -148,7 +153,22 @@ public class TFile implements Serializable, Comparable<TFile> {
     }
 
     public boolean isAbsolute() {
-        return !path.isEmpty() && path.charAt(0) == separatorChar;
+        return isAbsolutePath(path);
+    }
+
+    private boolean isAbsolutePath(String path) {
+        if (fs().isWindows()) {
+            if (path.length() < 3) {
+                return false;
+            }
+            return isDriveLetter(path.charAt(0)) && path.charAt(1) == ':' && path.charAt(2) == '\\';
+        } else {
+            return !path.isEmpty() && path.charAt(0) == separatorChar;
+        }
+    }
+
+    private static boolean isDriveLetter(char c) {
+        return c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
     }
 
     public boolean isDirectory() {
@@ -166,7 +186,7 @@ public class TFile implements Serializable, Comparable<TFile> {
     }
 
     public String getCanonicalPath() throws IOException {
-        return getCanonicalPathImpl();
+        return fs().canonicalize(getCanonicalPathImpl());
     }
 
     private String getCanonicalPathImpl() {
@@ -179,7 +199,7 @@ public class TFile implements Serializable, Comparable<TFile> {
             }
         }
         int[] sepLocations = new int[numSeparators];
-        int rootLoc = 0;
+        int rootLoc = fs().isWindows() ? 2 : 0;
         char[] newResult = new char[result.length() + 1];
         int newLength = 0;
         int lastSlash = 0;
@@ -206,7 +226,7 @@ public class TFile implements Serializable, Comparable<TFile> {
                         continue;
                     }
                     sepLocations[++lastSlash] = newLength;
-                    newResult[newLength++] = (byte) separatorChar;
+                    newResult[newLength++] = separatorChar;
                     continue;
                 }
                 if (result.charAt(i) == '.') {
@@ -236,12 +256,11 @@ public class TFile implements Serializable, Comparable<TFile> {
 
     public String getParent() {
         int length = path.length();
-        int firstInPath = 0;
         int index = path.lastIndexOf(separatorChar);
         if (index == -1 || path.charAt(length - 1) == separatorChar) {
             return null;
         }
-        if (path.indexOf(separatorChar) == index && path.charAt(firstInPath) == separatorChar) {
+        if (path.indexOf(separatorChar) == index && (isAbsolutePath(path) || index == 0)) {
             return path.substring(0, index + 1);
         }
         return path.substring(0, index);
@@ -258,16 +277,10 @@ public class TFile implements Serializable, Comparable<TFile> {
 
     public String[] list() {
         VirtualFile virtualFile = findVirtualFile();
-        if (virtualFile == null || !virtualFile.isDirectory()) {
+        if (virtualFile == null) {
             return null;
         }
-        VirtualFile[] entries = virtualFile.listFiles();
-        String[] names = new String[entries.length];
-        for (int i = 0; i < entries.length; ++i) {
-            names[i] = entries[i].getName();
-        }
-
-        return names;
+        return virtualFile.listFiles();
     }
 
     public String[] list(TFilenameFilter filter) {
@@ -289,13 +302,16 @@ public class TFile implements Serializable, Comparable<TFile> {
 
     public TFile[] listFiles() {
         VirtualFile virtualFile = findVirtualFile();
-        if (virtualFile == null || !virtualFile.isDirectory()) {
+        if (virtualFile == null) {
             return null;
         }
-        VirtualFile[] entries = virtualFile.listFiles();
+        String[] entries = virtualFile.listFiles();
+        if (entries == null) {
+            return null;
+        }
         TFile[] files = new TFile[entries.length];
         for (int i = 0; i < entries.length; ++i) {
-            files[i] = new TFile(this, entries[i].getName());
+            files[i] = new TFile(this, entries[i]);
         }
 
         return files;
@@ -336,7 +352,11 @@ public class TFile implements Serializable, Comparable<TFile> {
     }
 
     public boolean exists() {
-        return findVirtualFile() != null;
+        VirtualFile virtualFile = findVirtualFile();
+        if (virtualFile == null) {
+            return false;
+        }
+        return virtualFile.isDirectory() || virtualFile.isFile();
     }
 
     public long lastModified() {
@@ -349,21 +369,24 @@ public class TFile implements Serializable, Comparable<TFile> {
             throw new IllegalArgumentException();
         }
         VirtualFile file = findVirtualFile();
-        if (file == null || !file.canWrite()) {
+        if (file == null) {
             return false;
         }
 
-        file.setLastModified(time);
-        return true;
+        return file.setLastModified(time);
     }
 
     public boolean setReadOnly() {
         VirtualFile file = findVirtualFile();
-        if (file == null || !file.canWrite()) {
+        if (file == null) {
             return false;
         }
-        file.setReadOnly(true);
-        return true;
+        return file.setReadOnly(true);
+    }
+
+    public boolean setWritable(boolean writable) {
+        VirtualFile file = findVirtualFile();
+        return file.setReadOnly(!writable);
     }
 
     public long length() {
@@ -376,53 +399,49 @@ public class TFile implements Serializable, Comparable<TFile> {
         if (parentVirtualFile == null) {
             throw new IOException("Can't create file " + getPath() + " since parent directory does not exist");
         }
-        if (!parentVirtualFile.isDirectory() || !parentVirtualFile.canWrite()) {
-            throw new IOException("Can't create file " + getPath() + " since parent path denotes regular file");
-        }
 
-        if (parentVirtualFile.getChildFile(getName()) != null) {
-            return false;
-        }
-
-        return parentVirtualFile.createFile(getName()) != null;
+        return parentVirtualFile.createFile(getName());
     }
 
     public boolean mkdir() {
         VirtualFile virtualFile = findParentFile();
-        if (virtualFile == null || !virtualFile.isDirectory() || !virtualFile.canWrite()) {
-            return false;
-        }
-
-        return virtualFile.createDirectory(getName()) != null;
+        return virtualFile != null && virtualFile.createDirectory(getName());
     }
 
     public boolean mkdirs() {
         String path = getCanonicalPathImpl();
-        if (path.startsWith("/")) {
-            path = path.substring(1);
-        }
 
-        VirtualFile virtualFile = fs().getRootFile();
-        int i = 0;
+        if (path.indexOf(separatorChar) < 0) {
+            return false;
+        }
+        int i = path.length();
+
+        do {
+            VirtualFile file = fs().getFile(path.substring(0, i));
+            if (file.isDirectory()) {
+                break;
+            } else if (file.isFile()) {
+                return false;
+            }
+
+            i = path.lastIndexOf(separatorChar, i - 1);
+        } while (i >= 0);
+
+        i++;
+
         while (i < path.length()) {
-            int next = path.indexOf('/', i);
+            int next = path.indexOf(separatorChar, i);
             if (next < 0) {
                 next = path.length();
             }
-
-            String name = path.substring(i, next);
-            VirtualFile child = virtualFile.getChildFile(name);
-            if (child == null) {
-                if (!virtualFile.canWrite()) {
-                    return false;
-                }
-                virtualFile = virtualFile.createDirectory(name);
-            } else if (child.isFile()) {
-                return false;
-            } else {
-                virtualFile = child;
+            if (next == i + 1) {
+                break;
             }
 
+            VirtualFile file = fs().getFile(path.substring(0, i));
+            if (!file.createDirectory(path.substring(i, next))) {
+                return false;
+            }
             i = next + 1;
         }
 
@@ -431,18 +450,7 @@ public class TFile implements Serializable, Comparable<TFile> {
 
     public boolean delete() {
         VirtualFile virtualFile = findVirtualFile();
-        if (virtualFile == null || virtualFile == fs().getRootFile()
-                || (virtualFile.isDirectory() && virtualFile.listFiles().length > 0)) {
-            return false;
-        }
-
-        VirtualFile parentVirtualFile = findParentFile();
-        if (parentVirtualFile != null && !parentVirtualFile.canWrite()) {
-            return false;
-        }
-
-        virtualFile.delete();
-        return true;
+        return virtualFile.delete();
     }
 
     public void deleteOnExit() {
@@ -451,7 +459,7 @@ public class TFile implements Serializable, Comparable<TFile> {
 
     public boolean renameTo(TFile dest) {
         VirtualFile targetDir = dest.findParentFile();
-        if (targetDir == null || !targetDir.isDirectory()) {
+        if (targetDir == null) {
             return false;
         }
 
@@ -460,8 +468,7 @@ public class TFile implements Serializable, Comparable<TFile> {
             return false;
         }
 
-        targetDir.adopt(virtualFile, dest.getName());
-        return true;
+        return targetDir.adopt(virtualFile, dest.getName());
     }
 
     public URI toURI() {
@@ -488,7 +495,7 @@ public class TFile implements Serializable, Comparable<TFile> {
             // Directories must end with a slash
             name = new StringBuilder(name.length() + 1).append(name).append('/').toString();
         }
-        if (separatorChar != '/') { // Must convert slashes.
+        if (fs().isWindows()) { // Must convert slashes.
             name = name.replace(separatorChar, '/');
         }
         return name;
@@ -540,12 +547,14 @@ public class TFile implements Serializable, Comparable<TFile> {
         if (!(obj instanceof TFile)) {
             return false;
         }
-        return path.equals(((File) obj).getPath());
+        return fs().isWindows()
+            ? path.equalsIgnoreCase(((File) obj).getPath())
+            : path.equals(((File) obj).getPath());
     }
 
     @Override
     public int hashCode() {
-        return path.hashCode();
+        return fs().isWindows() ? path.toLowerCase().hashCode() : path.hashCode();
     }
 
     @Override
@@ -558,11 +567,18 @@ public class TFile implements Serializable, Comparable<TFile> {
         int length = origPath.length();
         int newLength = 0;
 
+        if (fs().isWindows() && length == 3) {
+            if (isDriveLetter(origPath.charAt(0)) && origPath.charAt(1) == ':'
+                && (origPath.charAt(2) == '/' || origPath.charAt(2) == '\\')) {
+                return origPath.substring(0, 2) + "\\";
+            }
+        }
+
         boolean foundSlash = false;
         char[] newPath = origPath.toCharArray();
         for (int i = 0; i < length; i++) {
             char pathChar = newPath[i];
-            if (pathChar == '/') {
+            if (pathChar == '/' || pathChar == separatorChar) {
                 if (!foundSlash || i == uncIndex) {
                     newPath[newLength++] = separatorChar;
                     foundSlash = true;
@@ -572,7 +588,7 @@ public class TFile implements Serializable, Comparable<TFile> {
                 foundSlash = false;
             }
         }
-        if (foundSlash && (newLength > uncIndex + 1 || newLength == 2 && newPath[0] != separatorChar)) {
+        if (foundSlash && (newLength > uncIndex + 1 || newLength == 2 && newPath[0] != '/')) {
             newLength--;
         }
 
@@ -589,7 +605,7 @@ public class TFile implements Serializable, Comparable<TFile> {
                 separatorIndex++;
             }
             if (separatorIndex > 0) {
-                name = name.substring(separatorIndex, name.length());
+                name = name.substring(separatorIndex);
             }
 
             if (!dirPath.isEmpty() && dirPath.charAt(dirPath.length() - 1) == separatorChar) {
@@ -602,28 +618,7 @@ public class TFile implements Serializable, Comparable<TFile> {
     }
 
     VirtualFile findVirtualFile() {
-        String path = getCanonicalPathImpl();
-        if (path.startsWith("/")) {
-            path = path.substring(1);
-        }
-
-        VirtualFile virtualFile = fs().getRootFile();
-        int i = 0;
-        while (i < path.length()) {
-            int next = path.indexOf('/', i);
-            if (next < 0) {
-                next = path.length();
-            }
-
-            virtualFile = virtualFile.getChildFile(path.substring(i, next));
-            if (virtualFile == null) {
-                return null;
-            }
-
-            i = next + 1;
-        }
-
-        return virtualFile;
+        return fs().getFile(getCanonicalPathImpl());
     }
 
     VirtualFile findParentFile() {
@@ -631,6 +626,14 @@ public class TFile implements Serializable, Comparable<TFile> {
         if (path.isEmpty() || path.equals("/")) {
             return null;
         }
-        return new TFile(getCanonicalPathImpl()).getParentFile().findVirtualFile();
+        return new TFile(path).getParentFile().findVirtualFile();
+    }
+
+    private boolean isRoot(String path) {
+        if (fs().isWindows()) {
+            return path.length() == 3 && isAbsolutePath(path);
+        } else {
+            return path.equals("/");
+        }
     }
 }

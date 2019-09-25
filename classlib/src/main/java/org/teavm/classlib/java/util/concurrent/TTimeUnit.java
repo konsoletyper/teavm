@@ -34,9 +34,9 @@ public enum TTimeUnit {
         long sourceNanos = sourceUnit.nanoseconds;
         long targetNanos = nanoseconds;
         if (sourceNanos < targetNanos) {
-            return sourceDuration * (targetNanos / sourceNanos);
+            return sourceDuration / (targetNanos / sourceNanos);
         } else {
-            return sourceDuration / (sourceNanos / targetNanos);
+            return sourceDuration * (sourceNanos / targetNanos);
         }
     }
 

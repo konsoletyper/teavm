@@ -15,7 +15,7 @@
  */
 package org.teavm.classlib.java.io;
 
-import org.teavm.classlib.java.lang.TString;
+import java.io.IOException;
 
 public class TBufferedInputStream extends TFilterInputStream {
     protected volatile byte[] buf;
@@ -38,16 +38,16 @@ public class TBufferedInputStream extends TFilterInputStream {
     }
 
     @Override
-    public int available() throws TIOException {
+    public int available() throws IOException {
         TInputStream localIn = in;
         if (buf == null || localIn == null) {
-            throw new TIOException(TString.wrap("Stream is closed"));
+            throw new IOException("Stream is closed");
         }
         return count - pos + localIn.available();
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() throws IOException {
         buf = null;
         TInputStream localIn = in;
         in = null;
@@ -56,7 +56,7 @@ public class TBufferedInputStream extends TFilterInputStream {
         }
     }
 
-    private int fillbuf(TInputStream localIn, byte[] localBuf) throws TIOException {
+    private int fillbuf(TInputStream localIn, byte[] localBuf) throws IOException {
         if (markpos == -1 || (pos - markpos >= marklimit)) {
             /* Mark position not set or exceeded readlimit */
             int result = localIn.read(localBuf);
@@ -103,13 +103,13 @@ public class TBufferedInputStream extends TFilterInputStream {
     }
 
     @Override
-    public synchronized int read() throws TIOException {
+    public synchronized int read() throws IOException {
         // Use local refs since buf and in may be invalidated by an
         // unsynchronized close()
         byte[] localBuf = buf;
         TInputStream localIn = in;
         if (localBuf == null || localIn == null) {
-            throw new TIOException(TString.wrap("Stream is closed"));
+            throw new IOException("Stream is closed");
         }
 
         /* Are there buffered bytes available? */
@@ -120,7 +120,7 @@ public class TBufferedInputStream extends TFilterInputStream {
         if (localBuf != buf) {
             localBuf = buf;
             if (localBuf == null) {
-                throw new TIOException(TString.wrap("Stream is closed"));
+                throw new IOException("Stream is closed");
             }
         }
 
@@ -132,10 +132,10 @@ public class TBufferedInputStream extends TFilterInputStream {
     }
 
     @Override
-    public synchronized int read(byte[] buffer, int offset, int length) throws TIOException {
+    public synchronized int read(byte[] buffer, int offset, int length) throws IOException {
         byte[] localBuf = buf;
         if (localBuf == null) {
-            throw new TIOException(TString.wrap("Stream is closed"));
+            throw new IOException("Stream is closed");
         }
         // avoid int overflow
         if (offset > buffer.length - length || offset < 0 || length < 0) {
@@ -146,7 +146,7 @@ public class TBufferedInputStream extends TFilterInputStream {
         }
         TInputStream localIn = in;
         if (localIn == null) {
-            throw new TIOException(TString.wrap("Stream is closed"));
+            throw new IOException("Stream is closed");
         }
 
         int required;
@@ -183,7 +183,7 @@ public class TBufferedInputStream extends TFilterInputStream {
                 if (localBuf != buf) {
                     localBuf = buf;
                     if (localBuf == null) {
-                        throw new TIOException(TString.wrap("Stream is closed"));
+                        throw new IOException("Stream is closed");
                     }
                 }
 
@@ -203,30 +203,30 @@ public class TBufferedInputStream extends TFilterInputStream {
     }
 
     @Override
-    public synchronized void reset() throws TIOException {
+    public synchronized void reset() throws IOException {
         if (buf == null) {
-            throw new TIOException(TString.wrap("Stream is closed"));
+            throw new IOException("Stream is closed");
         }
         if (-1 == markpos) {
-            throw new TIOException(TString.wrap("Mark has been invalidated."));
+            throw new IOException("Mark has been invalidated.");
         }
         pos = markpos;
     }
 
     @Override
-    public synchronized long skip(long amount) throws TIOException {
+    public synchronized long skip(long amount) throws IOException {
         // Use local refs since buf and in may be invalidated by an
         // unsynchronized close()
         byte[] localBuf = buf;
         TInputStream localIn = in;
         if (localBuf == null) {
-            throw new TIOException(TString.wrap("Stream is closed"));
+            throw new IOException("Stream is closed");
         }
         if (amount < 1) {
             return 0;
         }
         if (localIn == null) {
-            throw new TIOException(TString.wrap("Stream is closed"));
+            throw new IOException("Stream is closed");
         }
 
         if (count - pos >= amount) {

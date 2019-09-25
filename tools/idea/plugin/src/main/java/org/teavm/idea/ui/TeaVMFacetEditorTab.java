@@ -17,7 +17,6 @@ package org.teavm.idea.ui;
 
 import com.intellij.facet.ui.FacetEditorTab;
 import com.intellij.openapi.module.Module;
-import com.intellij.openapi.options.ConfigurationException;
 import javax.swing.JComponent;
 import org.jetbrains.annotations.Nls;
 import org.jetbrains.annotations.NotNull;
@@ -48,7 +47,7 @@ public class TeaVMFacetEditorTab extends FacetEditorTab {
     }
 
     @Override
-    public void apply() throws ConfigurationException {
+    public void apply() {
         configurable.apply();
     }
 

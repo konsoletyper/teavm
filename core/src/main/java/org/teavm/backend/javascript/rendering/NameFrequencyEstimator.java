@@ -20,20 +20,17 @@ import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.BinaryExpr;
-import org.teavm.ast.ClassNode;
 import org.teavm.ast.ConstantExpr;
-import org.teavm.ast.FieldNode;
 import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.InstanceOfExpr;
 import org.teavm.ast.InvocationExpr;
-import org.teavm.ast.MethodNode;
 import org.teavm.ast.MethodNodeVisitor;
 import org.teavm.ast.MonitorEnterStatement;
 import org.teavm.ast.MonitorExitStatement;
-import org.teavm.ast.NativeMethodNode;
 import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
+import org.teavm.ast.OperationType;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.RecursiveVisitor;
 import org.teavm.ast.RegularMethodNode;
@@ -41,9 +38,12 @@ import org.teavm.ast.ThrowStatement;
 import org.teavm.ast.TryCatchStatement;
 import org.teavm.ast.UnaryExpr;
 import org.teavm.backend.javascript.codegen.NameFrequencyConsumer;
+import org.teavm.backend.javascript.decompile.PreparedClass;
+import org.teavm.backend.javascript.decompile.PreparedMethod;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -51,6 +51,16 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
 
 class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisitor {
+    static final MethodReference MONITOR_ENTER_METHOD = new MethodReference(Object.class,
+            "monitorEnter", Object.class, void.class);
+    static final MethodReference MONITOR_ENTER_SYNC_METHOD = new MethodReference(Object.class,
+            "monitorEnterSync", Object.class, void.class);
+    static final MethodReference MONITOR_EXIT_METHOD = new MethodReference(Object.class,
+            "monitorExit", Object.class, void.class);
+    static final MethodReference MONITOR_EXIT_SYNC_METHOD = new MethodReference(Object.class,
+            "monitorExitSync", Object.class, void.class);
+    private static final MethodDescriptor CLINIT_METHOD = new MethodDescriptor("<clinit>", ValueType.VOID);
+
     private final NameFrequencyConsumer consumer;
     private final ClassReaderSource classSource;
     private boolean async;
@@ -65,13 +75,13 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         this.asyncFamilyMethods = asyncFamilyMethods;
     }
 
-    public void estimate(ClassNode cls) {
+    public void estimate(PreparedClass cls) {
         // Declaration
         consumer.consume(cls.getName());
         if (cls.getParentName() != null) {
             consumer.consume(cls.getParentName());
         }
-        for (FieldNode field : cls.getFields()) {
+        for (FieldHolder field : cls.getClassHolder().getFields()) {
             consumer.consume(new FieldReference(cls.getName(), field.getName()));
             if (field.getModifiers().contains(ElementModifier.STATIC)) {
                 consumer.consume(cls.getName());
@@ -79,27 +89,34 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         }
 
         // Methods
-        MethodReader clinit = classSource.get(cls.getName()).getMethod(
-                new MethodDescriptor("<clinit>", ValueType.VOID));
-        for (MethodNode method : cls.getMethods()) {
-            consumer.consume(method.getReference());
-            if (asyncFamilyMethods.contains(method.getReference())) {
-                consumer.consume(method.getReference());
+        MethodReader clinit = classSource.get(cls.getName()).getMethod(CLINIT_METHOD);
+        for (PreparedMethod method : cls.getMethods()) {
+            consumer.consume(method.reference);
+            if (asyncFamilyMethods.contains(method.reference)) {
+                consumer.consume(method.reference);
             }
-            if (clinit != null && (method.getModifiers().contains(ElementModifier.STATIC)
-                    || method.getReference().getName().equals("<init>"))) {
-                consumer.consume(method.getReference());
+            if (clinit != null && (method.methodHolder.getModifiers().contains(ElementModifier.STATIC)
+                    || method.reference.getName().equals("<init>"))) {
+                consumer.consume(method.reference);
             }
-            if (!method.getModifiers().contains(ElementModifier.STATIC)) {
-                consumer.consume(method.getReference().getDescriptor());
-                consumer.consume(method.getReference());
+            if (!method.methodHolder.getModifiers().contains(ElementModifier.STATIC)) {
+                consumer.consume(method.reference.getDescriptor());
+                consumer.consume(method.reference);
             }
-            if (method.isAsync()) {
+            if (method.async) {
                 consumer.consumeFunction("$rt_nativeThread");
                 consumer.consumeFunction("$rt_nativeThread");
                 consumer.consumeFunction("$rt_resuming");
                 consumer.consumeFunction("$rt_invalidPointer");
             }
+
+            if (method.node != null) {
+                method.node.acceptVisitor(this);
+            }
+        }
+
+        if (clinit != null) {
+            consumer.consumeFunction("$rt_eraseClinit");
         }
 
         // Metadata
@@ -108,7 +125,7 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         if (cls.getParentName() != null) {
             consumer.consume(cls.getParentName());
         }
-        for (String iface : cls.getInterfaces()) {
+        for (String iface : cls.getClassHolder().getInterfaces()) {
             consumer.consume(iface);
         }
     }
@@ -128,10 +145,6 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
     }
 
     @Override
-    public void visit(NativeMethodNode methodNode) {
-    }
-
-    @Override
     public void visit(AssignmentStatement statement) {
         super.visit(statement);
         if (statement.isAsync()) {
@@ -147,7 +160,7 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
 
     @Override
     public void visit(InitClassStatement statement) {
-        consumer.consume(statement.getClassName());
+        consumer.consumeClassInit(statement.getClassName());
     }
 
     @Override
@@ -156,20 +169,17 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         if (statement.getExceptionType() != null) {
             consumer.consume(statement.getExceptionType());
         }
+        consumer.consumeFunction("$rt_wrapException");
     }
 
     @Override
     public void visit(MonitorEnterStatement statement) {
         super.visit(statement);
         if (async) {
-            MethodReference monitorEnterRef = new MethodReference(
-                    Object.class, "monitorEnter", Object.class, void.class);
-            consumer.consume(monitorEnterRef);
+            consumer.consume(MONITOR_ENTER_METHOD);
             consumer.consumeFunction("$rt_suspending");
         } else {
-            MethodReference monitorEnterRef = new MethodReference(
-                    Object.class, "monitorEnterSync", Object.class, void.class);
-            consumer.consume(monitorEnterRef);
+            consumer.consume(MONITOR_ENTER_SYNC_METHOD);
         }
     }
 
@@ -177,13 +187,9 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
     public void visit(MonitorExitStatement statement) {
         super.visit(statement);
         if (async) {
-            MethodReference monitorEnterRef = new MethodReference(
-                    Object.class, "monitorExit", Object.class, void.class);
-            consumer.consume(monitorEnterRef);
+            consumer.consume(MONITOR_EXIT_METHOD);
         } else {
-            MethodReference monitorEnterRef = new MethodReference(
-                    Object.class, "monitorExitSync", Object.class, void.class);
-            consumer.consume(monitorEnterRef);
+            consumer.consume(MONITOR_EXIT_SYNC_METHOD);
         }
     }
 
@@ -193,6 +199,12 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         switch (expr.getOperation()) {
             case COMPARE:
                 consumer.consumeFunction("$rt_compare");
+                break;
+            case MULTIPLY:
+                if (expr.getType() == OperationType.INT && !RenderingUtil.isSmallInteger(expr.getFirstOperand())
+                        && !RenderingUtil.isSmallInteger(expr.getSecondOperand())) {
+                    consumer.consumeFunction("$rt_imul");
+                }
                 break;
             default:
                 break;

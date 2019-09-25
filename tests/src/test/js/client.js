@@ -20,7 +20,7 @@ function tryConnect() {
     let ws = new WebSocket("ws://localhost:9090");
 
     ws.onopen = () => {
-        console.log("Connected established");
+        console.log("Connection established");
         listen(ws);
     };
 
@@ -30,6 +30,10 @@ function tryConnect() {
             tryConnect();
         }, 500);
     };
+
+    ws.onerror = err => {
+        console.log("Could not connect WebSocket", err);
+    }
 }
 
 function listen(ws) {
@@ -58,12 +62,14 @@ function runTests(ws, suiteId, tests, index) {
 
 function runSingleTest(test, callback) {
     console.log("Running test " + test.name + " consisting of " + test.files);
-    let iframe = document.getElementById("test");
+    let iframe = document.createElement("iframe");
+    document.body.appendChild(iframe);
     let handshakeListener = () => {
         window.removeEventListener("message", handshakeListener);
 
         let listener = event => {
             window.removeEventListener("message", listener);
+            document.body.removeChild(iframe);
             callback(event.data);
         };
         window.addEventListener("message", listener);

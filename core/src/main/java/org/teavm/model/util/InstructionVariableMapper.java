@@ -267,9 +267,7 @@ public class InstructionVariableMapper extends AbstractInstructionVisitor {
         if (insn.getInstance() != null) {
             insn.setInstance(map(insn.getInstance()));
         }
-        for (int i = 0; i < insn.getArguments().size(); ++i) {
-            insn.getArguments().set(i, map(insn.getArguments().get(i)));
-        }
+        insn.replaceArguments(this::map);
     }
 
     @Override

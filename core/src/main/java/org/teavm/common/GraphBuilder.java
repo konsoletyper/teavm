@@ -15,7 +15,7 @@
  */
 package org.teavm.common;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -47,14 +47,14 @@ public class GraphBuilder {
         sz = Math.max(sz, Math.max(from, to) + 1);
         builtGraph = null;
         if (addedEdges.size() == from) {
-            addedEdges.add(IntOpenHashSet.from(to));
+            addedEdges.add(IntHashSet.from(to));
         } else if (addedEdges.size() <= from) {
             addedEdges.addAll(Collections.nCopies(from - addedEdges.size(), null));
-            addedEdges.add(IntOpenHashSet.from(to));
+            addedEdges.add(IntHashSet.from(to));
         } else {
             IntSet set = addedEdges.get(from);
             if (set == null) {
-                addedEdges.set(from, IntOpenHashSet.from(to));
+                addedEdges.set(from, IntHashSet.from(to));
             } else {
                 set.add(to);
             }
@@ -68,14 +68,14 @@ public class GraphBuilder {
         if (from >= addedEdges.size() || to >= addedEdges.size()) {
             return;
         }
-        addedEdges.get(from).removeAllOccurrences(to);
+        addedEdges.get(from).removeAll(to);
     }
 
     public Graph build() {
         if (builtGraph == null) {
             IntSet[] incomingEdges = new IntSet[sz];
             for (int i = 0; i < sz; ++i) {
-                incomingEdges[i] = new IntOpenHashSet();
+                incomingEdges[i] = new IntHashSet();
             }
             int[][] outgoingEdgeList = new int[sz][];
             for (int i = 0; i < addedEdges.size(); ++i) {

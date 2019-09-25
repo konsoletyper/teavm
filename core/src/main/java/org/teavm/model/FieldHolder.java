@@ -17,8 +17,10 @@ package org.teavm.model;
 
 public class FieldHolder extends MemberHolder implements FieldReader {
     private ValueType type;
+    private GenericValueType genericType;
     private Object initialValue;
     private ClassHolder owner;
+    private FieldReference reference;
 
     public FieldHolder(String name) {
         super(name);
@@ -27,6 +29,15 @@ public class FieldHolder extends MemberHolder implements FieldReader {
     @Override
     public ValueType getType() {
         return type;
+    }
+
+    @Override
+    public GenericValueType getGenericType() {
+        return genericType;
+    }
+
+    public void setGenericType(GenericValueType genericType) {
+        this.genericType = genericType;
     }
 
     public void setType(ValueType type) {
@@ -48,6 +59,7 @@ public class FieldHolder extends MemberHolder implements FieldReader {
 
     void setOwner(ClassHolder owner) {
         this.owner = owner;
+        reference = null;
     }
 
     @Override
@@ -57,6 +69,16 @@ public class FieldHolder extends MemberHolder implements FieldReader {
 
     @Override
     public FieldReference getReference() {
-        return new FieldReference(getOwnerName(), getName());
+        if (reference == null && owner != null) {
+            reference = new FieldReference(getOwnerName(), getName());
+        }
+        return reference;
+    }
+
+    public void updateReference(ReferenceCache cache) {
+        FieldReference reference = getReference();
+        if (reference != null) {
+            this.reference = cache.getCached(reference);
+        }
     }
 }

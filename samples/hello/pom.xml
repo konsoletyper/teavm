@@ -20,7 +20,7 @@
   <parent>
     <groupId>org.teavm</groupId>
     <artifactId>teavm-samples</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
   </parent>
   <artifactId>teavm-samples-hello</artifactId>
 
@@ -76,7 +76,6 @@
             <configuration>
               <targetDirectory>${project.build.directory}/generated/js/teavm</targetDirectory>
               <mainClass>org.teavm.samples.hello.Client</mainClass>
-              <runtime>SEPARATE</runtime>
               <minifying>false</minifying>
               <debugInformationGenerated>true</debugInformationGenerated>
               <sourceMapsGenerated>true</sourceMapsGenerated>

@@ -15,26 +15,38 @@
  */
 package org.teavm.dependency;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
+import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
-import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.Arrays;
 import java.util.List;
-import org.teavm.common.*;
-import org.teavm.model.*;
-import org.teavm.model.instructions.*;
+import org.teavm.common.DisjointSet;
+import org.teavm.common.Graph;
+import org.teavm.common.GraphBuilder;
+import org.teavm.common.IntegerStack;
+import org.teavm.model.BasicBlockReader;
+import org.teavm.model.FieldReference;
+import org.teavm.model.IncomingReader;
+import org.teavm.model.MethodReference;
+import org.teavm.model.PhiReader;
+import org.teavm.model.ProgramReader;
+import org.teavm.model.ValueType;
+import org.teavm.model.VariableReader;
+import org.teavm.model.instructions.AbstractInstructionReader;
+import org.teavm.model.instructions.ArrayElementType;
+import org.teavm.model.instructions.InvocationType;
 
 public class DataFlowGraphBuilder extends AbstractInstructionReader {
     private int lastIndex;
     private GraphBuilder builder = new GraphBuilder();
-    private ObjectIntMap<FieldReference> fieldNodes = new ObjectIntOpenHashMap<>();
+    private ObjectIntMap<FieldReference> fieldNodes = new ObjectIntHashMap<>();
     private int returnIndex = -1;
     private int exceptionIndex;
     private DisjointSet classes = new DisjointSet();
     private int paramCount;
-    private IntSet escaping = new IntOpenHashSet();
+    private IntSet escaping = new IntHashSet();
 
     private void join(int a, int b) {
         if (a < paramCount || b < paramCount) {

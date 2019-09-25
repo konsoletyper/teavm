@@ -28,20 +28,20 @@ public final class Allocator {
     public static Address allocate(RuntimeClass tag) {
         RuntimeObject object = GC.alloc(tag.size);
         fillZero(object.toAddress(), tag.size);
-        object.classReference = tag.toAddress().toInt() >> 3;
+        object.classReference = tag.pack();
         return object.toAddress();
     }
 
     public static Address allocateArray(RuntimeClass tag, int size) {
-        int itemSize = (tag.itemType.flags & RuntimeClass.PRIMITIVE) != 0 ? tag.itemType.size : 4;
+        int itemSize = (tag.itemType.flags & RuntimeClass.PRIMITIVE) != 0 ? tag.itemType.size : Address.sizeOf();
         int sizeInBytes = Address.align(Address.fromInt(Structure.sizeOf(RuntimeArray.class)), itemSize).toInt();
         sizeInBytes += itemSize * size;
-        sizeInBytes = Address.align(Address.fromInt(sizeInBytes), 4).toInt();
+        sizeInBytes = Address.align(Address.fromInt(sizeInBytes), Address.sizeOf()).toInt();
         Address result = GC.alloc(sizeInBytes).toAddress();
         fillZero(result, sizeInBytes);
 
         RuntimeArray array = result.toStructure();
-        array.classReference = tag.toAddress().toInt() >> 3;
+        array.classReference = tag.pack();
         array.size = size;
 
         return result;

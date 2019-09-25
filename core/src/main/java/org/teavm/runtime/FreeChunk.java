@@ -15,6 +15,11 @@
  */
 package org.teavm.runtime;
 
-class FreeChunk extends RuntimeObject {
+import org.teavm.interop.StaticInit;
+import org.teavm.interop.Structure;
+
+@StaticInit
+class FreeChunk extends Structure {
+    int classReference;
     int size;
 }

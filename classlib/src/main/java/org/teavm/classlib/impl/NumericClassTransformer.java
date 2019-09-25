@@ -15,11 +15,10 @@
  */
 package org.teavm.classlib.impl;
 
-import org.teavm.diagnostics.Diagnostics;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassHolderTransformer;
-import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ClassHolderTransformerContext;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
@@ -33,7 +32,7 @@ import org.teavm.model.instructions.NumericOperandType;
 
 public class NumericClassTransformer implements ClassHolderTransformer {
     @Override
-    public void transformClass(ClassHolder cls, ClassReaderSource innerSource, Diagnostics diagnostics) {
+    public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
         switch (cls.getName()) {
             case "java.lang.Integer":
                 transformInteger(cls);

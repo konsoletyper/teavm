@@ -26,9 +26,7 @@ import org.apache.maven.artifact.resolver.ArtifactResolutionRequest;
 import org.apache.maven.artifact.resolver.ArtifactResolutionResult;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.repository.RepositorySystem;
-import org.teavm.tooling.sources.DirectorySourceFileProvider;
-import org.teavm.tooling.sources.JarSourceFileProvider;
-import org.teavm.tooling.sources.SourceFileProvider;
+import org.teavm.tooling.builder.BuildStrategy;
 
 public class MavenSourceFileProviderLookup {
     private MavenProject mavenProject;
@@ -57,7 +55,7 @@ public class MavenSourceFileProviderLookup {
         this.pluginDependencies = pluginDependencies;
     }
 
-    public List<SourceFileProvider> resolve() {
+    public void resolve(BuildStrategy builder) {
         List<Artifact> initialArtifacts = new ArrayList<>();
         initialArtifacts.addAll(mavenProject.getArtifacts());
         if (pluginDependencies != null) {
@@ -74,7 +72,6 @@ public class MavenSourceFileProviderLookup {
         }
 
         artifacts.addAll(initialArtifacts);
-        List<SourceFileProvider> providers = new ArrayList<>();
         for (Artifact artifact : artifacts) {
             ArtifactResolutionRequest request = new ArtifactResolutionRequest()
                     .setLocalRepository(localRepository)
@@ -85,16 +82,15 @@ public class MavenSourceFileProviderLookup {
                 if (resolvedArtifact.getFile() != null) {
                     File file = resolvedArtifact.getFile();
                     if (!file.isDirectory()) {
-                        providers.add(new JarSourceFileProvider(file));
+                        builder.addSourcesJar(file.getAbsolutePath());
                     } else {
-                        providers.add(new DirectorySourceFileProvider(file));
+                        builder.addSourcesDirectory(file.getAbsolutePath());
                     }
                 }
             }
         }
         for (String sourceRoot : mavenProject.getCompileSourceRoots()) {
-            providers.add(new DirectorySourceFileProvider(new File(sourceRoot)));
+            builder.addSourcesDirectory(new File(sourceRoot).getAbsolutePath());
         }
-        return providers;
     }
 }

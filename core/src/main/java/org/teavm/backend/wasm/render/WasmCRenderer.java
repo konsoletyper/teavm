@@ -15,6 +15,9 @@
  */
 package org.teavm.backend.wasm.render;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.backend.wasm.model.WasmFunction;
@@ -65,15 +68,10 @@ public class WasmCRenderer {
     }
 
     public void render(WasmModule module) {
-        line("#include <inttypes.h>");
-        line("#include <string.h>");
-        line("#include <stdlib.h>");
-        line("#include <assert.h>");
+        renderPrologue();
         line("");
 
         renderFunctionDeclarations(module);
-        line("static int8_t *wasm_heap;");
-        line("static int32_t wasm_heap_size;");
         renderFunctionTable(module);
 
         for (WasmFunction function : module.getFunctions().values()) {
@@ -100,9 +98,25 @@ public class WasmCRenderer {
         line("}");
     }
 
+    private void renderPrologue() {
+        ClassLoader classLoader = WasmCRenderer.class.getClassLoader();
+        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                classLoader.getResourceAsStream("org/teavm/backend/wasm/wasm-runtime.c")))) {
+            while (true) {
+                String line = reader.readLine();
+                if (line == null) {
+                    break;
+                }
+                line(line);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
     private void renderHeap(WasmModule module) {
-        line("wasm_heap_size = " + 65536 * module.getMemorySize() + ";");
-        line("wasm_heap = malloc(" + 65536 * module.getMemorySize() + ");");
+        line("wasm_heap_size = " + 65536 * module.getMinMemorySize() + ";");
+        line("wasm_heap = malloc(wasm_heap_size);");
         for (WasmMemorySegment segment : module.getSegments()) {
             line("memcpy(wasm_heap + " + segment.getOffset() + ",");
             indent();
@@ -143,7 +157,9 @@ public class WasmCRenderer {
 
     private void renderFunctionDeclarations(WasmModule module) {
         for (WasmFunction function : module.getFunctions().values()) {
-            line(functionDeclaration(function) + ";");
+            if (function.getImportName() == null) {
+                line(functionDeclaration(function) + ";");
+            }
         }
     }
 

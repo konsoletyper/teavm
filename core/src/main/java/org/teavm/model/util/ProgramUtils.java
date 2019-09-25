@@ -16,10 +16,11 @@
 package org.teavm.model.util;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
+import org.teavm.ast.ControlFlowEntry;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.model.BasicBlock;
@@ -29,6 +30,7 @@ import org.teavm.model.IncomingReader;
 import org.teavm.model.Instruction;
 import org.teavm.model.InstructionIterator;
 import org.teavm.model.InstructionReadVisitor;
+import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.PhiReader;
 import org.teavm.model.Program;
@@ -37,14 +39,21 @@ import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.TryCatchBlockReader;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.ConstructInstruction;
+import org.teavm.model.instructions.InvocationType;
+import org.teavm.model.instructions.InvokeInstruction;
+import org.teavm.model.instructions.RaiseInstruction;
 
 public final class ProgramUtils {
+    private static final MethodReference NPE_INIT_METHOD = new MethodReference(
+            NullPointerException.class, "<init>", void.class);
+
     private ProgramUtils() {
     }
 
     public static Graph buildControlFlowGraph(Program program) {
         GraphBuilder graphBuilder = new GraphBuilder(program.basicBlockCount());
-        InstructionTransitionExtractor transitionExtractor = new InstructionTransitionExtractor();
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             Instruction insn = block.getLastInstruction();
@@ -63,7 +72,7 @@ public final class ProgramUtils {
         return graphBuilder.build();
     }
 
-    public static Map<TextLocation, TextLocation[]> getLocationCFG(Program program) {
+    public static ControlFlowEntry[] getLocationCFG(Program program) {
         return new LocationGraphBuilder().build(program);
     }
 
@@ -82,6 +91,7 @@ public final class ProgramUtils {
             BasicBlock blockCopy = copy.basicBlockAt(i);
             copyBasicBlock(block, blockCopy);
         }
+        ModelUtils.copyAnnotations(program.getAnnotations(), copy.getAnnotations());
         return copy;
     }
 
@@ -202,5 +212,42 @@ public final class ProgramUtils {
             }
             var.setLabel(suggestedName);
         }
+    }
+
+    public static List<Instruction> createThrowNPEInstructions(Program program, TextLocation location) {
+        ConstructInstruction newNPE = new ConstructInstruction();
+        newNPE.setType(NullPointerException.class.getName());
+        newNPE.setReceiver(program.createVariable());
+        newNPE.setLocation(location);
+
+        InvokeInstruction initNPE = new InvokeInstruction();
+        initNPE.setType(InvocationType.SPECIAL);
+        initNPE.setInstance(newNPE.getReceiver());
+        initNPE.setMethod(NPE_INIT_METHOD);
+        initNPE.setLocation(location);
+
+        RaiseInstruction raise = new RaiseInstruction();
+        raise.setException(newNPE.getReceiver());
+        raise.setLocation(location);
+
+        return Arrays.asList(newNPE, initNPE, raise);
+    }
+
+    public static List<Variable> getVariablesDefinedInBlock(BasicBlock block, DefinitionExtractor defExtractor) {
+        List<Variable> varsDefinedInBlock = new ArrayList<>();
+        for (Phi phi : block.getPhis()) {
+            varsDefinedInBlock.add(phi.getReceiver());
+        }
+        if (block.getExceptionVariable() != null) {
+            varsDefinedInBlock.add(block.getExceptionVariable());
+        }
+        for (Instruction instruction : block) {
+            instruction.acceptVisitor(defExtractor);
+            Variable[] varsDefinedByInstruction = defExtractor.getDefinedVariables();
+            if (varsDefinedByInstruction != null) {
+                varsDefinedInBlock.addAll(Arrays.asList(varsDefinedByInstruction));
+            }
+        }
+        return varsDefinedInBlock;
     }
 }

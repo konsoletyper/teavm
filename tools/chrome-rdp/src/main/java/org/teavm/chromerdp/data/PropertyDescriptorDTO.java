@@ -15,12 +15,14 @@
  */
 package org.teavm.chromerdp.data;
 
-import org.codehaus.jackson.annotate.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class PropertyDescriptorDTO {
     private String name;
     private RemoteObjectDTO value;
+    private RemoteObjectDTO getter;
 
     public String getName() {
         return name;
@@ -36,5 +38,15 @@ public class PropertyDescriptorDTO {
 
     public void setValue(RemoteObjectDTO value) {
         this.value = value;
+    }
+
+    @JsonProperty("get")
+    public RemoteObjectDTO getGetter() {
+        return getter;
+    }
+
+    @JsonProperty("get")
+    public void setGetter(RemoteObjectDTO getter) {
+        this.getter = getter;
     }
 }

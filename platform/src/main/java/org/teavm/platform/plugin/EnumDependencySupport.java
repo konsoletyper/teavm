@@ -36,7 +36,7 @@ public class EnumDependencySupport extends AbstractDependencyListener {
     }
 
     @Override
-    public void classReached(DependencyAgent agent, String className, CallLocation location) {
+    public void classReached(DependencyAgent agent, String className) {
         ClassReader cls = agent.getClassSource().get(className);
         if (cls == null || cls.getParent() == null || !cls.getParent().equals("java.lang.Enum")) {
             return;
@@ -45,7 +45,7 @@ public class EnumDependencySupport extends AbstractDependencyListener {
     }
 
     @Override
-    public void methodReached(DependencyAgent agent, MethodDependency method, CallLocation location) {
+    public void methodReached(DependencyAgent agent, MethodDependency method) {
         if (method.getReference().getClassName().equals(Platform.class.getName())
                 && method.getReference().getName().equals("getEnumConstants")) {
             allEnums.connect(method.getResult().getArrayItem());
@@ -55,12 +55,14 @@ public class EnumDependencySupport extends AbstractDependencyListener {
                 MethodReader valuesMethod = cls.getMethod(new MethodDescriptor("values",
                         ValueType.arrayOf(ValueType.object(cls.getName()))));
                 if (valuesMethod != null) {
-                    agent.linkMethod(valuesMethod.getReference(), new CallLocation(ref)).use();
+                    MethodDependency valuesDep = agent.linkMethod(valuesMethod.getReference());
+                    valuesDep.addLocation(new CallLocation(ref));
+                    valuesDep.use();
                 }
             });
-            method.getResult().propagate(agent.getType("[java.lang.Enum"));
+            method.getResult().propagate(agent.getType("[Ljava/lang/Enum;"));
             for (String cls : agent.getReachableClasses()) {
-                classReached(agent, cls, location);
+                classReached(agent, cls);
             }
         }
     }

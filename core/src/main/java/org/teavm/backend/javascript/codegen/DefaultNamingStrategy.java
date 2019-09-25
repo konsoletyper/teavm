@@ -17,17 +17,29 @@ package org.teavm.backend.javascript.codegen;
 
 import java.util.HashMap;
 import java.util.Map;
-import org.teavm.model.*;
+import org.teavm.model.AccessLevel;
+import org.teavm.model.ClassReader;
+import org.teavm.model.ClassReaderSource;
+import org.teavm.model.FieldReader;
+import org.teavm.model.FieldReference;
+import org.teavm.model.MethodDescriptor;
+import org.teavm.model.MethodReader;
+import org.teavm.model.MethodReference;
 
 public class DefaultNamingStrategy implements NamingStrategy {
+    private static final byte NO_CLASSIFIER = 0;
+    private static final byte INIT_CLASSIFIER = 1;
+
     private final AliasProvider aliasProvider;
     private final ClassReaderSource classSource;
-    private final Map<String, String> aliases = new HashMap<>();
-    private final Map<String, String> privateAliases = new HashMap<>();
-    private final Map<String, String> classAliases = new HashMap<>();
-    private final Map<String, String> fieldAliases = new HashMap<>();
-    private final Map<String, String> staticFieldAliases = new HashMap<>();
+    private final Map<MethodDescriptor, String> aliases = new HashMap<>();
+    private final Map<Key, ScopedName> privateAliases = new HashMap<>();
+    private final Map<String, ScopedName> classAliases = new HashMap<>();
+    private final Map<FieldReference, String> fieldAliases = new HashMap<>();
+    private final Map<FieldReference, ScopedName> staticFieldAliases = new HashMap<>();
     private final Map<String, String> functionAliases = new HashMap<>();
+    private final Map<String, ScopedName> classInitAliases = new HashMap<>();
+    private String scopeName;
 
     public DefaultNamingStrategy(AliasProvider aliasProvider, ClassReaderSource classSource) {
         this.aliasProvider = aliasProvider;
@@ -35,71 +47,87 @@ public class DefaultNamingStrategy implements NamingStrategy {
     }
 
     @Override
-    public String getNameFor(String cls) {
+    public ScopedName getNameFor(String cls) {
         return classAliases.computeIfAbsent(cls, key -> aliasProvider.getClassAlias(cls));
     }
 
     @Override
     public String getNameFor(MethodDescriptor method) {
-        String key = method.toString();
-        String alias = aliases.get(key);
+        String alias = aliases.get(method);
         if (alias == null) {
             alias = aliasProvider.getMethodAlias(method);
-            aliases.put(key, alias);
+            aliases.put(method, alias);
         }
         return alias;
     }
 
     @Override
-    public String getFullNameFor(MethodReference method) throws NamingException {
-        return getFullNameFor(method, 'M');
+    public ScopedName getFullNameFor(MethodReference method) {
+        return getFullNameFor(method, NO_CLASSIFIER);
     }
 
     @Override
-    public String getNameForInit(MethodReference method) throws NamingException {
-        return getFullNameFor(method, 'I');
+    public ScopedName getNameForInit(MethodReference method) {
+        return getFullNameFor(method, INIT_CLASSIFIER);
     }
 
-    private String getFullNameFor(MethodReference method, char classifier) throws NamingException {
+    private ScopedName getFullNameFor(MethodReference method, byte classifier) {
         MethodReference originalMethod = method;
         method = getRealMethod(method);
         if (method == null) {
-            throw new NamingException("Can't provide name for method as it was not found: " + originalMethod);
+            method = originalMethod;
         }
 
-        MethodReference resolvedMethod = method;
-        return privateAliases.computeIfAbsent(classifier + method.toString(),
-                key -> aliasProvider.getStaticMethodAlias(resolvedMethod));
+        return privateAliases.computeIfAbsent(new Key(classifier, method),
+                key -> aliasProvider.getStaticMethodAlias(key.data));
     }
 
     @Override
     public String getNameFor(FieldReference field) {
-        String realCls = getRealFieldOwner(field.getClassName(), field.getFieldName());
-        if (!realCls.equals(field.getClassName())) {
-            String alias = getNameFor(new FieldReference(realCls, field.getFieldName()));
-            fieldAliases.put(field.getClassName() + "#" + field, alias);
-            return alias;
-        } else {
-            return fieldAliases.computeIfAbsent(realCls + "#" + field, key -> aliasProvider.getFieldAlias(field));
+        String alias = fieldAliases.get(field);
+        if (alias == null) {
+            FieldReference realField = getRealField(field);
+            if (realField.equals(field)) {
+                alias = aliasProvider.getFieldAlias(realField);
+            } else {
+                alias = getNameFor(realField);
+            }
+            fieldAliases.put(field, alias);
         }
+        return alias;
     }
 
     @Override
-    public String getFullNameFor(FieldReference field) throws NamingException {
-        String realCls = getRealFieldOwner(field.getClassName(), field.getFieldName());
-        if (!realCls.equals(field.getClassName())) {
-            String alias = getNameFor(new FieldReference(realCls, field.getFieldName()));
-            staticFieldAliases.put(field.getClassName() + "#" + field, alias);
-            return alias;
-        } else {
-            return staticFieldAliases.computeIfAbsent(realCls + "#" + field,
-                    key -> aliasProvider.getStaticFieldAlias(field));
+    public ScopedName getFullNameFor(FieldReference field) {
+        ScopedName alias = staticFieldAliases.get(field);
+        if (alias == null) {
+            FieldReference realField = getRealField(field);
+            if (realField.equals(field)) {
+                alias = aliasProvider.getStaticFieldAlias(realField);
+            } else {
+                alias = getFullNameFor(realField);
+            }
+            staticFieldAliases.put(field, alias);
         }
+        return alias;
     }
 
     @Override
-    public String getNameForFunction(String name) throws NamingException {
-        return functionAliases.computeIfAbsent(name, key -> aliasProvider.getFunctionAlias(name));
+    public String getNameForFunction(String name) {
+        return functionAliases.computeIfAbsent(name, key -> aliasProvider.getFunctionAlias(key));
+    }
+
+    @Override
+    public ScopedName getNameForClassInit(String className) {
+        return classInitAliases.computeIfAbsent(className, key -> aliasProvider.getClassInitAlias(key));
+    }
+
+    @Override
+    public String getScopeName() {
+        if (scopeName == null) {
+            scopeName = aliasProvider.getScopeAlias();
+        }
+        return scopeName;
     }
 
     private MethodReference getRealMethod(MethodReference methodRef) {
@@ -114,28 +142,59 @@ public class DefaultNamingStrategy implements NamingStrategy {
                 if (method.getLevel() == AccessLevel.PRIVATE && !className.equals(methodRef.getClassName())) {
                     return null;
                 }
-                return new MethodReference(className, method.getDescriptor());
+                return method.getReference();
             }
             className = cls.getParent();
         }
         return null;
     }
 
-    private String getRealFieldOwner(String cls, String field) {
-        String initialCls = cls;
-        while (!fieldExists(cls, field)) {
-            ClassReader clsHolder = classSource.get(cls);
-            cls = clsHolder.getParent();
-            if (cls == null) {
-                throw new NamingException("Can't provide name for field as the field not found: "
-                        + initialCls + "." + field);
+    private FieldReference getRealField(FieldReference fieldRef) {
+        String cls = fieldRef.getClassName();
+        while (cls != null) {
+            ClassReader clsReader = classSource.get(cls);
+            if (clsReader != null) {
+                FieldReader fieldReader = clsReader.getField(fieldRef.getFieldName());
+                if (fieldReader != null) {
+                    return fieldReader.getReference();
+                }
             }
+            cls = clsReader.getParent();
         }
-        return cls;
+        return fieldRef;
     }
 
-    private boolean fieldExists(String cls, String field) {
-        ClassReader classHolder = classSource.get(cls);
-        return classHolder.getField(field) != null;
+    private final class Key {
+        final MethodReference data;
+        int hash;
+        final byte classifier;
+
+        Key(byte classifier, MethodReference data) {
+            this.classifier = classifier;
+            this.data = data;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof Key)) {
+                return false;
+            }
+            Key key = (Key) o;
+            return classifier == key.classifier && data.equals(key.data);
+        }
+
+        @Override
+        public int hashCode() {
+            if (hash == 0) {
+                hash = (classifier * 31 + data.hashCode()) * 17;
+                if (hash == 0) {
+                    hash++;
+                }
+            }
+            return hash;
+        }
     }
 }

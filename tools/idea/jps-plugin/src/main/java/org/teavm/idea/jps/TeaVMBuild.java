@@ -22,9 +22,11 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -57,8 +59,6 @@ import org.teavm.common.IntegerArray;
 import org.teavm.diagnostics.DefaultProblemTextConsumer;
 import org.teavm.diagnostics.Problem;
 import org.teavm.diagnostics.ProblemProvider;
-import org.teavm.idea.jps.model.TeaVMBuildResult;
-import org.teavm.idea.jps.model.TeaVMBuildStrategy;
 import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 import org.teavm.idea.jps.model.TeaVMProperty;
 import org.teavm.idea.jps.remote.TeaVMBuilderAssistant;
@@ -67,11 +67,20 @@ import org.teavm.model.CallLocation;
 import org.teavm.model.MethodReference;
 import org.teavm.model.TextLocation;
 import org.teavm.model.ValueType;
+import org.teavm.tooling.builder.BuildException;
+import org.teavm.tooling.builder.BuildResult;
+import org.teavm.tooling.builder.BuildStrategy;
 import org.teavm.vm.TeaVMPhase;
 import org.teavm.vm.TeaVMProgressFeedback;
 import org.teavm.vm.TeaVMProgressListener;
 
 class TeaVMBuild {
+    private static final String[] BLACKLISTED_CLASSES = {
+            "org/teavm/jso/impl/JSOPlugin.class",
+            "org/teavm/metaprogramming/impl/MetaprogrammingImpl.class",
+            "org/teavm/classlib/impl/JCLPlugin.class"
+    };
+
     private final CompileContext context;
     private final List<String> classPathEntries = new ArrayList<>();
     private List<String> directoryClassPathEntries;
@@ -79,27 +88,34 @@ class TeaVMBuild {
     private final TeaVMBuilderAssistant assistant;
     private final Map<String, File> sourceFileCache = new HashMap<>();
     private final Map<File, int[]> fileLineCache = new HashMap<>();
-    private TeaVMBuildStrategy buildStrategy;
+    private BuildStrategy buildStrategy;
     private BuildOutputConsumer outputConsumer;
+    private boolean incrementaSupported;
 
-    TeaVMBuild(CompileContext context, TeaVMBuilderAssistant assistant, TeaVMBuildStrategy buildStrategy,
-            BuildOutputConsumer outputConsumer) {
+    TeaVMBuild(CompileContext context, TeaVMBuilderAssistant assistant, BuildStrategy buildStrategy,
+            BuildOutputConsumer outputConsumer, boolean incrementalSupported) {
         this.context = context;
         this.assistant = assistant;
         this.buildStrategy = buildStrategy;
         this.outputConsumer = outputConsumer;
+        this.incrementaSupported = incrementalSupported;
     }
 
-    boolean perform(JpsModule module, TeaVMBuildTarget target) throws IOException {
+    boolean perform(JpsModule module, TeaVMBuildTarget target) throws IOException, BuildException {
         TeaVMStorageProvider storageProvider = new TeaVMStorageProvider(
                 target.getConfiguration().getTargetType().name());
         storage = context.getProjectDescriptor().dataManager.getStorage(target, storageProvider);
 
         TeaVMJpsConfiguration config = target.getConfiguration();
+        if (config.isSkipped()) {
+            context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.INFO,
+                    "TeaVM skipped due to facet configuration"));
+            return false;
+        }
 
         classPathEntries.clear();
         buildStrategy.init();
-        buildClassPath(module, new HashSet<>());
+        buildClassPath(module);
         directoryClassPathEntries = classPathEntries.stream().filter(name -> new File(name).isDirectory())
                 .collect(toList());
 
@@ -115,7 +131,7 @@ class TeaVMBuild {
         buildStrategy.setTargetType(config.getTargetType());
         buildStrategy.setTargetDirectory(config.getTargetDirectory());
         buildStrategy.setProgressListener(createProgressListener(context));
-        buildStrategy.setIncremental(!isRebuild(target));
+        buildStrategy.setIncremental(incrementaSupported && !isRebuild(target));
 
         Properties properties = new Properties();
         for (TeaVMProperty property : config.getProperties()) {
@@ -123,24 +139,16 @@ class TeaVMBuild {
         }
         buildStrategy.setProperties(properties);
 
-        TeaVMBuildResult buildResult = buildStrategy.build();
+        BuildResult buildResult = buildStrategy.build();
 
-        if (!buildResult.isErrorOccurred() && buildResult.getProblems().getSevereProblems().isEmpty()) {
+        if (!buildResult.getProblems().getSevereProblems().isEmpty()) {
             updateStorage(buildResult);
         }
 
         reportProblems(buildResult.getProblems(), buildResult.getCallGraph());
 
-        if (!buildResult.isErrorOccurred()) {
-            for (String fileName : buildResult.getGeneratedFiles()) {
-                outputConsumer.registerOutputFile(new File(fileName), Collections.emptyList());
-            }
-        }
-
-        if (buildResult.getStackTrace() != null) {
-            context.processMessage(new CompilerMessage("TeaVM", BuildMessage.Kind.ERROR,
-                    "Compiler crashed:\n" + buildResult.getStackTrace(), "",
-                    -1, -1, -1, -1, -1));
+        for (String fileName : buildResult.getGeneratedFiles()) {
+            outputConsumer.registerOutputFile(new File(fileName), Collections.emptyList());
         }
 
         return true;
@@ -173,14 +181,8 @@ class TeaVMBuild {
         switch (phase) {
             case DEPENDENCY_ANALYSIS:
                 return "Discovering classes to compile";
-            case LINKING:
-                return "Resolving method invocations";
-            case DECOMPILATION:
-                return "Compiling classes";
-            case OPTIMIZATION:
-                return "Optimizing code";
-            case RENDERING:
-                return "Building JS file";
+            case COMPILING:
+                return "Compiling";
             default:
                 throw new AssertionError();
         }
@@ -266,14 +268,20 @@ class TeaVMBuild {
                 problemsToReport.add(result);
             } else {
                 for (CallSite callSite : node.getCallerCallSites()) {
-                    CallLocation nextLocation = new CallLocation(callSite.getCaller().getMethod(),
-                            callSite.getLocation());
-                    workList.add(new Step(new CallLocationList(step.location, step.locationList), nextLocation));
+                    for (CallGraphNode caller : callSite.getCallers()) {
+                        CallLocation nextLocation = new CallLocation(caller.getMethod(),
+                                getLocation(callSite.getLocations(caller)));
+                        workList.add(new Step(new CallLocationList(step.location, step.locationList), nextLocation));
+                    }
                 }
             }
         }
 
         return problemsToReport;
+    }
+
+    private TextLocation getLocation(Collection<? extends TextLocation> location) {
+        return location.isEmpty() ? null : location.iterator().next();
     }
 
     private boolean isValid(ProblemToReport problemToReport) {
@@ -385,7 +393,7 @@ class TeaVMBuild {
 
     private int[] getLineOffsetsCacheMiss(File file) {
         IntegerArray lines = new IntegerArray(50);
-        try (Reader reader = new InputStreamReader(new FileInputStream(file), "UTF-8")) {
+        try (Reader reader = new InputStreamReader(new FileInputStream(file), StandardCharsets.UTF_8)) {
             int offset = 0;
             lines.add(0);
 
@@ -445,10 +453,9 @@ class TeaVMBuild {
         return false;
     }
 
-    private void updateStorage(TeaVMBuildResult buildResult) {
+    private void updateStorage(BuildResult buildResult) {
         Set<String> resources = Stream.concat(buildResult.getClasses().stream()
                 .map(cls -> cls.replace('.', '/') + ".class"), buildResult.getUsedResources().stream())
-                .sorted()
                 .collect(toSet());
         List<TeaVMStorage.Entry> participatingFiles = resources.stream()
                 .map(path -> {
@@ -471,10 +478,7 @@ class TeaVMBuild {
         return null;
     }
 
-    private void buildClassPath(JpsModule module, Set<JpsModule> visited) {
-        if (!visited.add(module)) {
-            return;
-        }
+    private void buildClassPath(JpsModule module) {
         File output = JpsJavaExtensionService.getInstance().getOutputDirectory(module, false);
         if (output != null) {
             classPathEntries.add(output.getPath());
@@ -487,7 +491,14 @@ class TeaVMBuild {
         for (JpsDependencyElement dependency : module.getDependenciesList().getDependencies()) {
             if (dependency instanceof JpsModuleDependency) {
                 JpsModuleDependency moduleDependency = (JpsModuleDependency) dependency;
-                buildClassPath(moduleDependency.getModule(), visited);
+                File dependencyOutput = JpsJavaExtensionService.getInstance().getOutputDirectory(
+                        moduleDependency.getModule(), false);
+                if (dependencyOutput != null && !isBlacklistedDependency(dependencyOutput)) {
+                    classPathEntries.add(dependencyOutput.getPath());
+                }
+                for (JpsModuleSourceRoot sourceRoot : moduleDependency.getModule().getSourceRoots()) {
+                    buildStrategy.addSourcesDirectory(sourceRoot.getFile().getAbsolutePath());
+                }
             } else if (dependency instanceof JpsLibraryDependency) {
                 JpsLibrary library = ((JpsLibraryDependency) dependency).getLibrary();
                 if (library == null) {
@@ -508,6 +519,15 @@ class TeaVMBuild {
                 }
             }
         }
+    }
+
+    private static boolean isBlacklistedDependency(File dependency) {
+        for (String entry : BLACKLISTED_CLASSES) {
+            if (new File(dependency, entry).exists()) {
+                return true;
+            }
+        }
+        return false;
     }
 
     private File getFileFromUrl(String url) {

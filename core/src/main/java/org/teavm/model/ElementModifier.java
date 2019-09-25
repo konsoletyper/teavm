@@ -25,18 +25,17 @@ import java.util.Set;
  */
 public enum ElementModifier {
     ABSTRACT,
+    INTERFACE,
+    FINAL,
+    ENUM,
     ANNOTATION,
+    SYNTHETIC,
     BRIDGE,
     DEPRECATED,
-    ENUM,
-    FINAL,
-    INTERFACE,
     NATIVE,
     STATIC,
     STRICT,
-    SUPER,
     SYNCHRONIZED,
-    SYNTHETIC,
     TRANSIENT,
     VARARGS,
     VOLATILE;

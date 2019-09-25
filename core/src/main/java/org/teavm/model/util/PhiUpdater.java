@@ -17,17 +17,17 @@ package org.teavm.model.util;
 
 import com.carrotsearch.hppc.IntArrayDeque;
 import com.carrotsearch.hppc.IntDeque;
+import com.carrotsearch.hppc.IntHashSet;
+import com.carrotsearch.hppc.IntObjectHashMap;
 import com.carrotsearch.hppc.IntObjectMap;
-import com.carrotsearch.hppc.IntObjectOpenHashMap;
-import com.carrotsearch.hppc.IntOpenHashSet;
 import com.carrotsearch.hppc.IntSet;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.BitSet;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
+import java.util.function.Predicate;
 import org.teavm.common.DominatorTree;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
@@ -36,8 +36,10 @@ import org.teavm.model.BasicBlock;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
+import org.teavm.model.Outgoing;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
+import org.teavm.model.Sigma;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.ArrayLengthInstruction;
@@ -91,12 +93,14 @@ public class PhiUpdater {
     private Phi[][] phiMap;
     private int[][] phiIndexMap;
     private List<List<Phi>> synthesizedPhisByBlock = new ArrayList<>();
-    private IntObjectMap<Phi> phisByReceiver = new IntObjectOpenHashMap<>();
+    private IntObjectMap<Phi> phisByReceiver = new IntObjectHashMap<>();
     private BitSet usedPhis = new BitSet();
-    private Variable[] originalExceptionVariables;
     private boolean[] usedDefinitions;
     private IntegerArray variableToSourceMap = new IntegerArray(10);
     private List<Phi> synthesizedPhis = new ArrayList<>();
+    private Sigma[][] sigmas;
+    private Predicate<Instruction> sigmaPredicate = instruction -> false;
+    private int[][][] frontierVariableCache;
 
     public int getSourceVariable(int var) {
         if (var >= variableToSourceMap.size()) {
@@ -109,10 +113,28 @@ public class PhiUpdater {
         return synthesizedPhis;
     }
 
-    public void updatePhis(Program program, Variable[] arguments) {
+    public void updatePhis(Program program, int parameterCount) {
+        Variable[] parameters = new Variable[parameterCount];
+        for (int i = 0; i < parameters.length; ++i) {
+            parameters[i] = program.variableAt(i);
+        }
+        updatePhis(program, parameters);
+    }
+
+    public Sigma[] getSigmasAt(int blockIndex) {
+        Sigma[] result = sigmas[blockIndex];
+        return result != null ? result.clone() : null;
+    }
+
+    public void setSigmaPredicate(Predicate<Instruction> sigmaPredicate) {
+        this.sigmaPredicate = sigmaPredicate;
+    }
+
+    public void updatePhis(Program program, Variable[] parameters) {
         if (program.basicBlockCount() == 0) {
             return;
         }
+        frontierVariableCache = new int[program.basicBlockCount()][][];
         this.program = program;
         phisByReceiver.clear();
         cfg = ProgramUtils.buildControlFlowGraph(program);
@@ -122,8 +144,8 @@ public class PhiUpdater {
 
         variableMap = new Variable[program.variableCount()];
         usedDefinitions = new boolean[program.variableCount()];
-        for (int i = 0; i < arguments.length; ++i) {
-            variableMap[i] = arguments[i];
+        for (int i = 0; i < parameters.length; ++i) {
+            variableMap[i] = parameters[i];
             usedDefinitions[i] = true;
         }
 
@@ -146,13 +168,53 @@ public class PhiUpdater {
             synthesizedPhisByBlock.add(new ArrayList<>());
         }
 
-        originalExceptionVariables = new Variable[program.basicBlockCount()];
-        Arrays.setAll(originalExceptionVariables, i -> program.basicBlockAt(i).getExceptionVariable());
-
+        estimateSigmas();
         estimatePhis();
         renameVariables();
         propagatePhiUsageInformation();
         addSynthesizedPhis();
+    }
+
+    private void estimateSigmas() {
+        TransitionExtractor transitionExtractor = new TransitionExtractor();
+        UsageExtractor usageExtractor = new UsageExtractor();
+
+        sigmas = new Sigma[program.basicBlockCount()][];
+        for (int i = 0; i < sigmas.length; ++i) {
+            BasicBlock block = program.basicBlockAt(i);
+            Instruction instruction = block.getLastInstruction();
+            if (instruction == null) {
+                continue;
+            }
+
+            instruction.acceptVisitor(transitionExtractor);
+            BasicBlock[] targets = transitionExtractor.getTargets();
+            if (targets == null || targets.length < 2) {
+                continue;
+            }
+
+            if (!sigmaPredicate.test(instruction)) {
+                continue;
+            }
+
+            instruction.acceptVisitor(usageExtractor);
+            Variable[] variables = usageExtractor.getUsedVariables();
+
+            Sigma[] sigmasInBlock = new Sigma[variables.length];
+            for (int j = 0; j < sigmasInBlock.length; ++j) {
+                Sigma sigma = new Sigma(block, variables[j]);
+                sigmasInBlock[j] = sigma;
+                for (BasicBlock target : targets) {
+                    Variable outgoingVar = program.createVariable();
+                    variableToSourceMap.add(sigma.getValue().getIndex());
+                    outgoingVar.setDebugName(sigma.getValue().getDebugName());
+                    outgoingVar.setLabel(sigma.getValue().getLabel());
+                    Outgoing outgoing = new Outgoing(outgoingVar, target);
+                    sigma.getOutgoings().add(outgoing);
+                }
+            }
+            sigmas[i] = sigmasInBlock;
+        }
     }
 
     private void estimatePhis() {
@@ -164,6 +226,23 @@ public class PhiUpdater {
         while (!stack.isEmpty()) {
             int i = stack.removeLast();
             currentBlock = program.basicBlockAt(i);
+
+            for (int predecessor : cfg.incomingEdges(i)) {
+                if (sigmas[predecessor] == null) {
+                    continue;
+                }
+                if (domTree.immediateDominatorOf(i) != predecessor) {
+                    continue;
+                }
+                for (Sigma sigma : sigmas[predecessor]) {
+                    for (Outgoing outgoing : sigma.getOutgoings()) {
+                        if (outgoing.getTarget() == currentBlock) {
+                            markAssignment(sigma.getValue());
+                            break;
+                        }
+                    }
+                }
+            }
 
             if (currentBlock.getExceptionVariable() != null) {
                 markAssignment(currentBlock.getExceptionVariable());
@@ -178,6 +257,12 @@ public class PhiUpdater {
                 insn.acceptVisitor(definitionExtractor);
                 for (Variable var : definitionExtractor.getDefinedVariables()) {
                     markAssignment(var);
+                }
+            }
+
+            if (sigmas[i] != null) {
+                for (Sigma sigma : sigmas[i]) {
+                    markAssignment(sigma.getValue());
                 }
             }
 
@@ -237,24 +322,43 @@ public class PhiUpdater {
 
             for (Incoming output : phiOutputs.get(index)) {
                 Variable var = output.getValue();
-                output.setValue(use(var));
+                Variable sigmaVar = applySigmaRename(output.getPhi().getBasicBlock(), var);
+                var = sigmaVar != var ? sigmaVar : use(var);
+                output.setValue(var);
             }
 
+            Sigma[] nextSigmas = sigmas[index];
             for (int j = successors.length - 1; j >= 0; --j) {
                 int successor = successors[j];
                 Task next = new Task();
                 next.variables = variableMap.clone();
                 next.block = program.basicBlockAt(successor);
+                if (nextSigmas != null) {
+                    for (Sigma sigma : nextSigmas) {
+                        for (Outgoing outgoing : sigma.getOutgoings()) {
+                            if (outgoing.getTarget().getIndex() == successor) {
+                                next.variables[sigma.getValue().getIndex()] = outgoing.getValue();
+                                break;
+                            }
+                        }
+                    }
+                }
                 stack.push(next);
             }
 
-            IntSet exceptionHandlingSuccessors = new IntOpenHashSet();
+            IntSet exceptionHandlingSuccessors = new IntHashSet();
             for (TryCatchBlock tryCatch : currentBlock.getTryCatchBlocks()) {
                 exceptionHandlingSuccessors.add(tryCatch.getHandler().getIndex());
             }
 
             for (int successor : cfg.outgoingEdges(index)) {
                 renameOutgoingPhis(successor, exceptionHandlingSuccessors.contains(successor));
+            }
+
+            if (sigmas[index] != null) {
+                for (Sigma sigma : sigmas[index]) {
+                    sigma.setValue(use(sigma.getValue()));
+                }
             }
         }
     }
@@ -281,7 +385,7 @@ public class PhiUpdater {
             }
         }
 
-        IntSet visited = new IntOpenHashSet();
+        IntSet visited = new IntHashSet();
         while (!worklist.isEmpty()) {
             int varIndex = worklist.removeFirst();
             if (!visited.add(varIndex)) {
@@ -306,6 +410,7 @@ public class PhiUpdater {
 
         for (int j = 0; j < phis.size(); ++j) {
             Phi phi = phis.get(j);
+            Variable originalVar = program.variableAt(phiIndexes[j]);
             Variable var = variableMap[phiIndexes[j]];
             if (var != null) {
                 List<Variable> versions = definedVersions.get(phiIndexes[j]);
@@ -318,13 +423,32 @@ public class PhiUpdater {
                     }
                 }
 
+                Variable sigmaVar = applySigmaRename(program.basicBlockAt(successor), originalVar);
                 Incoming incoming = new Incoming();
                 incoming.setSource(currentBlock);
-                incoming.setValue(var);
+                incoming.setValue(sigmaVar != originalVar ? sigmaVar : var);
                 phi.getIncomings().add(incoming);
                 phi.getReceiver().setDebugName(var.getDebugName());
             }
         }
+    }
+
+    private Variable applySigmaRename(BasicBlock target, Variable var) {
+        Sigma[] blockSigmas = sigmas[currentBlock.getIndex()];
+        if (blockSigmas == null) {
+            return var;
+        }
+        for (Sigma sigma : blockSigmas) {
+            if (sigma.getValue() != var) {
+                continue;
+            }
+            for (Outgoing outgoing : sigma.getOutgoings()) {
+                if (outgoing.getTarget() == target) {
+                    return outgoing.getValue();
+                }
+            }
+        }
+        return var;
     }
 
     private void markAssignment(Variable var) {
@@ -351,17 +475,52 @@ public class PhiUpdater {
         }
     }
 
+    private int[][] getIncomingVariablesForFrontier(int frontier) {
+        int[][] result = frontierVariableCache[frontier];
+        if (result == null) {
+            List<List<Variable>> builder = new ArrayList<>(Collections.nCopies(program.basicBlockCount(), null));
+            for (Phi phi : program.basicBlockAt(frontier).getPhis()) {
+                for (Incoming incoming : phi.getIncomings()) {
+                    List<Variable> variables = builder.get(incoming.getSource().getIndex());
+                    if (variables == null) {
+                        variables = new ArrayList<>();
+                        builder.set(incoming.getSource().getIndex(), variables);
+                    }
+                    variables.add(incoming.getValue());
+                }
+            }
+
+            result = new int[program.basicBlockCount()][];
+            for (int i = 0; i < result.length; ++i) {
+                List<Variable> builderVariables = builder.get(i);
+                if (builderVariables == null) {
+                    continue;
+                }
+                int[] resultVariables = new int[builderVariables.size()];
+                for (int j = 0; j < resultVariables.length; ++j) {
+                    resultVariables[j] = builderVariables.get(j).getIndex();
+                }
+                result[i] = resultVariables;
+            }
+
+            frontierVariableCache[frontier] = result;
+        }
+        return result;
+    }
+
     private void placePhi(int frontier, Variable var, BasicBlock block, Deque<BasicBlock> worklist) {
         BasicBlock frontierBlock = program.basicBlockAt(frontier);
         if (frontierBlock.getExceptionVariable() == var) {
             return;
         }
 
-        boolean exists = frontierBlock.getPhis().stream()
-                .flatMap(phi -> phi.getIncomings().stream())
-                .anyMatch(incoming -> incoming.getSource() == block && incoming.getValue() == var);
-        if (exists) {
-            return;
+        int[] frontierIncomingVariables = getIncomingVariablesForFrontier(frontier)[block.getIndex()];
+        if (frontierIncomingVariables != null) {
+            for (int incoming : frontierIncomingVariables) {
+                if (incoming == var.getIndex()) {
+                    return;
+                }
+            }
         }
 
         Phi phi = phiMap[frontier][var.getIndex()];
@@ -564,10 +723,7 @@ public class PhiUpdater {
 
         @Override
         public void visit(InvokeInstruction insn) {
-            List<Variable> args = insn.getArguments();
-            for (int i = 0; i < args.size(); ++i) {
-                args.set(i, use(args.get(i)));
-            }
+            insn.replaceArguments(v -> use(v));
             if (insn.getInstance() != null) {
                 insn.setInstance(use(insn.getInstance()));
             }

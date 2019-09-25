@@ -18,26 +18,39 @@
 
 window.addEventListener("message", event => {
     let request = event.data;
-    appendFiles(request.files, 0, () => {
-        launchTest(response => {
-            event.source.postMessage(response, "*");
-        });
-    }, error => {
-        event.source.postMessage({ status: "failed", errorMessage: error }, "*");
-    });
+    switch (request.type) {
+        case "js":
+            appendFiles(request.files, 0, () => {
+                launchTest(response => {
+                    event.source.postMessage(response, "*");
+                });
+            }, error => {
+                event.source.postMessage({ status: "failed", errorMessage: error }, "*");
+            });
+            break;
+        case "wasm":
+            appendFiles(request.files.filter(f => f.endsWith(".js")), 0, () => {
+                launchWasmTest(request.files.filter(f => f.endsWith(".wasm"))[0], response => {
+                    event.source.postMessage(response, "*");
+                });
+            }, error => {
+                event.source.postMessage({ status: "failed", errorMessage: error }, "*");
+            });
+            break;
+    }
 });
 
 function appendFiles(files, index, callback, errorCallback) {
     if (index === files.length) {
         callback();
     } else {
-        let fileName = "file://" + files[index];
+        let fileName = files[index];
         let script = document.createElement("script");
         script.onload = () => {
             appendFiles(files, index + 1, callback, errorCallback);
         };
         script.onerror = () => {
-            errorCallback("failed to load script" + fileName);
+            errorCallback("failed to load script " + fileName);
         };
         script.src = fileName;
         document.body.appendChild(script);
@@ -45,40 +58,65 @@ function appendFiles(files, index, callback, errorCallback) {
 }
 
 function launchTest(callback) {
-    $rt_startThread(() => {
-        let thread = $rt_nativeThread();
-        let instance;
-        let message;
-        if (thread.isResuming()) {
-            instance = thread.pop();
-        }
-        try {
-            runTest();
-        } catch (e) {
-            message = buildErrorMessage(e);
+    main([], result => {
+        if (result instanceof Error) {
             callback({
                 status: "failed",
-                errorMessage: buildErrorMessage(e)
+                errorMessage: buildErrorMessage(result)
             });
-            return;
-        }
-        if (thread.isSuspending()) {
-            thread.push(instance);
         } else {
             callback({ status: "OK" });
         }
     });
 
     function buildErrorMessage(e) {
-        let stack = e.stack;
+        let stack = "";
         if (e.$javaException && e.$javaException.constructor.$meta) {
             stack = e.$javaException.constructor.$meta.name + ": ";
-            let exceptionMessage = extractException(e.$javaException);
-            stack += exceptionMessage ? $rt_ustr(exceptionMessage) : "";
+            stack += e.$javaException.getMessage();
+            stack += "\n";
         }
-        stack += "\n" + stack;
+        stack += e.stack;
         return stack;
     }
+}
+
+function launchWasmTest(path, callback) {
+    var output = [];
+    var outputBuffer = "";
+
+    function putwchar(charCode) {
+        if (charCode === 10) {
+            switch (outputBuffer) {
+                case "SUCCESS":
+                    callback({status: "OK"});
+                    break;
+                case "FAILURE":
+                    callback({
+                        status: "failed",
+                        errorMessage: output.join("\n")
+                    });
+                    break;
+                default:
+                    output.push(outputBuffer);
+                    outputBuffer = "";
+            }
+        } else {
+            outputBuffer += String.fromCharCode(charCode);
+        }
+    }
+
+    TeaVM.wasm.run(path, {
+        installImports: function(o) {
+            o.teavm.putwchar = putwchar;
+        },
+        errorCallback: function(err) {
+            callback({
+                status: "failed",
+                errorMessage: err.message + '\n' + err.stack
+            });
+        }
+    });
 }
 
 function start() {

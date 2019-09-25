@@ -15,6 +15,7 @@
  */
 package org.teavm.backend.wasm;
 
+import java.lang.reflect.Array;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -38,6 +39,7 @@ public final class Example {
         testArrayIsObject();
         testIsAssignableFrom();
         testExceptions();
+        testArrayReflection();
         testBigInteger();
         testGC();
     }
@@ -192,6 +194,7 @@ public final class Example {
             throwsException();
         } catch (IllegalStateException e) {
             System.out.println("Caught 1: " + e.getMessage());
+            e.printStackTrace();
         }
 
         int x = 0;
@@ -210,6 +213,33 @@ public final class Example {
             throwsWithFinally();
         } catch (IllegalStateException e) {
             System.out.println("Caught 3: " + e.getMessage());
+        }
+
+        Object[] objects = { "a", null };
+        for (Object o : objects) {
+            try {
+                System.out.println(o.toString());
+            } catch (RuntimeException e) {
+                System.out.println("Caught NPE");
+                e.printStackTrace();
+            }
+        }
+    }
+
+    private static void testArrayReflection() {
+        Object[] arrays = new Object[] {
+                new int[] { 23, 42 },
+                new byte[] { (byte) 1, (byte) 2, (byte) 3 },
+                new String[] { "foo", "bar" },
+        };
+
+        for (Object array : arrays) {
+            int sz = Array.getLength(array);
+            System.out.println("Array type: " + array.getClass().getName() + ", length " + sz);
+            for (int i = 0; i < sz; ++i) {
+                Object item = Array.get(array, i);
+                System.out.println("  [" + i + "] = " + item + ": " + item.getClass().getName());
+            }
         }
     }
 

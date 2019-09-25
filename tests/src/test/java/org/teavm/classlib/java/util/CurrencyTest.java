@@ -56,11 +56,11 @@ public class CurrencyTest {
 
         Currency currency = Currency.getInstance("USD");
         assertEquals("US Dollar", currency.getDisplayName(english));
-        assertEquals("Доллар США", currency.getDisplayName(russian));
+        assertEquals("доллар сша", currency.getDisplayName(russian).toLowerCase());
 
         currency = Currency.getInstance("RUB");
         assertEquals("Russian Ruble", currency.getDisplayName(english));
-        assertEquals("Российский рубль", currency.getDisplayName(russian));
+        assertEquals("российский рубль", currency.getDisplayName(russian).toLowerCase());
 
         assertEquals("CHF", Currency.getInstance("CHF").getDisplayName(new Locale("xx", "YY")));
     }

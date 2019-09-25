@@ -15,20 +15,24 @@
  */
 package org.teavm.platform;
 
+import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
 
 public interface PlatformClassMetadata extends JSObject {
     @JSProperty("item")
+    @Unmanaged
     PlatformClass getArrayItem();
 
     @JSProperty
     PlatformSequence<PlatformClass> getSupertypes();
 
     @JSProperty
+    @Unmanaged
     PlatformClass getSuperclass();
 
     @JSProperty
+    @Unmanaged
     String getName();
 
     @JSProperty

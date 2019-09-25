@@ -81,7 +81,7 @@ public class TField extends TAccessibleObject implements TMember {
         if (sb.length() > 0) {
             sb.append(' ');
         }
-        sb.append(type.getName()).append(' ').append(declaringClass.getName()).append(".").append(name);
+        sb.append(getType().getName()).append(' ').append(declaringClass.getName()).append(".").append(name);
         return sb.toString();
     }
 

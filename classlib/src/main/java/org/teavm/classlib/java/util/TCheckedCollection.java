@@ -15,14 +15,11 @@
  */
 package org.teavm.classlib.java.util;
 
-import org.teavm.classlib.java.lang.TClass;
-import org.teavm.classlib.java.lang.TObject;
-
 class TCheckedCollection<E> implements TCollection<E> {
     TCollection<E> innerCollection;
-    TClass<E> type;
+    Class<E> type;
 
-    public TCheckedCollection(TCollection<E> innerCollection, TClass<E> type) {
+    public TCheckedCollection(TCollection<E> innerCollection, Class<E> type) {
         this.innerCollection = innerCollection;
         this.type = type;
     }
@@ -59,7 +56,7 @@ class TCheckedCollection<E> implements TCollection<E> {
 
     @Override
     public boolean add(E e) {
-        return innerCollection.add(type.cast(TObject.wrap(e)));
+        return innerCollection.add(type.cast(e));
     }
 
     @Override
@@ -77,7 +74,7 @@ class TCheckedCollection<E> implements TCollection<E> {
     public boolean addAll(TCollection<? extends E> c) {
         Object[] items = c.toArray();
         for (int i = 0; i < items.length; ++i) {
-            items[i] = type.cast(TObject.wrap(items[i]));
+            items[i] = type.cast(items[i]);
         }
         return innerCollection.addAll(TArrays.asList((E[]) items));
     }

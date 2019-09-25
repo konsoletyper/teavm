@@ -52,6 +52,7 @@ import org.teavm.idea.jps.model.TeaVMJpsConfiguration;
 import org.teavm.idea.jps.model.TeaVMProperty;
 
 class TeaVMConfigurationPanel extends JPanel {
+    private final JComboBox<ComboBoxItem<Boolean>> skipField = new JComboBox<>(new DefaultComboBoxModel<>());
     private final TextFieldWithBrowseButton mainClassField = new TextFieldWithBrowseButton(event -> chooseMainClass());
     private final TextFieldWithBrowseButton targetDirectoryField = new TextFieldWithBrowseButton();
     private final JComboBox<ComboBoxItem<Boolean>> sourceMapsField = new JComboBox<>(new DefaultComboBoxModel<>());
@@ -67,7 +68,13 @@ class TeaVMConfigurationPanel extends JPanel {
     private final List<ComboBoxItem<Boolean>> copySourcesOptions = Arrays.asList(new ComboBoxItem<>(true, "Copy"),
             new ComboBoxItem<>(false, "Skip"));
 
+    private final List<ComboBoxItem<Boolean>> skipOptions = Arrays.asList(new ComboBoxItem<>(true, "Skip"),
+            new ComboBoxItem<>(false, "Don't skip"));
+
     private final List<Field<?>> fields = Arrays.asList(
+            new Field<>(TeaVMJpsConfiguration::setSkipped, TeaVMJpsConfiguration::isSkipped,
+                    value -> skipField.setSelectedIndex(value ? 0 : 1),
+                    () -> skipOptions.get(skipField.getSelectedIndex()).value),
             new Field<>(TeaVMJpsConfiguration::setMainClass, TeaVMJpsConfiguration::getMainClass,
                     mainClassField::setText, mainClassField::getText),
             new Field<>(TeaVMJpsConfiguration::setTargetDirectory, TeaVMJpsConfiguration::getTargetDirectory,
@@ -94,6 +101,7 @@ class TeaVMConfigurationPanel extends JPanel {
 
         sourceMapsOptions.forEach(sourceMapsField::addItem);
         copySourcesOptions.forEach(copySourcesField::addItem);
+        skipOptions.forEach(skipField::addItem);
     }
 
     private void setupLayout() {
@@ -122,6 +130,9 @@ class TeaVMConfigurationPanel extends JPanel {
         fieldConstraints.insets.bottom = 20;
         fieldConstraints.insets.left = 10;
         fieldConstraints.insets.right = 10;
+
+        add(bold(new JBLabel("Skip TeaVM compilation")), labelConstraints);
+        add(skipField, fieldConstraints);
 
         add(bold(new JBLabel("Main class")), labelConstraints);
         add(mainClassField, fieldConstraints);

@@ -64,22 +64,27 @@ import org.teavm.ast.WhileStatement;
 import org.teavm.model.TextLocation;
 
 class OptimizingVisitor implements StatementVisitor, ExprVisitor {
+    private static final int MAX_DEPTH = 20;
     private Expr resultExpr;
     Statement resultStmt;
     private final boolean[] preservedVars;
     private final int[] writeFrequencies;
+    private final int[] initialWriteFrequencies;
     private final int[] readFrequencies;
+    private final Object[] constants;
     private List<Statement> resultSequence;
     private boolean friendlyToDebugger;
     private TextLocation currentLocation;
     private Deque<TextLocation> locationStack = new LinkedList<>();
     private Deque<TextLocation> notNullLocationStack = new ArrayDeque<>();
 
-    OptimizingVisitor(boolean[] preservedVars, int[] writeFrequencies, int[] readFrequencies,
+    OptimizingVisitor(boolean[] preservedVars, int[] writeFrequencies, int[] readFrequencies, Object[] constants,
             boolean friendlyToDebugger) {
         this.preservedVars = preservedVars;
         this.writeFrequencies = writeFrequencies;
+        this.initialWriteFrequencies = writeFrequencies.clone();
         this.readFrequencies = readFrequencies;
+        this.constants = constants;
         this.friendlyToDebugger = friendlyToDebugger;
     }
 
@@ -122,16 +127,35 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             Expr b = expr.getSecondOperand();
             Expr a = expr.getFirstOperand();
 
-            if (a instanceof VariableExpr || a instanceof ConstantExpr) {
-                b.acceptVisitor(this);
-                b = resultExpr;
-                if (b instanceof ConstantExpr && expr.getOperation() == BinaryOperation.SUBTRACT) {
-                    if (tryMakePositive((ConstantExpr) b)) {
-                        expr.setOperation(BinaryOperation.ADD);
-                    }
+            int barrierPosition = 0;
+            if (isSideEffectFree(a)) {
+                barrierPosition++;
+                if (isSideEffectFree(b)) {
+                    barrierPosition++;
                 }
-                a.acceptVisitor(this);
-                a = resultExpr;
+            }
+
+            Statement barrier = addBarrier();
+
+            if (barrierPosition == 2) {
+                removeBarrier(barrier);
+            }
+            b.acceptVisitor(this);
+            b = resultExpr;
+            if (b instanceof ConstantExpr && expr.getOperation() == BinaryOperation.SUBTRACT) {
+                if (tryMakePositive((ConstantExpr) b)) {
+                    expr.setOperation(BinaryOperation.ADD);
+                }
+            }
+
+            if (barrierPosition == 1) {
+                removeBarrier(barrier);
+            }
+            a.acceptVisitor(this);
+            a = resultExpr;
+
+            if (barrierPosition == 0) {
+                removeBarrier(barrier);
             }
 
             Expr p = a;
@@ -222,11 +246,15 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         pushLocation(expr.getLocation());
         try {
             expr.getCondition().acceptVisitor(this);
-            Expr cond = resultExpr;
+            Expr cond = optimizeCondition(resultExpr);
+
+            Statement barrier = addBarrier();
             expr.getConsequent().acceptVisitor(this);
             Expr consequent = resultExpr;
             expr.getAlternative().acceptVisitor(this);
             Expr alternative = resultExpr;
+            removeBarrier(barrier);
+
             expr.setCondition(cond);
             expr.setConsequent(consequent);
             expr.setAlternative(alternative);
@@ -248,6 +276,18 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             int index = expr.getIndex();
             resultExpr = expr;
             if (writeFrequencies[index] != 1) {
+                return;
+            }
+
+            if (!preservedVars[index] && initialWriteFrequencies[index] == 1 && constants[index] != null) {
+                ConstantExpr constantExpr = new ConstantExpr();
+                constantExpr.setValue(constants[index]);
+                constantExpr.setLocation(expr.getLocation());
+                resultExpr = constantExpr;
+                return;
+            }
+
+            if (locationStack.size() > MAX_DEPTH) {
                 return;
             }
             if (readFrequencies[index] != 1 || preservedVars[index]) {
@@ -288,10 +328,37 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(SubscriptExpr expr) {
         pushLocation(expr.getLocation());
         try {
+            Expr index = expr.getIndex();
+            Expr array = expr.getArray();
+
+            int barrierPosition = 0;
+            if (isSideEffectFree(array)) {
+                ++barrierPosition;
+                if (isSideEffectFree(index)) {
+                    ++barrierPosition;
+                }
+            }
+
+            Statement barrier = addBarrier();
+
+            if (barrierPosition == 2) {
+                removeBarrier(barrier);
+            }
+
             expr.getIndex().acceptVisitor(this);
-            Expr index = resultExpr;
+            index = resultExpr;
+
+            if (barrierPosition == 1) {
+                removeBarrier(barrier);
+            }
+
             expr.getArray().acceptVisitor(this);
-            Expr array = resultExpr;
+            array = resultExpr;
+
+            if (barrierPosition == 0) {
+                removeBarrier(barrier);
+            }
+
             expr.setArray(array);
             expr.setIndex(index);
             resultExpr = expr;
@@ -317,14 +384,33 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     public void visit(InvocationExpr expr) {
         pushLocation(expr.getLocation());
         try {
-            Expr[] args = new Expr[expr.getArguments().size()];
-            for (int i = expr.getArguments().size() - 1; i >= 0; --i) {
-                expr.getArguments().get(i).acceptVisitor(this);
-                args[i] = resultExpr;
+            Expr[] args = expr.getArguments().toArray(new Expr[0]);
+            int barrierPos;
+
+            for (barrierPos = 0; barrierPos < args.length; ++barrierPos) {
+                if (!isSideEffectFree(args[barrierPos])) {
+                    break;
+                }
             }
+
+            Statement barrier = addBarrier();
+
+            if (barrierPos == args.length) {
+                removeBarrier(barrier);
+            }
+
+            for (int i = args.length - 1; i >= 0; --i) {
+                args[i].acceptVisitor(this);
+                args[i] = resultExpr;
+                if (i == barrierPos) {
+                    removeBarrier(barrier);
+                }
+            }
+
             for (int i = 0; i < args.length; ++i) {
                 expr.getArguments().set(i, args[i]);
             }
+
             resultExpr = expr;
         } finally {
             popLocation();
@@ -473,6 +559,13 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
                 if (!(statement.getLeftValue() instanceof VariableExpr)) {
                     statement.getLeftValue().acceptVisitor(this);
                     left = resultExpr;
+                } else {
+                    int varIndex = ((VariableExpr) statement.getLeftValue()).getIndex();
+                    if (!preservedVars[varIndex] && initialWriteFrequencies[varIndex] == 1
+                            && constants[varIndex] != null) {
+                        resultStmt = new SequentialStatement();
+                        return;
+                    }
                 }
                 statement.setLeftValue(left);
                 statement.setRightValue(right);
@@ -565,11 +658,14 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         if (statements.isEmpty()) {
             return;
         }
+
+        boolean shouldOptimizeBreaks = !hitsRedundantBreakThreshold(statements, exit);
+
         for (int i = 0; i < statements.size(); ++i) {
             Statement stmt = statements.get(i);
             if (stmt instanceof ConditionalStatement) {
                 ConditionalStatement cond = (ConditionalStatement) stmt;
-                check_conditional: {
+                check_conditional: if (shouldOptimizeBreaks) {
                     last = cond.getConsequent().isEmpty() ? null
                             : cond.getConsequent().get(cond.getConsequent().size() - 1);
                     if (last instanceof BreakStatement) {
@@ -635,6 +731,37 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         }
     }
 
+    private boolean hitsRedundantBreakThreshold(List<Statement> statements, IdentifiedStatement exit) {
+        int count = 0;
+        for (int i = 0; i < statements.size(); ++i) {
+            Statement stmt = statements.get(i);
+            if (!(stmt instanceof ConditionalStatement)) {
+                continue;
+            }
+
+            ConditionalStatement conditional = (ConditionalStatement) stmt;
+            if (!conditional.getConsequent().isEmpty() && !conditional.getAlternative().isEmpty()) {
+                continue;
+            }
+            List<Statement> innerStatements = !conditional.getConsequent().isEmpty()
+                    ? conditional.getConsequent() : conditional.getAlternative();
+            if (innerStatements.isEmpty()) {
+                continue;
+            }
+
+            Statement last = innerStatements.get(innerStatements.size() - 1);
+            if (!(last instanceof BreakStatement)) {
+                continue;
+            }
+
+            BreakStatement breakStmt = (BreakStatement) last;
+            if (exit != null && exit == breakStmt.getTarget() && ++count == 8) {
+                return true;
+            }
+        }
+
+        return false;
+    }
 
     private void normalizeConditional(ConditionalStatement stmt) {
         if (stmt.getConsequent().isEmpty()) {
@@ -659,7 +786,7 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
     @Override
     public void visit(ConditionalStatement statement) {
         statement.getCondition().acceptVisitor(this);
-        statement.setCondition(resultExpr);
+        statement.setCondition(optimizeCondition(resultExpr));
         List<Statement> consequent = processSequence(statement.getConsequent());
         List<Statement> alternative = processSequence(statement.getAlternative());
         if (consequent.isEmpty()) {
@@ -744,7 +871,14 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         List<Statement> newDefault = processSequence(statement.getDefaultClause());
         statement.getDefaultClause().clear();
         statement.getDefaultClause().addAll(newDefault);
-        resultStmt = statement;
+
+        if (statement.getClauses().isEmpty()) {
+            SequentialStatement seq = new SequentialStatement();
+            seq.getSequence().addAll(statement.getDefaultClause());
+            resultStmt = seq;
+        } else {
+            resultStmt = statement;
+        }
     }
 
     @Override
@@ -900,5 +1034,66 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
         } finally {
             popLocation();
         }
+    }
+
+    private Statement addBarrier() {
+        SequentialStatement barrier = new SequentialStatement();
+        resultSequence.add(barrier);
+        return barrier;
+    }
+
+    private void removeBarrier(Statement barrier) {
+        Statement removedBarrier = resultSequence.remove(resultSequence.size() - 1);
+        if (removedBarrier != barrier) {
+            throw new AssertionError();
+        }
+    }
+
+    private boolean isSideEffectFree(Expr expr) {
+        if (expr == null) {
+            return true;
+        }
+
+        if (expr instanceof VariableExpr || expr instanceof ConstantExpr) {
+            return true;
+        }
+
+        if (expr instanceof BinaryExpr) {
+            BinaryExpr binary = (BinaryExpr) expr;
+            return isSideEffectFree(binary.getFirstOperand()) && isSideEffectFree(binary.getSecondOperand());
+        }
+
+        if (expr instanceof UnaryExpr) {
+            return isSideEffectFree(((UnaryExpr) expr).getOperand());
+        }
+
+        if (expr instanceof InstanceOfExpr) {
+            return isSideEffectFree(((InstanceOfExpr) expr).getExpr());
+        }
+
+        if (expr instanceof PrimitiveCastExpr) {
+            return isSideEffectFree(((PrimitiveCastExpr) expr).getValue());
+        }
+
+        if (expr instanceof NewExpr) {
+            return true;
+        }
+
+        return false;
+    }
+
+    private Expr optimizeCondition(Expr expr) {
+        if (expr instanceof BinaryExpr) {
+            BinaryExpr binary = (BinaryExpr) expr;
+            if (isZero(((BinaryExpr) expr).getSecondOperand())) {
+                switch (binary.getOperation()) {
+                    case EQUALS:
+                        return ExprOptimizer.invert(binary.getFirstOperand());
+                    case NOT_EQUALS:
+                        return binary.getFirstOperand();
+                }
+            }
+        }
+        return expr;
     }
 }

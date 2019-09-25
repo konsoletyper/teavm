@@ -22,11 +22,11 @@ public class TArrayIndexOutOfBoundsException extends TIndexOutOfBoundsException 
         super();
     }
 
-    public TArrayIndexOutOfBoundsException(TString message) {
+    public TArrayIndexOutOfBoundsException(String message) {
         super(message);
     }
 
     public TArrayIndexOutOfBoundsException(int index) {
-        super(TString.wrap(Integer.toString(index)));
+        super(Integer.toString(index));
     }
 }

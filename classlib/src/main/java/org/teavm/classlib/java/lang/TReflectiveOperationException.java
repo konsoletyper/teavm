@@ -22,11 +22,11 @@ public class TReflectiveOperationException extends TException {
         super();
     }
 
-    public TReflectiveOperationException(TString message, TThrowable cause) {
+    public TReflectiveOperationException(String message, TThrowable cause) {
         super(message, cause);
     }
 
-    public TReflectiveOperationException(TString message) {
+    public TReflectiveOperationException(String message) {
         super(message);
     }
 

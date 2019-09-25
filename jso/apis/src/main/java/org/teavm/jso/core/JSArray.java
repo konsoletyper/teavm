@@ -15,6 +15,7 @@
  */
 package org.teavm.jso.core;
 
+import org.teavm.interop.NoSideEffects;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.JSIndexer;
 import org.teavm.jso.JSObject;
@@ -83,9 +84,11 @@ public abstract class JSArray<T extends JSObject> implements JSArrayReader<T> {
     public abstract void setLength(int len);
 
     @JSBody(script = "return new Array();")
+    @NoSideEffects
     public static native <T extends JSObject> JSArray<T> create();
 
     @JSBody(params = "size", script = "return new Array(size);")
+    @NoSideEffects
     public static native <T extends JSObject> JSArray<T> create(int size);
 
     @SafeVarargs

@@ -221,4 +221,10 @@ public class WasmReplacingExpressionVisitor implements WasmExpressionVisitor {
         expression.getValue().acceptVisitor(this);
         expression.setValue(mapper.apply(expression.getValue()));
     }
+
+    @Override
+    public void visit(WasmMemoryGrow expression) {
+        expression.getAmount().acceptVisitor(this);
+        expression.setAmount(mapper.apply(expression.getAmount()));
+    }
 }

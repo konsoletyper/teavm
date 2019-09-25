@@ -21,7 +21,7 @@
   <parent>
     <groupId>org.teavm</groupId>
     <artifactId>teavm-idea-parent</artifactId>
-    <version>0.6.0-SNAPSHOT</version>
+    <version>0.7.0-SNAPSHOT</version>
     <relativePath>../pom.xml</relativePath>
   </parent>
   <modelVersion>4.0.0</modelVersion>
@@ -58,6 +58,8 @@
                     <item>install</item>
                     <item>-Didea.version=${idea.version}</item>
                     <item>-Dteavm.version=${project.version}</item>
+                    <item>-Dmaven.repo.local=${settings.localRepository}</item>
+                    <item>-B</item>
                   </arguments>
                 </configuration>
               </execution>

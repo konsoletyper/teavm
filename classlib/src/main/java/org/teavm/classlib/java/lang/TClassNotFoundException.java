@@ -22,11 +22,11 @@ public class TClassNotFoundException extends TReflectiveOperationException {
         super();
     }
 
-    public TClassNotFoundException(TString message, TThrowable cause) {
+    public TClassNotFoundException(String message, TThrowable cause) {
         super(message, cause);
     }
 
-    public TClassNotFoundException(TString message) {
+    public TClassNotFoundException(String message) {
         super(message);
     }
 

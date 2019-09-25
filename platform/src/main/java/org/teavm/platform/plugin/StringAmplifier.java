@@ -16,11 +16,13 @@
 package org.teavm.platform.plugin;
 
 import org.teavm.dependency.PluggableDependency;
+import org.teavm.interop.Unmanaged;
 
 final class StringAmplifier {
     private StringAmplifier() {
     }
 
     @PluggableDependency(StringAmplifierDependencyPlugin.class)
+    @Unmanaged
     static native String amplify(String string);
 }

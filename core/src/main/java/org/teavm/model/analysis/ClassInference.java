@@ -15,11 +15,11 @@
  */
 package org.teavm.model.analysis;
 
-import com.carrotsearch.hppc.IntOpenHashSet;
+import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
 import com.carrotsearch.hppc.IntStack;
+import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
-import com.carrotsearch.hppc.ObjectIntOpenHashMap;
 import com.carrotsearch.hppc.cursors.IntCursor;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +35,7 @@ import org.teavm.dependency.FieldDependencyInfo;
 import org.teavm.dependency.MethodDependencyInfo;
 import org.teavm.dependency.ValueDependencyInfo;
 import org.teavm.model.BasicBlock;
+import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
@@ -66,6 +67,7 @@ import org.teavm.model.instructions.UnwrapArrayInstruction;
 
 public class ClassInference {
     private DependencyInfo dependencyInfo;
+    private ClassHierarchy hierarchy;
     private Graph assignmentGraph;
     private Graph cloneGraph;
     private Graph arrayGraph;
@@ -78,8 +80,8 @@ public class ClassInference {
     private int[] propagationPath;
     private int[] nodeMapping;
 
-    private IntOpenHashSet[] types;
-    private ObjectIntMap<String> typeMap = new ObjectIntOpenHashMap<>();
+    private IntHashSet[] types;
+    private ObjectIntMap<String> typeMap = new ObjectIntHashMap<>();
     private List<String> typeList = new ArrayList<>();
 
     private boolean changed = true;
@@ -88,8 +90,9 @@ public class ClassInference {
 
     private static final int MAX_DEGREE = 3;
 
-    public ClassInference(DependencyInfo dependencyInfo) {
+    public ClassInference(DependencyInfo dependencyInfo, ClassHierarchy hierarchy) {
         this.dependencyInfo = dependencyInfo;
+        this.hierarchy = hierarchy;
     }
 
     public void infer(Program program, MethodReference methodReference) {
@@ -108,7 +111,7 @@ public class ClassInference {
             8. Repeat 7 until it changes anything (i.e. calculate fixed point).
         */
 
-        types = new IntOpenHashSet[program.variableCount() << 3];
+        types = new IntHashSet[program.variableCount() << 3];
         nodeChanged = new boolean[types.length];
         formerNodeChanged = new boolean[nodeChanged.length];
         nodeMapping = new int[types.length];
@@ -164,7 +167,7 @@ public class ClassInference {
     }
 
     public String[] classesOf(int variableIndex) {
-        IntOpenHashSet typeSet = types[nodeMapping[packNodeAndDegree(variableIndex, 0)]];
+        IntHashSet typeSet = types[nodeMapping[packNodeAndDegree(variableIndex, 0)]];
         if (typeSet == null) {
             return new String[0];
         }
@@ -228,7 +231,7 @@ public class ClassInference {
             int variable = extractNode(entry);
 
             // Actually, successor nodes in resulting graph
-            IntSet nextEntries = new IntOpenHashSet();
+            IntSet nextEntries = new IntHashSet();
 
             // Start: calculating successor nodes in resulting DAG along different paths
             //
@@ -282,7 +285,7 @@ public class ClassInference {
         }
 
         boolean[] nodeChangedBackup = nodeChanged.clone();
-        IntOpenHashSet[] typesBackup = types.clone();
+        IntHashSet[] typesBackup = types.clone();
         Arrays.fill(nodeChanged, false);
         Arrays.fill(types, null);
 
@@ -389,7 +392,7 @@ public class ClassInference {
                 continue;
             }
 
-            IntOpenHashSet nodeTypes = getNodeTypes(node);
+            IntHashSet nodeTypes = getNodeTypes(node);
             for (int predecessor : graph.incomingEdges(node)) {
                 if (formerNodeChanged[predecessor] || nodeChanged[predecessor]) {
                     if (nodeTypes.addAll(types[predecessor]) > 0) {
@@ -402,8 +405,6 @@ public class ClassInference {
     }
 
     private void propagateAlongCasts() {
-        ClassReaderSource classSource = dependencyInfo.getClassSource();
-
         for (ValueCast cast : casts) {
             int fromNode = nodeMapping[packNodeAndDegree(cast.fromVariable, 0)];
             if (!formerNodeChanged[fromNode] && !nodeChanged[fromNode]) {
@@ -411,7 +412,7 @@ public class ClassInference {
             }
 
             int toNode = nodeMapping[packNodeAndDegree(cast.toVariable, 0)];
-            IntOpenHashSet targetTypes = getNodeTypes(toNode);
+            IntHashSet targetTypes = getNodeTypes(toNode);
 
             for (IntCursor cursor : types[fromNode]) {
                 if (targetTypes.contains(cursor.value)) {
@@ -429,7 +430,7 @@ public class ClassInference {
                     type = ValueType.object(className);
                 }
 
-                if (classSource.isSuperType(cast.targetType, type).orElse(false)) {
+                if (hierarchy.isSuperType(cast.targetType, type, false)) {
                     changed = true;
                     nodeChanged[toNode] = true;
                     targetTypes.add(cursor.value);
@@ -499,11 +500,9 @@ public class ClassInference {
     }
 
     private void propagateException(String thrownTypeName, BasicBlock block) {
-        ClassReaderSource classSource = dependencyInfo.getClassSource();
-
         for (TryCatchBlock tryCatch : block.getTryCatchBlocks()) {
             String expectedType = tryCatch.getExceptionType();
-            if (expectedType == null || classSource.isSuperType(expectedType, thrownTypeName).orElse(false)) {
+            if (expectedType == null || hierarchy.isSuperType(expectedType, thrownTypeName, false)) {
                 if (tryCatch.getHandler().getExceptionVariable() == null) {
                     break;
                 }
@@ -520,10 +519,10 @@ public class ClassInference {
         }
     }
 
-    IntOpenHashSet getNodeTypes(int node) {
-        IntOpenHashSet result = types[node];
+    IntHashSet getNodeTypes(int node) {
+        IntHashSet result = types[node];
         if (result == null) {
-            result = new IntOpenHashSet();
+            result = new IntHashSet();
             types[node] = result;
         }
         return result;
@@ -680,7 +679,7 @@ public class ClassInference {
                 virtualCallSites.add(callSite);
 
                 if (insn.getReceiver() != null) {
-                    for (int j = 1; j <= MAX_DEGREE; ++j) {
+                    for (int j = 0; j <= MAX_DEGREE; ++j) {
                         getNodeTypes(packNodeAndDegree(callSite.receiver, j));
                     }
                 }
@@ -707,7 +706,7 @@ public class ClassInference {
 
     static class VirtualCallSite {
         int instance;
-        IntSet knownClasses = new IntOpenHashSet();
+        IntSet knownClasses = new IntHashSet();
         Set<MethodReference> resolvedMethods = new HashSet<>();
         MethodReference method;
         int[] arguments;

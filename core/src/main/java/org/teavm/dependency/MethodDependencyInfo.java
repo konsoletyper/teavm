@@ -34,5 +34,7 @@ public interface MethodDependencyInfo {
 
     boolean isUsed();
 
+    boolean isCalled();
+
     boolean isMissing();
 }

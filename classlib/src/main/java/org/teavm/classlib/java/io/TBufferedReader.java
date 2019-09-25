@@ -15,9 +15,9 @@
  */
 package org.teavm.classlib.java.io;
 
+import java.io.IOException;
 import org.teavm.classlib.java.lang.TIllegalArgumentException;
 import org.teavm.classlib.java.lang.TMath;
-import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.lang.TStringBuilder;
 import org.teavm.classlib.java.util.TArrays;
 
@@ -42,7 +42,7 @@ public class TBufferedReader extends TReader {
     }
 
     @Override
-    public int read() throws TIOException {
+    public int read() throws IOException {
         requireOpened();
         if (index >= count) {
             if (!fillBuffer(0)) {
@@ -53,14 +53,14 @@ public class TBufferedReader extends TReader {
     }
 
     @Override
-    public void close() throws TIOException {
+    public void close() throws IOException {
         requireOpened();
         innerReader.close();
         innerReader = null;
     }
 
     @Override
-    public int read(char[] cbuf, int off, int len) throws TIOException {
+    public int read(char[] cbuf, int off, int len) throws IOException {
         requireOpened();
         if (index == count && eof) {
             return -1;
@@ -79,7 +79,7 @@ public class TBufferedReader extends TReader {
         return charsRead;
     }
 
-    public TString readLine() throws TIOException {
+    public String readLine() throws IOException {
         requireOpened();
         if (eof && index >= count) {
             return null;
@@ -108,11 +108,11 @@ public class TBufferedReader extends TReader {
                 line.append(ch);
             }
         }
-        return TString.wrap(line.toString());
+        return line.toString();
     }
 
     @Override
-    public long skip(long n) throws TIOException {
+    public long skip(long n) throws IOException {
         requireOpened();
         if (n < count - index) {
             index += n;
@@ -135,7 +135,7 @@ public class TBufferedReader extends TReader {
     }
 
     @Override
-    public void mark(int readAheadLimit) throws TIOException {
+    public void mark(int readAheadLimit) throws IOException {
         if (readAheadLimit > buffer.length) {
             buffer = TArrays.copyOf(buffer, readAheadLimit);
         }
@@ -149,14 +149,14 @@ public class TBufferedReader extends TReader {
     }
 
     @Override
-    public void reset() throws TIOException {
+    public void reset() throws IOException {
         if (mark == -1) {
-            throw new TIOException();
+            throw new IOException();
         }
         index = mark;
     }
 
-    private boolean fillBuffer(int offset) throws TIOException {
+    private boolean fillBuffer(int offset) throws IOException {
         if (eof) {
             return false;
         }
@@ -177,9 +177,9 @@ public class TBufferedReader extends TReader {
         return true;
     }
 
-    private void requireOpened() {
+    private void requireOpened() throws IOException {
         if (innerReader == null) {
-            throw new TIOException();
+            throw new IOException();
         }
     }
 }

@@ -19,11 +19,9 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
-
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.lang.TArithmeticException;
 import org.teavm.classlib.java.lang.TDouble;
-import org.teavm.classlib.java.lang.TString;
 import org.teavm.classlib.java.util.TLocale;
 
 public class TDecimalFormat extends TNumberFormat {
@@ -984,7 +982,7 @@ public class TDecimalFormat extends TNumberFormat {
                 break;
             case UNNECESSARY:
                 if (mantissa % rounding != 0) {
-                    throw new TArithmeticException(TString.wrap("Can't avoid rounding"));
+                    throw new TArithmeticException("Can't avoid rounding");
                 }
                 break;
             case HALF_DOWN:
@@ -1040,7 +1038,7 @@ public class TDecimalFormat extends TNumberFormat {
                 break;
             case UNNECESSARY:
                 if (mantissa.remainder(rounding).equals(BigInteger.ZERO)) {
-                    throw new TArithmeticException(TString.wrap("Can't avoid rounding"));
+                    throw new TArithmeticException("Can't avoid rounding");
                 }
                 break;
             case HALF_DOWN:

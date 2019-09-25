@@ -22,7 +22,7 @@ public class TNoClassDefFoundError extends TLinkageError {
         super();
     }
 
-    public TNoClassDefFoundError(TString message) {
+    public TNoClassDefFoundError(String message) {
         super(message);
     }
 }
