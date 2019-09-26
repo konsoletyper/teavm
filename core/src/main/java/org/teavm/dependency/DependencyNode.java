@@ -434,6 +434,14 @@ public class DependencyNode implements ValueDependencyInfo {
         return i == result.length ? result : Arrays.copyOf(result, i);
     }
 
+    @Override
+    public boolean hasMoreTypesThan(int limit) {
+        if (typeSet == null) {
+            return false;
+        }
+        return typeSet.hasMoreTypesThan(limit, typeFilter != null ? getFilter()::match : null);
+    }
+
     DependencyType[] getTypesInternal() {
         if (typeSet == null) {
             return new DependencyType[0];

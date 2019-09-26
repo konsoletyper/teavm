@@ -23,6 +23,7 @@ import java.util.BitSet;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.function.Predicate;
 
 class TypeSet {
     private static final int SMALL_TYPES_THRESHOLD = 3;
@@ -86,6 +87,41 @@ class TypeSet {
             return types;
         } else {
             return EMPTY_TYPES;
+        }
+    }
+
+    boolean hasMoreTypesThan(int limit, Predicate<DependencyType> filter) {
+        if (this.types != null) {
+            if (filter == null) {
+                return this.types.cardinality() > limit;
+            }
+            for (int index = this.types.nextSetBit(0); index >= 0; index = this.types.nextSetBit(index + 1)) {
+                DependencyType type = dependencyAnalyzer.types.get(index);
+                if (filter.test(type)) {
+                    if (--limit < 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } else if (this.smallTypes != null) {
+            if (this.smallTypes.length <= limit) {
+                return false;
+            }
+            if (filter == null) {
+                return true;
+            }
+            for (int i = 0; i < smallTypes.length; ++i) {
+                DependencyType type = dependencyAnalyzer.types.get(smallTypes[i]);
+                if (filter.test(type)) {
+                    if (--limit < 0) {
+                        return true;
+                    }
+                }
+            }
+            return false;
+        } else {
+            return false;
         }
     }
 

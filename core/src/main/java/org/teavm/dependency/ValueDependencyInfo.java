@@ -20,6 +20,8 @@ public interface ValueDependencyInfo {
 
     boolean hasType(String type);
 
+    boolean hasMoreTypesThan(int limit);
+
     boolean hasArrayType();
 
     ValueDependencyInfo getArrayItem();

@@ -69,6 +69,7 @@ public class Inlining {
     private MethodUsageCounter usageCounter;
     private Set<MethodReference> methodsUsedOnce = new HashSet<>();
     private boolean devirtualization;
+    private ClassInference classInference;
 
     public Inlining(ClassHierarchy hierarchy, DependencyInfo dependencyInfo, InliningStrategy strategy,
             ListableClassReaderSource classes, Predicate<MethodReference> externalMethods,
@@ -393,8 +394,10 @@ public class Inlining {
     }
 
     private void devirtualize(Program program, MethodReference method, DependencyInfo dependencyInfo) {
-        ClassInference inference = new ClassInference(dependencyInfo, hierarchy);
-        inference.infer(program, method);
+        if (classInference == null) {
+            classInference = new ClassInference(dependencyInfo, hierarchy, classes.getClassNames(), 30);
+        }
+        classInference.infer(program, method);
 
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Instruction instruction : block) {
@@ -407,11 +410,19 @@ public class Inlining {
                 }
 
                 Set<MethodReference> implementations = new HashSet<>();
-                for (String className : inference.classesOf(invoke.getInstance().getIndex())) {
-                    MethodReference rawMethod = new MethodReference(className, invoke.getMethod().getDescriptor());
-                    MethodReader resolvedMethod = dependencyInfo.getClassSource().resolveImplementation(rawMethod);
-                    if (resolvedMethod != null) {
-                        implementations.add(resolvedMethod.getReference());
+                if (classInference.isOverflow(invoke.getInstance().getIndex())) {
+                    List<? extends MethodReference> knownImplementations = classInference.getMethodImplementations(
+                            invoke.getMethod().getDescriptor());
+                    if (knownImplementations != null) {
+                        implementations.addAll(knownImplementations);
+                    }
+                } else {
+                    for (String className : classInference.classesOf(invoke.getInstance().getIndex())) {
+                        MethodReference rawMethod = new MethodReference(className, invoke.getMethod().getDescriptor());
+                        MethodReader resolvedMethod = dependencyInfo.getClassSource().resolveImplementation(rawMethod);
+                        if (resolvedMethod != null) {
+                            implementations.add(resolvedMethod.getReference());
+                        }
                     }
                 }
 
@@ -423,7 +434,7 @@ public class Inlining {
         }
     }
 
-    private class PlanEntry {
+    static class PlanEntry {
         int targetBlock;
         Instruction targetInstruction;
         MethodReference method;

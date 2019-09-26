@@ -143,13 +143,13 @@ public class DependencyTest {
         MethodHolder method = classSource.get(testMethod.getClassName()).getMethod(testMethod.getDescriptor());
         List<Assertion> assertions = collectAssertions(method);
         processAssertions(assertions, vm.getDependencyInfo().getMethod(testMethod), vm.getDependencyInfo(),
-                method.getProgram());
+                method.getProgram(), vm.getClasses());
     }
 
     private void processAssertions(List<Assertion> assertions, MethodDependencyInfo methodDep,
-            DependencyInfo dependencyInfo, Program program) {
+            DependencyInfo dependencyInfo, Program program, Iterable<? extends String> classNames) {
         ClassInference classInference = new ClassInference(dependencyInfo, new ClassHierarchy(
-                dependencyInfo.getClassSource()));
+                dependencyInfo.getClassSource()), classNames, 10);
         classInference.infer(program, methodDep.getReference());
 
         for (Assertion assertion : assertions) {
@@ -160,10 +160,12 @@ public class DependencyTest {
             Arrays.sort(expectedTypes);
             Assert.assertArrayEquals("Assertion at " + assertion.location, expectedTypes, actualTypes);
 
-            actualTypes = classInference.classesOf(assertion.value);
-            Arrays.sort(actualTypes);
-            Assert.assertArrayEquals("Assertion at " + assertion.location + " (class inference)",
-                    expectedTypes, actualTypes);
+            if (!classInference.isOverflow(assertion.value)) {
+                Set<String> actualTypeSet = new HashSet<>(Arrays.asList(classInference.classesOf(assertion.value)));
+                Assert.assertTrue("Assertion at " + assertion.location + " (class inference), "
+                        + "expected: " + Arrays.toString(expectedTypes) + ", actual: " + actualTypeSet,
+                        actualTypeSet.containsAll(Arrays.asList(expectedTypes)));
+            }
         }
     }
 
