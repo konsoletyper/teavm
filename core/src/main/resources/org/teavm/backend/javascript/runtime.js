@@ -24,15 +24,7 @@ function $rt_nextId() {
     return x;
 }
 function $rt_compare(a, b) {
-    var nanA = isNaN(a);
-    var nanB = isNaN(b);
-    if (nanA && !nanB) return 1;
-    if (!nanA && nanB) return -1;
-    if (a === 0 && b === 0) {
-      a = 1 / a;
-      b = 1 / b;
-    }
-    return (a > b) - (a < b);
+    return a > b ? 1 : a < b ? -1 : a === b ? 0 : 1;
 }
 function $rt_isInstance(obj, cls) {
     return obj !== null && !!obj.constructor.$meta && $rt_isAssignable(obj.constructor, cls);
