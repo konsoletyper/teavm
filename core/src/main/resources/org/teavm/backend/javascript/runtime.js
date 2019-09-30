@@ -605,7 +605,7 @@ Long.prototype.valueOf = function() {
 var Long_ZERO = new Long(0, 0);
 var Long_MAX_NORMAL = 1 << 18;
 function Long_fromInt(val) {
-    new Long(val, -(val < 0));
+    new Long(val, (-(val < 0)) | 0);
 }
 function Long_fromNumber(val) {
     if (val >= 0) {
