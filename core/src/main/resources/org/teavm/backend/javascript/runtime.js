@@ -63,7 +63,7 @@ Array.prototype.fill = Array.prototype.fill || function(value,start,end) {
 function $rt_createArray(cls, sz) {
     var data = new Array(sz);
     var arr = new $rt_array(cls, data);
-    data.fill(null, 0, sz);
+    data.fill(null);
     return arr;
 }
 function $rt_wrapArray(cls, data) {
@@ -75,7 +75,7 @@ function $rt_createUnfilledArray(cls, sz) {
 function $rt_createLongArray(sz) {
     var data = new Array(sz);
     var arr = new $rt_array($rt_longcls(), data);
-    data.fill(Long_ZERO, 0, sz);
+    data.fill(Long_ZERO);
     return arr;
 }
 function $rt_createNumericArray(cls, nativeArray) {
