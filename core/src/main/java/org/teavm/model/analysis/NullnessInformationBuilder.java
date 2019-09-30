@@ -292,12 +292,13 @@ class NullnessInformationBuilder {
             Nullness status = deque.removeFirst() == 1 ? Nullness.NOT_NULL : Nullness.NULL;
             statuses[node] = status;
 
-            int[] pairs = variablePairs[node];
-            if (pairs != null) {
-                int pairStatus = status == Nullness.NULL ? 1 : 0;
-                for (int pair : pairs) {
-                    deque.addLast(pair);
-                    deque.addLast(pairStatus);
+            if (status == Nullness.NULL) {
+                int[] pairs = variablePairs[node];
+                if (pairs != null) {
+                    for (int pair : pairs) {
+                        deque.addLast(pair);
+                        deque.addLast(1);
+                    }
                 }
             }
 
@@ -451,7 +452,7 @@ class NullnessInformationBuilder {
         IntSet newlyNonNull = new IntHashSet();
     }
 
-    class NullnessInitVisitor extends AbstractInstructionVisitor {
+    static class NullnessInitVisitor extends AbstractInstructionVisitor {
         private IntDeque queue;
 
         NullnessInitVisitor(IntDeque queue) {
