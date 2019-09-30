@@ -24,7 +24,11 @@ function $rt_nextId() {
     return x;
 }
 function $rt_compare(a, b) {
-    return a > b ? 1 : a < b ? -1 : a === b ? 0 : 1;
+    var nanA = a != a;
+    var nanB = b != b;
+    if (nanA | nanB) return nanA - nanB;
+    if (a === 0 && b === 0) { a = 1 / a, b = 1 / b; }
+    return (a > b) - (a < b);
 }
 function $rt_isInstance(obj, cls) {
     return obj !== null && !!obj.constructor.$meta && $rt_isAssignable(obj.constructor, cls);
