@@ -24,7 +24,11 @@ function $rt_nextId() {
     return x;
 }
 function $rt_compare(a, b) {
-    return a > b ? 1 : a < b ? -1 : a === b ? 0 : 1;
+    var nanA = a != a;
+    var nanB = b != b;
+    if (nanA | nanB) return nanA - nanB;
+    if (a === 0 && b === 0) { a = 1 / a, b = 1 / b; }
+    return (a > b) - (a < b);
 }
 function $rt_isInstance(obj, cls) {
     return obj !== null && !!obj.constructor.$meta && $rt_isAssignable(obj.constructor, cls);
@@ -44,16 +48,26 @@ function $rt_isAssignable(from, to) {
     }
     return false;
 }
+Array.prototype.fill = Array.prototype.fill || function(value,start,end) {
+    var len = this.length;
+    if (!len) return this;
+    start = start | 0;
+    var i = start < 0
+        ? Math.max(len + start, 0)
+        : Math.min(start, len);
+    end = end === undefined ? len : end | 0;
+    end = end < 0
+        ? Math.max(len + end, 0)
+        : Math.min(end, len);
+    for (; i < end; i++) {
+        this[i] = value;
+    }
+    return this;
+};
 function $rt_createArray(cls, sz) {
     var data = new Array(sz);
     var arr = new $rt_array(cls, data);
-    if (sz > 0) {
-        var i = 0;
-        do {
-            data[i] = null;
-            i = (i + 1) | 0;
-        } while (i < sz);
-    }
+    data.fill(null);
     return arr;
 }
 function $rt_wrapArray(cls, data) {
@@ -65,9 +79,7 @@ function $rt_createUnfilledArray(cls, sz) {
 function $rt_createLongArray(sz) {
     var data = new Array(sz);
     var arr = new $rt_array($rt_longcls(), data);
-    for (var i = 0; i < sz; i = (i + 1) | 0) {
-        data[i] = Long_ZERO;
-    }
+    data.fill(Long_ZERO);
     return arr;
 }
 function $rt_createNumericArray(cls, nativeArray) {
@@ -568,7 +580,6 @@ function $dbg_class(obj) {
     }
     return clsName;
 }
-
 function Long(lo, hi) {
     this.lo = lo | 0;
     this.hi = hi | 0;
@@ -598,7 +609,7 @@ Long.prototype.valueOf = function() {
 var Long_ZERO = new Long(0, 0);
 var Long_MAX_NORMAL = 1 << 18;
 function Long_fromInt(val) {
-    return val >= 0 ? new Long(val, 0) : new Long(val, -1);
+    return new Long(val, (-(val < 0)) | 0);
 }
 function Long_fromNumber(val) {
     if (val >= 0) {
@@ -608,14 +619,8 @@ function Long_fromNumber(val) {
     }
 }
 function Long_toNumber(val) {
-    var lo = val.lo;
-    var hi = val.hi;
-    if (lo < 0) {
-        lo += 0x100000000;
-    }
-    return 0x100000000 * hi + lo;
+    return 0x100000000 * val.hi + (val.lo >>> 0);
 }
-
 var $rt_imul = Math.imul || function(a, b) {
     var ah = (a >>> 16) & 0xFFFF;
     var al = a & 0xFFFF;
@@ -624,20 +629,8 @@ var $rt_imul = Math.imul || function(a, b) {
     return (al * bl + (((ah * bl + al * bh) << 16) >>> 0)) | 0;
 };
 var $rt_udiv = function(a, b) {
-    if (a < 0) {
-        a += 0x100000000;
-    }
-    if (b < 0) {
-        b += 0x100000000;
-    }
-    return (a / b) | 0;
+    return ((a >>> 0) / (b >>> 0)) >>> 0;
 };
 var $rt_umod = function(a, b) {
-    if (a < 0) {
-        a += 0x100000000;
-    }
-    if (b < 0) {
-        b += 0x100000000;
-    }
-    return (a % b) | 0;
+    return ((a >>> 0) % (b >>> 0)) >>> 0;
 };
