@@ -152,6 +152,11 @@ import org.teavm.vm.spi.TeaVMHostExtension;
 public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private static final MethodReference INIT_HEAP_REF = new MethodReference(WasmHeap.class, "initHeap",
             Address.class, int.class, int.class, int.class, void.class);
+    private static final MethodReference RESIZE_HEAP_REF = new MethodReference(WasmHeap.class, "resizeHeap",
+            int.class, void.class);
+    private static final Set<MethodReference> VIRTUAL_METHODS = new HashSet<>(Arrays.asList(
+            new MethodReference(Object.class, "clone", Object.class)));
+
     private TeaVMTargetController controller;
     private boolean debugging;
     private boolean wastEmitted;
@@ -173,6 +178,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
         shadowStackTransformer = new ShadowStackTransformer(managedMethodRepository, true);
+
+        controller.addVirtualMethods(VIRTUAL_METHODS::contains);
     }
 
     @Override
@@ -291,6 +298,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 void.class)).use();
 
         dependencyAnalyzer.linkMethod(INIT_HEAP_REF).use();
+        dependencyAnalyzer.linkMethod(RESIZE_HEAP_REF).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(Allocator.class, "allocate",
                 RuntimeClass.class, Address.class)).use();

@@ -256,9 +256,11 @@ public final class WasmRuntime {
     }
 
     public static Address allocStack(int size) {
-        Address result = WasmHeap.stack.add(4);
-        WasmHeap.stack = result.add((size << 2) + 4);
-        WasmHeap.stack.putInt(size);
+        Address stack = WasmHeap.stack;
+        Address result = stack.add(4);
+        stack = result.add((size << 2) + 4);
+        stack.putInt(size);
+        WasmHeap.stack = stack;
         return result;
     }
 

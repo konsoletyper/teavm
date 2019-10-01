@@ -37,7 +37,7 @@ public class GCIntrinsic implements WasmIntrinsic {
     private static final MethodReference PRINT_OUT_OF_MEMORY = new MethodReference(
             WasmRuntime.class, "printOutOfMemory", void.class);
     private static final MethodReference RESIZE_HEAP = new MethodReference(
-            WasmHeap.class, "printOutOfMemory", void.class);
+            WasmHeap.class, "resizeHeap", int.class, void.class);
     private List<WasmInt32Constant> regionSizeExpressions = new ArrayList<>();
 
     public void setRegionSize(int regionSize) {
