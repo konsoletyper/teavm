@@ -72,7 +72,7 @@ after_success: >
      export SSH_KEY
      mv -f $HOME/built_artifacts_backup $HOME/mvn_repo/org/teavm
      $MVN_CMD deploy -Dteavm.build.all=false -DskipTests --settings travis-settings.xml \
-       -P deploy-to-bintray -P with-idea -P !download-dependencies && \
+       -P deploy-to-bintray -P with-idea -P with-cli -P !download-dependencies && \
        ./upload-files.sh
    fi
 before_cache:
