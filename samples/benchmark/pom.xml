@@ -165,7 +165,8 @@
               <debugInformationGenerated>true</debugInformationGenerated>
               <targetType>WEBASSEMBLY</targetType>
               <optimizationLevel>FULL</optimizationLevel>
-              <heapSize>8</heapSize>
+              <minHeapSize>1</minHeapSize>
+              <maxHeapSize>16</maxHeapSize>
             </configuration>
           </execution>
           <execution>
@@ -179,7 +180,8 @@
               <debugInformationGenerated>true</debugInformationGenerated>
               <targetType>C</targetType>
               <optimizationLevel>FULL</optimizationLevel>
-              <heapSize>8</heapSize>
+              <minHeapSize>1</minHeapSize>
+              <maxHeapSize>16</maxHeapSize>
             </configuration>
           </execution>
         </executions>

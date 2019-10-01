@@ -93,7 +93,7 @@ var Benchmark = function() {
     function tick() {
         var exports = this.instance.exports;
         exports.tick();
-        var exception = exports.sys_catchException();
+        var exception = exports.teavm_catchException();
         if (exception !== 0) {
             console.log("Exception: " + exception);
         }
