@@ -32,7 +32,6 @@ import org.teavm.interop.DelegateTo;
 import org.teavm.interop.Import;
 import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
-import org.teavm.interop.c.Include;
 import org.teavm.jso.browser.Performance;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.GC;
@@ -267,7 +266,7 @@ public final class TSystem extends TObject {
     }
 
     @Import(name = "teavm_currentTimeNano")
-    @Include("time.h")
+    @RuntimeInclude("time.h")
     private static native long nanoTimeLowLevel();
 
     public static int identityHashCode(Object x) {
