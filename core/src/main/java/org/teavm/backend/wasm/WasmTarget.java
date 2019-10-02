@@ -149,6 +149,9 @@ import org.teavm.vm.TeaVMTargetController;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
 public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
+    private static final Set<MethodReference> VIRTUAL_METHODS = new HashSet<>(Arrays.asList(
+            new MethodReference(Object.class, "clone", Object.class)));
+
     private TeaVMTargetController controller;
     private boolean debugging;
     private boolean wastEmitted;
@@ -169,6 +172,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
         shadowStackTransformer = new ShadowStackTransformer(managedMethodRepository, true);
+
+        controller.addVirtualMethods(VIRTUAL_METHODS::contains);
     }
 
     @Override
