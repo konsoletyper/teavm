@@ -42,7 +42,7 @@ public final class GC {
 
     static native int gcStorageSize();
 
-    private static native Address heapAddress();
+    public static native Address heapAddress();
 
     private static native Region regionsAddress();
 
@@ -59,7 +59,7 @@ public final class GC {
     private static native int regionSize();
 
     @Import(name = "teavm_outOfMemory")
-    private static native void outOfMemory();
+    public static native void outOfMemory();
 
     public static int getFreeMemory() {
         return freeMemory;
@@ -217,12 +217,9 @@ public final class GC {
 
         MarkQueue.init();
         MarkQueue.enqueue(object);
+        object.classReference |= RuntimeObject.GC_MARKED;
         while (!MarkQueue.isEmpty()) {
             object = MarkQueue.dequeue();
-            if (isMarked(object)) {
-                continue;
-            }
-            object.classReference |= RuntimeObject.GC_MARKED;
             MemoryTrace.mark(object.toAddress());
 
             long offset = object.toAddress().toLong() - heapAddress().toLong();
@@ -309,6 +306,7 @@ public final class GC {
 
     private static void enqueueMark(RuntimeObject object) {
         if (object != null && !isMarked(object)) {
+            object.classReference |= RuntimeObject.GC_MARKED;
             MarkQueue.enqueue(object);
         }
     }
