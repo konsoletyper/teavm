@@ -544,4 +544,15 @@ class InstructionStringifier implements InstructionReader {
     public void monitorExit(VariableReader objectRef) {
         append("monitorExit ").appendLocalVar(objectRef);
     }
+
+    @Override
+    public void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower) {
+        appendLocalVar(receiver).append(" = boundCheck ").appendLocalVar(index);
+        if (array != null) {
+            append(" upper ").appendLocalVar(array);
+        }
+        if (lower) {
+            append(" lower");
+        }
+    }
 }

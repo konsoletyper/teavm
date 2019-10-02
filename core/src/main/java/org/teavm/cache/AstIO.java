@@ -29,6 +29,7 @@ import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BinaryOperation;
 import org.teavm.ast.BlockStatement;
+import org.teavm.ast.BoundCheckExpr;
 import org.teavm.ast.BreakStatement;
 import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
@@ -665,6 +666,19 @@ public class AstIO {
                 throw new IOExceptionWrapper(e);
             }
         }
+
+        @Override
+        public void visit(BoundCheckExpr expr) {
+            try {
+                output.writeUnsigned(expr.getArray() == null ? 27 : !expr.isLower() ? 26 : 25);
+                writeExpr(expr.getIndex());
+                if (expr.getArray() != null) {
+                    writeExpr(expr.getArray());
+                }
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
     }
 
     private TextLocation readLocation(VarDataInput input) throws IOException {
@@ -1022,6 +1036,22 @@ public class AstIO {
                 expr.setSource(OperationType.values()[input.readUnsigned()]);
                 expr.setTarget(OperationType.values()[input.readUnsigned()]);
                 expr.setValue(readExpr(input));
+                return expr;
+            }
+            case 25:
+            case 26: {
+                BoundCheckExpr expr = new BoundCheckExpr();
+                expr.setLocation(lastReadLocation);
+                expr.setIndex(readExpr(input));
+                expr.setArray(readExpr(input));
+                expr.setLower(type == 25);
+                return expr;
+            }
+            case 27: {
+                BoundCheckExpr expr = new BoundCheckExpr();
+                expr.setLocation(lastReadLocation);
+                expr.setIndex(readExpr(input));
+                expr.setLower(true);
                 return expr;
             }
             default:

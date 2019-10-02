@@ -41,6 +41,7 @@ import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BlockStatement;
+import org.teavm.ast.BoundCheckExpr;
 import org.teavm.ast.BreakStatement;
 import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
@@ -1418,6 +1419,11 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         writer.println(";");
 
         popLocation(statement.getLocation());
+    }
+
+    @Override
+    public void visit(BoundCheckExpr expr) {
+        expr.getIndex().acceptVisitor(this);
     }
 
     private IntrinsicContext intrinsicContext = new IntrinsicContext() {

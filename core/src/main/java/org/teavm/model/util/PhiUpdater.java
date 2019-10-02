@@ -42,10 +42,12 @@ import org.teavm.model.Program;
 import org.teavm.model.Sigma;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.Variable;
+import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
@@ -580,11 +582,7 @@ public class PhiUpdater {
         return mappedVar;
     }
 
-    private InstructionVisitor consumer = new InstructionVisitor() {
-        @Override
-        public void visit(EmptyInstruction insn) {
-        }
-
+    private InstructionVisitor consumer = new AbstractInstructionVisitor() {
         @Override
         public void visit(ClassConstantInstruction insn) {
             insn.setReceiver(define(insn.getReceiver()));
@@ -649,11 +647,6 @@ public class PhiUpdater {
             insn.setFirstOperand(use(insn.getFirstOperand()));
             insn.setSecondOperand(use(insn.getSecondOperand()));
         }
-
-        @Override
-        public void visit(JumpInstruction insn) {
-        }
-
         @Override
         public void visit(SwitchInstruction insn) {
             insn.setCondition(use(insn.getCondition()));
@@ -789,10 +782,6 @@ public class PhiUpdater {
         }
 
         @Override
-        public void visit(InitClassInstruction insn) {
-        }
-
-        @Override
         public void visit(NullCheckInstruction insn) {
             insn.setValue(use(insn.getValue()));
             insn.setReceiver(define(insn.getReceiver()));
@@ -806,6 +795,15 @@ public class PhiUpdater {
         @Override
         public void visit(MonitorExitInstruction insn) {
             insn.setObjectRef(use(insn.getObjectRef()));
+        }
+
+        @Override
+        public void visit(BoundCheckInstruction insn) {
+            insn.setIndex(use(insn.getIndex()));
+            if (insn.getArray() != null) {
+                insn.setArray(use(insn.getArray()));
+            }
+            insn.setReceiver(define(insn.getReceiver()));
         }
     };
 }

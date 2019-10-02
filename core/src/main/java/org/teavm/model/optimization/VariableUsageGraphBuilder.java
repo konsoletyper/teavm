@@ -27,6 +27,7 @@ import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
 import org.teavm.model.instructions.CastNumberInstruction;
@@ -61,10 +62,10 @@ public final class VariableUsageGraphBuilder {
         return builder.build();
     }
 
-    private static class InstructionAnalyzer extends AbstractInstructionVisitor {
+    static class InstructionAnalyzer extends AbstractInstructionVisitor {
         private GraphBuilder builder;
 
-        public InstructionAnalyzer(GraphBuilder builder) {
+        InstructionAnalyzer(GraphBuilder builder) {
             this.builder = builder;
         }
 
@@ -149,6 +150,15 @@ public final class VariableUsageGraphBuilder {
         @Override
         public void visit(NullCheckInstruction insn) {
             use(insn.getReceiver(), insn.getValue());
+        }
+
+        @Override
+        public void visit(BoundCheckInstruction insn) {
+            if (insn.getArray() != null) {
+                use(insn.getReceiver(), insn.getIndex(), insn.getArray());
+            } else {
+                use(insn.getReceiver(), insn.getIndex());
+            }
         }
     }
 }

@@ -88,7 +88,6 @@ public class VolatileDefinitionFinder {
 
     private RecursiveVisitor handlerAnalyzer = new RecursiveVisitor() {
         StackElement surroundingTryCatches;
-        StackElement handlingTryCatches;
 
         @Override
         public void visit(TryCatchStatement statement) {

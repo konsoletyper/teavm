@@ -280,7 +280,6 @@ public class GlobalValueNumbering implements MethodOptimization {
             insn.setFirstOperand(program.variableAt(p));
             insn.setSecondOperand(program.variableAt(q));
             boolean commutative = false;
-            boolean noReplace = false;
             String value;
             switch (insn.getOperation()) {
                 case ADD:
@@ -302,7 +301,6 @@ public class GlobalValueNumbering implements MethodOptimization {
                     break;
                 case COMPARE:
                     value = "$";
-                    noReplace = true;
                     break;
                 case AND:
                     value = "&";

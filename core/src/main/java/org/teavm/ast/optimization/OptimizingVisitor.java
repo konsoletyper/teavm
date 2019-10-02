@@ -27,6 +27,7 @@ import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BinaryOperation;
 import org.teavm.ast.BlockStatement;
+import org.teavm.ast.BoundCheckExpr;
 import org.teavm.ast.BreakStatement;
 import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
@@ -1031,6 +1032,28 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
             statement.getObjectRef().acceptVisitor(this);
             statement.setObjectRef(resultExpr);
             resultStmt = statement;
+        } finally {
+            popLocation();
+        }
+    }
+
+    @Override
+    public void visit(BoundCheckExpr expr) {
+        pushLocation(expr.getLocation());
+        try {
+            expr.getIndex().acceptVisitor(this);
+            Expr index = resultExpr;
+
+            Expr array = null;
+            if (expr.getArray() != null) {
+                expr.getArray().acceptVisitor(this);
+                array = resultExpr;
+            }
+
+            expr.setIndex(index);
+            expr.setArray(array);
+
+            resultExpr = expr;
         } finally {
             popLocation();
         }

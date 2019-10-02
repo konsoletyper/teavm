@@ -48,6 +48,7 @@ import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
 import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
@@ -738,6 +739,20 @@ public class ProgramIO {
             }
         }
 
+        @Override
+        public void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower) {
+            try {
+                output.writeUnsigned(array == null ? 89 : !lower ? 88 : 87);
+                output.writeUnsigned(receiver.getIndex());
+                output.writeUnsigned(index.getIndex());
+                if (array != null) {
+                    output.writeUnsigned(array.getIndex());
+                }
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
         private void write(MethodHandle handle) throws IOException {
             switch (handle.getKind()) {
                 case GET_FIELD:
@@ -1203,6 +1218,18 @@ public class ProgramIO {
                 for (int i = 0; i < bootstrapArgsCount; ++i) {
                     insn.getBootstrapArguments().add(readRuntimeConstant(input));
                 }
+                return insn;
+            }
+            case 87:
+            case 88:
+            case 89: {
+                BoundCheckInstruction insn = new BoundCheckInstruction();
+                insn.setReceiver(program.variableAt(input.readUnsigned()));
+                insn.setIndex(program.variableAt(input.readUnsigned()));
+                if (insnType != 89) {
+                    insn.setArray(program.variableAt(input.readUnsigned()));
+                }
+                insn.setLower(insnType != 88);
                 return insn;
             }
             default:

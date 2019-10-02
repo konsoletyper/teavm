@@ -27,6 +27,7 @@ import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
@@ -303,5 +304,14 @@ public class InstructionVariableMapper extends AbstractInstructionVisitor {
     @Override
     public void visit(MonitorExitInstruction insn) {
         insn.setObjectRef(map(insn.getObjectRef()));
+    }
+
+    @Override
+    public void visit(BoundCheckInstruction insn) {
+        insn.setReceiver(map(insn.getReceiver()));
+        insn.setIndex(map(insn.getIndex()));
+        if (insn.getArray() != null) {
+            insn.setArray(map(insn.getArray()));
+        }
     }
 }

@@ -42,7 +42,7 @@ public class ProgramDependencyExtractor extends AbstractInstructionVisitor {
         return result;
     }
 
-    class AnalyzingVisitor extends AbstractInstructionVisitor {
+    static class AnalyzingVisitor extends AbstractInstructionVisitor {
         Set<String> dependencies = new LinkedHashSet<>();
         @Override public void visit(GetFieldInstruction insn) {
             dependencies.add(insn.getField().getClassName());

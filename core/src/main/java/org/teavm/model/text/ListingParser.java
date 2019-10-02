@@ -43,6 +43,7 @@ import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
 import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
@@ -430,6 +431,19 @@ public class ListingParser {
                         }
                         currentBlock.setExceptionVariable(receiver);
                         break;
+                    }
+                    case "boundCheck": {
+                        lexer.nextToken();
+                        BoundCheckInstruction insn = new BoundCheckInstruction();
+                        insn.setReceiver(receiver);
+                        insn.setIndex(expectVariable());
+                        if (lexer.tryConsumeIdentifier("upper")) {
+                            insn.setArray(expectVariable());
+                        }
+                        if (lexer.tryConsumeIdentifier("lower")) {
+                            insn.setLower(true);
+                        }
+                        addInstruction(insn);
                     }
                     default:
                         unexpected();

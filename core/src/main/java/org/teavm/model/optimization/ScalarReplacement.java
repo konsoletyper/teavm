@@ -136,7 +136,7 @@ public class ScalarReplacement implements MethodOptimization {
         private EscapeAnalysis escapeAnalysis;
         private List<Map<FieldReference, Variable>> fieldMappings;
 
-        public ScalarReplacementVisitor(EscapeAnalysis escapeAnalysis,
+        ScalarReplacementVisitor(EscapeAnalysis escapeAnalysis,
                 List<Map<FieldReference, Variable>> fieldMappings) {
             this.escapeAnalysis = escapeAnalysis;
             this.fieldMappings = fieldMappings;

@@ -91,4 +91,6 @@ public interface InstructionVisitor {
     void visit(MonitorEnterInstruction insn);
 
     void visit(MonitorExitInstruction insn);
+
+    void visit(BoundCheckInstruction insn);
 }

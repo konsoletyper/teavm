@@ -791,6 +791,11 @@ public class Interpreter {
         public void monitorExit(VariableReader objectRef) {
         }
 
+        @Override
+        public void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower) {
+            variables[receiver.getIndex()] = variables[index.getIndex()];
+        }
+
         private Class<?> asJvmClass(ValueType type) {
             if (type instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive) type).getKind()) {

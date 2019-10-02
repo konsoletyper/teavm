@@ -61,6 +61,7 @@ import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
 import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
@@ -1168,6 +1169,18 @@ public class CompositeMethodGenerator {
             MonitorExitInstruction insn = new MonitorExitInstruction();
             insn.setObjectRef(var(objectRef));
             add(insn);
+        }
+
+        @Override
+        public void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower) {
+            BoundCheckInstruction instruction = new BoundCheckInstruction();
+            instruction.setReceiver(var(receiver));
+            instruction.setIndex(var(index));
+            if (array != null) {
+                instruction.setArray(var(array));
+            }
+            instruction.setLower(lower);
+            add(instruction);
         }
     }
 }

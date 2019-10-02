@@ -227,4 +227,14 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     public void visit(MonitorExitStatement statement) {
         statement.getObjectRef().acceptVisitor(this);
     }
+
+    @Override
+    public void visit(BoundCheckExpr expr) {
+        beforeVisit(expr);
+        expr.getIndex().acceptVisitor(this);
+        if (expr.getArray() != null) {
+            expr.getArray().acceptVisitor(this);
+        }
+        afterVisit(expr);
+    }
 }

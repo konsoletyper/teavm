@@ -103,4 +103,6 @@ public interface InstructionReader {
     void monitorEnter(VariableReader objectRef);
 
     void monitorExit(VariableReader objectRef);
+
+    void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower);
 }

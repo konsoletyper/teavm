@@ -100,7 +100,7 @@ class ReadWriteStatsBuilder {
     static class ConstantExtractor extends AbstractInstructionVisitor {
         private Object[] constants;
 
-        public ConstantExtractor(Object[] constants) {
+        ConstantExtractor(Object[] constants) {
             this.constants = constants;
         }
 

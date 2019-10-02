@@ -189,4 +189,8 @@ public class AbstractInstructionReader implements InstructionReader {
     @Override
     public void monitorExit(VariableReader objectRef) {
     }
+
+    @Override
+    public void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower) {
+    }
 }

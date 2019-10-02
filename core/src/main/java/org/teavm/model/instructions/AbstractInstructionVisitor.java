@@ -165,4 +165,8 @@ public abstract class AbstractInstructionVisitor implements InstructionVisitor {
     @Override
     public void visit(MonitorExitInstruction insn) {
     }
+
+    @Override
+    public void visit(BoundCheckInstruction insn) {
+    }
 }

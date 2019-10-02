@@ -45,4 +45,6 @@ public interface ExprVisitor {
     void visit(CastExpr expr);
 
     void visit(PrimitiveCastExpr expr);
+
+    void visit(BoundCheckExpr expr);
 }

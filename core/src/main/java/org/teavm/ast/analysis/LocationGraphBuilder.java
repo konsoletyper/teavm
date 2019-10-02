@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.Set;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BlockStatement;
+import org.teavm.ast.BoundCheckExpr;
 import org.teavm.ast.BreakStatement;
 import org.teavm.ast.ConditionalExpr;
 import org.teavm.ast.ConditionalStatement;
@@ -64,8 +65,8 @@ public final class LocationGraphBuilder {
         for (int terminal : visitor.nodes) {
             visitor.terminalNodes.set(terminal);
         }
-        TextLocation[][] locations = propagate(visitor.locations.toArray(new TextLocation[0]), graph,
-                visitor.terminalNodes);
+        TextLocation[][] locations = propagate(visitor.locations.toArray(new TextLocation[0]), graph
+        );
 
         Map<TextLocation, Set<TextLocation>> builder = new LinkedHashMap<>();
         for (int i = 0; i < graph.size(); ++i) {
@@ -91,7 +92,7 @@ public final class LocationGraphBuilder {
         return result;
     }
 
-    private static TextLocation[][] propagate(TextLocation[] locations, Graph graph, BitSet terminal) {
+    private static TextLocation[][] propagate(TextLocation[] locations, Graph graph) {
         List<Set<TextLocation>> result = new ArrayList<>();
         boolean[] stop = new boolean[graph.size()];
         IntDeque queue = new IntArrayDeque();
@@ -336,6 +337,12 @@ public final class LocationGraphBuilder {
             exit.add(nodes);
 
             nodes = distinct(exit);
+        }
+
+        @Override
+        public void visit(BoundCheckExpr expr) {
+            super.visit(expr);
+            setLocation(expr.getLocation());
         }
 
         private void setNode(int node) {

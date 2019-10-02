@@ -304,7 +304,6 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
     static class MethodInfo {
         MethodReference method;
         boolean complete;
-        Set<MethodInfo> recursiveCallers;
         Set<String> classesWithModifiedFields;
         boolean anyFieldModified;
 

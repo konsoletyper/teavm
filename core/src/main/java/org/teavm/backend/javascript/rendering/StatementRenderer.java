@@ -30,6 +30,7 @@ import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BinaryOperation;
 import org.teavm.ast.BlockStatement;
+import org.teavm.ast.BoundCheckExpr;
 import org.teavm.ast.BreakStatement;
 import org.teavm.ast.CastExpr;
 import org.teavm.ast.ConditionalExpr;
@@ -1559,6 +1560,11 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
         } catch (IOException ex) {
             throw new RenderingException("IO error occurred", ex);
         }
+    }
+
+    @Override
+    public void visit(BoundCheckExpr expr) {
+        expr.getIndex().acceptVisitor(this);
     }
 
     private class InjectorContextImpl implements InjectorContext {

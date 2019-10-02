@@ -26,12 +26,20 @@ class ListingLexer {
     private int index = -1;
     private int tokenStart;
 
-    public ListingLexer(Reader reader) {
+    ListingLexer(Reader reader) {
         this.reader = reader;
     }
 
     public ListingToken getToken() {
         return token;
+    }
+
+    public boolean tryConsumeIdentifier(String value) throws IOException, ListingParseException {
+        if (token == ListingToken.IDENTIFIER && value.equals(tokenValue)) {
+            nextToken();
+            return true;
+        }
+        return false;
     }
 
     public Object getTokenValue() {

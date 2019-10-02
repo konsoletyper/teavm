@@ -38,6 +38,7 @@ import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
+import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.CloneArrayInstruction;
@@ -424,6 +425,13 @@ class NullnessInformationBuilder {
         @Override
         public void visit(NullCheckInstruction insn) {
             markAsNotNull(insn.getReceiver());
+        }
+
+        @Override
+        public void visit(BoundCheckInstruction insn) {
+            if (insn.getArray() != null) {
+                markAsNotNull(insn.getArray());
+            }
         }
 
         private void insertNotNullInstruction(Instruction currentInstruction, Variable var) {

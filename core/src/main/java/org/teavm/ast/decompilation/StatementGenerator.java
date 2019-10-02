@@ -24,6 +24,7 @@ import java.util.Map;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryOperation;
+import org.teavm.ast.BoundCheckExpr;
 import org.teavm.ast.BreakStatement;
 import org.teavm.ast.ContinueStatement;
 import org.teavm.ast.Expr;
@@ -54,6 +55,7 @@ import org.teavm.model.instructions.ArrayLengthInstruction;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
+import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
@@ -630,5 +632,17 @@ class StatementGenerator implements InstructionVisitor {
         stmt.setLocation(currentLocation);
         stmt.setObjectRef(Expr.var(insn.getObjectRef().getIndex()));
         statements.add(stmt);
+    }
+
+    @Override
+    public void visit(BoundCheckInstruction insn) {
+        BoundCheckExpr expr = new BoundCheckExpr();
+        expr.setLower(insn.isLower());
+        expr.setIndex(Expr.var(insn.getIndex().getIndex()));
+        if (insn.getArray() != null) {
+            expr.setArray(Expr.var(insn.getArray().getIndex()));
+        }
+        expr.setLocation(insn.getLocation());
+        assign(expr, insn.getReceiver());
     }
 }

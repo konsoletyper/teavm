@@ -38,6 +38,7 @@ import org.teavm.model.instructions.BinaryBranchingCondition;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
 import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.BranchingCondition;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
@@ -476,6 +477,19 @@ public class InstructionCopyReader implements InstructionReader {
     public void monitorExit(VariableReader objectRef) {
         MonitorExitInstruction insnCopy = new MonitorExitInstruction();
         insnCopy.setObjectRef(copyVar(objectRef));
+        copy = insnCopy;
+        copy.setLocation(location);
+    }
+
+    @Override
+    public void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower) {
+        BoundCheckInstruction insnCopy = new BoundCheckInstruction();
+        insnCopy.setReceiver(copyVar(receiver));
+        insnCopy.setIndex(copyVar(index));
+        if (array != null) {
+            insnCopy.setArray(copyVar(array));
+        }
+        insnCopy.setLower(lower);
         copy = insnCopy;
         copy.setLocation(location);
     }

@@ -213,4 +213,9 @@ public class InstructionReadVisitor implements InstructionVisitor {
     public void visit(MonitorExitInstruction insn) {
         reader.monitorExit(insn.getObjectRef());
     }
+
+    @Override
+    public void visit(BoundCheckInstruction insn) {
+        reader.boundCheck(insn.getReceiver(), insn.getIndex(), insn.getArray(), insn.isLower());
+    }
 }

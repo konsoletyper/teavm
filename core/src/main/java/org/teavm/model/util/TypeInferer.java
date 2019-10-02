@@ -322,6 +322,11 @@ public class TypeInferer {
         public void arrayLength(VariableReader receiver, VariableReader array) {
             types[receiver.getIndex()] = new InferenceType(InferenceKind.INT, 0);
         }
+
+        @Override
+        public void boundCheck(VariableReader receiver, VariableReader index, VariableReader array, boolean lower) {
+            types[receiver.getIndex()] = new InferenceType(InferenceKind.INT, 0);
+        }
     };
 
     enum InferenceKind {

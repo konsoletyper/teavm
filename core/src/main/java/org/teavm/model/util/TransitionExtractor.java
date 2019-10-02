@@ -216,4 +216,9 @@ public class TransitionExtractor implements InstructionVisitor {
     public void visit(MonitorExitInstruction insn) {
         targets = null;
     }
+
+    @Override
+    public void visit(BoundCheckInstruction insn) {
+        targets = null;
+    }
 }
