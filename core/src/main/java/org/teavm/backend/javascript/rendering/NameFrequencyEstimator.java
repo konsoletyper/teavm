@@ -20,6 +20,7 @@ import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.BinaryExpr;
+import org.teavm.ast.BoundCheckExpr;
 import org.teavm.ast.ConstantExpr;
 import org.teavm.ast.InitClassStatement;
 import org.teavm.ast.InstanceOfExpr;
@@ -301,6 +302,18 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
             }
         } else {
             consumer.consumeFunction("$rt_isInstance");
+        }
+    }
+
+    @Override
+    public void visit(BoundCheckExpr expr) {
+        super.visit(expr);
+        if (expr.getArray() != null && expr.getIndex() != null) {
+            consumer.consumeFunction("$rt_checkBounds");
+        } else if (expr.getArray() != null) {
+            consumer.consumeFunction("$rt_checkUpperBound");
+        } else if (expr.isLower()) {
+            consumer.consumeFunction("$rt_checkLowerBound");
         }
     }
 }

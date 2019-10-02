@@ -119,11 +119,11 @@ public class UnusedVariableElimination implements MethodOptimization {
         return false;
     }
 
-    private static class InstructionOptimizer extends AbstractInstructionVisitor {
+    static class InstructionOptimizer extends AbstractInstructionVisitor {
         private boolean[] used;
         boolean eliminate;
 
-        public InstructionOptimizer(boolean[] used) {
+        InstructionOptimizer(boolean[] used) {
             this.used = used;
         }
 

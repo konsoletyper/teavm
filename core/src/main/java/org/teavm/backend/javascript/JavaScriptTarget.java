@@ -95,6 +95,7 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.lowlevel.BoundCheckInsertion;
 import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.vm.BuildTarget;
@@ -126,6 +127,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private List<VirtualMethodContributor> customVirtualMethods = new ArrayList<>();
     private int topLevelNameLimit = 10000;
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
+    private boolean strict;
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
@@ -207,6 +209,10 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         this.topLevelNameLimit = topLevelNameLimit;
     }
 
+    public void setStrict(boolean strict) {
+        this.strict = strict;
+    }
+
     @Override
     public boolean requiresRegisterAllocation() {
         return true;
@@ -274,6 +280,14 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
         exceptionCons.getVariable(1).propagate(stringType);
         exceptionCons.use();
 
+        if (strict) {
+            exceptionCons = dependencyAnalyzer.linkMethod(new MethodReference(
+                    ArrayIndexOutOfBoundsException.class, "<init>", void.class));
+            exceptionCons.getVariable(0).propagate(dependencyAnalyzer.getType(
+                    ArrayIndexOutOfBoundsException.class.getName()));
+            exceptionCons.use();
+        }
+
         if (stackTraceIncluded) {
             includeStackTraceMethods(dependencyAnalyzer);
         }
@@ -324,6 +338,9 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
     @Override
     public void beforeOptimizations(Program program, MethodReader method) {
+        if (strict) {
+            new BoundCheckInsertion().transformProgram(program, method.getReference());
+        }
     }
 
     @Override

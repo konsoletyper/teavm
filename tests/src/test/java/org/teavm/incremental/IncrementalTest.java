@@ -207,6 +207,7 @@ public class IncrementalTest {
             vm.setProgramCache(programCache);
             target.setAstCache(astCache);
             target.setMinifying(false);
+            target.setStrict(true);
             vm.add(new EntryPointTransformer(entryPoint));
             vm.entryPoint(EntryPoint.class.getName());
             vm.installPlugins();

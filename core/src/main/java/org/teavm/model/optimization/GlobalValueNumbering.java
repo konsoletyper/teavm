@@ -37,6 +37,7 @@ import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.BinaryBranchingInstruction;
 import org.teavm.model.instructions.BinaryInstruction;
 import org.teavm.model.instructions.BinaryOperation;
+import org.teavm.model.instructions.BoundCheckInstruction;
 import org.teavm.model.instructions.BranchingInstruction;
 import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.CastIntegerInstruction;
@@ -780,6 +781,16 @@ public class GlobalValueNumbering implements MethodOptimization {
         public void visit(MonitorExitInstruction insn) {
             int val = replaceMap[insn.getObjectRef().getIndex()];
             insn.setObjectRef(program.variableAt(val));
+        }
+
+        @Override
+        public void visit(BoundCheckInstruction insn) {
+            int index = replaceMap[insn.getIndex().getIndex()];
+            insn.setIndex(program.variableAt(index));
+            if (insn.getArray() != null) {
+                int array = replaceMap[insn.getArray().getIndex()];
+                insn.setArray(program.variableAt(array));
+            }
         }
     };
 }

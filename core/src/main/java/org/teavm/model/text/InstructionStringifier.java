@@ -36,6 +36,9 @@ class InstructionStringifier implements InstructionReader {
         Set<String> occupiedLabels = new HashSet<>();
         for (int i = 0; i < program.variableCount(); ++i) {
             VariableReader var = program.variableAt(i);
+            if (var == null) {
+                continue;
+            }
             String suggestedName = var.getLabel() != null ? var.getLabel() : Integer.toString(i);
             if (!occupiedLabels.add(suggestedName)) {
                 int suffix = 1;

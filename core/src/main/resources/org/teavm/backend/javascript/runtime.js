@@ -630,3 +630,21 @@ var $rt_udiv = function(a, b) {
 var $rt_umod = function(a, b) {
     return ((a >>> 0) % (b >>> 0)) >>> 0;
 };
+function $rt_checkBounds(index, array) {
+    if (index < 0 || index >= array.length) {
+        $rt_throwAIOOBE();
+    }
+    return index;
+}
+function $rt_checkUpperBound(index, array) {
+    if (index >= array.length) {
+        $rt_throwAIOOBE();
+    }
+    return index;
+}
+function $rt_checkLowerBound(index) {
+    if (index < 0) {
+        $rt_throwAIOOBE();
+    }
+    return index;
+}

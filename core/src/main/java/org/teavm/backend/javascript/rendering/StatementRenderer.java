@@ -1564,7 +1564,36 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(BoundCheckExpr expr) {
-        expr.getIndex().acceptVisitor(this);
+        try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
+
+            if (expr.getArray() != null && expr.isLower()) {
+                writer.appendFunction("$rt_checkBounds").append("(");
+            } else if (expr.getArray() != null) {
+                writer.appendFunction("$rt_checkUpperBound").append("(");
+            } else if (expr.isLower()) {
+                writer.appendFunction("$rt_checkLowerBound").append("(");
+            }
+
+            expr.getIndex().acceptVisitor(this);
+
+            if (expr.getArray() != null) {
+                writer.append(",").ws();
+                expr.getArray().acceptVisitor(this);
+            }
+
+            if (expr.getArray() != null || expr.isLower()) {
+                writer.append(")");
+            }
+
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
+        } catch (IOException e) {
+            throw new RenderingException("IO error occurred", e);
+        }
     }
 
     private class InjectorContextImpl implements InjectorContext {

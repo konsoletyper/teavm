@@ -26,6 +26,7 @@ import org.mozilla.javascript.ast.AstRoot;
 import org.teavm.backend.javascript.codegen.SourceWriter;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReader;
@@ -46,6 +47,8 @@ public class RuntimeRenderer {
             "<init>", String.class, String.class, String.class, int.class, void.class);
     private static final MethodReference SET_STACK_TRACE_METHOD = new MethodReference(Throwable.class,
             "setStackTrace", StackTraceElement[].class, void.class);
+    private static final MethodReference AIOOBE_INIT_METHOD = new MethodReference(ArrayIndexOutOfBoundsException.class,
+            "<init>", void.class);
 
     private final ClassReaderSource classSource;
     private final SourceWriter writer;
@@ -69,6 +72,7 @@ public class RuntimeRenderer {
             renderRuntimeCreateException();
             renderCreateStackTraceElement();
             renderSetStackTrace();
+            renderThrowAIOOBE();
         } catch (IOException e) {
             throw new RenderingException("IO error", e);
         }
@@ -247,6 +251,20 @@ public class RuntimeRenderer {
             writer.appendMethodBody(SET_STACK_TRACE_METHOD);
             writer.append("(e,").ws().append("stack);").softNewLine();
         }
+        writer.outdent().append("}").newLine();
+    }
+
+    private void renderThrowAIOOBE() throws IOException {
+        writer.append("function $rt_throwAIOOBE()").ws().append("{").indent().softNewLine();
+
+        ClassReader cls = classSource.get(AIOOBE_INIT_METHOD.getClassName());
+        if (cls != null) {
+            MethodReader method = cls.getMethod(AIOOBE_INIT_METHOD.getDescriptor());
+            if (method != null && !method.hasModifier(ElementModifier.ABSTRACT)) {
+                writer.append("$rt_throw(").appendInit(AIOOBE_INIT_METHOD).append("());").softNewLine();
+            }
+        }
+
         writer.outdent().append("}").newLine();
     }
 }

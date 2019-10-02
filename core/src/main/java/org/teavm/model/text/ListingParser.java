@@ -444,6 +444,7 @@ public class ListingParser {
                             insn.setLower(true);
                         }
                         addInstruction(insn);
+                        break;
                     }
                     default:
                         unexpected();

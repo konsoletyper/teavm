@@ -770,7 +770,8 @@ public class CodeServlet extends HttpServlet {
         jsTarget.setMinifying(false);
         jsTarget.setAstCache(astCache);
         jsTarget.setDebugEmitter(debugInformationBuilder);
-        jsTarget.setTopLevelNameLimit(500);
+        jsTarget.setTopLevelNameLimit(2000);
+        jsTarget.setStrict(true);
         vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
         vm.setCacheStatus(classSource);
         vm.addVirtualMethods(m -> true);
