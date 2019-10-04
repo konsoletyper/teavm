@@ -21,6 +21,8 @@ import org.teavm.jso.JSProperty;
 import org.teavm.jso.dom.events.Event;
 import org.teavm.jso.dom.events.EventListener;
 import org.teavm.jso.dom.events.MessageEvent;
+import org.teavm.jso.typedarrays.ArrayBuffer;
+import org.teavm.jso.typedarrays.ArrayBufferView;
 
 public abstract class WebSocket implements JSObject {
   @JSProperty("onclose")
@@ -51,6 +53,10 @@ public abstract class WebSocket implements JSObject {
   public abstract void close(int code, String reason);
 
   public abstract void send(String data);
+
+  public abstract void send(ArrayBuffer data);
+
+  public abstract void send(ArrayBufferView data);
 
   @JSProperty
   public abstract String getBinaryType();
