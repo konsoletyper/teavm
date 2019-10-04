@@ -106,12 +106,13 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
+import org.teavm.model.lowlevel.CheckInstructionTransformation;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ExportDependencyListener;
 import org.teavm.model.lowlevel.LowLevelNullCheckFilter;
-import org.teavm.model.lowlevel.NullCheckTransformation;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
+import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.AsyncMethodFinder;
@@ -150,7 +151,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
     private NullCheckInsertion nullCheckInsertion;
-    private NullCheckTransformation nullCheckTransformation;
+    private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
+    private CheckInstructionTransformation checkTransformation;
     private ExportDependencyListener exportDependencyListener = new ExportDependencyListener();
     private int minHeapSize = 4 * 1024 * 1024;
     private int maxHeapSize = 128 * 1024 * 1024;
@@ -222,7 +224,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         classInitializerTransformer = new ClassInitializerTransformer();
         shadowStackTransformer = new ShadowStackTransformer(characteristics, !longjmpUsed);
         nullCheckInsertion = new NullCheckInsertion(new LowLevelNullCheckFilter(characteristics));
-        nullCheckTransformation = new NullCheckTransformation();
+        checkTransformation = new CheckInstructionTransformation();
 
         controller.addVirtualMethods(VIRTUAL_METHODS::contains);
     }
@@ -267,6 +269,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwNullPointerException",
                 void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class,
+                "throwArrayIndexOutOfBoundsException", void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(NullPointerException.class, "<init>", void.class))
                 .propagate(0, NullPointerException.class.getName())
                 .use();
@@ -324,6 +328,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     @Override
     public void beforeOptimizations(Program program, MethodReader method) {
         nullCheckInsertion.transformProgram(program, method.getReference());
+        boundCheckInsertion.transformProgram(program, method.getReference());
     }
 
     @Override
@@ -331,7 +336,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
         if (!longjmpUsed) {
-            nullCheckTransformation.apply(program, method.getResultType());
+            checkTransformation.apply(program, method.getResultType());
         }
         new CoroutineTransformation(controller.getUnprocessedClassSource(), asyncMethods, hasThreads)
                 .apply(program, method.getReference());
@@ -394,8 +399,8 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         if (incremental) {
             configHeaderWriter.println("#define TEAVM_INCREMENTAL 1");
         }
-        if (longjmpUsed) {
-            configHeaderWriter.println("#define TEAVM_USE_SETJMP 1");
+        if (!longjmpUsed) {
+            configHeaderWriter.println("#define TEAVM_USE_SETJMP 0");
         }
         if (vmAssertions) {
             configHeaderWriter.println("#define TEAVM_MEMORY_TRACE 1");

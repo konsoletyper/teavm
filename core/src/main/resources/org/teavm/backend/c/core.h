@@ -5,7 +5,6 @@
 #include "definitions.h"
 #include "heapdump.h"
 #include "memory.h"
-#include "exceptions.h"
 
 #if TEAVM_MEMORY_TRACE
     #include "heaptrace.h"
@@ -52,6 +51,10 @@ typedef struct TeaVM_String {
 } TeaVM_String;
 
 extern char* teavm_beforeClasses;
+
+extern void* teavm_throwClassCastException();
+extern void teavm_throwNullPointerException();
+extern void teavm_throwArrayIndexOutOfBoundsException();
 
 #define TEAVM_PACK_CLASS(cls) ((int32_t) ((uintptr_t) ((char*) (cls) - teavm_beforeClasses) >> 3))
 #define TEAVM_UNPACK_CLASS(cls) ((TeaVM_Class*) (teavm_beforeClasses + ((cls) << 3)))

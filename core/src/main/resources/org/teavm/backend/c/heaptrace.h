@@ -1,6 +1,7 @@
 #pragma once
 #include <stdint.h>
 #include <stdio.h>
+#include <stddef.h>
 #include "definitions.h"
 
 #if TEAVM_MEMORY_TRACE

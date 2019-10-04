@@ -1423,7 +1423,37 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
     @Override
     public void visit(BoundCheckExpr expr) {
+        if (expr.getArray() == null && !expr.isLower()) {
+            expr.getIndex().acceptVisitor(this);
+            return;
+        }
+
+        boolean needParenthesis = false;
+        if (needsCallSiteId()) {
+            needParenthesis = true;
+            withCallSite();
+        }
+
+        String functionName;
+        if (expr.getArray() == null) {
+            functionName = "teavm_checkLowerBound";
+        } else if (!expr.isLower()) {
+            functionName = "teavm_checkUpperBound";
+        } else {
+            functionName = "teavm_checkBounds";
+        }
+
+        writer.print(functionName);
+        writer.print("(");
         expr.getIndex().acceptVisitor(this);
+        if (expr.getArray() != null) {
+            writer.print(", ");
+            visitReference(expr.getArray());
+        }
+        writer.print(")");
+        if (needParenthesis) {
+            writer.print(")");
+        }
     }
 
     private IntrinsicContext intrinsicContext = new IntrinsicContext() {

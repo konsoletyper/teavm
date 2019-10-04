@@ -127,6 +127,12 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
+    @Export(name = "teavm_throwArrayIndexOutOfBoundsException")
+    public static void throwArrayIndexOutOfBoundsException() {
+        throw new ArrayIndexOutOfBoundsException();
+    }
+
+    @Unmanaged
     public static int callStackSize() {
         Address stackFrame = ShadowStack.getStackTop();
         int size = 0;

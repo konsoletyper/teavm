@@ -4,6 +4,10 @@
 #include "string.h"
 #include "definitions.h"
 
+#if TEAVM_USE_SETJMP
+#include <setjmp.h>
+#endif
+
 typedef struct {
     TeaVM_String* value;
 } TeaVM_StringPtr;

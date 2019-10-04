@@ -1,14 +1,12 @@
 #pragma once
 #include "definitions.h"
+#include "core.h"
 #include <stdint.h>
 #include <stddef.h>
 
 #if TEAVM_USE_SETJMP
     #include <setjmp.h>
 #endif
-
-extern void* teavm_throwClassCastException();
-extern void teavm_throwNullPointerException();
 
 #if TEAVM_USE_SETJMP
     #define TEAVM_JUMP_SUPPORTED 1
@@ -35,18 +33,7 @@ extern void teavm_throwNullPointerException();
     #define TEAVM_JUMP_TO_FRAME(frame, id) \
         teavm_stackTop = (TeaVM_StackFrame*) (frame); \
         longjmp(*teavm_stackTop->jmpTarget, id)
-    inline static void* teavm_nullCheck(void* o) {
-        if (o == NULL) {
-            teavm_throwNullPointerException();
-            #if TEAVM_UNIX
-                __builtin_unreachable();
-            #endif
-            #if TEAVM_WINDOWS
-                __assume(0);
-            #endif
-        }
-        return o;
-    }
+
 
     #if TEAVM_UNIX
         #define TEAVM_UNREACHABLE __builtin_unreachable();
@@ -57,6 +44,38 @@ extern void teavm_throwNullPointerException();
     #ifndef TEAVM_UNREACHABLE
         #define TEAVM_UNREACHABLE return;
     #endif
+
+    inline static void* teavm_nullCheck(void* o) {
+        if (o == NULL) {
+            teavm_throwNullPointerException();
+            TEAVM_UNREACHABLE
+        }
+        return o;
+    }
+
+    inline static int32_t teavm_checkBounds(int32_t index, void* array) {
+        if (index < 0 || index >= TEAVM_ARRAY_LENGTH(array)) {
+            teavm_throwArrayIndexOutOfBoundsException();
+            TEAVM_UNREACHABLE
+        }
+        return index;
+    }
+
+    inline static int32_t teavm_checkLowerBound(int32_t index) {
+        if (index < 0) {
+            teavm_throwArrayIndexOutOfBoundsException();
+            TEAVM_UNREACHABLE
+        }
+        return index;
+    }
+
+    inline static int32_t teavm_checkUpperBound(int32_t index, void* array) {
+        if (index >= TEAVM_ARRAY_LENGTH(array)) {
+            teavm_throwArrayIndexOutOfBoundsException();
+            TEAVM_UNREACHABLE
+        }
+        return index;
+    }
 
 #else
     #define TEAVM_JUMP_SUPPORTED 0
