@@ -95,7 +95,9 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.RaiseInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
-import org.teavm.model.lowlevel.BoundCheckInsertion;
+import org.teavm.model.transformation.BoundCheckInsertion;
+import org.teavm.model.transformation.NullCheckFilter;
+import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.model.util.ProgramUtils;
 import org.teavm.vm.BuildTarget;
@@ -128,6 +130,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     private int topLevelNameLimit = 10000;
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
     private boolean strict;
+    private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
+    private NullCheckInsertion nullCheckInsertion = new NullCheckInsertion(NullCheckFilter.EMPTY);
 
     @Override
     public List<ClassHolderTransformer> getTransformers() {
@@ -339,7 +343,8 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     @Override
     public void beforeOptimizations(Program program, MethodReader method) {
         if (strict) {
-            new BoundCheckInsertion().transformProgram(program, method.getReference());
+            boundCheckInsertion.transformProgram(program, method.getReference());
+            nullCheckInsertion.transformProgram(program, method.getReference());
         }
     }
 

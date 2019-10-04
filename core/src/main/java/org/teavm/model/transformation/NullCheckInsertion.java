@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.lowlevel;
+package org.teavm.model.transformation;
 
 import com.carrotsearch.hppc.IntHashSet;
 import com.carrotsearch.hppc.IntSet;
@@ -39,14 +39,14 @@ import org.teavm.model.util.DominatorWalkerCallback;
 import org.teavm.model.util.PhiUpdater;
 
 public class NullCheckInsertion {
-    private Characteristics characteristics;
+    private NullCheckFilter filter;
 
-    public NullCheckInsertion(Characteristics characteristics) {
-        this.characteristics = characteristics;
+    public NullCheckInsertion(NullCheckFilter filter) {
+        this.filter = filter;
     }
 
     public void transformProgram(Program program, MethodReference methodReference) {
-        if (!characteristics.isManaged(methodReference) || program.basicBlockCount() == 0) {
+        if (!filter.apply(methodReference) || program.basicBlockCount() == 0) {
             return;
         }
 
@@ -99,14 +99,14 @@ public class NullCheckInsertion {
 
         @Override
         public void visit(GetFieldInstruction insn) {
-            if (!characteristics.isStructure(insn.getField().getClassName())) {
+            if (filter.apply(insn.getField())) {
                 addGuard(insn, GetFieldInstruction::getInstance, GetFieldInstruction::setInstance);
             }
         }
 
         @Override
         public void visit(PutFieldInstruction insn) {
-            if (!characteristics.isStructure(insn.getField().getClassName())) {
+            if (filter.apply(insn.getField())) {
                 addGuard(insn, PutFieldInstruction::getInstance, PutFieldInstruction::setInstance);
             }
         }
@@ -123,8 +123,7 @@ public class NullCheckInsertion {
 
         @Override
         public void visit(InvokeInstruction insn) {
-            if (!characteristics.isStructure(insn.getMethod().getClassName())
-                    && characteristics.isManaged(insn.getMethod())) {
+            if (filter.apply(insn.getMethod())) {
                 addGuard(insn, InvokeInstruction::getInstance, InvokeInstruction::setInstance);
             }
         }

@@ -109,10 +109,11 @@ import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ExportDependencyListener;
-import org.teavm.model.lowlevel.NullCheckInsertion;
+import org.teavm.model.lowlevel.LowLevelNullCheckFilter;
 import org.teavm.model.lowlevel.NullCheckTransformation;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
 import org.teavm.model.transformation.ClassPatch;
+import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.model.util.AsyncMethodFinder;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.CallSite;
@@ -220,7 +221,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
         shadowStackTransformer = new ShadowStackTransformer(characteristics, !longjmpUsed);
-        nullCheckInsertion = new NullCheckInsertion(characteristics);
+        nullCheckInsertion = new NullCheckInsertion(new LowLevelNullCheckFilter(characteristics));
         nullCheckTransformation = new NullCheckTransformation();
 
         controller.addVirtualMethods(VIRTUAL_METHODS::contains);

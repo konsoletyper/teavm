@@ -30,6 +30,7 @@ public enum Precedence {
     ADDITION,
     MULTIPLICATION,
     UNARY,
+    NEW,
     FUNCTION_CALL,
     MEMBER_ACCESS,
     GROUPING;

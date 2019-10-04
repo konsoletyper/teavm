@@ -1113,6 +1113,11 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             if (injector != null) {
                 injector.generate(new InjectorContextImpl(expr.getArguments()), expr.getMethod());
             } else {
+                Precedence outerPrecedence = precedence;
+                if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
+                    writer.append('(');
+                }
+
                 if (expr.getType() == InvocationType.DYNAMIC) {
                     precedence = Precedence.MEMBER_ACCESS;
                     expr.getArguments().get(0).acceptVisitor(this);
@@ -1184,6 +1189,10 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 if (shouldEraseCallSite) {
                     lastCallSite = null;
                 }
+
+                if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
+                    writer.append(')');
+                }
             }
             if (expr.getLocation() != null) {
                 popLocation();
@@ -1224,14 +1233,14 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             }
 
             Precedence outerPrecedence = precedence;
-            if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
+            if (outerPrecedence.ordinal() > Precedence.NEW.ordinal()) {
                 writer.append('(');
             }
 
-            precedence = Precedence.FUNCTION_CALL;
+            precedence = Precedence.NEW;
 
             writer.append("new ").appendClass(expr.getConstructedClass());
-            if (outerPrecedence.ordinal() > Precedence.FUNCTION_CALL.ordinal()) {
+            if (outerPrecedence.ordinal() > Precedence.NEW.ordinal()) {
                 writer.append(')');
             }
 
