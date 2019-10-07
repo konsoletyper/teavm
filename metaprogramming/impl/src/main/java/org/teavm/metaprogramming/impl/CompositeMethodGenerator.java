@@ -681,6 +681,7 @@ public class CompositeMethodGenerator {
             BasicBlock target = program.basicBlockAt(returnBlockIndex);
 
             if (valueToReturn != null) {
+                Variable valueToReturnResolved = var(valueToReturn);
                 if (resultVar == null) {
                     resultVar = program.createVariable();
                     resultPhi = new Phi();
@@ -689,7 +690,7 @@ public class CompositeMethodGenerator {
                 }
                 Incoming incoming = new Incoming();
                 incoming.setSource(program.basicBlockAt(blockIndex));
-                incoming.setValue(var(valueToReturn));
+                incoming.setValue(valueToReturnResolved);
                 resultPhi.getIncomings().add(incoming);
             }
 
