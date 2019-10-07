@@ -321,14 +321,12 @@ void teavm_gc_defragCompleted() {
 }
 
 void teavm_gc_setDumpDirectory(const wchar_t* path) {
-    #if TEAVM_MEMORY_TRACE
-        if (teavm_gc_dumpDirectory != NULL) {
-            free(teavm_gc_dumpDirectory);
-        }
-        size_t pathLen = wcslen(path);
-        size_t bytesLen = sizeof(wchar_t) * (pathLen + 1);
-        teavm_gc_dumpDirectory = malloc(bytesLen);
-        memcpy(teavm_gc_dumpDirectory, path, bytesLen);
-    #endif
+    if (teavm_gc_dumpDirectory != NULL) {
+        free(teavm_gc_dumpDirectory);
+    }
+    size_t pathLen = wcslen(path);
+    size_t bytesLen = sizeof(wchar_t) * (pathLen + 1);
+    teavm_gc_dumpDirectory = malloc(bytesLen);
+    memcpy(teavm_gc_dumpDirectory, path, bytesLen);
 }
 
