@@ -746,7 +746,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     private static SourceLocation map(TextLocation location) {
-        if (location == null) {
+        if (location == null || location.isEmpty()) {
             return null;
         }
         return new SourceLocation(location.getFileName(), location.getLine());

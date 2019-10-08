@@ -65,8 +65,7 @@ public final class LocationGraphBuilder {
         for (int terminal : visitor.nodes) {
             visitor.terminalNodes.set(terminal);
         }
-        TextLocation[][] locations = propagate(visitor.locations.toArray(new TextLocation[0]), graph
-        );
+        TextLocation[][] locations = propagate(visitor.locations.toArray(new TextLocation[0]), graph);
 
         Map<TextLocation, Set<TextLocation>> builder = new LinkedHashMap<>();
         for (int i = 0; i < graph.size(); ++i) {
@@ -353,7 +352,7 @@ public final class LocationGraphBuilder {
         }
 
         private void setLocation(TextLocation location) {
-            if (location == null) {
+            if (location == null || location.isEmpty()) {
                 return;
             }
             int node = createNode(location);

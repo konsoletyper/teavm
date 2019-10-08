@@ -153,6 +153,9 @@ public class DefaultNamingStrategy implements NamingStrategy {
         String cls = fieldRef.getClassName();
         while (cls != null) {
             ClassReader clsReader = classSource.get(cls);
+            if (clsReader == null) {
+                break;
+            }
             if (clsReader != null) {
                 FieldReader fieldReader = clsReader.getField(fieldRef.getFieldName());
                 if (fieldReader != null) {
@@ -164,7 +167,7 @@ public class DefaultNamingStrategy implements NamingStrategy {
         return fieldRef;
     }
 
-    private final class Key {
+    static final class Key {
         final MethodReference data;
         int hash;
         final byte classifier;

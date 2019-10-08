@@ -348,7 +348,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     }
 
     static class ClassMetadata {
-        int parentIndex;
+        int parentIndex = -1;
         String jsName;
         Map<Integer, Integer> fieldMap = new HashMap<>();
     }

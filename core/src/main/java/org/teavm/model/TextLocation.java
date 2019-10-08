@@ -19,12 +19,22 @@ import java.io.Serializable;
 import java.util.Objects;
 
 public class TextLocation implements Serializable {
+    public static final TextLocation EMPTY = new TextLocation(null, -1);
+    private static final InliningInfo[] EMPTY_ARRAY = new InliningInfo[0];
+
     private String fileName;
-    private int line = -1;
+    private int line;
+    private InliningInfo inlining;
+    private transient int hash;
 
     public TextLocation(String fileName, int line) {
+        this(fileName, line, null);
+    }
+
+    public TextLocation(String fileName, int line, InliningInfo inlining) {
         this.fileName = fileName;
         this.line = line;
+        this.inlining = inlining;
     }
 
     public String getFileName() {
@@ -35,12 +45,47 @@ public class TextLocation implements Serializable {
         return line;
     }
 
+    public InliningInfo getInlining() {
+        return inlining;
+    }
+
+    public InliningInfo[] getInliningPath() {
+        if (inlining == null) {
+            return EMPTY_ARRAY;
+        }
+
+        InliningInfo inlining = this.inlining;
+        int sz = 0;
+        while (inlining != null) {
+            sz++;
+            inlining = inlining.getParent();
+        }
+
+        InliningInfo[] result = new InliningInfo[sz];
+        inlining = this.inlining;
+        while (inlining != null) {
+            result[--sz] = inlining;
+            inlining = inlining.getParent();
+        }
+
+        return result;
+    }
+
+    public boolean isEmpty() {
+        return fileName == null && line < 0;
+    }
+
     @Override
     public int hashCode() {
-        final int prime = 31;
-        int result = 1;
-        result = prime * result + (fileName == null ? 0 : fileName.hashCode());
-        result = prime * result + line;
+        int result = hash;
+        if (result == 0) {
+            final int prime = 31;
+            result = 1;
+            result = prime * result + (fileName == null ? 0 : fileName.hashCode());
+            result = prime * result + line;
+            result = prime * result + (inlining != null ? inlining.hashCode() : 0);
+            hash = result;
+        }
         return result;
     }
 
@@ -53,11 +98,29 @@ public class TextLocation implements Serializable {
             return false;
         }
         TextLocation other = (TextLocation) obj;
-        return Objects.equals(fileName, other.fileName) && line == other.line;
+        return Objects.equals(fileName, other.fileName) && line == other.line
+                && Objects.equals(inlining, other.inlining);
     }
 
     @Override
     public String toString() {
-        return fileName + ":" + line;
+        StringBuilder sb = new StringBuilder();
+        sb.append(fileName).append(':').append(line);
+        InliningInfo inlining = this.inlining;
+        if (inlining != null) {
+            sb.append('[');
+            boolean first = true;
+            while (inlining != null) {
+                if (!first) {
+                    sb.append("->");
+                }
+                first = false;
+                sb.append(inlining.getMethod()).append("@")
+                        .append(inlining.getFileName()).append(':').append(inlining.getLine());
+                inlining = inlining.getParent();
+            }
+            sb.append(']');
+        }
+        return sb.toString();
     }
 }

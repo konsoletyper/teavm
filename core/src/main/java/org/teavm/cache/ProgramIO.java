@@ -24,6 +24,7 @@ import org.teavm.model.BasicBlockReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Incoming;
 import org.teavm.model.IncomingReader;
+import org.teavm.model.InliningInfo;
 import org.teavm.model.Instruction;
 import org.teavm.model.InvokeDynamicInstruction;
 import org.teavm.model.MethodDescriptor;
@@ -206,6 +207,7 @@ public class ProgramIO {
                 block.getTryCatchBlocks().add(tryCatch);
             }
 
+            InliningInfo inliningInfo = null;
             TextLocation location = null;
             insnLoop: while (true) {
                 int insnType = data.readUnsigned();
@@ -213,19 +215,39 @@ public class ProgramIO {
                     case 0:
                         break insnLoop;
                     case 1:
-                        location = null;
+                        location = new TextLocation(null, -1, inliningInfo);
                         break;
                     case 2: {
                         String file = fileTable.at(data.readUnsigned());
                         int line = data.readUnsigned();
-                        location = new TextLocation(file, line);
+                        location = new TextLocation(file, line, inliningInfo);
                         break;
                     }
                     case 127: {
                         int line = location.getLine() + data.readSigned();
-                        location = new TextLocation(location.getFileName(), line);
+                        location = new TextLocation(location.getFileName(), line, inliningInfo);
                         break;
                     }
+                    case 124:
+                    case 125: {
+                        String className = symbolTable.at(data.readUnsigned());
+                        MethodDescriptor methodDescriptor = parseMethodDescriptor(symbolTable.at(data.readUnsigned()));
+                        String fileName;
+                        int lineNumber;
+                        if (insnType == 125) {
+                            fileName = fileTable.at(data.readUnsigned());
+                            lineNumber = data.readUnsigned();
+                        } else {
+                            fileName = null;
+                            lineNumber = -1;
+                        }
+                        inliningInfo = new InliningInfo(createMethodReference(className, methodDescriptor),
+                                fileName, lineNumber, inliningInfo);
+                        break;
+                    }
+                    case 126:
+                        inliningInfo = inliningInfo.getParent();
+                        break;
                     default: {
                         Instruction insn = readInstruction(insnType, program, data);
                         insn.setLocation(location);
@@ -241,7 +263,7 @@ public class ProgramIO {
 
     private class InstructionWriter implements InstructionReader {
         private VarDataOutput output;
-        TextLocation location;
+        TextLocation location = TextLocation.EMPTY;
 
         InstructionWriter(VarDataOutput output) {
             this.output = output;
@@ -250,11 +272,41 @@ public class ProgramIO {
         @Override
         public void location(TextLocation newLocation) {
             try {
-                if (newLocation == null || newLocation.getFileName() == null || newLocation.getLine() < 0) {
+                if (newLocation == null) {
+                    newLocation = TextLocation.EMPTY;
+                }
+
+                InliningInfo lastCommonInlining = null;
+                InliningInfo[] prevPath = location.getInliningPath();
+                InliningInfo[] newPath = newLocation.getInliningPath();
+                int pathIndex = 0;
+                while (pathIndex < prevPath.length && pathIndex < newPath.length
+                        && prevPath[pathIndex].equals(newPath[pathIndex])) {
+                    lastCommonInlining = prevPath[pathIndex++];
+                }
+
+                InliningInfo prevInlining = location.getInlining();
+                while (prevInlining != lastCommonInlining) {
+                    output.writeUnsigned(126);
+                    prevInlining = prevInlining.getParent();
+                }
+
+                while (pathIndex < newPath.length) {
+                    InliningInfo inlining = newPath[pathIndex++];
+                    MethodReference method = inlining.getMethod();
+                    output.writeUnsigned(inlining.isEmpty() ? 124 : 125);
+                    output.writeUnsigned(symbolTable.lookup(method.getClassName()));
+                    output.writeUnsigned(symbolTable.lookup(method.getDescriptor().toString()));
+                    if (!inlining.isEmpty()) {
+                        output.writeUnsigned(fileTable.lookup(inlining.getFileName()));
+                        output.writeUnsigned(inlining.getLine());
+                    }
+                }
+
+                if (newLocation.isEmpty()) {
                     output.writeUnsigned(1);
-                    location = null;
                 } else {
-                    if (location != null && location.getFileName().equals(newLocation.getFileName())) {
+                    if (!location.isEmpty() && location.getFileName().equals(newLocation.getFileName())) {
                         output.writeUnsigned(127);
                         output.writeSigned(newLocation.getLine() - location.getLine());
                     } else {
@@ -262,8 +314,8 @@ public class ProgramIO {
                         output.writeUnsigned(fileTable.lookup(newLocation.getFileName()));
                         output.writeUnsigned(newLocation.getLine());
                     }
-                    location = newLocation;
                 }
+                location = newLocation;
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
             }

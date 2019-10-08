@@ -37,6 +37,7 @@ import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.Incoming;
+import org.teavm.model.InliningInfo;
 import org.teavm.model.Instruction;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReader;
@@ -44,6 +45,7 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.ProgramReader;
+import org.teavm.model.TextLocation;
 import org.teavm.model.TryCatchBlock;
 import org.teavm.model.VariableReader;
 import org.teavm.model.analysis.ClassInference;
@@ -178,7 +180,7 @@ public class Inlining {
         if (step == null) {
             return false;
         }
-        List<PlanEntry> plan = buildPlan(program, -1, step, method);
+        List<PlanEntry> plan = buildPlan(program, -1, step, method, null);
         if (plan.isEmpty()) {
             return false;
         }
@@ -227,6 +229,8 @@ public class Inlining {
         jumpToInlinedProgram.setTarget(firstInlineBlock);
         block.add(jumpToInlinedProgram);
 
+        InliningInfoMerger inliningInfoMerger = new InliningInfoMerger(planEntry.locationInfo);
+
         for (int i = 0; i < inlineProgram.basicBlockCount(); ++i) {
             BasicBlock blockToInline = inlineProgram.basicBlockAt(i);
             BasicBlock inlineBlock = program.basicBlockAt(firstInlineBlock.getIndex() + i);
@@ -244,6 +248,14 @@ public class Inlining {
                         }
                     }
                 }
+
+                TextLocation location = insn.getLocation();
+                if (location == null) {
+                    location = TextLocation.EMPTY;
+                }
+                location = new TextLocation(location.getFileName(), location.getLine(),
+                        inliningInfoMerger.merge(location.getInlining()));
+                insn.setLocation(location);
             }
 
             List<Phi> phis = new ArrayList<>(blockToInline.getPhis());
@@ -324,7 +336,8 @@ public class Inlining {
         execPlan(program, planEntry.innerPlan, firstInlineBlock.getIndex());
     }
 
-    private List<PlanEntry> buildPlan(Program program, int depth, InliningStep step, MethodReference method) {
+    private List<PlanEntry> buildPlan(Program program, int depth, InliningStep step, MethodReference method,
+            InliningInfo inliningInfo) {
         List<PlanEntry> plan = new ArrayList<>();
         int originalDepth = depth;
 
@@ -373,13 +386,22 @@ public class Inlining {
                 }
                 Program invokedProgram = ProgramUtils.copy(invokedMethod.getProgram());
 
+                TextLocation location = insn.getLocation();
+                InliningInfo innerInliningInfo = new InliningInfo(
+                        invoke.getMethod(),
+                        location != null ? location.getFileName() : null,
+                        location != null ? location.getLine() : -1,
+                        inliningInfo);
+
                 PlanEntry entry = new PlanEntry();
                 entry.targetBlock = block.getIndex();
                 entry.targetInstruction = insn;
                 entry.program = invokedProgram;
-                entry.innerPlan.addAll(buildPlan(invokedProgram, depth + 1, innerStep, invokedMethod.getReference()));
+                entry.innerPlan.addAll(buildPlan(invokedProgram, depth + 1, innerStep, invokedMethod.getReference(),
+                        inliningInfo));
                 entry.depth = depth;
                 entry.method = invokedMethod.getReference();
+                entry.locationInfo = innerInliningInfo;
                 plan.add(entry);
             }
         }
@@ -441,6 +463,7 @@ public class Inlining {
         Program program;
         int depth;
         final List<PlanEntry> innerPlan = new ArrayList<>();
+        InliningInfo locationInfo;
     }
 
     static class MethodUsageCounter extends AbstractInstructionReader {

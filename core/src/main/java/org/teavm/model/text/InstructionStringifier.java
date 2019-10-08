@@ -158,6 +158,11 @@ class InstructionStringifier implements InstructionReader {
     }
 
     private InstructionStringifier escapeIdentifierIfNeeded(String s) {
+        escapeIdentifierIfNeeded(sb, s);
+        return this;
+    }
+
+    static void escapeIdentifierIfNeeded(StringBuilder sb, String s) {
         boolean needsEscaping = false;
         if (s.isEmpty()) {
             needsEscaping = true;
@@ -176,8 +181,6 @@ class InstructionStringifier implements InstructionReader {
         } else {
             sb.append(s);
         }
-
-        return this;
     }
 
     @Override

@@ -71,6 +71,7 @@ import org.teavm.ast.VariableNode;
 import org.teavm.ast.WhileStatement;
 import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldReference;
+import org.teavm.model.InliningInfo;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ReferenceCache;
@@ -89,6 +90,7 @@ public class AstIO {
     private ReferenceCache referenceCache;
     private TextLocation lastWrittenLocation;
     private TextLocation lastReadLocation;
+    private InliningInfo lastReadInlining;
 
     public AstIO(ReferenceCache referenceCache, SymbolTable symbolTable, SymbolTable fileTable,
             SymbolTable variableTable) {
@@ -99,7 +101,7 @@ public class AstIO {
     }
 
     public void write(VarDataOutput output, ControlFlowEntry[] cfg) throws IOException {
-        lastWrittenLocation = null;
+        lastWrittenLocation = TextLocation.EMPTY;
         output.writeUnsigned(cfg.length);
         for (ControlFlowEntry entry : cfg) {
             writeLocation(output, entry.from);
@@ -130,7 +132,7 @@ public class AstIO {
     }
 
     public ControlFlowEntry[] readControlFlow(VarDataInput input) throws IOException {
-        lastReadLocation = null;
+        lastReadLocation = TextLocation.EMPTY;
         int size = input.readUnsigned();
         ControlFlowEntry[] result = new ControlFlowEntry[size];
         for (int i = 0; i < size; ++i) {
@@ -152,7 +154,7 @@ public class AstIO {
         for (int i = 0; i < varCount; ++i) {
             node.getVariables().add(readVariable(input));
         }
-        lastReadLocation = null;
+        lastReadLocation = TextLocation.EMPTY;
         node.setBody(readStatement(input));
         return node;
     }
@@ -211,23 +213,24 @@ public class AstIO {
     }
 
     private void writeLocation(VarDataOutput output, TextLocation location) throws IOException {
-        if (location == null || location.getFileName() == null) {
+        if (location == null) {
+            location = TextLocation.EMPTY;
+        }
+        if (location.isEmpty()) {
             output.writeUnsigned(0);
-            lastWrittenLocation = null;
-        } else if (lastWrittenLocation != null && lastWrittenLocation.getFileName().equals(location.getFileName())) {
+        } else if (!lastWrittenLocation.isEmpty() && lastWrittenLocation.getFileName().equals(location.getFileName())) {
             output.writeUnsigned(1);
             output.writeSigned(location.getLine() - lastWrittenLocation.getLine());
-            lastWrittenLocation = location;
         } else {
             output.writeUnsigned(fileTable.lookup(location.getFileName()) + 2);
             output.writeUnsigned(location.getLine());
-            lastWrittenLocation = location;
         }
+        lastWrittenLocation = location;
     }
 
     private class NodeWriter implements ExprVisitor, StatementVisitor {
         private final VarDataOutput output;
-        private TextLocation lastLocation;
+        private TextLocation lastLocation = TextLocation.EMPTY;
 
         NodeWriter(VarDataOutput output) {
             super();
@@ -240,22 +243,52 @@ public class AstIO {
         }
 
         private void writeLocation(TextLocation location) throws IOException {
+            if (location == null) {
+                location = TextLocation.EMPTY;
+            }
             if (Objects.equals(location, lastLocation)) {
                 return;
             }
-            if (location == null || location.getFileName() == null) {
+
+            InliningInfo lastCommonInlining = null;
+            InliningInfo[] prevPath = lastLocation.getInliningPath();
+            InliningInfo[] newPath = location.getInliningPath();
+            int pathIndex = 0;
+            while (pathIndex < prevPath.length && pathIndex < newPath.length
+                    && prevPath[pathIndex].equals(newPath[pathIndex])) {
+                lastCommonInlining = prevPath[pathIndex++];
+            }
+
+            InliningInfo prevInlining = lastLocation.getInlining();
+            while (prevInlining != lastCommonInlining) {
+                output.writeUnsigned(124);
+                prevInlining = prevInlining.getParent();
+            }
+
+            while (pathIndex < newPath.length) {
+                InliningInfo inlining = newPath[pathIndex++];
+                MethodReference method = inlining.getMethod();
+                output.writeUnsigned(inlining.isEmpty() ? 122 : 123);
+                output.writeUnsigned(symbolTable.lookup(method.getClassName()));
+                output.writeUnsigned(symbolTable.lookup(method.getDescriptor().toString()));
+                if (!inlining.isEmpty()) {
+                    output.writeUnsigned(fileTable.lookup(inlining.getFileName()));
+                    output.writeUnsigned(inlining.getLine());
+                }
+            }
+
+            if (location.isEmpty()) {
                 output.writeUnsigned(127);
-                lastLocation = null;
-            } else if (lastLocation != null && lastLocation.getFileName().equals(location.getFileName())) {
+            } else if (!lastLocation.isEmpty() && lastLocation.getFileName().equals(location.getFileName())) {
                 output.writeUnsigned(126);
                 output.writeSigned(location.getLine() - lastLocation.getLine());
-                lastLocation = location;
             } else {
                 output.writeUnsigned(125);
                 output.writeUnsigned(fileTable.lookup(location.getFileName()));
                 output.writeUnsigned(location.getLine());
-                lastLocation = location;
             }
+
+            lastLocation = location;
         }
 
         private void writeSequence(List<Statement> sequence) throws IOException {
@@ -702,10 +735,32 @@ public class AstIO {
                 break;
             case 126:
                 lastReadLocation = new TextLocation(lastReadLocation.getFileName(),
-                        lastReadLocation.getLine() + input.readSigned());
+                        lastReadLocation.getLine() + input.readSigned(), lastReadInlining);
                 break;
             case 125:
-                lastReadLocation = new TextLocation(fileTable.at(input.readUnsigned()), input.readUnsigned());
+                lastReadLocation = new TextLocation(fileTable.at(input.readUnsigned()), input.readUnsigned(),
+                        lastReadInlining);
+                break;
+            case 122:
+            case 123: {
+                String className = symbolTable.at(input.readUnsigned());
+                MethodDescriptor methodDescriptor = MethodDescriptor.parse(symbolTable.at(input.readUnsigned()));
+                methodDescriptor = referenceCache.getCached(methodDescriptor);
+                String fileName;
+                int lineNumber;
+                if (type == 122) {
+                    fileName = fileTable.at(input.readUnsigned());
+                    lineNumber = input.readUnsigned();
+                } else {
+                    fileName = null;
+                    lineNumber = -1;
+                }
+                lastReadInlining = new InliningInfo(referenceCache.getCached(className, methodDescriptor),
+                        fileName, lineNumber, lastReadInlining);
+                break;
+            }
+            case 124:
+                lastReadInlining = lastReadInlining.getParent();
                 break;
             default:
                 return type;

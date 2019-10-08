@@ -332,7 +332,7 @@ public class ProgramParser {
         BasicBlock basicBlock = null;
         Map<Integer, String> accumulatedDebugNames = new HashMap<>();
         Integer lastLineNumber = null;
-        TextLocation lastLocation = null;
+        TextLocation lastLocation = TextLocation.EMPTY;
         for (int i = 0; i < basicBlocks.size(); ++i) {
             BasicBlock newBasicBlock = basicBlocks.get(i);
             if (newBasicBlock != null) {

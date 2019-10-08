@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Objects;
 import org.teavm.model.BasicBlockReader;
 import org.teavm.model.IncomingReader;
+import org.teavm.model.InliningInfo;
 import org.teavm.model.InstructionIterator;
 import org.teavm.model.PhiReader;
 import org.teavm.model.ProgramReader;
@@ -76,12 +77,23 @@ public class ListingBuilder {
                 if (!Objects.equals(location, stringifier.getLocation())) {
                     location = stringifier.getLocation();
                     sb.append(prefix).append("  at ");
-                    if (location == null) {
+                    if (location == null || location.isEmpty()) {
                         sb.append("unknown location");
                     } else {
                         sb.append("'");
                         InstructionStringifier.escapeStringLiteral(location.getFileName(), sb);
                         sb.append("' " + location.getLine());
+                    }
+                    if (location != null) {
+                        InliningInfo inliningInfo = location.getInlining();
+                        while (inliningInfo != null) {
+                            sb.append(" at ");
+                            InstructionStringifier.escapeIdentifierIfNeeded(sb, inliningInfo.getMethod().toString());
+                            sb.append(" '");
+                            InstructionStringifier.escapeStringLiteral(inliningInfo.getFileName(), sb);
+                            sb.append("' " + inliningInfo.getLine());
+                            inliningInfo = inliningInfo.getParent();
+                        }
                     }
                     sb.append('\n');
                 }
