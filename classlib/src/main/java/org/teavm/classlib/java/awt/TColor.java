@@ -48,7 +48,7 @@ public class TColor {
     public TColor(int value) {
         this.r = (value >> 16) & 0xFF;
         this.g = (value >> 8) & 0xFF;
-        this.b = (value) & 0xFF;
+        this.b = value & 0xFF;
         this.a = (value >> 24) & 0xFF;
     }
 
