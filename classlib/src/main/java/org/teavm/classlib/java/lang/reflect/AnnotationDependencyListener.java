@@ -257,6 +257,8 @@ public class AnnotationDependencyListener extends AbstractDependencyListener {
         switch (value.getType()) {
             case AnnotationValue.BOOLEAN:
                 return pe.constant(value.getBoolean() ? 1 : 0);
+            case AnnotationValue.CHAR:
+                return pe.constant(value.getChar());
             case AnnotationValue.BYTE:
                 return pe.constant(value.getByte());
             case AnnotationValue.SHORT:
