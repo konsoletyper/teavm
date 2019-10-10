@@ -57,7 +57,7 @@ public interface TSpliterator<T> {
         throw new IllegalStateException();
     }
 
-    interface OfPrimitive<T, C, S extends OfPrimitive<T, C, S>> {
+    public interface OfPrimitive<T, C, S extends OfPrimitive<T, C, S>> {
         S trySplit();
 
         boolean tryAdvance(C action);
@@ -69,7 +69,7 @@ public interface TSpliterator<T> {
         }
     }
 
-    interface OfInt extends OfPrimitive<Integer, IntConsumer, OfInt> {
+    public interface OfInt extends OfPrimitive<Integer, IntConsumer, OfInt> {
         default boolean tryAdvance(Consumer<? super Integer> action) {
             return tryAdvance((IntConsumer) action::accept);
         }
@@ -81,7 +81,7 @@ public interface TSpliterator<T> {
         }
     }
 
-    interface OfLong extends OfPrimitive<Long, LongConsumer, OfLong> {
+    public interface OfLong extends OfPrimitive<Long, LongConsumer, OfLong> {
         default boolean tryAdvance(Consumer<? super Long> action) {
             return tryAdvance((LongConsumer) action::accept);
         }
@@ -93,7 +93,7 @@ public interface TSpliterator<T> {
         }
     }
 
-    interface OfDouble extends OfPrimitive<Double, DoubleConsumer, OfDouble> {
+    public interface OfDouble extends OfPrimitive<Double, DoubleConsumer, OfDouble> {
         default boolean tryAdvance(Consumer<? super Double> action) {
             return tryAdvance((DoubleConsumer) action::accept);
         }
