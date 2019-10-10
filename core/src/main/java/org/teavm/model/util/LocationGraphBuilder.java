@@ -61,7 +61,7 @@ class LocationGraphBuilder {
         while (!stack.isEmpty()) {
             Step step = stack.pop();
             if (visited[step.block]) {
-                if (step.location != null) {
+                if (step.location != null && !step.location.isEmpty()) {
                     additionalConnections.add(new AdditionalConnection(step.location, startLocations.get(step.block)));
                 }
                 continue;
@@ -83,14 +83,14 @@ class LocationGraphBuilder {
                     if (blockLocations[step.block] == null) {
                         blockLocations[step.block] = insn.getLocation();
                     }
-                    if (location != null && !Objects.equals(location, insn.getLocation())) {
+                    if (location != null && !location.isEmpty() && !Objects.equals(location, insn.getLocation())) {
                         addEdge(location, insn.getLocation());
                     }
                     location = insn.getLocation();
                 }
             }
             if (graph.outgoingEdgesCount(step.block) == 0) {
-                if (location != null) {
+                if (location != null && !location.isEmpty()) {
                     addEdge(location, new TextLocation(null, -1));
                 }
             } else {

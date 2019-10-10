@@ -62,7 +62,8 @@ class SourceMapsWriter {
         output.write("\"}");
     }
 
-    private void writeSegment(GeneratedLocation loc, int sourceFile, int sourceLine) throws IOException {
+    private void writeSegment(GeneratedLocation loc, int sourceFile, int sourceLine)
+            throws IOException {
         while (loc.getLine() > lastLine) {
             output.write(';');
             ++lastLine;

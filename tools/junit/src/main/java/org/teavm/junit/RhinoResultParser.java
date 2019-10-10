@@ -25,16 +25,18 @@ import java.io.InputStreamReader;
 import java.io.Reader;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import net.sourceforge.htmlunit.corejs.javascript.Scriptable;
 import org.teavm.debugging.information.DebugInformation;
+import org.teavm.debugging.information.GeneratedLocation;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.model.MethodReference;
 
 final class RhinoResultParser {
-    private static Pattern pattern = Pattern.compile("(([A-Za-z_$]+)\\(\\))?@.+:([0-9]+)");
+    private static Pattern pattern = Pattern.compile("(([A-Za-z_$][A-Za-z0-9_$]*)\\(\\))?@.+:([0-9]+)");
     private static Pattern lineSeparator = Pattern.compile("\\r\\n|\r|\n");
     private DebugInformation debugInformation;
     private String[] script;
@@ -70,8 +72,7 @@ final class RhinoResultParser {
                 String stack = result.get("stack", result).toString();
                 StackTraceElement[] decodedStack = null;
                 if (debugInformation != null) {
-                    List<StackTraceElement> elements = new ArrayList<>();
-                    elements.addAll(Arrays.asList(decodeStack(stack)));
+                    List<StackTraceElement> elements = new ArrayList<>(Arrays.asList(decodeStack(stack)));
                     List<StackTraceElement> currentElements = Arrays.asList(Thread.currentThread().getStackTrace());
                     elements.addAll(currentElements.subList(2, currentElements.size()));
                     decodedStack = elements.toArray(new StackTraceElement[0]);
@@ -104,34 +105,49 @@ final class RhinoResultParser {
             }
 
             String functionName = matcher.group(2);
-            int lineNumber = Integer.parseInt(matcher.group(3)) - 1;
+            int jsLineNumber = Integer.parseInt(matcher.group(3)) - 1;
 
-            String scriptLine = script[lineNumber];
-            int column = firstNonSpace(scriptLine);
-            MethodReference method = debugInformation.getMethodAt(lineNumber, column);
-            String className;
-            String methodName;
+            String scriptLine = script[jsLineNumber];
+            int jsColumn = firstNonSpace(scriptLine);
 
-            if (method != null) {
-                className = method.getClassName();
-                methodName = method.getName();
-            } else {
-                className = "<JS>";
-                methodName = functionName != null ? functionName : "<unknown_function>";
+            int layer = 0;
+            List<StackTraceElement> elementsByLine = new ArrayList<>();
+            GeneratedLocation jsLocation = new GeneratedLocation(jsLineNumber, jsColumn);
+            while (true) {
+                int lineNumber = jsLineNumber;
+
+                MethodReference method = debugInformation.getMethodAt(jsLocation, layer);
+                String className;
+                String methodName;
+
+                if (method != null) {
+                    className = method.getClassName();
+                    methodName = method.getName();
+                } else if (layer > 0) {
+                    break;
+                } else {
+                    className = "<JS>";
+                    methodName = functionName != null ? functionName : "<unknown_function>";
+                }
+
+                String fileName;
+                SourceLocation location = debugInformation.getSourceLocation(jsLocation, layer);
+                if (location != null && location.getFileName() != null) {
+                    fileName = location.getFileName();
+                    fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
+                    lineNumber = location.getLine();
+                } else {
+                    fileName = "test.js";
+                    lineNumber++;
+                }
+
+                elementsByLine.add(new StackTraceElement(className, methodName, fileName, lineNumber));
+
+                ++layer;
             }
 
-            String fileName;
-            SourceLocation location = debugInformation.getSourceLocation(lineNumber, column);
-            if (location != null && location.getFileName() != null) {
-                fileName = location.getFileName();
-                fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
-                lineNumber = location.getLine();
-            } else {
-                fileName = "test.js";
-                lineNumber++;
-            }
-
-            elements.add(new StackTraceElement(className, methodName, fileName, lineNumber));
+            Collections.reverse(elementsByLine);
+            elements.addAll(elementsByLine);
         }
 
         return elements.toArray(new StackTraceElement[0]);

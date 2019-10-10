@@ -17,8 +17,11 @@ package org.teavm.devserver.deobfuscate;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import org.teavm.debugging.information.DebugInformation;
+import org.teavm.debugging.information.GeneratedLocation;
 import org.teavm.debugging.information.SourceLocation;
 import org.teavm.jso.JSBody;
 import org.teavm.jso.ajax.XMLHttpRequest;
@@ -71,11 +74,12 @@ public final class Deobfuscator {
                 String fileName = groups.get(2).stringValue();
                 int lineNumber = Integer.parseInt(groups.get(3).stringValue());
                 int columnNumber = Integer.parseInt(groups.get(4).stringValue());
-                Frame frame = deobfuscateFrame(debugInformation, classesFileName, fileName, lineNumber, columnNumber);
-                if (frame == null) {
-                    frame = createDefaultFrame(fileName, functionName, lineNumber);
+                List<Frame> framesPerLine = deobfuscateFrames(debugInformation, classesFileName, fileName,
+                        lineNumber, columnNumber);
+                if (framesPerLine == null) {
+                    framesPerLine = Arrays.asList(createDefaultFrame(fileName, functionName, lineNumber));
                 }
-                frames.add(frame);
+                frames.addAll(framesPerLine);
             }
             return frames.toArray(new Frame[0]);
         });
@@ -85,32 +89,42 @@ public final class Deobfuscator {
         }
     }
 
-    private static Frame deobfuscateFrame(DebugInformation debugInformation, String classesFileName,
+    private static List<Frame> deobfuscateFrames(DebugInformation debugInformation, String classesFileName,
             String fileName, int lineNumber, int columnNumber) {
         if (!fileName.equals(classesFileName)) {
             return null;
         }
 
-        MethodReference method = debugInformation.getMethodAt(lineNumber - 1, columnNumber - 1);
-        if (method == null) {
+        List<Frame> result = new ArrayList<>();
+
+        for (int layer = 0; layer < debugInformation.layerCount(); ++layer) {
+            GeneratedLocation jsLocation = new GeneratedLocation(lineNumber - 1, columnNumber - 1);
+            MethodReference method = debugInformation.getMethodAt(jsLocation, layer);
+            if (method == null) {
+                break;
+            }
+
+            SourceLocation location = debugInformation.getSourceLocation(jsLocation, layer);
+
+            String decodedFileName = location != null ? location.getFileName() : null;
+            if (decodedFileName != null) {
+                decodedFileName = decodedFileName.substring(decodedFileName.lastIndexOf('/') + 1);
+            }
+
+            Frame frame = createEmptyFrame();
+            frame.setClassName(method.getClassName());
+            frame.setMethodName(method.getName());
+            frame.setFileName(decodedFileName);
+            if (location != null) {
+                frame.setLineNumber(location.getLine());
+            }
+        }
+
+        if (result.isEmpty()) {
             return null;
         }
-
-        SourceLocation location = debugInformation.getSourceLocation(lineNumber - 1, columnNumber - 1);
-
-        String decodedFileName = location != null ? location.getFileName() : null;
-        if (decodedFileName != null) {
-            decodedFileName = decodedFileName.substring(decodedFileName.lastIndexOf('/') + 1);
-        }
-
-        Frame frame = createEmptyFrame();
-        frame.setClassName(method.getClassName());
-        frame.setMethodName(method.getName());
-        frame.setFileName(decodedFileName);
-        if (location != null) {
-            frame.setLineNumber(location.getLine());
-        }
-        return frame;
+        Collections.reverse(result);
+        return result;
     }
 
     private static Frame createDefaultFrame(String fileName, String functionName, int lineNumber) {

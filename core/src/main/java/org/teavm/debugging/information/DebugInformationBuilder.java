@@ -34,23 +34,20 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     private List<Long> exactMethods = new ArrayList<>();
     private Map<Long, Integer> exactMethodMap = new HashMap<>();
     private RecordArrayBuilder statementStartMapping = new RecordArrayBuilder(2, 0);
-    private RecordArrayBuilder fileMapping = new RecordArrayBuilder(3, 0);
-    private RecordArrayBuilder lineMapping = new RecordArrayBuilder(3, 0);
-    private RecordArrayBuilder classMapping = new RecordArrayBuilder(3, 0);
-    private RecordArrayBuilder methodMapping = new RecordArrayBuilder(3, 0);
+    private List<LayerBuilder> layers = new ArrayList<>();
+    private LayerBuilder currentLayer;
+    private int currentLayerIndex;
     private RecordArrayBuilder callSiteMapping = new RecordArrayBuilder(4, 0);
     private Map<Integer, RecordArrayBuilder> variableMappings = new HashMap<>();
-    private MethodDescriptor currentMethod;
-    private String currentClass;
-    private String currentFileName;
     private int currentClassMetadata = -1;
     private List<ClassMetadata> classesMetadata = new ArrayList<>();
     private List<RecordArrayBuilder> cfgs = new ArrayList<>();
-    private int currentLine;
     private ReferenceCache referenceCache;
 
     public DebugInformationBuilder(ReferenceCache referenceCache) {
         this.referenceCache = referenceCache;
+        currentLayer = new LayerBuilder();
+        layers.add(currentLayer);
     }
 
     public LocationProvider getLocationProvider() {
@@ -66,14 +63,30 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     public void emitLocation(String fileName, int line) {
         debugInformation = null;
         int fileIndex = files.index(fileName);
-        if (!Objects.equals(currentFileName, fileName)) {
-            add(fileMapping, fileIndex);
-            currentFileName = fileName;
+        if (!Objects.equals(currentLayer.currentFileName, fileName)) {
+            add(currentLayer.fileMapping, fileIndex);
+            currentLayer.currentFileName = fileName;
         }
-        if (currentLine != line) {
-            add(lineMapping, line);
-            currentLine = line;
+        if (currentLayer.currentLine != line) {
+            add(currentLayer.lineMapping, line);
+            currentLayer.currentLine = line;
         }
+    }
+
+    @Override
+    public void enterLocation() {
+        if (++currentLayerIndex >= layers.size()) {
+            layers.add(new LayerBuilder());
+        }
+        currentLayer = layers.get(currentLayerIndex);
+    }
+
+    @Override
+    public void exitLocation() {
+        emitClass(null);
+        emitMethod(null);
+        emitLocation(null, -1);
+        currentLayer = layers.get(--currentLayerIndex);
     }
 
     private RecordArrayBuilder.Record add(RecordArrayBuilder builder) {
@@ -99,9 +112,9 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     public void emitClass(String className) {
         debugInformation = null;
         int classIndex = classes.index(className);
-        if (!Objects.equals(className, currentClass)) {
-            add(classMapping, classIndex);
-            currentClass = className;
+        if (!Objects.equals(className, currentLayer.currentClass)) {
+            add(currentLayer.classMapping, classIndex);
+            currentLayer.currentClass = className;
         }
     }
 
@@ -109,12 +122,12 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
     public void emitMethod(MethodDescriptor method) {
         debugInformation = null;
         int methodIndex = methods.index(method != null ? method.toString() : null);
-        if (!Objects.equals(method, currentMethod)) {
-            add(methodMapping, methodIndex);
-            currentMethod = method;
+        if (!Objects.equals(method, currentLayer.currentMethod)) {
+            add(currentLayer.methodMapping, methodIndex);
+            currentLayer.currentMethod = method;
         }
-        if (currentClass != null) {
-            int classIndex = classes.index(currentClass);
+        if (currentLayer.currentClass != null) {
+            int classIndex = classes.index(currentLayer.currentClass);
             long fullIndex = ((long) classIndex << 32) | methodIndex;
             if (!exactMethodMap.containsKey(fullIndex)) {
                 exactMethodMap.put(fullIndex, exactMethods.size());
@@ -283,10 +296,19 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
             debugInformation.exactMethodMap = new HashMap<>(exactMethodMap);
 
             debugInformation.statementStartMapping = statementStartMapping.build();
-            debugInformation.fileMapping = compress(fileMapping).build();
-            debugInformation.lineMapping = compress(lineMapping).build();
-            debugInformation.classMapping = compress(classMapping).build();
-            debugInformation.methodMapping = compress(methodMapping).build();
+
+            DebugInformation.Layer[] builtLayers = new DebugInformation.Layer[layers.size()];
+            for (int i = 0; i < builtLayers.length; ++i) {
+                LayerBuilder layerBuilder = layers.get(i);
+                DebugInformation.Layer builtLayer = new DebugInformation.Layer();
+                builtLayer.fileMapping = compress(layerBuilder.fileMapping).build();
+                builtLayer.lineMapping = compress(layerBuilder.lineMapping).build();
+                builtLayer.classMapping = compress(layerBuilder.classMapping).build();
+                builtLayer.methodMapping = compress(layerBuilder.methodMapping).build();
+                builtLayers[i] = builtLayer;
+            }
+            debugInformation.layers = builtLayers;
+
             debugInformation.callSiteMapping = callSiteMapping.build();
             debugInformation.variableMappings = new RecordArray[variableNames.list.size()];
             for (int var : variableMappings.keySet()) {
@@ -339,7 +361,7 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         }
 
         public String[] getItems() {
-            return list.toArray(new String[list.size()]);
+            return list.toArray(new String[0]);
         }
 
         public Map<String, Integer> getIndexes() {
@@ -351,5 +373,16 @@ public class DebugInformationBuilder implements DebugInformationEmitter {
         int parentIndex = -1;
         String jsName;
         Map<Integer, Integer> fieldMap = new HashMap<>();
+    }
+
+    static class LayerBuilder {
+        private RecordArrayBuilder fileMapping = new RecordArrayBuilder(3, 0);
+        private RecordArrayBuilder lineMapping = new RecordArrayBuilder(3, 0);
+        private RecordArrayBuilder classMapping = new RecordArrayBuilder(3, 0);
+        private RecordArrayBuilder methodMapping = new RecordArrayBuilder(3, 0);
+        private MethodDescriptor currentMethod;
+        private String currentClass;
+        private String currentFileName;
+        private int currentLine;
     }
 }

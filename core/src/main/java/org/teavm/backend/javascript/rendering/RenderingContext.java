@@ -25,6 +25,7 @@ import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Properties;
 import java.util.function.Predicate;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
@@ -38,6 +39,7 @@ import org.teavm.interop.PlatformMarker;
 import org.teavm.model.AnnotationReader;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.InliningInfo;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
@@ -62,6 +64,7 @@ public class RenderingContext {
     private final Map<MethodReference, InjectorHolder> injectorMap = new HashMap<>();
     private boolean minifying;
     private ClassInitializerInfo classInitializerInfo;
+    private TextLocation lastEmittedLocation = TextLocation.EMPTY;
 
     public RenderingContext(DebugInformationEmitter debugEmitter,
             ClassReaderSource initialClassSource, ListableClassReaderSource classSource,
@@ -128,11 +131,11 @@ public class RenderingContext {
         LocationStackEntry prevEntry = locationStack.peek();
         if (location != null) {
             if (prevEntry == null || !location.equals(prevEntry.location)) {
-                debugEmitter.emitLocation(location.getFileName(), location.getLine());
+                emitLocation(location);
             }
         } else {
             if (prevEntry != null) {
-                debugEmitter.emitLocation(null, -1);
+                emitLocation(TextLocation.EMPTY);
             }
         }
         locationStack.push(new LocationStackEntry(location));
@@ -143,11 +146,62 @@ public class RenderingContext {
         LocationStackEntry entry = locationStack.peek();
         if (entry != null) {
             if (!entry.location.equals(prevEntry.location)) {
-                debugEmitter.emitLocation(entry.location.getFileName(), entry.location.getLine());
+                emitLocation(entry.location);
             }
         } else {
-            debugEmitter.emitLocation(null, -1);
+            emitLocation(TextLocation.EMPTY);
         }
+    }
+
+    private void emitLocation(TextLocation location) {
+        if (lastEmittedLocation.equals(location)) {
+            return;
+        }
+
+        String fileName = lastEmittedLocation.getFileName();
+        int lineNumber = lastEmittedLocation.getLine();
+        if (lastEmittedLocation.getInlining() != location.getInlining()) {
+            InliningInfo[] newPath = location.getInliningPath();
+            InliningInfo[] prevPath = lastEmittedLocation.getInliningPath();
+
+            InliningInfo lastCommonInlining = null;
+            int pathIndex = 0;
+            while (pathIndex < prevPath.length && pathIndex < newPath.length
+                    && prevPath[pathIndex].equals(newPath[pathIndex])) {
+                lastCommonInlining = prevPath[pathIndex++];
+            }
+
+            InliningInfo prevInlining = lastEmittedLocation.getInlining();
+            while (prevInlining != lastCommonInlining) {
+                debugEmitter.exitLocation();
+                fileName = prevInlining.getFileName();
+                lineNumber = prevInlining.getLine();
+                prevInlining = prevInlining.getParent();
+            }
+
+            while (pathIndex < newPath.length) {
+                InliningInfo inlining = newPath[pathIndex++];
+                emitSimpleLocation(fileName, lineNumber, inlining.getFileName(), inlining.getLine());
+                fileName = null;
+                lineNumber = -1;
+
+                debugEmitter.enterLocation();
+                debugEmitter.emitClass(inlining.getMethod().getClassName());
+                debugEmitter.emitMethod(inlining.getMethod().getDescriptor());
+            }
+        }
+
+        emitSimpleLocation(fileName, lineNumber, location.getFileName(), location.getLine());
+        lastEmittedLocation = location;
+    }
+
+
+    private void emitSimpleLocation(String fileName, int lineNumber, String newFileName, int newLineNumber) {
+        if (Objects.equals(fileName, newFileName) && lineNumber == newLineNumber) {
+            return;
+        }
+
+        debugEmitter.emitLocation(newFileName, newLineNumber);
     }
 
     public boolean isMinifying() {

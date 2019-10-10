@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+import java.util.Objects;
 import org.teavm.model.BasicBlock;
 import org.teavm.model.BasicBlockReader;
 import org.teavm.model.FieldReference;
@@ -208,7 +209,7 @@ public class ProgramIO {
             }
 
             InliningInfo inliningInfo = null;
-            TextLocation location = null;
+            TextLocation location = TextLocation.EMPTY;
             insnLoop: while (true) {
                 int insnType = data.readUnsigned();
                 switch (insnType) {
@@ -228,24 +229,16 @@ public class ProgramIO {
                         location = new TextLocation(location.getFileName(), line, inliningInfo);
                         break;
                     }
-                    case 124:
                     case 125: {
                         String className = symbolTable.at(data.readUnsigned());
                         MethodDescriptor methodDescriptor = parseMethodDescriptor(symbolTable.at(data.readUnsigned()));
-                        String fileName;
-                        int lineNumber;
-                        if (insnType == 125) {
-                            fileName = fileTable.at(data.readUnsigned());
-                            lineNumber = data.readUnsigned();
-                        } else {
-                            fileName = null;
-                            lineNumber = -1;
-                        }
                         inliningInfo = new InliningInfo(createMethodReference(className, methodDescriptor),
-                                fileName, lineNumber, inliningInfo);
+                                location.getFileName(), location.getLine(), inliningInfo);
+                        location = new TextLocation(null, -1, inliningInfo);
                         break;
                     }
                     case 126:
+                        location = new TextLocation(inliningInfo.getFileName(), inliningInfo.getLine());
                         inliningInfo = inliningInfo.getParent();
                         break;
                     default: {
@@ -276,48 +269,62 @@ public class ProgramIO {
                     newLocation = TextLocation.EMPTY;
                 }
 
-                InliningInfo lastCommonInlining = null;
-                InliningInfo[] prevPath = location.getInliningPath();
-                InliningInfo[] newPath = newLocation.getInliningPath();
-                int pathIndex = 0;
-                while (pathIndex < prevPath.length && pathIndex < newPath.length
-                        && prevPath[pathIndex].equals(newPath[pathIndex])) {
-                    lastCommonInlining = prevPath[pathIndex++];
-                }
+                String fileName = location.getFileName();
+                int lineNumber = location.getLine();
 
-                InliningInfo prevInlining = location.getInlining();
-                while (prevInlining != lastCommonInlining) {
-                    output.writeUnsigned(126);
-                    prevInlining = prevInlining.getParent();
-                }
+                if (newLocation.getInlining() != location.getInlining()) {
+                    InliningInfo lastCommonInlining = null;
+                    InliningInfo[] prevPath = location.getInliningPath();
+                    InliningInfo[] newPath = newLocation.getInliningPath();
+                    int pathIndex = 0;
+                    while (pathIndex < prevPath.length && pathIndex < newPath.length
+                            && prevPath[pathIndex].equals(newPath[pathIndex])) {
+                        lastCommonInlining = prevPath[pathIndex++];
+                    }
 
-                while (pathIndex < newPath.length) {
-                    InliningInfo inlining = newPath[pathIndex++];
-                    MethodReference method = inlining.getMethod();
-                    output.writeUnsigned(inlining.isEmpty() ? 124 : 125);
-                    output.writeUnsigned(symbolTable.lookup(method.getClassName()));
-                    output.writeUnsigned(symbolTable.lookup(method.getDescriptor().toString()));
-                    if (!inlining.isEmpty()) {
-                        output.writeUnsigned(fileTable.lookup(inlining.getFileName()));
-                        output.writeUnsigned(inlining.getLine());
+                    InliningInfo prevInlining = location.getInlining();
+                    while (prevInlining != lastCommonInlining) {
+                        output.writeUnsigned(126);
+                        fileName = prevInlining.getFileName();
+                        lineNumber = prevInlining.getLine();
+                        prevInlining = prevInlining.getParent();
+                    }
+
+                    while (pathIndex < newPath.length) {
+                        InliningInfo inlining = newPath[pathIndex++];
+                        writeSimpleLocation(fileName, lineNumber, inlining.getFileName(), inlining.getLine());
+                        fileName = null;
+                        lineNumber = -1;
+
+                        output.writeUnsigned(125);
+                        MethodReference method = inlining.getMethod();
+                        output.writeUnsigned(symbolTable.lookup(method.getClassName()));
+                        output.writeUnsigned(symbolTable.lookup(method.getDescriptor().toString()));
                     }
                 }
 
-                if (newLocation.isEmpty()) {
-                    output.writeUnsigned(1);
-                } else {
-                    if (!location.isEmpty() && location.getFileName().equals(newLocation.getFileName())) {
-                        output.writeUnsigned(127);
-                        output.writeSigned(newLocation.getLine() - location.getLine());
-                    } else {
-                        output.writeUnsigned(2);
-                        output.writeUnsigned(fileTable.lookup(newLocation.getFileName()));
-                        output.writeUnsigned(newLocation.getLine());
-                    }
-                }
+                writeSimpleLocation(fileName, lineNumber, newLocation.getFileName(), newLocation.getLine());
                 location = newLocation;
             } catch (IOException e) {
                 throw new IOExceptionWrapper(e);
+            }
+        }
+
+        private void writeSimpleLocation(String fileName, int lineNumber, String newFileName, int newLineNumber)
+                throws IOException {
+            if (Objects.equals(fileName, newFileName) && lineNumber == newLineNumber) {
+                return;
+            }
+
+            if (newFileName == null) {
+                output.writeUnsigned(1);
+            } else if (fileName != null && fileName.equals(newFileName)) {
+                output.writeUnsigned(127);
+                output.writeSigned(newLineNumber - lineNumber);
+            } else {
+                output.writeUnsigned(2);
+                output.writeUnsigned(fileTable.lookup(newFileName));
+                output.writeUnsigned(newLineNumber);
             }
         }
 

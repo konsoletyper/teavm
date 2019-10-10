@@ -497,6 +497,7 @@ class StatementGenerator implements InstructionVisitor {
         } else {
             stmt = Statement.assign(null, invocationExpr);
         }
+        invocationExpr.setLocation(currentLocation);
         stmt.setLocation(currentLocation);
         stmt.setAsync(async);
         async = false;

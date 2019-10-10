@@ -250,45 +250,61 @@ public class AstIO {
                 return;
             }
 
-            InliningInfo lastCommonInlining = null;
-            InliningInfo[] prevPath = lastLocation.getInliningPath();
-            InliningInfo[] newPath = location.getInliningPath();
-            int pathIndex = 0;
-            while (pathIndex < prevPath.length && pathIndex < newPath.length
-                    && prevPath[pathIndex].equals(newPath[pathIndex])) {
-                lastCommonInlining = prevPath[pathIndex++];
-            }
+            String fileName = lastLocation.getFileName();
+            int lineNumber = lastLocation.getLine();
 
-            InliningInfo prevInlining = lastLocation.getInlining();
-            while (prevInlining != lastCommonInlining) {
-                output.writeUnsigned(124);
-                prevInlining = prevInlining.getParent();
-            }
+            if (location.getInlining() != lastLocation.getInlining()) {
+                InliningInfo lastCommonInlining = null;
+                InliningInfo[] prevPath = lastLocation.getInliningPath();
+                InliningInfo[] newPath = location.getInliningPath();
+                int pathIndex = 0;
+                while (pathIndex < prevPath.length && pathIndex < newPath.length
+                        && prevPath[pathIndex].equals(newPath[pathIndex])) {
+                    lastCommonInlining = prevPath[pathIndex++];
+                }
 
-            while (pathIndex < newPath.length) {
-                InliningInfo inlining = newPath[pathIndex++];
-                MethodReference method = inlining.getMethod();
-                output.writeUnsigned(inlining.isEmpty() ? 122 : 123);
-                output.writeUnsigned(symbolTable.lookup(method.getClassName()));
-                output.writeUnsigned(symbolTable.lookup(method.getDescriptor().toString()));
-                if (!inlining.isEmpty()) {
-                    output.writeUnsigned(fileTable.lookup(inlining.getFileName()));
-                    output.writeUnsigned(inlining.getLine());
+                InliningInfo prevInlining = location.getInlining();
+                while (prevInlining != lastCommonInlining) {
+                    output.writeUnsigned(123);
+                    fileName = prevInlining.getFileName();
+                    lineNumber = prevInlining.getLine();
+                    prevInlining = prevInlining.getParent();
+                }
+
+                while (pathIndex < newPath.length) {
+                    InliningInfo inlining = newPath[pathIndex++];
+                    writeSimpleLocation(fileName, lineNumber, inlining.getFileName(), inlining.getLine());
+                    fileName = null;
+                    lineNumber = -1;
+
+                    output.writeUnsigned(124);
+                    MethodReference method = inlining.getMethod();
+                    output.writeUnsigned(symbolTable.lookup(method.getClassName()));
+                    output.writeUnsigned(symbolTable.lookup(method.getDescriptor().toString()));
                 }
             }
 
-            if (location.isEmpty()) {
-                output.writeUnsigned(127);
-            } else if (!lastLocation.isEmpty() && lastLocation.getFileName().equals(location.getFileName())) {
-                output.writeUnsigned(126);
-                output.writeSigned(location.getLine() - lastLocation.getLine());
-            } else {
-                output.writeUnsigned(125);
-                output.writeUnsigned(fileTable.lookup(location.getFileName()));
-                output.writeUnsigned(location.getLine());
-            }
+            writeSimpleLocation(fileName, lineNumber, location.getFileName(), location.getLine());
 
             lastLocation = location;
+        }
+
+        private void writeSimpleLocation(String fileName, int lineNumber, String newFileName, int newLineNumber)
+                throws IOException {
+            if (Objects.equals(fileName, newFileName) && lineNumber == newLineNumber) {
+                return;
+            }
+
+            if (newFileName == null) {
+                output.writeUnsigned(127);
+            } else if (fileName != null && fileName.equals(newFileName)) {
+                output.writeUnsigned(126);
+                output.writeSigned(newLineNumber - lineNumber);
+            } else {
+                output.writeUnsigned(125);
+                output.writeUnsigned(fileTable.lookup(newFileName));
+                output.writeUnsigned(newLineNumber);
+            }
         }
 
         private void writeSequence(List<Statement> sequence) throws IOException {
@@ -741,25 +757,17 @@ public class AstIO {
                 lastReadLocation = new TextLocation(fileTable.at(input.readUnsigned()), input.readUnsigned(),
                         lastReadInlining);
                 break;
-            case 122:
-            case 123: {
+            case 124: {
                 String className = symbolTable.at(input.readUnsigned());
                 MethodDescriptor methodDescriptor = MethodDescriptor.parse(symbolTable.at(input.readUnsigned()));
                 methodDescriptor = referenceCache.getCached(methodDescriptor);
-                String fileName;
-                int lineNumber;
-                if (type == 122) {
-                    fileName = fileTable.at(input.readUnsigned());
-                    lineNumber = input.readUnsigned();
-                } else {
-                    fileName = null;
-                    lineNumber = -1;
-                }
                 lastReadInlining = new InliningInfo(referenceCache.getCached(className, methodDescriptor),
-                        fileName, lineNumber, lastReadInlining);
+                        lastReadLocation.getFileName(), lastReadLocation.getLine(), lastReadInlining);
+                lastReadLocation = new TextLocation(null, -1, lastReadInlining);
                 break;
             }
-            case 124:
+            case 123:
+                lastReadLocation = new TextLocation(lastReadInlining.getFileName(), lastReadInlining.getLine());
                 lastReadInlining = lastReadInlining.getParent();
                 break;
             default:

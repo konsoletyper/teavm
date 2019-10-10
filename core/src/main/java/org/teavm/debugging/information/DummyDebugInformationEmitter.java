@@ -25,6 +25,16 @@ public class DummyDebugInformationEmitter implements DebugInformationEmitter {
     }
 
     @Override
+    public void enterLocation() {
+
+    }
+
+    @Override
+    public void exitLocation() {
+
+    }
+
+    @Override
     public void emitMethod(MethodDescriptor method) {
     }
 

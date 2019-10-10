@@ -43,10 +43,15 @@ class DebugInformationReader {
         debugInfo.methods = readStrings();
         debugInfo.variableNames = readStrings();
         debugInfo.exactMethods = readExactMethods();
-        debugInfo.fileMapping = readMapping();
-        debugInfo.lineMapping = readMapping();
-        debugInfo.classMapping = readMapping();
-        debugInfo.methodMapping = readMapping();
+        debugInfo.layers = new DebugInformation.Layer[input.read()];
+        for (int i = 0; i < debugInfo.layers.length; ++i) {
+            DebugInformation.Layer layer = new DebugInformation.Layer();
+            layer.fileMapping = readMapping();
+            layer.lineMapping = readMapping();
+            layer.classMapping = readMapping();
+            layer.methodMapping = readMapping();
+            debugInfo.layers[i] = layer;
+        }
         debugInfo.statementStartMapping = readBooleanMapping();
         debugInfo.callSiteMapping = readCallSiteMapping();
         debugInfo.variableMappings = readVariableMappings(debugInfo.variableNames.length);

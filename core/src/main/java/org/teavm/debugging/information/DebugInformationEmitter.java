@@ -23,6 +23,10 @@ public interface DebugInformationEmitter {
 
     void emitLocation(String fileName, int line);
 
+    void enterLocation();
+
+    void exitLocation();
+
     void emitStatementStart();
 
     void emitMethod(MethodDescriptor method);

@@ -21,29 +21,30 @@ import org.teavm.model.MethodReference;
 
 public class ExactMethodIterator {
     private DebugInformation debugInformation;
+    private DebugInformation.Layer layer;
     private GeneratedLocation location;
     private int classIndex;
     private int methodIndex;
     private int classId = -1;
     private int methodId = -1;
 
-    ExactMethodIterator(DebugInformation debugInformation) {
+    ExactMethodIterator(DebugInformation debugInformation, DebugInformation.Layer layer) {
         this.debugInformation = debugInformation;
+        this.layer = layer;
         if (!isEndReached()) {
             read();
         }
     }
 
     public boolean isEndReached() {
-        return methodIndex >= debugInformation.methodMapping.size()
-                && classIndex >= debugInformation.classMapping.size();
+        return methodIndex >= layer.methodMapping.size() && classIndex >= layer.classMapping.size();
     }
 
     private void read() {
-        if (classIndex < debugInformation.classMapping.size()
-                && methodIndex < debugInformation.methodMapping.size()) {
-            RecordArray.Record classRecord = debugInformation.classMapping.get(classIndex);
-            RecordArray.Record methodRecord = debugInformation.methodMapping.get(methodIndex);
+        if (classIndex < layer.classMapping.size()
+                && methodIndex < layer.methodMapping.size()) {
+            RecordArray.Record classRecord = layer.classMapping.get(classIndex);
+            RecordArray.Record methodRecord = layer.methodMapping.get(methodIndex);
             GeneratedLocation classLoc = DebugInformation.key(classRecord);
             GeneratedLocation methodLoc = DebugInformation.key(methodRecord);
             int cmp = classLoc.compareTo(methodLoc);
@@ -55,9 +56,9 @@ public class ExactMethodIterator {
                 nextClassRecord();
                 nextMethodRecord();
             }
-        } else if (classIndex < debugInformation.classMapping.size()) {
+        } else if (classIndex < layer.classMapping.size()) {
             nextClassRecord();
-        } else if (methodIndex < debugInformation.methodMapping.size()) {
+        } else if (methodIndex < layer.methodMapping.size()) {
             nextMethodRecord();
         } else {
             throw new IllegalStateException("End already reached");
@@ -65,13 +66,13 @@ public class ExactMethodIterator {
     }
 
     private void nextClassRecord() {
-        RecordArray.Record record = debugInformation.classMapping.get(classIndex++);
+        RecordArray.Record record = layer.classMapping.get(classIndex++);
         classId = record.get(2);
         location = DebugInformation.key(record);
     }
 
     private void nextMethodRecord() {
-        RecordArray.Record record = debugInformation.methodMapping.get(methodIndex++);
+        RecordArray.Record record = layer.methodMapping.get(methodIndex++);
         methodId = record.get(2);
         location = DebugInformation.key(record);
     }

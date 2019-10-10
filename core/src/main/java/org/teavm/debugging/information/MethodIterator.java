@@ -15,37 +15,30 @@
  */
 package org.teavm.debugging.information;
 
-import org.teavm.model.MethodDescriptor;
-
-public class MethodIterator {
-    private DebugInformation debugInformation;
+class MethodIterator {
+    private DebugInformation.Layer layer;
     private int index;
 
-    MethodIterator(DebugInformation debugInformation) {
-        this.debugInformation = debugInformation;
+    MethodIterator(DebugInformation.Layer layer) {
+        this.layer = layer;
     }
 
     public boolean isEndReached() {
-        return index < debugInformation.methodMapping.size();
+        return index >= layer.methodMapping.size();
     }
 
     public GeneratedLocation getLocation() {
         if (isEndReached()) {
             throw new IllegalStateException("End already reached");
         }
-        return DebugInformation.key(debugInformation.methodMapping.get(index));
+        return DebugInformation.key(layer.methodMapping.get(index));
     }
 
     public int getMethodId() {
         if (isEndReached()) {
             throw new IllegalStateException("End already reached");
         }
-        return debugInformation.methodMapping.get(index).get(2);
-    }
-
-    public MethodDescriptor getMethod() {
-        int methodId = getMethodId();
-        return methodId >= 0 ? debugInformation.getMethod(methodId) : null;
+        return layer.methodMapping.get(index).get(2);
     }
 
     public void next() {

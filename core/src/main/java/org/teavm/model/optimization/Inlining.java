@@ -398,7 +398,7 @@ public class Inlining {
                 entry.targetInstruction = insn;
                 entry.program = invokedProgram;
                 entry.innerPlan.addAll(buildPlan(invokedProgram, depth + 1, innerStep, invokedMethod.getReference(),
-                        inliningInfo));
+                        innerInliningInfo));
                 entry.depth = depth;
                 entry.method = invokedMethod.getReference();
                 entry.locationInfo = innerInliningInfo;
