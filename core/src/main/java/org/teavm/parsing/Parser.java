@@ -538,6 +538,8 @@ public class Parser {
             return new AnnotationValue((String) value);
         } else if (value instanceof Boolean) {
             return new AnnotationValue((Boolean) value);
+        } else if (value instanceof Character) {
+            return new AnnotationValue((Character) value);
         } else if (value instanceof Byte) {
             return new AnnotationValue((Byte) value);
         } else if (value instanceof Short) {

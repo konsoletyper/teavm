@@ -87,7 +87,7 @@ class AnnotationProxy implements InvocationHandler {
                 case DOUBLE:
                     return value.getDouble();
                 case CHARACTER:
-                    break;
+                    return value.getChar();
             }
         } else if (type.isObject(String.class)) {
             return value.getString();

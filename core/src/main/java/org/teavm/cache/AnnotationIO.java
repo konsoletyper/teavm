@@ -93,6 +93,9 @@ public class AnnotationIO {
             case AnnotationValue.BOOLEAN:
                 output.writeUnsigned(value.getBoolean() ? 1 : 0);
                 break;
+            case AnnotationValue.CHAR:
+                output.writeSigned(value.getChar());
+                break;
             case AnnotationValue.BYTE:
                 output.writeSigned(value.getByte());
                 break;
@@ -139,6 +142,8 @@ public class AnnotationIO {
                 return new AnnotationValue(readAnnotation(input));
             case AnnotationValue.BOOLEAN:
                 return new AnnotationValue(input.readUnsigned() != 0);
+            case AnnotationValue.CHAR:
+                return new AnnotationValue((char) input.readUnsigned());
             case AnnotationValue.BYTE:
                 return new AnnotationValue((byte) input.readSigned());
             case AnnotationValue.CLASS:

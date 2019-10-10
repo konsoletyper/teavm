@@ -31,6 +31,7 @@ public class AnnotationValue {
     public static final byte LIST = 9;
     public static final byte ENUM = 10;
     public static final byte ANNOTATION = 11;
+    public static final byte CHAR = 12;
     private byte type;
     private Object value;
 
@@ -41,6 +42,11 @@ public class AnnotationValue {
 
     public AnnotationValue(byte value) {
         this.type = BYTE;
+        this.value = value;
+    }
+
+    public AnnotationValue(char value) {
+        this.type = CHAR;
         this.value = value;
     }
 
@@ -99,6 +105,13 @@ public class AnnotationValue {
             throw new IllegalStateException("There is no boolean value");
         }
         return (Boolean) value;
+    }
+
+    public char getChar() {
+        if (type != CHAR) {
+            throw new IllegalStateException("There is no char value");
+        }
+        return (Character) value;
     }
 
     public byte getByte() {

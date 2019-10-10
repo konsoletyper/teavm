@@ -25,4 +25,6 @@ public @interface TestAnnotation {
     int b() default 23;
 
     Class<?>[] c();
+
+    char d() default '?';
 }

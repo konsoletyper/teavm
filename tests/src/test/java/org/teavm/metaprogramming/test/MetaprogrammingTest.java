@@ -224,9 +224,9 @@ public class MetaprogrammingTest {
     @Test
     public void annotationsWork() {
         assertEquals(""
-                + "foo:23:Object\n"
-                + "foo=!:42:String:int\n"
-                + "f=!:23\n",
+                + "foo:23:Object:?\n"
+                + "foo=!:42:String:int:?\n"
+                + "f=!:23:^\n",
                 readAnnotations(WithAnnotations.class, new WithAnnotations()));
     }
 
@@ -264,6 +264,7 @@ public class MetaprogrammingTest {
         for (Class<?> cls : annot.c()) {
             sb.append(':').append(cls.getSimpleName());
         }
+        sb.append(':').append(annot.d());
         return sb.toString();
     }
 
@@ -534,7 +535,7 @@ public class MetaprogrammingTest {
     @TestAnnotation(a = "foo", c = Object.class)
     @MetaprogrammingClass
     static class WithAnnotations {
-        @TestAnnotation(c = {})
+        @TestAnnotation(c = {}, d = '^')
         int f;
 
         @TestAnnotation(b = 42, c = { String.class, int.class })
