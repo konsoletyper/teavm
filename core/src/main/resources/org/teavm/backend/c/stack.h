@@ -21,6 +21,7 @@ typedef struct TeaVM_MethodLocation {
 typedef struct TeaVM_CallSiteLocation {
     TeaVM_MethodLocation* method;
     int32_t lineNumber;
+    struct TeaVM_CallSiteLocation* next;
 } TeaVM_CallSiteLocation;
 
 typedef struct TeaVM_ExceptionHandler {

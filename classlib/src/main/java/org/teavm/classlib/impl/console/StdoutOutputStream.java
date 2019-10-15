@@ -13,12 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.lowlevel;
+package org.teavm.classlib.impl.console;
 
-@interface CallSiteDescriptorAnnot {
-    int id();
+import java.io.IOException;
+import java.io.OutputStream;
 
-    ExceptionHandlerDescriptorAnnot[] handlers();
+public class StdoutOutputStream extends OutputStream {
+    public static final StdoutOutputStream INSTANCE = new StdoutOutputStream();
 
-    CallSiteLocationsAnnot location();
+    private StdoutOutputStream() {
+    }
+
+    @Override
+    public void write(int b) throws IOException {
+        Console.writeStdout(b);
+    }
 }

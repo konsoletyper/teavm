@@ -24,6 +24,7 @@ import org.teavm.model.ListableClassHolderSource;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodReader;
 import org.teavm.model.Program;
+import org.teavm.model.optimization.InliningFilterFactory;
 import org.teavm.vm.spi.TeaVMHostExtension;
 
 public interface TeaVMTarget {
@@ -51,4 +52,8 @@ public interface TeaVMTarget {
     String[] getPlatformTags();
 
     boolean isAsyncSupported();
+
+    default InliningFilterFactory getInliningFilter() {
+        return InliningFilterFactory.DEFAULT;
+    }
 }

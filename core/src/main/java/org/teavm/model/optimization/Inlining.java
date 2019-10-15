@@ -72,15 +72,17 @@ public class Inlining {
     private Set<MethodReference> methodsUsedOnce = new HashSet<>();
     private boolean devirtualization;
     private ClassInference classInference;
+    private InliningFilterFactory filterFactory;
 
     public Inlining(ClassHierarchy hierarchy, DependencyInfo dependencyInfo, InliningStrategy strategy,
             ListableClassReaderSource classes, Predicate<MethodReference> externalMethods,
-            boolean devirtualization) {
+            boolean devirtualization, InliningFilterFactory filterFactory) {
         this.hierarchy = hierarchy;
         this.classes = classes;
         this.dependencyInfo = dependencyInfo;
         this.strategy = strategy;
         this.devirtualization = devirtualization;
+        this.filterFactory = filterFactory;
         usageCounter = new MethodUsageCounter(externalMethods);
 
         for (String className : classes.getClassNames()) {
@@ -340,6 +342,7 @@ public class Inlining {
             InliningInfo inliningInfo) {
         List<PlanEntry> plan = new ArrayList<>();
         int originalDepth = depth;
+        InliningFilter filter = filterFactory.createFilter(method);
 
         ContextImpl context = new ContextImpl();
         for (BasicBlock block : program.getBasicBlocks()) {
@@ -366,6 +369,9 @@ public class Inlining {
 
                 if (invoke.getMethod().getClassName().equals(Fiber.class.getName())
                         != method.getClassName().equals(Fiber.class.getName())) {
+                    continue;
+                }
+                if (!filter.apply(invoke.getMethod())) {
                     continue;
                 }
 

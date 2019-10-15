@@ -16,6 +16,7 @@
 package org.teavm.model.lowlevel;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
@@ -33,19 +34,19 @@ import org.teavm.model.Program;
 public class CallSiteDescriptor {
     private int id;
     private List<ExceptionHandlerDescriptor> handlers = new ArrayList<>();
-    private CallSiteLocation location;
+    private CallSiteLocation[] locations;
 
-    public CallSiteDescriptor(int id, CallSiteLocation location) {
+    public CallSiteDescriptor(int id, CallSiteLocation[] locations) {
         this.id = id;
-        this.location = location;
+        this.locations = locations != null ? locations.clone() : null;
     }
 
     public int getId() {
         return id;
     }
 
-    public CallSiteLocation getLocation() {
-        return location;
+    public CallSiteLocation[] getLocations() {
+        return locations != null ? locations.clone() : null;
     }
 
     public List<ExceptionHandlerDescriptor> getHandlers() {
@@ -57,7 +58,8 @@ public class CallSiteDescriptor {
         for (CallSiteDescriptor descriptor : descriptors) {
             AnnotationHolder descriptorAnnot = new AnnotationHolder(CallSiteDescriptorAnnot.class.getName());
             descriptorAnnot.getValues().put("id", new AnnotationValue(descriptor.id));
-            descriptorAnnot.getValues().put("location", new AnnotationValue(descriptor.location.save()));
+            descriptorAnnot.getValues().put("location", new AnnotationValue(
+                    CallSiteLocation.saveMany(Arrays.asList(descriptor.locations))));
             List<AnnotationValue> handlersValue = descriptor.handlers.stream()
                     .map(h -> new AnnotationValue(h.save()))
                     .collect(Collectors.toList());
@@ -80,11 +82,12 @@ public class CallSiteDescriptor {
         for (AnnotationValue descriptorValue : descriptorsAnnot.getValue("value").getList()) {
             AnnotationReader descriptorAnnot = descriptorValue.getAnnotation();
             int id = descriptorAnnot.getValue("id").getInt();
-            CallSiteLocation location = CallSiteLocation.load(descriptorAnnot.getValue("location").getAnnotation());
+            List<? extends CallSiteLocation> location = CallSiteLocation.loadMany(
+                    descriptorAnnot.getValue("location").getAnnotation());
             List<ExceptionHandlerDescriptor> handlers = descriptorAnnot.getValue("handlers").getList().stream()
                     .map(a -> ExceptionHandlerDescriptor.load(a.getAnnotation()))
                     .collect(Collectors.toList());
-            CallSiteDescriptor descriptor = new CallSiteDescriptor(id, location);
+            CallSiteDescriptor descriptor = new CallSiteDescriptor(id, location.toArray(new CallSiteLocation[0]));
             descriptor.getHandlers().addAll(handlers);
             descriptors.add(descriptor);
         }

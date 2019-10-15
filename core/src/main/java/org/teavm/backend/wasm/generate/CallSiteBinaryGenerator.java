@@ -37,6 +37,7 @@ public class CallSiteBinaryGenerator {
     private static final int EXCEPTION_HANDLER_NEXT = 2;
     private static final int LOCATION_METHOD = 0;
     private static final int LOCATION_LINE = 1;
+    private static final int LOCATION_NEXT = 2;
     private static final int METHOD_LOCATION_FILE = 0;
     private static final int METHOD_LOCATION_CLASS = 1;
     private static final int METHOD_LOCATION_METHOD = 2;
@@ -50,7 +51,8 @@ public class CallSiteBinaryGenerator {
             DataPrimitives.ADDRESS);
     private DataStructure locationStructure = new DataStructure((byte) 0,
             DataPrimitives.ADDRESS,
-            DataPrimitives.INT);
+            DataPrimitives.INT,
+            DataPrimitives.ADDRESS);
     private DataStructure methodLocationStructure = new DataStructure((byte) 0,
             DataPrimitives.ADDRESS,
             DataPrimitives.ADDRESS,
@@ -83,7 +85,7 @@ public class CallSiteBinaryGenerator {
             binaryCallSites.add(binaryCallSite);
         }
 
-        ObjectIntMap<CallSiteLocation> locationCache = new ObjectIntHashMap<>();
+        ObjectIntMap<LocationList> locationCache = new ObjectIntHashMap<>();
         ObjectIntMap<MethodLocation> methodLocationCache = new ObjectIntHashMap<>();
 
         for (int callSiteId = 0; callSiteId < callSites.size(); ++callSiteId) {
@@ -118,36 +120,46 @@ public class CallSiteBinaryGenerator {
                 }
             }
 
-            CallSiteLocation location = callSite.getLocation();
-            int locationAddress = locationCache.getOrDefault(location, -1);
-            if (locationAddress < 0) {
-                DataValue binaryLocation = locationStructure.createValue();
-                locationAddress = writer.append(binaryLocation);
-                locationCache.put(location, locationAddress);
-                MethodLocation methodLocation = new MethodLocation(location.getFileName(), location.getClassName(),
-                        location.getMethodName());
-                int methodLocationAddress = methodLocationCache.getOrDefault(methodLocation, -1);
-                if (methodLocationAddress < 0) {
-                    DataValue binaryMethodLocation = methodLocationStructure.createValue();
-                    methodLocationAddress = writer.append(binaryMethodLocation);
-                    methodLocationCache.put(methodLocation, methodLocationAddress);
-                    if (location.getFileName() != null) {
-                        binaryMethodLocation.setAddress(METHOD_LOCATION_FILE,
-                                getStringIndirectPointer(location.getFileName()));
+            CallSiteLocation[] locations = callSite.getLocations();
+            LocationList prevList = null;
+            int locationAddress = 0;
+            int previousLocationAddress = 0;
+            for (int i = locations.length - 1; i >= 0; --i) {
+                LocationList list = new LocationList(locations[i], prevList);
+                locationAddress = locationCache.getOrDefault(list, 0);
+                if (locationAddress == 0) {
+                    DataValue binaryLocation = locationStructure.createValue();
+                    locationAddress = writer.append(binaryLocation);
+                    locationCache.put(list, locationAddress);
+                    CallSiteLocation location = list.location;
+                    MethodLocation methodLocation = new MethodLocation(location.getFileName(), location.getClassName(),
+                            location.getMethodName());
+                    int methodLocationAddress = methodLocationCache.getOrDefault(methodLocation, -1);
+                    if (methodLocationAddress < 0) {
+                        DataValue binaryMethodLocation = methodLocationStructure.createValue();
+                        methodLocationAddress = writer.append(binaryMethodLocation);
+                        methodLocationCache.put(methodLocation, methodLocationAddress);
+                        if (location.getFileName() != null) {
+                            binaryMethodLocation.setAddress(METHOD_LOCATION_FILE,
+                                    getStringIndirectPointer(location.getFileName()));
+                        }
+                        if (location.getClassName() != null) {
+                            binaryMethodLocation.setAddress(METHOD_LOCATION_CLASS,
+                                    getStringIndirectPointer(location.getClassName()));
+                        }
+                        if (location.getMethodName() != null) {
+                            binaryMethodLocation.setAddress(METHOD_LOCATION_METHOD,
+                                    getStringIndirectPointer(location.getMethodName()));
+                        }
                     }
-                    if (location.getClassName() != null) {
-                        binaryMethodLocation.setAddress(METHOD_LOCATION_CLASS,
-                                getStringIndirectPointer(location.getClassName()));
-                    }
-                    if (location.getMethodName() != null) {
-                        binaryMethodLocation.setAddress(METHOD_LOCATION_METHOD,
-                                getStringIndirectPointer(location.getMethodName()));
-                    }
-                }
 
-                binaryLocation.setAddress(LOCATION_METHOD, methodLocationAddress);
-                binaryLocation.setInt(LOCATION_LINE, location.getLineNumber());
+                    binaryLocation.setAddress(LOCATION_METHOD, methodLocationAddress);
+                    binaryLocation.setInt(LOCATION_LINE, location.getLineNumber());
+                    binaryLocation.setAddress(LOCATION_NEXT, previousLocationAddress);
+                }
+                previousLocationAddress = locationAddress;
             }
+
             binaryCallSite.setAddress(CALL_SITE_LOCATION, locationAddress);
         }
 
@@ -192,6 +204,34 @@ public class CallSiteBinaryGenerator {
         @Override
         public int hashCode() {
             return Objects.hash(file, className, methodName);
+        }
+    }
+
+
+    final static class LocationList {
+        final CallSiteLocation location;
+        final LocationList next;
+
+        LocationList(CallSiteLocation location, LocationList next) {
+            this.location = location;
+            this.next = next;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof LocationList)) {
+                return false;
+            }
+            LocationList that = (LocationList) o;
+            return location.equals(that.location) && Objects.equals(next, that.next);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(location, next);
         }
     }
 }

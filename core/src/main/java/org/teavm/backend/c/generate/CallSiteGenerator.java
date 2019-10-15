@@ -30,8 +30,8 @@ public class CallSiteGenerator {
     private GenerationContext context;
     private CodeWriter writer;
     private IncludeManager includes;
-    private ObjectIntMap<CallSiteLocation> locationMap = new ObjectIntHashMap<>();
-    private List<CallSiteLocation> locations = new ArrayList<>();
+    private ObjectIntMap<LocationList> locationMap = new ObjectIntHashMap<>();
+    private List<LocationList> locations = new ArrayList<>();
     private List<HandlerContainer> exceptionHandlers = new ArrayList<>();
     private ObjectIntMap<MethodLocation> methodLocationMap = new ObjectIntHashMap<>();
     private List<MethodLocation> methodLocations = new ArrayList<>();
@@ -79,12 +79,20 @@ public class CallSiteGenerator {
             first = false;
 
             int locationIndex = -1;
-            if (callSite.getLocation() != null) {
-                locationIndex = locationMap.getOrDefault(callSite.getLocation(), -1);
-                if (locationIndex < 0) {
-                    locationIndex = locations.size();
-                    locationMap.put(callSite.getLocation(), locationIndex);
-                    locations.add(callSite.getLocation());
+            CallSiteLocation[] locations = callSite.getLocations();
+            if (locations != null && locations.length > 0) {
+                LocationList prevList = null;
+                for (int i = locations.length - 1; i >= 0; --i) {
+                    LocationList list = new LocationList(locations[i], prevList);
+                    locationIndex = locationMap.getOrDefault(list, -1);
+                    if (locationIndex < 0) {
+                        locationIndex = this.locations.size();
+                        locationMap.put(list, locationIndex);
+                        this.locations.add(list);
+                    } else {
+                        list = this.locations.get(locationIndex);
+                    }
+                    prevList = list;
                 }
             }
 
@@ -116,11 +124,13 @@ public class CallSiteGenerator {
                 + "[" + locations.size() + "] = {").indent();
 
         boolean first = true;
-        for (CallSiteLocation location : locations) {
+        for (LocationList locationList : locations) {
             if (!first) {
                 writer.print(",");
             }
             first = false;
+
+            CallSiteLocation location = locationList.location;
 
             writer.println().print("{ ");
             MethodLocation methodLocation = new MethodLocation(location.getFileName(), location.getClassName(),
@@ -134,6 +144,11 @@ public class CallSiteGenerator {
             writer.print(".method = ").print("methodLocations_" + callSitesName + " + " + index)
                     .print(", ");
             writer.print(".lineNumber = ").print(String.valueOf(location.getLineNumber()));
+
+            if (locationList.next != null) {
+                int nextIndex = locationMap.get(locationList.next);
+                writer.print(", .next = callSiteLocations_" + callSitesName + " + " + nextIndex);
+            }
 
             writer.print(" }");
         }
@@ -157,7 +172,8 @@ public class CallSiteGenerator {
             first = false;
 
             writer.println().print("{ ");
-            writer.print(".fileName = ").print(getStringExpr(location.file)).print(", ");
+            String fileName = location.file != null && !location.file.isEmpty() ? location.file : null;
+            writer.print(".fileName = ").print(getStringExpr(fileName)).print(", ");
             writer.print(".className = ").print(getStringExpr(location.className)).print(", ");
             writer.print(".methodName = ").print(getStringExpr(location.methodName));
 
@@ -242,6 +258,33 @@ public class CallSiteGenerator {
         @Override
         public int hashCode() {
             return Objects.hash(file, className, methodName);
+        }
+    }
+
+    final static class LocationList {
+        final CallSiteLocation location;
+        final LocationList next;
+
+        LocationList(CallSiteLocation location, LocationList next) {
+            this.location = location;
+            this.next = next;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) {
+                return true;
+            }
+            if (!(o instanceof LocationList)) {
+                return false;
+            }
+            LocationList that = (LocationList) o;
+            return location.equals(that.location) && Objects.equals(next, that.next);
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(location, next);
         }
     }
 }

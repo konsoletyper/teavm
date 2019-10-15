@@ -15,10 +15,6 @@
  */
 package org.teavm.model.lowlevel;
 
-@interface CallSiteDescriptorAnnot {
-    int id();
-
-    ExceptionHandlerDescriptorAnnot[] handlers();
-
-    CallSiteLocationsAnnot location();
+@interface CallSiteLocationsAnnot {
+    CallSiteLocationAnnot[] value();
 }

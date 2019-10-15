@@ -17,6 +17,7 @@ extern int32_t teavm_file_delete(char16_t*, int32_t);
 extern int32_t teavm_file_rename(char16_t*, int32_t, char16_t*, int32_t);
 extern int64_t teavm_file_lastModified(char16_t*, int32_t);
 extern int32_t teavm_file_setLastModified(char16_t*, int32_t, int64_t);
+extern int32_t teavm_file_setReadonly(char16_t*, int32_t, int32_t);
 extern int32_t teavm_file_length(char16_t*, int32_t);
 extern int64_t teavm_file_open(char16_t*, int32_t, int32_t);
 extern int32_t teavm_file_close(int64_t);

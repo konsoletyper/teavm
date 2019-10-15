@@ -530,16 +530,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     private void withCallSite() {
         LocationStackEntry locationEntry = locationStack.peek();
         TextLocation location = locationEntry != null ? locationEntry.location : null;
-        String fileName = location != null ? location.getFileName() : null;
-        if (fileName != null) {
-            fileName = fileName.substring(fileName.lastIndexOf('/') + 1);
-        }
-        CallSiteLocation callSiteLocation = new CallSiteLocation(
-                fileName,
-                callingMethod.getClassName(),
-                callingMethod.getName(),
-                location != null ? location.getLine() : 0);
-        CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size(), callSiteLocation);
+        CallSiteLocation[] callSiteLocations = CallSiteLocation.fromTextLocation(location, callingMethod);
+        CallSiteDescriptor callSite = new CallSiteDescriptor(callSites.size(), callSiteLocations);
         List<ExceptionHandlerDescriptor> reverseHandlers = new ArrayList<>(handlers);
         Collections.reverse(reverseHandlers);
         callSite.getHandlers().addAll(reverseHandlers);

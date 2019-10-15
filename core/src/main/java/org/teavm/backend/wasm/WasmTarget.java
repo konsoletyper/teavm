@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
+import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.lowlevel.generate.NameProviderWithSpecialNames;
 import org.teavm.backend.wasm.binary.BinaryWriter;
@@ -137,6 +138,7 @@ import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
+import org.teavm.model.optimization.InliningFilterFactory;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.ExceptionHandling;
@@ -158,6 +160,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             new MethodReference(Object.class, "clone", Object.class)));
 
     private TeaVMTargetController controller;
+    private Characteristics characteristics;
     private boolean debugging;
     private boolean wastEmitted;
     private boolean cEmitted;
@@ -173,11 +176,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     @Override
     public void setController(TeaVMTargetController controller) {
         this.controller = controller;
-        Characteristics managedMethodRepository = new Characteristics(
-                controller.getUnprocessedClassSource());
+        characteristics = new Characteristics(controller.getUnprocessedClassSource());
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
-        shadowStackTransformer = new ShadowStackTransformer(managedMethodRepository, true);
+        shadowStackTransformer = new ShadowStackTransformer(characteristics, true);
 
         controller.addVirtualMethods(VIRTUAL_METHODS::contains);
     }
@@ -853,6 +855,11 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     @Override
     public boolean isAsyncSupported() {
         return false;
+    }
+
+    @Override
+    public InliningFilterFactory getInliningFilter() {
+        return new LowLevelInliningFilterFactory(characteristics);
     }
 
     static class MethodGeneratorContextImpl implements WasmMethodGeneratorContext {

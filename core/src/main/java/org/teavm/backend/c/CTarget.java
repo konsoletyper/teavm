@@ -69,6 +69,7 @@ import org.teavm.backend.c.intrinsic.RuntimeClassIntrinsic;
 import org.teavm.backend.c.intrinsic.ShadowStackIntrinsic;
 import org.teavm.backend.c.intrinsic.StringsIntrinsic;
 import org.teavm.backend.c.intrinsic.StructureIntrinsic;
+import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
 import org.teavm.backend.lowlevel.dependency.ExceptionHandlingDependencyListener;
 import org.teavm.backend.lowlevel.dependency.WeakReferenceDependencyListener;
 import org.teavm.backend.lowlevel.generate.NameProvider;
@@ -112,6 +113,7 @@ import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ExportDependencyListener;
 import org.teavm.model.lowlevel.LowLevelNullCheckFilter;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
+import org.teavm.model.optimization.InliningFilterFactory;
 import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.model.transformation.NullCheckInsertion;
@@ -885,5 +887,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     @Override
     public boolean isAsyncSupported() {
         return true;
+    }
+
+    @Override
+    public InliningFilterFactory getInliningFilter() {
+        return new LowLevelInliningFilterFactory(characteristics);
     }
 }

@@ -172,7 +172,8 @@ public class WasmCRenderer {
         renderFunctionModifiers(declaration, function);
         declaration.append(WasmCRenderingVisitor.mapType(function.getResult())).append(' ');
         declaration.append(function.getName()).append('(');
-        for (int i = 0; i < function.getParameters().size(); ++i) {
+        int sz = Math.min(function.getParameters().size(), function.getLocalVariables().size());
+        for (int i = 0; i < sz; ++i) {
             if (i > 0) {
                 declaration.append(", ");
             }
@@ -184,8 +185,7 @@ public class WasmCRenderer {
         line(declaration.toString());
         indent();
 
-        List<WasmLocal> variables = function.getLocalVariables().subList(function.getParameters().size(),
-                function.getLocalVariables().size());
+        List<WasmLocal> variables = function.getLocalVariables().subList(sz, function.getLocalVariables().size());
         for (WasmLocal variable : variables) {
             line(WasmCRenderingVisitor.mapType(variable.getType()) + " " + visitor.getVariableName(variable) + ";");
         }

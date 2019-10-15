@@ -462,12 +462,13 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         dependencyAnalyzer.cleanupTypes();
 
+        target.setController(targetController);
+
         inline(classSet);
         if (wasCancelled()) {
             return null;
         }
 
-        target.setController(targetController);
         target.analyzeBeforeOptimizations(new ListableClassReaderSourceAdapter(
                 dependencyAnalyzer.getClassSource(),
                 new LinkedHashSet<>(dependencyAnalyzer.getReachableClasses())));
@@ -627,7 +628,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         }
 
         Inlining inlining = new Inlining(new ClassHierarchy(classes), dependencyAnalyzer, inliningStrategy,
-                classes, this::isExternal, optimizationLevel == TeaVMOptimizationLevel.FULL);
+                classes, this::isExternal, optimizationLevel == TeaVMOptimizationLevel.FULL,
+                target.getInliningFilter());
         List<MethodReference> methodReferences = inlining.getOrder();
         int classCount = classes.getClassNames().size();
         int initialValue = compileProgressValue;

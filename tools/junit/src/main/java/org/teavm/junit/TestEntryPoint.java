@@ -21,7 +21,7 @@ final class TestEntryPoint {
     private TestEntryPoint() {
     }
 
-    public static void run() {
+    public static void run() throws Exception {
         before();
         try {
             launchTest();
@@ -36,7 +36,7 @@ final class TestEntryPoint {
 
     private static native void before();
 
-    private static native void launchTest();
+    private static native void launchTest() throws Exception;
 
     private static native void after();
 

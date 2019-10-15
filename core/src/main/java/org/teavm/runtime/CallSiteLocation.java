@@ -24,4 +24,5 @@ import org.teavm.interop.c.Native;
 public class CallSiteLocation extends Structure {
     public MethodLocation method;
     public int lineNumber;
+    CallSiteLocation next;
 }

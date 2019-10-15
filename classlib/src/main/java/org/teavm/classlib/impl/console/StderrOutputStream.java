@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,24 +13,19 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.classlib.impl.console;
 
 import java.io.IOException;
-import org.teavm.classlib.java.io.TOutputStream;
-import org.teavm.interop.DelegateTo;
-import org.teavm.jso.JSBody;
+import java.io.OutputStream;
 
-class TConsoleOutputStreamStdout extends TOutputStream {
-    @Override
-    @DelegateTo("writeLowLevel")
-    public void write(int b) throws IOException {
-        writeJs(b);
+public class StderrOutputStream extends OutputStream {
+    public static final StderrOutputStream INSTANCE = new StderrOutputStream();
+
+    private StderrOutputStream() {
     }
 
-    @JSBody(params = "b", script = "$rt_putStdout(b);")
-    private static native void writeJs(int b);
-
-    private void writeLowLevel(int b) {
-        TConsoleOutputStreamStderr.writeImpl(b);
+    @Override
+    public void write(int b) throws IOException {
+        Console.writeStderr(b);
     }
 }

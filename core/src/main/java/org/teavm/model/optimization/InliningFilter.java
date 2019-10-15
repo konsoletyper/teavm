@@ -13,12 +13,12 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model.lowlevel;
+package org.teavm.model.optimization;
 
-@interface CallSiteDescriptorAnnot {
-    int id();
+import org.teavm.model.MethodReference;
 
-    ExceptionHandlerDescriptorAnnot[] handlers();
+public interface InliningFilter {
+    boolean apply(MethodReference methodReference);
 
-    CallSiteLocationsAnnot location();
+    InliningFilter DEFAULT = m -> true;
 }

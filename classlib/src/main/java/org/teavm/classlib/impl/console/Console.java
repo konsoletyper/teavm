@@ -1,5 +1,5 @@
 /*
- *  Copyright 2013 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,33 +13,52 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.lang;
+package org.teavm.classlib.impl.console;
 
-import java.io.IOException;
 import org.teavm.backend.c.intrinsic.RuntimeInclude;
 import org.teavm.classlib.PlatformDetector;
-import org.teavm.classlib.java.io.TOutputStream;
 import org.teavm.interop.Import;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSBody;
 
-class TConsoleOutputStreamStderr extends TOutputStream {
-    @Override
-    public void write(int b) throws IOException {
-        writeImpl(b);
+public final class Console {
+    private Console() {
     }
 
-    static void writeImpl(int b) {
+    public static void writeStderr(int b) {
         if (PlatformDetector.isC()) {
             writeC(b);
+        } else if (PlatformDetector.isWebAssembly()) {
+            writeWasm(b);
         } else {
             writeJs(b);
         }
     }
 
+    public static void writeStdout(int b) {
+        if (PlatformDetector.isC()) {
+            writeC(b);
+        } else if (PlatformDetector.isWebAssembly()) {
+            writeWasm(b);
+        } else {
+            writeJsStdout(b);
+        }
+    }
+
+    public static void writeStdout(String s) {
+        for (int i = 0; i < s.length(); ++i) {
+            writeStderr(s.charAt(i));
+        }
+    }
+
     @JSBody(params = "b", script = "$rt_putStderr(b);")
-    @Import(name = "putwchar", module = "teavm")
     private static native void writeJs(int b);
+
+    @JSBody(params = "b", script = "$rt_putStdout(b);")
+    private static native void writeJsStdout(int b);
+
+    @Import(name = "putwchar", module = "teavm")
+    private static native void writeWasm(int b);
 
     @Unmanaged
     @Import(name = "teavm_logchar")

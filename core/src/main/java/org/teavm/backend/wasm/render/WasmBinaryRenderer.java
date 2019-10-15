@@ -264,7 +264,8 @@ public class WasmBinaryRenderer {
         WasmBinaryWriter code = new WasmBinaryWriter();
 
         List<WasmLocal> localVariables = function.getLocalVariables();
-        localVariables = localVariables.subList(function.getParameters().size(), localVariables.size());
+        int parameterCount = Math.min(function.getParameters().size(), localVariables.size());
+        localVariables = localVariables.subList(parameterCount, localVariables.size());
         if (localVariables.isEmpty()) {
             code.writeLEB(0);
         } else {
