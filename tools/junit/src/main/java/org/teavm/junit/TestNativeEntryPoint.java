@@ -16,6 +16,7 @@
 package org.teavm.junit;
 
 import java.io.PrintStream;
+import org.teavm.classlib.impl.console.StderrOutputStream;
 import org.teavm.classlib.impl.console.StdoutOutputStream;
 
 final class TestNativeEntryPoint {
@@ -27,7 +28,7 @@ final class TestNativeEntryPoint {
             TestEntryPoint.run();
             new PrintStream(StdoutOutputStream.INSTANCE).println("SUCCESS");
         } catch (Throwable e) {
-            PrintStream out = new PrintStream(StdoutOutputStream.INSTANCE);
+            PrintStream out = new PrintStream(StderrOutputStream.INSTANCE);
             e.printStackTrace(out);
             out.println("FAILURE");
         }
