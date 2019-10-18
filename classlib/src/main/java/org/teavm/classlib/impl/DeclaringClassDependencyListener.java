@@ -23,14 +23,26 @@ import org.teavm.model.ClassReader;
 public class DeclaringClassDependencyListener extends AbstractDependencyListener {
     @Override
     public void methodReached(DependencyAgent agent, MethodDependency method) {
-        if (method.getReference().getClassName().equals("java.lang.Class")
-                && method.getReference().getName().equals("getDeclaringClass")) {
-            method.getVariable(0).getClassValueNode().addConsumer(t -> {
-                ClassReader cls = agent.getClassSource().get(t.getName());
-                if (cls != null && cls.getOwnerName() != null) {
-                    agent.linkClass(cls.getOwnerName());
+        if (method.getReference().getClassName().equals("java.lang.Class")) {
+            switch (method.getReference().getName()) {
+                case "getEnclosingClass":
+                    method.getVariable(0).getClassValueNode().addConsumer(t -> {
+                        ClassReader cls = agent.getClassSource().get(t.getName());
+                        if (cls != null && cls.getOwnerName() != null) {
+                            agent.linkClass(cls.getOwnerName());
+                        }
+                    });
+                    break;
+                case "getDeclaringClass": {
+                    method.getVariable(0).getClassValueNode().addConsumer(t -> {
+                        ClassReader cls = agent.getClassSource().get(t.getName());
+                        if (cls != null && cls.getDeclaringClassName() != null) {
+                            agent.linkClass(cls.getDeclaringClassName());
+                        }
+                    });
+                    break;
                 }
-            });
+            }
         }
     }
 }

@@ -22,6 +22,7 @@ public class RuntimeClass extends RuntimeObject {
     public static final int INITIALIZED = 1;
     public static final int PRIMITIVE = 2;
     public static final int ENUM = 4;
+    public static final int SYNTHETIC = 1024;
 
     public static final int PRIMITIVE_SHIFT = 3;
     public static final int PRIMITIVE_MASK = 15;
@@ -49,6 +50,8 @@ public class RuntimeClass extends RuntimeObject {
     public RuntimeObjectPtr name;
     public RuntimeClass itemType;
     public RuntimeClass arrayType;
+    public RuntimeClass declaringClass;
+    public RuntimeClass enclosingClass;
     public IsSupertypeFunction isSupertypeOf;
     public InitFunction init;
     public RuntimeClass parent;
@@ -56,7 +59,9 @@ public class RuntimeClass extends RuntimeObject {
     public RuntimeClassPointer superinterfaces;
     public Address enumValues;
     public Address layout;
-    public RuntimeObject simpleName;
+    public RuntimeObjectPtr simpleName;
+    public RuntimeObject simpleNameCache;
+    public RuntimeObject canonicalName;
 
     @Unmanaged
     public static int computeCanary(int size, int tag) {

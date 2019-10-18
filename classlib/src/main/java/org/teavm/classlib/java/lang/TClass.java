@@ -53,6 +53,7 @@ import org.teavm.runtime.RuntimeObject;
 public class TClass<T> extends TObject implements TAnnotatedElement {
     String name;
     String simpleName;
+    String canonicalName;
     private PlatformClass platformClass;
     private TAnnotation[] annotationsCache;
     private Map<TClass<?>, TAnnotation> annotationsByType;
@@ -115,51 +116,110 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     public String getSimpleName() {
-        String simpleName = getSimpleNameCache();
+        String simpleName = getSimpleNameCache(this);
         if (simpleName == null) {
             if (isArray()) {
                 simpleName = getComponentType().getSimpleName() + "[]";
-                setSimpleNameCache(simpleName);
-                return simpleName;
-            }
-            String name = Platform.getName(platformClass);
-            int lastDollar = name.lastIndexOf('$');
-            if (lastDollar != -1) {
-                name = name.substring(lastDollar + 1);
-                if (name.charAt(0) >= '0' && name.charAt(0) <= '9') {
-                    name = "";
+            } else if (getEnclosingClass() != null) {
+                simpleName = Platform.getSimpleName(platformClass);
+                if (simpleName == null) {
+                    simpleName = "";
                 }
             } else {
-                int lastDot = name.lastIndexOf('.');
-                if (lastDot != -1) {
-                    name = name.substring(lastDot + 1);
+                String name = Platform.getName(platformClass);
+                int lastDollar = name.lastIndexOf('$');
+                if (lastDollar != -1) {
+                    name = name.substring(lastDollar + 1);
+                    if (name.charAt(0) >= '0' && name.charAt(0) <= '9') {
+                        name = "";
+                    }
+                } else {
+                    int lastDot = name.lastIndexOf('.');
+                    if (lastDot != -1) {
+                        name = name.substring(lastDot + 1);
+                    }
                 }
+                simpleName = name;
             }
-            simpleName = name;
-            setSimpleNameCache(simpleName);
+            setSimpleNameCache(this, simpleName);
         }
         return simpleName;
     }
 
     @DelegateTo("getSimpleNameCacheLowLevel")
-    private String getSimpleNameCache() {
-        return simpleName;
+    private static String getSimpleNameCache(TClass<?> self) {
+        return self.simpleName;
     }
 
     @Unmanaged
     @PluggableDependency(ClassDependencyListener.class)
-    private RuntimeObject getSimpleNameCacheLowLevel() {
-        return Address.ofObject(this).<RuntimeClass>toStructure().simpleName;
+    private static RuntimeObject getSimpleNameCacheLowLevel(RuntimeClass self) {
+        return self.simpleNameCache;
     }
 
     @DelegateTo("setSimpleNameCacheLowLevel")
-    private void setSimpleNameCache(String value) {
-        simpleName = value;
+    private static void setSimpleNameCache(TClass<?> self, String value) {
+        self.simpleName = value;
     }
 
     @Unmanaged
-    private void setSimpleNameCacheLowLevel(RuntimeObject object) {
-        Address.ofObject(this).<RuntimeClass>toStructure().simpleName = object;
+    private static void setSimpleNameCacheLowLevel(RuntimeClass self, RuntimeObject object) {
+        self.simpleNameCache = object;
+    }
+
+    public String getCanonicalName() {
+        String result = getCanonicalNameCache();
+        if (result == null) {
+            if (isArray()) {
+                String componentName = getComponentType().getCanonicalName();
+                if (componentName == null) {
+                    return null;
+                }
+                result = componentName + "[]";
+            } else if (getEnclosingClass() != null) {
+                if (getDeclaringClass() == null || isSynthetic()) {
+                    return null;
+                }
+                String enclosingName = getDeclaringClass().getCanonicalName();
+                if (enclosingName == null) {
+                    return null;
+                }
+                result = enclosingName + "." + getSimpleName();
+            } else {
+                result = getName();
+            }
+            setCanonicalNameCache(result);
+        }
+        return result;
+    }
+
+    private boolean isSynthetic() {
+        if (PlatformDetector.isJavaScript()) {
+            return (platformClass.getMetadata().getAccessLevel() & Flags.SYNTHETIC) != 0;
+        } else {
+            return (RuntimeClass.getClass(Address.ofObject(this).toStructure()).flags & RuntimeClass.SYNTHETIC) != 0;
+        }
+    }
+
+    @DelegateTo("getCanonicalNameCacheLowLevel")
+    private String getCanonicalNameCache() {
+        return canonicalName;
+    }
+
+    @Unmanaged
+    @PluggableDependency(ClassDependencyListener.class)
+    private RuntimeObject getCanonicalNameCacheLowLevel() {
+        return Address.ofObject(this).<RuntimeClass>toStructure().canonicalName;
+    }
+
+    @DelegateTo("setCanonicalNameCacheLowLevel")
+    private void setCanonicalNameCache(String value) {
+        canonicalName = value;
+    }
+
+    @Unmanaged
+    private void setCanonicalNameCacheLowLevel(RuntimeObject object) {
+        Address.ofObject(this).<RuntimeClass>toStructure().canonicalName = object;
     }
 
     public boolean isPrimitive() {
@@ -176,6 +236,15 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
     public boolean isInterface() {
         return (platformClass.getMetadata().getFlags() & Flags.INTERFACE) != 0;
+    }
+
+    public boolean isLocalClass() {
+        return (platformClass.getMetadata().getFlags() & Flags.SYNTHETIC) != 0
+                && getEnclosingClass() != null;
+    }
+
+    public boolean isMemberClass() {
+        return getDeclaringClass() != null;
     }
 
     @PluggableDependency(ClassGenerator.class)
@@ -597,11 +666,14 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     }
 
     public TClass<?> getDeclaringClass() {
-        PlatformClass result = getDeclaringClassImpl(getPlatformClass());
+        PlatformClass result = Platform.getDeclaringClass(getPlatformClass());
         return result != null ? getClass(result) : null;
     }
-    
-    private static native PlatformClass getDeclaringClassImpl(PlatformClass cls);
+
+    public TClass<?> getEnclosingClass() {
+        PlatformClass result = Platform.getEnclosingClass(getPlatformClass());
+        return result != null ? getClass(result) : null;
+    }
 
     @SuppressWarnings("unchecked")
     public <U> TClass<? extends U> asSubclass(TClass<U> clazz) {

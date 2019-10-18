@@ -60,7 +60,12 @@ public class PlatformGenerator implements Generator, Injector, DependencyPlugin 
                 method.getResult().propagate(agent.getType("[Ljava/lang/Enum;"));
                 break;
             case "getName":
+            case "getSimpleName":
                 method.getResult().propagate(agent.getType("java.lang.String"));
+                break;
+            case "getEnclosingClass":
+            case "getDeclaringClass":
+                method.getResult().propagate(agent.getType("java.lang.Class"));
                 break;
         }
     }

@@ -74,6 +74,8 @@ public class WasmClassGenerator {
             DataPrimitives.ADDRESS, /* name */
             DataPrimitives.ADDRESS, /* item type */
             DataPrimitives.ADDRESS, /* array type */
+            DataPrimitives.ADDRESS, /* declaring class */
+            DataPrimitives.ADDRESS, /* enclosing class */
             DataPrimitives.INT, /* isInstance function */
             DataPrimitives.INT, /* init function */
             DataPrimitives.ADDRESS, /* parent */
@@ -81,7 +83,9 @@ public class WasmClassGenerator {
             DataPrimitives.ADDRESS, /* interfaces */
             DataPrimitives.ADDRESS, /* enum values */
             DataPrimitives.ADDRESS, /* layout */
-            DataPrimitives.ADDRESS  /* simple name */);
+            DataPrimitives.ADDRESS,  /* simple name */
+            DataPrimitives.ADDRESS,  /* simple name cache */
+            DataPrimitives.ADDRESS   /* canonical name cache */);
     private IntegerArray staticGcRoots = new IntegerArray(1);
     private int staticGcRootsAddress;
 
@@ -92,12 +96,14 @@ public class WasmClassGenerator {
     private static final int CLASS_NAME = 5;
     private static final int CLASS_ITEM_TYPE = 6;
     private static final int CLASS_ARRAY_TYPE = 7;
-    private static final int CLASS_IS_INSTANCE = 8;
-    private static final int CLASS_INIT = 9;
-    private static final int CLASS_PARENT = 10;
-    private static final int CLASS_ENUM_VALUES = 13;
-    private static final int CLASS_LAYOUT = 14;
-    private static final int CLASS_SIMPLE_NAME = 15;
+    private static final int CLASS_DECLARING_CLASS = 8;
+    private static final int CLASS_ENCLOSING_CLASS = 9;
+    private static final int CLASS_IS_INSTANCE = 10;
+    private static final int CLASS_INIT = 11;
+    private static final int CLASS_PARENT = 12;
+    private static final int CLASS_ENUM_VALUES = 15;
+    private static final int CLASS_LAYOUT = 16;
+    private static final int CLASS_SIMPLE_NAME = 17;
 
     public WasmClassGenerator(ClassReaderSource processedClassSource, ClassReaderSource classSource,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, BinaryWriter binaryWriter,
@@ -275,6 +281,19 @@ public class WasmClassGenerator {
         functionTable.add(names.forSupertypeFunction(ValueType.object(name)));
         header.setAddress(CLASS_PARENT, parentPtr);
 
+        ClassReader cls = processedClassSource.get(name);
+
+        if (cls.getSimpleName() != null) {
+            header.setAddress(CLASS_SIMPLE_NAME, stringPool.getStringPointer(cls.getSimpleName()));
+        }
+
+        if (cls.getOwnerName() != null && processedClassSource.get(cls.getOwnerName()) != null) {
+            header.setAddress(CLASS_ENCLOSING_CLASS, getClassPointer(ValueType.object(cls.getOwnerName())));
+        }
+        if (cls.getDeclaringClassName() != null && processedClassSource.get(cls.getDeclaringClassName()) != null) {
+            header.setAddress(CLASS_DECLARING_CLASS, getClassPointer(ValueType.object(cls.getDeclaringClassName())));
+        }
+
         if (vtable != null) {
             fillVirtualTable(vtable, array);
         }
@@ -296,10 +315,14 @@ public class WasmClassGenerator {
             staticGcRoots.add(binaryData.fieldLayout.get(field.getFieldName()));
         }
 
-        ClassReader cls = processedClassSource.get(name);
-        if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
-            header.setAddress(CLASS_ENUM_VALUES, generateEnumValues(cls, binaryData));
-            flags |= RuntimeClass.ENUM;
+        if (cls != null) {
+            if (cls.hasModifier(ElementModifier.ENUM)) {
+                header.setAddress(CLASS_ENUM_VALUES, generateEnumValues(cls, binaryData));
+                flags |= RuntimeClass.ENUM;
+            }
+            if (cls.hasModifier(ElementModifier.SYNTHETIC)) {
+                flags |= RuntimeClass.SYNTHETIC;
+            }
         }
 
         if (cls != null && binaryData.start >= 0
@@ -311,7 +334,6 @@ public class WasmClassGenerator {
         }
 
         header.setInt(CLASS_FLAGS, flags);
-        header.setAddress(CLASS_SIMPLE_NAME, 0);
 
         return vtable != null ? wrapper : header;
     }

@@ -25,12 +25,13 @@ import org.teavm.runtime.RuntimeClass;
 
 public class PlatformClassMetadataIntrinsic implements WasmIntrinsic {
     private static final String PLATFORM_CLASS_METADATA = "org.teavm.platform.PlatformClassMetadata";
-    private static final FieldReference ITEM_TYPE_FIELD = new FieldReference(
-            RuntimeClass.class.getName(), "itemType");
-    private static final FieldReference SUPERCLASS_FIELD = new FieldReference(
-            RuntimeClass.class.getName(), "parent");
-    private static final FieldReference NAME_FIELD = new FieldReference(
-            RuntimeClass.class.getName(), "name");
+    private static final String RUNTIME_CLASS = RuntimeClass.class.getName();
+    private static final FieldReference ITEM_TYPE_FIELD = new FieldReference(RUNTIME_CLASS, "itemType");
+    private static final FieldReference SUPERCLASS_FIELD = new FieldReference(RUNTIME_CLASS, "parent");
+    private static final FieldReference NAME_FIELD = new FieldReference(RUNTIME_CLASS, "name");
+    private static final FieldReference SIMPLE_NAME_FIELD = new FieldReference(RUNTIME_CLASS, "simpleName");
+    private static final FieldReference ENCLOSING_CLASS_FIELD = new FieldReference(RUNTIME_CLASS, "enclosingClass");
+    private static final FieldReference DECLARING_CLASS_FIELD = new FieldReference(RUNTIME_CLASS, "declaringClass");
 
     @Override
     public boolean isApplicable(MethodReference methodReference) {
@@ -41,6 +42,9 @@ public class PlatformClassMetadataIntrinsic implements WasmIntrinsic {
             case "getArrayItem":
             case "getSuperclass":
             case "getName":
+            case "getSimpleName":
+            case "getEnclosingClass":
+            case "getDeclaringClass":
                 return true;
         }
         return false;
@@ -55,6 +59,12 @@ public class PlatformClassMetadataIntrinsic implements WasmIntrinsic {
                 return fieldAccess(manager, invocation, SUPERCLASS_FIELD);
             case "getName":
                 return fieldAccess(manager, invocation, NAME_FIELD);
+            case "getSimpleName":
+                return fieldAccess(manager, invocation, SIMPLE_NAME_FIELD);
+            case "getEnclosingClass":
+                return fieldAccess(manager, invocation, ENCLOSING_CLASS_FIELD);
+            case "getDeclaringClass":
+                return fieldAccess(manager, invocation, DECLARING_CLASS_FIELD);
             default:
                 return new WasmUnreachable();
         }

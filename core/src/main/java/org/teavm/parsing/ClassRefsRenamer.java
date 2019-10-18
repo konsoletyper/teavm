@@ -89,6 +89,9 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         if (cls.getOwnerName() != null) {
             renamedCls.setOwnerName(classNameMapper.apply(cls.getOwnerName()));
         }
+        if (cls.getDeclaringClassName() != null) {
+            renamedCls.setDeclaringClassName(classNameMapper.apply(cls.getDeclaringClassName()));
+        }
         rename(cls.getAnnotations(), renamedCls.getAnnotations());
         for (String iface : cls.getInterfaces()) {
             String mappedIfaceName = classNameMapper.apply(iface);

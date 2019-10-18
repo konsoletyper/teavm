@@ -802,7 +802,8 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
     }
 
     private boolean isWrappedNativeCall(MethodReader method) {
-        if (!method.hasModifier(ElementModifier.NATIVE)) {
+        if (!method.hasModifier(ElementModifier.NATIVE)
+                || method.getAnnotations().get(DelegateTo.class.getName()) != null) {
             return false;
         }
         if (method.getAnnotations().get(Variable.class.getName()) != null) {

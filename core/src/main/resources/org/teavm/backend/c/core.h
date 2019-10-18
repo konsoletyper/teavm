@@ -30,6 +30,8 @@ typedef struct TeaVM_Class {
     TeaVM_Object** name;
     struct TeaVM_Class* itemType;
     struct TeaVM_Class* arrayType;
+    struct TeaVM_Class* declaringClass;
+    struct TeaVM_Class* enclosingClass;
     int32_t (*isSupertypeOf)(struct TeaVM_Class*);
     void (*init)();
     struct TeaVM_Class* superclass;
@@ -37,7 +39,9 @@ typedef struct TeaVM_Class {
     struct TeaVM_Class** superinterfaces;
     void* enumValues;
     void* layout;
-    TeaVM_Object* simpleName;
+    TeaVM_Object** simpleName;
+    TeaVM_Object* simpleNameCache;
+    TeaVM_Object* canonicalName;
     #if TEAVM_HEAP_DUMP
         TeaVM_FieldDescriptors* fieldDescriptors;
         TeaVM_StaticFieldDescriptors* staticFieldDescriptors;

@@ -38,4 +38,8 @@ public interface ClassReader extends ElementReader {
     Collection<? extends FieldReader> getFields();
 
     String getOwnerName();
+
+    String getSimpleName();
+
+    String getDeclaringClassName();
 }

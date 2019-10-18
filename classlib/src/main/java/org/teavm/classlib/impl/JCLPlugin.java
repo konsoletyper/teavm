@@ -144,12 +144,6 @@ public class JCLPlugin implements TeaVMPlugin {
 
         installMetadata(host.getService(MetadataRegistration.class));
         host.add(new DeclaringClassDependencyListener());
-
-        TeaVMJavaScriptHost jsExtension = host.getExtension(TeaVMJavaScriptHost.class);
-        if (jsExtension != null) {
-            jsExtension.add(new MethodReference(Class.class, "getDeclaringClassImpl", PlatformClass.class,
-                    PlatformClass.class), new DeclaringClassGenerator());
-        }
     }
 
     private void installMetadata(MetadataRegistration reg) {

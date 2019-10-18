@@ -108,8 +108,18 @@ function $rt_arraycls(cls) {
     if (result === null) {
         var arraycls = {};
         var name = "[" + cls.$meta.binaryName;
-        arraycls.$meta = { item : cls, supertypes : [$rt_objcls()], primitive : false, superclass : $rt_objcls(),
-                name : name, binaryName : name, enum : false };
+        arraycls.$meta = {
+            item: cls,
+            supertypes: [$rt_objcls()],
+            primitive: false,
+            superclass: $rt_objcls(),
+            name: name,
+            binaryName: name,
+            enum: false,
+            simpleName: null,
+            declaringClass: null,
+            enclosingClass: null
+        };
         arraycls.classObject = null;
         arraycls.$array = null;
         result = arraycls;
@@ -121,7 +131,7 @@ function $rt_createcls() {
     return {
         $array : null,
         classObject : null,
-        $meta : {
+        $meta: {
             supertypes : [],
             superclass : null
         }
@@ -134,6 +144,9 @@ function $rt_createPrimitiveCls(name, binaryName) {
     cls.$meta.binaryName = binaryName;
     cls.$meta.enum = false;
     cls.$meta.item = null;
+    cls.$meta.simpleName = null;
+    cls.$meta.declaringClass = null;
+    cls.$meta.enclosingClass = null;
     return cls;
 }
 var $rt_booleanclsCache = null;
@@ -452,6 +465,20 @@ function $rt_metadata(data) {
         cls.classObject = null;
 
         m.accessLevel = data[i++];
+
+        var innerClassInfo = data[i++];
+        if (innerClassInfo === 0) {
+            m.simpleName = null;
+            m.declaringClass = null;
+            m.enclosingClass = null;
+        } else {
+            var enclosingClass = innerClassInfo[0];
+            m.enclosingClass = enclosingClass !== 0 ? enclosingClass : null;
+            var declaringClass = innerClassInfo[1];
+            m.declaringClass = declaringClass !== 0 ? declaringClass : null;
+            var simpleName = innerClassInfo[2];
+            m.simpleName = simpleName !== 0 ? simpleName : null;
+        }
 
         var clinit = data[i++];
         cls.$clinit = clinit !== 0 ? clinit : function() {};

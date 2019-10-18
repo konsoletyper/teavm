@@ -475,7 +475,7 @@ public class Renderer implements RenderingManager {
             return;
         }
 
-        Set<String> classesRequiringName = findClassesRequiringName();
+        Map<String, RequiredClassMetadata> classesRequiringName = findRequiredClassMetadata();
 
         int start = writer.getOffset();
         try {
@@ -496,7 +496,7 @@ public class Renderer implements RenderingManager {
     }
 
     private void renderClassMetadataPortion(List<PreparedClass> classes, ObjectIntMap<String> packageIndexes,
-            Set<String> classesRequiringName) throws IOException {
+            Map<String, RequiredClassMetadata> metadataRequirements) throws IOException {
         writer.append("$rt_metadata([");
         boolean first = true;
         for (PreparedClass cls : classes) {
@@ -507,7 +507,8 @@ public class Renderer implements RenderingManager {
             debugEmitter.emitClass(cls.getName());
             writer.appendClass(cls.getName()).append(",").ws();
 
-            if (classesRequiringName.contains(cls.getName())) {
+            RequiredClassMetadata requiredMetadata = metadataRequirements.get(cls.getName());
+            if (requiredMetadata != null && requiredMetadata.name) {
                 String className = cls.getName();
                 int dotIndex = className.lastIndexOf('.') + 1;
                 String packageName = className.substring(0, dotIndex);
@@ -539,6 +540,33 @@ public class Renderer implements RenderingManager {
             writer.append(ElementModifier.pack(cls.getClassHolder().getModifiers())).append(',').ws();
             writer.append(cls.getClassHolder().getLevel().ordinal()).append(',').ws();
 
+            if (requiredMetadata == null || !(requiredMetadata.enclosingClass
+                    || requiredMetadata.declaringClass || requiredMetadata.simpleName)) {
+                writer.append("0");
+            } else {
+                writer.append('[');
+                if (requiredMetadata.enclosingClass && cls.getClassHolder().getOwnerName() != null) {
+                    writer.appendClass(cls.getClassHolder().getOwnerName());
+                } else {
+                    writer.append('0');
+                }
+                writer.append(',');
+                if (requiredMetadata.declaringClass && cls.getClassHolder().getDeclaringClassName() != null) {
+                    writer.appendClass(cls.getClassHolder().getDeclaringClassName());
+                } else {
+                    writer.append('0');
+                }
+                writer.append(',');
+                if (requiredMetadata.simpleName && cls.getClassHolder().getSimpleName() != null) {
+                    writer.append("\"").append(RenderingUtil.escapeString(cls.getClassHolder().getSimpleName()))
+                            .append("\"");
+                } else {
+                    writer.append('0');
+                }
+                writer.append(']');
+            }
+            writer.append(",").ws();
+
             MethodReader clinit = classSource.get(cls.getName()).getMethod(CLINIT_METHOD);
             if (clinit != null && context.isDynamicInitializer(cls.getName())) {
                 writer.appendClassInit(cls.getName());
@@ -561,13 +589,14 @@ public class Renderer implements RenderingManager {
         writer.append("]);").newLine();
     }
 
-    private ObjectIntMap<String> generatePackageMetadata(List<PreparedClass> classes, Set<String> classesRequiringName)
-            throws IOException {
+    private ObjectIntMap<String> generatePackageMetadata(List<PreparedClass> classes,
+            Map<String, RequiredClassMetadata> metadataRequirements) throws IOException {
         PackageNode root = new PackageNode(null);
 
         for (PreparedClass classNode : classes) {
             String className = classNode.getName();
-            if (!classesRequiringName.contains(className)) {
+            RequiredClassMetadata requiredMetadata = metadataRequirements.get(className);
+            if (requiredMetadata == null || !requiredMetadata.name) {
                 continue;
             }
 
@@ -626,23 +655,50 @@ public class Renderer implements RenderingManager {
         }
     }
 
-    private Set<String> findClassesRequiringName() {
-        Set<String> classesRequiringName = new HashSet<>();
+    private Map<String, RequiredClassMetadata> findRequiredClassMetadata() {
+        Map<String, RequiredClassMetadata> requirements = new HashMap<>();
+
         MethodDependencyInfo getNameMethod = context.getDependencyInfo().getMethod(
                 new MethodReference(Class.class, "getName", String.class));
         if (getNameMethod != null) {
-            addClassesRequiringName(classesRequiringName, getNameMethod.getVariable(0).getClassValueNode().getTypes());
+            addClassesRequiringName(requirements, getNameMethod.getVariable(0).getClassValueNode().getTypes());
         }
+
         MethodDependencyInfo getSimpleNameMethod = context.getDependencyInfo().getMethod(
                 new MethodReference(Class.class, "getSimpleName", String.class));
         if (getSimpleNameMethod != null) {
-            addClassesRequiringName(classesRequiringName,
-                    getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes());
+            String[] classNames = getSimpleNameMethod.getVariable(0).getClassValueNode().getTypes();
+            addClassesRequiringName(requirements, classNames);
+            for (String className : classNames) {
+                RequiredClassMetadata requiredMetadata = requirements.computeIfAbsent(className,
+                        k -> new RequiredClassMetadata());
+                requiredMetadata.simpleName = true;
+                requiredMetadata.enclosingClass = true;
+            }
         }
-        return classesRequiringName;
+
+        MethodDependencyInfo getDeclaringClassMethod = context.getDependencyInfo().getMethod(
+                new MethodReference(Class.class, "getDeclaringClass", Class.class));
+        if (getDeclaringClassMethod != null) {
+            String[] classNames = getDeclaringClassMethod.getVariable(0).getClassValueNode().getTypes();
+            for (String className : classNames) {
+                requirements.computeIfAbsent(className, k -> new RequiredClassMetadata()).declaringClass = true;
+            }
+        }
+
+        MethodDependencyInfo getEnclosingClassMethod = context.getDependencyInfo().getMethod(
+                new MethodReference(Class.class, "getEnclosingClass", Class.class));
+        if (getEnclosingClassMethod != null) {
+            String[] classNames = getEnclosingClassMethod.getVariable(0).getClassValueNode().getTypes();
+            for (String className : classNames) {
+                requirements.computeIfAbsent(className, k -> new RequiredClassMetadata()).enclosingClass = true;
+            }
+        }
+
+        return requirements;
     }
 
-    private void addClassesRequiringName(Set<String> target, String[] source) {
+    private void addClassesRequiringName(Map<String, RequiredClassMetadata> target, String[] source) {
         for (String typeName : source) {
             if (typeName.startsWith("[")) {
                 if (!typeName.endsWith(";")) {
@@ -654,7 +710,7 @@ public class Renderer implements RenderingManager {
                 }
                 typeName = typeName.substring(index, typeName.length() - 1).replace('/', '.');
             }
-            target.add(typeName);
+            target.computeIfAbsent(typeName, k -> new RequiredClassMetadata()).name = true;
         }
     }
 
@@ -1160,5 +1216,12 @@ public class Renderer implements RenderingManager {
 
     private boolean isVirtual(MethodReference method) {
         return context.isVirtual(method);
+    }
+
+    static class RequiredClassMetadata {
+        boolean name;
+        boolean simpleName;
+        boolean declaringClass;
+        boolean enclosingClass;
     }
 }

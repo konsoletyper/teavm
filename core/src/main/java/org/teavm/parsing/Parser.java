@@ -29,6 +29,7 @@ import org.objectweb.asm.commons.JSRInlinerAdapter;
 import org.objectweb.asm.tree.AnnotationNode;
 import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
+import org.objectweb.asm.tree.InnerClassNode;
 import org.objectweb.asm.tree.MethodNode;
 import org.teavm.common.Graph;
 import org.teavm.common.GraphUtils;
@@ -302,14 +303,24 @@ public class Parser {
             cls.addMethod(method);
             method.updateReference(referenceCache);
         }
+
         if (node.outerClass != null) {
             cls.setOwnerName(node.outerClass.replace('/', '.'));
-        } else {
-            int lastIndex = node.name.lastIndexOf('$');
-            if (lastIndex != -1) {
-                cls.setOwnerName(node.name.substring(0, lastIndex).replace('/', '.'));
+        }
+
+        if (node.innerClasses != null && !node.innerClasses.isEmpty()) {
+            for (InnerClassNode innerClassNode : node.innerClasses) {
+                if (node.name.equals(innerClassNode.name)) {
+                    if (innerClassNode.outerName != null) {
+                        cls.setDeclaringClassName(innerClassNode.outerName.replace('/', '.'));
+                        cls.setOwnerName(cls.getDeclaringClassName());
+                    }
+                    cls.setSimpleName(innerClassNode.innerName);
+                    break;
+                }
             }
         }
+
         parseAnnotations(cls.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
         return cls;
     }

@@ -28,6 +28,12 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
             RuntimeClass.class.getName(), "parent");
     private static final FieldReference NAME_FIELD = new FieldReference(
             RuntimeClass.class.getName(), "name");
+    private static final FieldReference SIMPLE_NAME_FIELD = new FieldReference(
+            RuntimeClass.class.getName(), "simpleName");
+    private static final FieldReference DECLARING_CLASS_FIELD = new FieldReference(
+            RuntimeClass.class.getName(), "declaringClass");
+    private static final FieldReference ENCLOSING_CLASS_FIELD = new FieldReference(
+            RuntimeClass.class.getName(), "enclosingClass");
 
     @Override
     public boolean canHandle(MethodReference method) {
@@ -38,6 +44,9 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
             case "getArrayItem":
             case "getSuperclass":
             case "getName":
+            case "getSimpleName":
+            case "getDeclaringClass":
+            case "getEnclosingClass":
                 return true;
         }
         return false;
@@ -55,6 +64,19 @@ public class PlatformClassMetadataIntrinsic implements Intrinsic {
             case "getName":
                 context.writer().print("*");
                 printFieldAccess(context, invocation, NAME_FIELD);
+                break;
+            case "getSimpleName":
+                context.writer().print("(");
+                printFieldAccess(context, invocation, SIMPLE_NAME_FIELD);
+                context.writer().print(" ? *");
+                printFieldAccess(context, invocation, SIMPLE_NAME_FIELD);
+                context.writer().print(" : NULL)");
+                break;
+            case "getDeclaringClass":
+                printFieldAccess(context, invocation, DECLARING_CLASS_FIELD);
+                break;
+            case "getEnclosingClass":
+                printFieldAccess(context, invocation, ENCLOSING_CLASS_FIELD);
                 break;
         }
     }

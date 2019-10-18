@@ -246,6 +246,24 @@ public final class Platform {
         return cls.getMetadata().getName();
     }
 
+    @Unmanaged
+    @PluggableDependency(PlatformGenerator.class)
+    public static String getSimpleName(PlatformClass cls) {
+        return cls.getMetadata().getSimpleName();
+    }
+
+    @Unmanaged
+    @PluggableDependency(PlatformGenerator.class)
+    public static PlatformClass getEnclosingClass(PlatformClass cls) {
+        return cls.getMetadata().getEnclosingClass();
+    }
+
+    @Unmanaged
+    @PluggableDependency(PlatformGenerator.class)
+    public static PlatformClass getDeclaringClass(PlatformClass cls) {
+        return cls.getMetadata().getDeclaringClass();
+    }
+
     @PlatformMarker(Platforms.LOW_LEVEL)
     private static boolean isLowLevel() {
         return false;

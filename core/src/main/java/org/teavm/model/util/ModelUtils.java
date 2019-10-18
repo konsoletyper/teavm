@@ -49,6 +49,8 @@ public final class ModelUtils {
             target.addField(copyField(field));
         }
         target.setOwnerName(original.getOwnerName());
+        target.setDeclaringClassName(original.getDeclaringClassName());
+        target.setSimpleName(original.getSimpleName());
         copyAnnotations(original.getAnnotations(), target.getAnnotations());
         return target;
     }

@@ -26,6 +26,8 @@ public class ClassHolder extends ElementHolder implements ClassReader {
     private Map<MethodDescriptor, MethodHolder> methods = new LinkedHashMap<>();
     private Map<String, FieldHolder> fields = new LinkedHashMap<>();
     private String ownerName;
+    private String simpleName;
+    private String declaringClassName;
 
     public ClassHolder(String name) {
         super(name);
@@ -137,5 +139,23 @@ public class ClassHolder extends ElementHolder implements ClassReader {
 
     public void setOwnerName(String ownerName) {
         this.ownerName = ownerName;
+    }
+
+    @Override
+    public String getSimpleName() {
+        return simpleName;
+    }
+
+    public void setSimpleName(String simpleName) {
+        this.simpleName = simpleName;
+    }
+
+    @Override
+    public String getDeclaringClassName() {
+        return declaringClassName;
+    }
+
+    public void setDeclaringClassName(String declaringClassName) {
+        this.declaringClassName = declaringClassName;
     }
 }

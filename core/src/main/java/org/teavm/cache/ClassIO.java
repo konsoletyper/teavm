@@ -59,6 +59,9 @@ public class ClassIO {
         output.writeUnsigned(packModifiers(cls.readModifiers()));
         output.writeUnsigned(cls.getParent() != null ? symbolTable.lookup(cls.getParent()) + 1 : 0);
         output.writeUnsigned(cls.getOwnerName() != null ? symbolTable.lookup(cls.getOwnerName()) + 1 : 0);
+        output.writeUnsigned(cls.getDeclaringClassName() != null
+                ? symbolTable.lookup(cls.getDeclaringClassName()) + 1 : 0);
+        output.writeUnsigned(cls.getSimpleName() != null ? symbolTable.lookup(cls.getSimpleName()) + 1 : 0);
         output.writeUnsigned(cls.getInterfaces().size());
         for (String iface : cls.getInterfaces()) {
             output.writeUnsigned(symbolTable.lookup(iface));
@@ -84,6 +87,11 @@ public class ClassIO {
         cls.parent = parentIndex > 0 ? referenceCache.getCached(symbolTable.at(parentIndex - 1)) : null;
         int ownerIndex = input.readUnsigned();
         cls.owner = ownerIndex > 0 ? referenceCache.getCached(symbolTable.at(ownerIndex - 1)) : null;
+        int declaringClassIndex = input.readUnsigned();
+        cls.declaringClass = declaringClassIndex > 0
+                ? referenceCache.getCached(symbolTable.at(declaringClassIndex - 1)) : null;
+        int simpleNameIndex = input.readUnsigned();
+        cls.simpleName = simpleNameIndex > 0 ? referenceCache.getCached(symbolTable.at(simpleNameIndex - 1)) : null;
         int ifaceCount = input.readUnsigned();
         Set<String> interfaces = new LinkedHashSet<>();
         for (int i = 0; i < ifaceCount; ++i) {

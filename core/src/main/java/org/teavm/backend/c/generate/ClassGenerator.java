@@ -667,6 +667,9 @@ public class ClassGenerator {
         String initFunction = "NULL";
         String superinterfaceCount = "0";
         String superinterfaces = "NULL";
+        String simpleName = null;
+        String declaringClass = "NULL";
+        String enclosingClass = "NULL";
 
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
@@ -682,8 +685,13 @@ public class ClassGenerator {
             } else {
                 sizeExpr = "0";
             }
-            if (cls != null && cls.hasModifier(ElementModifier.ENUM)) {
-                flags |= RuntimeClass.ENUM;
+            if (cls != null) {
+                if (cls.hasModifier(ElementModifier.ENUM)) {
+                    flags |= RuntimeClass.ENUM;
+                }
+                if (cls.hasModifier(ElementModifier.SYNTHETIC)) {
+                    flags |= RuntimeClass.SYNTHETIC;
+                }
             }
             List<TagRegistry.Range> ranges = tagRegistry != null ? tagRegistry.getRanges(className) : null;
             tag = !context.isIncremental() && ranges != null && !ranges.isEmpty() ? ranges.get(0).lower : 0;
@@ -730,6 +738,22 @@ public class ClassGenerator {
                     break;
             }
 
+            simpleName = cls.getSimpleName();
+
+            if (cls.getDeclaringClassName() != null
+                    && context.getDependencies().getClass(cls.getDeclaringClassName()) != null) {
+                declaringClass = "(TeaVM_Class*) &" + context.getNames().forClassInstance(
+                        ValueType.object(cls.getDeclaringClassName()));
+                includes.includeClass(cls.getDeclaringClassName());
+            }
+
+            if (cls.getOwnerName() != null
+                    && context.getDependencies().getClass(cls.getOwnerName()) != null) {
+                enclosingClass = "(TeaVM_Class*) &" + context.getNames().forClassInstance(
+                        ValueType.object(cls.getOwnerName()));
+                includes.includeClass(cls.getOwnerName());
+            }
+
         } else if (type instanceof ValueType.Array) {
             includes.includeClass("java.lang.Object");
             parent = "(TeaVM_Class*) &" + context.getNames().forClassInstance(ValueType.object("java.lang.Object"));
@@ -766,13 +790,20 @@ public class ClassGenerator {
             arrayTypeExpr = "NULL";
         }
 
+        if (simpleName == null) {
+            simpleName = "NULL";
+        } else {
+            int simpleNameIndex = context.getStringPool().getStringIndex(simpleName);
+            simpleName = "(TeaVM_Object**) &TEAVM_GET_STRING(" + simpleNameIndex + ")";
+        }
+
         includes.includePath("strings.h");
         codeWriter.println(".size = " + sizeExpr + ",");
         codeWriter.println(".flags = " + flags + ",");
         codeWriter.println(".tag = " + tag + ",");
         codeWriter.println(".canary = 0,");
         codeWriter.println(".name = (TeaVM_Object**) &TEAVM_GET_STRING(" + nameRef + "),");
-        codeWriter.println(".simpleName = NULL,");
+        codeWriter.println(".simpleName = " + simpleName + ",");
         codeWriter.println(".arrayType = " + arrayTypeExpr + ",");
         codeWriter.println(".itemType = " + itemTypeExpr + ",");
         codeWriter.println(".isSupertypeOf = &" + superTypeFunction + ",");
@@ -781,6 +812,8 @@ public class ClassGenerator {
         codeWriter.println(".superinterfaces = " + superinterfaces + ",");
         codeWriter.println(".layout = " + layout + ",");
         codeWriter.println(".enumValues = " + enumConstants + ",");
+        codeWriter.println(".declaringClass = " + declaringClass + ",");
+        codeWriter.println(".enclosingClass = " + enclosingClass + ",");
         codeWriter.print(".init = " + initFunction);
 
         if (context.isHeapDump() && type instanceof ValueType.Object) {
@@ -1161,7 +1194,7 @@ public class ClassGenerator {
                     throw new AssertionError();
             }
         } else if (type instanceof ValueType.Array) {
-            return nameOfType(((ValueType.Array) type).getItemType()) + "[]";
+            return type.toString().replace('/', '.');
         } else if (type == ValueType.VOID) {
             return "void";
         } else if (type instanceof ValueType.Object) {
