@@ -283,15 +283,18 @@ public class WasmClassGenerator {
 
         ClassReader cls = processedClassSource.get(name);
 
-        if (cls.getSimpleName() != null) {
-            header.setAddress(CLASS_SIMPLE_NAME, stringPool.getStringPointer(cls.getSimpleName()));
-        }
+        if (cls != null) {
+            if (cls.getSimpleName() != null) {
+                header.setAddress(CLASS_SIMPLE_NAME, stringPool.getStringPointer(cls.getSimpleName()));
+            }
 
-        if (cls.getOwnerName() != null && processedClassSource.get(cls.getOwnerName()) != null) {
-            header.setAddress(CLASS_ENCLOSING_CLASS, getClassPointer(ValueType.object(cls.getOwnerName())));
-        }
-        if (cls.getDeclaringClassName() != null && processedClassSource.get(cls.getDeclaringClassName()) != null) {
-            header.setAddress(CLASS_DECLARING_CLASS, getClassPointer(ValueType.object(cls.getDeclaringClassName())));
+            if (cls.getOwnerName() != null && processedClassSource.get(cls.getOwnerName()) != null) {
+                header.setAddress(CLASS_ENCLOSING_CLASS, getClassPointer(ValueType.object(cls.getOwnerName())));
+            }
+            if (cls.getDeclaringClassName() != null && processedClassSource.get(cls.getDeclaringClassName()) != null) {
+                header.setAddress(CLASS_DECLARING_CLASS,
+                        getClassPointer(ValueType.object(cls.getDeclaringClassName())));
+            }
         }
 
         if (vtable != null) {
