@@ -95,8 +95,14 @@ public final class CodeGeneratorUtil {
         } else if (value instanceof Character) {
             writeIntValue(writer, (char) value);
         } else if (value instanceof ValueType) {
-            includes.includeType((ValueType) value);
-            writer.print("&").print(context.getNames().forClassInstance((ValueType) value));
+            ValueType type = (ValueType) value;
+            if (type instanceof ValueType.Object
+                    && !context.getCharacteristics().isManaged(((ValueType.Object) type).getClassName())) {
+                writer.print("NULL");
+            } else {
+                includes.includeType(type);
+                writer.print("&").print(context.getNames().forClassInstance(type));
+            }
         }
     }
 

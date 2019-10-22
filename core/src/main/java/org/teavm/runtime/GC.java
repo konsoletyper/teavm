@@ -198,6 +198,19 @@ public final class GC {
             staticRoots = staticRoots.add(Address.sizeOf());
         }
 
+        int classCount = Mutator.getClassCount();
+        Address classPtr = Mutator.getClasses();
+        for (int i = 0; i < classCount; ++i) {
+            RuntimeClass cls = classPtr.getAddress().toStructure();
+            if (cls.simpleNameCache != null) {
+                mark(cls.simpleNameCache);
+            }
+            if (cls.canonicalName != null) {
+                mark(cls.canonicalName);
+            }
+            classPtr = classPtr.add(Address.sizeOf());
+        }
+
         for (Address stackRoots = ShadowStack.getStackTop(); stackRoots != null;
              stackRoots = ShadowStack.getNextStackFrame(stackRoots)) {
             int count = ShadowStack.getStackRootCount(stackRoots);
@@ -414,6 +427,7 @@ public final class GC {
         markStackRoots();
         calculateRelocationTargets();
         updatePointersFromStaticRoots();
+        updatePointersFromClasses();
         updatePointersFromObjects();
         restoreObjectHeaders();
         relocateObjects();
@@ -554,6 +568,21 @@ public final class GC {
             Address staticRoot = staticRoots.getAddress();
             staticRoot.putAddress(updatePointer(staticRoot.getAddress()));
             staticRoots = staticRoots.add(Address.sizeOf());
+        }
+    }
+
+    private static void updatePointersFromClasses() {
+        int classCount = Mutator.getClassCount();
+        Address classPtr = Mutator.getClasses();
+        for (int i = 0; i < classCount; ++i) {
+            RuntimeClass cls = classPtr.getAddress().toStructure();
+            if (cls.simpleNameCache != null) {
+                cls.simpleNameCache = updatePointer(cls.simpleNameCache.toAddress()).toStructure();
+            }
+            if (cls.canonicalName != null) {
+                cls.canonicalName = updatePointer(cls.canonicalName.toAddress()).toStructure();
+            }
+            classPtr = classPtr.add(Address.sizeOf());
         }
     }
 

@@ -403,6 +403,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         generateIsSupertypeFunctions(tagRegistry, module, classGenerator);
         classGenerator.postProcess();
         mutatorIntrinsic.setStaticGcRootsAddress(classGenerator.getStaticGcRootsAddress());
+        mutatorIntrinsic.setClassesAddress(classGenerator.getClassesAddress());
+        mutatorIntrinsic.setClassCount(classGenerator.getClassCount());
 
         WasmMemorySegment dataSegment = new WasmMemorySegment();
         dataSegment.setData(binaryWriter.getData());

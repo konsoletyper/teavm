@@ -40,18 +40,14 @@ import org.teavm.model.MethodReference;
 import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;
-import org.teavm.model.instructions.CloneArrayInstruction;
-import org.teavm.model.instructions.ConstructArrayInstruction;
-import org.teavm.model.instructions.ConstructInstruction;
-import org.teavm.model.instructions.ConstructMultiArrayInstruction;
-import org.teavm.model.instructions.InitClassInstruction;
+import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
-import org.teavm.model.instructions.MonitorEnterInstruction;
-import org.teavm.model.instructions.MonitorExitInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
-import org.teavm.model.instructions.RaiseInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.GraphColorer;
 import org.teavm.model.util.LivenessAnalyzer;
@@ -128,6 +124,7 @@ public class GCShadowStackContributor {
 
     private List<Map<Instruction, BitSet>> findCallSiteLiveIns(Program program, MethodReader method) {
         boolean[] nativePointers = nativePointerFinder.findNativePointers(method.getReference(), program);
+        BitSet constants = findConstantRefVariables(program);
 
         TypeInferer typeInferer = new TypeInferer();
         typeInferer.inferTypes(program, method.getReference());
@@ -153,20 +150,10 @@ public class GCShadowStackContributor {
                 for (Variable definedVar : defExtractor.getDefinedVariables()) {
                     currentLiveOut.clear(definedVar.getIndex());
                 }
-                if (insn instanceof InvokeInstruction || insn instanceof InitClassInstruction
-                        || insn instanceof ConstructInstruction || insn instanceof ConstructArrayInstruction
-                        || insn instanceof ConstructMultiArrayInstruction
-                        || insn instanceof CloneArrayInstruction || insn instanceof RaiseInstruction
-                        || insn instanceof NullCheckInstruction
-                        || insn instanceof MonitorEnterInstruction || insn instanceof MonitorExitInstruction) {
-                    if (insn instanceof InvokeInstruction
-                            && !characteristics.isManaged(((InvokeInstruction) insn).getMethod())) {
-                        continue;
-                    }
-
+                if (ExceptionHandlingShadowStackContributor.isCallInstruction(characteristics, insn)) {
                     BitSet csLiveIn = (BitSet) currentLiveOut.clone();
                     for (int v = csLiveIn.nextSetBit(0); v >= 0; v = csLiveIn.nextSetBit(v + 1)) {
-                        if (!isReference(typeInferer, v) || nativePointers[v]) {
+                        if (!isReference(typeInferer, v) || nativePointers[v] || constants.get(v)) {
                             csLiveIn.clear(v);
                         }
                     }
@@ -409,5 +396,47 @@ public class GCShadowStackContributor {
             default:
                 return false;
         }
+    }
+
+    private BitSet findConstantRefVariables(Program program) {
+        BitSet constantClasses = new BitSet();
+        DisjointSet classes = new DisjointSet();
+        for (int i = 0; i < program.variableCount(); ++i) {
+            classes.create();
+        }
+
+        for (BasicBlock block : program.getBasicBlocks()) {
+            for (Instruction instruction : block) {
+                Variable variable;
+                if (instruction instanceof ClassConstantInstruction) {
+                    variable = ((ClassConstantInstruction) instruction).getReceiver();
+                } else if (instruction instanceof StringConstantInstruction) {
+                    variable = ((StringConstantInstruction) instruction).getReceiver();
+                } else if (instruction instanceof NullConstantInstruction) {
+                    variable = ((NullConstantInstruction) instruction).getReceiver();
+                } else if (instruction instanceof AssignInstruction) {
+                    AssignInstruction assign = (AssignInstruction) instruction;
+                    boolean wasConstant = constantClasses.get(classes.find(assign.getAssignee().getIndex()));
+                    int newClass = classes.union(assign.getAssignee().getIndex(), assign.getReceiver().getIndex());
+                    if (wasConstant) {
+                        constantClasses.set(newClass);
+                    }
+                    continue;
+                } else {
+                    continue;
+                }
+
+                constantClasses.set(classes.find(variable.getIndex()));
+            }
+        }
+
+        BitSet result = new BitSet();
+        for (int i = 0; i < program.variableCount(); ++i) {
+            if (constantClasses.get(classes.find(i))) {
+                result.set(i);
+            }
+        }
+
+        return result;
     }
 }

@@ -88,6 +88,8 @@ public class WasmClassGenerator {
             DataPrimitives.ADDRESS   /* canonical name cache */);
     private IntegerArray staticGcRoots = new IntegerArray(1);
     private int staticGcRootsAddress;
+    private int classesAddress;
+    private int classCount;
 
     private static final int CLASS_SIZE = 1;
     private static final int CLASS_FLAGS = 2;
@@ -618,10 +620,19 @@ public class WasmClassGenerator {
             }
         }
         writeStaticGcRoots();
+        writeClasses();
     }
 
     public int getStaticGcRootsAddress() {
         return staticGcRootsAddress;
+    }
+
+    public int getClassesAddress() {
+        return classesAddress;
+    }
+
+    public int getClassCount() {
+        return classCount;
     }
 
     private void writeStaticGcRoots() {
@@ -632,6 +643,21 @@ public class WasmClassGenerator {
             DataValue value = DataPrimitives.ADDRESS.createValue();
             value.setAddress(0, gcRoot);
             binaryWriter.append(value);
+        }
+    }
+
+    private void writeClasses() {
+        for (ClassBinaryData cls : binaryDataMap.values()) {
+            if (cls.start < 0) {
+                continue;
+            }
+            DataValue value = DataPrimitives.ADDRESS.createValue();
+            value.setAddress(0, cls.start);
+            int address = binaryWriter.append(value);
+            if (classesAddress == 0) {
+                classesAddress = address;
+            }
+            ++classCount;
         }
     }
 

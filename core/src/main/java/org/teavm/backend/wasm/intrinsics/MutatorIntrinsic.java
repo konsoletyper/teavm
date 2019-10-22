@@ -25,10 +25,24 @@ import org.teavm.runtime.Mutator;
 
 public class MutatorIntrinsic implements WasmIntrinsic {
     private List<WasmInt32Constant> staticGcRootsExpressions = new ArrayList<>();
+    private List<WasmInt32Constant> classesExpressions = new ArrayList<>();
+    private List<WasmInt32Constant> classCountExpressions = new ArrayList<>();
 
     public void setStaticGcRootsAddress(int address) {
         for (WasmInt32Constant constant : staticGcRootsExpressions) {
             constant.setValue(address);
+        }
+    }
+
+    public void setClassesAddress(int address) {
+        for (WasmInt32Constant constant : classesExpressions) {
+            constant.setValue(address);
+        }
+    }
+
+    public void setClassCount(int count) {
+        for (WasmInt32Constant constant : classCountExpressions) {
+            constant.setValue(count);
         }
     }
 
@@ -39,6 +53,8 @@ public class MutatorIntrinsic implements WasmIntrinsic {
         }
         switch (methodReference.getName()) {
             case "getStaticGCRoots":
+            case "getClasses":
+            case "getClassCount":
                 return true;
             default:
                 return false;
@@ -51,6 +67,16 @@ public class MutatorIntrinsic implements WasmIntrinsic {
             case "getStaticGCRoots": {
                 WasmInt32Constant constant = new WasmInt32Constant(0);
                 staticGcRootsExpressions.add(constant);
+                return constant;
+            }
+            case "getClasses": {
+                WasmInt32Constant constant = new WasmInt32Constant(0);
+                classesExpressions.add(constant);
+                return constant;
+            }
+            case "getClassCount": {
+                WasmInt32Constant constant = new WasmInt32Constant(0);
+                classCountExpressions.add(constant);
                 return constant;
             }
         }

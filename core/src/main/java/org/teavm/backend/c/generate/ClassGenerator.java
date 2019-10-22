@@ -1077,10 +1077,7 @@ public class ClassGenerator {
     public static boolean needsVirtualTable(Characteristics characteristics, ValueType type) {
         if (type instanceof ValueType.Object) {
             String className = ((ValueType.Object) type).getClassName();
-            if (className.equals(Address.class.getName())) {
-                return false;
-            }
-            return !characteristics.isStructure(className);
+            return characteristics.isManaged(className);
         } else if (type instanceof ValueType.Array) {
             return needsVirtualTable(characteristics, ((ValueType.Array) type).getItemType());
         } else {

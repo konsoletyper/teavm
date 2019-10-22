@@ -26,4 +26,8 @@ public final class Mutator {
     }
 
     public static native Address getStaticGCRoots();
+
+    public static native Address getClasses();
+
+    public static native int getClassCount();
 }
