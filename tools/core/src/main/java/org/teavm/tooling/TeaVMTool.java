@@ -342,6 +342,7 @@ public class TeaVMTool {
         cTarget.setLineNumbersGenerated(debugInformationGenerated);
         cTarget.setLongjmpUsed(longjmpSupported);
         cTarget.setHeapDump(heapDump);
+        cTarget.setObfuscated(minifying);
         return cTarget;
     }
 

@@ -18,6 +18,10 @@ package org.teavm.backend.c;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.Writer;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -78,6 +82,7 @@ import org.teavm.backend.lowlevel.transform.CoroutineTransformation;
 import org.teavm.backend.lowlevel.transform.WeakReferenceTransformation;
 import org.teavm.cache.EmptyMethodNodeCache;
 import org.teavm.cache.MethodNodeCache;
+import org.teavm.common.JsonUtil;
 import org.teavm.dependency.ClassDependency;
 import org.teavm.dependency.DependencyAnalyzer;
 import org.teavm.dependency.DependencyListener;
@@ -169,6 +174,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private SimpleStringPool stringPool;
     private boolean longjmpUsed = true;
     private boolean heapDump;
+    private boolean obfuscated;
     private List<CallSiteDescriptor> callSites = new ArrayList<>();
 
     public CTarget(NameProvider nameProvider) {
@@ -201,6 +207,10 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
     public void setAstCache(MethodNodeCache astCache) {
         this.astCache = astCache;
+    }
+
+    public void setObfuscated(boolean obfuscated) {
+        this.obfuscated = obfuscated;
     }
 
     @Override
@@ -392,7 +402,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 controller.getDependencyInfo(), stringPool, nameProvider, controller.getDiagnostics(), classes,
                 intrinsics, generators, asyncMethods::contains, buildTarget,
                 controller.getClassInitializerInfo(), incremental, longjmpUsed,
-                vmAssertions, vmAssertions || heapDump);
+                vmAssertions, vmAssertions || heapDump, obfuscated);
 
         BufferedCodeWriter specialWriter = new BufferedCodeWriter(false);
         BufferedCodeWriter configHeaderWriter = new BufferedCodeWriter(false);
@@ -409,6 +419,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
         if (heapDump) {
             configHeaderWriter.println("#define TEAVM_HEAP_DUMP 1");
+        }
+        if (obfuscated) {
+            configHeaderWriter.println("#define TEAVM_OBFUSCATED 1");
         }
 
         ClassGenerator classGenerator = new ClassGenerator(context, tagRegistry, decompiler,
@@ -522,6 +535,61 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 ? this.callSites
                 : CallSiteDescriptor.extract(context.getClassSource(), classNames);
         new CallSiteGenerator(context, writer, includes, "teavm_callSites").generate(callSites);
+        if (obfuscated) {
+            generateCallSitesJson(context.getBuildTarget(), callSites);
+        }
+    }
+
+    private void generateCallSitesJson(BuildTarget buildTarget, List<? extends CallSiteDescriptor> callSites) {
+        try (OutputStream output = buildTarget.createResource("callsites.json");
+                Writer writer = new OutputStreamWriter(output, StandardCharsets.UTF_8)) {
+            writer.append("[\n");
+            boolean first = true;
+            for (CallSiteDescriptor descriptor : callSites) {
+                if (!first) {
+                    writer.append(",\n");
+                }
+                first = false;
+                writer.append("{\"id\":").append(Integer.toString(descriptor.getId()));
+                writer.append(",\"locations\":[");
+                org.teavm.model.lowlevel.CallSiteLocation[] locations = descriptor.getLocations();
+                if (locations != null) {
+                    boolean firstLocation = true;
+                    for (org.teavm.model.lowlevel.CallSiteLocation location : locations) {
+                        if (!firstLocation) {
+                            writer.append(",");
+                        }
+                        firstLocation = false;
+                        writer.append("{\"class\":");
+                        appendJsonString(writer, location.getClassName());
+                        writer.append(",\"method\":");
+                        appendJsonString(writer, location.getMethodName());
+                        writer.append(",\"file\":");
+                        appendJsonString(writer, location.getFileName());
+                        writer.append(",\"line\":").append(Integer.toString(location.getLineNumber()));
+                        writer.append("}");
+                    }
+                }
+                writer.append("]}");
+            }
+            if (!first) {
+                writer.append("\n");
+            }
+            writer.append("]");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private static void appendJsonString(Writer writer, String string) throws IOException {
+        if (string == null) {
+            writer.append("null");
+            return;
+        }
+
+        writer.append("\"");
+        JsonUtil.writeEscapedString(writer, string);
+        writer.append("\"");
     }
 
     private void generateStrings(BuildTarget buildTarget, GenerationContext context) throws IOException {

@@ -38,32 +38,41 @@ public final class ExceptionHandling {
     public static native void abort();
 
     @Unmanaged
+    private static native boolean isObfuscated();
+
+    @Unmanaged
     public static void printStack() {
         Address stackFrame = ShadowStack.getStackTop();
         while (stackFrame != null) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
-            CallSite callSite = findCallSiteById(callSiteId, stackFrame);
-            CallSiteLocation location = callSite.location;
-            while (location != null) {
-                MethodLocation methodLocation = location != null ? location.method : null;
-
-                Console.printString("    at ");
-                if (methodLocation.className == null || methodLocation.methodName == null) {
-                    Console.printString("(Unknown method)");
-                } else {
-                    Console.printString(methodLocation.className.value);
-                    Console.printString(".");
-                    Console.printString(methodLocation.methodName.value);
-                }
-                Console.printString("(");
-                if (methodLocation.fileName != null && location.lineNumber >= 0) {
-                    Console.printString(methodLocation.fileName.value);
-                    Console.printString(":");
-                    Console.printInt(location.lineNumber);
-                }
+            if (isObfuscated()) {
+                Console.printString("    at Obfuscated.obfuscated(Obfuscated.java:");
+                Console.printInt(callSiteId);
                 Console.printString(")\n");
+            } else {
+                CallSite callSite = findCallSiteById(callSiteId, stackFrame);
+                CallSiteLocation location = callSite.location;
+                while (location != null) {
+                    MethodLocation methodLocation = location != null ? location.method : null;
 
-                location = location.next;
+                    Console.printString("    at ");
+                    if (methodLocation.className == null || methodLocation.methodName == null) {
+                        Console.printString("(Unknown method)");
+                    } else {
+                        Console.printString(methodLocation.className.value);
+                        Console.printString(".");
+                        Console.printString(methodLocation.methodName.value);
+                    }
+                    Console.printString("(");
+                    if (methodLocation.fileName != null && location.lineNumber >= 0) {
+                        Console.printString(methodLocation.fileName.value);
+                        Console.printString(":");
+                        Console.printInt(location.lineNumber);
+                    }
+                    Console.printString(")\n");
+
+                    location = location.next;
+                }
             }
             stackFrame = ShadowStack.getNextStackFrame(stackFrame);
         }
@@ -137,14 +146,14 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
-    public static int callStackSize() {
+    private static int callStackSize() {
         Address stackFrame = ShadowStack.getStackTop();
         int size = 0;
         while (stackFrame != null) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
             CallSite callSite = findCallSiteById(callSiteId, stackFrame);
             CallSiteLocation location = callSite.location;
-            if (location == null) {
+            if (isObfuscated() || location == null) {
                 size++;
             } else {
                 while (location != null) {
@@ -159,27 +168,35 @@ public final class ExceptionHandling {
     }
 
     @Unmanaged
-    public static void fillStackTrace(StackTraceElement[] target) {
+    public static StackTraceElement[] fillStackTrace() {
         Address stackFrame = ShadowStack.getStackTop();
+        int size = callStackSize();
+
+        ShadowStack.allocStack(1);
+        StackTraceElement[] target = new StackTraceElement[size];
+        ShadowStack.registerGCRoot(0, target);
+
         int index = 0;
         while (stackFrame != null) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
             CallSite callSite = findCallSiteById(callSiteId, stackFrame);
             CallSiteLocation location = callSite.location;
-            if (location == null) {
-                target[index++] = createElement("", "", null, location.lineNumber);
+            if (isObfuscated()) {
+                target[index++] = new StackTraceElement("Obfuscated", "obfuscated", "Obfuscated.java", callSiteId);
+            } else if (location == null) {
+                target[index++] = new StackTraceElement("", "", null, location.lineNumber);
             } else {
                 while (location != null) {
                     MethodLocation methodLocation = location.method;
                     StackTraceElement element;
                     if (methodLocation != null) {
-                        element = createElement(
+                        element = new StackTraceElement(
                                 methodLocation.className != null ? methodLocation.className.value : "",
                                 methodLocation.methodName != null ? methodLocation.methodName.value : "",
                                 methodLocation.fileName != null ? methodLocation.fileName.value : null,
                                 location.lineNumber);
                     } else {
-                        element = createElement("", "", null, location.lineNumber);
+                        element = new StackTraceElement("", "", null, location.lineNumber);
                     }
                     target[index++] = element;
                     location = location.next;
@@ -187,10 +204,8 @@ public final class ExceptionHandling {
             }
             stackFrame = ShadowStack.getNextStackFrame(stackFrame);
         }
-    }
+        ShadowStack.releaseStack(1);
 
-    private static StackTraceElement createElement(String className, String methodName, String fileName,
-            int lineNumber) {
-        return new StackTraceElement(className, methodName, fileName, lineNumber);
+        return target;
     }
 }

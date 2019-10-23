@@ -26,7 +26,6 @@ import org.teavm.model.lowlevel.CallSiteLocation;
 import org.teavm.model.lowlevel.ExceptionHandlerDescriptor;
 
 public class CallSiteGenerator {
-
     private GenerationContext context;
     private CodeWriter writer;
     private IncludeManager includes;
@@ -79,20 +78,22 @@ public class CallSiteGenerator {
             first = false;
 
             int locationIndex = -1;
-            CallSiteLocation[] locations = callSite.getLocations();
-            if (locations != null && locations.length > 0) {
-                LocationList prevList = null;
-                for (int i = locations.length - 1; i >= 0; --i) {
-                    LocationList list = new LocationList(locations[i], prevList);
-                    locationIndex = locationMap.getOrDefault(list, -1);
-                    if (locationIndex < 0) {
-                        locationIndex = this.locations.size();
-                        locationMap.put(list, locationIndex);
-                        this.locations.add(list);
-                    } else {
-                        list = this.locations.get(locationIndex);
+            if (!context.isObfuscated()) {
+                CallSiteLocation[] locations = callSite.getLocations();
+                if (locations != null && locations.length > 0) {
+                    LocationList prevList = null;
+                    for (int i = locations.length - 1; i >= 0; --i) {
+                        LocationList list = new LocationList(locations[i], prevList);
+                        locationIndex = locationMap.getOrDefault(list, -1);
+                        if (locationIndex < 0) {
+                            locationIndex = this.locations.size();
+                            locationMap.put(list, locationIndex);
+                            this.locations.add(list);
+                        } else {
+                            list = this.locations.get(locationIndex);
+                        }
+                        prevList = list;
                     }
-                    prevList = list;
                 }
             }
 

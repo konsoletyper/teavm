@@ -54,6 +54,7 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
             case "isJumpSupported":
             case "jumpToFrame":
             case "abort":
+            case "isObfuscated":
                 return true;
         }
         return false;
@@ -83,6 +84,7 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
             }
 
             case "isJumpSupported":
+            case "isObfuscated":
                 return new WasmInt32Constant(0);
 
             case "jumpToFrame":

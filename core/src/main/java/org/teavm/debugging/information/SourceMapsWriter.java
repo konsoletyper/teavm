@@ -17,6 +17,7 @@ package org.teavm.debugging.information;
 
 import java.io.IOException;
 import java.io.Writer;
+import org.teavm.common.JsonUtil;
 
 class SourceMapsWriter {
     private static final String BASE64_CHARS = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
@@ -34,10 +35,10 @@ class SourceMapsWriter {
     public void write(String generatedFile, String sourceRoot, DebugInformation debugInfo) throws IOException {
         output.write("{\"version\":3");
         output.write(",\"file\":\"");
-        writeEscapedString(generatedFile);
+        JsonUtil.writeEscapedString(output, generatedFile);
         output.write("\"");
         output.write(",\"sourceRoot\":\"");
-        writeEscapedString(sourceRoot);
+        JsonUtil.writeEscapedString(output, sourceRoot);
         output.write("\"");
         output.write(",\"sources\":[");
         for (int i = 0; i < debugInfo.fileNames.length; ++i) {
@@ -45,7 +46,7 @@ class SourceMapsWriter {
                 output.write(',');
             }
             output.write("\"");
-            writeEscapedString(debugInfo.fileNames[i]);
+            JsonUtil.writeEscapedString(output, debugInfo.fileNames[i]);
             output.write("\"");
         }
         output.write("]");
@@ -83,35 +84,6 @@ class SourceMapsWriter {
         }
         lastColumn = loc.getColumn();
         first = false;
-    }
-
-    private void writeEscapedString(String str) throws IOException {
-        for (int i = 0; i < str.length(); ++i) {
-            char c = str.charAt(i);
-            switch (c) {
-                case '\n':
-                    output.write("\\n");
-                    break;
-                case '\r':
-                    output.write("\\r");
-                    break;
-                case '\t':
-                    output.write("\\t");
-                    break;
-                case '\b':
-                    output.write("\\b");
-                    break;
-                case '\\':
-                    output.write("\\\\");
-                    break;
-                case '"':
-                    output.write("\\\"");
-                    break;
-                default:
-                    output.write(c);
-                    break;
-            }
-        }
     }
 
     private void writeVLQ(int number) throws IOException {

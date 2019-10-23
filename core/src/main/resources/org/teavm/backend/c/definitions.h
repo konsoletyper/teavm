@@ -58,3 +58,7 @@
 #ifndef TEAVM_GC_LOG
     #define TEAVM_GC_LOG 0
 #endif
+
+#ifndef TEAVM_OBFUSCATED
+    #define TEAVM_OBFUSCATED 0
+#endif

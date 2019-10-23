@@ -111,10 +111,7 @@ public class TThrowable extends RuntimeException {
 
     @Unmanaged
     private static TStackTraceElement[] fillInStackTraceLowLevel() {
-        int stackSize = ExceptionHandling.callStackSize();
-        TStackTraceElement[] stackTrace = new TStackTraceElement[stackSize];
-        ExceptionHandling.fillStackTrace((StackTraceElement[]) (Object) stackTrace);
-        return stackTrace;
+        return (TStackTraceElement[]) (Object) ExceptionHandling.fillStackTrace();
     }
 
     @Rename("getMessage")

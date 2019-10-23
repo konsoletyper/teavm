@@ -31,6 +31,7 @@ public class ExceptionHandlingIntrinsic implements Intrinsic {
             case "isJumpSupported":
             case "jumpToFrame":
             case "abort":
+            case "isObfuscated":
                 return true;
             default:
                 return false;
@@ -63,6 +64,10 @@ public class ExceptionHandlingIntrinsic implements Intrinsic {
             case "abort":
                 context.includes().addInclude("<stdlib.h>");
                 context.writer().print("abort();");
+                break;
+
+            case "isObfuscated":
+                context.writer().print("TEAVM_OBFUSCATED");
                 break;
         }
     }
