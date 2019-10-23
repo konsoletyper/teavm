@@ -145,6 +145,7 @@ import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.RuntimeArray;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
+import org.teavm.runtime.ShadowStack;
 import org.teavm.vm.BuildTarget;
 import org.teavm.vm.TeaVMEntryPoint;
 import org.teavm.vm.TeaVMTarget;
@@ -605,7 +606,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 if (methodGenerator != null) {
                     WasmFunction function = context.getFunction(context.names.forMethod(method.getReference()));
                     methodGenerator.apply(method.getReference(), function, methodGeneratorContext);
-                } else {
+                } else if (!isShadowStackMethod(method.getReference())) {
                     if (context.getImportedMethod(method.getReference()) == null) {
                         CallLocation location = new CallLocation(method.getReference());
                         controller.getDiagnostics().error(location, "Method {{m0}} is native but "
@@ -626,6 +627,21 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             if (controller.wasCancelled()) {
                 return;
             }
+        }
+    }
+
+    private boolean isShadowStackMethod(MethodReference method) {
+        if (!method.getClassName().equals(ShadowStack.class.getName())) {
+            return false;
+        }
+        switch (method.getName()) {
+            case "allocStack":
+            case "registerGCRoot":
+            case "removeGCRoot":
+            case "releaseStack":
+                return true;
+            default:
+                return false;
         }
     }
 
