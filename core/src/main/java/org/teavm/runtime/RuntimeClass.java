@@ -48,6 +48,7 @@ public class RuntimeClass extends RuntimeObject {
     public int tag;
     public int canary;
     public RuntimeObjectPtr name;
+    public RuntimeObject nameCache;
     public RuntimeClass itemType;
     public RuntimeClass arrayType;
     public RuntimeClass declaringClass;

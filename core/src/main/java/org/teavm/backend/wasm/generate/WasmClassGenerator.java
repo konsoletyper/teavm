@@ -72,6 +72,7 @@ public class WasmClassGenerator {
             DataPrimitives.INT, /* tag */
             DataPrimitives.INT, /* canary */
             DataPrimitives.ADDRESS, /* name */
+            DataPrimitives.ADDRESS, /* name cache */
             DataPrimitives.ADDRESS, /* item type */
             DataPrimitives.ADDRESS, /* array type */
             DataPrimitives.ADDRESS, /* declaring class */
@@ -96,16 +97,16 @@ public class WasmClassGenerator {
     private static final int CLASS_TAG = 3;
     private static final int CLASS_CANARY = 4;
     private static final int CLASS_NAME = 5;
-    private static final int CLASS_ITEM_TYPE = 6;
-    private static final int CLASS_ARRAY_TYPE = 7;
-    private static final int CLASS_DECLARING_CLASS = 8;
-    private static final int CLASS_ENCLOSING_CLASS = 9;
-    private static final int CLASS_IS_INSTANCE = 10;
-    private static final int CLASS_INIT = 11;
-    private static final int CLASS_PARENT = 12;
-    private static final int CLASS_ENUM_VALUES = 15;
-    private static final int CLASS_LAYOUT = 16;
-    private static final int CLASS_SIMPLE_NAME = 17;
+    private static final int CLASS_ITEM_TYPE = 7;
+    private static final int CLASS_ARRAY_TYPE = 8;
+    private static final int CLASS_DECLARING_CLASS = 9;
+    private static final int CLASS_ENCLOSING_CLASS = 10;
+    private static final int CLASS_IS_INSTANCE = 11;
+    private static final int CLASS_INIT = 12;
+    private static final int CLASS_PARENT = 13;
+    private static final int CLASS_ENUM_VALUES = 16;
+    private static final int CLASS_LAYOUT = 17;
+    private static final int CLASS_SIMPLE_NAME = 18;
 
     public WasmClassGenerator(ClassReaderSource processedClassSource, ClassReaderSource classSource,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, BinaryWriter binaryWriter,

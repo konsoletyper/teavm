@@ -208,6 +208,9 @@ public final class GC {
             if (cls.canonicalName != null) {
                 mark(cls.canonicalName);
             }
+            if (cls.nameCache != null) {
+                mark(cls.nameCache);
+            }
             classPtr = classPtr.add(Address.sizeOf());
         }
 
@@ -581,6 +584,9 @@ public final class GC {
             }
             if (cls.canonicalName != null) {
                 cls.canonicalName = updatePointer(cls.canonicalName.toAddress()).toStructure();
+            }
+            if (cls.nameCache != null) {
+                cls.nameCache = updatePointer(cls.nameCache.toAddress()).toStructure();
             }
             classPtr = classPtr.add(Address.sizeOf());
         }

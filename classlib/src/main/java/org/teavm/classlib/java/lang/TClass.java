@@ -106,7 +106,21 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     @Unmanaged
     public String getName() {
         if (PlatformDetector.isLowLevel()) {
-            return Platform.getName(platformClass);
+            String result = getNameCache(this);
+            if (result == null) {
+                result = Platform.getName(platformClass);
+                if (result == null) {
+                    if (isArray()) {
+                        TClass<?> componentType = getComponentType();
+                        String componentName = componentType.getName();
+                        if (componentName != null) {
+                            result = componentType.isArray() ? "[" + componentName : "[L" + componentName + ";";
+                        }
+                    }
+                }
+                setNameCache(this, result);
+            }
+            return result;
         } else {
             if (name == null) {
                 name = Platform.getName(platformClass);
@@ -165,6 +179,27 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
     @Unmanaged
     private static void setSimpleNameCacheLowLevel(RuntimeClass self, RuntimeObject object) {
         self.simpleNameCache = object;
+    }
+
+    @DelegateTo("getNameCacheLowLevel")
+    private static String getNameCache(TClass<?> self) {
+        return self.name;
+    }
+
+    @Unmanaged
+    @PluggableDependency(ClassDependencyListener.class)
+    private static RuntimeObject getNameCacheLowLevel(RuntimeClass self) {
+        return self.nameCache;
+    }
+
+    @DelegateTo("setNameCacheLowLevel")
+    private static void setNameCache(TClass<?> self, String value) {
+        self.name = value;
+    }
+
+    @Unmanaged
+    private static void setNameCacheLowLevel(RuntimeClass self, RuntimeObject object) {
+        self.nameCache = object;
     }
 
     public String getCanonicalName() {

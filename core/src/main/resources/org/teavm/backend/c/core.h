@@ -28,6 +28,7 @@ typedef struct TeaVM_Class {
     int32_t tag;
     int32_t canary;
     TeaVM_Object** name;
+    TeaVM_Object* nameCache;
     struct TeaVM_Class* itemType;
     struct TeaVM_Class* arrayType;
     struct TeaVM_Class* declaringClass;

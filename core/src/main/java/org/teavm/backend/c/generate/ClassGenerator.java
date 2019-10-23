@@ -58,6 +58,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
+import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
@@ -104,6 +105,7 @@ public class ClassGenerator {
     private MethodNodeCache astCache = EmptyMethodNodeCache.INSTANCE;
     private AstDependencyExtractor dependencyExtractor = new AstDependencyExtractor();
     private List<CallSiteDescriptor> callSites;
+    private ClassMetadataRequirements metadataRequirements;
 
     public ClassGenerator(GenerationContext context, TagRegistry tagRegistry, Decompiler decompiler,
             CacheStatus cacheStatus) {
@@ -111,6 +113,7 @@ public class ClassGenerator {
         this.tagRegistry = tagRegistry;
         this.decompiler = decompiler;
         this.cacheStatus = cacheStatus;
+        metadataRequirements = new ClassMetadataRequirements(context.getDependencies());
     }
 
     public void setAstCache(MethodNodeCache astCache) {
@@ -778,7 +781,10 @@ public class ClassGenerator {
             itemTypeExpr = "NULL";
         }
 
-        int nameRef = context.getStringPool().getStringIndex(nameOfType(type));
+        String metadataName = nameOfType(type);
+        String nameRef = metadataName != null
+                ? "(TeaVM_Object**) &TEAVM_GET_STRING(" + context.getStringPool().getStringIndex(metadataName) + ")"
+                : "NULL";
         String superTypeFunction = context.getNames().forSupertypeFunction(type);
 
         ValueType arrayType = ValueType.arrayOf(type);
@@ -802,7 +808,7 @@ public class ClassGenerator {
         codeWriter.println(".flags = " + flags + ",");
         codeWriter.println(".tag = " + tag + ",");
         codeWriter.println(".canary = 0,");
-        codeWriter.println(".name = (TeaVM_Object**) &TEAVM_GET_STRING(" + nameRef + "),");
+        codeWriter.println(".name = " + nameRef + ",");
         codeWriter.println(".simpleName = " + simpleName + ",");
         codeWriter.println(".arrayType = " + arrayTypeExpr + ",");
         codeWriter.println(".itemType = " + itemTypeExpr + ",");
@@ -1168,7 +1174,7 @@ public class ClassGenerator {
         return true;
     }
 
-    public static String nameOfType(ValueType type) {
+    public String nameOfType(ValueType type) {
         if (type instanceof ValueType.Primitive) {
             switch (((ValueType.Primitive) type).getKind()) {
                 case BOOLEAN:
@@ -1191,14 +1197,26 @@ public class ClassGenerator {
                     throw new AssertionError();
             }
         } else if (type instanceof ValueType.Array) {
-            return type.toString().replace('/', '.');
+            if (isArrayOfPrimitives(type)) {
+                return type.toString().replace('/', '.');
+            } else {
+                return null;
+            }
         } else if (type == ValueType.VOID) {
             return "void";
         } else if (type instanceof ValueType.Object) {
-            return ((ValueType.Object) type).getClassName();
+            String name = ((ValueType.Object) type).getClassName();
+            return metadataRequirements.getInfo(name).name() ? name : null;
         } else {
             throw new AssertionError();
         }
+    }
+
+    private static boolean isArrayOfPrimitives(ValueType type) {
+        while (type instanceof ValueType.Array) {
+            type = ((ValueType.Array) type).getItemType();
+        }
+        return type instanceof ValueType.Primitive || type == ValueType.VOID;
     }
 
     private void generateIsSupertypeFunction(ValueType type) {

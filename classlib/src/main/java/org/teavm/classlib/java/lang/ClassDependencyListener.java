@@ -34,6 +34,8 @@ public class ClassDependencyListener implements DependencyPlugin {
                 });
                 break;
             case "getSimpleNameCacheLowLevel":
+            case "getCanonicalNameCacheLowLevel":
+            case "getNameCacheLowLevel":
                 method.getResult().propagate(agent.getType("java.lang.String"));
                 break;
         }
