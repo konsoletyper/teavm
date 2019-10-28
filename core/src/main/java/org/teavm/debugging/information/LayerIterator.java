@@ -26,7 +26,9 @@ class LayerIterator {
             methodIterators[i] = new MethodIterator(debugInformation.layers[i]);
         }
 
-        nextImpl();
+        if (!isEndReached()) {
+            nextImpl();
+        }
     }
 
     public boolean isEndReached() {
