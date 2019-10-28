@@ -67,6 +67,8 @@ import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.ShadowStack;
 
 public class ExceptionHandlingShadowStackContributor {
+    private static final MethodReference FILL_STACK_TRACE = new MethodReference(ExceptionHandling.class,
+            "fillStackTrace", StackTraceElement[].class);
     private Characteristics characteristics;
     private List<CallSiteDescriptor> callSites;
     private BasicBlock defaultExceptionHandler;
@@ -281,7 +283,11 @@ public class ExceptionHandlingShadowStackContributor {
                 || insn instanceof NullCheckInstruction || insn instanceof BoundCheckInstruction) {
             return true;
         } else if (insn instanceof InvokeInstruction) {
-            return isManagedMethodCall(characteristics, ((InvokeInstruction) insn).getMethod());
+            MethodReference method = ((InvokeInstruction) insn).getMethod();
+            if (method.equals(FILL_STACK_TRACE)) {
+                return true;
+            }
+            return isManagedMethodCall(characteristics, method);
         }
         return false;
     }

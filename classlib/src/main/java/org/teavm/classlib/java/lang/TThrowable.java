@@ -22,7 +22,6 @@ import org.teavm.classlib.java.util.TArrays;
 import org.teavm.interop.Remove;
 import org.teavm.interop.Rename;
 import org.teavm.interop.Superclass;
-import org.teavm.interop.Unmanaged;
 import org.teavm.runtime.ExceptionHandling;
 
 @Superclass("java.lang.Object")
@@ -104,14 +103,9 @@ public class TThrowable extends RuntimeException {
     @Override
     public Throwable fillInStackTrace() {
         if (PlatformDetector.isLowLevel()) {
-            stackTrace = fillInStackTraceLowLevel();
+            stackTrace = (TStackTraceElement[]) (Object) ExceptionHandling.fillStackTrace();
         }
         return this;
-    }
-
-    @Unmanaged
-    private static TStackTraceElement[] fillInStackTraceLowLevel() {
-        return (TStackTraceElement[]) (Object) ExceptionHandling.fillStackTrace();
     }
 
     @Rename("getMessage")
