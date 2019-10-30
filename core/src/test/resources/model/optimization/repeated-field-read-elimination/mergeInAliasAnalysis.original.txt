@@ -1,0 +1,22 @@
+var @this as this
+
+$start
+  @o := new Foo
+  @p := new Foo
+  @q := new Foo
+  @a := field Foo.intField @o as I
+  @b := field Foo.intField @p as I
+  @c := field Foo.intField @q as I
+  if @a == 0 then goto $zero else goto $nonzero
+$zero
+  goto $join
+$nonzero
+  goto $join
+$join
+  @j := phi @o from $zero, @p from $nonzero
+  @v := 23
+  field Foo.intField @j := @v as I
+  @a1 := field Foo.intField @o as I
+  @b1 := field Foo.intField @p as I
+  @c1 := field Foo.intField @q as I
+  return

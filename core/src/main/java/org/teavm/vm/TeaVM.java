@@ -89,6 +89,7 @@ import org.teavm.model.optimization.MethodOptimization;
 import org.teavm.model.optimization.MethodOptimizationContext;
 import org.teavm.model.optimization.RedundantJumpElimination;
 import org.teavm.model.optimization.RedundantNullCheckElimination;
+import org.teavm.model.optimization.RepeatedFieldReadElimination;
 import org.teavm.model.optimization.ScalarReplacement;
 import org.teavm.model.optimization.UnreachableBasicBlockElimination;
 import org.teavm.model.optimization.UnusedVariableElimination;
@@ -622,7 +623,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
 
         InliningStrategy inliningStrategy;
         if (optimizationLevel == TeaVMOptimizationLevel.FULL) {
-            inliningStrategy = new DefaultInliningStrategy(14, 7, 300, false);
+            inliningStrategy = new DefaultInliningStrategy(20, 7, 300, false);
         } else {
             inliningStrategy = new DefaultInliningStrategy(100, 7, 300, true);
         }
@@ -750,6 +751,11 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         public DependencyInfo getDependencyInfo() {
             return dependencyAnalyzer;
         }
+
+        @Override
+        public ClassReaderSource getClassSource() {
+            return dependencyAnalyzer.getClassSource();
+        }
     }
 
     private List<MethodOptimization> getOptimizations() {
@@ -760,6 +766,9 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             optimizations.add(new ScalarReplacement());
             //optimizations.add(new LoopInversion());
             optimizations.add(new LoopInvariantMotion());
+        }
+        if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.FULL.ordinal()) {
+            optimizations.add(new RepeatedFieldReadElimination());
         }
         optimizations.add(new GlobalValueNumbering(optimizationLevel == TeaVMOptimizationLevel.SIMPLE));
         optimizations.add(new RedundantNullCheckElimination());

@@ -1,0 +1,18 @@
+var @this as this
+
+$start
+  @o := invokeStatic `Foo.getFoo()LFoo;`
+  @p := invokeStatic `Foo.getFoo()LFoo;`
+  @a := field Foo.intField @o as I
+  if @a == 0 then goto $zero else goto $nonzero
+$zero
+  @b := field Foo.intField @o as I
+  goto $join
+$nonzero
+  @c := field Foo.intField @o as I
+  @v := 23
+  field Foo.intField @p := @v as I
+  goto $join
+$join
+  @d := field Foo.intField @o as I
+  return

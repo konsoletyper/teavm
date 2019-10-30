@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -20,20 +20,24 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TestName;
 import org.teavm.dependency.DependencyInfo;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.ClassReaderSource;
+import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldHolder;
 import org.teavm.model.ListingParseUtils;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
+import org.teavm.model.MutableClassHolderSource;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
 import org.teavm.model.optimization.MethodOptimizationContext;
-import org.teavm.model.optimization.ScalarReplacement;
+import org.teavm.model.optimization.RepeatedFieldReadElimination;
 import org.teavm.model.text.ListingBuilder;
 import org.teavm.model.util.ProgramUtils;
 
-public class ScalarReplacementTest {
-    private static final String PREFIX = "model/optimization/scalar-replacement/";
+public class RepeatedFieldReadEliminationTest {
+    private static final String PREFIX = "model/optimization/repeated-field-read-elimination/";
     @Rule
     public TestName name = new TestName();
 
@@ -43,42 +47,42 @@ public class ScalarReplacementTest {
     }
 
     @Test
-    public void phi() {
+    public void volatileField() {
         doTest();
     }
 
     @Test
-    public void escapingPhi() {
+    public void fieldStoreInvalidates() {
         doTest();
     }
 
     @Test
-    public void escapingPhiSource() {
+    public void fieldStoreInDifferentObjects() {
         doTest();
     }
 
     @Test
-    public void escapingPhiReceiver() {
+    public void invalidateInOneBranch() {
         doTest();
     }
 
     @Test
-    public void escapingSharedPhiSource() {
+    public void invocationInvalidates() {
         doTest();
     }
 
     @Test
-    public void escapingLivingAssignmentSource() {
+    public void alwaysInvalidateExternalObject() {
         doTest();
     }
 
     @Test
-    public void copy() {
+    public void updatingExternalObjectInvalidatesAll() {
         doTest();
     }
 
     @Test
-    public void reachabilityByClasses() {
+    public void mergeInAliasAnalysis() {
         doTest();
     }
 
@@ -88,18 +92,42 @@ public class ScalarReplacementTest {
         Program original = ListingParseUtils.parseFromResource(originalPath);
         Program expected = ListingParseUtils.parseFromResource(expectedPath);
 
-        performScalarReplacement(original);
+        performOptimization(original);
 
         String originalText = new ListingBuilder().buildListing(original, "");
         String expectedText = new ListingBuilder().buildListing(expected, "");
         Assert.assertEquals(expectedText, originalText);
     }
 
-    private void performScalarReplacement(Program program) {
+    private void performOptimization(Program program) {
+        MutableClassHolderSource classSource = new MutableClassHolderSource();
+
         ClassHolder testClass = new ClassHolder("TestClass");
         MethodHolder testMethod = new MethodHolder("testMethod", ValueType.VOID);
         testMethod.setProgram(ProgramUtils.copy(program));
         testClass.addMethod(testMethod);
+
+        classSource.putClassHolder(testClass);
+
+        ClassHolder foo = new ClassHolder("Foo");
+
+        FieldHolder intField = new FieldHolder("intField");
+        intField.setLevel(AccessLevel.PUBLIC);
+        intField.setType(ValueType.INTEGER);
+        foo.addField(intField);
+
+        FieldHolder volatileField = new FieldHolder("volatileField");
+        volatileField.setLevel(AccessLevel.PUBLIC);
+        volatileField.setType(ValueType.INTEGER);
+        volatileField.getModifiers().add(ElementModifier.VOLATILE);
+        foo.addField(volatileField);
+
+        MethodHolder getFoo = new MethodHolder("getFoo", ValueType.object("Foo"));
+        getFoo.getModifiers().add(ElementModifier.STATIC);
+        getFoo.getModifiers().add(ElementModifier.NATIVE);
+        foo.addMethod(getFoo);
+
+        classSource.putClassHolder(foo);
 
         MethodOptimizationContext context = new MethodOptimizationContext() {
             @Override
@@ -114,10 +142,10 @@ public class ScalarReplacementTest {
 
             @Override
             public ClassReaderSource getClassSource() {
-                return null;
+                return classSource;
             }
         };
 
-        new ScalarReplacement().optimize(context, program);
+        new RepeatedFieldReadElimination().optimize(context, program);
     }
 }

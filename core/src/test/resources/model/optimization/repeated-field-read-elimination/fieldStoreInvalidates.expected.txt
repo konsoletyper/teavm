@@ -1,0 +1,10 @@
+var @this as this
+
+$start
+  @o := invokeStatic `Foo.getFoo()LFoo;`
+  @p := invokeStatic `Foo.getFoo()LFoo;`
+  @a := field Foo.intField @o as I
+  @v := 23
+  field Foo.intField @p := @v as I
+  @b := field Foo.intField @o as I
+  return

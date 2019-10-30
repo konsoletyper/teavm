@@ -1,0 +1,7 @@
+var @this as this
+
+$start
+  @o := new Foo
+  @a := field Foo.volatileField @o as I
+  @b := field Foo.volatileField @o as I
+  return

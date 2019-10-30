@@ -1,0 +1,10 @@
+var @this as this
+
+$start
+  @o := new Foo
+  @a := field Foo.intField @o as I
+  @b := field Foo.intField @o as I
+  @c := 23
+  field Foo.intField @o := @c as I
+  @d := field Foo.intField @o as I
+  return
