@@ -1,6 +1,7 @@
 #include "memory.h"
 #include "definitions.h"
 #include <stdlib.h>
+#include <string.h>
 
 #if TEAVM_UNIX
     #include <unistd.h>

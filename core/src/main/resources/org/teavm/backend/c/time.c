@@ -1,6 +1,7 @@
 #include "time.h"
 #include "definitions.h"
 #include <time.h>
+#include <math.h>
 
 #if TEAVM_WINDOWS
     #include <Windows.h>

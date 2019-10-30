@@ -1,4 +1,3 @@
-#pragma once
 #include "virtcall.h"
 #include "definitions.h"
 #include <stdlib.h>

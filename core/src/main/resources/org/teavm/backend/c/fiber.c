@@ -1,5 +1,8 @@
 #include "fiber.h"
 #include "definitions.h"
+#include <stddef.h>
+#include <locale.h>
+#include <time.h>
 
 #if TEAVM_UNIX
     #include <signal.h>

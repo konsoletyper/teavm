@@ -5,6 +5,7 @@
 #include "definitions.h"
 #include "heapdump.h"
 #include "memory.h"
+#include <stdlib.h>
 
 #if TEAVM_MEMORY_TRACE
     #include "heaptrace.h"

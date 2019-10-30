@@ -1,6 +1,7 @@
 #include "file.h"
 #include "string.h"
 #include "time.h"
+#include "date.h"
 #include "definitions.h"
 #include <stdlib.h>
 #include <errno.h>
