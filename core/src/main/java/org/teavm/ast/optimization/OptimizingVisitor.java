@@ -766,6 +766,9 @@ class OptimizingVisitor implements StatementVisitor, ExprVisitor {
 
     private void normalizeConditional(ConditionalStatement stmt) {
         if (stmt.getConsequent().isEmpty()) {
+            if (stmt.getAlternative().isEmpty()) {
+                return;
+            }
             stmt.getConsequent().addAll(stmt.getAlternative());
             stmt.getAlternative().clear();
             stmt.setCondition(ExprOptimizer.invert(stmt.getCondition()));
