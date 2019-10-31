@@ -13,7 +13,7 @@
     #pragma warning(disable:4102)
 
     #ifdef WINAPI_FAMILY
-        #if WINAPI_FAMILY == 2 || WINAPI_FAMILY == 3 || WINAPI_FAMILY == 5
+        #if WINAPI_FAMILY == WINAPI_FAMILY_APP || WINAPI_FAMILY == 2 || WINAPI_FAMILY == 3 || WINAPI_FAMILY == 5
             #undef TEAVM_WINDOWS_UWP
             #define TEAVM_WINDOWS_UWP 1
         #endif
