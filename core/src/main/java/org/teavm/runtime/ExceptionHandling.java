@@ -53,7 +53,7 @@ public final class ExceptionHandling {
                 CallSite callSite = findCallSiteById(callSiteId, stackFrame);
                 CallSiteLocation location = callSite.location;
                 while (location != null) {
-                    MethodLocation methodLocation = location != null ? location.method : null;
+                    MethodLocation methodLocation = location.method;
 
                     Console.printString("    at ");
                     if (methodLocation.className == null || methodLocation.methodName == null) {
@@ -184,7 +184,7 @@ public final class ExceptionHandling {
             if (isObfuscated()) {
                 target[index++] = new StackTraceElement("Obfuscated", "obfuscated", "Obfuscated.java", callSiteId);
             } else if (location == null) {
-                target[index++] = new StackTraceElement("", "", null, location.lineNumber);
+                target[index++] = new StackTraceElement("", "", null, -1);
             } else {
                 while (location != null) {
                     MethodLocation methodLocation = location.method;

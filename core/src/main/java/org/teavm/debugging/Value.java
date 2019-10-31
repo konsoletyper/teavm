@@ -119,18 +119,12 @@ public class Value {
         return vars;
     }
 
-    public boolean hasInnerStructure() {
-        if (getType().equals("long")) {
-            return false;
-        }
-        return jsValue.hasInnerStructure();
+    public Promise<Boolean> hasInnerStructure() {
+        return getType().then(value -> !value.equals("long") && jsValue.hasInnerStructure());
     }
 
-    public String getInstanceId() {
-        if (getType().equals("long")) {
-            return null;
-        }
-        return jsValue.getInstanceId();
+    public Promise<String> getInstanceId() {
+        return getType().then(value -> value.equals("long") ? null : jsValue.getInstanceId());
     }
 
     public JavaScriptValue getOriginalValue() {

@@ -120,7 +120,6 @@ class TInitManifest {
     }
 
     private void readName() throws IOException {
-        int i = 0;
         int mark = pos;
 
         while (pos < buf.length) {
@@ -141,9 +140,6 @@ class TInitManifest {
                     || b == '-' || (b >= '0' && b <= '9'))) {
                 throw new IOException();
             }
-        }
-        if (i > 0) {
-            throw new IOException();
         }
     }
 

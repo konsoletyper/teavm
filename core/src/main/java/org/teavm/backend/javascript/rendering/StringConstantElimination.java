@@ -17,7 +17,6 @@ package org.teavm.backend.javascript.rendering;
 
 import org.mozilla.javascript.Node;
 import org.mozilla.javascript.ast.AstNode;
-import org.mozilla.javascript.ast.AstRoot;
 import org.mozilla.javascript.ast.Block;
 import org.mozilla.javascript.ast.ExpressionStatement;
 import org.mozilla.javascript.ast.NodeVisitor;
@@ -27,7 +26,7 @@ import org.mozilla.javascript.ast.StringLiteral;
 public class StringConstantElimination implements NodeVisitor {
     @Override
     public boolean visit(AstNode astNode) {
-        if (astNode instanceof Block || astNode instanceof Scope || astNode instanceof AstRoot) {
+        if (astNode instanceof Block || astNode instanceof Scope) {
             handle(astNode);
         }
         return true;

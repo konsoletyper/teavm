@@ -741,20 +741,22 @@ public class ClassGenerator {
                     break;
             }
 
-            simpleName = cls.getSimpleName();
+            if (cls != null) {
+                simpleName = cls.getSimpleName();
 
-            if (cls.getDeclaringClassName() != null
-                    && context.getDependencies().getClass(cls.getDeclaringClassName()) != null) {
-                declaringClass = "(TeaVM_Class*) &" + context.getNames().forClassInstance(
-                        ValueType.object(cls.getDeclaringClassName()));
-                includes.includeClass(cls.getDeclaringClassName());
-            }
+                if (cls.getDeclaringClassName() != null
+                        && context.getDependencies().getClass(cls.getDeclaringClassName()) != null) {
+                    declaringClass = "(TeaVM_Class*) &" + context.getNames().forClassInstance(
+                            ValueType.object(cls.getDeclaringClassName()));
+                    includes.includeClass(cls.getDeclaringClassName());
+                }
 
-            if (cls.getOwnerName() != null
-                    && context.getDependencies().getClass(cls.getOwnerName()) != null) {
-                enclosingClass = "(TeaVM_Class*) &" + context.getNames().forClassInstance(
-                        ValueType.object(cls.getOwnerName()));
-                includes.includeClass(cls.getOwnerName());
+                if (cls.getOwnerName() != null
+                        && context.getDependencies().getClass(cls.getOwnerName()) != null) {
+                    enclosingClass = "(TeaVM_Class*) &" + context.getNames().forClassInstance(
+                            ValueType.object(cls.getOwnerName()));
+                    includes.includeClass(cls.getOwnerName());
+                }
             }
 
         } else if (type instanceof ValueType.Array) {

@@ -216,7 +216,7 @@ public class TEnumMap<K extends Enum<K>, V> extends AbstractMap<K, V> implements
                     }
                     int index = ((Enum<?>) o).ordinal();
                     if (provided[index]) {
-                        provided[index] = true;
+                        provided[index] = false;
                         data[index] = null;
                         size--;
                         return true;

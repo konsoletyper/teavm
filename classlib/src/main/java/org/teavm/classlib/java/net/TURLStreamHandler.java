@@ -98,9 +98,7 @@ public abstract class TURLStreamHandler {
             } else {
                 host = parseString.substring(hostIdx, portIdx);
                 String portString = parseString.substring(portIdx + 1, hostEnd);
-                if (portString.length() == 0) {
-                    port = -1;
-                } else {
+                if (!portString.isEmpty()) {
                     port = Integer.parseInt(portString);
                 }
             }
@@ -189,7 +187,7 @@ public abstract class TURLStreamHandler {
             if (dirIndex != 0) {
                 path = path.substring(0, path.lastIndexOf('/', dirIndex - 1)) + path.substring(dirIndex + 3);
             } else {
-                path = path.substring(dirIndex + 3);
+                path = path.substring(3);
             }
         }
 

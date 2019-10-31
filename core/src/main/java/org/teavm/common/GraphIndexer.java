@@ -80,7 +80,7 @@ public class GraphIndexer {
                 case VISITING:
                     state[node] = VISITED;
                     for (int succ : graph.outgoingEdges(node)) {
-                        if (state[node] == VISITED) {
+                        if (state[succ] == VISITED) {
                             weights[node] += weights[succ];
                         }
                     }

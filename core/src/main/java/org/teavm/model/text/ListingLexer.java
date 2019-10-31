@@ -154,7 +154,7 @@ class ListingLexer {
                 break;
             case '*':
                 nextChar();
-                token = ListingToken.SUBTRACT;
+                token = ListingToken.MULTIPLY;
                 break;
             case '/':
                 nextChar();

@@ -287,7 +287,6 @@ class TBitLevel {
         }
         if (count == 0) {
             System.arraycopy(source, intCount, result, 0, resultLen);
-            i = resultLen;
         } else {
             int leftShiftCount = 32 - count;
 
@@ -336,7 +335,6 @@ class TBitLevel {
                     for (i = intCount + 1; i < firstNonZeroDigit; i++) {
                         resDigits[i] = -1;
                     }
-                    resDigits[i] = resDigits[i]--;
                 } else {
                     i = intCount;
                     resDigits[i] = -((-resDigits[intCount]) ^ bitNumber);

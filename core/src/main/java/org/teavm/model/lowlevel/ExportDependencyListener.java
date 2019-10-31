@@ -249,7 +249,7 @@ public class ExportDependencyListener extends AbstractDependencyListener {
         return true;
     }
 
-    class FunctionGetFinder extends AbstractInstructionReader {
+    static class FunctionGetFinder extends AbstractInstructionReader {
         DisjointSet variableClasses = new DisjointSet();
         String[] stringConstants;
         ValueType[] classConstants;

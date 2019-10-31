@@ -207,8 +207,7 @@ public final class MetaprogrammingImpl {
             return null;
         }
         ReflectMethod method = new ReflectMethodImpl(cls, methodReader);
-        return new SourceLocation(method, location != null ? location.getFileName() : null,
-                location != null ? location.getLine() : null);
+        return new SourceLocation(method, location.getFileName(), location.getLine());
     }
 
     @SuppressWarnings("WeakerAccess")

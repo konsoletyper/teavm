@@ -157,6 +157,7 @@ public class JavaScriptBodyDependency extends AbstractDependencyListener {
             if (reader == null) {
                 agent.getDiagnostics().error(new CallLocation(caller.getReference()), "Can't resolve method {{m0}}",
                         methodRef);
+                return;
             }
 
             methodRef = reader.getReference();

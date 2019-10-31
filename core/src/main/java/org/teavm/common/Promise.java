@@ -26,7 +26,6 @@ public class Promise<T> {
     public static final Promise<Void> VOID = Promise.of(null);
 
     private T value;
-    private Promise<T> promise;
     private Throwable error;
     private State state = State.PENDING;
     private List<Then<T>> thenList;
@@ -81,7 +80,6 @@ public class Promise<T> {
         boolean error;
 
         AllVoidFunction(int count) {
-            this.result = result;
             this.count = count;
         }
 
@@ -109,7 +107,6 @@ public class Promise<T> {
         boolean error;
 
         AllFunction(int count) {
-            this.result = result;
             this.count = count;
             list.addAll(Collections.nCopies(count, null));
         }
@@ -124,7 +121,7 @@ public class Promise<T> {
                 }
                 return null;
             };
-        };
+        }
 
         Function<Throwable, Void> catchF = e -> {
             if (!error) {

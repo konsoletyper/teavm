@@ -178,7 +178,7 @@ public class AddressIntrinsic implements Intrinsic {
                     context.writer().print(" * sizeof(");
 
                     if (className != null) {
-                        ClassReader cls = className != null ? context.classes().get(className) : null;
+                        ClassReader cls = context.classes().get(className);
                         CodeGeneratorUtil.printClassReference(context.writer(), context.includes(),
                                 context.names(), cls, className);
                     } else {

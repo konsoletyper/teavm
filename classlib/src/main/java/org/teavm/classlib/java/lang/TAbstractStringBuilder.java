@@ -229,7 +229,6 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
         int intPart = 1;
         int sz = 1; // Decimal point always included
         if (negative) {
-            negative = true;
             ++sz; // including '-' sign of mantissa
         }
 
@@ -246,7 +245,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 intPart = exp + 1;
                 digits = Math.max(digits, intPart + 1);
                 exp = 0;
-            } else if (exp < 0) {
+            } else {
                 mantissa /= Constants.intPowersOfTen[-exp];
                 digits -= exp;
                 exp = 0;
@@ -373,7 +372,7 @@ class TAbstractStringBuilder extends TObject implements TSerializable, TCharSequ
                 intPart = exp + 1;
                 digits = Math.max(digits, intPart + 1);
                 exp = 0;
-            } else if (exp < 0) {
+            } else {
                 mantissa /= Constants.longPowersOfTen[-exp];
                 digits -= exp;
                 exp = 0;

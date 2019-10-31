@@ -20,20 +20,22 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 import org.teavm.model.MethodReference;
-import org.teavm.platform.metadata.*;
+import org.teavm.platform.metadata.MetadataGenerator;
+import org.teavm.platform.metadata.MetadataGeneratorContext;
+import org.teavm.platform.metadata.Resource;
+import org.teavm.platform.metadata.ResourceMap;
+import org.teavm.platform.metadata.StringResource;
 
 public class CountriesGenerator implements MetadataGenerator {
     @Override
     public Resource generateMetadata(MetadataGeneratorContext context, MethodReference method) {
         try (InputStream input = new BufferedInputStream(context.getClassLoader().getResourceAsStream(
                 "org/teavm/classlib/impl/currency/iso3166.csv"))) {
-            if (input == null) {
-                throw new AssertionError("ISO 3166 table was not found");
-            }
-            try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, "UTF-8"))) {
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(input, StandardCharsets.UTF_8))) {
                 return readIso3166(context, reader);
             }
         } catch (IOException e) {
@@ -77,7 +79,7 @@ public class CountriesGenerator implements MetadataGenerator {
                                 + ": closing quote not found");
                     }
                     if (next + 1 == row.length() || row.charAt(next + 1) != '"') {
-                        sb.append(row.substring(index, next));
+                        sb.append(row, index, next);
                         index = next + 1;
                         break;
                     }
@@ -100,6 +102,6 @@ public class CountriesGenerator implements MetadataGenerator {
                 }
             }
         }
-        return values.toArray(new String[values.size()]);
+        return values.toArray(new String[0]);
     }
 }

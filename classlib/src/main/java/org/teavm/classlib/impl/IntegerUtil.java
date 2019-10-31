@@ -49,7 +49,7 @@ public final class IntegerUtil {
         int sz = (Long.SIZE - Long.numberOfLeadingZeros(value) + radixLog2 - 1) / radixLog2;
         char[] chars = new char[sz];
 
-        long pos = (sz - 1) * radixLog2;
+        int pos = (sz - 1) * radixLog2;
         int target = 0;
         while (pos >= 0) {
             chars[target++] = Character.forDigit((int) (value >>> pos) & mask, radix);

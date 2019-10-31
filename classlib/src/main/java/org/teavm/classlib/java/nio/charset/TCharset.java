@@ -60,7 +60,7 @@ public abstract class TCharset implements Comparable<TCharset> {
     }
 
     private static boolean isValidCharsetStart(char c) {
-        return c >= '0' && c <= '9' || c >= 'a' && c <= 'z' || c >= 'A' || c <= 'Z';
+        return c >= '0' && c <= '9' || c >= 'a' && c <= 'z' || c >= 'A' && c <= 'Z';
     }
 
     public static TCharset forName(String charsetName) {

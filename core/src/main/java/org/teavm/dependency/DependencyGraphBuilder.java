@@ -287,7 +287,9 @@ class DependencyGraphBuilder {
             }
             MethodDependency cloneDep = getAnalyzer().linkMethod(CLONE_METHOD);
             cloneDep.addLocation(getCallLocation());
-            arrayNode.connect(cloneDep.getVariable(0));
+            if (arrayNode != null) {
+                arrayNode.connect(cloneDep.getVariable(0));
+            }
             cloneDep.use();
         }
 

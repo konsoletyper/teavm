@@ -297,7 +297,7 @@ public final class TFormatter implements Closeable, Flushable {
                 formatGivenString(upperCase, "null");
                 return;
             } else {
-                throw new IllegalFormatConversionException(specifier, arg != null ? arg.getClass() : null);
+                throw new IllegalFormatConversionException(specifier, arg.getClass());
             }
 
             formatGivenString(upperCase, new String(Character.toChars(c)));

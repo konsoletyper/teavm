@@ -135,7 +135,7 @@ public class TeaVMCBuilderRunner {
         if (args.length != 1) {
             System.err.println("Unexpected arguments");
             printUsage();
-        } else if (args.length == 1) {
+        } else {
             builder.setMainClass(args[0]);
         }
     }

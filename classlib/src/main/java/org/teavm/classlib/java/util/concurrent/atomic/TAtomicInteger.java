@@ -19,9 +19,10 @@ import java.io.Serializable;
 import java.util.function.IntBinaryOperator;
 import java.util.function.IntUnaryOperator;
 
+@SuppressWarnings("NonAtomicOperationOnVolatileField")
 public class TAtomicInteger extends Number implements Serializable {
     private int value;
-    private int version;
+    private volatile int version;
 
     public TAtomicInteger() {
     }

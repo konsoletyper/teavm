@@ -23,7 +23,7 @@ import org.teavm.jso.browser.Window;
 
 public class TTimer extends TObject {
     TSet<TTimerTask> tasks = new THashSet<>();
-    private boolean cancelled;
+    private volatile boolean cancelled;
 
     public TTimer() {
     }

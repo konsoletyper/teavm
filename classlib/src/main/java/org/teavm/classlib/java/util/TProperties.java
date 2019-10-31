@@ -291,7 +291,7 @@ public class TProperties extends THashtable<Object, Object> {
                     }
                     break;
                 }
-                if (nextChar < 256 && Character.isWhitespace(nextChar)) {
+                if (Character.isWhitespace(nextChar)) {
                     if (mode == CONTINUE) {
                         mode = IGNORE;
                     }

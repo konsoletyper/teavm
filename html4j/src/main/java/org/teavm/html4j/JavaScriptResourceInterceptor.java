@@ -38,8 +38,9 @@ public class JavaScriptResourceInterceptor extends AbstractRendererListener {
                 continue;
             }
             String path = annot.getValue("value").getString();
-            String packageName = className.substring(0, className.lastIndexOf('.'));
-            String resourceName = packageName.replace('.', '/') + "/" + path;
+            int packageIndex = className.lastIndexOf('.');
+            String packageName = packageIndex >= 0 ? className.substring(0, packageIndex) : "";
+            String resourceName = packageName.isEmpty() ? path : packageName.replace('.', '/') + "/" + path;
             try (InputStream input = manager.getClassLoader().getResourceAsStream(resourceName)) {
                 if (input == null) {
                     throw new RenderingException("Error processing JavaScriptResource annotation on class "

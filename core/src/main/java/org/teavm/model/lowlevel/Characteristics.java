@@ -107,6 +107,6 @@ public class Characteristics {
         if (cls.getAnnotations().get(Unmanaged.class.getName()) != null) {
             return false;
         }
-        return method == null || method.getAnnotations().get(Unmanaged.class.getName()) == null;
+        return method.getAnnotations().get(Unmanaged.class.getName()) == null;
     }
 }

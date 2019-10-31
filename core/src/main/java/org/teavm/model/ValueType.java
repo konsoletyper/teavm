@@ -270,7 +270,7 @@ public abstract class ValueType implements Serializable {
         int index = 0;
         while (index < text.length()) {
             int nextIndex = cut(text, index);
-            ValueType type = parse(text.substring(index, nextIndex));
+            ValueType type = parseIfPossible(text.substring(index, nextIndex));
             if (type == null) {
                 return null;
             }

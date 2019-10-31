@@ -563,7 +563,6 @@ public class TFile implements Serializable, Comparable<TFile> {
     }
 
     private static String fixSlashes(String origPath) {
-        int uncIndex = 0;
         int length = origPath.length();
         int newLength = 0;
 
@@ -579,7 +578,7 @@ public class TFile implements Serializable, Comparable<TFile> {
         for (int i = 0; i < length; i++) {
             char pathChar = newPath[i];
             if (pathChar == '/' || pathChar == separatorChar) {
-                if (!foundSlash || i == uncIndex) {
+                if (!foundSlash || i == 0) {
                     newPath[newLength++] = separatorChar;
                     foundSlash = true;
                 }
@@ -588,7 +587,7 @@ public class TFile implements Serializable, Comparable<TFile> {
                 foundSlash = false;
             }
         }
-        if (foundSlash && (newLength > uncIndex + 1 || newLength == 2 && newPath[0] != '/')) {
+        if (foundSlash && (newLength > 1 || newPath[0] != '/')) {
             newLength--;
         }
 

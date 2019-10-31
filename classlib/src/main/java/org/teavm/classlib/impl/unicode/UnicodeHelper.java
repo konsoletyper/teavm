@@ -89,7 +89,7 @@ public final class UnicodeHelper {
             byte b = bytes[i];
             if (i < bytes.length - 1 && b == bytes[i + 1]) {
                 int count = 0;
-                while (count < 16384 && i < bytes.length && bytes[i + count] == b) {
+                while (count < 16384 && bytes[i + count] == b) {
                     ++count;
                 }
                 i += count;

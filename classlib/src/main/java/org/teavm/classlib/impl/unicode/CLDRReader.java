@@ -105,6 +105,9 @@ public class CLDRReader {
                     readLikelySubtags(input);
                 }
                 int objectIndex = entry.getName().lastIndexOf('/');
+                if (objectIndex < 0) {
+                    continue;
+                }
                 String objectName = entry.getName().substring(objectIndex + 1);
                 String localeName = entry.getName().substring(0, objectIndex);
                 if (localeName.startsWith("/")) {

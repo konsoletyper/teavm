@@ -63,7 +63,7 @@ public class TMessageFormat extends TFormat {
                     if (ch == '}' || ch == ',') {
                         break;
                     }
-                    if (ch < '0' && ch > '9') {
+                    if (ch < '0' || ch > '9') {
                         throw new IllegalArgumentException("Invalid argument number");
                     }
                     arg = arg * 10 + (ch - '0');

@@ -42,7 +42,6 @@ public class CodeGenerator {
         this.writer = writer;
         this.names = context.getNames();
         this.includes = includes;
-        this.classContext = classContext;
     }
 
     public ClassGenerationContext getClassContext() {

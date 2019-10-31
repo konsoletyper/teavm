@@ -234,7 +234,7 @@ public final class ChromeRDPRunner {
     private Command resumeCommand = args -> debugger.resume();
 
     private Command breakpointCommand = args -> {
-        if (args.length != 3 && args.length != 3) {
+        if (args.length < 2 || args.length > 4) {
             System.out.println("Expected 2 arguments");
             return Promise.VOID;
         }

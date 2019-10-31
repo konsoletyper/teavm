@@ -156,11 +156,9 @@ public class DefaultNamingStrategy implements NamingStrategy {
             if (clsReader == null) {
                 break;
             }
-            if (clsReader != null) {
-                FieldReader fieldReader = clsReader.getField(fieldRef.getFieldName());
-                if (fieldReader != null) {
-                    return fieldReader.getReference();
-                }
+            FieldReader fieldReader = clsReader.getField(fieldRef.getFieldName());
+            if (fieldReader != null) {
+                return fieldReader.getReference();
             }
             cls = clsReader.getParent();
         }

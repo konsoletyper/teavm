@@ -39,7 +39,7 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
         if (capacity < 0) {
             throw new IllegalArgumentException();
         }
-        elementData = newElementArray(capacity);
+        elementData = new Object[capacity];
         elementCount = 0;
         this.capacityIncrement = capacityIncrement;
     }
@@ -50,11 +50,6 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
         while (it.hasNext()) {
             elementData[elementCount++] = it.next();
         }
-    }
-
-    @SuppressWarnings("unchecked")
-    private E[] newElementArray(int size) {
-        return (E[]) new Object[size];
     }
 
     @Override
@@ -179,7 +174,7 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
     public synchronized void ensureCapacity(int minimumCapacity) {
         if (elementData.length < minimumCapacity) {
             int next = (capacityIncrement <= 0 ? elementData.length : capacityIncrement) + elementData.length;
-            grow(minimumCapacity > next ? minimumCapacity : next);
+            grow(Math.max(minimumCapacity, next));
         }
     }
 
@@ -222,7 +217,7 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
     }
 
     private void grow(int newCapacity) {
-        E[] newData = newElementArray(newCapacity);
+        Object[] newData = new Object[newCapacity];
         // Assumes elementCount is <= newCapacity
         assert elementCount <= newCapacity;
         System.arraycopy(elementData, 0, newData, 0, elementCount);
@@ -243,20 +238,20 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
             adding = capacityIncrement;
         }
 
-        E[] newData = newElementArray(elementData.length + adding);
+        Object[] newData = new Object[elementData.length + adding];
         System.arraycopy(elementData, 0, newData, 0, elementCount);
         elementData = newData;
     }
 
     private void growBy(int required) {
-        int adding = 0;
+        int adding;
         if (capacityIncrement <= 0) {
             adding = elementData.length;
             if (adding == 0) {
                 adding = required;
             }
             while (adding < required) {
-                adding += adding;
+                adding *= 2;
             }
         } else {
             adding = (required / capacityIncrement) * capacityIncrement;
@@ -264,7 +259,7 @@ public class TVector<E> extends TAbstractList<E> implements TList<E>, TRandomAcc
                 adding += capacityIncrement;
             }
         }
-        E[] newData = newElementArray(elementData.length + adding);
+        Object[] newData = new Object[elementData.length + adding];
         System.arraycopy(elementData, 0, newData, 0, elementCount);
         elementData = newData;
     }

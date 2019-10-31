@@ -414,17 +414,15 @@ public class TArrayBlockingQueue<E> extends TAbstractQueue<E> implements TBlocki
         if (waitHandlers == null) {
             return;
         }
-        if (waitHandlers != null) {
-            while (!waitHandlers.isEmpty()) {
-                WaitHandler handler = waitHandlers.remove();
-                if (PlatformDetector.isLowLevel()) {
-                    EventQueue.offer(handler::changed);
-                } else {
-                    Platform.postpone(handler::changed);
-                }
+        while (!waitHandlers.isEmpty()) {
+            WaitHandler handler = waitHandlers.remove();
+            if (PlatformDetector.isLowLevel()) {
+                EventQueue.offer(handler::changed);
+            } else {
+                Platform.postpone(handler::changed);
             }
-            waitHandlers = null;
         }
+        waitHandlers = null;
     }
 
     @Async

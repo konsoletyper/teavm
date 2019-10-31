@@ -329,8 +329,8 @@ public abstract class TTimeZone implements Serializable, Cloneable {
                             return (TTimeZone) GMT.clone();
                         }
                         raw += minute * 60000;
-                    } else if (hour >= 30 || index > 6) {
-                        raw = (hour / 100 * 3600000) + (hour % 100 * 60000);
+                    } else if (index > 6) {
+                        raw = hour * 60000;
                     }
                     if (sign == '-') {
                         raw = -raw;

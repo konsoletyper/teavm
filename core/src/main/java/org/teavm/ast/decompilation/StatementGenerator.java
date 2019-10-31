@@ -342,10 +342,7 @@ class StatementGenerator implements InstructionVisitor {
                 conditions[i] = conditionList.get(i);
             }
             clause.setConditions(conditions);
-            Statement jumpStmt = generateJumpStatement(stmt, target);
-            if (jumpStmt != null) {
-                clause.getBody().add(jumpStmt);
-            }
+            clause.getBody().add(generateJumpStatement(stmt, target));
             stmt.getClauses().add(clause);
         }
         Statement breakStmt = generateJumpStatement(insn.getDefaultTarget());

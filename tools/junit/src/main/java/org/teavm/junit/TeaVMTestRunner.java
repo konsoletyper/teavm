@@ -130,7 +130,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     static {
         for (RunKind kind : RunKind.values()) {
             runners.put(kind, new RunnerKindInfo());
-            runners.put(kind, new RunnerKindInfo());
         }
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
             synchronized (TeaVMTestRunner.class) {

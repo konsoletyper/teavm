@@ -398,8 +398,6 @@ public class ClassInference {
             if (!outerChanged) {
                 break;
             }
-
-            changed = false;
         }
     }
 
@@ -684,13 +682,7 @@ public class ClassInference {
 
             String expectedType = tryCatch.getExceptionType();
             List<? extends String> thrownTypes = subclassListProvider.getSubclasses(expectedType, false);
-            if (thrownTypes == null) {
-                if (!overflowTypes[exceptionNode]) {
-                    overflowTypes[exceptionNode] = true;
-                    changed = true;
-                    nodeChanged[exceptionNode] = true;
-                }
-            } else {
+            if (thrownTypes != null) {
                 IntHashSet nodeTypes = getNodeTypes(exceptionNode);
                 for (String thrownTypeName : thrownTypes) {
                     int thrownType = getTypeByName(thrownTypeName);
@@ -953,7 +945,7 @@ public class ClassInference {
             overflowType(variable, degree);
         } else {
             String[] types = dep.getTypes();
-            for (String type : dep.getTypes()) {
+            for (String type : types) {
                 if (addType(variable, degree, type)) {
                     break;
                 }

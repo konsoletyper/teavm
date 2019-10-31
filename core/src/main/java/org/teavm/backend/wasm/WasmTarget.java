@@ -803,9 +803,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
             block.getBody().add(new WasmStoreInt32(4, new WasmInt32Constant(index), initFlag,
                     WasmInt32Subtype.INT32));
 
-            if (method != null) {
-                block.getBody().add(new WasmCall(classGenerator.names.forMethod(method.getReference())));
-            }
+            block.getBody().add(new WasmCall(classGenerator.names.forMethod(method.getReference())));
 
             if (controller.wasCancelled()) {
                 break;

@@ -496,7 +496,7 @@ class TLogical {
         int[] resDigits = new int[resLength];
 
         int i = Math.min(longer.getFirstNonzeroDigit(), shorter.getFirstNonzeroDigit());
-        for (i = 0; i < shorter.numberLength; i++) {
+        for (; i < shorter.numberLength; i++) {
             resDigits[i] = longer.digits[i] | shorter.digits[i];
         }
         for (; i < resLength; i++) {

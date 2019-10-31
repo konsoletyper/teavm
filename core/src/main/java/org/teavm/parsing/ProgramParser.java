@@ -878,13 +878,7 @@ public class ProgramParser {
         @Override
         public void visitIntInsn(int opcode, int operand) {
             switch (opcode) {
-                case Opcodes.BIPUSH: {
-                    IntegerConstantInstruction insn = new IntegerConstantInstruction();
-                    insn.setConstant(operand);
-                    insn.setReceiver(getVariable(pushSingle()));
-                    addInstruction(insn);
-                    break;
-                }
+                case Opcodes.BIPUSH:
                 case Opcodes.SIPUSH: {
                     IntegerConstantInstruction insn = new IntegerConstantInstruction();
                     insn.setConstant(operand);

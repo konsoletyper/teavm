@@ -95,7 +95,7 @@ public class TLogger {
                 break;
             }
             if (message.charAt(next) != '}') {
-                sb.append(message.substring(index, next));
+                sb.append(message, index, next);
                 index = next;
                 continue;
             }

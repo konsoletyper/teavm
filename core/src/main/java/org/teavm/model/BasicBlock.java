@@ -384,7 +384,7 @@ public class BasicBlock implements BasicBlockReader, Iterable<Instruction> {
 
         @Override
         public TryCatchBlock set(int index, TryCatchBlock element) {
-            TryCatchBlock oldTryCatch = tryCatchBlocks.get(index);
+            TryCatchBlock oldTryCatch = tryCatchBlocks != null ? tryCatchBlocks.get(index) : null;
             if (oldTryCatch == element) {
                 return oldTryCatch;
             }

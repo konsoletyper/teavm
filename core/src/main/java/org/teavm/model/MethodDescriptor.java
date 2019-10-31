@@ -119,14 +119,14 @@ public class MethodDescriptor implements Serializable {
             return null;
         }
         int index = text.indexOf(')', 1);
-        if (index < 0) {
+        if (index <= 0) {
             return null;
         }
         ValueType[] params = ValueType.parseManyIfPossible(text.substring(1, index));
         if (params == null) {
             return null;
         }
-        ValueType result = ValueType.parse(text.substring(index + 1));
+        ValueType result = ValueType.parseIfPossible(text.substring(index + 1));
         if (result == null) {
             return null;
         }

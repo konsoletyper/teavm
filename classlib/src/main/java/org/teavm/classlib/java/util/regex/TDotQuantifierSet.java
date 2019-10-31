@@ -92,7 +92,7 @@ class TDotQuantifierSet extends TQuantifierSet {
                 nextSearch = strLength;
             }
             nextSearch = next.findBack(res, nextSearch, testString, matchResult);
-            res = (res < nextSearch) ? nextSearch : res;
+            res = Math.max(res, nextSearch);
         } else {
             return -1;
         }

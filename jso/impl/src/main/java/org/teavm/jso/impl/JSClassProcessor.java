@@ -786,7 +786,7 @@ class JSClassProcessor {
 
     private boolean isProperSetIndexer(MethodDescriptor desc) {
         return desc.parameterCount() == 2 && typeHelper.isSupportedType(desc.parameterType(0))
-                && typeHelper.isSupportedType(desc.parameterType(0)) && desc.getResultType() == ValueType.VOID;
+                && typeHelper.isSupportedType(desc.parameterType(1)) && desc.getResultType() == ValueType.VOID;
     }
 
     private static String cutPrefix(String name, int prefixLength) {

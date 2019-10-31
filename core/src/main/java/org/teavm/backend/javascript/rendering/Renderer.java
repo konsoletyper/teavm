@@ -984,16 +984,14 @@ public class Renderer implements RenderingManager {
                 }
                 variableNames.add(context.pointerName());
                 variableNames.add(context.tempVarName());
-                if (!variableNames.isEmpty()) {
-                    writer.append("var ");
-                    for (int i = 0; i < variableNames.size(); ++i) {
-                        if (i > 0) {
-                            writer.append(",").ws();
-                        }
-                        writer.append(variableNames.get(i));
+                writer.append("var ");
+                for (int i = 0; i < variableNames.size(); ++i) {
+                    if (i > 0) {
+                        writer.append(",").ws();
                     }
-                    writer.append(";").softNewLine();
+                    writer.append(variableNames.get(i));
                 }
+                writer.append(";").softNewLine();
 
                 int firstToSave = 0;
                 if (methodNode.getModifiers().contains(ElementModifier.STATIC)) {

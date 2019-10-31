@@ -603,9 +603,6 @@ public class CalendarTest {
         }
     }
 
-    /**
-     * @tests java.util.Calendar#isSet(int)
-     */
     @Test
     public void test_isSet() {
         Calendar calendar = Calendar.getInstance();
@@ -615,10 +612,6 @@ public class CalendarTest {
         }
     }
 
-    /**
-     * @tests java.util.Calendar#getInstance(Locale)
-     * @tests java.util.Calendar#getInstance(TimeZone, Locale)
-     */
     @Test
     public void test_getInstance() {
         // test getInstance(Locale)
@@ -640,9 +633,6 @@ public class CalendarTest {
                 .getID(), estCalendar.getTimeZone().getID());
     }
 
-    /**
-     * @tests java.util.Calendar#internalGet(int)
-     */
     @Test
     public void test_internalGet() {
         MockGregorianCalendar c = new MockGregorianCalendar();
@@ -650,18 +640,12 @@ public class CalendarTest {
         assertEquals(0, c.internal_get(Calendar.YEAR));
     }
 
-    /**
-     * @tests java.util.Calendar#hashCode()
-     */
     @Test
     public void test_hashcode() {
         Calendar calendar = Calendar.getInstance(Locale.JAPAN);
         assertTrue(calendar.hashCode() == calendar.hashCode());
     }
 
-    /**
-     * @tests java.util.Calendar#roll(int, int)
-     */
     @Test
     public void test_roll() {
         Calendar calendar = Calendar.getInstance();

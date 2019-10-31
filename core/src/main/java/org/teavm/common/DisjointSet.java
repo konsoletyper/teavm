@@ -84,7 +84,7 @@ public class DisjointSet {
             parent[b] = a;
             setSize[a] += setSize[b];
             return a;
-        } else if (rank[b] < rank[a]) {
+        } else if (rank[b] > rank[a]) {
             parent[a] = b;
             setSize[b] += setSize[a];
             return b;

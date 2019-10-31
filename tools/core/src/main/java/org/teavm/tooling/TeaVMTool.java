@@ -366,7 +366,7 @@ public class TeaVMTool {
                         fileTable, variableTable, classSource, innerClassSource);
                 programCache = new DiskProgramCache(cacheDirectory, referenceCache, symbolTable, fileTable,
                         variableTable);
-                if (incremental && targetType == TeaVMTargetType.JAVASCRIPT) {
+                if (targetType == TeaVMTargetType.JAVASCRIPT) {
                     astCache = new DiskMethodNodeCache(cacheDirectory, referenceCache, symbolTable, fileTable,
                             variableTable);
                     javaScriptTarget.setAstCache(astCache);

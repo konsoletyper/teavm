@@ -375,10 +375,8 @@ public class BoundCheckInsertion {
                 }
             }
 
-            if (lower) {
-                if ((isConstant[index] && constantValue[index] >= 0) || nonNegative[index]) {
-                    lower = false;
-                }
+            if ((isConstant[index] && constantValue[index] >= 0) || nonNegative[index]) {
+                lower = false;
             }
 
             if (upper) {

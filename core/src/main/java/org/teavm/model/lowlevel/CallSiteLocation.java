@@ -55,10 +55,10 @@ public class CallSiteLocation {
             List<CallSiteLocation> result = new ArrayList<>();
             InliningInfo inlining = location.getInlining();
             result.add(new CallSiteLocation(
-                    convertFileName(location != null ? location.getFileName() : null),
+                    convertFileName(location.getFileName()),
                     inlining.getMethod().getClassName(),
                     inlining.getMethod().getName(),
-                    location != null ? location.getLine() : 0));
+                    location.getLine()));
             while (inlining != null) {
                 MethodReference method = inlining.getParent() != null
                         ? inlining.getParent().getMethod()

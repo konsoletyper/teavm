@@ -175,9 +175,7 @@ public class TObject {
         if (monitor.enteringThreads != null && !monitor.enteringThreads.isEmpty()) {
             PlatformQueue<PlatformRunnable> enteringThreads = monitor.enteringThreads;
             PlatformRunnable r = enteringThreads.remove();
-            if (enteringThreads == null) {
-                monitor.enteringThreads = null;
-            }
+            monitor.enteringThreads = null;
             r.run();
         }
     }

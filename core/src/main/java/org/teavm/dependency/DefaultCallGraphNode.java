@@ -94,10 +94,8 @@ class DefaultCallGraphNode implements CallGraphNode {
                 callee.addCaller(singleCallSite);
                 return singleCallSite;
             }
-            if (singleCallSite != null) {
-                if (singleCallSite.singleCalledMethod.getMethod().equals(method)) {
-                    return singleCallSite;
-                }
+            if (singleCallSite.singleCalledMethod.getMethod().equals(method)) {
+                return singleCallSite;
             }
             callSiteMap = new LinkedHashMap<>();
             callSites = new ArrayList<>();

@@ -118,6 +118,7 @@ public final class Deobfuscator {
             if (location != null) {
                 frame.setLineNumber(location.getLine());
             }
+            result.add(frame);
         }
 
         if (result.isEmpty()) {

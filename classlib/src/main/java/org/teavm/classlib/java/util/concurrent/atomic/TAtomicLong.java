@@ -19,9 +19,10 @@ import java.io.Serializable;
 import java.util.function.LongBinaryOperator;
 import java.util.function.LongUnaryOperator;
 
+@SuppressWarnings("NonAtomicOperationOnVolatileField")
 public class TAtomicLong extends Number implements Serializable {
     private long value;
-    private int version;
+    private volatile int version;
 
     public TAtomicLong() {
     }

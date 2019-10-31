@@ -187,7 +187,7 @@ public class TBufferedInputStream extends TFilterInputStream {
                     }
                 }
 
-                read = count - pos >= required ? required : count - pos;
+                read = Math.min(count - pos, required);
                 System.arraycopy(localBuf, pos, buffer, offset, read);
                 pos += read;
             }

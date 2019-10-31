@@ -35,7 +35,7 @@ public final class TeaVMDevServerRunner {
         setupOptions();
     }
 
-    @SuppressWarnings("static-access")
+    @SuppressWarnings("AccessStaticViaInstance")
     private static void setupOptions() {
         options.addOption(OptionBuilder
                 .withArgName("directory")
@@ -150,7 +150,7 @@ public final class TeaVMDevServerRunner {
         if (args.length != 1) {
             System.err.println("Unexpected arguments");
             printUsage();
-        } else if (args.length == 1) {
+        } else {
             devServer.setMainClass(args[0]);
         }
     }

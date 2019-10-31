@@ -123,13 +123,12 @@ class TSupplRangeSet extends TJointSet {
     @Override
     public int matches(int stringIndex, CharSequence testString, TMatchResultImpl matchResult) {
         int strLength = matchResult.getRightBound();
-        int offset = -1;
 
         if (stringIndex < strLength) {
             char high = testString.charAt(stringIndex++);
 
             if (contains(high)) {
-                offset = next.matches(stringIndex, testString, matchResult);
+                int offset = next.matches(stringIndex, testString, matchResult);
                 if (offset > 0) {
                     return offset;
                 }

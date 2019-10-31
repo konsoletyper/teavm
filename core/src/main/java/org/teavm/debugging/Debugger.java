@@ -324,8 +324,10 @@ public class Debugger {
                     loc = null;
                 }
                 boolean empty = loc == null || (loc.getFileName() == null && loc.getLine() < 0);
-                MethodReference method = !empty ? debugInformation.getMethodAt(jsFrame.getLocation().getLine(),
-                        jsFrame.getLocation().getColumn()) : null;
+                MethodReference method = !empty && debugInformation != null
+                        ? debugInformation.getMethodAt(jsFrame.getLocation().getLine(),
+                                jsFrame.getLocation().getColumn())
+                        : null;
                 if (!empty || !wasEmpty) {
                     frames.add(new CallFrame(this, jsFrame, loc, method, debugInformation));
                 }

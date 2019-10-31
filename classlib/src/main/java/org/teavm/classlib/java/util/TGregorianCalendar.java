@@ -917,7 +917,6 @@ public class TGregorianCalendar extends TCalendar {
             lastYearSkew = 0;
             currentYearSkew = julianSkew;
         }
-        isCached = false;
     }
 
     @Override
