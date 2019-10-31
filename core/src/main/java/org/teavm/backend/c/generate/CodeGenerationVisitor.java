@@ -499,7 +499,7 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
 
         pushLocation(expr.getLocation());
 
-        if (needsCallSiteId() && context.getCharacteristics().isManaged(expr.getMethod())) {
+        if (needsCallSiteId() && isManagedMethodCall(context.getCharacteristics(), expr.getMethod())) {
             needParenthesis = true;
             withCallSite();
         }

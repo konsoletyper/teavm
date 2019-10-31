@@ -283,17 +283,13 @@ public class ExceptionHandlingShadowStackContributor {
                 || insn instanceof NullCheckInstruction || insn instanceof BoundCheckInstruction) {
             return true;
         } else if (insn instanceof InvokeInstruction) {
-            MethodReference method = ((InvokeInstruction) insn).getMethod();
-            if (method.equals(FILL_STACK_TRACE)) {
-                return true;
-            }
-            return isManagedMethodCall(characteristics, method);
+            return isManagedMethodCall(characteristics, ((InvokeInstruction) insn).getMethod());
         }
         return false;
     }
 
     public static boolean isManagedMethodCall(Characteristics characteristics, MethodReference method) {
-        if (characteristics.isManaged(method)) {
+        if (characteristics.isManaged(method) || method.equals(FILL_STACK_TRACE)) {
             return true;
         }
         return method.getClassName().equals(ExceptionHandling.class.getName())
