@@ -50,7 +50,10 @@ public class TeaVMValue extends XNamedValue {
                         if (Objects.equals(type, "java.lang.String")) {
                             getStringRepresentation().thenVoid(str -> node.setPresentation(icon, type, str, true));
                         } else {
-                            node.setPresentation(icon, type, representation, innerValue.hasInnerStructure());
+                            innerValue.hasInnerStructure().then(innerStructure -> {
+                                node.setPresentation(icon, type, representation, innerStructure);
+                                return null;
+                            });
                         }
                     });
                 });
