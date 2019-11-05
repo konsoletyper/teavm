@@ -21,7 +21,6 @@ import com.carrotsearch.hppc.LongObjectMap;
 import com.carrotsearch.hppc.ObjectIntHashMap;
 import com.carrotsearch.hppc.ObjectIntMap;
 import java.io.BufferedInputStream;
-import java.io.DataOutput;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
@@ -215,9 +214,12 @@ public final class HeapDumpConverter {
         output.write("JAVA PROFILE 1.0.2\0".getBytes(StandardCharsets.UTF_8));
         output.writeInt(idSize);
         output.writeLong(System.currentTimeMillis());
-        writeSymbols(output, symbolTable);
-        writeStack(output, symbolTable);
-        writeHeapDump(reader, output, symbolTable);
+
+        BufferedFile bufferedOutput = new BufferedFile(output);
+        writeSymbols(bufferedOutput, symbolTable);
+        writeStack(bufferedOutput, symbolTable);
+        writeHeapDump(reader, bufferedOutput, symbolTable);
+        bufferedOutput.flush();
 
         output.write(0x2C);
         output.writeInt(0);
@@ -225,7 +227,7 @@ public final class HeapDumpConverter {
         output.setLength(output.getFilePointer());
     }
 
-    private static void writeSymbols(RandomAccessFile output, SymbolTable symbolTable) throws IOException {
+    private static void writeSymbols(BufferedFile output, SymbolTable symbolTable) throws IOException {
         List<String> strings = symbolTable.getStrings();
         for (int i = 0; i < strings.size(); ++i) {
             byte[] bytes = strings.get(i).getBytes(StandardCharsets.UTF_8);
@@ -238,7 +240,7 @@ public final class HeapDumpConverter {
         }
     }
 
-    private static void writeStack(RandomAccessFile output, SymbolTable symbolTable) throws IOException {
+    private static void writeStack(BufferedFile output, SymbolTable symbolTable) throws IOException {
         for (int i = 0; i < symbolTable.stack.size(); ++i) {
             Frame frame = symbolTable.stack.get(i);
             output.write(4);
@@ -271,7 +273,7 @@ public final class HeapDumpConverter {
         }
     }
 
-    private static void writeGcRoots(RandomAccessFile output, SymbolTable symbolTable) throws IOException {
+    private static void writeGcRoots(BufferedFile output, SymbolTable symbolTable) throws IOException {
         List<Frame> stack = symbolTable.stack;
         for (int i = 0; i < stack.size(); i++) {
             Frame frame = stack.get(i);
@@ -295,7 +297,7 @@ public final class HeapDumpConverter {
         }
     }
 
-    private static void writeHeapDump(Reader reader, RandomAccessFile output, SymbolTable symbolTable)
+    private static void writeHeapDump(Reader reader, BufferedFile output, SymbolTable symbolTable)
             throws IOException {
         for (ClassDescriptor classDescriptor : symbolTable.getClasses()) {
             if (classDescriptor.primitiveType != null) {
@@ -330,7 +332,7 @@ public final class HeapDumpConverter {
         output.seek(pointerBackup);
     }
 
-    private static void writeClassObjects(RandomAccessFile output, SymbolTable symbolTable) throws IOException {
+    private static void writeClassObjects(BufferedFile output, SymbolTable symbolTable) throws IOException {
         Collection<ClassDescriptor> classes = symbolTable.getClasses();
         for (ClassDescriptor cls : classes) {
             if (cls.primitiveType == null) {
@@ -339,7 +341,7 @@ public final class HeapDumpConverter {
         }
     }
 
-    private static void writeClassDump(RandomAccessFile output, SymbolTable symbolTable, ClassDescriptor cls)
+    private static void writeClassDump(BufferedFile output, SymbolTable symbolTable, ClassDescriptor cls)
             throws IOException {
         output.write(0x20);
         writeId(output, cls.id);
@@ -377,14 +379,14 @@ public final class HeapDumpConverter {
     }
 
     static class ObjectDumpVisitor extends JsonAllErrorVisitor {
-        private DataOutput output;
+        private BufferedFile output;
         private SymbolTable symbolTable;
         private JsonPropertyVisitor propertyVisitor = new JsonPropertyVisitor(true);
         private long id;
         private long classId;
         private byte[] data;
 
-        ObjectDumpVisitor(DataOutput output, SymbolTable symbolTable) {
+        ObjectDumpVisitor(BufferedFile output, SymbolTable symbolTable) {
             this.output = output;
             this.symbolTable = symbolTable;
             propertyVisitor.addProperty("id", idVisitor);
@@ -437,7 +439,7 @@ public final class HeapDumpConverter {
                     if (itemCls.primitiveType == null) {
                         writeId(output, classId);
                     } else {
-                        output.writeByte(typeToInt(itemCls.primitiveType));
+                        output.write(typeToInt(itemCls.primitiveType));
                     }
                     for (int i = 0; i < size; ++i) {
                         int ptr = i * itemSize;
@@ -869,11 +871,11 @@ public final class HeapDumpConverter {
         }
     }
 
-    private static void writeId(DataOutput out, long id) throws IOException {
+    private static void writeId(BufferedFile out, long id) throws IOException {
         writeLongBytes(out, id, idSize);
     }
 
-    private static void writeLongBytes(DataOutput out, long v, int size) throws IOException {
+    private static void writeLongBytes(BufferedFile out, long v, int size) throws IOException {
         for (int i = size - 1; i >= 0; --i) {
             buffer[i] = (byte) (v & 255);
             v >>>= 8;
