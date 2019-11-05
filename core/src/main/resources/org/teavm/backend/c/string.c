@@ -1,6 +1,12 @@
 #include "string.h"
+#include "stack.h"
 #include <stdlib.h>
 #include <string.h>
+#include <stddef.h>
+
+#if TEAVM_INCREMENTAL
+#define TEAVM_ALLOC_STACK(sz) TEAVM_ALLOC_STACK_DEF(sz, NULL)
+#endif
 
 int32_t teavm_hashCode(TeaVM_String* string) {
     int32_t hashCode = INT32_C(0);
@@ -106,9 +112,15 @@ TeaVM_String* teavm_cToString(char* cstring) {
         return NULL;
     }
 
+    TEAVM_ALLOC_STACK(1);
+    TEAVM_CALL_SITE(-1);
+    TEAVM_GC_ROOT_RELEASE(0);
+
     size_t clen = strlen(cstring);
     int32_t size = teavm_c16Size(cstring, clen);
     TeaVM_Array* charArray = teavm_allocateCharArray(size);
+    TEAVM_GC_ROOT(0, charArray);
+
     char16_t* javaChars = TEAVM_ARRAY_DATA(charArray, char16_t);
     mbstate_t state = {0};
     for (int32_t i = 0; i < size; ++i) {
@@ -120,7 +132,10 @@ TeaVM_String* teavm_cToString(char* cstring) {
             cstring += result;
         }
     }
-    return teavm_createString(charArray);
+
+    TeaVM_String* result = teavm_createString(charArray);
+    TEAVM_RELEASE_STACK;
+    return result;
 }
 
 TeaVM_String* teavm_c16ToString(char16_t* cstring) {
@@ -128,14 +143,23 @@ TeaVM_String* teavm_c16ToString(char16_t* cstring) {
         return NULL;
     }
 
+
+    TEAVM_ALLOC_STACK(1);
+    TEAVM_CALL_SITE(-1);
+    TEAVM_GC_ROOT_RELEASE(0);
+
     int32_t size = 0;
     while (cstring[size] != 0) {
         ++size;
     }
     TeaVM_Array* charArray = teavm_allocateCharArray(size);
+    TEAVM_GC_ROOT(0, charArray);
     char16_t* javaChars = TEAVM_ARRAY_DATA(charArray, char16_t);
     memcpy(javaChars, cstring, size * sizeof(char16_t));
-    return teavm_createString(charArray);
+
+    TeaVM_String* result = teavm_createString(charArray);
+    TEAVM_RELEASE_STACK;
+    return result;
 }
 
 char16_t* teavm_mbToChar16(char* cstring, int32_t* length) {
