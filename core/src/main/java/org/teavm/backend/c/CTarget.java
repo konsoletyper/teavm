@@ -143,8 +143,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private static final Set<MethodReference> VIRTUAL_METHODS = new HashSet<>(Arrays.asList(
             new MethodReference(Object.class, "clone", Object.class)
     ));
-    private static final MethodReference STRING_CONSTRUCTOR = new MethodReference(String.class,
-            "<init>", char[].class, void.class);
     private static final String[] RUNTIME_FILES = { "core.c", "core.h", "date.c", "date.h", "definitions.h",
             "exceptions.h", "fiber.c", "fiber.h", "file.c", "file.h", "heapdump.c", "heapdump.h", "heaptrace.c",
             "heaptrace.h", "log.c", "log.h", "memory.c", "memory.h", "references.c", "references.h",
@@ -293,10 +291,6 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         dependencyAnalyzer.linkClass("java.lang.String");
         dependencyAnalyzer.linkClass("java.lang.Class");
         dependencyAnalyzer.linkField(new FieldReference("java.lang.String", "hashCode"));
-        dependencyAnalyzer.linkMethod(STRING_CONSTRUCTOR)
-                .propagate(0, "java.lang.String")
-                .propagate(1, "[C")
-                .use();
 
         ClassDependency runtimeClassDep = dependencyAnalyzer.linkClass(RuntimeClass.class.getName());
         ClassDependency runtimeObjectDep = dependencyAnalyzer.linkClass(RuntimeObject.class.getName());
@@ -712,12 +706,11 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private void generateCreateString(ClassGenerationContext context, CodeWriter writer, IncludeManager includes) {
         NameProvider names = context.getContext().getNames();
         context.importMethod(CodeGenerationVisitor.ALLOC_METHOD, true);
-        context.importMethod(STRING_CONSTRUCTOR, false);
         includes.includeClass(String.class.getName());
         writer.println("TeaVM_String* teavm_createString(TeaVM_Array* array) {").indent();
         writer.print("TeaVM_String* str = (TeaVM_String*) ").print(names.forMethod(CodeGenerationVisitor.ALLOC_METHOD))
                 .print("(&").print(names.forClassInstance(ValueType.object("java.lang.String"))).println(");");
-        writer.print(names.forMethod(STRING_CONSTRUCTOR)).println("(str, array);");
+        writer.print("str->characters = array;");
         writer.println("return str;");
         writer.outdent().println("}");
     }
