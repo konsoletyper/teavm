@@ -15,7 +15,6 @@
  */
 package org.teavm.model.util;
 
-import org.teavm.common.DominatorTree;
 import org.teavm.model.BasicBlock;
 
 /**
@@ -24,7 +23,7 @@ import org.teavm.model.BasicBlock;
  * @param <T> type of state that can be saved for each visited node.
  */
 public interface DominatorWalkerCallback<T> {
-    default void setDomTree(DominatorTree domTree) {
+    default void setContext(DominatorWalkerContext context) {
     }
 
     /**

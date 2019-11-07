@@ -27,6 +27,7 @@ public class MemoryTraceIntrinsic implements Intrinsic {
 
     @Override
     public void apply(IntrinsicContext context, InvocationExpr invocation) {
+        context.includes().includePath("heaptrace.h");
         context.writer().print("teavm_gc_").print(invocation.getMethod().getName()).print("(");
         if (!invocation.getArguments().isEmpty()) {
             context.emit(invocation.getArguments().get(0));

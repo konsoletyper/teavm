@@ -37,26 +37,33 @@ class SpilledPhisFinder {
     int[][] variableSpilledBlocks;
     Phi[] definingPhis;
     int variableCount;
+    private int[] variableClasses;
+    private int[] colors;
 
-    SpilledPhisFinder(List<Map<Instruction, BitSet>> liveInInformation, DominatorTree dom, Program program) {
+    SpilledPhisFinder(List<Map<Instruction, BitSet>> liveInInformation, DominatorTree dom, Program program,
+            int[] variableClasses, int[] colors) {
         this.dom = dom;
         variableCount = program.variableCount();
         autoSpilled = new boolean[variableCount];
         status = new byte[variableCount];
-        variableSpilledBlocks = variableSpilledBlocks(liveInInformation, variableCount);
-        definingPhis = findPhis(program);
+        variableSpilledBlocks = variableSpilledBlocks(liveInInformation, variableCount, variableClasses);
+        definingPhis = findPhis(program, variableClasses);
+        this.variableClasses = variableClasses;
+        this.colors = colors;
     }
 
-    private static int[][] variableSpilledBlocks(List<Map<Instruction, BitSet>> liveInInformation, int count) {
+    private static int[][] variableSpilledBlocks(List<Map<Instruction, BitSet>> liveInInformation, int count,
+            int[] variableClasses) {
         IntSet[] builder = new IntSet[count];
         for (int b = 0; b < liveInInformation.size(); b++) {
             Map<Instruction, BitSet> blockLiveIn = liveInInformation.get(b);
             for (BitSet liveVarsSet : blockLiveIn.values()) {
                 for (int v = liveVarsSet.nextSetBit(0); v >= 0; v = liveVarsSet.nextSetBit(v + 1)) {
-                    if (builder[v] == null) {
-                        builder[v] = new IntHashSet();
+                    int cls = variableClasses[v];
+                    if (builder[cls] == null) {
+                        builder[cls] = new IntHashSet();
                     }
-                    builder[v].add(b);
+                    builder[cls].add(b);
                 }
             }
         }
@@ -71,11 +78,11 @@ class SpilledPhisFinder {
         return result;
     }
 
-    private static Phi[] findPhis(Program program) {
+    private static Phi[] findPhis(Program program, int[] variableClasses) {
         Phi[] result = new Phi[program.variableCount()];
         for (BasicBlock block : program.getBasicBlocks()) {
             for (Phi phi : block.getPhis()) {
-                result[phi.getReceiver().getIndex()] = phi;
+                result[variableClasses[phi.getReceiver().getIndex()]] = phi;
             }
         }
         return result;
@@ -89,6 +96,8 @@ class SpilledPhisFinder {
     }
 
     private boolean isAutoSpilled(int v) {
+        v = variableClasses[v];
+
         if (status[v] == VISITED) {
             return autoSpilled[v];
         }
@@ -107,6 +116,10 @@ class SpilledPhisFinder {
 
         boolean result = true;
         for (Incoming incoming : definingPhi.getIncomings()) {
+            if (colors[incoming.getValue().getIndex()] != colors[definingPhi.getReceiver().getIndex()]) {
+                result = false;
+                break;
+            }
             if (!isAutoSpilled(incoming.getValue().getIndex())) {
                 int[] spilledAt = variableSpilledBlocks[incoming.getValue().getIndex()];
                 result = false;

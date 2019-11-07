@@ -24,7 +24,7 @@ import org.teavm.interop.Unmanaged;
 public final class WasmHeap {
     public static final int PAGE_SIZE = 65536;
     public static final int DEFAULT_STACK_SIZE = PAGE_SIZE * 4;
-    public static final int DEFAULT_REGION_SIZE = 32768;
+    public static final int DEFAULT_REGION_SIZE = 4096;
 
     public static int minHeapSize;
     public static int maxHeapSize;
@@ -33,6 +33,7 @@ public final class WasmHeap {
     public static Address regionsAddress;
     public static int regionsCount;
     public static int regionsSize;
+    public static Address cardTable;
     public static Address heapAddress;
     public static int heapSize;
     public static int regionSize = DEFAULT_REGION_SIZE;
@@ -79,7 +80,8 @@ public final class WasmHeap {
         int newRegionsSize = calculateRegionsSize(newRegionsCount);
 
         Address newRegionsAddress = WasmRuntime.align(heapAddress.add(newHeapSize), 16);
-        Address newStorageAddress = WasmRuntime.align(newRegionsAddress.add(newRegionsSize), 16);
+        Address newCardTable = WasmRuntime.align(newRegionsAddress.add(newRegionsCount), 16);
+        Address newStorageAddress = WasmRuntime.align(newCardTable.add(newRegionsSize), 16);
         Address newMemoryLimit = WasmRuntime.align(newStorageAddress.add(newStorageSize), PAGE_SIZE);
         if (newMemoryLimit != memoryLimit) {
             growMemory((int) (newMemoryLimit.toLong() - memoryLimit.toLong()) / PAGE_SIZE);
@@ -89,11 +91,13 @@ public final class WasmHeap {
             WasmRuntime.moveMemoryBlock(storageAddress, newStorageAddress, storageSize);
         }
         if (regionsSize > 0) {
+            WasmRuntime.moveMemoryBlock(cardTable, newCardTable, regionsCount);
             WasmRuntime.moveMemoryBlock(regionsAddress, newRegionsAddress, regionsSize);
         }
 
         storageAddress = newStorageAddress;
         regionsAddress = newRegionsAddress;
+        cardTable = newCardTable;
         storageSize = newStorageSize;
         regionsCount = newRegionsCount;
         regionsSize = newRegionsSize;

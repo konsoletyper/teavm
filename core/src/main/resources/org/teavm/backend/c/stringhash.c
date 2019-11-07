@@ -66,8 +66,8 @@ static void teavm_rehashStrings() {
 }
 
 TeaVM_String* teavm_registerString(TeaVM_String* str) {
-    str->parent.header = TEAVM_PACK_CLASS(teavm_stringClass);
-    str->characters->parent.header = TEAVM_PACK_CLASS(teavm_charArrayClass);
+    str->parent.header = TEAVM_PACK_CLASS(teavm_stringClass) | (int32_t) INT32_C(0x80000000);
+    str->characters->parent.header = TEAVM_PACK_CLASS(teavm_charArrayClass) | (int32_t) INT32_C(0x80000000);
 
     if (teavm_stringHashtable == NULL) {
         teavm_stringHashtableSize = 256;

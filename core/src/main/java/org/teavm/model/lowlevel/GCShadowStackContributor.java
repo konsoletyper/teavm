@@ -33,14 +33,13 @@ import org.teavm.common.Graph;
 import org.teavm.common.GraphBuilder;
 import org.teavm.common.GraphUtils;
 import org.teavm.model.BasicBlock;
-import org.teavm.model.Incoming;
 import org.teavm.model.Instruction;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
-import org.teavm.model.Phi;
 import org.teavm.model.Program;
 import org.teavm.model.Variable;
 import org.teavm.model.instructions.AssignInstruction;
+import org.teavm.model.instructions.CastInstruction;
 import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.IntegerConstantInstruction;
 import org.teavm.model.instructions.InvocationType;
@@ -48,6 +47,7 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
 import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.StringConstantInstruction;
+import org.teavm.model.instructions.UnwrapArrayInstruction;
 import org.teavm.model.util.DefinitionExtractor;
 import org.teavm.model.util.GraphColorer;
 import org.teavm.model.util.LivenessAnalyzer;
@@ -98,28 +98,38 @@ public class GCShadowStackContributor {
         // for this phi.
         Graph cfg = ProgramUtils.buildControlFlowGraph(program);
         DominatorTree dom = GraphUtils.buildDominatorTree(cfg);
-        boolean[] autoSpilled = new SpilledPhisFinder(liveInInformation, dom, program).find();
+        boolean[] autoSpilled = new SpilledPhisFinder(liveInInformation, dom, program, variableClasses, colors).find();
 
         List<Map<Instruction, int[]>> liveInStores = reduceGCRootStores(dom, program, usedColors, liveInInformation,
-                colors, autoSpilled);
+                colors, autoSpilled, variableClasses);
         putLiveInGCRoots(program, liveInStores);
 
         return usedColors;
     }
 
     private int[] getVariableClasses(Program program) {
-        DisjointSet variableClasses = new DisjointSet();
+        DisjointSet disjointSet = new DisjointSet();
         for (int i = 0; i < program.variableCount(); ++i) {
-            variableClasses.create();
+            disjointSet.create();
         }
         for (BasicBlock block : program.getBasicBlocks()) {
-            for (Phi phi : block.getPhis()) {
-                for (Incoming incoming : phi.getIncomings()) {
-                    variableClasses.union(phi.getReceiver().getIndex(), incoming.getValue().getIndex());
+            for (Instruction instruction : block) {
+                if (instruction instanceof AssignInstruction) {
+                    AssignInstruction assign = (AssignInstruction) instruction;
+                    disjointSet.union(assign.getAssignee().getIndex(), assign.getReceiver().getIndex());
+                } else if (instruction instanceof NullCheckInstruction) {
+                    NullCheckInstruction nullCheck = (NullCheckInstruction) instruction;
+                    disjointSet.union(nullCheck.getValue().getIndex(), nullCheck.getReceiver().getIndex());
+                } else if (instruction instanceof CastInstruction) {
+                    CastInstruction cast = (CastInstruction) instruction;
+                    disjointSet.union(cast.getValue().getIndex(), cast.getReceiver().getIndex());
+                } else if (instruction instanceof UnwrapArrayInstruction) {
+                    UnwrapArrayInstruction unwrapArray = (UnwrapArrayInstruction) instruction;
+                    disjointSet.union(unwrapArray.getArray().getIndex(), unwrapArray.getReceiver().getIndex());
                 }
             }
         }
-        return variableClasses.pack(program.variableCount());
+        return disjointSet.pack(program.variableCount());
     }
 
     private List<Map<Instruction, BitSet>> findCallSiteLiveIns(Program program, MethodReader method) {
@@ -207,7 +217,8 @@ public class GCShadowStackContributor {
     }
 
     private List<Map<Instruction, int[]>> reduceGCRootStores(DominatorTree dom, Program program, int usedColors,
-            List<Map<Instruction, BitSet>> liveInInformation, int[] colors, boolean[] autoSpilled) {
+            List<Map<Instruction, BitSet>> liveInInformation, int[] colors, boolean[] autoSpilled,
+            int[] variableClasses) {
         class Step {
             private final int node;
             private final int[] slotStates = new int[usedColors];
@@ -228,7 +239,6 @@ public class GCShadowStackContributor {
         Step start = new Step(0);
         Arrays.fill(start.slotStates, program.variableCount());
         stack[head++] = start;
-        int[] definitionClasses = getDefinitionClasses(program);
 
         while (head > 0) {
             Step step = stack[--head];
@@ -250,7 +260,7 @@ public class GCShadowStackContributor {
                     }
                 }
 
-                int[] updates = compareStates(previousStates, states, autoSpilled, definitionClasses);
+                int[] updates = compareStates(previousStates, states, autoSpilled, variableClasses);
                 updatesByCallSite.put(callSiteLocation, updates);
                 previousStates = states;
                 states = states.clone();
@@ -264,22 +274,6 @@ public class GCShadowStackContributor {
         }
 
         return slotsToUpdate;
-    }
-
-    private int[] getDefinitionClasses(Program program) {
-        DisjointSet disjointSet = new DisjointSet();
-        for (int i = 0; i < program.variableCount(); ++i) {
-            disjointSet.create();
-        }
-        for (BasicBlock block : program.getBasicBlocks()) {
-            for (Instruction instruction : block) {
-                if (instruction instanceof NullCheckInstruction) {
-                    NullCheckInstruction nullCheck = (NullCheckInstruction) instruction;
-                    disjointSet.union(nullCheck.getValue().getIndex(), nullCheck.getReceiver().getIndex());
-                }
-            }
-        }
-        return disjointSet.pack(program.variableCount());
     }
 
     private List<Instruction> sortInstructions(Collection<Instruction> instructions, BasicBlock block) {

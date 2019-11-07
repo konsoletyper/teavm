@@ -29,17 +29,27 @@ public class MemoryTrace {
 
     public static native void checkIsFree(Address address, int size);
 
-    public static native void initMark();
+    public static native void markStarted();
 
     public static native void mark(Address address);
 
+    public static native void reportDirtyRegion(Address address);
+
+    public static native void markCompleted();
+
     public static native void move(Address from, Address to, int size);
 
-    public static native void gcStarted();
+    public static native void gcStarted(boolean full);
+
+    public static native void sweepStarted();
 
     public static native void sweepCompleted();
+
+    public static native void defragStarted();
 
     public static native void defragCompleted();
 
     public static native void writeHeapDump();
+
+    public static native void gcCompleted();
 }

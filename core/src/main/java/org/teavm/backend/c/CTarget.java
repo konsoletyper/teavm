@@ -118,6 +118,7 @@ import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ExportDependencyListener;
 import org.teavm.model.lowlevel.LowLevelNullCheckFilter;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
+import org.teavm.model.lowlevel.WriteBarrierInsertion;
 import org.teavm.model.optimization.InliningFilterFactory;
 import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
@@ -155,6 +156,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
     private ClassInitializerEliminator classInitializerEliminator;
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
+    private WriteBarrierInsertion writeBarrierInsertion;
     private NullCheckInsertion nullCheckInsertion;
     private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
     private CheckInstructionTransformation checkTransformation;
@@ -235,6 +237,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         shadowStackTransformer = new ShadowStackTransformer(characteristics, !longjmpUsed);
         nullCheckInsertion = new NullCheckInsertion(new LowLevelNullCheckFilter(characteristics));
         checkTransformation = new CheckInstructionTransformation();
+        writeBarrierInsertion = new WriteBarrierInsertion(characteristics);
 
         controller.addVirtualMethods(VIRTUAL_METHODS::contains);
     }
@@ -272,6 +275,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         dependencyAnalyzer.linkMethod(new MethodReference(GC.class, "fixHeap", void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(GC.class, "tryShrink", void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(GC.class, "collectGarbage", void.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(GC.class, "collectGarbageFull", void.class)).use();
 
         dependencyAnalyzer.linkMethod(new MethodReference(ExceptionHandling.class, "throwException",
                 Throwable.class, void.class)).use();
@@ -350,6 +354,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
                 ? this.shadowStackTransformer
                 : new ShadowStackTransformer(characteristics, !longjmpUsed);
         shadowStackTransformer.apply(program, method);
+        writeBarrierInsertion.apply(program);
     }
 
     @Override
@@ -392,6 +397,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
 
         stringPool = new SimpleStringPool();
         boolean vmAssertions = Boolean.parseBoolean(System.getProperty("teavm.c.vmAssertions", "false"));
+        boolean gcStats = Boolean.parseBoolean(System.getProperty("teavm.c.gcStats", "false"));
         GenerationContext context = new GenerationContext(vtableProvider, characteristics,
                 controller.getDependencyInfo(), stringPool, nameProvider, controller.getDiagnostics(), classes,
                 intrinsics, generators, asyncMethods::contains, buildTarget,
@@ -416,6 +422,9 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         }
         if (obfuscated) {
             configHeaderWriter.println("#define TEAVM_OBFUSCATED 1");
+        }
+        if (gcStats) {
+            configHeaderWriter.println("#define TEAVM_GC_STATS 1");
         }
 
         ClassGenerator classGenerator = new ClassGenerator(context, tagRegistry, decompiler,

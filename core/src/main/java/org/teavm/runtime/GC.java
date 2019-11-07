@@ -28,15 +28,23 @@ public final class GC {
     private GC() {
     }
 
+    private static final byte CARD_VALID = 1;
+    private static final byte CARD_YOUNG_GEN = 2;
+    private static final byte CARD_GAP = 4;
+    private static final byte CARD_RELOCATABLE = 8;
+
     static Address currentChunkLimit;
     static FreeChunk currentChunk;
     static FreeChunkHolder currentChunkPointer;
     static int freeChunks;
+    static int totalChunks;
     static int freeMemory = (int) availableBytes();
     static RuntimeReference firstWeakReference;
     static FreeChunk lastChunk;
 
     static RelocationBlock lastRelocationBlock;
+    static boolean isFullGC = true;
+    private static int youngGCCount;
 
     static native Address gcStorageAddress();
 
@@ -45,6 +53,8 @@ public final class GC {
     public static native Address heapAddress();
 
     private static native Region regionsAddress();
+
+    private static native Address cardTable();
 
     private static native int regionMaxCount();
 
@@ -57,6 +67,8 @@ public final class GC {
     public static native void resizeHeap(long size);
 
     private static native int regionSize();
+
+    public static native void writeBarrier(RuntimeObject object);
 
     @Import(name = "teavm_outOfMemory")
     public static native void outOfMemory();
@@ -73,6 +85,14 @@ public final class GC {
         currentChunkPointer = gcStorageAddress().toStructure();
         currentChunkPointer.value = currentChunk;
         freeChunks = 1;
+        totalChunks = 1;
+
+        int regionCount = getRegionCount();
+        Allocator.fill(cardTable(), CARD_VALID, regionCount);
+    }
+
+    private static int getRegionCount() {
+        return (int) (availableBytes() / regionSize()) + 1;
     }
 
     public static RuntimeObject alloc(int size) {
@@ -126,15 +146,38 @@ public final class GC {
         collectGarbageImpl(0);
     }
 
+    @Export(name = "teavm_gc_collectFull")
+    public static void collectGarbageFull() {
+        fixHeap();
+        collectGarbageFullImpl(0);
+    }
+
+    private static void collectGarbageFullImpl(int size) {
+        triggerFullGC();
+        collectGarbageImpl(size);
+    }
+
+    private static void triggerFullGC() {
+        isFullGC = true;
+        int regionsCount = getRegionCount();
+        Allocator.fill(cardTable(), (byte) 0, getRegionCount());
+        Allocator.fill(regionsAddress().toAddress(), (byte) 0, regionsCount * Structure.sizeOf(Region.class));
+    }
+
     private static void collectGarbageImpl(int size) {
-        MemoryTrace.gcStarted();
-        mark();
-        processReferences();
-        sweep();
-        MemoryTrace.sweepCompleted();
-        defragment();
-        MemoryTrace.defragCompleted();
-        updateFreeMemory();
+        doCollectGarbage();
+
+        if (!isFullGC) {
+            if (++youngGCCount >= 8 && isAboutToExpand(size)) {
+                triggerFullGC();
+                doCollectGarbage();
+                youngGCCount = 0;
+            }
+        } else {
+            youngGCCount = 0;
+        }
+        isFullGC = false;
+
         long minRequestedSize = 0;
         if (!hasAvailableChunk(size)) {
             minRequestedSize = computeMinRequestedSize(size);
@@ -142,6 +185,22 @@ public final class GC {
         resizeHeapIfNecessary(minRequestedSize);
         currentChunk = currentChunkPointer.value;
         currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
+
+        Allocator.fill(cardTable(), CARD_VALID, getRegionCount());
+    }
+
+    private static void doCollectGarbage() {
+        MemoryTrace.gcStarted(isFullGC);
+        if (!isFullGC) {
+            storeGapsInCardTable();
+        }
+        mark();
+        processReferences();
+        sweep();
+        defragment();
+        updateFreeMemory();
+        MemoryTrace.gcCompleted();
+        totalChunks = freeChunks;
     }
 
     private static boolean hasAvailableChunk(int size) {
@@ -177,16 +236,25 @@ public final class GC {
         long availableBytes = availableBytes();
         long occupiedMemory = availableBytes - freeMemory;
         if (occupiedMemory < availableBytes / 4) {
-            collectGarbage();
+            collectGarbageFull();
         }
     }
 
     private static void mark() {
-        MemoryTrace.initMark();
+        MemoryTrace.markStarted();
         firstWeakReference = null;
-        int regionsCount = (int) ((availableBytes() - 1) / regionSize()) + 1;
-        Allocator.fillZero(regionsAddress().toAddress(), regionsCount * Structure.sizeOf(Region.class));
 
+        markFromStaticFields();
+        markFromClasses();
+        markFromStack();
+        if (!isFullGC) {
+            markFromOldGeneration();
+        }
+
+        MemoryTrace.markCompleted();
+    }
+
+    private static void markFromStaticFields() {
         Address staticRoots = Mutator.getStaticGCRoots();
         int staticCount = staticRoots.getInt();
         staticRoots = staticRoots.add(Address.sizeOf());
@@ -197,7 +265,9 @@ public final class GC {
             }
             staticRoots = staticRoots.add(Address.sizeOf());
         }
+    }
 
+    private static void markFromClasses() {
         int classCount = Mutator.getClassCount();
         Address classPtr = Mutator.getClasses();
         for (int i = 0; i < classCount; ++i) {
@@ -213,7 +283,9 @@ public final class GC {
             }
             classPtr = classPtr.add(Address.sizeOf());
         }
+    }
 
+    private static void markFromStack() {
         for (Address stackRoots = ShadowStack.getStackTop(); stackRoots != null;
              stackRoots = ShadowStack.getNextStackFrame(stackRoots)) {
             int count = ShadowStack.getStackRootCount(stackRoots);
@@ -226,16 +298,90 @@ public final class GC {
         }
     }
 
+    private static void markFromOldGeneration() {
+        int validMask = CARD_VALID | (CARD_VALID << 8) | (CARD_VALID << 16) | (CARD_VALID << 24);
+        int regionsCount = getRegionCount();
+        int regionSize = regionSize();
+
+        Address cardPtr = cardTable();
+        Address regionPtr = heapAddress();
+        int regionIndex;
+        for (regionIndex = 0; regionIndex < regionsCount - 3; regionIndex += 4) {
+            int n = cardPtr.getInt();
+            if ((n & validMask) != validMask) {
+                for (int i = 0; i < 4; ++i) {
+                    n = cardPtr.add(i).getByte();
+                    if ((n & CARD_VALID) == 0) {
+                        markFromRegion(regionIndex + i);
+                    }
+                }
+            }
+            cardPtr = cardPtr.add(4);
+            regionPtr = regionPtr.add(4 * regionSize);
+        }
+
+        for (; regionIndex < regionsCount; regionIndex++) {
+            if ((cardPtr.getByte() & CARD_VALID) == 0) {
+                markFromRegion(regionIndex);
+            }
+            cardPtr = cardPtr.add(1);
+        }
+    }
+
+    private static void markFromRegion(int regionIndex) {
+        Address card = cardTable().add(regionIndex);
+        int regionOffset = Structure.add(Region.class, regionsAddress(), regionIndex).start;
+        if (regionOffset == 0) {
+            card.putByte((byte) (card.getByte() | CARD_VALID));
+            return;
+        }
+        regionOffset--;
+
+        int regionSize = regionSize();
+        Address regionStart = heapAddress().add(regionIndex * regionSize);
+        MemoryTrace.reportDirtyRegion(regionStart);
+        Address regionEnd = regionStart.add(regionSize);
+        FreeChunk object = regionStart.add(regionOffset).toStructure();
+        Address heapLimit = heapAddress().add(availableBytes());
+        if (heapLimit.isLessThan(regionEnd)) {
+            regionEnd = heapLimit;
+        }
+
+        boolean objectMarked = false;
+        while (object.toAddress().isLessThan(regionEnd)) {
+            int header = object.classReference;
+
+            if (header != 0 && (header & RuntimeObject.GC_OLD_GENERATION) != 0) {
+                objectMarked |= doMarkOldGeneration(object.toAddress().toStructure());
+            }
+
+            object = object.toAddress().add(objectSize(object)).toStructure();
+        }
+
+        if (!objectMarked) {
+            card.putByte((byte) (card.getByte() | CARD_VALID));
+        }
+    }
+
     private static void mark(RuntimeObject object) {
         if (object == null || isMarked(object)) {
             return;
         }
-
         MarkQueue.init();
-        MarkQueue.enqueue(object);
-        object.classReference |= RuntimeObject.GC_MARKED;
+        enqueueMark(object);
+        doProcessMarkQueue();
+    }
+
+    private static boolean doMarkOldGeneration(RuntimeObject object) {
+        MarkQueue.init();
+        boolean hasObjectsFromYoungGen = markObjectData(object);
+        doProcessMarkQueue();
+        return hasObjectsFromYoungGen;
+    }
+
+    private static void doProcessMarkQueue() {
         while (!MarkQueue.isEmpty()) {
-            object = MarkQueue.dequeue();
+            RuntimeObject object = MarkQueue.dequeue();
             MemoryTrace.mark(object.toAddress());
 
             long offset = object.toAddress().toLong() - heapAddress().toLong();
@@ -244,87 +390,118 @@ public final class GC {
             if (region.start == 0 || region.start > relativeOffset) {
                 region.start = relativeOffset;
             }
+            Address cardTableItem = cardTable().add(offset / regionSize());
+            cardTableItem.putByte((byte) (cardTableItem.getByte() | CARD_YOUNG_GEN));
 
-            RuntimeClass cls = RuntimeClass.getClass(object);
-            if (cls.itemType == null) {
-                markObject(cls, object);
-            } else {
-                markArray(cls, (RuntimeArray) object);
-            }
+            markObjectData(object);
         }
     }
 
-    private static void markObject(RuntimeClass cls, RuntimeObject object) {
+    private static boolean markObjectData(RuntimeObject object) {
+        RuntimeClass cls = RuntimeClass.getClass(object);
+        if (cls.itemType == null) {
+            return markObject(cls, object);
+        } else {
+            return markArray(cls, (RuntimeArray) object);
+        }
+    }
+
+    private static boolean markObject(RuntimeClass cls, RuntimeObject object) {
+        boolean hasObjectsFromYoungGen = false;
         while (cls != null) {
             int type = (cls.flags >> RuntimeClass.VM_TYPE_SHIFT) & RuntimeClass.VM_TYPE_MASK;
             switch (type) {
                 case RuntimeClass.VM_TYPE_WEAKREFERENCE:
-                    markWeakReference((RuntimeReference) object);
+                    hasObjectsFromYoungGen |= markWeakReference((RuntimeReference) object);
                     break;
 
                 case RuntimeClass.VM_TYPE_REFERENCEQUEUE:
-                    markReferenceQueue((RuntimeReferenceQueue) object);
+                    hasObjectsFromYoungGen |= markReferenceQueue((RuntimeReferenceQueue) object);
                     break;
 
                 default:
-                    markFields(cls, object);
+                    hasObjectsFromYoungGen |= markFields(cls, object);
                     break;
             }
             cls = cls.parent;
         }
+        return hasObjectsFromYoungGen;
     }
 
-    private static void markWeakReference(RuntimeReference object) {
+    private static boolean markWeakReference(RuntimeReference object) {
+        boolean hasObjectsFromYoungGen = false;
         if (object.queue != null) {
-            enqueueMark(object.queue);
+            hasObjectsFromYoungGen |= enqueueMark(object.queue);
             if (object.next != null && object.object != null) {
-                enqueueMark(object.object);
+                hasObjectsFromYoungGen |= enqueueMark(object.object);
             }
         }
         if (object.next == null && object.object != null) {
             object.next = firstWeakReference;
             firstWeakReference = object;
         }
+        return hasObjectsFromYoungGen;
     }
 
-    private static void markReferenceQueue(RuntimeReferenceQueue object) {
+    private static boolean markReferenceQueue(RuntimeReferenceQueue object) {
         RuntimeReference reference = object.first;
+        boolean hasObjectsFromYoungGen = false;
         while (reference != null) {
-            enqueueMark(reference);
+            hasObjectsFromYoungGen |= enqueueMark(reference);
             reference = reference.next;
         }
+        return hasObjectsFromYoungGen;
     }
 
-    private static void markFields(RuntimeClass cls, RuntimeObject object) {
+    private static boolean markFields(RuntimeClass cls, RuntimeObject object) {
         Address layout = cls.layout;
-        if (layout != null) {
-            short fieldCount = layout.getShort();
-            while (fieldCount-- > 0) {
-                layout = layout.add(2);
-                int fieldOffset = layout.getShort();
-                RuntimeObject reference = object.toAddress().add(fieldOffset).getAddress().toStructure();
-                enqueueMark(reference);
-            }
+        if (layout == null) {
+            return false;
         }
+        boolean hasObjectsFromYoungGen = false;
+        short fieldCount = layout.getShort();
+        while (fieldCount-- > 0) {
+            layout = layout.add(2);
+            int fieldOffset = layout.getShort();
+            RuntimeObject reference = object.toAddress().add(fieldOffset).getAddress().toStructure();
+            hasObjectsFromYoungGen |= enqueueMark(reference);
+        }
+        return hasObjectsFromYoungGen;
     }
 
-    private static void markArray(RuntimeClass cls, RuntimeArray array) {
+    private static boolean markArray(RuntimeClass cls, RuntimeArray array) {
         if ((cls.itemType.flags & RuntimeClass.PRIMITIVE) != 0) {
-            return;
+            return false;
         }
         Address base = Address.align(array.toAddress().add(RuntimeArray.class, 1), Address.sizeOf());
+        boolean hasObjectsFromYoungGen = false;
         for (int i = 0; i < array.size; ++i) {
             RuntimeObject reference = base.getAddress().toStructure();
-            enqueueMark(reference);
+            hasObjectsFromYoungGen |= enqueueMark(reference);
             base = base.add(Address.sizeOf());
+        }
+        return hasObjectsFromYoungGen;
+    }
+
+    private static boolean enqueueMark(RuntimeObject object) {
+        if (object == null) {
+            return false;
+        }
+        if (!isMarked(object)) {
+            doEnqueueMark(object);
+            return true;
+        } else {
+            return (object.classReference & RuntimeObject.GC_OLD_GENERATION) == 0;
         }
     }
 
-    private static void enqueueMark(RuntimeObject object) {
-        if (object != null && !isMarked(object)) {
+    private static void doEnqueueMark(RuntimeObject object) {
+        if (isFullGC) {
+            object.classReference |= RuntimeObject.GC_MARKED | RuntimeObject.GC_OLD_GENERATION;
+        } else {
             object.classReference |= RuntimeObject.GC_MARKED;
-            MarkQueue.enqueue(object);
         }
+        MarkQueue.enqueue(object);
     }
 
     private static void processReferences() {
@@ -332,7 +509,7 @@ public final class GC {
         while (reference != null) {
             RuntimeReference next = reference.next;
             reference.next = null;
-            if ((reference.object.classReference & RuntimeObject.GC_MARKED) == 0) {
+            if (!isMarked(reference.object)) {
                 reference.object = null;
                 RuntimeReferenceQueue queue = reference.queue;
                 if (queue != null) {
@@ -349,45 +526,29 @@ public final class GC {
     }
 
     private static void sweep() {
-        FreeChunkHolder freeChunkPtr = gcStorageAddress().toStructure();
+        MemoryTrace.sweepStarted();
+
+        currentChunkPointer = gcStorageAddress().toStructure();
         freeChunks = 0;
+        totalChunks = 0;
 
         FreeChunk object = heapAddress().toStructure();
         FreeChunk lastFreeSpace = null;
         long heapSize = availableBytes();
-        int regionsCount = (int) ((heapSize - 1) / regionSize()) + 1;
+        int regionsCount = getRegionCount();
         Address currentRegionEnd = null;
         Address limit = heapAddress().add(heapSize);
 
         loop: while (object.toAddress().isLessThan(limit)) {
-            if (!object.toAddress().isLessThan(currentRegionEnd)) {
-                int currentRegionIndex = (int) ((object.toAddress().toLong() - heapAddress().toLong()) / regionSize());
-                Region currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
-                if (currentRegion.start == 0) {
-                    if (lastFreeSpace == null) {
-                        lastFreeSpace = object;
-                    }
-
-                    do {
-                        if (++currentRegionIndex == regionsCount) {
-                            object = limit.toStructure();
-                            break loop;
-                        }
-                        currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
-                    } while (currentRegion.start == 0);
-
-                    Address newRegionStart = heapAddress().add(currentRegionIndex * regionSize());
-                    object = newRegionStart.add(currentRegion.start - 1).toStructure();
-                    currentRegionEnd = newRegionStart.add(regionSize());
-                }
-            }
-
             int tag = object.classReference;
             boolean free;
             if (tag == 0) {
                 free = true;
             } else {
                 free = (tag & RuntimeObject.GC_MARKED) == 0;
+                if (free && !isFullGC && (tag & RuntimeObject.GC_OLD_GENERATION) != 0) {
+                    free = false;
+                }
                 if (!free) {
                     tag &= ~RuntimeObject.GC_MARKED;
                 }
@@ -398,15 +559,64 @@ public final class GC {
                 if (lastFreeSpace == null) {
                     lastFreeSpace = object;
                 }
+
+                if (!object.toAddress().isLessThan(currentRegionEnd)) {
+                    int currentRegionIndex = (int) ((object.toAddress().toLong() - heapAddress().toLong())
+                            / regionSize());
+                    Region currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
+                    currentRegionEnd = heapAddress().add((currentRegionIndex + 1) * regionSize());
+                    if (currentRegion.start == 0) {
+                        do {
+                            if (++currentRegionIndex == regionsCount) {
+                                object = limit.toStructure();
+                                break loop;
+                            }
+                            currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
+                        } while (currentRegion.start == 0);
+
+                        Address newRegionStart = heapAddress().add(currentRegionIndex * regionSize());
+                        object = newRegionStart.add(currentRegion.start - 1).toStructure();
+                        currentRegionEnd = newRegionStart.add(regionSize());
+                        continue;
+                    }
+                }
             } else {
                 if (lastFreeSpace != null) {
-                    lastFreeSpace.classReference = 0;
-                    lastFreeSpace.size = (int) (object.toAddress().toLong() - lastFreeSpace.toAddress().toLong());
-                    MemoryTrace.free(lastFreeSpace.toAddress(), lastFreeSpace.size);
-                    freeChunkPtr.value = lastFreeSpace;
-                    freeChunkPtr = Structure.add(FreeChunkHolder.class, freeChunkPtr, 1);
-                    freeChunks++;
+                    freeMemory(lastFreeSpace, object);
                     lastFreeSpace = null;
+                }
+
+                if (!object.toAddress().isLessThan(currentRegionEnd)) {
+                    int currentRegionIndex = (int) ((object.toAddress().toLong() - heapAddress().toLong())
+                            / regionSize());
+                    currentRegionEnd = heapAddress().add((currentRegionIndex + 1) * regionSize());
+                    FreeChunk formerObject = object;
+
+                    if (!isFullGC && (cardTable().add(currentRegionIndex).getByte() & CARD_YOUNG_GEN) == 0
+                            && (cardTable().add(currentRegionIndex).getByte() & CARD_GAP) == 0) {
+                        // We are collecting young generation and the new region is composed entirely of old
+                        // generation objects, so skip this one and all subsequent ones
+
+                        Region currentRegion;
+                        do {
+                            if (++currentRegionIndex == regionsCount) {
+                                break;
+                            }
+                            currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
+                        } while (currentRegion.start != 0
+                                && (cardTable().add(currentRegionIndex).getByte() & CARD_YOUNG_GEN) == 0
+                                && (cardTable().add(currentRegionIndex).getByte() & CARD_GAP) == 0);
+
+                        --currentRegionIndex;
+                        currentRegion = Structure.add(Region.class, regionsAddress(), currentRegionIndex);
+
+                        Address newRegionStart = heapAddress().add(currentRegionIndex * regionSize());
+                        object = newRegionStart.add(currentRegion.start - 1).toStructure();
+                        currentRegionEnd = newRegionStart.add(regionSize());
+                        if (formerObject.toAddress().isLessThan(object.toAddress())) {
+                            continue;
+                        }
+                    }
                 }
             }
 
@@ -415,19 +625,61 @@ public final class GC {
         }
 
         if (lastFreeSpace != null) {
-            int freeSize = (int) (object.toAddress().toLong() - lastFreeSpace.toAddress().toLong());
-            lastFreeSpace.classReference = 0;
-            lastFreeSpace.size = freeSize;
-            MemoryTrace.free(lastFreeSpace.toAddress(), lastFreeSpace.size);
-            freeChunkPtr.value = lastFreeSpace;
-            freeChunks++;
+            freeMemory(lastFreeSpace, object);
         }
 
         currentChunkPointer = gcStorageAddress().toStructure();
+        MemoryTrace.sweepCompleted();
+    }
+
+    private static void storeGapsInCardTable() {
+        for (int i = 0; i < totalChunks; ++i) {
+            FreeChunk freeChunkStart = FreeChunkHolder.add(FreeChunkHolder.class,
+                    gcStorageAddress().toStructure(), i).value;
+            long freeChunkOffset = freeChunkStart.toAddress().toLong() - heapAddress().toLong();
+            long freeChunkEndOffset = freeChunkOffset + freeChunkStart.size;
+            int startRegion = (int) (freeChunkOffset / regionSize());
+            int endRegion = (int) (freeChunkEndOffset / regionSize());
+            for (int region = startRegion; region <= endRegion; ++region) {
+                Address card = cardTable().add(region);
+                card.putByte((byte) (card.getByte() | CARD_GAP));
+            }
+        }
+    }
+
+    private static void clearGapsFromCardTable() {
+        int gapMask = ~(CARD_GAP | (CARD_GAP << 8) | (CARD_GAP << 16) | (CARD_GAP << 24));
+        int regionsCount = getRegionCount();
+
+        Address cardPtr = cardTable();
+        int regionIndex;
+        for (regionIndex = 0; regionIndex < regionsCount - 3; regionIndex += 4) {
+            cardPtr.putInt(cardPtr.getInt() & gapMask);
+            cardPtr = cardPtr.add(4);
+        }
+
+        for (; regionIndex < regionsCount; regionIndex++) {
+            cardPtr.putByte((byte) (cardPtr.getByte() & ~CARD_GAP));
+            cardPtr = cardPtr.add(1);
+        }
+    }
+
+    private static void freeMemory(FreeChunk from, FreeChunk to) {
+        from.classReference = 0;
+        from.size = (int) (to.toAddress().toLong() - from.toAddress().toLong());
+        MemoryTrace.free(from.toAddress(), from.size);
+        currentChunkPointer.value = from;
+        currentChunkPointer = Structure.add(FreeChunkHolder.class, currentChunkPointer, 1);
+        freeChunks++;
+        totalChunks++;
     }
 
     private static void defragment() {
+        MemoryTrace.defragStarted();
+        clearGapsFromCardTable();
+        storeGapsInCardTable();
         markStackRoots();
+        moveNonRelocatableObjectsToOldGeneration();
         calculateRelocationTargets();
         updatePointersFromStaticRoots();
         updatePointersFromClasses();
@@ -435,6 +687,7 @@ public final class GC {
         restoreObjectHeaders();
         relocateObjects();
         putNewFreeChunks();
+        MemoryTrace.defragCompleted();
     }
 
     private static void markStackRoots() {
@@ -447,10 +700,44 @@ public final class GC {
             while (count-- > 0) {
                 RuntimeObject obj = stackRootsPtr.getAddress().toStructure();
                 if (!obj.toAddress().isLessThan(relocationThreshold)) {
-                    obj.classReference |= RuntimeObject.GC_MARKED;
+                    if (isFullGC || (obj.classReference & RuntimeObject.GC_OLD_GENERATION) == 0) {
+                        obj.classReference |= RuntimeObject.GC_MARKED;
+                    }
                 }
                 stackRootsPtr = stackRootsPtr.add(Address.sizeOf());
             }
+        }
+    }
+
+    private static void moveNonRelocatableObjectsToOldGeneration() {
+        Address limitAddress = currentChunkPointer.value.toAddress();
+        long limit = limitAddress.toLong() - heapAddress().toLong();
+        for (int region = 0; region * (long) regionSize() < limit; ++region) {
+            if ((cardTable().add(region).getByte() & CARD_YOUNG_GEN) != 0) {
+                moveObjectsToOldGenerationInRegion(region, limitAddress);
+            }
+        }
+    }
+
+    private static void moveObjectsToOldGenerationInRegion(int region, Address limit) {
+        int regionOffset = Structure.add(Region.class, regionsAddress(), region).start - 1;
+
+        int regionSize = regionSize();
+        Address regionStart = heapAddress().add(region * regionSize);
+        Address regionEnd = regionStart.add(regionSize);
+        FreeChunk object = regionStart.add(regionOffset).toStructure();
+        if (limit.isLessThan(regionEnd)) {
+            regionEnd = limit;
+        }
+
+        while (object.toAddress().isLessThan(regionEnd)) {
+            int classRef = object.classReference;
+            if (classRef != 0 && (classRef & RuntimeObject.GC_OLD_GENERATION) == 0) {
+                classRef |= RuntimeObject.GC_OLD_GENERATION;
+                object.classReference = classRef;
+            }
+            int size = objectSize(object);
+            object = object.toAddress().add(size).toStructure();
         }
     }
 
@@ -475,6 +762,7 @@ public final class GC {
 
         Address relocations = Structure.add(FreeChunk.class, freeChunk, 1).toAddress();
         Address relocationsLimit = freeChunk.toAddress().add(freeChunk.size);
+        Address currentRegionEnd = null;
         lastChunk = heapAddress().toStructure();
 
         boolean lastWasLocked = false;
@@ -482,7 +770,8 @@ public final class GC {
             int size = objectSize(object);
             if (object.classReference != 0) {
                 Address nextRelocationTarget = null;
-                boolean shouldRelocateObject = (object.classReference & RuntimeObject.GC_MARKED) == 0;
+                boolean shouldRelocateObject = shouldRelocateObject(object);
+                object.classReference |= RuntimeObject.GC_OLD_GENERATION;
                 if (shouldRelocateObject) {
                     while (true) {
                         nextRelocationTarget = relocationTarget.add(size);
@@ -509,6 +798,32 @@ public final class GC {
                         lastRelocationBlock.end = limit;
                         lastWasLocked = true;
                     }
+
+                    // Trying to skip continuous sequences of objects from old generation
+                    if (!isFullGC && !object.toAddress().isLessThan(currentRegionEnd)) {
+                        int region = (int) ((object.toAddress().toLong() - heapAddress().toLong()) / regionSize());
+                        currentRegionEnd = heapAddress().add((long) regionSize() * (region + 1));
+                        byte card = cardTable().add(region).getByte();
+                        if ((card & CARD_YOUNG_GEN) == 0 && (card & CARD_GAP) == 0) {
+                            while (true) {
+                                region++;
+                                card = cardTable().add(region).getByte();
+                                if ((card & CARD_YOUNG_GEN) != 0 || (card & CARD_GAP) != 0) {
+                                    break;
+                                }
+                                if (Structure.add(Region.class, regionsAddress(), region).start == 0) {
+                                    break;
+                                }
+                            }
+                            region--;
+                            currentRegionEnd = heapAddress().add((long) regionSize() * (region + 1));
+
+                            int offset = Structure.add(Region.class, regionsAddress(), region).start - 1;
+                            object = heapAddress().add((long) regionSize() * region).add(offset).toStructure();
+                            size = objectSize(object);
+                        }
+                    }
+
                     lastRelocationBlock.start = object.toAddress().add(size);
                     lastRelocationBlock.count = 0;
                     object.classReference &= ~RuntimeObject.GC_MARKED;
@@ -538,6 +853,10 @@ public final class GC {
                     object.classReference = (int) (targetAddress >>> 33) | RuntimeObject.GC_MARKED;
                     object.size = (int) (targetAddress >> 1);
                     relocationTarget = nextRelocationTarget;
+
+                    int region = (int) ((object.toAddress().toLong() - heapAddress().toLong()) / regionSize());
+                    Address card = cardTable().add(region);
+                    card.putByte((byte) (card.getByte() | CARD_RELOCATABLE));
                 }
             } else {
                 lastWasLocked = false;
@@ -550,7 +869,10 @@ public final class GC {
         while (object.toAddress().isLessThan(limit)) {
             int size = objectSize(object);
             if (object.classReference != 0) {
-                object.classReference &= ~RuntimeObject.GC_MARKED;
+                int classRef = object.classReference;
+                classRef &= ~RuntimeObject.GC_MARKED;
+                classRef |= RuntimeObject.GC_OLD_GENERATION;
+                object.classReference = classRef;
             } else {
                 lastRelocationBlock = Structure.add(RelocationBlock.class, lastRelocationBlock, 1);
                 lastRelocationBlock.start = object.toAddress();
@@ -561,6 +883,11 @@ public final class GC {
         }
 
         GC.lastRelocationBlock = lastRelocationBlock;
+    }
+
+    private static boolean shouldRelocateObject(FreeChunk object) {
+        return (object.classReference & RuntimeObject.GC_MARKED) == 0
+                && (isFullGC || (object.classReference & RuntimeObject.GC_OLD_GENERATION) == 0);
     }
 
     private static void updatePointersFromStaticRoots() {
@@ -593,6 +920,14 @@ public final class GC {
     }
 
     private static void updatePointersFromObjects() {
+        if (isFullGC) {
+            updatePointersFromObjectsFull();
+        } else {
+            updatePointersFromObjectsYoung();
+        }
+    }
+
+    private static void updatePointersFromObjectsFull() {
         Address start = heapAddress();
         long heapSize = availableBytes();
         Address limit = start.add(heapSize);
@@ -611,6 +946,72 @@ public final class GC {
                 RuntimeObject realObject = object.toAddress().toStructure();
                 updatePointers(cls, realObject);
                 size = objectSize(realObject, cls);
+            } else {
+                size = object.size;
+            }
+
+            object = object.toAddress().add(size).toStructure();
+        }
+    }
+
+    private static void updatePointersFromObjectsYoung() {
+        int validMask = CARD_VALID | (CARD_VALID << 8) | (CARD_VALID << 16) | (CARD_VALID << 24);
+        int youngMask = CARD_YOUNG_GEN | (CARD_YOUNG_GEN << 8) | (CARD_YOUNG_GEN << 16) | (CARD_YOUNG_GEN << 24);
+        int regionsCount = getRegionCount();
+        int regionSize = regionSize();
+
+        Address cardPtr = cardTable();
+        Address regionPtr = heapAddress();
+        int regionIndex;
+        for (regionIndex = 0; regionIndex < regionsCount - 3; regionIndex += 4) {
+            int n = cardPtr.getInt();
+            if ((n & validMask) != validMask || (n & youngMask) != 0) {
+                for (int i = 0; i < 4; ++i) {
+                    n = cardPtr.add(i).getByte();
+                    if ((n & CARD_VALID) == 0 || (n & CARD_YOUNG_GEN) != 0) {
+                        updatePointersFromRegion(regionIndex + i);
+                    }
+                }
+            }
+            cardPtr = cardPtr.add(4);
+            regionPtr = regionPtr.add(4 * regionSize);
+        }
+
+        for (; regionIndex < regionsCount; regionIndex++) {
+            int n = cardPtr.getByte();
+            if ((n & CARD_VALID) == 0 || (n & CARD_YOUNG_GEN) != 0) {
+                updatePointersFromRegion(regionIndex);
+            }
+            cardPtr = cardPtr.add(1);
+        }
+    }
+
+    private static void updatePointersFromRegion(int regionIndex) {
+        int regionOffset = Structure.add(Region.class, regionsAddress(), regionIndex).start - 1;
+        if (regionOffset < 0) {
+            return;
+        }
+
+        int regionSize = regionSize();
+        Address regionStart = heapAddress().add(regionIndex * regionSize);
+        Address regionEnd = regionStart.add(regionSize);
+        FreeChunk object = regionStart.add(regionOffset).toStructure();
+        Address heapLimit = heapAddress().add(availableBytes());
+        if (heapLimit.isLessThan(regionEnd)) {
+            regionEnd = heapLimit;
+        }
+
+        while (object.toAddress().isLessThan(regionEnd)) {
+            int classRef = object.classReference;
+            int size;
+            if (classRef != 0) {
+                Relocation relocation = getRelocation(object.toAddress());
+                if (relocation != null) {
+                    classRef = relocation.classBackup;
+                }
+                RuntimeClass cls = RuntimeClass.unpack(classRef);
+                updatePointers(cls, object.toAddress().toStructure());
+                size = objectSize(object.toAddress().toStructure(), cls);
             } else {
                 size = object.size;
             }
@@ -703,14 +1104,51 @@ public final class GC {
         return Address.fromLong(result).toStructure();
     }
 
+
     private static void restoreObjectHeaders() {
-        Address start = heapAddress();
-        long heapSize = availableBytes();
-        Address limit = start.add(heapSize);
+        int relocatableMask = CARD_RELOCATABLE | (CARD_RELOCATABLE << 8) | (CARD_RELOCATABLE << 16)
+                | (CARD_RELOCATABLE << 24);
+        int regionsCount = getRegionCount();
 
-        FreeChunk freeChunk = currentChunkPointer.value;
-        FreeChunk object = freeChunk.toAddress().add(freeChunk.size).toStructure();
+        Address cardPtr = cardTable();
+        Address limit = heapAddress().add(availableBytes());
+        int regionIndex;
+        for (regionIndex = 0; regionIndex < regionsCount - 3; regionIndex += 4) {
+            int n = cardPtr.getInt();
+            if ((n & relocatableMask) != 0) {
+                for (int i = 0; i < 4; ++i) {
+                    n = cardPtr.add(i).getByte();
+                    if ((n & CARD_RELOCATABLE) != 0) {
+                        restoreObjectHeadersInRegion(regionIndex + i, limit);
+                    }
+                }
+            }
+            cardPtr = cardPtr.add(4);
+        }
 
+        for (; regionIndex < regionsCount; regionIndex++) {
+            if ((cardPtr.getByte() & CARD_RELOCATABLE) != 0) {
+                restoreObjectHeadersInRegion(regionIndex, limit);
+            }
+            cardPtr = cardPtr.add(1);
+        }
+    }
+
+    private static void restoreObjectHeadersInRegion(int region, Address limit) {
+        int regionOffset = Structure.add(Region.class, regionsAddress(), region).start - 1;
+
+        int regionSize = regionSize();
+        Address regionStart = heapAddress().add(region * regionSize);
+        Address regionEnd = regionStart.add(regionSize);
+        FreeChunk object = regionStart.add(regionOffset).toStructure();
+        if (limit.isLessThan(regionEnd)) {
+            regionEnd = limit;
+        }
+
+        restoreObjectHeadersInRange(object, regionEnd);
+    }
+
+    private static void restoreObjectHeadersInRange(FreeChunk object, Address limit) {
         while (object.toAddress().isLessThan(limit)) {
             Relocation relocation = getRelocation(object.toAddress());
             if (relocation != null) {
@@ -739,6 +1177,8 @@ public final class GC {
         Address blockTarget = null;
         Address blockSource = null;
         int blockSize = 0;
+        Address currentRegionEnd = null;
+        int regionCount = getRegionCount();
 
         while (object.toAddress().isLessThan(limit)) {
             int size = objectSize(object);
@@ -747,8 +1187,7 @@ public final class GC {
 
                 while (countInRelocationBlock == 0) {
                     if (blockSize != 0) {
-                        Allocator.moveMemoryBlock(blockSource, blockTarget, blockSize);
-                        MemoryTrace.move(blockSource, blockTarget, blockSize);
+                        moveMemoryBlock(blockSource, blockTarget, blockSize);
                         blockSource = null;
                         blockSize = 0;
                     }
@@ -763,14 +1202,40 @@ public final class GC {
                     blockSource = object.toAddress();
                     blockTarget = relocationTarget;
                 }
+
                 relocationTarget = relocationTarget.add(size);
                 blockSize += size;
                 --countInRelocationBlock;
-            } else if (blockSource != null) {
-                Allocator.moveMemoryBlock(blockSource, blockTarget, blockSize);
-                MemoryTrace.move(blockSource, blockTarget, blockSize);
-                blockSource = null;
-                blockSize = 0;
+            } else {
+                if (blockSource != null) {
+                    moveMemoryBlock(blockSource, blockTarget, blockSize);
+                    blockSource = null;
+                    blockSize = 0;
+                }
+
+                // Trying to skip continuous sequences of non-relocatable objects
+                if (object.classReference != 0 && !object.toAddress().isLessThan(currentRegionEnd)) {
+                    int region = (int) ((object.toAddress().toLong() - heapAddress().toLong()) / regionSize());
+                    currentRegionEnd = heapAddress().add((long) regionSize() * (region + 1));
+                    byte card = cardTable().add(region).getByte();
+                    if ((card & CARD_RELOCATABLE) == 0 && (card & CARD_GAP) == 0) {
+                        while (++region < regionCount) {
+                            card = cardTable().add(region).getByte();
+                            if ((card & CARD_RELOCATABLE) != 0 || (card & CARD_GAP) != 0) {
+                                break;
+                            }
+                            if (Structure.add(Region.class, regionsAddress(), region).start == 0) {
+                                break;
+                            }
+                        }
+                        region--;
+                        currentRegionEnd = heapAddress().add((long) regionSize() * (region + 1));
+
+                        int offset = Structure.add(Region.class, regionsAddress(), region).start - 1;
+                        object = heapAddress().add((long) regionSize() * region).add(offset).toStructure();
+                        size = objectSize(object);
+                    }
+                }
             }
 
             object = object.toAddress().add(size).toStructure();
@@ -778,9 +1243,69 @@ public final class GC {
 
         relocationBlock.start = relocationTarget;
         if (blockSource != null) {
-            Allocator.moveMemoryBlock(blockSource, blockTarget, blockSize);
-            MemoryTrace.move(blockSource, blockTarget, blockSize);
+            moveMemoryBlock(blockSource, blockTarget, blockSize);
         }
+    }
+
+    private static void moveMemoryBlock(Address blockSource, Address blockTarget, int blockSize) {
+        long sourceStartOffset = blockSource.toLong() - heapAddress().toLong();
+        int sourceStartRegionIndex = (int) (sourceStartOffset / regionSize());
+        Region sourceStartRegion = Structure.add(Region.class, regionsAddress(), sourceStartRegionIndex);
+
+        long sourceEndOffset = sourceStartOffset + blockSize;
+        int sourceEndRegionIndex = (int) (sourceEndOffset / regionSize());
+        Region sourceEndRegion = Structure.add(Region.class, regionsAddress(), sourceEndRegionIndex);
+
+        if (sourceStartRegion != sourceEndRegion && sourceStartOffset % regionSize() + 1 == sourceStartRegion.start) {
+            sourceStartRegion.start = 0;
+        }
+        for (int i = sourceStartRegionIndex + 1; i < sourceEndRegionIndex; ++i) {
+            Structure.add(Region.class, regionsAddress(), i).start = 0;
+        }
+
+        if (sourceStartRegion != sourceEndRegion || sourceStartOffset % regionSize() + 1 == sourceStartRegion.start) {
+            Address heapLimit = heapAddress().add(availableBytes());
+            FreeChunk objectAfterSource = blockSource.add(blockSize).toStructure();
+
+            if (objectAfterSource.toAddress().isLessThan(heapLimit)) {
+                int objectRegionIndex = sourceEndRegionIndex;
+                if (objectAfterSource.classReference == 0) {
+                    objectAfterSource = objectAfterSource.toAddress().add(objectAfterSource.size).toStructure();
+                    objectRegionIndex = (int) ((objectAfterSource.toAddress().toLong() - heapAddress().toLong())
+                            / regionSize());
+                }
+                if (objectRegionIndex != sourceEndRegionIndex || !objectAfterSource.toAddress().isLessThan(heapLimit)) {
+                    sourceEndRegion.start = 0;
+                } else {
+                    sourceEndRegion.start = (short) ((objectAfterSource.toAddress().toLong() - heapAddress().toLong())
+                            % regionSize() + 1);
+                }
+            } else {
+                sourceEndRegion.start = 0;
+            }
+        }
+
+        Allocator.moveMemoryBlock(blockSource, blockTarget, blockSize);
+
+        FreeChunk object = blockTarget.toStructure();
+        Address blockTargetEnd = blockTarget.add(blockSize);
+        Address currentRegionEnd = null;
+        while (object.toAddress().isLessThan(blockTargetEnd)) {
+            if (!object.toAddress().isLessThan(currentRegionEnd)) {
+                long offset = object.toAddress().toLong() - heapAddress().toLong();
+                int regionIndex = (int) (offset / regionSize());
+                currentRegionEnd = heapAddress().add((long) regionSize() * (regionIndex + 1));
+                Region region = Structure.add(Region.class, regionsAddress(), regionIndex);
+                int offsetInRegion = (int) (offset % regionSize());
+                if (region.start == 0 || region.start - 1 > offsetInRegion) {
+                    region.start = (short) (offsetInRegion + 1);
+                }
+            }
+            int size = objectSize(object);
+            object = object.toAddress().add(size).toStructure();
+        }
+
+        MemoryTrace.move(blockSource, blockTarget, blockSize);
     }
 
     private static void putNewFreeChunks() {
@@ -803,6 +1328,7 @@ public final class GC {
             }
             relocationBlock = Structure.add(RelocationBlock.class, relocationBlock, 1);
         }
+        totalChunks = freeChunks;
     }
 
     private static void updateFreeMemory() {
@@ -820,7 +1346,13 @@ public final class GC {
             return;
         }
         if (newSize > oldSize) {
+            int previousRegionCount = getRegionCount();
             resizeHeap(newSize);
+            int newRegionCount = getRegionCount();
+            for (int i = previousRegionCount; i < newRegionCount; ++i) {
+                Structure.add(Region.class, regionsAddress(), i).start = 0;
+            }
+
             if (lastChunk.classReference == 0) {
                 lastChunk.size += (int) (newSize - oldSize);
             } else {
@@ -830,6 +1362,7 @@ public final class GC {
                 lastChunk.size = (int) (newSize - oldSize);
                 Structure.add(FreeChunkHolder.class, currentChunkPointer, freeChunks).value = lastChunk;
                 freeChunks++;
+                totalChunks++;
             }
         } else {
             long minimumSize = lastChunk.toAddress().toLong() - heapAddress().toLong();
@@ -844,6 +1377,7 @@ public final class GC {
             }
             if (newSize == minimumSize) {
                 freeChunks--;
+                totalChunks--;
             } else {
                 lastChunk.size -= (int) (oldSize - newSize);
             }
@@ -854,7 +1388,7 @@ public final class GC {
     private static void resizeHeapIfNecessary(long requestedSize) {
         long availableBytes = availableBytes();
         long occupiedMemory = availableBytes - freeMemory;
-        if (requestedSize > availableBytes || occupiedMemory > availableBytes / 2) {
+        if (isAboutToExpand(requestedSize)) {
             long newSize = max(requestedSize, (availableBytes - freeMemory) * 2);
             newSize = min(newSize, maxAvailableBytes());
             if (newSize != availableBytes) {
@@ -871,6 +1405,12 @@ public final class GC {
             }
             resizeHeapConsistent(newSize);
         }
+    }
+
+    private static boolean isAboutToExpand(long requestedSize) {
+        long availableBytes = availableBytes();
+        long occupiedMemory = availableBytes - freeMemory;
+        return requestedSize > availableBytes || occupiedMemory > availableBytes / 2;
     }
 
     private static long min(long a, long b) {
@@ -907,7 +1447,8 @@ public final class GC {
     }
 
     private static boolean isMarked(RuntimeObject object) {
-        return (object.classReference & RuntimeObject.GC_MARKED) != 0;
+        return (object.classReference & RuntimeObject.GC_MARKED) != 0
+                || (!isFullGC && (object.classReference & RuntimeObject.GC_OLD_GENERATION) != 0);
     }
 
     static class Region extends Structure {

@@ -121,6 +121,7 @@ public final class TSystem extends TObject {
         int itemSize = type.itemType.size;
         if ((type.itemType.flags & RuntimeClass.PRIMITIVE) == 0) {
             itemSize = Address.sizeOf();
+            GC.writeBarrier(dest);
         }
 
         Address srcAddress = Address.align(src.toAddress().add(RuntimeArray.class, 1), itemSize);
@@ -253,7 +254,7 @@ public final class TSystem extends TObject {
     }
 
     private static void gcLowLevel() {
-        GC.collectGarbage();
+        GC.collectGarbageFull();
     }
 
     public static void runFinalization() {

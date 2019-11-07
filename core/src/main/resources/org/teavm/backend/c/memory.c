@@ -1,4 +1,5 @@
 #include "memory.h"
+#include "heaptrace.h"
 #include "definitions.h"
 #include <stdlib.h>
 #include <string.h>
@@ -20,7 +21,7 @@ void* teavm_gc_heapAddress = NULL;
 void* teavm_gc_gcStorageAddress = NULL;
 int32_t teavm_gc_gcStorageSize = INT32_C(0);
 void* teavm_gc_regionsAddress = NULL;
-int32_t teavm_gc_regionSize = INT32_C(32768);
+void* teavm_gc_cardTable = NULL;
 int32_t teavm_gc_regionMaxCount;
 int64_t teavm_gc_availableBytes;
 int64_t teavm_gc_minAvailableBytes;
@@ -110,6 +111,8 @@ void teavm_gc_resizeHeap(int64_t newSize) {
         return;
     }
 
+    teavm_gc_heapResized(newSize);
+
     int32_t workSize = teavm_gc_calculateWorkSize(newSize);
     int32_t regionsSize = teavm_gc_calculateRegionsSize(newSize);
 
@@ -119,6 +122,8 @@ void teavm_gc_resizeHeap(int64_t newSize) {
     int64_t oldWorkSizeAligned = teavm_pageCount(teavm_gc_gcStorageSize);
     int64_t newRegionsSizeAligned = teavm_pageCount(regionsSize * 2);
     int64_t oldRegionsSizeAligned = teavm_pageCount(teavm_gc_regionMaxCount * 2);
+    int64_t newCardTableSizeAligned = teavm_pageCount(regionsSize);
+    int64_t oldCardTableSizeAligned = teavm_pageCount(teavm_gc_regionMaxCount);
 
     if (newSize > teavm_gc_availableBytes) {
         if (newSizeAligned > oldSizeAligned) {
@@ -132,6 +137,10 @@ void teavm_gc_resizeHeap(int64_t newSize) {
             teavm_virtualCommit((char*) teavm_gc_regionsAddress + oldRegionsSizeAligned,
                 newRegionsSizeAligned - oldRegionsSizeAligned);
         }
+        if (newCardTableSizeAligned > oldCardTableSizeAligned) {
+            teavm_virtualCommit((char*) teavm_gc_cardTable + oldCardTableSizeAligned,
+                newCardTableSizeAligned - oldCardTableSizeAligned);
+        }
     } else {
         if (newSizeAligned < oldSizeAligned) {
             teavm_virtualUncommit((char*) teavm_gc_heapAddress + newSizeAligned, oldSizeAligned - newSizeAligned);
@@ -143,6 +152,10 @@ void teavm_gc_resizeHeap(int64_t newSize) {
         if (newRegionsSizeAligned < oldRegionsSizeAligned) {
             teavm_virtualUncommit((char*) teavm_gc_regionsAddress + newRegionsSizeAligned,
                 oldRegionsSizeAligned - newRegionsSizeAligned);
+        }
+        if (newCardTableSizeAligned < oldCardTableSizeAligned) {
+            teavm_virtualUncommit((char*) teavm_gc_cardTable + newCardTableSizeAligned,
+                oldCardTableSizeAligned - newCardTableSizeAligned);
         }
     }
 
@@ -159,6 +172,7 @@ void teavm_initHeap(int64_t minHeap, int64_t maxHeap) {
     teavm_gc_heapAddress = teavm_virtualAlloc(teavm_pageCount(maxHeap));
     teavm_gc_gcStorageAddress = teavm_virtualAlloc(teavm_pageCount(workSize));
     teavm_gc_regionsAddress = teavm_virtualAlloc(teavm_pageCount(regionsSize * 2));
+    teavm_gc_cardTable = teavm_virtualAlloc(teavm_pageCount(regionsSize));
 
     #if TEAVM_MEMORY_TRACE
         int64_t heapMapSize = maxHeap / sizeof(void*);

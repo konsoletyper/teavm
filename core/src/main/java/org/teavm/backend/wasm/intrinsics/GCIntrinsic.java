@@ -27,7 +27,11 @@ import org.teavm.backend.wasm.model.expression.WasmConversion;
 import org.teavm.backend.wasm.model.expression.WasmExpression;
 import org.teavm.backend.wasm.model.expression.WasmInt32Constant;
 import org.teavm.backend.wasm.model.expression.WasmInt32Subtype;
+import org.teavm.backend.wasm.model.expression.WasmIntBinary;
+import org.teavm.backend.wasm.model.expression.WasmIntBinaryOperation;
+import org.teavm.backend.wasm.model.expression.WasmIntType;
 import org.teavm.backend.wasm.model.expression.WasmLoadInt32;
+import org.teavm.backend.wasm.model.expression.WasmStoreInt32;
 import org.teavm.backend.wasm.model.expression.WasmUnreachable;
 import org.teavm.model.FieldReference;
 import org.teavm.model.MethodReference;
@@ -38,6 +42,8 @@ public class GCIntrinsic implements WasmIntrinsic {
             WasmRuntime.class, "printOutOfMemory", void.class);
     private static final MethodReference RESIZE_HEAP = new MethodReference(
             WasmHeap.class, "resizeHeap", int.class, void.class);
+    private static final FieldReference CARD_TABLE = new FieldReference(WasmHeap.class.getName(), "cardTable");
+    private static final FieldReference HEAP_ADDRESS = new FieldReference(WasmHeap.class.getName(), "heapAddress");
     private List<WasmInt32Constant> regionSizeExpressions = new ArrayList<>();
 
     public void setRegionSize(int regionSize) {
@@ -58,12 +64,14 @@ public class GCIntrinsic implements WasmIntrinsic {
             case "heapAddress":
             case "availableBytes":
             case "regionsAddress":
+            case "cardTable":
             case "regionMaxCount":
             case "regionSize":
             case "outOfMemory":
             case "minAvailableBytes":
             case "maxAvailableBytes":
             case "resizeHeap":
+            case "writeBarrier":
                 return true;
             default:
                 return false;
@@ -81,6 +89,8 @@ public class GCIntrinsic implements WasmIntrinsic {
                 return getStaticField(manager, "heapAddress");
             case "regionsAddress":
                 return getStaticField(manager, "regionsAddress");
+            case "cardTable":
+                return getStaticField(manager, "cardTable");
             case "regionMaxCount":
                 return getStaticField(manager, "regionsCount");
             case "minAvailableBytes":
@@ -105,6 +115,21 @@ public class GCIntrinsic implements WasmIntrinsic {
                 block.getBody().add(call);
                 block.getBody().add(new WasmUnreachable());
                 return block;
+            }
+            case "writeBarrier": {
+                WasmExpression cardTableField = new WasmInt32Constant(manager.getStaticField(CARD_TABLE));
+                WasmExpression cardTable = new WasmLoadInt32(4, cardTableField, WasmInt32Subtype.INT32);
+                WasmExpression heapAddressField = new WasmInt32Constant(manager.getStaticField(HEAP_ADDRESS));
+                WasmExpression heapAddress = new WasmLoadInt32(4, heapAddressField, WasmInt32Subtype.INT32);
+                WasmInt32Constant regionSize = new WasmInt32Constant(0);
+                regionSizeExpressions.add(regionSize);
+                WasmExpression offsetInHeap = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.SUB,
+                        manager.generate(invocation.getArguments().get(0)), heapAddress);
+                WasmExpression cardIndex = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.DIV_SIGNED,
+                        offsetInHeap, regionSize);
+                WasmExpression card = new WasmIntBinary(WasmIntType.INT32, WasmIntBinaryOperation.ADD, cardTable,
+                        cardIndex);
+                return new WasmStoreInt32(1, card, new WasmInt32Constant(0), WasmInt32Subtype.INT8);
             }
             default:
                 throw new IllegalArgumentException(invocation.getMethod().toString());

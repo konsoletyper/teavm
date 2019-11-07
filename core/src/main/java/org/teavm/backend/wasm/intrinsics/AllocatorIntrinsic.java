@@ -46,6 +46,7 @@ public class AllocatorIntrinsic implements WasmIntrinsic {
             return false;
         }
         switch (methodReference.getName()) {
+            case "fill":
             case "fillZero":
             case "moveMemoryBlock":
             case "isInitialized":
@@ -58,6 +59,7 @@ public class AllocatorIntrinsic implements WasmIntrinsic {
     @Override
     public WasmExpression apply(InvocationExpr invocation, WasmIntrinsicManager manager) {
         switch (invocation.getMethod().getName()) {
+            case "fill":
             case "fillZero":
             case "moveMemoryBlock": {
                 MethodReference delegateMethod = new MethodReference(WasmRuntime.class.getName(),

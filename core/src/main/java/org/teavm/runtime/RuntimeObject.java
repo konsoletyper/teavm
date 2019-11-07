@@ -21,6 +21,7 @@ import org.teavm.interop.Structure;
 @StaticInit
 public class RuntimeObject extends Structure {
     public static final int GC_MARKED = 0x80000000;
+    public static final int GC_OLD_GENERATION = 0x40000000;
 
     public static int nextId;
 

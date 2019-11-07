@@ -961,7 +961,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
                     if (program == null) {
                         program = ProgramUtils.copy(classReader.getMethod(method.getDescriptor()).getProgram());
                         missingItemsProcessor.processMethod(method.getReference(), program);
-                        linker.link(method.getReference(), program);
+                        linker.link(method, program);
                         clinitInsertion.apply(method, program);
                         program = optimizeMethodCacheMiss(method, program);
                         Program finalProgram = program;

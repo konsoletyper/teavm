@@ -97,23 +97,30 @@ public final class WasmRuntime {
     public static native void printOutOfMemory();
 
     public static void fillZero(Address address, int count) {
+        fill(address, (byte) 0, count);
+    }
+
+    public static void fill(Address address, byte value, int count) {
+        int value4 = (value & 0xFF << 24) | (value & 0xFF << 16) | (value & 0xFF << 8) | (value & 0xFF);
         int start = address.toInt();
 
         int alignedStart = start >>> 2 << 2;
         address = Address.fromInt(alignedStart);
         switch (start - alignedStart) {
             case 0:
-                address.putInt(0);
+                address.putInt(value4);
                 break;
             case 1:
-                address.add(1).putByte((byte) 0);
-                address.add(2).putShort((short) 0);
+                address.add(1).putByte(value);
+                address.add(2).putByte(value);
+                address.add(3).putByte(value);
                 break;
             case 2:
-                address.add(2).putShort((short) 0);
+                address.add(2).putByte(value);
+                address.add(3).putByte(value);
                 break;
             case 3:
-                address.add(3).putByte((byte) 0);
+                address.add(3).putByte(value);
                 break;
         }
 
@@ -124,19 +131,21 @@ public final class WasmRuntime {
             case 0:
                 break;
             case 1:
-                address.putByte((byte) 0);
+                address.putByte(value);
                 break;
             case 2:
-                address.putShort((short) 0);
+                address.putByte(value);
+                address.add(1).putByte(value);
                 break;
             case 3:
-                address.putShort((short) 0);
-                address.add(2).putByte((byte) 0);
+                address.putByte(value);
+                address.add(1).putByte(value);
+                address.add(2).putByte(value);
                 break;
         }
 
         for (address = Address.fromInt(alignedStart + 4); address.toInt() < alignedEnd; address = address.add(4)) {
-            address.putInt(0);
+            address.putInt(value4);
         }
     }
 

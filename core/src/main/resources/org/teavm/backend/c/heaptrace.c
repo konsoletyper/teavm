@@ -2,6 +2,7 @@
 #include "core.h"
 #include "definitions.h"
 #include "memory.h"
+#include "time.h"
 #include <string.h>
 #include <stdint.h>
 #include <inttypes.h>
@@ -9,6 +10,7 @@
 #include <stdlib.h>
 #include <wchar.h>
 #include <wctype.h>
+#include <stdbool.h>
 
 #if TEAVM_WINDOWS
     #include <Windows.h>
@@ -32,6 +34,27 @@ void teavm_outOfMemory() {
 }
 
 static wchar_t* teavm_gc_dumpDirectory = NULL;
+
+#ifdef TEAVM_GC_STATS
+    static int32_t teavm_gc_allocationCount = 0;
+    static int32_t teavm_gc_freeCount = 0;
+    static int32_t teavm_gc_freeByteCount = 0;
+    static int32_t teavm_gc_markCount = 0;
+    static int32_t teavm_gc_dirtyRegionCount = 0;
+    static int32_t teavm_gc_relocatedBlocks = 0;
+    static int32_t teavm_gc_relocatedBytes = 0;
+
+    static int64_t teavm_gc_startTimeMillis;
+    static int64_t teavm_gc_startTime;
+    static int64_t teavm_gc_endTime;
+    static int64_t teavm_gc_markStartTime;
+    static int64_t teavm_gc_markEndTime;
+    static int64_t teavm_gc_sweepStartTime;
+    static int64_t teavm_gc_sweepEndTime;
+    static int64_t teavm_gc_defragStartTime;
+    static int64_t teavm_gc_defragEndTime;
+    static bool teavm_gc_full;
+#endif
 
 #if TEAVM_MEMORY_TRACE
     void teavm_gc_assertSize(int32_t size) {
@@ -65,6 +88,10 @@ void teavm_gc_allocate(void* address, int32_t size) {
             *map++ = 2;
         }
     #endif
+
+    #if TEAVM_GC_STATS
+        teavm_gc_allocationCount++;
+    #endif
 }
 
 void teavm_gc_free(void* address, int32_t size) {
@@ -86,6 +113,11 @@ void teavm_gc_free(void* address, int32_t size) {
         uint8_t* map = teavm_gc_heapMap + offset;
         memset(map, 0, size);
     #endif
+
+    #if TEAVM_GC_STATS
+        teavm_gc_freeCount++;
+        teavm_gc_freeByteCount += size;
+    #endif
 }
 
 void teavm_gc_assertFree(void* address, int32_t size) {
@@ -106,9 +138,19 @@ void teavm_gc_assertFree(void* address, int32_t size) {
     #endif
 }
 
-void teavm_gc_initMark() {
+void teavm_gc_markStarted() {
     #if TEAVM_MEMORY_TRACE
         memset(teavm_gc_markMap, 0, teavm_gc_availableBytes / sizeof(void*));
+    #endif
+
+    #if TEAVM_GC_STATS
+        teavm_gc_markStartTime = teavm_currentTimeNano();
+    #endif
+}
+
+void teavm_gc_markCompleted() {
+    #if TEAVM_GC_STATS
+        teavm_gc_markEndTime = teavm_currentTimeNano();
     #endif
 }
 
@@ -144,7 +186,8 @@ void teavm_gc_mark(void* address) {
         size /= sizeof(void*);
 
         if (*map++ != 1 || *markMap != 0) {
-            fprintf(stderr, "[GC] assertion failed marking object at: %d\n", (int) ((char*) address - (char*) teavm_gc_heapAddress));
+            fprintf(stderr, "[GC] assertion failed marking object at: %d\n",
+                    (int) ((char*) address - (char*) teavm_gc_heapAddress));
             abort();
         }
         *markMap++ = 1;
@@ -155,6 +198,10 @@ void teavm_gc_mark(void* address) {
             }
             *markMap++ = 1;
         }
+    #endif
+
+    #if TEAVM_GC_STATS
+        teavm_gc_markCount++;
     #endif
 }
 
@@ -187,6 +234,11 @@ void teavm_gc_move(void* from, void* to, int32_t size) {
                 mapFrom[i] = 0;
             }
         }
+    #endif
+
+    #if TEAVM_GC_STATS
+        teavm_gc_relocatedBlocks++;
+        teavm_gc_relocatedBytes += size;
     #endif
 }
 
@@ -251,8 +303,10 @@ FILE* teavm_gc_openDumpFile(wchar_t* name) {
         #endif
     }
 
-    void teavm_gc_checkHeapConsistency() {
+    void teavm_gc_checkHeapConsistency(bool oldGen, bool offsets) {
+        int32_t lastCheckedRegion = -1;
         TeaVM_Object* obj = teavm_gc_heapAddress;
+        uint16_t* regions = (uint16_t*) teavm_gc_regionsAddress;
         while ((char*) obj < (char*) teavm_gc_heapAddress + teavm_gc_availableBytes) {
             int32_t size;
             if (obj->header == 0) {
@@ -260,14 +314,32 @@ FILE* teavm_gc_openDumpFile(wchar_t* name) {
                 teavm_gc_assertFree(obj, size);
             } else {
                 teavm_verify(obj);
+                if (offsets) {
+                    int64_t offset = (int64_t) ((char*) obj - (char*) teavm_gc_heapAddress);
+                    int32_t objRegion = (int32_t) (offset / teavm_gc_regionSize);
+                    if (objRegion != lastCheckedRegion) {
+                        while (++lastCheckedRegion < objRegion) {
+                            if (regions[lastCheckedRegion] != 0) {
+                                abort();
+                            }
+                        }
+                        int32_t offsetInRegion = (int32_t) (offset % teavm_gc_regionSize);
+                        if (regions[objRegion] != offsetInRegion + 1) {
+                            abort();
+                        }
+                    }
+                }
+                if (oldGen && !(obj->header & 0x40000000)) {
+                    abort();
+                }
                 TeaVM_Class* cls = TEAVM_CLASS_OF(obj);
                 if (cls->itemType != NULL) {
                     if (!(cls->itemType->flags & 2)) {
                         char* offset = NULL;
                         offset += sizeof(TeaVM_Array);
                         offset = TEAVM_ALIGN(offset, sizeof(void*));
-                        void** data = (void**)((char*)obj + (uintptr_t)offset);
-                        int32_t size = ((TeaVM_Array*)obj)->size;
+                        void** data = (void**) ((char*) obj + (uintptr_t) offset);
+                        int32_t size = ((TeaVM_Array*) obj)->size;
                         for (int32_t i = 0; i < size; ++i) {
                             teavm_verify(data[i]);
                         }
@@ -297,26 +369,143 @@ FILE* teavm_gc_openDumpFile(wchar_t* name) {
             }
             obj = (TeaVM_Object*) ((char*) obj + size);
         }
+
+        if (offsets) {
+            int32_t lastRegion = (int32_t) (teavm_gc_availableBytes / teavm_gc_regionSize);
+            while (++lastCheckedRegion <= lastRegion) {
+                if (regions[lastCheckedRegion] != 0) {
+                    abort();
+                }
+            }
+        }
     }
 #endif
 
-void teavm_gc_gcStarted() {
+void teavm_gc_gcStarted(int32_t full) {
     #if TEAVM_MEMORY_TRACE
         teavm_writeHeapMemory("start");
-        teavm_gc_checkHeapConsistency();
+        teavm_gc_checkHeapConsistency(false, false);
+    #endif
+
+    #if TEAVM_GC_STATS
+        teavm_gc_startTime = teavm_currentTimeNano();
+        teavm_gc_startTimeMillis = teavm_currentTimeMillis();
+        teavm_gc_full = full;
+    #endif
+}
+
+void teavm_gc_sweepStarted() {
+    #if TEAVM_GC_STATS
+        teavm_gc_sweepStartTime = teavm_currentTimeNano();
     #endif
 }
 
 void teavm_gc_sweepCompleted() {
     #if TEAVM_MEMORY_TRACE
         teavm_writeHeapMemory("sweep");
-        teavm_gc_checkHeapConsistency();
+        teavm_gc_checkHeapConsistency(false, true);
+    #endif
+
+    #if TEAVM_GC_STATS
+        teavm_gc_sweepEndTime = teavm_currentTimeNano();
+    #endif
+}
+
+void teavm_gc_defragStarted() {
+    #if TEAVM_GC_STATS
+        teavm_gc_defragStartTime = teavm_currentTimeNano();
     #endif
 }
 
 void teavm_gc_defragCompleted() {
     #if TEAVM_MEMORY_TRACE
         teavm_writeHeapMemory("defrag");
+        teavm_gc_checkHeapConsistency(true, true);
+    #endif
+
+    #if TEAVM_GC_STATS
+        teavm_gc_defragEndTime = teavm_currentTimeNano();
+    #endif
+}
+
+#define TEAVM_GC_LOG_BUFFER_SIZE 512
+
+#if TEAVM_GC_STATS
+    static void teavm_gc_print(wchar_t* s) {
+        #if TEAVM_WINDOWS_LOG
+            OutputDebugStringW(s);
+        #else
+            fprintf(stderr, "%ls", s);
+        #endif
+    }
+
+    static void teavm_gc_printStats() {
+        wchar_t buffer[TEAVM_GC_LOG_BUFFER_SIZE];
+
+        swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC] Garbage collection (%ls) performed at %" PRIu64 ", took %"
+                PRIu64 " ns\n", teavm_gc_full ? L"full" : L"young", teavm_gc_startTimeMillis,
+                 teavm_gc_endTime - teavm_gc_startTime);
+        teavm_gc_print(buffer);
+
+        swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC]   Allocations performed before GC: %" PRIu32 "\n",
+                teavm_gc_allocationCount);
+        teavm_gc_print(buffer);
+
+        swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC]   Mark phase took %" PRIu64 " ns, %" PRIu32
+                " objects reached\n", teavm_gc_markEndTime - teavm_gc_markStartTime, teavm_gc_markCount);
+        teavm_gc_print(buffer);
+
+        if (!teavm_gc_full) {
+            swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC]     Regions scanned from remembered set: %" PRIu32 "\n",
+                    teavm_gc_dirtyRegionCount);
+            teavm_gc_print(buffer);
+        }
+
+        swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC]   Sweep phase took %" PRIu64 " ns, %" PRIu32 " regions of %"
+                PRIu32 " bytes freed\n", teavm_gc_sweepEndTime - teavm_gc_sweepStartTime, teavm_gc_freeCount,
+                teavm_gc_freeByteCount);
+        teavm_gc_print(buffer);
+
+        swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC]   Defrag phase took %" PRIu64 " ns\n",
+                teavm_gc_defragEndTime - teavm_gc_defragStartTime);
+        teavm_gc_print(buffer);
+
+        swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC]     Blocks relocated %" PRId32 " of total %" PRId32 " bytes\n",
+            teavm_gc_relocatedBlocks, teavm_gc_relocatedBytes);
+        teavm_gc_print(buffer);
+    }
+
+    static void teavm_gc_resetStats() {
+        teavm_gc_allocationCount = 0;
+        teavm_gc_markCount = 0;
+        teavm_gc_dirtyRegionCount = 0;
+        teavm_gc_freeCount = 0;
+        teavm_gc_freeByteCount = 0;
+        teavm_gc_relocatedBlocks = 0;
+        teavm_gc_relocatedBytes = 0;
+    }
+#endif
+
+void teavm_gc_gcCompleted() {
+    #if TEAVM_GC_STATS
+        teavm_gc_endTime = teavm_currentTimeNano();
+        teavm_gc_printStats();
+        teavm_gc_resetStats();
+    #endif
+}
+
+void teavm_gc_heapResized(int64_t newSize) {
+    #if TEAVM_GC_STATS
+        wchar_t buffer[TEAVM_GC_LOG_BUFFER_SIZE];
+
+        swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC] Heap resized to %" PRIu64 " bytes\n", newSize);
+        teavm_gc_print(buffer);
+    #endif
+}
+
+void teavm_gc_reportDirtyRegion(void* address) {
+    #if TEAVM_GC_STATS
+        teavm_gc_dirtyRegionCount++;
     #endif
 }
 
@@ -329,4 +518,3 @@ void teavm_gc_setDumpDirectory(const wchar_t* path) {
     teavm_gc_dumpDirectory = malloc(bytesLen);
     memcpy(teavm_gc_dumpDirectory, path, bytesLen);
 }
-

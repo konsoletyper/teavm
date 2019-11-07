@@ -23,23 +23,23 @@ import org.teavm.model.ElementModifier;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.FieldReference;
 import org.teavm.model.Instruction;
-import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.instructions.GetFieldInstruction;
-import org.teavm.model.instructions.InitClassInstruction;
 import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.transformation.ClassInitInsertion;
 
 public class Linker {
-    private static final MethodDescriptor clinitDescriptor = new MethodDescriptor("<clinit>", void.class);
     private DependencyInfo dependency;
+    private ClassInitInsertion classInitInsertion;
 
     public Linker(DependencyInfo dependency) {
         this.dependency = dependency;
+        classInitInsertion = new ClassInitInsertion(dependency);
     }
 
     public void link(ClassHolder cls) {
@@ -55,7 +55,7 @@ public class Linker {
                     method.setProgram(null);
                 }
             } else if (method.getProgram() != null) {
-                link(method.getReference(), method.getProgram());
+                link(method, method.getProgram());
             }
         }
         for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
@@ -66,7 +66,7 @@ public class Linker {
         }
     }
 
-    public void link(MethodReference method, Program program) {
+    public void link(MethodReader method, Program program) {
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction insn : block) {
@@ -111,36 +111,16 @@ public class Linker {
                         getField.setField(linkedField.getReference());
                     }
 
-                    FieldReference fieldRef = getField.getField();
-                    if (getField.getInstance() == null) {
-                        insertClinit(dependency, fieldRef.getClassName(), method, insn);
-                    }
                 } else if (insn instanceof PutFieldInstruction) {
                     PutFieldInstruction putField = (PutFieldInstruction) insn;
                     FieldDependencyInfo linkedField = dependency.getField(putField.getField());
                     if (linkedField != null) {
                         putField.setField(linkedField.getReference());
                     }
-
-                    FieldReference fieldRef = putField.getField();
-                    if (putField.getInstance() == null) {
-                        insertClinit(dependency, fieldRef.getClassName(), method, insn);
-                    }
                 }
             }
         }
-    }
 
-    private void insertClinit(DependencyInfo dependency, String className, MethodReference method, Instruction insn) {
-        if (className.equals(method.getClassName())) {
-            return;
-        }
-        ClassReader cls = dependency.getClassSource().get(className);
-        if (cls == null || cls.getMethod(clinitDescriptor) != null) {
-            InitClassInstruction initInsn = new InitClassInstruction();
-            initInsn.setClassName(className);
-            initInsn.setLocation(insn.getLocation());
-            insn.insertPrevious(initInsn);
-        }
+        classInitInsertion.apply(program, method);
     }
 }

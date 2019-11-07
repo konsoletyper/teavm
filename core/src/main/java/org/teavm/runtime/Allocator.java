@@ -21,6 +21,7 @@ import org.teavm.interop.Structure;
 import org.teavm.interop.Unmanaged;
 
 @StaticInit
+@Unmanaged
 public final class Allocator {
     private Allocator() {
     }
@@ -62,12 +63,11 @@ public final class Allocator {
         return array;
     }
 
-    @Unmanaged
     public static native void fillZero(Address address, int count);
 
-    @Unmanaged
+    public static native void fill(Address address, byte value, int count);
+
     public static native void moveMemoryBlock(Address source, Address target, int count);
 
-    @Unmanaged
     public static native boolean isInitialized(Class<?> cls);
 }

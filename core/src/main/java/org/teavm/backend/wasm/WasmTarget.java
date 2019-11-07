@@ -272,6 +272,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "align", Address.class, int.class,
                 Address.class)).use();
+        dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "fill", Address.class, int.class,
+                int.class, void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "fillZero", Address.class, int.class,
                 void.class)).use();
         dependencyAnalyzer.linkMethod(new MethodReference(WasmRuntime.class, "moveMemoryBlock", Address.class,
@@ -821,6 +823,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         address = WasmRuntime.align(address + WasmHeap.DEFAULT_STACK_SIZE, 16);
         address = WasmRuntime.align(address + maxHeapSize, 16);
         address = WasmRuntime.align(address + newRegionsSize, 16);
+        address = WasmRuntime.align(address + newRegionsCount, 16);
         address = WasmRuntime.align(address + newStorageSize, 16);
         gcIntrinsic.setRegionSize(WasmHeap.DEFAULT_REGION_SIZE);
 

@@ -180,3 +180,9 @@ extern TeaVM_Class* teavm_stringClass;
 extern TeaVM_Class* teavm_charArrayClass;
 extern int32_t teavm_classReferencesCount;
 extern void teavm_initClasses();
+
+
+inline static void teavm_gc_writeBarrier(void* object) {
+    intptr_t offset = (intptr_t) ((char*) object - (char*) teavm_gc_heapAddress) / teavm_gc_regionSize;
+    ((char*) teavm_gc_cardTable)[offset] = 0;
+}
