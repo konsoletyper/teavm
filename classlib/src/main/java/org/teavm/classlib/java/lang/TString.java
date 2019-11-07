@@ -667,7 +667,7 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
         for (CharSequence element : elements) {
             resultLength += element.length();
         }
-        resultLength += elements.length * delimiter.length();
+        resultLength += (elements.length - 1) * delimiter.length();
 
         char[] chars = new char[resultLength];
         int index = 0;

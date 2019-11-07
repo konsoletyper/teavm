@@ -290,4 +290,25 @@ public class StringTest {
     public void internsConstants() {
         assertSame("abc", ("a" + "bc").intern());
     }
+
+    @Test
+    public void joinStrings() {
+        String str = String.join("/", "a", "b");
+        assertEquals(3, str.length());
+        assertEquals("a/b", str);
+    }
+
+    @Test
+    public void joinSingleString() {
+        String str = String.join("/", "a");
+        assertEquals(1, str.length());
+        assertEquals("a", str);
+    }
+
+    @Test
+    public void joinNoStrings() {
+        String str = String.join("/");
+        assertEquals(0, str.length());
+        assertEquals("", str);
+    }
 }
