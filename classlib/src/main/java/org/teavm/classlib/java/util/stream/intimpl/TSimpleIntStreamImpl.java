@@ -102,10 +102,15 @@ public abstract class TSimpleIntStreamImpl implements TIntStream {
 
     @Override
     public void forEachOrdered(IntConsumer action) {
-        next(e -> {
-            action.accept(e);
-            return true;
-        });
+        while (true) {
+            boolean hasMore = next(e -> {
+                action.accept(e);
+                return true;
+            });
+            if (!hasMore) {
+                return;
+            }
+        }
     }
 
     @Override
@@ -113,7 +118,9 @@ public abstract class TSimpleIntStreamImpl implements TIntStream {
         int estimatedSize = estimateSize();
         if (estimatedSize < 0) {
             List<Integer> list = new ArrayList<>();
-            next(list::add);
+            while (next(list::add)) {
+                // go on
+            }
             int[] array = new int[list.size()];
             for (int i = 0; i < array.length; ++i) {
                 array[i] = list.get(i);
@@ -122,8 +129,9 @@ public abstract class TSimpleIntStreamImpl implements TIntStream {
         } else {
             int[] array = new int[estimatedSize];
             ArrayFillingConsumer consumer = new ArrayFillingConsumer(array);
-            boolean wantsMore = next(consumer);
-            assert !wantsMore : "next() should have reported done status";
+            while (next(consumer)) {
+                // go on
+            }
             if (consumer.index < array.length) {
                 array = Arrays.copyOf(array, consumer.index);
             }
@@ -134,26 +142,33 @@ public abstract class TSimpleIntStreamImpl implements TIntStream {
     @Override
     public int reduce(int identity, IntBinaryOperator accumulator) {
         TReducingIntConsumer consumer = new TReducingIntConsumer(accumulator, identity, true);
-        boolean wantsMore = next(consumer);
-        assert !wantsMore : "next() should have returned true";
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.result;
     }
 
     @Override
     public OptionalInt reduce(IntBinaryOperator accumulator) {
         TReducingIntConsumer consumer = new TReducingIntConsumer(accumulator, 0, false);
-        boolean wantsMore = next(consumer);
-        assert !wantsMore : "next() should have returned true";
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.initialized ? OptionalInt.of(consumer.result) : OptionalInt.empty();
     }
 
     @Override
     public <R> R collect(Supplier<R> supplier, ObjIntConsumer<R> accumulator, BiConsumer<R, R> combiner) {
         R collection = supplier.get();
-        next(e -> {
-            accumulator.accept(collection, e);
-            return true;
-        });
+        while (true) {
+            boolean hasMore = next(e -> {
+                accumulator.accept(collection, e);
+                return true;
+            });
+            if (!hasMore) {
+                break;
+            }
+        }
         return collection;
     }
 
@@ -170,32 +185,46 @@ public abstract class TSimpleIntStreamImpl implements TIntStream {
     @Override
     public long count() {
         TCountingIntConsumer consumer = new TCountingIntConsumer();
-        next(consumer);
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.count;
     }
 
     @Override
     public int sum() {
         TSumIntConsumer consumer = new TSumIntConsumer();
-        next(consumer);
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.sum;
     }
 
     @Override
     public OptionalDouble average() {
         TSumIntAsDoubleConsumer consumer = new TSumIntAsDoubleConsumer();
-        next(consumer);
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.count > 0 ? OptionalDouble.of(consumer.sum / consumer.count) : OptionalDouble.empty();
     }
 
     @Override
     public boolean anyMatch(IntPredicate predicate) {
-        return next(predicate.negate());
+        TAnyMatchConsumer consumer = new TAnyMatchConsumer(predicate);
+        while (!consumer.matched && next(consumer)) {
+            // go on
+        }
+        return consumer.matched;
     }
 
     @Override
     public boolean allMatch(IntPredicate predicate) {
-        return !next(predicate);
+        TAllMatchConsumer consumer = new TAllMatchConsumer(predicate);
+        while (consumer.matched && next(consumer)) {
+            // go on
+        }
+        return consumer.matched;
     }
 
     @Override
@@ -206,7 +235,9 @@ public abstract class TSimpleIntStreamImpl implements TIntStream {
     @Override
     public OptionalInt findFirst() {
         TFindFirstIntConsumer consumer = new TFindFirstIntConsumer();
-        next(consumer);
+        while (!consumer.hasAny && next(consumer)) {
+            // go on
+        }
         return consumer.hasAny ? OptionalInt.of(consumer.result) : OptionalInt.empty();
     }
 
@@ -275,7 +306,7 @@ public abstract class TSimpleIntStreamImpl implements TIntStream {
 
     public abstract boolean next(IntPredicate consumer);
 
-    class ArrayFillingConsumer implements IntPredicate {
+    static class ArrayFillingConsumer implements IntPredicate {
         int[] array;
         int index;
 

@@ -53,13 +53,21 @@ public class TSimpleDoubleStreamIterator implements PrimitiveIterator.OfDouble {
         if (state != NEEDS_MORE) {
             return;
         }
-        boolean hasMore = stream.next(e -> {
-            lastElement = e;
-            return false;
-        });
-        state = hasMore ? HAS_DATA : LAST_ELEMENT;
-        if (state == LAST_ELEMENT) {
-            stream = null;
+        state = NEEDS_MORE;
+        while (state == NEEDS_MORE) {
+            boolean hasMore = stream.next(e -> {
+                lastElement = e;
+                state = HAS_DATA;
+                return false;
+            });
+            if (!hasMore) {
+                if (state == NEEDS_MORE) {
+                    state = DONE;
+                } else {
+                    state = LAST_ELEMENT;
+                }
+                stream = null;
+            }
         }
     }
 }

@@ -123,10 +123,15 @@ public abstract class TSimpleStreamImpl<T> implements TStream<T> {
 
     @Override
     public void forEachOrdered(Consumer<? super T> action) {
-        next(e -> {
-            action.accept(e);
-            return true;
-        });
+        while (true) {
+            boolean hasMore = next(e -> {
+                action.accept(e);
+                return true;
+            });
+            if (!hasMore) {
+                return;
+            }
+        }
     }
 
     @Override
@@ -140,7 +145,9 @@ public abstract class TSimpleStreamImpl<T> implements TStream<T> {
         int estimatedSize = estimateSize();
         if (estimatedSize < 0) {
             List<T> list = new ArrayList<>();
-            next(list::add);
+            while (next(list::add)) {
+                // go on
+            }
             A[] array = generator.apply(list.size());
             for (int i = 0; i < array.length; ++i) {
                 array[i] = (A) list.get(i);
@@ -148,9 +155,10 @@ public abstract class TSimpleStreamImpl<T> implements TStream<T> {
             return array;
         } else {
             A[] array = generator.apply(estimatedSize);
-            ArrayFillingConsumer<A> consumer = new ArrayFillingConsumer<>(array);
-            boolean wantsMore = next(consumer);
-            assert !wantsMore : "next() should have reported done status";
+            ArrayFillingConsumer<A, T> consumer = new ArrayFillingConsumer<>(array);
+            while (next(consumer)) {
+                // go on
+            }
             if (consumer.index < array.length) {
                 array = Arrays.copyOf(array, consumer.index);
             }
@@ -161,34 +169,42 @@ public abstract class TSimpleStreamImpl<T> implements TStream<T> {
     @Override
     public T reduce(T identity, BinaryOperator<T> accumulator) {
         TReducingConsumer<T> consumer = new TReducingConsumer<>(accumulator, identity, true);
-        boolean wantsMore = next(consumer);
-        assert !wantsMore : "next() should have returned true";
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.result;
     }
 
     @Override
     public Optional<T> reduce(BinaryOperator<T> accumulator) {
         TReducingConsumer<T> consumer = new TReducingConsumer<>(accumulator, null, false);
-        boolean wantsMore = next(consumer);
-        assert !wantsMore : "next() should have returned true";
+        while (next(consumer)) {
+            // go on
+        }
         return Optional.ofNullable(consumer.result);
     }
 
     @Override
     public <U> U reduce(U identity, BiFunction<U, ? super T, U> accumulator, BinaryOperator<U> combiner) {
         TReducingConsumer2<T, U> consumer = new TReducingConsumer2<>(accumulator, identity);
-        boolean wantsMore = next(consumer);
-        assert !wantsMore : "next() should have returned true";
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.result;
     }
 
     @Override
     public <R> R collect(Supplier<R> supplier, BiConsumer<R, ? super T> accumulator, BiConsumer<R, R> combiner) {
         R collection = supplier.get();
-        next(e -> {
-            accumulator.accept(collection, e);
-            return true;
-        });
+        while (true) {
+            boolean hasMore = next(e -> {
+                accumulator.accept(collection, e);
+                return true;
+            });
+            if (!hasMore) {
+                break;
+            }
+        }
         return collection;
     }
 
@@ -216,18 +232,28 @@ public abstract class TSimpleStreamImpl<T> implements TStream<T> {
     @Override
     public long count() {
         TCountingConsumer<T> consumer = new TCountingConsumer<>();
-        next(consumer);
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.count;
     }
 
     @Override
     public boolean anyMatch(Predicate<? super T> predicate) {
-        return next(predicate.negate());
+        TAnyMatchConsumer<T> consumer = new TAnyMatchConsumer<>(predicate);
+        while (!consumer.matched && next(consumer)) {
+            // go on
+        }
+        return consumer.matched;
     }
 
     @Override
     public boolean allMatch(Predicate<? super T> predicate) {
-        return !next(predicate);
+        TAllMatchConsumer<T> consumer = new TAllMatchConsumer<>(predicate);
+        while (consumer.matched && next(consumer)) {
+            // go on
+        }
+        return consumer.matched;
     }
 
     @Override
@@ -238,7 +264,9 @@ public abstract class TSimpleStreamImpl<T> implements TStream<T> {
     @Override
     public Optional<T> findFirst() {
         TFindFirstConsumer<T> consumer = new TFindFirstConsumer<>();
-        next(consumer);
+        while (consumer.result == null && next(consumer)) {
+            // go on
+        }
         return Optional.ofNullable(consumer.result);
     }
 
@@ -292,7 +320,7 @@ public abstract class TSimpleStreamImpl<T> implements TStream<T> {
 
     public abstract boolean next(Predicate<? super T> consumer);
 
-    class ArrayFillingConsumer<A> implements Predicate<T> {
+    static class ArrayFillingConsumer<A, T> implements Predicate<T> {
         A[] array;
         int index;
 

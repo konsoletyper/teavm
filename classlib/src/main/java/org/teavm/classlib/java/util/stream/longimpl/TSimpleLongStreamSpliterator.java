@@ -20,6 +20,7 @@ import java.util.function.LongConsumer;
 
 public class TSimpleLongStreamSpliterator implements Spliterator.OfLong {
     private TSimpleLongStreamImpl stream;
+    private boolean foundItems;
     private boolean done;
 
     public TSimpleLongStreamSpliterator(TSimpleLongStreamImpl stream) {
@@ -39,10 +40,14 @@ public class TSimpleLongStreamSpliterator implements Spliterator.OfLong {
         if (done) {
             return false;
         }
-        done = !stream.next(x -> {
-            action.accept(x);
-            return false;
-        });
+        foundItems = false;
+        while (!foundItems && !done) {
+            done = !stream.next(x -> {
+                action.accept(x);
+                foundItems = true;
+                return false;
+            });
+        }
         return true;
     }
 

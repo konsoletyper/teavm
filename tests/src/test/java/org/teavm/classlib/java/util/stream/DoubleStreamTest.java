@@ -19,13 +19,15 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.teavm.classlib.java.util.stream.Helper.appendDoubleNumbersTo;
+import static org.teavm.classlib.java.util.stream.Helper.testDoubleStream;
+import static org.teavm.classlib.java.util.stream.Helper.testIntStream;
+import static org.teavm.classlib.java.util.stream.Helper.testIntegerStream;
+import static org.teavm.classlib.java.util.stream.Helper.testLongStream;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
-import java.util.function.DoubleConsumer;
-import java.util.function.IntConsumer;
-import java.util.function.LongConsumer;
-import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
+import java.util.stream.LongStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -34,85 +36,94 @@ import org.teavm.junit.TeaVMTestRunner;
 public class DoubleStreamTest {
     @Test
     public void forEachWorks() {
-        StringBuilder sb = new StringBuilder();
-        DoubleStream.of(1, 2, 3).forEach(appendNumbersTo(sb));
-        assertEquals("1.0;2.0;3.0;", sb.toString());
+        testDoubleStream(() -> DoubleStream.of(1, 2, 3), 1, 2, 3);
+        testDoubleStream(() -> DoubleStream.concat(DoubleStream.of(1), DoubleStream.of(2, 3)), 1, 2, 3);
+        testDoubleStream(() -> DoubleStream.concat(DoubleStream.empty(), DoubleStream.of(1, 2, 3)), 1, 2, 3);
     }
 
     @Test
     public void mapWorks() {
-        StringBuilder sb = new StringBuilder();
-        DoubleStream.of(1, 2, 3).map(n -> n * n).forEach(appendNumbersTo(sb));
-        assertEquals("1.0;4.0;9.0;", sb.toString());
+        testDoubleStream(() -> DoubleStream.of(1, 2, 3).map(n -> n * n), 1, 4, 9);
+        testDoubleStream(() -> DoubleStream.concat(DoubleStream.of(1), DoubleStream.of(2, 3))
+                .map(n -> n * n), 1, 4, 9);
+        testDoubleStream(() -> DoubleStream.concat(DoubleStream.empty(), DoubleStream.of(1, 2, 3))
+                .map(n -> n * n), 1, 4, 9);
     }
 
     @Test
     public void mapToObjWorks() {
-        String result = DoubleStream.of(1, 2, 3).mapToObj(n -> String.valueOf(n * n)).collect(Collectors.joining(";"));
-        assertEquals("1.0;4.0;9.0", result);
+        testIntegerStream(() -> DoubleStream.of(1, 2, 3).mapToObj(n -> (int) (n * n)), 1, 4, 9);
+        testIntegerStream(() -> DoubleStream.concat(DoubleStream.of(1), DoubleStream.of(2, 3))
+                .mapToObj(n -> (int) (n * n)), 1, 4, 9);
+        testIntegerStream(() -> DoubleStream.concat(DoubleStream.empty(), DoubleStream.of(1, 2, 3))
+                .mapToObj(n -> (int) (n * n)), 1, 4, 9);
     }
 
     @Test
     public void mapToIntWorks() {
-        StringBuilder sb = new StringBuilder();
-        DoubleStream.of(1, 2, 3).mapToInt(n -> (int) (n * n)).forEach(appendIntNumbersTo(sb));
-        assertEquals("1;4;9;", sb.toString());
+        testIntStream(() -> DoubleStream.of(1, 2, 3).mapToInt(n -> (int) (n * n)), 1, 4, 9);
+        testIntStream(() -> DoubleStream.concat(DoubleStream.of(1), DoubleStream.of(2, 3))
+                .mapToInt(n -> (int) (n * n)), 1, 4, 9);
+        testIntStream(() -> DoubleStream.concat(DoubleStream.empty(), DoubleStream.of(1, 2, 3))
+                .mapToInt(n -> (int) (n * n)), 1, 4, 9);
     }
 
     @Test
     public void mapToLongWorks() {
-        StringBuilder sb = new StringBuilder();
-        DoubleStream.of(1, 2, 3).mapToLong(n -> (long) (n * n)).forEach(appendLongNumbersTo(sb));
-        assertEquals("1;4;9;", sb.toString());
+        testLongStream(() -> DoubleStream.of(1, 2, 3).mapToLong(n -> (long) (n * n)), 1, 4, 9);
+        testLongStream(() -> DoubleStream.concat(DoubleStream.of(1), DoubleStream.of(2, 3))
+                .mapToLong(n -> (long) (n * n)), 1, 4, 9);
+        testLongStream(() -> DoubleStream.concat(DoubleStream.empty(), DoubleStream.of(1, 2, 3))
+                .mapToLong(n -> (long) (n * n)), 1, 4, 9);
     }
 
     @Test
     public void filterWorks() {
-        StringBuilder sb = new StringBuilder();
-        DoubleStream.of(1, 2, 3, 4, 5, 6).filter(n -> (n % 2) == 0).forEach(appendNumbersTo(sb));
-        assertEquals("2.0;4.0;6.0;", sb.toString());
+        testDoubleStream(() -> DoubleStream.of(1, 2, 3, 4, 5, 6).filter(n -> (n % 2) == 0), 2, 4, 6);
+        testDoubleStream(() -> DoubleStream.concat(DoubleStream.of(1), DoubleStream.of(2, 3, 4, 5, 6))
+                .filter(n -> ((int) n & 1) == 0), 2, 4, 6);
+        testDoubleStream(() -> DoubleStream.concat(DoubleStream.empty(), DoubleStream.of(1, 2, 3, 4, 5, 6))
+                .filter(n -> ((int) n & 1) == 0), 2, 4, 6);
     }
 
     @Test
     public void flatMapWorks() {
-        StringBuilder sb = new StringBuilder();
-        DoubleStream.of(1, 3).flatMap(n -> DoubleStream.of(n, n + 1)).forEach(appendNumbersTo(sb));
-        assertEquals("1.0;2.0;3.0;4.0;", sb.toString());
+        testDoubleStream(() -> DoubleStream.of(1, 3).flatMap(n -> DoubleStream.of(n, n + 1)), 1, 2, 3, 4);
+        testDoubleStream(() -> DoubleStream.of(1, 3).flatMap(n -> DoubleStream.of(n, n + 1)).skip(1), 2, 3, 4);
+        testDoubleStream(() -> DoubleStream.of(1, 4).flatMap(n -> DoubleStream.of(n, n + 1, n + 2)).skip(3), 4, 5, 6);
 
-        sb.setLength(0);
-        DoubleStream.of(1, 3).flatMap(n -> DoubleStream.of(n, n + 1)).skip(1).forEach(appendNumbersTo(sb));
-        assertEquals("2.0;3.0;4.0;", sb.toString());
-
-        sb.setLength(0);
-        DoubleStream.of(1, 4).flatMap(n -> DoubleStream.of(n, n + 1, n + 2)).skip(4).forEach(appendNumbersTo(sb));
-        assertEquals("5.0;6.0;", sb.toString());
+        testDoubleStream(() -> DoubleStream.of(1, 3, 100)
+                .flatMap(n -> n < 100 ? DoubleStream.of(n, n + 1) : DoubleStream.empty()), 1, 2, 3, 4);
+        testDoubleStream(() -> DoubleStream.of(100, 1, 3)
+                .flatMap(n -> n < 100 ? DoubleStream.of(n, n + 1) : DoubleStream.empty()), 1, 2, 3, 4);
     }
 
     @Test
     public void skipWorks() {
-        for (int i = 0; i <= 6; ++i) {
-            StringBuilder sb = new StringBuilder();
-            DoubleStream.iterate(1, n -> n + 1).limit(5).skip(i).forEach(appendNumbersTo(sb));
-
-            StringBuilder expected = new StringBuilder();
+        for (int i = 0; i <= 5; ++i) {
+            int index = i;
+            double[] expected = new double[5 - i];
             for (int j = i; j < 5; ++j) {
-                expected.append((double) j + 1).append(';');
+                expected[j - i] = j + 1;
             }
-            assertEquals("Error skipping " + i + " elements", expected.toString(), sb.toString());
+            testDoubleStream(() -> DoubleStream.iterate(1, n -> n + 1).limit(5).skip(index), expected);
+            testDoubleStream(() -> DoubleStream.concat(DoubleStream.of(1), DoubleStream.iterate(2, n -> n + 1)
+                    .limit(4)).skip(index), expected);
+            testDoubleStream(() -> DoubleStream.concat(DoubleStream.empty(), DoubleStream.iterate(1, n -> n + 1)
+                    .limit(5)).skip(index), expected);
         }
     }
 
     @Test
     public void limitWorks() {
         for (int i = 0; i <= 3; ++i) {
-            StringBuilder sb = new StringBuilder();
-            DoubleStream.iterate(1, n -> n + 1).limit(i).forEach(appendNumbersTo(sb));
-
-            StringBuilder expected = new StringBuilder();
-            for (int j = 0; j < i; ++j) {
-                expected.append((double) j + 1).append(';');
+            int index = i;
+            long[] expected = new long[i];
+            for (int j = 0; j < expected.length; ++j) {
+                expected[j] = j + 1;
             }
-            assertEquals("Error limiting to " + i + " elements", expected.toString(), sb.toString());
+
+            testLongStream(() -> LongStream.iterate(1, n -> n + 1).limit(index), expected);
         }
     }
 
@@ -135,19 +146,19 @@ public class DoubleStreamTest {
     @Test
     public void distinctWorks() {
         StringBuilder sb = new StringBuilder();
-        DoubleStream.of(2, 3, 2, 3).distinct().forEach(appendNumbersTo(sb));
+        DoubleStream.of(2, 3, 2, 3).distinct().forEach(appendDoubleNumbersTo(sb));
         assertEquals("2.0;3.0;", sb.toString());
 
         sb.setLength(0);
-        DoubleStream.of(2, 3, 2, 3).skip(1).distinct().forEach(appendNumbersTo(sb));
+        DoubleStream.of(2, 3, 2, 3).skip(1).distinct().forEach(appendDoubleNumbersTo(sb));
         assertEquals("3.0;2.0;", sb.toString());
 
         sb.setLength(0);
-        DoubleStream.of(2, 3, 2, 3).limit(2).distinct().forEach(appendNumbersTo(sb));
+        DoubleStream.of(2, 3, 2, 3).limit(2).distinct().forEach(appendDoubleNumbersTo(sb));
         assertEquals("2.0;3.0;", sb.toString());
 
         sb.setLength(0);
-        DoubleStream.of(2, 2, 3, 2, 4, 3, 1).distinct().forEach(appendNumbersTo(sb));
+        DoubleStream.of(2, 2, 3, 2, 4, 3, 1).distinct().forEach(appendDoubleNumbersTo(sb));
         assertEquals("2.0;3.0;4.0;1.0;", sb.toString());
     }
 
@@ -164,22 +175,22 @@ public class DoubleStreamTest {
     @Test
     public void concatWorks() {
         StringBuilder sb = new StringBuilder();
-        DoubleStream.concat(DoubleStream.of(1, 2), DoubleStream.of(3, 4)).forEach(appendNumbersTo(sb));
+        DoubleStream.concat(DoubleStream.of(1, 2), DoubleStream.of(3, 4)).forEach(appendDoubleNumbersTo(sb));
         assertEquals("1.0;2.0;3.0;4.0;", sb.toString());
 
         sb.setLength(0);
-        DoubleStream.concat(DoubleStream.of(1, 2), DoubleStream.of(3, 4)).skip(1).forEach(appendNumbersTo(sb));
+        DoubleStream.concat(DoubleStream.of(1, 2), DoubleStream.of(3, 4)).skip(1).forEach(appendDoubleNumbersTo(sb));
         assertEquals("2.0;3.0;4.0;", sb.toString());
 
         sb.setLength(0);
-        DoubleStream.concat(DoubleStream.of(1, 2), DoubleStream.of(3, 4, 5)).skip(3).forEach(appendNumbersTo(sb));
+        DoubleStream.concat(DoubleStream.of(1, 2), DoubleStream.of(3, 4, 5)).skip(3).forEach(appendDoubleNumbersTo(sb));
         assertEquals("4.0;5.0;", sb.toString());
     }
 
     @Test
     public void peekWorks() {
         StringBuilder sb = new StringBuilder();
-        DoubleStream.of(1, 2, 3).peek(appendNumbersTo(sb)).map(n -> n + 10).forEach(appendNumbersTo(sb));
+        DoubleStream.of(1, 2, 3).peek(appendDoubleNumbersTo(sb)).map(n -> n + 10).forEach(appendDoubleNumbersTo(sb));
         assertEquals("1.0;11.0;2.0;12.0;3.0;13.0;", sb.toString());
     }
 
@@ -196,31 +207,31 @@ public class DoubleStreamTest {
     @Test
     public void streamOfOneElement() {
         StringBuilder sb = new StringBuilder();
-        DoubleStream.of(5).forEach(appendNumbersTo(sb));
+        DoubleStream.of(5).forEach(appendDoubleNumbersTo(sb));
         assertEquals("5.0;", sb.toString());
 
         sb.setLength(0);
-        DoubleStream.of(5).skip(1).forEach(appendNumbersTo(sb));
+        DoubleStream.of(5).skip(1).forEach(appendDoubleNumbersTo(sb));
         assertEquals("", sb.toString());
 
         sb.setLength(0);
-        DoubleStream.concat(DoubleStream.of(5), DoubleStream.of(6)).forEach(appendNumbersTo(sb));
+        DoubleStream.concat(DoubleStream.of(5), DoubleStream.of(6)).forEach(appendDoubleNumbersTo(sb));
         assertEquals("5.0;6.0;", sb.toString());
     }
 
     @Test
     public void sortedStream() {
         StringBuilder sb = new StringBuilder();
-        DoubleStream.of(5, 7, 1, 2, 4, 3).sorted().forEach(appendNumbersTo(sb));
+        DoubleStream.of(5, 7, 1, 2, 4, 3).sorted().forEach(appendDoubleNumbersTo(sb));
         assertEquals("1.0;2.0;3.0;4.0;5.0;7.0;", sb.toString());
 
         sb.setLength(0);
-        DoubleStream.of(2, 3, 1).peek(appendNumbersTo(sb)).sorted().limit(2).map(n -> n + 10)
-                .forEach(appendNumbersTo(sb));
+        DoubleStream.of(2, 3, 1).peek(appendDoubleNumbersTo(sb)).sorted().limit(2).map(n -> n + 10)
+                .forEach(appendDoubleNumbersTo(sb));
         assertEquals("2.0;3.0;1.0;11.0;12.0;", sb.toString());
 
         sb.setLength(0);
-        DoubleStream.of(2, 3, 1).peek(appendNumbersTo(sb)).sorted().limit(0).forEach(appendNumbersTo(sb));
+        DoubleStream.of(2, 3, 1).peek(appendDoubleNumbersTo(sb)).sorted().limit(0).forEach(appendDoubleNumbersTo(sb));
         assertEquals("2.0;3.0;1.0;", sb.toString());
     }
 
@@ -299,7 +310,7 @@ public class DoubleStreamTest {
 
         sb.setLength(0);
         iterator = DoubleStream.of(1, 2, 3).iterator();
-        iterator.forEachRemaining(appendNumbersTo(sb));
+        iterator.forEachRemaining(appendDoubleNumbersTo(sb));
         assertEquals("1.0;2.0;3.0;", sb.toString());
     }
 
@@ -307,14 +318,14 @@ public class DoubleStreamTest {
     public void spliterator() {
         StringBuilder sb = new StringBuilder();
         Spliterator.OfDouble spliterator = DoubleStream.of(1, 2, 3).spliterator();
-        while (spliterator.tryAdvance(appendNumbersTo(sb))) {
+        while (spliterator.tryAdvance(appendDoubleNumbersTo(sb))) {
             // continue
         }
         assertEquals("1.0;2.0;3.0;", sb.toString());
 
         sb.setLength(0);
         spliterator = DoubleStream.of(1, 2, 3).spliterator();
-        spliterator.forEachRemaining(appendNumbersTo(sb));
+        spliterator.forEachRemaining(appendDoubleNumbersTo(sb));
         assertEquals("1.0;2.0;3.0;", sb.toString());
     }
 
@@ -322,17 +333,5 @@ public class DoubleStreamTest {
     public void average() {
         assertEquals(2.5, DoubleStream.of(1, 2, 3, 4).average().getAsDouble(), 0.001);
         assertFalse(DoubleStream.empty().average().isPresent());
-    }
-
-    private DoubleConsumer appendNumbersTo(StringBuilder sb) {
-        return n -> sb.append(n).append(';');
-    }
-
-    private IntConsumer appendIntNumbersTo(StringBuilder sb) {
-        return n -> sb.append(n).append(';');
-    }
-
-    private LongConsumer appendLongNumbersTo(StringBuilder sb) {
-        return n -> sb.append(n).append(';');
     }
 }

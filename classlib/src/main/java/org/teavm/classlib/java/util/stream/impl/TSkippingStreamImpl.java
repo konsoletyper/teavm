@@ -30,7 +30,7 @@ public class TSkippingStreamImpl<T> extends TSimpleStreamImpl<T> {
 
     @Override
     public boolean next(Predicate<? super T> consumer) {
-        if (remaining > 0) {
+        while (remaining > 0) {
             if (!sourceStream.next(e -> --remaining > 0)) {
                 return false;
             }

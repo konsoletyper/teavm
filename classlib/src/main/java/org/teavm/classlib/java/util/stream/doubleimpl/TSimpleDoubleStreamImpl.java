@@ -101,10 +101,15 @@ public abstract class TSimpleDoubleStreamImpl implements TDoubleStream {
 
     @Override
     public void forEachOrdered(DoubleConsumer action) {
-        next(e -> {
-            action.accept(e);
-            return true;
-        });
+        while (true) {
+            boolean hasMore = next(e -> {
+                action.accept(e);
+                return true;
+            });
+            if (!hasMore) {
+                return;
+            }
+        }
     }
 
     @Override
@@ -112,7 +117,9 @@ public abstract class TSimpleDoubleStreamImpl implements TDoubleStream {
         int estimatedSize = estimateSize();
         if (estimatedSize < 0) {
             List<Double> list = new ArrayList<>();
-            next(list::add);
+            while (next(list::add)) {
+                // go on
+            }
             double[] array = new double[list.size()];
             for (int i = 0; i < array.length; ++i) {
                 array[i] = list.get(i);
@@ -121,8 +128,9 @@ public abstract class TSimpleDoubleStreamImpl implements TDoubleStream {
         } else {
             double[] array = new double[estimatedSize];
             ArrayFillingConsumer consumer = new ArrayFillingConsumer(array);
-            boolean wantsMore = next(consumer);
-            assert !wantsMore : "next() should have reported done status";
+            while (next(consumer)) {
+                // go on
+            }
             if (consumer.index < array.length) {
                 array = Arrays.copyOf(array, consumer.index);
             }
@@ -133,26 +141,33 @@ public abstract class TSimpleDoubleStreamImpl implements TDoubleStream {
     @Override
     public double reduce(double identity, DoubleBinaryOperator accumulator) {
         TReducingDoubleConsumer consumer = new TReducingDoubleConsumer(accumulator, identity, true);
-        boolean wantsMore = next(consumer);
-        assert !wantsMore : "next() should have returned true";
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.result;
     }
 
     @Override
     public OptionalDouble reduce(DoubleBinaryOperator accumulator) {
         TReducingDoubleConsumer consumer = new TReducingDoubleConsumer(accumulator, 0, false);
-        boolean wantsMore = next(consumer);
-        assert !wantsMore : "next() should have returned true";
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.initialized ? OptionalDouble.of(consumer.result) : OptionalDouble.empty();
     }
 
     @Override
     public <R> R collect(Supplier<R> supplier, ObjDoubleConsumer<R> accumulator, BiConsumer<R, R> combiner) {
         R collection = supplier.get();
-        next(e -> {
-            accumulator.accept(collection, e);
-            return true;
-        });
+        while (true) {
+            boolean hasMore = next(e -> {
+                accumulator.accept(collection, e);
+                return true;
+            });
+            if (!hasMore) {
+                break;
+            }
+        }
         return collection;
     }
 
@@ -169,32 +184,46 @@ public abstract class TSimpleDoubleStreamImpl implements TDoubleStream {
     @Override
     public long count() {
         TCountingDoubleConsumer consumer = new TCountingDoubleConsumer();
-        next(consumer);
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.count;
     }
 
     @Override
     public double sum() {
         TSumDoubleConsumer consumer = new TSumDoubleConsumer();
-        next(consumer);
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.sum;
     }
 
     @Override
     public OptionalDouble average() {
         TAverageDoubleConsumer consumer = new TAverageDoubleConsumer();
-        next(consumer);
+        while (next(consumer)) {
+            // go on
+        }
         return consumer.count > 0 ? OptionalDouble.of(consumer.sum / consumer.count) : OptionalDouble.empty();
     }
 
     @Override
     public boolean anyMatch(DoublePredicate predicate) {
-        return next(predicate.negate());
+        TAnyMatchConsumer consumer = new TAnyMatchConsumer(predicate);
+        while (!consumer.matched && next(consumer)) {
+            // go on
+        }
+        return consumer.matched;
     }
 
     @Override
     public boolean allMatch(DoublePredicate predicate) {
-        return !next(predicate);
+        TAllMatchConsumer consumer = new TAllMatchConsumer(predicate);
+        while (consumer.matched && next(consumer)) {
+            // go on
+        }
+        return consumer.matched;
     }
 
     @Override
@@ -205,7 +234,9 @@ public abstract class TSimpleDoubleStreamImpl implements TDoubleStream {
     @Override
     public OptionalDouble findFirst() {
         TFindFirstDoubleConsumer consumer = new TFindFirstDoubleConsumer();
-        next(consumer);
+        while (!consumer.hasAny && next(consumer)) {
+            // go on
+        }
         return consumer.hasAny ? OptionalDouble.of(consumer.result) : OptionalDouble.empty();
     }
 
@@ -264,7 +295,7 @@ public abstract class TSimpleDoubleStreamImpl implements TDoubleStream {
 
     public abstract boolean next(DoublePredicate consumer);
 
-    class ArrayFillingConsumer implements DoublePredicate {
+    static class ArrayFillingConsumer implements DoublePredicate {
         double[] array;
         int index;
 

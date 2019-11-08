@@ -22,6 +22,7 @@ import org.teavm.classlib.java.util.stream.TLongStream;
 
 public class TFlatMappingLongStreamImpl extends TSimpleLongStreamImpl {
     private TSimpleLongStreamImpl sourceStream;
+    private boolean currentSet;
     private TLongStream current;
     private PrimitiveIterator.OfLong iterator;
     private LongFunction<? extends TLongStream> mapper;
@@ -34,42 +35,44 @@ public class TFlatMappingLongStreamImpl extends TSimpleLongStreamImpl {
 
     @Override
     public boolean next(LongPredicate consumer) {
-        while (true) {
-            if (current == null) {
-                if (done) {
-                    return false;
-                }
+        if (current == null) {
+            if (done) {
+                return false;
+            }
+            currentSet = false;
+            while (!currentSet) {
                 boolean hasMore = sourceStream.next(e -> {
                     current = mapper.apply(e);
+                    currentSet = true;
                     return false;
                 });
                 if (!hasMore) {
                     done = true;
-                }
-                if (current == null) {
-                    done = true;
-                    return false;
+                    break;
                 }
             }
-            if (current instanceof TSimpleLongStreamImpl) {
-                @SuppressWarnings("unchecked")
-                TSimpleLongStreamImpl castCurrent = (TSimpleLongStreamImpl) current;
-                if (castCurrent.next(consumer)) {
-                    return true;
-                }
-                current = null;
-            } else {
-                iterator = current.iterator();
-                while (iterator.hasNext()) {
-                    long e = iterator.nextLong();
-                    if (!consumer.test(e)) {
-                        return true;
-                    }
-                }
-                iterator = null;
-                current = null;
+            if (current == null) {
+                return false;
             }
         }
+        if (current instanceof TSimpleLongStreamImpl) {
+            TSimpleLongStreamImpl castCurrent = (TSimpleLongStreamImpl) current;
+            if (castCurrent.next(consumer)) {
+                return true;
+            }
+            current = null;
+        } else {
+            iterator = current.iterator();
+            while (iterator.hasNext()) {
+                long e = iterator.next();
+                if (!consumer.test(e)) {
+                    return true;
+                }
+            }
+            iterator = null;
+            current = null;
+        }
+        return true;
     }
 
     @Override

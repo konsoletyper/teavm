@@ -33,16 +33,15 @@ public class TSpecializedConcatIntStream extends TSimpleIntStreamImpl {
         if (current == null) {
             return false;
         }
-        while (true) {
-            if (current.next(consumer)) {
-                return true;
-            }
-            if (current == first) {
-                current = second;
-            } else {
-                current = null;
-                return false;
-            }
+        if (current.next(consumer)) {
+            return true;
+        }
+        if (current == first) {
+            current = second;
+            return true;
+        } else {
+            current = null;
+            return false;
         }
     }
 

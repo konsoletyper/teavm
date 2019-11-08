@@ -22,6 +22,7 @@ import org.teavm.classlib.java.util.stream.TStream;
 
 public class TFlatMappingStreamImpl<T, S> extends TSimpleStreamImpl<T> {
     private TSimpleStreamImpl<S> sourceStream;
+    private boolean currentSet;
     private TStream<? extends T> current;
     private Iterator<? extends T> iterator;
     private Function<? super S, ? extends TStream<? extends T>> mapper;
@@ -35,42 +36,45 @@ public class TFlatMappingStreamImpl<T, S> extends TSimpleStreamImpl<T> {
 
     @Override
     public boolean next(Predicate<? super T> consumer) {
-        while (true) {
-            if (current == null) {
-                if (done) {
-                    return false;
-                }
+        if (current == null) {
+            if (done) {
+                return false;
+            }
+            currentSet = false;
+            while (!currentSet) {
                 boolean hasMore = sourceStream.next(e -> {
                     current = mapper.apply(e);
+                    currentSet = true;
                     return false;
                 });
                 if (!hasMore) {
                     done = true;
-                }
-                if (current == null) {
-                    done = true;
-                    return false;
+                    break;
                 }
             }
-            if (current instanceof TSimpleStreamImpl) {
-                @SuppressWarnings("unchecked")
-                TSimpleStreamImpl<? extends T> castCurrent = (TSimpleStreamImpl<? extends T>) current;
-                if (castCurrent.next(consumer)) {
-                    return true;
-                }
-                current = null;
-            } else {
-                iterator = current.iterator();
-                while (iterator.hasNext()) {
-                    T e = iterator.next();
-                    if (!consumer.test(e)) {
-                        return true;
-                    }
-                }
-                iterator = null;
-                current = null;
+            if (current == null) {
+                return false;
             }
         }
+        if (current instanceof TSimpleStreamImpl) {
+            @SuppressWarnings("unchecked")
+            TSimpleStreamImpl<? extends T> castCurrent = (TSimpleStreamImpl<? extends T>) current;
+            if (castCurrent.next(consumer)) {
+                return true;
+            }
+            current = null;
+        } else {
+            iterator = current.iterator();
+            while (iterator.hasNext()) {
+                T e = iterator.next();
+                if (!consumer.test(e)) {
+                    return true;
+                }
+            }
+            iterator = null;
+            current = null;
+        }
+        return true;
     }
 
     @Override

@@ -20,6 +20,7 @@ import java.util.function.IntConsumer;
 
 public class TSimpleIntStreamSpliterator implements Spliterator.OfInt {
     private TSimpleIntStreamImpl stream;
+    private boolean foundItems;
     private boolean done;
 
     public TSimpleIntStreamSpliterator(TSimpleIntStreamImpl stream) {
@@ -39,10 +40,14 @@ public class TSimpleIntStreamSpliterator implements Spliterator.OfInt {
         if (done) {
             return false;
         }
-        done = !stream.next(x -> {
-            action.accept(x);
-            return false;
-        });
+        foundItems = false;
+        while (!foundItems && !done) {
+            done = !stream.next(x -> {
+                action.accept(x);
+                foundItems = true;
+                return false;
+            });
+        }
         return true;
     }
 

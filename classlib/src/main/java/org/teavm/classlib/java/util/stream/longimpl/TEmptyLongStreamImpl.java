@@ -30,6 +30,6 @@ public class TEmptyLongStreamImpl extends TSimpleLongStreamImpl {
 
     @Override
     public long count() {
-        return 1;
+        return 0;
     }
 }

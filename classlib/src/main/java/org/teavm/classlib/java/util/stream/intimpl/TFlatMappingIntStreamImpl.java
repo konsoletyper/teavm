@@ -22,6 +22,7 @@ import org.teavm.classlib.java.util.stream.TIntStream;
 
 public class TFlatMappingIntStreamImpl extends TSimpleIntStreamImpl {
     private TSimpleIntStreamImpl sourceStream;
+    private boolean currentSet;
     private TIntStream current;
     private PrimitiveIterator.OfInt iterator;
     private IntFunction<? extends TIntStream> mapper;
@@ -34,42 +35,44 @@ public class TFlatMappingIntStreamImpl extends TSimpleIntStreamImpl {
 
     @Override
     public boolean next(IntPredicate consumer) {
-        while (true) {
-            if (current == null) {
-                if (done) {
-                    return false;
-                }
+        if (current == null) {
+            if (done) {
+                return false;
+            }
+            currentSet = false;
+            while (!currentSet) {
                 boolean hasMore = sourceStream.next(e -> {
                     current = mapper.apply(e);
+                    currentSet = true;
                     return false;
                 });
                 if (!hasMore) {
                     done = true;
-                }
-                if (current == null) {
-                    done = true;
-                    return false;
+                    break;
                 }
             }
-            if (current instanceof TSimpleIntStreamImpl) {
-                @SuppressWarnings("unchecked")
-                TSimpleIntStreamImpl castCurrent = (TSimpleIntStreamImpl) current;
-                if (castCurrent.next(consumer)) {
-                    return true;
-                }
-                current = null;
-            } else {
-                iterator = current.iterator();
-                while (iterator.hasNext()) {
-                    int e = iterator.nextInt();
-                    if (!consumer.test(e)) {
-                        return true;
-                    }
-                }
-                iterator = null;
-                current = null;
+            if (current == null) {
+                return false;
             }
         }
+        if (current instanceof TSimpleIntStreamImpl) {
+            TSimpleIntStreamImpl castCurrent = (TSimpleIntStreamImpl) current;
+            if (castCurrent.next(consumer)) {
+                return true;
+            }
+            current = null;
+        } else {
+            iterator = current.iterator();
+            while (iterator.hasNext()) {
+                int e = iterator.next();
+                if (!consumer.test(e)) {
+                    return true;
+                }
+            }
+            iterator = null;
+            current = null;
+        }
+        return true;
     }
 
     @Override

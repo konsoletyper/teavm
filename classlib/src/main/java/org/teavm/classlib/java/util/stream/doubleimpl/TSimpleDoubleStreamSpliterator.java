@@ -20,6 +20,7 @@ import java.util.function.DoubleConsumer;
 
 public class TSimpleDoubleStreamSpliterator implements Spliterator.OfDouble {
     private TSimpleDoubleStreamImpl stream;
+    private boolean foundItems;
     private boolean done;
 
     public TSimpleDoubleStreamSpliterator(TSimpleDoubleStreamImpl stream) {
@@ -39,10 +40,14 @@ public class TSimpleDoubleStreamSpliterator implements Spliterator.OfDouble {
         if (done) {
             return false;
         }
-        done = !stream.next(x -> {
-            action.accept(x);
-            return false;
-        });
+        foundItems = false;
+        while (!foundItems && !done) {
+            done = !stream.next(x -> {
+                action.accept(x);
+                foundItems = true;
+                return false;
+            });
+        }
         return true;
     }
 

@@ -19,12 +19,13 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import static org.teavm.classlib.java.util.stream.Helper.appendLongNumbersTo;
+import static org.teavm.classlib.java.util.stream.Helper.testDoubleStream;
+import static org.teavm.classlib.java.util.stream.Helper.testIntStream;
+import static org.teavm.classlib.java.util.stream.Helper.testIntegerStream;
+import static org.teavm.classlib.java.util.stream.Helper.testLongStream;
 import java.util.PrimitiveIterator;
 import java.util.Spliterator;
-import java.util.function.DoubleConsumer;
-import java.util.function.IntConsumer;
-import java.util.function.LongConsumer;
-import java.util.stream.Collectors;
 import java.util.stream.LongStream;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -34,85 +35,92 @@ import org.teavm.junit.TeaVMTestRunner;
 public class LongStreamTest {
     @Test
     public void forEachWorks() {
-        StringBuilder sb = new StringBuilder();
-        LongStream.of(1, 2, 3).forEach(appendNumbersTo(sb));
-        assertEquals("1;2;3;", sb.toString());
+        testLongStream(() -> LongStream.of(1, 2, 3), 1, 2, 3);
+        testLongStream(() -> LongStream.concat(LongStream.of(1), LongStream.of(2, 3)), 1, 2, 3);
+        testLongStream(() -> LongStream.concat(LongStream.empty(), LongStream.of(1, 2, 3)), 1, 2, 3);
     }
 
     @Test
     public void mapWorks() {
-        StringBuilder sb = new StringBuilder();
-        LongStream.of(1, 2, 3).map(n -> n * n).forEach(appendNumbersTo(sb));
-        assertEquals("1;4;9;", sb.toString());
+        testLongStream(() -> LongStream.of(1, 2, 3).map(n -> n * n), 1, 4, 9);
+        testLongStream(() -> LongStream.concat(LongStream.of(1), LongStream.of(2, 3)).map(n -> n * n), 1, 4, 9);
+        testLongStream(() -> LongStream.concat(LongStream.empty(), LongStream.of(1, 2, 3)).map(n -> n * n), 1, 4, 9);
     }
 
     @Test
     public void mapToObjWorks() {
-        String result = LongStream.of(1, 2, 3).mapToObj(n -> String.valueOf(n * n)).collect(Collectors.joining(";"));
-        assertEquals("1;4;9", result);
+        testIntegerStream(() -> LongStream.of(1, 2, 3).mapToObj(n -> (int) (n * n)), 1, 4, 9);
+        testIntegerStream(() -> LongStream.concat(LongStream.of(1), LongStream.of(2, 3))
+                .mapToObj(n -> (int) (n * n)), 1, 4, 9);
+        testIntegerStream(() -> LongStream.concat(LongStream.empty(), LongStream.of(1, 2, 3))
+                .mapToObj(n -> (int) (n * n)), 1, 4, 9);
     }
 
     @Test
     public void mapToIntWorks() {
-        StringBuilder sb = new StringBuilder();
-        LongStream.of(1, 2, 3).mapToInt(n -> (int) (n * n)).forEach(appendIntNumbersTo(sb));
-        assertEquals("1;4;9;", sb.toString());
+        testIntStream(() -> LongStream.of(1, 2, 3).mapToInt(n -> (int) (n * n)), 1, 4, 9);
+        testIntStream(() -> LongStream.concat(LongStream.of(1), LongStream.of(2, 3))
+                .mapToInt(n -> (int) (n * n)), 1, 4, 9);
+        testIntStream(() -> LongStream.concat(LongStream.empty(), LongStream.of(1, 2, 3))
+                .mapToInt(n -> (int) (n * n)), 1, 4, 9);
     }
 
     @Test
     public void mapToDoubleWorks() {
-        StringBuilder sb = new StringBuilder();
-        LongStream.of(1, 2, 3).mapToDouble(n -> n * n).forEach(appendDoubleNumbersTo(sb));
-        assertEquals("1.0;4.0;9.0;", sb.toString());
+        testDoubleStream(() -> LongStream.of(1, 2, 3).mapToDouble(n -> n * n), 1, 4, 9);
+        testDoubleStream(() -> LongStream.concat(LongStream.of(1), LongStream.of(2, 3)).mapToDouble(n -> n * n),
+                1, 4, 9);
+        testDoubleStream(() -> LongStream.concat(LongStream.empty(), LongStream.of(1, 2, 3)).mapToDouble(n -> n * n),
+                1, 4, 9);
     }
 
     @Test
     public void filterWorks() {
-        StringBuilder sb = new StringBuilder();
-        LongStream.of(1, 2, 3, 4, 5, 6).filter(n -> (n & 1) == 0).forEach(appendNumbersTo(sb));
-        assertEquals("2;4;6;", sb.toString());
+        testLongStream(() -> LongStream.of(1, 2, 3, 4, 5, 6).filter(n -> (n & 1) == 0), 2, 4, 6);
+        testLongStream(() -> LongStream.concat(LongStream.of(1), LongStream.of(2, 3, 4, 5, 6))
+                .filter(n -> (n & 1) == 0), 2, 4, 6);
+        testLongStream(() -> LongStream.concat(LongStream.empty(), LongStream.of(1, 2, 3, 4, 5, 6))
+                .filter(n -> (n & 1) == 0), 2, 4, 6);
     }
 
     @Test
     public void flatMapWorks() {
-        StringBuilder sb = new StringBuilder();
-        LongStream.of(1, 3).flatMap(n -> LongStream.of(n, n + 1)).forEach(appendNumbersTo(sb));
-        assertEquals("1;2;3;4;", sb.toString());
+        testLongStream(() -> LongStream.of(1, 3).flatMap(n -> LongStream.of(n, n + 1)), 1, 2, 3, 4);
+        testLongStream(() -> LongStream.of(1, 3).flatMap(n -> LongStream.of(n, n + 1)).skip(1), 2, 3, 4);
+        testLongStream(() -> LongStream.of(1, 4).flatMap(n -> LongStream.of(n, n + 1, n + 2)).skip(3), 4, 5, 6);
 
-        sb.setLength(0);
-        LongStream.of(1, 3).flatMap(n -> LongStream.of(n, n + 1)).skip(1).forEach(appendNumbersTo(sb));
-        assertEquals("2;3;4;", sb.toString());
-
-        sb.setLength(0);
-        LongStream.of(1, 4).flatMap(n -> LongStream.of(n, n + 1, n + 2)).skip(4).forEach(appendNumbersTo(sb));
-        assertEquals("5;6;", sb.toString());
+        testLongStream(() -> LongStream.of(1, 3, 100)
+                .flatMap(n -> n < 100 ? LongStream.of(n, n + 1) : LongStream.empty()), 1, 2, 3, 4);
+        testLongStream(() -> LongStream.of(100, 1, 3)
+                .flatMap(n -> n < 100 ? LongStream.of(n, n + 1) : LongStream.empty()), 1, 2, 3, 4);
     }
 
     @Test
     public void skipWorks() {
-        for (int i = 0; i <= 6; ++i) {
-            StringBuilder sb = new StringBuilder();
-            LongStream.iterate(1, n -> n + 1).limit(5).skip(i).forEach(appendNumbersTo(sb));
-
-            StringBuilder expected = new StringBuilder();
+        for (int i = 0; i <= 5; ++i) {
+            int index = i;
+            long[] expected = new long[5 - i];
             for (int j = i; j < 5; ++j) {
-                expected.append(j + 1).append(';');
+                expected[j - i] = j + 1;
             }
-            assertEquals("Error skipping " + i + " elements", expected.toString(), sb.toString());
+            testLongStream(() -> LongStream.iterate(1, n -> n + 1).limit(5).skip(index), expected);
+            testLongStream(() -> LongStream.concat(LongStream.of(1), LongStream.iterate(2, n -> n + 1).limit(4))
+                    .skip(index), expected);
+            testLongStream(() -> LongStream.concat(LongStream.empty(), LongStream.iterate(1, n -> n + 1).limit(5))
+                    .skip(index), expected);
         }
     }
 
     @Test
     public void limitWorks() {
         for (int i = 0; i <= 3; ++i) {
-            StringBuilder sb = new StringBuilder();
-            LongStream.iterate(1, n -> n + 1).limit(i).forEach(appendNumbersTo(sb));
-
-            StringBuilder expected = new StringBuilder();
-            for (int j = 0; j < i; ++j) {
-                expected.append(j + 1).append(';');
+            int index = i;
+            long[] expected = new long[i];
+            for (int j = 0; j < expected.length; ++j) {
+                expected[j] = j + 1;
             }
-            assertEquals("Error limiting to " + i + " elements", expected.toString(), sb.toString());
+
+            testLongStream(() -> LongStream.iterate(1, n -> n + 1).limit(index), expected);
         }
     }
 
@@ -153,22 +161,22 @@ public class LongStreamTest {
     @Test
     public void concatWorks() {
         StringBuilder sb = new StringBuilder();
-        LongStream.concat(LongStream.of(1, 2), LongStream.of(3, 4)).forEach(appendNumbersTo(sb));
+        LongStream.concat(LongStream.of(1, 2), LongStream.of(3, 4)).forEach(appendLongNumbersTo(sb));
         assertEquals("1;2;3;4;", sb.toString());
 
         sb.setLength(0);
-        LongStream.concat(LongStream.of(1, 2), LongStream.of(3, 4)).skip(1).forEach(appendNumbersTo(sb));
+        LongStream.concat(LongStream.of(1, 2), LongStream.of(3, 4)).skip(1).forEach(appendLongNumbersTo(sb));
         assertEquals("2;3;4;", sb.toString());
 
         sb.setLength(0);
-        LongStream.concat(LongStream.of(1, 2), LongStream.of(3, 4, 5)).skip(3).forEach(appendNumbersTo(sb));
+        LongStream.concat(LongStream.of(1, 2), LongStream.of(3, 4, 5)).skip(3).forEach(appendLongNumbersTo(sb));
         assertEquals("4;5;", sb.toString());
     }
 
     @Test
     public void peekWorks() {
         StringBuilder sb = new StringBuilder();
-        LongStream.of(1, 2, 3).peek(appendNumbersTo(sb)).map(n -> n + 10).forEach(appendNumbersTo(sb));
+        LongStream.of(1, 2, 3).peek(appendLongNumbersTo(sb)).map(n -> n + 10).forEach(appendLongNumbersTo(sb));
         assertEquals("1;11;2;12;3;13;", sb.toString());
     }
 
@@ -185,31 +193,31 @@ public class LongStreamTest {
     @Test
     public void streamOfOneElement() {
         StringBuilder sb = new StringBuilder();
-        LongStream.of(5).forEach(appendNumbersTo(sb));
+        LongStream.of(5).forEach(appendLongNumbersTo(sb));
         assertEquals("5;", sb.toString());
 
         sb.setLength(0);
-        LongStream.of(5).skip(1).forEach(appendNumbersTo(sb));
+        LongStream.of(5).skip(1).forEach(appendLongNumbersTo(sb));
         assertEquals("", sb.toString());
 
         sb.setLength(0);
-        LongStream.concat(LongStream.of(5), LongStream.of(6)).forEach(appendNumbersTo(sb));
+        LongStream.concat(LongStream.of(5), LongStream.of(6)).forEach(appendLongNumbersTo(sb));
         assertEquals("5;6;", sb.toString());
     }
 
     @Test
     public void sortedStream() {
         StringBuilder sb = new StringBuilder();
-        LongStream.of(5, 7, 1, 2, 4, 3).sorted().forEach(appendNumbersTo(sb));
+        LongStream.of(5, 7, 1, 2, 4, 3).sorted().forEach(appendLongNumbersTo(sb));
         assertEquals("1;2;3;4;5;7;", sb.toString());
 
         sb.setLength(0);
-        LongStream.of(2, 3, 1).peek(appendNumbersTo(sb)).sorted().limit(2).map(n -> n + 10)
-                .forEach(appendNumbersTo(sb));
+        LongStream.of(2, 3, 1).peek(appendLongNumbersTo(sb)).sorted().limit(2).map(n -> n + 10)
+                .forEach(appendLongNumbersTo(sb));
         assertEquals("2;3;1;11;12;", sb.toString());
 
         sb.setLength(0);
-        LongStream.of(2, 3, 1).peek(appendNumbersTo(sb)).sorted().limit(0).forEach(appendNumbersTo(sb));
+        LongStream.of(2, 3, 1).peek(appendLongNumbersTo(sb)).sorted().limit(0).forEach(appendLongNumbersTo(sb));
         assertEquals("2;3;1;", sb.toString());
     }
 
@@ -288,7 +296,7 @@ public class LongStreamTest {
 
         sb.setLength(0);
         iterator = LongStream.of(1, 2, 3).iterator();
-        iterator.forEachRemaining(appendNumbersTo(sb));
+        iterator.forEachRemaining(appendLongNumbersTo(sb));
         assertEquals("1;2;3;", sb.toString());
     }
 
@@ -296,14 +304,14 @@ public class LongStreamTest {
     public void spliterator() {
         StringBuilder sb = new StringBuilder();
         Spliterator.OfLong spliterator = LongStream.of(1, 2, 3).spliterator();
-        while (spliterator.tryAdvance(appendNumbersTo(sb))) {
+        while (spliterator.tryAdvance(appendLongNumbersTo(sb))) {
             // continue
         }
         assertEquals("1;2;3;", sb.toString());
 
         sb.setLength(0);
         spliterator = LongStream.of(1, 2, 3).spliterator();
-        spliterator.forEachRemaining(appendNumbersTo(sb));
+        spliterator.forEachRemaining(appendLongNumbersTo(sb));
         assertEquals("1;2;3;", sb.toString());
     }
 
@@ -316,23 +324,11 @@ public class LongStreamTest {
     @Test
     public void range() {
         StringBuilder sb = new StringBuilder();
-        LongStream.range(1, 4).forEach(appendNumbersTo(sb));
+        LongStream.range(1, 4).forEach(appendLongNumbersTo(sb));
         assertEquals("1;2;3;", sb.toString());
 
         sb.setLength(0);
-        LongStream.rangeClosed(1, 4).forEach(appendNumbersTo(sb));
+        LongStream.rangeClosed(1, 4).forEach(appendLongNumbersTo(sb));
         assertEquals("1;2;3;4;", sb.toString());
-    }
-
-    private LongConsumer appendNumbersTo(StringBuilder sb) {
-        return n -> sb.append(n).append(';');
-    }
-
-    private IntConsumer appendIntNumbersTo(StringBuilder sb) {
-        return n -> sb.append(n).append(';');
-    }
-
-    private DoubleConsumer appendDoubleNumbersTo(StringBuilder sb) {
-        return n -> sb.append(n).append(';');
     }
 }

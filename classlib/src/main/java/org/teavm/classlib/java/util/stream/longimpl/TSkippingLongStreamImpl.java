@@ -30,7 +30,7 @@ public class TSkippingLongStreamImpl extends TSimpleLongStreamImpl {
 
     @Override
     public boolean next(LongPredicate consumer) {
-        if (remaining > 0) {
+        while (remaining > 0) {
             if (!sourceStream.next(e -> --remaining > 0)) {
                 return false;
             }

@@ -1,5 +1,5 @@
 /*
- *  Copyright 2017 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,23 +13,21 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.classlib.java.util.stream.impl;
+package org.teavm.classlib.java.util.stream.intimpl;
 
-import java.util.function.Predicate;
+import java.util.function.IntPredicate;
 
-public class TEmptyStreamImpl<T> extends TSimpleStreamImpl<T> {
-    @Override
-    public boolean next(Predicate<? super T> consumer) {
-        return false;
+public class TAnyMatchConsumer implements IntPredicate {
+    public boolean matched;
+    private IntPredicate predicate;
+
+    public TAnyMatchConsumer(IntPredicate predicate) {
+        this.predicate = predicate;
     }
 
     @Override
-    protected int estimateSize() {
-        return 0;
-    }
-
-    @Override
-    public long count() {
-        return 0;
+    public boolean test(int t) {
+        matched = predicate.test(t);
+        return !matched;
     }
 }

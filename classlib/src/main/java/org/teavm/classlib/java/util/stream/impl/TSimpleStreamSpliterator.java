@@ -20,6 +20,7 @@ import java.util.function.Consumer;
 
 public class TSimpleStreamSpliterator<T> implements Spliterator<T> {
     private TSimpleStreamImpl<T> stream;
+    private boolean foundItems;
     private boolean done;
 
     public TSimpleStreamSpliterator(TSimpleStreamImpl<T> stream) {
@@ -28,10 +29,15 @@ public class TSimpleStreamSpliterator<T> implements Spliterator<T> {
 
     @Override
     public void forEachRemaining(Consumer<? super T> action) {
-        stream.next(x -> {
-            action.accept(x);
-            return true;
-        });
+        while (true) {
+            boolean hasMore = stream.next(x -> {
+                action.accept(x);
+                return true;
+            });
+            if (!hasMore) {
+                break;
+            }
+        }
     }
 
     @Override
@@ -39,10 +45,14 @@ public class TSimpleStreamSpliterator<T> implements Spliterator<T> {
         if (done) {
             return false;
         }
-        done = !stream.next(x -> {
-            action.accept(x);
-            return false;
-        });
+        foundItems = false;
+        while (!foundItems && !done) {
+            done = !stream.next(x -> {
+                action.accept(x);
+                foundItems = true;
+                return false;
+            });
+        }
         return true;
     }
 
