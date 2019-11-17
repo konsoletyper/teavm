@@ -284,4 +284,8 @@ public final class TSystem extends TObject {
     public static String lineSeparator() {
         return "\n";
     }
+    
+    public static String getenv(String name) {
+        return null;
+    }
 }
