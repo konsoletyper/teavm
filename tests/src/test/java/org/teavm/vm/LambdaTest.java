@@ -18,6 +18,7 @@ package org.teavm.vm;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import java.io.Serializable;
+import java.util.function.IntPredicate;
 import java.util.function.Supplier;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -39,6 +40,23 @@ public class LambdaTest {
 
         assertEquals("OK", supplier.get());
         assertTrue("Supplier is expected to implement Serializable", supplier instanceof Serializable);
+    }
+
+    @Test
+    public void boxParameterToSupertype() {
+        assertEquals(".*.*.*.*.*", acceptIntPredicate(this::oddPredicate));
+    }
+
+    private String acceptIntPredicate(IntPredicate p) {
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < 10; ++i) {
+            sb.append(p.test(i) ? '*' : '.');
+        }
+        return sb.toString();
+    }
+
+    private boolean oddPredicate(Object o) {
+        return o instanceof Integer && ((Integer) o) % 2 != 0;
     }
 
     interface A {

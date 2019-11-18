@@ -748,6 +748,9 @@ public class ValueEmitter {
         if (!pe.hierarchy.isSuperType(targetClass, boxClassName, false)) {
             throw new EmitException("Can't convert " + this.type + " to " + targetClass);
         }
+        if (!result.type.equals(type)) {
+            result.type = type;
+        }
         return result;
     }
 
