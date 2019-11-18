@@ -37,5 +37,6 @@
     <module>async</module>
     <module>kotlin</module>
     <module>scala</module>
+    <module>gamepad</module>
   </modules>
 </project>
