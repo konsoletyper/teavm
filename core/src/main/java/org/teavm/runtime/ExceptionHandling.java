@@ -55,21 +55,23 @@ public final class ExceptionHandling {
                 while (location != null) {
                     MethodLocation methodLocation = location.method;
 
-                    Console.printString("    at ");
-                    if (methodLocation.className == null || methodLocation.methodName == null) {
-                        Console.printString("(Unknown method)");
-                    } else {
-                        Console.printString(methodLocation.className.value);
-                        Console.printString(".");
-                        Console.printString(methodLocation.methodName.value);
+                    if (methodLocation != null) {
+                        Console.printString("    at ");
+                        if (methodLocation.className == null || methodLocation.methodName == null) {
+                            Console.printString("(Unknown method)");
+                        } else {
+                            Console.printString(methodLocation.className.value);
+                            Console.printString(".");
+                            Console.printString(methodLocation.methodName.value);
+                        }
+                        Console.printString("(");
+                        if (methodLocation.fileName != null && location.lineNumber >= 0) {
+                            Console.printString(methodLocation.fileName.value);
+                            Console.printString(":");
+                            Console.printInt(location.lineNumber);
+                        }
+                        Console.printString(")\n");
                     }
-                    Console.printString("(");
-                    if (methodLocation.fileName != null && location.lineNumber >= 0) {
-                        Console.printString(methodLocation.fileName.value);
-                        Console.printString(":");
-                        Console.printInt(location.lineNumber);
-                    }
-                    Console.printString(")\n");
 
                     location = location.next;
                 }

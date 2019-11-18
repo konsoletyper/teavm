@@ -131,7 +131,7 @@ public class BufferedCodeWriter extends CodeWriter {
                 return;
             }
             if (isNewLine) {
-                if (pendingFileName != null || pendingLineNumber >= 0) {
+                if (pendingFileName != null && pendingLineNumber >= 0) {
                     printLineDirective(pendingFileName, pendingLineNumber);
                     pendingLineNumber = -1;
                     pendingFileName = null;
