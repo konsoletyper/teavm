@@ -109,6 +109,7 @@ public class JCLPlugin implements TeaVMPlugin {
 
         if (!isBootstrap()) {
             host.add(new ScalaHacks());
+            host.add(new KotlinHacks());
         }
 
         host.add(new NumericClassTransformer());

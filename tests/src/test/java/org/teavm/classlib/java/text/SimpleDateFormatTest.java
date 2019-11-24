@@ -159,4 +159,10 @@ public class SimpleDateFormatTest {
         calendar.setTime(date);
         return calendar.getTimeInMillis();
     }
+
+    @Test
+    public void fieldsParsedWithoutDelimiters() throws ParseException {
+        SimpleDateFormat format = new SimpleDateFormat("yyMMddHHmm", Locale.ENGLISH);
+        assertEquals(1403602380000L, getTimeWithoutZoneOffset(format.parse("1406240933")));
+    }
 }
