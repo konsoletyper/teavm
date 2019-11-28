@@ -27,7 +27,8 @@ import org.teavm.jso.gamepad.GamepadButton;
  * @author devnewton
  */
 public final class Application {
-    private static HTMLDocument document = Window.current().getDocument();
+
+    private static final HTMLDocument document = Window.current().getDocument();
 
     private Application() {
     }
@@ -42,14 +43,23 @@ public final class Application {
             if (null != pad) {
                 sb.append("<p>");
                 sb.append("Pad: ").append(pad.getId()).append("<br>");
-                sb.append("Axes: ").append(pad.getAxes()).append("<br>");
+
+                sb.append("Axes: ");
+                double[] axes = pad.getAxes();
+                for (int a = 0; a < axes.length; ++a) {
+                    sb.append(axes[a]).append(" ");
+                }
+                sb.append("<br>");
+
                 sb.append("Buttons pressed: ");
                 int buttonNum = 1;
                 for (GamepadButton button : pad.getButtons()) {
                     if (button.isPressed()) {
-                        sb.append(buttonNum++).append(" ");
+                        sb.append(buttonNum).append(" ");
                     }
+                    ++buttonNum;
                 }
+
                 sb.append("</p>");
             }
         }
