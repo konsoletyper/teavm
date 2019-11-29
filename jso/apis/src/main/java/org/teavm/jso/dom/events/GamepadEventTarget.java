@@ -30,7 +30,7 @@ public interface GamepadEventTarget extends EventTarget {
         addEventListener("gamepaddisconnected", listener);
     }
 
-    default void neglectlistenGamepadDisconnected(EventListener<GamepadEvent> listener) {
+    default void neglectGamepadDisconnected(EventListener<GamepadEvent> listener) {
         removeEventListener("gamepaddisconnected", listener);
     }
 
