@@ -16,6 +16,7 @@
 package org.teavm.jso.browser;
 
 import org.teavm.jso.JSBody;
+import org.teavm.jso.gamepad.Gamepad;
 import org.teavm.jso.geolocation.Geolocation;
 
 public final class Navigator {
@@ -36,4 +37,7 @@ public final class Navigator {
 
     @JSBody(script = "return navigator.languages;")
     public static native String[] getLanguages();
+    
+    @JSBody(script = "return navigator.getGamepads();")
+    public static native Gamepad[] getGamepads();
 }
