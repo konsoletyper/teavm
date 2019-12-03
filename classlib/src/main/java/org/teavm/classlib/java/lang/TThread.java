@@ -26,7 +26,7 @@ import org.teavm.runtime.Fiber;
 public class TThread extends TObject implements TRunnable {
     private static TThread mainThread = new TThread("main");
     private static TThread currentThread = mainThread;
-    private static long nextId = 1;
+    private static int nextId = 1;
     private static int activeCount = 1;
     private long id;
     private int priority;
