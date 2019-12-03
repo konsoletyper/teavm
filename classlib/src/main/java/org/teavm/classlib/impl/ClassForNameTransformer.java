@@ -121,14 +121,22 @@ public class ClassForNameTransformer implements ClassHolderTransformer {
                     representative = program.variableAt(nameRepresentatives[nameIndex]);
                 } else if (constant != null) {
                     if (hierarchy.getClassSource().get(constant) == null || !filterClassName(constant)) {
-                        continue;
+                        InvokeInstruction invokeException = new InvokeInstruction();
+                        invokeException.setType(InvocationType.SPECIAL);
+                        invokeException.setMethod(new MethodReference(ExceptionHelpers.class, "classNotFound",
+                                Class.class));
+                        invokeException.setReceiver(program.createVariable());
+                        invokeException.setLocation(invoke.getLocation());
+                        invoke.insertPrevious(invokeException);
+                        representative = invokeException.getReceiver();
+                    } else {
+                        ClassConstantInstruction classConstant = new ClassConstantInstruction();
+                        classConstant.setConstant(ValueType.object(constant));
+                        classConstant.setReceiver(program.createVariable());
+                        classConstant.setLocation(invoke.getLocation());
+                        invoke.insertPrevious(classConstant);
+                        representative = classConstant.getReceiver();
                     }
-                    ClassConstantInstruction classConstant = new ClassConstantInstruction();
-                    classConstant.setConstant(ValueType.object(constant));
-                    classConstant.setReceiver(program.createVariable());
-                    classConstant.setLocation(invoke.getLocation());
-                    invoke.insertPrevious(classConstant);
-                    representative = classConstant.getReceiver();
                 } else {
                     continue;
                 }
