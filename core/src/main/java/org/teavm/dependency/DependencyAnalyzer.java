@@ -81,7 +81,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             || shouldLog;
     static final boolean dependencyReport = System.getProperty("org.teavm.dependencyReport", "false").equals("true");
     private int classNameSuffix;
-    private ClassReaderSource unprocessedClassSource;
     private DependencyClassSource classSource;
     ClassReaderSource agentClassSource;
     private ClassLoader classLoader;
@@ -118,7 +117,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
 
     DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics, ReferenceCache referenceCache) {
-        unprocessedClassSource = classSource;
         this.diagnostics = diagnostics;
         this.referenceCache = referenceCache;
         this.classSource = new DependencyClassSource(classSource, diagnostics, incrementalCache);
@@ -170,30 +168,8 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
             type = new DependencyType(this, name, types.size());
             types.add(type);
             typeMap.put(name, type);
-
-            if (!name.startsWith("[") && !name.startsWith("~")) {
-               markSupertypesAsHavingSubtypes(name);
-            }
         }
         return type;
-    }
-
-    private void markSupertypesAsHavingSubtypes(String name) {
-        ClassReader cls = unprocessedClassSource.get(name);
-        if (cls == null) {
-            cls = classSource.get(name);
-            if (cls == null) {
-                return;
-            }
-        }
-
-        if (cls.getParent() != null) {
-            getType(cls.getParent()).subtypeExists = true;
-        }
-
-        for (String itf : cls.getInterfaces()) {
-            getType(itf).subtypeExists = true;
-        }
     }
 
     public DependencyNode createNode() {
@@ -773,7 +749,6 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         classSource.cleanup();
         agent.cleanup();
         listeners.clear();
-        unprocessedClassSource = null;
         classSource.innerHierarchy = null;
 
         agentClassSource = classSourcePacker.pack(classSource,
@@ -869,7 +844,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
                     ValueType.Object itemType = (ValueType.Object) ValueType.parse(superClass.substring(1));
                     result = new SuperArrayFilter(this, getSuperClassFilter(itemType.getClassName()));
                 } else {
-                    result = new ExactTypeFilter(superClass);
+                    result = new ExactTypeFilter(getType(superClass));
                 }
             } else {
                 if (superClass.equals("java.lang.Object")) {

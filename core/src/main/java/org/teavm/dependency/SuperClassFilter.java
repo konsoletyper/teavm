@@ -19,22 +19,16 @@ import java.util.BitSet;
 import org.teavm.common.OptionalPredicate;
 
 class SuperClassFilter implements DependencyTypeFilter {
-    private static final int[] EMPTY_ARRAY = new int[0];
-    private DependencyType superType;
     private OptionalPredicate<String> predicate;
     private BitSet knownTypes = new BitSet();
     private BitSet cache = new BitSet();
 
     SuperClassFilter(DependencyAnalyzer dependencyAnalyzer, DependencyType superType) {
-        this.superType = superType;
         predicate = dependencyAnalyzer.getClassHierarchy().getSuperclassPredicate(superType.getName());
     }
 
     @Override
     public boolean match(DependencyType type) {
-        if (!superType.subtypeExists) {
-            return superType.index == type.index;
-        }
         if (knownTypes.get(type.index)) {
             return cache.get(type.index);
         }
@@ -42,13 +36,5 @@ class SuperClassFilter implements DependencyTypeFilter {
         knownTypes.set(type.index);
         cache.set(type.index, result);
         return result;
-    }
-
-    @Override
-    public int[] tryExtract(BitSet types) {
-        if (superType.subtypeExists) {
-            return null;
-        }
-        return types.get(superType.index) ? new int[] { superType.index } : EMPTY_ARRAY;
     }
 }

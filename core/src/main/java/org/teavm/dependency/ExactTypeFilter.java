@@ -15,12 +15,17 @@
  */
 package org.teavm.dependency;
 
+import java.util.BitSet;
+
 class ExactTypeFilter implements DependencyTypeFilter {
+    private static final int[] EMPTY = new int[0];
     String typeName;
     int cache = -1;
+    int index;
 
-    ExactTypeFilter(String typeName) {
-        this.typeName = typeName;
+    ExactTypeFilter(DependencyType dependencyType) {
+        this.typeName = dependencyType.getName();
+        index = dependencyType.index;
     }
 
     @Override
@@ -33,5 +38,10 @@ class ExactTypeFilter implements DependencyTypeFilter {
             cache = type.index;
         }
         return result;
+    }
+
+    @Override
+    public int[] tryExtract(BitSet types) {
+        return types.get(index) ? new int[] { index } : EMPTY;
     }
 }
