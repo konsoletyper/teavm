@@ -339,7 +339,7 @@ public class CodeServlet extends HttpServlet {
                         resp.setStatus(HttpServletResponse.SC_OK);
                         resp.setCharacterEncoding("UTF-8");
                         resp.setHeader("Access-Control-Allow-Origin", "*");
-                        resp.setContentType("text/plain");
+                        resp.setContentType(chooseContentType(fileName));
                         resp.getOutputStream().write(fileContent);
                         resp.getOutputStream().flush();
                         log.debug("File " + path + " served as generated file");
@@ -365,11 +365,23 @@ public class CodeServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_NOT_FOUND);
     }
 
+    private String chooseContentType(String name) {
+        if (name.endsWith(".js")) {
+            return "application/javascript";
+        } else if (name.endsWith(".js.map")) {
+            return "application/json";
+        } else if (name.endsWith(".teavmdbg")) {
+            return "application/octet-stream";
+        } else {
+            return "text/plain";
+        }
+    }
+
     private void serveDeobfuscator(HttpServletResponse resp) throws IOException {
         ClassLoader loader = CodeServlet.class.getClassLoader();
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setCharacterEncoding("UTF-8");
-        resp.setContentType("text/plain");
+        resp.setContentType("application/javascript");
         try (InputStream input = loader.getResourceAsStream("teavm/devserver/deobfuscator.js")) {
             IOUtils.copy(input, resp.getOutputStream());
         }
