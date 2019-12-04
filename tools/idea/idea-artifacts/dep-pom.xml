@@ -286,6 +286,39 @@
             </configuration>
           </execution>
           <execution>
+            <id>platform-impl</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <file>dependencies/idea/lib/platform-impl.jar</file>
+              <artifactId>platform-impl</artifactId>
+            </configuration>
+          </execution>
+          <execution>
+            <id>java-api</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <file>dependencies/idea/lib/java-api.jar</file>
+              <artifactId>java-api</artifactId>
+            </configuration>
+          </execution>
+          <execution>
+            <id>java-impl</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <file>dependencies/idea/lib/java-impl.jar</file>
+              <artifactId>java-impl</artifactId>
+            </configuration>
+          </execution>
+          <execution>
             <id>jps-builders</id>
             <goals>
               <goal>install-file</goal>

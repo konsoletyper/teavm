@@ -90,6 +90,12 @@
     </dependency>
     <dependency>
       <groupId>org.teavm.idea</groupId>
+      <artifactId>platform-impl</artifactId>
+      <version>${idea.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm.idea</groupId>
       <artifactId>commons-logging</artifactId>
       <version>${idea.version}</version>
       <scope>provided</scope>
@@ -98,6 +104,20 @@
       <groupId>org.teavm.idea</groupId>
       <artifactId>teavm</artifactId>
       <version>${project.version}</version>
+    </dependency>
+
+
+    <dependency>
+      <groupId>org.teavm.idea</groupId>
+      <artifactId>java-api</artifactId>
+      <version>${idea.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm.idea</groupId>
+      <artifactId>java-impl</artifactId>
+      <version>${idea.version}</version>
+      <scope>provided</scope>
     </dependency>
 
     <dependency>
