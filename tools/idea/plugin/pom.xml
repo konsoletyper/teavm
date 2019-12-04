@@ -84,6 +84,12 @@
     </dependency>
     <dependency>
       <groupId>org.teavm.idea</groupId>
+      <artifactId>platform-api</artifactId>
+      <version>${idea.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm.idea</groupId>
       <artifactId>commons-logging</artifactId>
       <version>${idea.version}</version>
       <scope>provided</scope>
