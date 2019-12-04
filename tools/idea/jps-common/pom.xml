@@ -67,6 +67,12 @@
     </dependency>
     <dependency>
       <groupId>org.teavm.idea</groupId>
+      <artifactId>platform-api</artifactId>
+      <version>${idea.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.teavm.idea</groupId>
       <artifactId>jps-builders</artifactId>
       <version>${idea.version}</version>
       <scope>provided</scope>

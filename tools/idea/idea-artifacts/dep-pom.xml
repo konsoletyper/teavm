@@ -275,6 +275,17 @@
             </configuration>
           </execution>
           <execution>
+            <id>platform-api</id>
+            <goals>
+              <goal>install-file</goal>
+            </goals>
+            <phase>prepare-package</phase>
+            <configuration>
+              <file>dependencies/idea/lib/platform-api.jar</file>
+              <artifactId>platform-api</artifactId>
+            </configuration>
+          </execution>
+          <execution>
             <id>jps-builders</id>
             <goals>
               <goal>install-file</goal>
