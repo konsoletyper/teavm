@@ -18,13 +18,21 @@ package org.teavm.classlib.java.util.stream;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
+import com.carrotsearch.hppc.DoubleArrayList;
+import com.carrotsearch.hppc.IntArrayList;
+import com.carrotsearch.hppc.LongArrayList;
+import com.carrotsearch.hppc.cursors.DoubleCursor;
+import com.carrotsearch.hppc.cursors.IntCursor;
+import com.carrotsearch.hppc.cursors.LongCursor;
 import java.util.Iterator;
+import java.util.List;
 import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
 import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
 import java.util.function.LongConsumer;
 import java.util.function.Supplier;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.IntStream;
 import java.util.stream.LongStream;
@@ -49,6 +57,13 @@ final class Helper {
         Iterator<Integer> iter = streamSupplier.get().iterator();
         while (iter.hasNext()) {
             sb.append(iter.next()).append(';');
+        }
+        assertEquals(expectedText, sb.toString());
+
+        sb.setLength(0);
+        List<Integer> list = streamSupplier.get().collect(Collectors.toList());
+        for (Integer e : list) {
+            sb.append(e).append(';');
         }
         assertEquals(expectedText, sb.toString());
 
@@ -91,6 +106,13 @@ final class Helper {
         }
         assertEquals(expectedText, sb.toString());
 
+        sb.setLength(0);
+        IntArrayList list = streamSupplier.get().collect(IntArrayList::new, IntArrayList::add, IntArrayList::addAll);
+        for (IntCursor cursor : list) {
+            sb.append(cursor.value).append(';');
+        }
+        assertEquals(expectedText, sb.toString());
+
         assertEquals(expected.length, streamSupplier.get().count());
 
         if (expected.length > 0) {
@@ -130,6 +152,14 @@ final class Helper {
         }
         assertEquals(expectedText, sb.toString());
 
+        sb.setLength(0);
+        LongArrayList list = streamSupplier.get().collect(LongArrayList::new, LongArrayList::add,
+                LongArrayList::addAll);
+        for (LongCursor cursor : list) {
+            sb.append(cursor.value).append(';');
+        }
+        assertEquals(expectedText, sb.toString());
+
         assertEquals(expected.length, streamSupplier.get().count());
 
         if (expected.length > 0) {
@@ -166,6 +196,14 @@ final class Helper {
         PrimitiveIterator.OfDouble iter = streamSupplier.get().iterator();
         while (iter.hasNext()) {
             sb.append(iter.next()).append(';');
+        }
+        assertEquals(expectedText, sb.toString());
+
+        sb.setLength(0);
+        DoubleArrayList list = streamSupplier.get().collect(DoubleArrayList::new, DoubleArrayList::add,
+                DoubleArrayList::addAll);
+        for (DoubleCursor cursor : list) {
+            sb.append(cursor.value).append(';');
         }
         assertEquals(expectedText, sb.toString());
 

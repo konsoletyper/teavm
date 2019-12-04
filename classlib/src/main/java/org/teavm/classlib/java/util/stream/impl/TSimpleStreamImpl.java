@@ -212,10 +212,15 @@ public abstract class TSimpleStreamImpl<T> implements TStream<T> {
     public <R, A> R collect(TCollector<? super T, A, R> collector) {
         A collection = collector.supplier().get();
         BiConsumer<A, ? super T> accumulator = collector.accumulator();
-        next(e -> {
-            accumulator.accept(collection, e);
-            return true;
-        });
+        while (true) {
+            boolean hasMore = next(e -> {
+                accumulator.accept(collection, e);
+                return true;
+            });
+            if (!hasMore) {
+                break;
+            }
+        }
         return collector.finisher().apply(collection);
     }
 
