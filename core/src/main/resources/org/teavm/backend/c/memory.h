@@ -6,7 +6,7 @@ extern void* teavm_gc_gcStorageAddress;
 extern int32_t teavm_gc_gcStorageSize;
 extern void* teavm_gc_regionsAddress;
 extern void* teavm_gc_cardTable;
-#define teavm_gc_regionSize INT32_C(8192)
+#define teavm_gc_regionSize INT32_C(2048)
 extern int32_t teavm_gc_regionMaxCount;
 extern int64_t teavm_gc_availableBytes;
 extern int64_t teavm_gc_minAvailableBytes;
