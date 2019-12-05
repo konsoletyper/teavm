@@ -30,6 +30,7 @@ import org.teavm.model.instructions.AbstractInstructionVisitor;
 import org.teavm.model.instructions.ArrayElementType;
 import org.teavm.model.instructions.AssignInstruction;
 import org.teavm.model.instructions.CastInstruction;
+import org.teavm.model.instructions.ClassConstantInstruction;
 import org.teavm.model.instructions.CloneArrayInstruction;
 import org.teavm.model.instructions.ConstructArrayInstruction;
 import org.teavm.model.instructions.ConstructInstruction;
@@ -40,8 +41,10 @@ import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.instructions.MonitorEnterInstruction;
 import org.teavm.model.instructions.MonitorExitInstruction;
 import org.teavm.model.instructions.NullCheckInstruction;
+import org.teavm.model.instructions.NullConstantInstruction;
 import org.teavm.model.instructions.PutElementInstruction;
 import org.teavm.model.instructions.PutFieldInstruction;
+import org.teavm.model.instructions.StringConstantInstruction;
 import org.teavm.model.util.DominatorWalker;
 import org.teavm.model.util.DominatorWalkerCallback;
 import org.teavm.model.util.DominatorWalkerContext;
@@ -61,13 +64,18 @@ public class WriteBarrierInsertion {
         if (program.basicBlockCount() == 0) {
             return;
         }
-        new DominatorWalker(program).walk(new WalkerCallbackImpl());
+        new DominatorWalker(program).walk(new WalkerCallbackImpl(program.variableCount()));
     }
 
     class WalkerCallbackImpl extends AbstractInstructionVisitor implements DominatorWalkerCallback<State> {
         private DominatorWalkerContext context;
+        private boolean[] constantVariables;
         IntHashSet installedBarriers = new IntHashSet();
         State state;
+
+        WalkerCallbackImpl(int variableCount) {
+            constantVariables = new boolean[variableCount];
+        }
 
         @Override
         public void setContext(DominatorWalkerContext context) {
@@ -109,9 +117,24 @@ public class WriteBarrierInsertion {
         }
 
         @Override
+        public void visit(NullConstantInstruction insn) {
+            constantVariables[insn.getReceiver().getIndex()] = true;
+        }
+
+        @Override
+        public void visit(ClassConstantInstruction insn) {
+            constantVariables[insn.getReceiver().getIndex()] = true;
+        }
+
+        @Override
+        public void visit(StringConstantInstruction insn) {
+            constantVariables[insn.getReceiver().getIndex()] = true;
+        }
+
+        @Override
         public void visit(PutFieldInstruction insn) {
             if (insn.getInstance() != null && isManagedReferenceType(insn.getFieldType())) {
-                installBarrier(insn, insn.getInstance());
+                installBarrier(insn, insn.getInstance(), insn.getValue());
             }
         }
 
@@ -169,7 +192,7 @@ public class WriteBarrierInsertion {
         @Override
         public void visit(PutElementInstruction insn) {
             if (insn.getType() == ArrayElementType.OBJECT) {
-                installBarrier(insn, insn.getArray());
+                installBarrier(insn, insn.getArray(), insn.getValue());
             }
         }
 
@@ -192,9 +215,15 @@ public class WriteBarrierInsertion {
             if (installedBarriers.contains(from.getIndex())) {
                 markAsInstalled(to.getIndex());
             }
+            if (constantVariables[from.getIndex()]) {
+                constantVariables[to.getIndex()] = true;
+            }
         }
 
-        private void installBarrier(Instruction instruction, Variable variable) {
+        private void installBarrier(Instruction instruction, Variable variable, Variable value) {
+            if (constantVariables[value.getIndex()]) {
+                return;
+            }
             if (markAsInstalled(variable.getIndex())) {
                 InvokeInstruction invoke = new InvokeInstruction();
                 invoke.setType(InvocationType.SPECIAL);
