@@ -17,6 +17,7 @@ package org.teavm.classlib.java.util;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 public class TSpliterators {
@@ -53,10 +54,9 @@ public class TSpliterators {
 
             @Override
             public boolean tryAdvance(IntConsumer action) {
-                index++;
-
                 if (index < toIndex) {
                     action.accept(array[index]);
+                    index++;
                     return true;
                 } else {
                     return false;
@@ -67,11 +67,31 @@ public class TSpliterators {
 
     public static <T> TSpliterator<T> spliterator(Iterator<? extends T> iterator,
                                                   long size, int characteristics) {
-        TArrayList<T> list = new TArrayList<T>();
-        while (iterator.hasNext()) {
-            list.add((T) iterator.next());
-        }
+        return new TSpliterator<T>() {
+            @Override
+            public boolean tryAdvance(Consumer<? super T> action) {
+                if (iterator.hasNext()) {
+                    action.accept(iterator.next());
+                    return true;
+                } else {
+                    return false;
+                }
+            }
 
-        return list.spliterator();
+            @Override
+            public TSpliterator<T> trySplit() {
+                return this;
+            }
+
+            @Override
+            public long estimateSize() {
+                return size;
+            }
+
+            @Override
+            public int characteristics() {
+                return characteristics;
+            }
+        };
     }
 }
