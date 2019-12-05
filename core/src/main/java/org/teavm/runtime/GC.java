@@ -212,6 +212,7 @@ public final class GC {
             if (size <= ptr.value.size) {
                 return true;
             }
+            ptr = Structure.add(FreeChunkHolder.class, ptr, 1);
         }
         return false;
     }
