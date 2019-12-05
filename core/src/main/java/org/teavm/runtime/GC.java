@@ -167,8 +167,13 @@ public final class GC {
     private static void collectGarbageImpl(int size) {
         doCollectGarbage();
 
+        long minRequestedSize = 0;
+        if (!hasAvailableChunk(size)) {
+            minRequestedSize = computeMinRequestedSize(size);
+        }
+
         if (!isFullGC) {
-            if (++youngGCCount >= 8 && isAboutToExpand(size)) {
+            if (++youngGCCount >= 8 && isAboutToExpand(minRequestedSize)) {
                 triggerFullGC();
                 doCollectGarbage();
                 youngGCCount = 0;
@@ -178,10 +183,6 @@ public final class GC {
         }
         isFullGC = false;
 
-        long minRequestedSize = 0;
-        if (!hasAvailableChunk(size)) {
-            minRequestedSize = computeMinRequestedSize(size);
-        }
         resizeHeapIfNecessary(minRequestedSize);
         currentChunk = currentChunkPointer.value;
         currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
