@@ -20,16 +20,18 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
-public class TSpliteratorsTest {
+public class SpliteratorsTest {
 
     @Test
-    public void testIntSpliterator() {
+    public void intSpliterator() {
         int[] values = {1, 2, 3, 4, 5};
 
         TSpliterator.OfInt spliterator = TSpliterators.spliterator(values, 0, 5, 0);
@@ -48,7 +50,7 @@ public class TSpliteratorsTest {
     }
 
     @Test
-    public void testIntSpliteratorWithSubRange() {
+    public void intSpliteratorWithSubRange() {
         int[] values = {1, 2, 3, 4, 5};
 
         TSpliterator.OfInt spliterator = TSpliterators.spliterator(values, 1, 4, 0);
@@ -65,12 +67,32 @@ public class TSpliteratorsTest {
     }
 
     @Test
-    public void testSpliteratorFromIterator() {
+    public void spliteratorFromIterator() {
         List<Integer> values = Arrays.asList(1, 2, 3);
 
         TSpliterator<Integer> spliterator = TSpliterators.spliterator(values.iterator(),
             values.size(), 0);
 
         assertEquals(3L, spliterator.estimateSize());
+    }
+
+    @Test
+    public void spliteratorFromObjectArray() {
+        Object[] array = {1, 2, 3, 4};
+
+        TSpliterator<Integer> spliterator = TSpliterators.spliterator(array, 0);
+
+        List<Object> collected = new ArrayList<>();
+        Consumer<Object> collector = value -> collected.add(value);
+
+        spliterator.tryAdvance(collector);
+        spliterator.tryAdvance(collector);
+        array[2] = 9;
+        spliterator.tryAdvance(collector);
+        spliterator.tryAdvance(collector);
+        spliterator.tryAdvance(collector);
+
+        assertArrayEquals(new Object[] {1, 2, 9, 4}, array);
+        assertEquals(4L, spliterator.estimateSize());
     }
 }

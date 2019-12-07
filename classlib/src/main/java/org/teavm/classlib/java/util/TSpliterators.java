@@ -26,12 +26,35 @@ public class TSpliterators {
     }
 
     public static <T> TSpliterator<T> spliterator(Object[] array, int additionalCharacteristics) {
-        TArrayList<T> list = new TArrayList<T>();
-        for (Object element : array) {
-            list.add((T) element);
-        }
+        return new TSpliterator<T>() {
+            private int index = 0;
 
-        return list.spliterator();
+            @Override
+            public boolean tryAdvance(Consumer<? super T> action) {
+                if (index >= array.length) {
+                    return false;
+                }
+
+                action.accept((T) array[index]);
+                index++;
+                return true;
+            }
+
+            @Override
+            public TSpliterator<T> trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return array.length;
+            }
+
+            @Override
+            public int characteristics() {
+                return additionalCharacteristics | TSpliterator.SIZED;
+            }
+        };
     }
 
     public static <T> TSpliterator<T> spliterator(Collection<? extends T> c, int characteristics) {
@@ -80,7 +103,7 @@ public class TSpliterators {
 
             @Override
             public TSpliterator<T> trySplit() {
-                return this;
+                return null;
             }
 
             @Override
