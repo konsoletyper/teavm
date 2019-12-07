@@ -27,7 +27,7 @@ public class TSpliterators {
 
     public static <T> TSpliterator<T> spliterator(Object[] array, int additionalCharacteristics) {
         return new TSpliterator<T>() {
-            private int index = 0;
+            private int index;
 
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {
