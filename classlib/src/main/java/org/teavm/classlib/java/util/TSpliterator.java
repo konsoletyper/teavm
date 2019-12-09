@@ -57,7 +57,8 @@ public interface TSpliterator<T> {
         throw new IllegalStateException();
     }
 
-    public interface OfPrimitive<T, C, S extends OfPrimitive<T, C, S>> {
+    interface OfPrimitive<T, C, S extends OfPrimitive<T, C, S>> extends TSpliterator<T> {
+        @Override
         S trySplit();
 
         boolean tryAdvance(C action);
@@ -69,11 +70,13 @@ public interface TSpliterator<T> {
         }
     }
 
-    public interface OfInt extends OfPrimitive<Integer, IntConsumer, OfInt> {
+    interface OfInt extends OfPrimitive<Integer, IntConsumer, OfInt> {
+        @Override
         default boolean tryAdvance(Consumer<? super Integer> action) {
             return tryAdvance((IntConsumer) action::accept);
         }
 
+        @Override
         default void forEachRemaining(Consumer<? super Integer> action) {
             while (tryAdvance(action)) {
                 // continue
@@ -81,11 +84,13 @@ public interface TSpliterator<T> {
         }
     }
 
-    public interface OfLong extends OfPrimitive<Long, LongConsumer, OfLong> {
+    interface OfLong extends OfPrimitive<Long, LongConsumer, OfLong> {
+        @Override
         default boolean tryAdvance(Consumer<? super Long> action) {
             return tryAdvance((LongConsumer) action::accept);
         }
 
+        @Override
         default void forEachRemaining(Consumer<? super Long> action) {
             while (tryAdvance(action)) {
                 // continue
@@ -93,11 +98,13 @@ public interface TSpliterator<T> {
         }
     }
 
-    public interface OfDouble extends OfPrimitive<Double, DoubleConsumer, OfDouble> {
+    interface OfDouble extends OfPrimitive<Double, DoubleConsumer, OfDouble> {
+        @Override
         default boolean tryAdvance(Consumer<? super Double> action) {
             return tryAdvance((DoubleConsumer) action::accept);
         }
 
+        @Override
         default void forEachRemaining(Consumer<? super Double> action) {
             while (tryAdvance(action)) {
                 // continue

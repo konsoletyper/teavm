@@ -35,8 +35,9 @@ public class TSpliterators {
                     return false;
                 }
 
-                action.accept((T) array[index]);
-                index++;
+                @SuppressWarnings("unchecked")
+                T e = (T) array[index++];
+                action.accept(e);
                 return true;
             }
 
@@ -47,7 +48,7 @@ public class TSpliterators {
 
             @Override
             public long estimateSize() {
-                return array.length;
+                return array.length - index;
             }
 
             @Override
@@ -57,8 +58,9 @@ public class TSpliterators {
         };
     }
 
+    @SuppressWarnings("unchecked")
     public static <T> TSpliterator<T> spliterator(Collection<? extends T> c, int characteristics) {
-        return ((TCollection) c).spliterator();
+        return ((TCollection<T>) c).spliterator();
     }
 
     public static TSpliterator.OfInt spliterator(int[] array, int additionalCharacteristics) {
@@ -66,7 +68,7 @@ public class TSpliterators {
     }
 
     public static TSpliterator.OfInt spliterator(int[] array, int fromIndex, int toIndex,
-                                                 int additionalCharacteristics) {
+            int additionalCharacteristics) {
         return new TSpliterator.OfInt() {
             int index = fromIndex;
 
@@ -78,18 +80,26 @@ public class TSpliterators {
             @Override
             public boolean tryAdvance(IntConsumer action) {
                 if (index < toIndex) {
-                    action.accept(array[index]);
-                    index++;
+                    action.accept(array[index++]);
                     return true;
                 } else {
                     return false;
                 }
             }
+
+            @Override
+            public long estimateSize() {
+                return toIndex - index;
+            }
+
+            @Override
+            public int characteristics() {
+                return TSpliterator.SIZED;
+            }
         };
     }
 
-    public static <T> TSpliterator<T> spliterator(Iterator<? extends T> iterator,
-                                                  long size, int characteristics) {
+    public static <T> TSpliterator<T> spliterator(Iterator<? extends T> iterator, long size, int characteristics) {
         return new TSpliterator<T>() {
             @Override
             public boolean tryAdvance(Consumer<? super T> action) {

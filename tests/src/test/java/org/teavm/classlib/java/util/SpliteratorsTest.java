@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2019 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -23,46 +23,59 @@ import static org.junit.Assert.assertTrue;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Spliterator;
+import java.util.Spliterators;
 import java.util.function.Consumer;
 import java.util.function.IntConsumer;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class SpliteratorsTest {
 
     @Test
     public void intSpliterator() {
-        int[] values = {1, 2, 3, 4, 5};
+        int[] values = { 1, 2, 3, 4, 5 };
 
-        TSpliterator.OfInt spliterator = TSpliterators.spliterator(values, 0, 5, 0);
+        Spliterator.OfInt spliterator = Spliterators.spliterator(values, 0, 5, 0);
+        assertEquals(5L, spliterator.estimateSize());
 
         List<Integer> collected = new ArrayList<>();
-        IntConsumer collector = value -> collected.add((Integer) value);
+        IntConsumer collector = collected::add;
 
         assertTrue(spliterator.tryAdvance(collector));
+
+        assertEquals(4L, spliterator.estimateSize());
+        assertEquals(Arrays.asList(1), collected);
+
         assertTrue(spliterator.tryAdvance(collector));
         assertTrue(spliterator.tryAdvance(collector));
         assertTrue(spliterator.tryAdvance(collector));
         assertTrue(spliterator.tryAdvance(collector));
         assertFalse(spliterator.tryAdvance(collector));
 
+        assertEquals(0L, spliterator.estimateSize());
         assertEquals(Arrays.asList(1, 2, 3, 4, 5), collected);
     }
 
     @Test
     public void intSpliteratorWithSubRange() {
-        int[] values = {1, 2, 3, 4, 5};
+        int[] values = { 1, 2, 3, 4, 5 };
 
-        TSpliterator.OfInt spliterator = TSpliterators.spliterator(values, 1, 4, 0);
+        Spliterator.OfInt spliterator = Spliterators.spliterator(values, 1, 4, 0);
+        assertEquals(3L, spliterator.estimateSize());
 
         List<Integer> collected = new ArrayList<>();
-        IntConsumer collector = value -> collected.add((Integer) value);
+        IntConsumer collector = collected::add;
 
         assertTrue(spliterator.tryAdvance(collector));
         assertTrue(spliterator.tryAdvance(collector));
         assertTrue(spliterator.tryAdvance(collector));
         assertFalse(spliterator.tryAdvance(collector));
 
+        assertEquals(0L, spliterator.estimateSize());
         assertEquals(Arrays.asList(2, 3, 4), collected);
     }
 
@@ -70,20 +83,31 @@ public class SpliteratorsTest {
     public void spliteratorFromIterator() {
         List<Integer> values = Arrays.asList(1, 2, 3);
 
-        TSpliterator<Integer> spliterator = TSpliterators.spliterator(values.iterator(),
-            values.size(), 0);
+        Spliterator<Integer> spliterator = Spliterators.spliterator(values.iterator(), values.size(), 0);
 
         assertEquals(3L, spliterator.estimateSize());
+
+        List<Integer> collected = new ArrayList<>();
+        Consumer<Integer> collector = collected::add;
+
+        assertTrue(spliterator.tryAdvance(collector));
+        assertTrue(spliterator.tryAdvance(collector));
+        assertTrue(spliterator.tryAdvance(collector));
+        assertFalse(spliterator.tryAdvance(collector));
+
+        assertEquals(3L, spliterator.estimateSize());
+        assertEquals(Arrays.asList(1, 2, 3), collected);
     }
 
     @Test
     public void spliteratorFromObjectArray() {
-        Object[] array = {1, 2, 3, 4};
+        Object[] array = { 1, 2, 3, 4 };
 
-        TSpliterator<Integer> spliterator = TSpliterators.spliterator(array, 0);
+        Spliterator<Integer> spliterator = Spliterators.spliterator(array, 0);
+        assertEquals(4L, spliterator.estimateSize());
 
         List<Object> collected = new ArrayList<>();
-        Consumer<Object> collector = value -> collected.add(value);
+        Consumer<Object> collector = collected::add;
 
         spliterator.tryAdvance(collector);
         spliterator.tryAdvance(collector);
@@ -92,7 +116,7 @@ public class SpliteratorsTest {
         spliterator.tryAdvance(collector);
         spliterator.tryAdvance(collector);
 
-        assertArrayEquals(new Object[] {1, 2, 9, 4}, array);
-        assertEquals(4L, spliterator.estimateSize());
+        assertArrayEquals(new Object[] { 1, 2, 9, 4 }, collected.toArray());
+        assertEquals(0, spliterator.estimateSize());
     }
 }
