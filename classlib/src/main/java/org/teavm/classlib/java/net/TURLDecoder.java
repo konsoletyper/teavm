@@ -33,6 +33,15 @@ public final class TURLDecoder {
     public static String decode(String s) {
         return decode(s, StandardCharsets.UTF_8);
     }
+    
+    public static String decode(String s, Charset enc) {
+        try {
+            return decode(s, enc.displayName());
+        } catch (UnsupportedEncodingException e) {
+            // Cannot happen as the provided character encoding is known to be available.
+            throw new AssertionError(e);
+        }
+    }
 
     public static String decode(String s, String enc) throws UnsupportedEncodingException {
         Objects.requireNonNull(enc);

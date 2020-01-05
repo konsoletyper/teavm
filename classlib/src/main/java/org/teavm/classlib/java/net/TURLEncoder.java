@@ -51,6 +51,15 @@ public final class TURLEncoder {
         }
         return buf.toString();
     }
+    
+    public static String encode(String s, Charset enc) {
+        try {
+            return encode(s, enc.displayName());
+        } catch (UnsupportedEncodingException e) {
+            // Cannot happen as the provided character encoding is known to be available.
+            throw new AssertionError(e);
+        }
+    }
 
     public static String encode(String s, String enc) throws UnsupportedEncodingException {
         Objects.requireNonNull(s);
