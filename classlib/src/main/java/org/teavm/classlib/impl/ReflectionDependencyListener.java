@@ -314,6 +314,9 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                 case INTEGER:
                     boxMethod = new MethodReference(Integer.class, "valueOf", int.class, Integer.class);
                     break;
+                case LONG:
+                    boxMethod = new MethodReference(Long.class, "valueOf", long.class, Long.class);
+                    break;
                 case FLOAT:
                     boxMethod = new MethodReference(Float.class, "valueOf", float.class, Float.class);
                     break;
@@ -350,6 +353,9 @@ public class ReflectionDependencyListener extends AbstractDependencyListener {
                     break;
                 case INTEGER:
                     unboxMethod = new MethodReference(Integer.class, "intValue", int.class);
+                    break;
+                case LONG:
+                    unboxMethod = new MethodReference(Long.class, "longValue", long.class);
                     break;
                 case FLOAT:
                     unboxMethod = new MethodReference(Float.class, "floatValue", float.class);

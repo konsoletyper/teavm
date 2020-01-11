@@ -36,6 +36,7 @@ public class MethodTest {
 
         assertEquals(""
                 + "java.lang.Object Foo.baz();"
+                + "public void Foo.accept(long);"
                 + "public void Foo.bar(java.lang.Object);",
                 text);
     }
@@ -46,7 +47,7 @@ public class MethodTest {
 
         String text = collectMethods(Foo.class.getMethods());
 
-        assertEquals("public void Foo.bar(java.lang.Object);", text);
+        assertEquals("public void Foo.accept(long);public void Foo.bar(java.lang.Object);", text);
     }
 
     @Test
@@ -94,6 +95,7 @@ public class MethodTest {
     private void callMethods() {
         new Foo().bar(null);
         new Foo().baz();
+        new Foo().accept(0);
         new SuperClass().f();
         new SubClass().g();
         new SuperClassWithBridge().f();
@@ -117,6 +119,10 @@ public class MethodTest {
 
     static class Foo {
         Object value;
+
+        @Reflectable
+        public void accept(long l) {
+        }
 
         @Reflectable
         public void bar(Object value) {

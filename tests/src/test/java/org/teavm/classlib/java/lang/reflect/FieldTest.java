@@ -40,6 +40,7 @@ public class FieldTest {
                 + "java.lang.String org.teavm.classlib.java.lang.reflect.FieldTest$ReflectableType.d;"
                 + "long org.teavm.classlib.java.lang.reflect.FieldTest$ReflectableType.e;"
                 + "private static short org.teavm.classlib.java.lang.reflect.FieldTest$ReflectableType.f;"
+                + "long org.teavm.classlib.java.lang.reflect.FieldTest$ReflectableType.g;"
                 + "static boolean org.teavm.classlib.java.lang.reflect.FieldTest$ReflectableType.initialized;",
                 sb.toString());
     }
@@ -50,6 +51,14 @@ public class FieldTest {
         Field field = instance.getClass().getDeclaredField("a");
         Object result = field.get(instance);
         assertEquals(23, result);
+    }
+
+    @Test
+    public void fieldReadLong() throws NoSuchFieldException, IllegalAccessException {
+        ReflectableType instance = new ReflectableType();
+        Field field = instance.getClass().getDeclaredField("g");
+        Object result = field.get(instance);
+        assertEquals(Long.MAX_VALUE, result);
     }
 
     @Test
@@ -116,10 +125,9 @@ public class FieldTest {
         @Reflectable private boolean b;
         @Reflectable Object c;
         @Reflectable String d;
-
         long e;
-
         @Reflectable private static short f = 99;
+        @Reflectable long g;
 
         static boolean initialized = true;
 
@@ -129,6 +137,7 @@ public class FieldTest {
             c = "foo";
             d = "bar";
             e = 42;
+            g = Long.MAX_VALUE;
         }
     }
 
