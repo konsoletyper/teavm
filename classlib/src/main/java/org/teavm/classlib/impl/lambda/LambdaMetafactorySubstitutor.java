@@ -15,8 +15,10 @@
  */
 package org.teavm.classlib.impl.lambda;
 
+import java.lang.invoke.SerializedLambda;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
@@ -58,7 +60,8 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         MethodHandle implMethod = callSite.getBootstrapArguments().get(1).getMethodHandle();
         ValueType[] instantiatedMethodType = callSite.getBootstrapArguments().get(2).getMethodType();
 
-        String samName = ((ValueType.Object) callSite.getCalledMethod().getResultType()).getClassName();
+        ValueType.Object lambdaInterfaceType = (ValueType.Object) callSite.getCalledMethod().getResultType();
+        String samName = lambdaInterfaceType.getClassName();
         ClassHierarchy hierarchy = callSite.getAgent().getClassHierarchy();
         ClassReader samClass = hierarchy.getClassSource().get(samName);
 
@@ -128,6 +131,19 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
 
             if ((flags & FLAG_SERIALIZABLE) != 0) {
                 implementor.getInterfaces().add("java.io.Serializable");
+                String functionInterfaceMethodName = callSite.getCalledMethod().getName();
+                addWriteReplaceMethod(
+                    callerPe.getCurrentLocation(),
+                    hierarchy,
+                    implementor,
+                    ValueType.object(callSite.getCaller().getClassName()),
+                    lambdaInterfaceType,
+                    new MethodDescriptor(functionInterfaceMethodName, samMethodType),
+                    implMethod.getKind(),
+                    ValueType.object(implMethod.getClassName()),
+                    new MethodDescriptor(implMethod.getName(), implMethod.signature()),
+                    new MethodDescriptor(functionInterfaceMethodName, instantiatedMethodType)
+                );
             }
 
             int bootstrapArgIndex = 4;
@@ -374,5 +390,52 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
         }
 
         implementor.addMethod(bridge);
+    }
+
+    private static void addWriteReplaceMethod(
+        TextLocation location,
+        ClassHierarchy classHierarchy,
+        ClassHolder lambdaClassDefinition,
+        ValueType.Object capturingClass,
+        ValueType.Object functionalInterfaceClass,
+        MethodDescriptor functionalInterfaceMethodDescriptor,
+        MethodHandleType implMethodKind,
+        ValueType.Object implClass,
+        MethodDescriptor implMethodDescriptor,
+        MethodDescriptor instantiatedMethodDescriptor
+    ) {
+        MethodHolder writeReplace =
+                new MethodHolder("writeReplace", new ValueType.Object(SerializedLambda.class.getName()));
+        writeReplace.setLevel(AccessLevel.PRIVATE);
+        writeReplace.getModifiers().add(ElementModifier.FINAL);
+        ProgramEmitter programEmitter = ProgramEmitter.create(writeReplace, classHierarchy);
+        programEmitter.setCurrentLocation(location);
+        Collection<FieldHolder> fields = lambdaClassDefinition.getFields();
+        ValueEmitter capturedParametersArray = programEmitter.constructArray(Object.class, fields.size());
+        ValueEmitter lambdaThis = programEmitter.var(0, lambdaClassDefinition);
+        int index = 0;
+        for (FieldHolder fieldHolder : fields) {
+            ValueType fieldType = fieldHolder.getType();
+            ValueEmitter fieldValue = lambdaThis.getField(fieldHolder.getName(), fieldType);
+            if (fieldType instanceof ValueType.Primitive) {
+                fieldValue = fieldValue.cast(((ValueType.Primitive) fieldType).getBoxedType());
+            }
+            capturedParametersArray.setElement(index++, fieldValue);
+        }
+        ValueEmitter newSerializedLambda = programEmitter.construct(
+            SerializedLambda.class,
+            programEmitter.constant(capturingClass),
+            programEmitter.constant(functionalInterfaceClass.getClassName().replace('.', '/')),
+            programEmitter.constant(functionalInterfaceMethodDescriptor.getName()),
+            programEmitter.constant(functionalInterfaceMethodDescriptor.signatureToString()),
+            programEmitter.constant(implMethodKind.ordinal()),
+            programEmitter.constant(implClass.getClassName().replace('.', '/')),
+            programEmitter.constant(implMethodDescriptor.getName()),
+            programEmitter.constant(implMethodDescriptor.signatureToString()),
+            programEmitter.constant(instantiatedMethodDescriptor.signatureToString()),
+            capturedParametersArray
+        );
+        newSerializedLambda.returnValue();
+        lambdaClassDefinition.addMethod(writeReplace);
     }
 }

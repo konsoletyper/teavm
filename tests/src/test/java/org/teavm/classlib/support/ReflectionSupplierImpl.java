@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.support;
 
+import java.lang.invoke.SerializedLambda;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -44,6 +45,10 @@ public class ReflectionSupplierImpl implements ReflectionSupplier {
         Set<MethodDescriptor> methods = new HashSet<>();
         for (MethodReader method : cls.getMethods()) {
             if (method.getAnnotations().get(Reflectable.class.getName()) != null) {
+                methods.add(method.getDescriptor());
+            } else if ("writeReplace".equals(method.getName())
+                    && method.getResultType().isObject(SerializedLambda.class)) {
+                //Required by org.teavm.classlib.java.lang.invoke.SerializedLambdaTest.
                 methods.add(method.getDescriptor());
             }
         }
