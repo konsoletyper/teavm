@@ -66,7 +66,6 @@ public interface HTMLInputElement extends HTMLElement {
     @JSProperty
     void setValue(String value);
     
-    @JSProperty
     void setCustomValidity(String validationFailure);
 
     void select();
