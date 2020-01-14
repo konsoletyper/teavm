@@ -428,7 +428,7 @@ public class LambdaMetafactorySubstitutor implements BootstrapMethodSubstitutor 
             programEmitter.constant(functionalInterfaceClass.getClassName().replace('.', '/')),
             programEmitter.constant(functionalInterfaceMethodDescriptor.getName()),
             programEmitter.constant(functionalInterfaceMethodDescriptor.signatureToString()),
-            programEmitter.constant(implMethodKind.ordinal()),
+            programEmitter.constant(implMethodKind.getReferenceKind()),
             programEmitter.constant(implClass.getClassName().replace('.', '/')),
             programEmitter.constant(implMethodDescriptor.getName()),
             programEmitter.constant(implMethodDescriptor.signatureToString()),
