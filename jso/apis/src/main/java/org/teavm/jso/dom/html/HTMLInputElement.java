@@ -67,4 +67,10 @@ public interface HTMLInputElement extends HTMLElement {
     void setValue(String value);
 
     void select();
+
+    @JSProperty
+    String getPlaceholder();
+
+    @JSProperty
+    void setPlaceholder(String value);
 }
