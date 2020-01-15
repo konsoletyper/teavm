@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2020 adam.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,26 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model;
+package org.teavm.classlib.java.lang.invoke;
 
-public enum MethodHandleType {
-    GET_FIELD(1),
-    GET_STATIC_FIELD(2),
-    PUT_FIELD(3),
-    PUT_STATIC_FIELD(4),
-    INVOKE_VIRTUAL(5),
-    INVOKE_STATIC(6),
-    INVOKE_SPECIAL(7),
-    INVOKE_CONSTRUCTOR(8),
-    INVOKE_INTERFACE(9),
-    ;
-    private final int referenceKind;
-
-    MethodHandleType(int referenceKind) {
-        this.referenceKind = referenceKind;
-    }
-
-    public int getReferenceKind() {
-        return referenceKind;
+public
+interface TMethodHandleInfo {
+    static String referenceKindToString(int referenceKind) {
+        if (!TMethodHandleNatives.refKindIsValid(referenceKind)) {
+            throw new IllegalArgumentException("invalid reference kind: " + referenceKind);
+        }
+        return TMethodHandleNatives.refKindName((byte) referenceKind);
     }
 }

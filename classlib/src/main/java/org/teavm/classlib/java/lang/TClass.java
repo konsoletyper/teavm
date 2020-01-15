@@ -79,6 +79,12 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
         return result;
     }
 
+    @Override
+    public String toString() {
+        return (isInterface() ? "interface " : (isPrimitive() ? "" : "class "))
+                + getName();
+    }
+
     public PlatformClass getPlatformClass() {
         return platformClass;
     }
