@@ -58,4 +58,6 @@ public interface HTMLSelectElement extends HTMLElement {
     void setValue(String value);
 
     void setCustomValidity(String validationFailure);
+    
+    boolean reportValidity();
 }

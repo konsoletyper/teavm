@@ -67,6 +67,10 @@ public interface HTMLInputElement extends HTMLElement {
     void setValue(String value);
     
     void setCustomValidity(String validationFailure);
+    
+    boolean checkValidity();
+    
+    boolean reportValidity();
 
     void select();
 
