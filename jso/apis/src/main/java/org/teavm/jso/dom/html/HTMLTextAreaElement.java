@@ -111,6 +111,7 @@ public interface HTMLTextAreaElement extends HTMLElement {
     @JSProperty
     int getTextLength();
 
+    void setCustomValidity(String validationFailure);
 
     void select();
 
