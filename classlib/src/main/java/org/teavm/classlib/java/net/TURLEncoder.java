@@ -53,24 +53,8 @@ public final class TURLEncoder {
     }
     
     public static String encode(String s, Charset enc) {
-        try {
-            return encode(s, enc.displayName());
-        } catch (UnsupportedEncodingException e) {
-            // Cannot happen as the provided character encoding is known to be available.
-            throw new AssertionError(e);
-        }
-    }
-
-    public static String encode(String s, String enc) throws UnsupportedEncodingException {
         Objects.requireNonNull(s);
         Objects.requireNonNull(enc);
-
-        // check for UnsupportedEncodingException
-        try {
-            Charset.forName(enc);
-        } catch (UnsupportedCharsetException e) {
-            throw new UnsupportedEncodingException(enc);
-        }
 
         // Guess a bit bigger for encoded form
         StringBuffer buf = new StringBuffer(s.length() + 16);
@@ -100,7 +84,19 @@ public final class TURLEncoder {
         return buf.toString();
     }
 
-    private static void convert(String s, StringBuffer buf, String enc) throws UnsupportedEncodingException {
+    public static String encode(String s, String enc) throws UnsupportedEncodingException {
+        Objects.requireNonNull(s);
+        Objects.requireNonNull(enc);
+
+        // check for UnsupportedEncodingException
+        try {
+            return encode(s, Charset.forName(enc));
+        } catch (UnsupportedCharsetException e) {
+            throw new UnsupportedEncodingException(enc);
+        }
+    }
+
+    private static void convert(String s, StringBuffer buf, Charset enc) {
         byte[] bytes = s.getBytes(enc);
         for (int j = 0; j < bytes.length; j++) {
             buf.append('%');
