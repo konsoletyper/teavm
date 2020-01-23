@@ -263,7 +263,7 @@
           <artifactId>maven-surefire-plugin</artifactId>
           <version>2.21.0</version>
         </plugin>
-        <plugin>
+        <!--plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-checkstyle-plugin</artifactId>
           <version>2.16</version>
@@ -286,7 +286,7 @@
             <propertyExpansion>config_loc=${basedir}/..</propertyExpansion>
             <configLocation>../checkstyle.xml</configLocation>
           </configuration>
-        </plugin>
+        </plugin-->
         <plugin>
           <groupId>org.apache.maven.plugins</groupId>
           <artifactId>maven-jar-plugin</artifactId>
