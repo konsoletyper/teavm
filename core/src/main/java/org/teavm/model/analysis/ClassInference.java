@@ -260,7 +260,11 @@ public class ClassInference {
 
             if (degree > 0) {
                 for (int predecessor : assignmentGraph.incomingEdges(variable)) {
-                    nextEntries.add(packNodeAndDegree(predecessor, degree));
+                    int predecessorEntry = packNodeAndDegree(predecessor, degree);
+                    graphBuilder.addEdge(predecessorEntry, entry);
+                    if (!visited[predecessorEntry]) {
+                        stack.push(predecessorEntry);
+                    }
                 }
 
                 for (int successor : itemGraph.outgoingEdges(variable)) {
