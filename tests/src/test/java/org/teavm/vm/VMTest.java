@@ -313,6 +313,40 @@ public class VMTest {
         assertEquals(23, ReadingStateInClinit.state);
     }
 
+    @Test
+    public void implementInBaseMethodWithDefault() {
+        SubclassWithInheritedImplementation o = new SubclassWithInheritedImplementation();
+        assertEquals(1, o.x);
+        assertEquals(2, new SubclassWithInheritedDefaultImplementation().foo());
+    }
+
+    static class BaseClassWithImplementation {
+        public int foo() {
+            return 1;
+        }
+    }
+
+    interface BaseInterfaceWithDefault {
+        default int foo() {
+            return 2;
+        }
+    }
+
+    static class IntermediateClassInheritingImplementation extends BaseClassWithImplementation {
+    }
+
+    static class SubclassWithInheritedImplementation extends IntermediateClassInheritingImplementation
+            implements BaseInterfaceWithDefault {
+        int x;
+
+        SubclassWithInheritedImplementation() {
+            x = foo();
+        }
+    }
+
+    static class SubclassWithInheritedDefaultImplementation implements BaseInterfaceWithDefault {
+    }
+
     interface WithDefaultMethod {
         default String foo() {
             return "default";
