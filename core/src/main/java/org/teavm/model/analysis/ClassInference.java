@@ -262,6 +262,7 @@ public class ClassInference {
                 for (int predecessor : assignmentGraph.incomingEdges(variable)) {
                     int predecessorEntry = packNodeAndDegree(predecessor, degree);
                     graphBuilder.addEdge(predecessorEntry, entry);
+                    graphBuilder.addEdge(entry, predecessorEntry);
                     if (!visited[predecessorEntry]) {
                         stack.push(predecessorEntry);
                     }
@@ -270,10 +271,32 @@ public class ClassInference {
                 for (int successor : itemGraph.outgoingEdges(variable)) {
                     nextEntries.add(packNodeAndDegree(successor, degree - 1));
                 }
+
+                for (int predecessor : arrayGraph.incomingEdges(variable)) {
+                    int predecessorEntry = packNodeAndDegree(predecessor, degree - 1);
+                    graphBuilder.addEdge(predecessorEntry, entry);
+                    if (!visited[predecessorEntry]) {
+                        stack.push(predecessorEntry);
+                    }
+                }
+
+                for (int successor : assignmentGraph.outgoingEdges(variable)) {
+                    graphBuilder.addEdge(packNodeAndDegree(successor, degree), entry);
+                }
             }
 
-            for (int successor : arrayGraph.outgoingEdges(variable)) {
-                nextEntries.add(packNodeAndDegree(successor, degree + 1));
+            if (degree <= MAX_DEGREE) {
+                for (int successor : arrayGraph.outgoingEdges(variable)) {
+                    nextEntries.add(packNodeAndDegree(successor, degree + 1));
+                }
+
+                for (int predecessor : itemGraph.incomingEdges(variable)) {
+                    int predecessorEntry = packNodeAndDegree(predecessor, degree + 1);
+                    graphBuilder.addEdge(predecessorEntry, entry);
+                    if (!visited[predecessorEntry]) {
+                        stack.push(predecessorEntry);
+                    }
+                }
             }
 
             //
@@ -321,7 +344,7 @@ public class ClassInference {
 
             int node = nodeMapping[i];
             if (overflowTypesBackup[i]) {
-                overflowTypes[i] = true;
+                overflowTypes[node] = true;
                 types[node] = null;
             } else if (typesBackup[i] != null && !overflowTypes[i]) {
                 IntHashSet nodeTypes = getNodeTypes(node);
