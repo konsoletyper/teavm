@@ -57,10 +57,9 @@ public class TSpliterators {
             }
         };
     }
-
-    @SuppressWarnings("unchecked")
+    
     public static <T> TSpliterator<T> spliterator(Collection<? extends T> c, int characteristics) {
-        return ((TCollection<T>) c).spliterator();
+        return spliterator(c.iterator(), c.size(), characteristics);
     }
 
     public static TSpliterator.OfInt spliterator(int[] array, int additionalCharacteristics) {
