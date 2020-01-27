@@ -61,12 +61,13 @@ public class ServiceLoaderSupport extends AbstractDependencyListener implements 
         for (Map.Entry<String, List<String>> entry : serviceMap.entrySet()) {
             writer.appendClass(entry.getKey()).append(".$$serviceList$$ = [");
             List<String> implementations = entry.getValue();
-            for (int i = 0; i < implementations.size(); ++i) {
-                if (i > 0) {
-                    writer.append(", ");
-                }
-                String implName = implementations.get(i);
+            boolean first = true;
+            for (String implName : implementations) {
                 if (context.getClassSource().getClassNames().contains(implName)) {
+                    if (!first) {
+                        writer.append(", ");
+                    }
+                    first = false;
                     writer.append("[").appendClass(implName).append(", ").appendMethodBody(
                             new MethodReference(implName, INIT_METHOD))
                             .append("]");
