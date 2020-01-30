@@ -1,5 +1,6 @@
 #include "heaptrace.h"
 #include "core.h"
+#include "log.h"
 #include "definitions.h"
 #include "memory.h"
 #include "time.h"
@@ -12,14 +13,10 @@
 #include <wctype.h>
 #include <stdbool.h>
 
+#define TEAVM_GC_LOG_BUFFER_SIZE 512
+
 #if TEAVM_WINDOWS
     #include <Windows.h>
-#endif
-
-#if !TEAVM_WINDOWS_LOG
-    #define TEAVM_OUTPUT_STRING(s) fprintf(stderr, s)
-#else
-    #define TEAVM_OUTPUT_STRING(s) OutputDebugStringW(L##s)
 #endif
 
 #if TEAVM_MEMORY_TRACE
@@ -27,8 +24,12 @@
     uint8_t* teavm_gc_markMap = NULL;
 #endif
 
+static inline void teavm_gc_print(wchar_t* s) {
+    teavm_printWString(s);
+}
+
 void teavm_outOfMemory() {
-    TEAVM_OUTPUT_STRING("Application crashed due to lack of free memory\n");
+    teavm_gc_print(L"Application crashed due to lack of free memory\n");
     teavm_gc_writeHeapDump();
     abort();
 }
@@ -73,16 +74,20 @@ void teavm_gc_allocate(void* address, int32_t size) {
         uint8_t* map = teavm_gc_heapMap + (((char*) address - (char*) teavm_gc_heapAddress) / sizeof(void*));
 
         if (*map != 0) {
-            fprintf(stderr, "[GC] trying allocate at memory in use at: %d\n",
+            wchar_t buffer[TEAVM_GC_LOG_BUFFER_SIZE];
+            swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC] trying allocate at memory in use at: %d\n",
                     (int) ((char*) address - (char*) teavm_gc_heapAddress));
+            teavm_gc_print(buffer);
             abort();
         }
         *map++ = 1;
 
         for (int32_t i = 1; i < size; ++i) {
             if (*map != 0) {
-                fprintf(stderr, "[GC] trying allocate at memory in use at: %d\n",
+                wchar_t buffer[TEAVM_GC_LOG_BUFFER_SIZE];
+                swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC] trying allocate at memory in use at: %d\n",
                         (int) ((char*) address - (char*) teavm_gc_heapAddress));
+                teavm_gc_print(buffer);
                 abort();
             }
             *map++ = 2;
@@ -104,8 +109,10 @@ void teavm_gc_free(void* address, int32_t size) {
         size /= sizeof(void*);
         for (int32_t i = 0; i < size; ++i) {
             if (markMap[i] != 0) {
-                fprintf(stderr, "[GC] trying to release reachable object at: %d\n",
+                wchar_t buffer[TEAVM_GC_LOG_BUFFER_SIZE];
+                swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC] trying to release reachable object at: %d\n",
                         (int) ((char*) address - (char*) teavm_gc_heapAddress));
+                teavm_gc_print(buffer);
                 abort();
             }
         }
@@ -130,8 +137,10 @@ void teavm_gc_assertFree(void* address, int32_t size) {
         size /= sizeof(void*);
         for (int32_t i = 0; i < size; ++i) {
             if (map[i] != 0) {
-                fprintf(stderr, "[GC] memory supposed to be free at: %d\n",
+                wchar_t buffer[TEAVM_GC_LOG_BUFFER_SIZE];
+                swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC] memory supposed to be free at: %d\n",
                         (int) ((char*) address - (char*) teavm_gc_heapAddress));
+                teavm_gc_print(buffer);
                 abort();
             }
         }
@@ -186,8 +195,10 @@ void teavm_gc_mark(void* address) {
         size /= sizeof(void*);
 
         if (*map++ != 1 || *markMap != 0) {
-            fprintf(stderr, "[GC] assertion failed marking object at: %d\n",
+            wchar_t buffer[TEAVM_GC_LOG_BUFFER_SIZE];
+            swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE, L"[GC] assertion failed marking object at: %d\n",
                     (int) ((char*) address - (char*) teavm_gc_heapAddress));
+            teavm_gc_print(buffer);
             abort();
         }
         *markMap++ = 1;
@@ -218,8 +229,12 @@ void teavm_gc_move(void* from, void* to, int32_t size) {
         if (mapFrom > mapTo) {
             for (int32_t i = 0; i < size; ++i) {
                 if (mapFrom[i] == 0 || mapTo[i] != 0) {
-                    fprintf(stderr, "[GC] assertion failed moving object from: %d to %d\n",
-                        (int) ((char*) from - (char*) teavm_gc_heapAddress), (int) ((char*) to - (char*) teavm_gc_heapAddress));
+                    wchar_t buffer[TEAVM_GC_LOG_BUFFER_SIZE];
+                    swprintf(buffer, TEAVM_GC_LOG_BUFFER_SIZE,
+                            L"[GC] assertion failed moving object from: %d to %d\n",
+                            (int) ((char*) from - (char*) teavm_gc_heapAddress),
+                            (int) ((char*) to - (char*) teavm_gc_heapAddress));
+                    teavm_gc_print(buffer);
                     abort();
                 }
                 mapTo[i] = mapFrom[i];
@@ -428,17 +443,7 @@ void teavm_gc_defragCompleted() {
     #endif
 }
 
-#define TEAVM_GC_LOG_BUFFER_SIZE 512
-
 #if TEAVM_GC_STATS
-    static void teavm_gc_print(wchar_t* s) {
-        #if TEAVM_WINDOWS_LOG
-            OutputDebugStringW(s);
-        #else
-            fprintf(stderr, "%ls", s);
-        #endif
-    }
-
     static void teavm_gc_printStats() {
         wchar_t buffer[TEAVM_GC_LOG_BUFFER_SIZE];
 

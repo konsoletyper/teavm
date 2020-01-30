@@ -55,6 +55,10 @@
     #define TEAVM_WINDOWS_LOG 0
 #endif
 
+#ifndef TEAVM_CUSTOM_LOG
+    #define TEAVM_CUSTOM_LOG 0
+#endif
+
 #ifndef TEAVM_GC_LOG
     #define TEAVM_GC_LOG 0
 #endif
