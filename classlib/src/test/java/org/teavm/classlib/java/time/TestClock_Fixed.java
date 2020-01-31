@@ -29,103 +29,100 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 import java.io.IOException;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-/**
- * Test fixed clock.
- */
 @Test
 public class TestClock_Fixed extends AbstractTest {
 
-    private static final ZoneId MOSCOW = ZoneId.of("Europe/Moscow");
-    private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
-    private static final Instant INSTANT = LocalDateTime.of(2008, 6, 30, 11, 30, 10, 500).atZone(ZoneOffset.ofHours(2)).toInstant();
+    private static final TZoneId MOSCOW = TZoneId.of("Europe/Moscow");
+    private static final TZoneId PARIS = TZoneId.of("Europe/Paris");
+    private static final TInstant INSTANT = TLocalDateTime.of(2008, 6, 30, 11, 30, 10, 500).atZone(TZoneOffset.ofHours(2)).toInstant();
 
     //-----------------------------------------------------------------------
     public void test_isSerializable() throws IOException, ClassNotFoundException {
-        assertSerializable(Clock.fixed(INSTANT, ZoneOffset.UTC));
-        assertSerializable(Clock.fixed(INSTANT, PARIS));
+        assertSerializable(TClock.fixed(INSTANT, TZoneOffset.UTC));
+        assertSerializable(TClock.fixed(INSTANT, PARIS));
     }
 
     //-------------------------------------------------------------------------
     public void test_fixed_InstantZoneId() {
-        Clock test = Clock.fixed(INSTANT, PARIS);
+        TClock test = TClock.fixed(INSTANT, PARIS);
         assertEquals(test.instant(), INSTANT);
         assertEquals(test.getZone(), PARIS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void test_fixed_InstantZoneId_nullInstant() {
-        Clock.fixed(null, PARIS);
+        TClock.fixed(null, PARIS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void test_fixed_InstantZoneId_nullZoneId() {
-        Clock.fixed(INSTANT, null);
+        TClock.fixed(INSTANT, null);
     }
 
     //-------------------------------------------------------------------------
     public void test_withZone() {
-        Clock test = Clock.fixed(INSTANT, PARIS);
-        Clock changed = test.withZone(MOSCOW);
+        TClock test = TClock.fixed(INSTANT, PARIS);
+        TClock changed = test.withZone(MOSCOW);
         assertEquals(test.getZone(), PARIS);
         assertEquals(changed.getZone(), MOSCOW);
     }
 
     public void test_withZone_same() {
-        Clock test = Clock.fixed(INSTANT, PARIS);
-        Clock changed = test.withZone(PARIS);
+        TClock test = TClock.fixed(INSTANT, PARIS);
+        TClock changed = test.withZone(PARIS);
         assertSame(test, changed);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void test_withZone_null() {
-        Clock.fixed(INSTANT, PARIS).withZone(null);
+        TClock.fixed(INSTANT, PARIS).withZone(null);
     }
 
     //-----------------------------------------------------------------------
     public void test_equals() {
-        Clock a = Clock.fixed(INSTANT, ZoneOffset.UTC);
-        Clock b = Clock.fixed(INSTANT, ZoneOffset.UTC);
+        TClock a = TClock.fixed(INSTANT, TZoneOffset.UTC);
+        TClock b = TClock.fixed(INSTANT, TZoneOffset.UTC);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), true);
         assertEquals(b.equals(a), true);
         assertEquals(b.equals(b), true);
 
-        Clock c = Clock.fixed(INSTANT, PARIS);
+        TClock c = TClock.fixed(INSTANT, PARIS);
         assertEquals(a.equals(c), false);
 
-        Clock d = Clock.fixed(INSTANT.minusNanos(1), ZoneOffset.UTC);
+        TClock d = TClock.fixed(INSTANT.minusNanos(1), TZoneOffset.UTC);
         assertEquals(a.equals(d), false);
 
         assertEquals(a.equals(null), false);
         assertEquals(a.equals("other type"), false);
-        assertEquals(a.equals(Clock.systemUTC()), false);
+        assertEquals(a.equals(TClock.systemUTC()), false);
     }
 
     public void test_hashCode() {
-        Clock a = Clock.fixed(INSTANT, ZoneOffset.UTC);
-        Clock b = Clock.fixed(INSTANT, ZoneOffset.UTC);
+        TClock a = TClock.fixed(INSTANT, TZoneOffset.UTC);
+        TClock b = TClock.fixed(INSTANT, TZoneOffset.UTC);
         assertEquals(a.hashCode(), a.hashCode());
         assertEquals(a.hashCode(), b.hashCode());
 
-        Clock c = Clock.fixed(INSTANT, PARIS);
+        TClock c = TClock.fixed(INSTANT, PARIS);
         assertEquals(a.hashCode() == c.hashCode(), false);
 
-        Clock d = Clock.fixed(INSTANT.minusNanos(1), ZoneOffset.UTC);
+        TClock d = TClock.fixed(INSTANT.minusNanos(1), TZoneOffset.UTC);
         assertEquals(a.hashCode() == d.hashCode(), false);
     }
 
     //-----------------------------------------------------------------------
     public void test_toString() {
-        Clock test = Clock.fixed(INSTANT, PARIS);
+        TClock test = TClock.fixed(INSTANT, PARIS);
         assertEquals(test.toString(), "FixedClock[2008-06-30T09:30:10.000000500Z,Europe/Paris]");
     }
 

@@ -29,16 +29,13 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-import org.testng.annotations.Test;
-import org.threeten.bp.format.DateTimeFormatterBuilder.StringLiteralPrinterParser;
+import org.junit.Test;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.StringLiteralPrinterParser;
 
-/**
- * Test StringLiteralPrinterParser.
- */
 @Test
 public class TestStringLiteralPrinter extends AbstractTestPrinterParser {
 

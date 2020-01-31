@@ -29,66 +29,55 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.HOUR_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.MINUTE_OF_HOUR;
-import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.NANO_OF_SECOND;
-import static org.threeten.bp.temporal.ChronoField.SECOND_OF_MINUTE;
-import static org.threeten.bp.temporal.ChronoField.YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.HOUR_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MINUTE_OF_HOUR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_SECOND;
+import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_MINUTE;
+import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Calendar;
+import org.teavm.classlib.java.util.TCalendar;
 import java.util.Collections;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import org.teavm.classlib.java.util.TDate;
+import org.teavm.classlib.java.util.TGregorianCalendar;
 import java.util.List;
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 import java.util.Random;
 import java.util.TreeMap;
 
-import org.threeten.bp.format.DateTimeFormatter;
+import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 
-/**
- * Test Performance.
- */
 public class Performance {
 
-    /** Size. */
     private static final NumberFormat NF = NumberFormat.getIntegerInstance();
     static {
         NF.setGroupingUsed(true);
     }
-    /** Size. */
     private static final int SIZE = 100000;
-    /** Results. */
     private static final Map<String, long[]> RESULTS = new TreeMap<String, long[]>();
-    /** Count. */
     private static int loop = 0;
 
-    /**
-     * Main.
-     * @param args  the arguments
-     */
     public static void main(String[] args) {
         for (loop = 0; loop < 5; loop++) {
-            System.out.println("-------------------------------------");
+            TSystem.out.println("-------------------------------------");
             process();
         }
 
-        System.out.println();
+        TSystem.out.println();
         for (String name : RESULTS.keySet()) {
-            System.out.println(name + " " + Arrays.toString(RESULTS.get(name)));
+            TSystem.out.println(name + " " + Arrays.toString(RESULTS.get(name)));
         }
 
-        System.out.println();
+        TSystem.out.println();
         for (String name : RESULTS.keySet()) {
             long[] r = RESULTS.get(name);
             BigDecimal percent = BigDecimal.valueOf(r[6], 1);
@@ -96,44 +85,44 @@ public class Performance {
             max = max.substring(max.length() - 12);
             String min = ("           " + NF.format(r[5]));
             min = min.substring(min.length() - 12);
-            System.out.println(name + "\t" + max + "\t" + min + "\t-" + percent + "%");
+            TSystem.out.println(name + "\t" + max + "\t" + min + "\t-" + percent + "%");
         }
     }
     public static void process() {
-        LocalTime time = LocalTime.of(12, 30, 20);
-        System.out.println(time);
+        TLocalTime time = TLocalTime.of(12, 30, 20);
+        TSystem.out.println(time);
 
-        List<LocalDateTime> ldt = setupDateTime();
+        List<TLocalDateTime> ldt = setupDateTime();
         queryListDateTime(ldt);
         formatListDateTime(ldt);
         sortListDateTime(ldt);
 
-        List<ZonedDateTime> zdt = setupZonedDateTime();
+        List<TZonedDateTime> zdt = setupZonedDateTime();
         queryListZonedDateTime(zdt);
         formatListZonedDateTime(zdt);
         sortListZonedDateTime(zdt);
 
-        List<Instant> instants = setupInstant();
+        List<TInstant> instants = setupInstant();
         queryListInstant(instants);
         formatListInstant(instants);
         sortListInstant(instants);
 
-        List<Date> judates = setupDate();
+        List<TDate> judates = setupDate();
         queryListDate(judates);
         formatListDate(judates);
         sortListDate(judates);
 
-        List<LocalDate> ld = setupLocalDate();
+        List<TLocalDate> ld = setupLocalDate();
         queryListLocalDate(ld);
         formatListLocalDate(ld);
         sortListLocalDate(ld);
 
-        List<LocalTime> lt = setupTime();
+        List<TLocalTime> lt = setupTime();
         queryListTime(lt);
         formatListTime(lt);
         sortListTime(lt);
 
-        List<GregorianCalendar> gcals = setupGCal();
+        List<TGregorianCalendar> gcals = setupGCal();
         queryListGCal(gcals);
         formatListGCal(gcals);
         sortListGCal(gcals);
@@ -143,34 +132,34 @@ public class Performance {
     }
 
     //-----------------------------------------------------------------------
-    private static List<LocalDateTime> setupDateTime() {
+    private static List<TLocalDateTime> setupDateTime() {
         Random random = new Random(47658758756875687L);
-        List<LocalDateTime> list = new ArrayList<LocalDateTime>(SIZE);
-        long start = System.nanoTime();
+        List<TLocalDateTime> list = new ArrayList<TLocalDateTime>(SIZE);
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
-            LocalDateTime t = LocalDateTime.of(
+            TLocalDateTime t = TLocalDateTime.of(
                     random.nextInt(10000), random.nextInt(12) + 1, random.nextInt(28) + 1,
                     random.nextInt(24), random.nextInt(60), random.nextInt(60));
             list.add(t);
         }
-        long end = System.nanoTime();
-        System.out.println("LocalDT:   Setup:  " + NF.format(end - start) + " ns");
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalDT:   Setup:  " + NF.format(end - start) + " ns");
         result("LocalDT-I", end - start);
         return list;
     }
 
-    private static void sortListDateTime(List<LocalDateTime> list) {
-        long start = System.nanoTime();
+    private static void sortListDateTime(List<TLocalDateTime> list) {
+        long start = TSystem.nanoTime();
         Collections.sort(list);
-        long end = System.nanoTime();
-        System.out.println("LocalDT:   Sort:   " + NF.format(end - start) + " ns " + list.get(0));
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalDT:   Sort:   " + NF.format(end - start) + " ns " + list.get(0));
         result("LocalDT-S", end - start);
     }
 
-    private static void queryListDateTime(List<LocalDateTime> list) {
+    private static void queryListDateTime(List<TLocalDateTime> list) {
         long total = 0;
-        long start = System.nanoTime();
-        for (LocalDateTime dt : list) {
+        long start = TSystem.nanoTime();
+        for (TLocalDateTime dt : list) {
             total += dt.getYear();
             total += dt.getMonth().getValue();
             total += dt.getDayOfMonth();
@@ -178,182 +167,182 @@ public class Performance {
             total += dt.getMinute();
             total += dt.getSecond();
         }
-        long end = System.nanoTime();
-        System.out.println("LocalDT:   Query:  " + NF.format(end - start) + " ns" + " " + total);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalDT:   Query:  " + NF.format(end - start) + " ns" + " " + total);
         result("LocalDT-Q", end - start);
     }
 
-    private static void formatListDateTime(List<LocalDateTime> list) {
+    private static void formatListDateTime(List<TLocalDateTime> list) {
         StringBuilder buf = new StringBuilder();
-        DateTimeFormatter format = DateTimeFormatter.ISO_DATE.withLocale(Locale.ENGLISH);
-        long start = System.nanoTime();
-        for (LocalDateTime dt : list) {
+        TDateTimeFormatter format = TDateTimeFormatter.ISO_DATE.withLocale(TLocale.ENGLISH);
+        long start = TSystem.nanoTime();
+        for (TLocalDateTime dt : list) {
             buf.setLength(0);
             buf.append(format.format(dt));
         }
-        long end = System.nanoTime();
-        System.out.println("LocalDT:   Format: " + NF.format(end - start) + " ns" + " " + buf);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalDT:   Format: " + NF.format(end - start) + " ns" + " " + buf);
         result("LocalDT-P", end - start);
     }
 
-    private static void deriveDateTime(List<LocalDateTime> list) {
+    private static void deriveDateTime(List<TLocalDateTime> list) {
         long total = 0;
-        long start = System.nanoTime();
-        for (LocalDateTime dt : list) {
+        long start = TSystem.nanoTime();
+        for (TLocalDateTime dt : list) {
             total += dt.get(YEAR);
             total += dt.get(MONTH_OF_YEAR);
             total += dt.get(DAY_OF_MONTH);
             total += dt.get(HOUR_OF_DAY);
             total += dt.get(MINUTE_OF_HOUR);
         }
-        long end = System.nanoTime();
-        System.out.println("LocalDT:   Derive: " + NF.format(end - start) + " ns" + " " + total);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalDT:   Derive: " + NF.format(end - start) + " ns" + " " + total);
         result("LocalDT-V", end - start);
     }
 
     //-----------------------------------------------------------------------
-    private static List<LocalDate> setupLocalDate() {
+    private static List<TLocalDate> setupLocalDate() {
         Random random = new Random(47658758756875687L);
-        List<LocalDate> list = new ArrayList<LocalDate>(SIZE);
-        long start = System.nanoTime();
+        List<TLocalDate> list = new ArrayList<TLocalDate>(SIZE);
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
-            LocalDate t = LocalDate.of(random.nextInt(10000), random.nextInt(12) + 1, random.nextInt(28) + 1);
+            TLocalDate t = TLocalDate.of(random.nextInt(10000), random.nextInt(12) + 1, random.nextInt(28) + 1);
             list.add(t);
         }
-        long end = System.nanoTime();
-        System.out.println("LocalD:    Setup:  " + NF.format(end - start) + " ns");
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalD:    Setup:  " + NF.format(end - start) + " ns");
         result("LocalD-I", end - start);
         return list;
     }
 
-    private static void sortListLocalDate(List<LocalDate> list) {
-        long start = System.nanoTime();
+    private static void sortListLocalDate(List<TLocalDate> list) {
+        long start = TSystem.nanoTime();
         Collections.sort(list);
-        long end = System.nanoTime();
-        System.out.println("LocalD:    Sort:   " + NF.format(end - start) + " ns " + list.get(0));
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalD:    Sort:   " + NF.format(end - start) + " ns " + list.get(0));
         result("LocalD-S", end - start);
     }
 
-    private static void queryListLocalDate(List<LocalDate> list) {
+    private static void queryListLocalDate(List<TLocalDate> list) {
         long total = 0;
-        long start = System.nanoTime();
-        for (LocalDate dt : list) {
+        long start = TSystem.nanoTime();
+        for (TLocalDate dt : list) {
             total += dt.getYear();
             total += dt.getMonth().getValue();
             total += dt.getDayOfMonth();
         }
-        long end = System.nanoTime();
-        System.out.println("LocalD:    Query:  " + NF.format(end - start) + " ns" + " " + total);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalD:    Query:  " + NF.format(end - start) + " ns" + " " + total);
         result("LocalD-Q", end - start);
     }
 
-    private static void formatListLocalDate(List<LocalDate> list) {
+    private static void formatListLocalDate(List<TLocalDate> list) {
         StringBuilder buf = new StringBuilder();
-        DateTimeFormatter format = DateTimeFormatter.ISO_DATE.withLocale(Locale.ENGLISH);
-        long start = System.nanoTime();
-        for (LocalDate dt : list) {
+        TDateTimeFormatter format = TDateTimeFormatter.ISO_DATE.withLocale(TLocale.ENGLISH);
+        long start = TSystem.nanoTime();
+        for (TLocalDate dt : list) {
             buf.setLength(0);
             buf.append(format.format(dt));
         }
-        long end = System.nanoTime();
-        System.out.println("LocalD:    Format: " + NF.format(end - start) + " ns" + " " + buf);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalD:    Format: " + NF.format(end - start) + " ns" + " " + buf);
         result("LocalD-P", end - start);
     }
 
     //-----------------------------------------------------------------------
-    private static List<LocalTime> setupTime() {
+    private static List<TLocalTime> setupTime() {
         Random random = new Random(47658758756875687L);
-        List<LocalTime> list = new ArrayList<LocalTime>(SIZE);
-        long start = System.nanoTime();
+        List<TLocalTime> list = new ArrayList<TLocalTime>(SIZE);
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
-            LocalTime t = LocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60), random.nextInt(1000000000));
+            TLocalTime t = TLocalTime.of(random.nextInt(24), random.nextInt(60), random.nextInt(60), random.nextInt(1000000000));
             list.add(t);
         }
-        long end = System.nanoTime();
-        System.out.println("LocalT:    Setup:  " + NF.format(end - start) + " ns");
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalT:    Setup:  " + NF.format(end - start) + " ns");
         result("LocalT-I", end - start);
         return list;
     }
 
-    private static void sortListTime(List<LocalTime> list) {
-        long start = System.nanoTime();
+    private static void sortListTime(List<TLocalTime> list) {
+        long start = TSystem.nanoTime();
         Collections.sort(list);
-        long end = System.nanoTime();
-        System.out.println("LocalT:    Sort:   " + NF.format(end - start) + " ns " + list.get(0));
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalT:    Sort:   " + NF.format(end - start) + " ns " + list.get(0));
         result("LocalT-S", end - start);
     }
 
-    private static void queryListTime(List<LocalTime> list) {
+    private static void queryListTime(List<TLocalTime> list) {
         long total = 0;
-        long start = System.nanoTime();
-        for (LocalTime dt : list) {
+        long start = TSystem.nanoTime();
+        for (TLocalTime dt : list) {
             total += dt.getHour();
             total += dt.getMinute();
             total += dt.getSecond();
             total += dt.getNano();
         }
-        long end = System.nanoTime();
-        System.out.println("LocalT:    Query:  " + NF.format(end - start) + " ns" + " " + total);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalT:    Query:  " + NF.format(end - start) + " ns" + " " + total);
         result("LocalT-Q", end - start);
     }
 
-    private static void formatListTime(List<LocalTime> list) {
+    private static void formatListTime(List<TLocalTime> list) {
         StringBuilder buf = new StringBuilder();
-        DateTimeFormatter format = DateTimeFormatter.ISO_TIME.withLocale(Locale.ENGLISH);
-        long start = System.nanoTime();
-        for (LocalTime dt : list) {
+        TDateTimeFormatter format = TDateTimeFormatter.ISO_TIME.withLocale(TLocale.ENGLISH);
+        long start = TSystem.nanoTime();
+        for (TLocalTime dt : list) {
             buf.setLength(0);
             buf.append(format.format(dt));
         }
-        long end = System.nanoTime();
-        System.out.println("LocalT:    Format: " + NF.format(end - start) + " ns" + " " + buf);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalT:    Format: " + NF.format(end - start) + " ns" + " " + buf);
         result("LocalT-P", end - start);
     }
 
-    private static void deriveTime(List<LocalTime> list) {
+    private static void deriveTime(List<TLocalTime> list) {
         long total = 0;
-        long start = System.nanoTime();
-        for (LocalTime dt : list) {
+        long start = TSystem.nanoTime();
+        for (TLocalTime dt : list) {
             total += dt.get(HOUR_OF_DAY);
             total += dt.get(MINUTE_OF_HOUR);
             total += dt.get(SECOND_OF_MINUTE);
             total += dt.get(NANO_OF_SECOND);
         }
-        long end = System.nanoTime();
-        System.out.println("LocalT:    Derive: " + NF.format(end - start) + " ns" + " " + total);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("LocalT:    Derive: " + NF.format(end - start) + " ns" + " " + total);
         result("LocalT-V", end - start);
     }
 
     //-----------------------------------------------------------------------
-    private static List<ZonedDateTime> setupZonedDateTime() {
-        ZoneId tz = ZoneId.of("Europe/London");
+    private static List<TZonedDateTime> setupZonedDateTime() {
+        TZoneId tz = TZoneId.of("Europe/London");
         Random random = new Random(47658758756875687L);
-        List<ZonedDateTime> list = new ArrayList<ZonedDateTime>(SIZE);
-        long start = System.nanoTime();
+        List<TZonedDateTime> list = new ArrayList<TZonedDateTime>(SIZE);
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
-            ZonedDateTime t = LocalDateTime.of(
+            TZonedDateTime t = TLocalDateTime.of(
                     2008/*random.nextInt(10000)*/, random.nextInt(12) + 1, random.nextInt(28) + 1,
                     random.nextInt(24), random.nextInt(60), random.nextInt(60), 0).atZone(tz);
             list.add(t);
         }
-        long end = System.nanoTime();
-        System.out.println("ZonedDT:   Setup:  " + NF.format(end - start) + " ns");
+        long end = TSystem.nanoTime();
+        TSystem.out.println("ZonedDT:   Setup:  " + NF.format(end - start) + " ns");
         result("ZonedDT-I", end - start);
         return list;
     }
 
-    private static void sortListZonedDateTime(List<ZonedDateTime> list) {
-        long start = System.nanoTime();
+    private static void sortListZonedDateTime(List<TZonedDateTime> list) {
+        long start = TSystem.nanoTime();
         Collections.sort(list);
-        long end = System.nanoTime();
-        System.out.println("ZonedDT:   Sort:   " + NF.format(end - start) + " ns");
+        long end = TSystem.nanoTime();
+        TSystem.out.println("ZonedDT:   Sort:   " + NF.format(end - start) + " ns");
         result("ZonedDT-S", end - start);
     }
 
-    private static void queryListZonedDateTime(List<ZonedDateTime> list) {
+    private static void queryListZonedDateTime(List<TZonedDateTime> list) {
         long total = 0;
-        long start = System.nanoTime();
-        for (ZonedDateTime dt : list) {
+        long start = TSystem.nanoTime();
+        for (TZonedDateTime dt : list) {
             total += dt.getYear();
             total += dt.getMonth().getValue();
             total += dt.getDayOfMonth();
@@ -361,170 +350,170 @@ public class Performance {
             total += dt.getMinute();
             total += dt.getSecond();
         }
-        long end = System.nanoTime();
-        System.out.println("ZonedDT:   Query:  " + NF.format(end - start) + " ns" + " " + total);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("ZonedDT:   Query:  " + NF.format(end - start) + " ns" + " " + total);
         result("ZonedDT-Q", end - start);
     }
 
-    private static void formatListZonedDateTime(List<ZonedDateTime> list) {
+    private static void formatListZonedDateTime(List<TZonedDateTime> list) {
         StringBuilder buf = new StringBuilder();
-        DateTimeFormatter format = DateTimeFormatter.ISO_DATE.withLocale(Locale.ENGLISH);
-        long start = System.nanoTime();
-        for (ZonedDateTime dt : list) {
+        TDateTimeFormatter format = TDateTimeFormatter.ISO_DATE.withLocale(TLocale.ENGLISH);
+        long start = TSystem.nanoTime();
+        for (TZonedDateTime dt : list) {
             buf.setLength(0);
             buf.append(format.format(dt));
         }
-        long end = System.nanoTime();
-        System.out.println("ZonedDT:   Format: " + NF.format(end - start) + " ns" + " " + buf);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("ZonedDT:   Format: " + NF.format(end - start) + " ns" + " " + buf);
         result("ZonedDT-P", end - start);
     }
 
     //-----------------------------------------------------------------------
-    private static List<Instant> setupInstant() {
+    private static List<TInstant> setupInstant() {
         Random random = new Random(47658758756875687L);
-        List<Instant> list = new ArrayList<Instant>(SIZE);
-        long start = System.nanoTime();
+        List<TInstant> list = new ArrayList<TInstant>(SIZE);
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
-            Instant t = Instant.ofEpochMilli(random.nextLong());
+            TInstant t = TInstant.ofEpochMilli(random.nextLong());
             list.add(t);
         }
-        long end = System.nanoTime();
-        System.out.println("Instant:   Setup:  " + NF.format(end - start) + " ns");
-        result("Instant-I", end - start);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("TInstant:   Setup:  " + NF.format(end - start) + " ns");
+        result("TInstant-I", end - start);
         return list;
     }
 
-    private static void sortListInstant(List<Instant> list) {
-        long start = System.nanoTime();
+    private static void sortListInstant(List<TInstant> list) {
+        long start = TSystem.nanoTime();
         Collections.sort(list);
-        long end = System.nanoTime();
-        System.out.println("Instant:   Sort:   " + NF.format(end - start) + " ns");
-        result("Instant-S", end - start);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("TInstant:   Sort:   " + NF.format(end - start) + " ns");
+        result("TInstant-S", end - start);
     }
 
-    private static void queryListInstant(List<Instant> list) {
+    private static void queryListInstant(List<TInstant> list) {
         long total = 0;
-        long start = System.nanoTime();
-        for (Instant dt : list) {
+        long start = TSystem.nanoTime();
+        for (TInstant dt : list) {
             total += dt.getEpochSecond();
             total += dt.getNano();
         }
-        long end = System.nanoTime();
-        System.out.println("Instant:   Query:  " + NF.format(end - start) + " ns" + " " + total);
-        result("Instant-Q", end - start);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("TInstant:   Query:  " + NF.format(end - start) + " ns" + " " + total);
+        result("TInstant-Q", end - start);
     }
 
-    private static void formatListInstant(List<Instant> list) {
+    private static void formatListInstant(List<TInstant> list) {
         StringBuilder buf = new StringBuilder();
-        long start = System.nanoTime();
-        for (Instant dt : list) {
+        long start = TSystem.nanoTime();
+        for (TInstant dt : list) {
             buf.setLength(0);
             buf.append(dt.toString());
         }
-        long end = System.nanoTime();
-        System.out.println("Instant:   Format: " + NF.format(end - start) + " ns" + " " + buf);
-        result("Instant-P", end - start);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("TInstant:   Format: " + NF.format(end - start) + " ns" + " " + buf);
+        result("TInstant-P", end - start);
     }
 
     //-----------------------------------------------------------------------
-    private static List<Date> setupDate() {
+    private static List<TDate> setupDate() {
         Random random = new Random(47658758756875687L);
-        List<Date> list = new ArrayList<Date>(SIZE);
-        long start = System.nanoTime();
+        List<TDate> list = new ArrayList<TDate>(SIZE);
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
-            Date t = new Date(random.nextLong());
+            TDate t = new TDate(random.nextLong());
             list.add(t);
         }
-        long end = System.nanoTime();
-        System.out.println("Date:      Setup:  " + NF.format(end - start) + " ns");
+        long end = TSystem.nanoTime();
+        TSystem.out.println("TDate:      Setup:  " + NF.format(end - start) + " ns");
         result("JUDate-I", end - start);
         return list;
     }
 
-    private static void sortListDate(List<Date> list) {
-        long start = System.nanoTime();
+    private static void sortListDate(List<TDate> list) {
+        long start = TSystem.nanoTime();
         Collections.sort(list);
-        long end = System.nanoTime();
-        System.out.println("Date:      Sort:   " + NF.format(end - start) + " ns " + list.get(0));
+        long end = TSystem.nanoTime();
+        TSystem.out.println("TDate:      Sort:   " + NF.format(end - start) + " ns " + list.get(0));
         result("JUDate-S", end - start);
     }
 
-    private static void queryListDate(List<Date> list) {
+    private static void queryListDate(List<TDate> list) {
         long total = 0;
-        long start = System.nanoTime();
-        for (Date dt : list) {
+        long start = TSystem.nanoTime();
+        for (TDate dt : list) {
             total += dt.getTime();
         }
-        long end = System.nanoTime();
-        System.out.println("Date:      Query:  " + NF.format(end - start) + " ns" + " " + total);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("TDate:      Query:  " + NF.format(end - start) + " ns" + " " + total);
         result("JUDate-Q", end - start);
     }
 
-    private static void formatListDate(List<Date> list) {
+    private static void formatListDate(List<TDate> list) {
         StringBuilder buf = new StringBuilder();
-        long start = System.nanoTime();
-        for (Date dt : list) {
+        long start = TSystem.nanoTime();
+        for (TDate dt : list) {
             buf.setLength(0);
             buf.append(dt.toString());
         }
-        long end = System.nanoTime();
-        System.out.println("Date:      Format: " + NF.format(end - start) + " ns" + " " + buf);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("TDate:      Format: " + NF.format(end - start) + " ns" + " " + buf);
         result("JUDate-P", end - start);
     }
 
     //-----------------------------------------------------------------------
-    private static List<GregorianCalendar> setupGCal() {
-        java.util.TimeZone tz = java.util.TimeZone.getTimeZone("Europe/London");
+    private static List<TGregorianCalendar> setupGCal() {
+        java.util.TTimeZone tz = java.util.TTimeZone.getTimeZone("Europe/London");
         Random random = new Random(47658758756875687L);
-        List<GregorianCalendar> list = new ArrayList<GregorianCalendar>(SIZE);
-        long start = System.nanoTime();
+        List<TGregorianCalendar> list = new ArrayList<TGregorianCalendar>(SIZE);
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
-            GregorianCalendar t = new GregorianCalendar(tz);
-            t.setGregorianChange(new Date(Long.MIN_VALUE));
+            TGregorianCalendar t = new TGregorianCalendar(tz);
+            t.setGregorianChange(new TDate(Long.MIN_VALUE));
             t.set(random.nextInt(10000), random.nextInt(12), random.nextInt(28) + 1, random.nextInt(24), random.nextInt(60), random.nextInt(60));
             list.add(t);
         }
-        long end = System.nanoTime();
-        System.out.println("GCalendar: Setup:  " + NF.format(end - start) + " ns");
+        long end = TSystem.nanoTime();
+        TSystem.out.println("GCalendar: Setup:  " + NF.format(end - start) + " ns");
         result("GregCal-I", end - start);
         return list;
     }
 
-    private static void sortListGCal(List<GregorianCalendar> list) {
-        long start = System.nanoTime();
+    private static void sortListGCal(List<TGregorianCalendar> list) {
+        long start = TSystem.nanoTime();
         Collections.sort(list);
-        long end = System.nanoTime();
-        System.out.println("GCalendar: Sort:   " + NF.format(end - start) + " ns");
+        long end = TSystem.nanoTime();
+        TSystem.out.println("GCalendar: Sort:   " + NF.format(end - start) + " ns");
         result("GregCal-S", end - start);
     }
 
-    private static void queryListGCal(List<GregorianCalendar> list) {
+    private static void queryListGCal(List<TGregorianCalendar> list) {
         long total = 0;
-        long start = System.nanoTime();
-        for (GregorianCalendar gcal : list) {
-            total += gcal.get(Calendar.YEAR);
-            total += gcal.get(Calendar.MONTH + 1);
-            total += gcal.get(Calendar.DAY_OF_MONTH);
-            total += gcal.get(Calendar.HOUR_OF_DAY);
-            total += gcal.get(Calendar.MINUTE);
-            total += gcal.get(Calendar.SECOND);
-            total += gcal.get(Calendar.SECOND);
+        long start = TSystem.nanoTime();
+        for (TGregorianCalendar gcal : list) {
+            total += gcal.get(TCalendar.YEAR);
+            total += gcal.get(TCalendar.MONTH + 1);
+            total += gcal.get(TCalendar.DAY_OF_MONTH);
+            total += gcal.get(TCalendar.HOUR_OF_DAY);
+            total += gcal.get(TCalendar.MINUTE);
+            total += gcal.get(TCalendar.SECOND);
+            total += gcal.get(TCalendar.SECOND);
         }
-        long end = System.nanoTime();
-        System.out.println("GCalendar: Query:  " + NF.format(end - start) + " ns" + " " + total);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("GCalendar: Query:  " + NF.format(end - start) + " ns" + " " + total);
         result("GregCal-Q", end - start);
     }
 
-    private static void formatListGCal(List<GregorianCalendar> list) {
+    private static void formatListGCal(List<TGregorianCalendar> list) {
         StringBuilder buf = new StringBuilder();
-        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", Locale.ENGLISH);
-        long start = System.nanoTime();
-        for (GregorianCalendar gcal : list) {
+        SimpleDateFormat format = new SimpleDateFormat("yyyy-MM-dd", TLocale.ENGLISH);
+        long start = TSystem.nanoTime();
+        for (TGregorianCalendar gcal : list) {
             buf.setLength(0);
             buf.append(format.format(gcal.getTime()));
         }
-        long end = System.nanoTime();
-        System.out.println("GCalendar: Format: " + NF.format(end - start) + " ns" + " " + buf);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("GCalendar: Format: " + NF.format(end - start) + " ns" + " " + buf);
         result("GregCal-P", end - start);
     }
 

@@ -29,36 +29,33 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.util.Set;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.ZoneId;
-import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.format.DateTimeFormatterBuilder.ZoneIdPrinterParser;
-import org.threeten.bp.temporal.TemporalQueries;
-import org.threeten.bp.zone.ZoneRulesProvider;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TZoneId;
+import org.teavm.classlib.java.time.TZoneOffset;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.ZoneIdPrinterParser;
+import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.classlib.java.time.zone.TZoneRulesProvider;
 
-/**
- * Test ZonePrinterParser.
- */
 @Test
 public class TestZoneIdParser extends AbstractTestPrinterParser {
 
     private static final String AMERICA_DENVER = "America/Denver";
-    private static final ZoneId TIME_ZONE_DENVER = ZoneId.of(AMERICA_DENVER);
+    private static final TZoneId TIME_ZONE_DENVER = TZoneId.of(AMERICA_DENVER);
 
     //-----------------------------------------------------------------------
     @DataProvider(name="error")
     Object[][] data_error() {
         return new Object[][] {
-            {new ZoneIdPrinterParser(TemporalQueries.zoneId(), null), "hello", -1, IndexOutOfBoundsException.class},
-            {new ZoneIdPrinterParser(TemporalQueries.zoneId(), null), "hello", 6, IndexOutOfBoundsException.class},
+            {new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null), "hello", -1, IndexOutOfBoundsException.class},
+            {new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null), "hello", 6, IndexOutOfBoundsException.class},
         };
     }
 
@@ -74,35 +71,35 @@ public class TestZoneIdParser extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
     public void test_parse_exactMatch_Denver() throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         int result = pp.parse(parseContext, AMERICA_DENVER, 0);
         assertEquals(result, AMERICA_DENVER.length());
         assertParsed(TIME_ZONE_DENVER);
     }
 
     public void test_parse_startStringMatch_Denver() throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         int result = pp.parse(parseContext, AMERICA_DENVER + "OTHER", 0);
         assertEquals(result, AMERICA_DENVER.length());
         assertParsed(TIME_ZONE_DENVER);
     }
 
     public void test_parse_midStringMatch_Denver() throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         int result = pp.parse(parseContext, "OTHER" + AMERICA_DENVER + "OTHER", 5);
         assertEquals(result, 5 + AMERICA_DENVER.length());
         assertParsed(TIME_ZONE_DENVER);
     }
 
     public void test_parse_endStringMatch_Denver() throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         int result = pp.parse(parseContext, "OTHER" + AMERICA_DENVER, 5);
         assertEquals(result, 5+ AMERICA_DENVER.length());
         assertParsed(TIME_ZONE_DENVER);
     }
 
     public void test_parse_partialMatch() throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         int result = pp.parse(parseContext, "OTHERAmerica/Bogusville", 5);
         assertEquals(result, -6);
         assertParsed(null);
@@ -111,18 +108,18 @@ public class TestZoneIdParser extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     @DataProvider(name="zones")
     Object[][] populateTestData() {
-        Set<String> ids = ZoneRulesProvider.getAvailableZoneIds();
+        Set<String> ids = TZoneRulesProvider.getAvailableZoneIds();
         Object[][] rtnval = new Object[ids.size()][];
         int i = 0;
         for (String id : ids) {
-            rtnval[i++] = new Object[] { id, ZoneId.of(id) };
+            rtnval[i++] = new Object[] { id, TZoneId.of(id) };
         }
         return rtnval;
     }
 
     @Test(dataProvider="zones")
-    public void test_parse_exactMatch(String parse, ZoneId expected) throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+    public void test_parse_exactMatch(String parse, TZoneId expected) throws Exception {
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         int result = pp.parse(parseContext, parse, 0);
         assertEquals(result, parse.length());
         assertParsed(expected);
@@ -130,50 +127,50 @@ public class TestZoneIdParser extends AbstractTestPrinterParser {
 
     @Test
     public void test_parse_lowerCase() throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         parseContext.setCaseSensitive(false);
         int result = pp.parse(parseContext, "europe/london", 0);
         assertEquals(result, 13);
-        assertParsed(ZoneId.of("Europe/London"));
+        assertParsed(TZoneId.of("Europe/London"));
     }
 
     //-----------------------------------------------------------------------
     public void test_parse_endStringMatch_utc() throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         int result = pp.parse(parseContext, "OTHERZ", 5);
         assertEquals(result, 6);
-        assertParsed(ZoneOffset.UTC);
+        assertParsed(TZoneOffset.UTC);
     }
 
     public void test_parse_endStringMatch_utc_plus1() throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         int result = pp.parse(parseContext, "OTHER+01:00", 5);
         assertEquals(result, 11);
-        assertParsed(ZoneId.of("+01:00"));
+        assertParsed(TZoneId.of("+01:00"));
     }
 
     //-----------------------------------------------------------------------
     public void test_parse_midStringMatch_utc() throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         int result = pp.parse(parseContext, "OTHERZOTHER", 5);
         assertEquals(result, 6);
-        assertParsed(ZoneOffset.UTC);
+        assertParsed(TZoneOffset.UTC);
     }
 
     public void test_parse_midStringMatch_utc_plus1() throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), null);
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
         int result = pp.parse(parseContext, "OTHER+01:00OTHER", 5);
         assertEquals(result, 11);
-        assertParsed(ZoneId.of("+01:00"));
+        assertParsed(TZoneId.of("+01:00"));
     }
 
     //-----------------------------------------------------------------------
     public void test_toString_id() {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TemporalQueries.zoneId(), "ZoneId()");
-        assertEquals(pp.toString(), "ZoneId()");
+        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), "TZoneId()");
+        assertEquals(pp.toString(), "TZoneId()");
     }
 
-    private void assertParsed(ZoneId expectedZone) {
+    private void assertParsed(TZoneId expectedZone) {
         assertEquals(parseContext.toParsed().zone, expectedZone);
     }
 

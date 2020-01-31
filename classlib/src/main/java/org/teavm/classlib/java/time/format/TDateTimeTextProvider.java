@@ -29,98 +29,43 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
 import java.util.Iterator;
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 
-import org.threeten.bp.temporal.TemporalField;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
 
-/**
- * The Service Provider Interface (SPI) to be implemented by classes providing
- * the textual form of a date-time field.
- *
- * <h3>Specification for implementors</h3>
- * This interface is a service provider that can be called by multiple threads.
- * Implementations must be thread-safe.
- * Implementations should cache the textual information.
- * <p>
- * This class has been made pubilc primarily for the benefit of Android.
- */
-public abstract class DateTimeTextProvider {
+public abstract class TDateTimeTextProvider {
 
-    private static final AtomicReference<DateTimeTextProvider> MUTABLE_PROVIDER = new AtomicReference<DateTimeTextProvider>();
+    private static final AtomicReference<TDateTimeTextProvider> MUTABLE_PROVIDER = new AtomicReference<TDateTimeTextProvider>();
 
-    /**
-     * Gets the provider.
-     *
-     * @return the provider, not null
-     */
-    static DateTimeTextProvider getInstance() {
+    static TDateTimeTextProvider getInstance() {
         return ProviderSingleton.PROVIDER;
     }
 
-    /**
-     * Sets the provider to use.
-     * <p>
-     * This can only be invoked before {@link DateTimeTextProvider} class is used for formatting/parsing.
-     * Invoking this method at a later point will throw an exception.
-     * 
-     * @param provider  the provider to use
-     * @throws IllegalStateException if initialization has already occurred or another provider has been set
-     */
-    public static void setInitializer(DateTimeTextProvider provider) {
+    public static void setInitializer(TDateTimeTextProvider provider) {
         if (!MUTABLE_PROVIDER.compareAndSet(null, provider)) {
             throw new IllegalStateException("Provider was already set, possibly with a default during initialization");
         }
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Gets the text for the specified field, locale and style
-     * for the purpose of printing.
-     * <p>
-     * The text associated with the value is returned.
-     * The null return value should be used if there is no applicable text, or
-     * if the text would be a numeric representation of the value.
-     *
-     * @param field  the field to get text for, not null
-     * @param value  the field value to get text for, not null
-     * @param style  the style to get text for, not null
-     * @param locale  the locale to get text for, not null
-     * @return the text for the field value, null if no text found
-     */
-    public abstract String getText(TemporalField field, long value, TextStyle style, Locale locale);
+    public abstract String getText(TTemporalField field, long value, TTextStyle style, TLocale locale);
 
-    /**
-     * Gets an iterator of text to field for the specified field, locale and style
-     * for the purpose of parsing.
-     * <p>
-     * The iterator must be returned in order from the longest text to the shortest.
-     * <p>
-     * The null return value should be used if there is no applicable parsable text, or
-     * if the text would be a numeric representation of the value.
-     * Text can only be parsed if all the values for that field-style-locale combination are unique.
-     *
-     * @param field  the field to get text for, not null
-     * @param style  the style to get text for, null for all parsable text
-     * @param locale  the locale to get text for, not null
-     * @return the iterator of text to field pairs, in order from longest text to shortest text,
-     *  null if the field or style is not parsable
-     */
-    public abstract Iterator<Entry<String, Long>> getTextIterator(TemporalField field, TextStyle style, Locale locale);
+    public abstract Iterator<Entry<String, Long>> getTextIterator(TTemporalField field, TTextStyle style, TLocale locale);
 
     //-----------------------------------------------------------------------
     // use JVM class initializtion to lock the singleton without additional synchronization
     static class ProviderSingleton {
-        static final DateTimeTextProvider PROVIDER = initialize();
+        static final TDateTimeTextProvider PROVIDER = initialize();
 
         // initialize the provider
-        static DateTimeTextProvider initialize() {
+        static TDateTimeTextProvider initialize() {
             // Set the default initializer if none has been provided yet
-            MUTABLE_PROVIDER.compareAndSet(null, new SimpleDateTimeTextProvider());
+            MUTABLE_PROVIDER.compareAndSet(null, new TSimpleDateTimeTextProvider());
             return MUTABLE_PROVIDER.get();
         }
     }

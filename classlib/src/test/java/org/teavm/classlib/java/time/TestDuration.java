@@ -29,53 +29,50 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
-import static org.threeten.bp.temporal.ChronoUnit.DAYS;
-import static org.threeten.bp.temporal.ChronoUnit.HALF_DAYS;
-import static org.threeten.bp.temporal.ChronoUnit.HOURS;
-import static org.threeten.bp.temporal.ChronoUnit.MICROS;
-import static org.threeten.bp.temporal.ChronoUnit.MILLIS;
-import static org.threeten.bp.temporal.ChronoUnit.MINUTES;
-import static org.threeten.bp.temporal.ChronoUnit.NANOS;
-import static org.threeten.bp.temporal.ChronoUnit.SECONDS;
-import static org.threeten.bp.temporal.ChronoUnit.WEEKS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.HALF_DAYS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.HOURS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.MICROS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.MILLIS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.MINUTES;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.SECONDS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.format.DateTimeParseException;
-import org.threeten.bp.temporal.TemporalUnit;
+import org.junit.Test;
+import org.teavm.classlib.java.time.format.TDateTimeParseException;
+import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 
-/**
- * Test Duration.
- */
 @Test
 public class TestDuration extends AbstractTest {
 
     //-----------------------------------------------------------------------
     @Test
     public void test_immutable() {
-        assertImmutable(Duration.class);
+        assertImmutable(TDuration.class);
     }
 
     @Test
     public void test_serialization() throws Exception {
-        assertSerializable(Duration.ofHours(5));
-        assertSerializable(Duration.ofHours(-5));
-        assertSerializableAndSame(Duration.ZERO);
+        assertSerializable(TDuration.ofHours(5));
+        assertSerializable(TDuration.ofHours(-5));
+        assertSerializableAndSame(TDuration.ZERO);
     }
 
     @Test
     public void test_serialization_format() throws Exception {
-        assertEqualsSerialisedForm(Duration.ofSeconds(654321, 123456789));
+        assertEqualsSerialisedForm(TDuration.ofSeconds(654321, 123456789));
     }
 
     //-----------------------------------------------------------------------
@@ -83,8 +80,8 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_zero() {
-        assertEquals(Duration.ZERO.getSeconds(), 0L);
-        assertEquals(Duration.ZERO.getNano(), 0);
+        assertEquals(TDuration.ZERO.getSeconds(), 0L);
+        assertEquals(TDuration.ZERO.getNano(), 0);
     }
 
     //-----------------------------------------------------------------------
@@ -93,7 +90,7 @@ public class TestDuration extends AbstractTest {
     @Test
     public void factory_seconds_long() {
         for (long i = -2; i <= 2; i++) {
-            Duration t = Duration.ofSeconds(i);
+            TDuration t = TDuration.ofSeconds(i);
             assertEquals(t.getSeconds(), i);
             assertEquals(t.getNano(), 0);
         }
@@ -106,17 +103,17 @@ public class TestDuration extends AbstractTest {
     public void factory_seconds_long_long() {
         for (long i = -2; i <= 2; i++) {
             for (int j = 0; j < 10; j++) {
-                Duration t = Duration.ofSeconds(i, j);
+                TDuration t = TDuration.ofSeconds(i, j);
                 assertEquals(t.getSeconds(), i);
                 assertEquals(t.getNano(), j);
             }
             for (int j = -10; j < 0; j++) {
-                Duration t = Duration.ofSeconds(i, j);
+                TDuration t = TDuration.ofSeconds(i, j);
                 assertEquals(t.getSeconds(), i - 1);
                 assertEquals(t.getNano(), j + 1000000000);
             }
             for (int j = 999999990; j < 1000000000; j++) {
-                Duration t = Duration.ofSeconds(i, j);
+                TDuration t = TDuration.ofSeconds(i, j);
                 assertEquals(t.getSeconds(), i);
                 assertEquals(t.getNano(), j);
             }
@@ -125,14 +122,14 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void factory_seconds_long_long_nanosNegativeAdjusted() {
-        Duration test = Duration.ofSeconds(2L, -1);
+        TDuration test = TDuration.ofSeconds(2L, -1);
         assertEquals(test.getSeconds(), 1);
         assertEquals(test.getNano(), 999999999);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void factory_seconds_long_long_tooBig() {
-        Duration.ofSeconds(Long.MAX_VALUE, 1000000000);
+        TDuration.ofSeconds(Long.MAX_VALUE, 1000000000);
     }
 
     //-----------------------------------------------------------------------
@@ -157,7 +154,7 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="MillisDurationNoNanos")
     public void factory_millis_long(long millis, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration test = Duration.ofMillis(millis);
+        TDuration test = TDuration.ofMillis(millis);
         assertEquals(test.getSeconds(), expectedSeconds);
         assertEquals(test.getNano(), expectedNanoOfSecond);
     }
@@ -167,35 +164,35 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void factory_nanos_nanos() {
-        Duration test = Duration.ofNanos(1);
+        TDuration test = TDuration.ofNanos(1);
         assertEquals(test.getSeconds(), 0);
         assertEquals(test.getNano(), 1);
     }
 
     @Test
     public void factory_nanos_nanosSecs() {
-        Duration test = Duration.ofNanos(1000000002);
+        TDuration test = TDuration.ofNanos(1000000002);
         assertEquals(test.getSeconds(), 1);
         assertEquals(test.getNano(), 2);
     }
 
     @Test
     public void factory_nanos_negative() {
-        Duration test = Duration.ofNanos(-2000000001);
+        TDuration test = TDuration.ofNanos(-2000000001);
         assertEquals(test.getSeconds(), -3);
         assertEquals(test.getNano(), 999999999);
     }
 
     @Test
     public void factory_nanos_max() {
-        Duration test = Duration.ofNanos(Long.MAX_VALUE);
+        TDuration test = TDuration.ofNanos(Long.MAX_VALUE);
         assertEquals(test.getSeconds(), Long.MAX_VALUE / 1000000000);
         assertEquals(test.getNano(), Long.MAX_VALUE % 1000000000);
     }
 
     @Test
     public void factory_nanos_min() {
-        Duration test = Duration.ofNanos(Long.MIN_VALUE);
+        TDuration test = TDuration.ofNanos(Long.MIN_VALUE);
         assertEquals(test.getSeconds(), Long.MIN_VALUE / 1000000000 - 1);
         assertEquals(test.getNano(), Long.MIN_VALUE % 1000000000 + 1000000000);
     }
@@ -205,33 +202,33 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void factory_minutes() {
-        Duration test = Duration.ofMinutes(2);
+        TDuration test = TDuration.ofMinutes(2);
         assertEquals(test.getSeconds(), 120);
         assertEquals(test.getNano(), 0);
     }
 
     @Test
     public void factory_minutes_max() {
-        Duration test = Duration.ofMinutes(Long.MAX_VALUE / 60);
+        TDuration test = TDuration.ofMinutes(Long.MAX_VALUE / 60);
         assertEquals(test.getSeconds(), (Long.MAX_VALUE / 60) * 60);
         assertEquals(test.getNano(), 0);
     }
 
     @Test
     public void factory_minutes_min() {
-        Duration test = Duration.ofMinutes(Long.MIN_VALUE / 60);
+        TDuration test = TDuration.ofMinutes(Long.MIN_VALUE / 60);
         assertEquals(test.getSeconds(), (Long.MIN_VALUE / 60) * 60);
         assertEquals(test.getNano(), 0);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void factory_minutes_tooBig() {
-        Duration.ofMinutes(Long.MAX_VALUE / 60 + 1);
+        TDuration.ofMinutes(Long.MAX_VALUE / 60 + 1);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void factory_minutes_tooSmall() {
-        Duration.ofMinutes(Long.MIN_VALUE / 60 - 1);
+        TDuration.ofMinutes(Long.MIN_VALUE / 60 - 1);
     }
 
     //-----------------------------------------------------------------------
@@ -239,33 +236,33 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void factory_hours() {
-        Duration test = Duration.ofHours(2);
+        TDuration test = TDuration.ofHours(2);
         assertEquals(test.getSeconds(), 2 * 3600);
         assertEquals(test.getNano(), 0);
     }
 
     @Test
     public void factory_hours_max() {
-        Duration test = Duration.ofHours(Long.MAX_VALUE / 3600);
+        TDuration test = TDuration.ofHours(Long.MAX_VALUE / 3600);
         assertEquals(test.getSeconds(), (Long.MAX_VALUE / 3600) * 3600);
         assertEquals(test.getNano(), 0);
     }
 
     @Test
     public void factory_hours_min() {
-        Duration test = Duration.ofHours(Long.MIN_VALUE / 3600);
+        TDuration test = TDuration.ofHours(Long.MIN_VALUE / 3600);
         assertEquals(test.getSeconds(), (Long.MIN_VALUE / 3600) * 3600);
         assertEquals(test.getNano(), 0);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void factory_hours_tooBig() {
-        Duration.ofHours(Long.MAX_VALUE / 3600 + 1);
+        TDuration.ofHours(Long.MAX_VALUE / 3600 + 1);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void factory_hours_tooSmall() {
-        Duration.ofHours(Long.MIN_VALUE / 3600 - 1);
+        TDuration.ofHours(Long.MIN_VALUE / 3600 - 1);
     }
 
     //-----------------------------------------------------------------------
@@ -273,37 +270,37 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void factory_days() {
-        Duration test = Duration.ofDays(2);
+        TDuration test = TDuration.ofDays(2);
         assertEquals(test.getSeconds(), 2 * 86400);
         assertEquals(test.getNano(), 0);
     }
 
     @Test
     public void factory_days_max() {
-        Duration test = Duration.ofDays(Long.MAX_VALUE / 86400);
+        TDuration test = TDuration.ofDays(Long.MAX_VALUE / 86400);
         assertEquals(test.getSeconds(), (Long.MAX_VALUE / 86400) * 86400);
         assertEquals(test.getNano(), 0);
     }
 
     @Test
     public void factory_days_min() {
-        Duration test = Duration.ofDays(Long.MIN_VALUE / 86400);
+        TDuration test = TDuration.ofDays(Long.MIN_VALUE / 86400);
         assertEquals(test.getSeconds(), (Long.MIN_VALUE / 86400) * 86400);
         assertEquals(test.getNano(), 0);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void factory_days_tooBig() {
-        Duration.ofDays(Long.MAX_VALUE / 86400 + 1);
+        TDuration.ofDays(Long.MAX_VALUE / 86400 + 1);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void factory_days_tooSmall() {
-        Duration.ofDays(Long.MIN_VALUE / 86400 - 1);
+        TDuration.ofDays(Long.MIN_VALUE / 86400 - 1);
     }
 
     //-----------------------------------------------------------------------
-    // of(long,TemporalUnit)
+    // of(long,TTemporalUnit)
     //-----------------------------------------------------------------------
     @DataProvider(name="OfTemporalUnit")
     Object[][] provider_factory_of_longTemporalUnit() {
@@ -366,8 +363,8 @@ public class TestDuration extends AbstractTest {
     }
 
     @Test(dataProvider="OfTemporalUnit")
-    public void factory_of_longTemporalUnit(long amount, TemporalUnit unit, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.of(amount, unit);
+    public void factory_of_longTemporalUnit(long amount, TTemporalUnit unit, long expectedSeconds, int expectedNanoOfSecond) {
+        TDuration t = TDuration.of(amount, unit);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
     }
@@ -385,18 +382,18 @@ public class TestDuration extends AbstractTest {
     }
 
     @Test(dataProvider="OfTemporalUnitOutOfRange", expectedExceptions=ArithmeticException.class)
-    public void factory_of_longTemporalUnit_outOfRange(long amount, TemporalUnit unit) {
-        Duration.of(amount, unit);
+    public void factory_of_longTemporalUnit_outOfRange(long amount, TTemporalUnit unit) {
+        TDuration.of(amount, unit);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void factory_of_longTemporalUnit_estimatedUnit() {
-        Duration.of(2, WEEKS);
+        TDuration.of(2, WEEKS);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_of_longTemporalUnit_null() {
-        Duration.of(1, (TemporalUnit) null);
+        TDuration.of(1, (TTemporalUnit) null);
     }
 
     //-----------------------------------------------------------------------
@@ -415,23 +412,23 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="DurationBetween")
     public void factory_between_Instant_Instant(long secs1, int nanos1, long secs2, int nanos2, long expectedSeconds, int expectedNanoOfSecond) {
-        Instant start = Instant.ofEpochSecond(secs1, nanos1);
-        Instant end = Instant.ofEpochSecond(secs2, nanos2);
-        Duration t = Duration.between(start, end);
+        TInstant start = TInstant.ofEpochSecond(secs1, nanos1);
+        TInstant end = TInstant.ofEpochSecond(secs2, nanos2);
+        TDuration t = TDuration.between(start, end);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_between_Instant_Instant_startNull() {
-        Instant end = Instant.ofEpochSecond(1);
-        Duration.between(null, end);
+        TInstant end = TInstant.ofEpochSecond(1);
+        TDuration.between(null, end);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_between_Instant_Instant_endNull() {
-        Instant start = Instant.ofEpochSecond(1);
-        Duration.between(start, null);
+        TInstant start = TInstant.ofEpochSecond(1);
+        TDuration.between(start, null);
     }
 
     //-----------------------------------------------------------------------
@@ -501,14 +498,14 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="Parse")
     public void factory_parse(String text, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.parse(text);
+        TDuration t = TDuration.parse(text);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
     }
 
     @Test(dataProvider="Parse")
     public void factory_parse_ignoreCase(String text, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.parse(text.toLowerCase(Locale.ENGLISH));
+        TDuration t = TDuration.parse(text.toLowerCase(TLocale.ENGLISH));
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
     }
@@ -516,7 +513,7 @@ public class TestDuration extends AbstractTest {
     @Test(dataProvider="Parse")
     public void factory_parse_comma(String text, long expectedSeconds, int expectedNanoOfSecond) {
         text = text.replace('.', ',');
-        Duration t = Duration.parse(text);
+        TDuration t = TDuration.parse(text);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
     }
@@ -552,53 +549,53 @@ public class TestDuration extends AbstractTest {
         };
     }
 
-    @Test(dataProvider="ParseFailures", expectedExceptions=DateTimeParseException.class)
+    @Test(dataProvider="ParseFailures", expectedExceptions=TDateTimeParseException.class)
     public void factory_parseFailures(String text) {
-        Duration.parse(text);
+        TDuration.parse(text);
     }
 
-    @Test(dataProvider="ParseFailures", expectedExceptions=DateTimeParseException.class)
+    @Test(dataProvider="ParseFailures", expectedExceptions=TDateTimeParseException.class)
     public void factory_parseFailures_comma(String text) {
         text = text.replace('.', ',');
-        Duration.parse(text);
+        TDuration.parse(text);
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class)
+    @Test(expectedExceptions=TDateTimeParseException.class)
     public void factory_parse_tooBig() {
-        Duration.parse("PT" + Long.MAX_VALUE + "1S");
+        TDuration.parse("PT" + Long.MAX_VALUE + "1S");
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class)
+    @Test(expectedExceptions=TDateTimeParseException.class)
     public void factory_parse_tooBig_decimal() {
-        Duration.parse("PT" + Long.MAX_VALUE + "1.1S");
+        TDuration.parse("PT" + Long.MAX_VALUE + "1.1S");
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class)
+    @Test(expectedExceptions=TDateTimeParseException.class)
     public void factory_parse_tooSmall() {
-        Duration.parse("PT" + Long.MIN_VALUE + "1S");
+        TDuration.parse("PT" + Long.MIN_VALUE + "1S");
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class)
+    @Test(expectedExceptions=TDateTimeParseException.class)
     public void factory_parse_tooSmall_decimal() {
-        Duration.parse("PT" + Long.MIN_VALUE + ".1S");
+        TDuration.parse("PT" + Long.MIN_VALUE + ".1S");
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_parse_nullText() {
-        Duration.parse((String) null);
+        TDuration.parse((String) null);
     }
 
     @Test
     public void test_deserialization() throws Exception {
-        Duration orginal = Duration.ofSeconds(2);
+        TDuration orginal = TDuration.ofSeconds(2);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(baos);
         out.writeObject(orginal);
         out.close();
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         ObjectInputStream in = new ObjectInputStream(bais);
-        Duration ser = (Duration) in.readObject();
-        assertEquals(Duration.ofSeconds(2), ser);
+        TDuration ser = (TDuration) in.readObject();
+        assertEquals(TDuration.ofSeconds(2), ser);
     }
 
     //-----------------------------------------------------------------------
@@ -606,26 +603,26 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_isZero() {
-        assertEquals(Duration.ofNanos(0).isZero(), true);
-        assertEquals(Duration.ofSeconds(0).isZero(), true);
-        assertEquals(Duration.ofNanos(1).isZero(), false);
-        assertEquals(Duration.ofSeconds(1).isZero(), false);
-        assertEquals(Duration.ofSeconds(1, 1).isZero(), false);
-        assertEquals(Duration.ofNanos(-1).isZero(), false);
-        assertEquals(Duration.ofSeconds(-1).isZero(), false);
-        assertEquals(Duration.ofSeconds(-1, -1).isZero(), false);
+        assertEquals(TDuration.ofNanos(0).isZero(), true);
+        assertEquals(TDuration.ofSeconds(0).isZero(), true);
+        assertEquals(TDuration.ofNanos(1).isZero(), false);
+        assertEquals(TDuration.ofSeconds(1).isZero(), false);
+        assertEquals(TDuration.ofSeconds(1, 1).isZero(), false);
+        assertEquals(TDuration.ofNanos(-1).isZero(), false);
+        assertEquals(TDuration.ofSeconds(-1).isZero(), false);
+        assertEquals(TDuration.ofSeconds(-1, -1).isZero(), false);
     }
 
     @Test
     public void test_isNegative() {
-        assertEquals(Duration.ofNanos(0).isNegative(), false);
-        assertEquals(Duration.ofSeconds(0).isNegative(), false);
-        assertEquals(Duration.ofNanos(1).isNegative(), false);
-        assertEquals(Duration.ofSeconds(1).isNegative(), false);
-        assertEquals(Duration.ofSeconds(1, 1).isNegative(), false);
-        assertEquals(Duration.ofNanos(-1).isNegative(), true);
-        assertEquals(Duration.ofSeconds(-1).isNegative(), true);
-        assertEquals(Duration.ofSeconds(-1, -1).isNegative(), true);
+        assertEquals(TDuration.ofNanos(0).isNegative(), false);
+        assertEquals(TDuration.ofSeconds(0).isNegative(), false);
+        assertEquals(TDuration.ofNanos(1).isNegative(), false);
+        assertEquals(TDuration.ofSeconds(1).isNegative(), false);
+        assertEquals(TDuration.ofSeconds(1, 1).isNegative(), false);
+        assertEquals(TDuration.ofNanos(-1).isNegative(), true);
+        assertEquals(TDuration.ofSeconds(-1).isNegative(), true);
+        assertEquals(TDuration.ofSeconds(-1, -1).isNegative(), true);
     }
 
     //-----------------------------------------------------------------------
@@ -818,27 +815,27 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="Plus")
     public void plus(long seconds, int nanos, long otherSeconds, int otherNanos, long expectedSeconds, int expectedNanoOfSecond) {
-       Duration t = Duration.ofSeconds(seconds, nanos).plus(Duration.ofSeconds(otherSeconds, otherNanos));
+       TDuration t = TDuration.ofSeconds(seconds, nanos).plus(TDuration.ofSeconds(otherSeconds, otherNanos));
        assertEquals(t.getSeconds(), expectedSeconds);
        assertEquals(t.getNano(), expectedNanoOfSecond);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void plusOverflowTooBig() {
-       Duration t = Duration.ofSeconds(Long.MAX_VALUE, 999999999);
-       t.plus(Duration.ofSeconds(0, 1));
+       TDuration t = TDuration.ofSeconds(Long.MAX_VALUE, 999999999);
+       t.plus(TDuration.ofSeconds(0, 1));
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void plusOverflowTooSmall() {
-       Duration t = Duration.ofSeconds(Long.MIN_VALUE);
-       t.plus(Duration.ofSeconds(-1, 999999999));
+       TDuration t = TDuration.ofSeconds(Long.MIN_VALUE);
+       t.plus(TDuration.ofSeconds(-1, 999999999));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void plus_longTemporalUnit_seconds() {
-        Duration t = Duration.ofSeconds(1);
+        TDuration t = TDuration.ofSeconds(1);
         t = t.plus(1, SECONDS);
         assertEquals(2, t.getSeconds());
         assertEquals(0, t.getNano());
@@ -846,7 +843,7 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void plus_longTemporalUnit_millis() {
-        Duration t = Duration.ofSeconds(1);
+        TDuration t = TDuration.ofSeconds(1);
         t = t.plus(1, MILLIS);
         assertEquals(1, t.getSeconds());
         assertEquals(1000000, t.getNano());
@@ -854,7 +851,7 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void plus_longTemporalUnit_micros() {
-        Duration t = Duration.ofSeconds(1);
+        TDuration t = TDuration.ofSeconds(1);
         t = t.plus(1, MICROS);
         assertEquals(1, t.getSeconds());
         assertEquals(1000, t.getNano());
@@ -862,7 +859,7 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void plus_longTemporalUnit_nanos() {
-        Duration t = Duration.ofSeconds(1);
+        TDuration t = TDuration.ofSeconds(1);
         t = t.plus(1, NANOS);
         assertEquals(1, t.getSeconds());
         assertEquals(1, t.getNano());
@@ -870,8 +867,8 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void plus_longTemporalUnit_null() {
-       Duration t = Duration.ofSeconds(1);
-       t.plus(1, (TemporalUnit) null);
+       TDuration t = TDuration.ofSeconds(1);
+       t.plus(1, (TTemporalUnit) null);
     }
 
     //-----------------------------------------------------------------------
@@ -903,7 +900,7 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="PlusSeconds")
     public void plusSeconds_long(long seconds, int nanos, long amount, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.ofSeconds(seconds, nanos);
+        TDuration t = TDuration.ofSeconds(seconds, nanos);
         t = t.plusSeconds(amount);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
@@ -911,13 +908,13 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void plusSeconds_long_overflowTooBig() {
-        Duration t = Duration.ofSeconds(1, 0);
+        TDuration t = TDuration.ofSeconds(1, 0);
         t.plusSeconds(Long.MAX_VALUE);
     }
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void plusSeconds_long_overflowTooSmall() {
-        Duration t = Duration.ofSeconds(-1, 0);
+        TDuration t = TDuration.ofSeconds(-1, 0);
         t.plusSeconds(Long.MIN_VALUE);
     }
 
@@ -979,21 +976,21 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="PlusMillis")
     public void plusMillis_long(long seconds, int nanos, long amount, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.ofSeconds(seconds, nanos);
+        TDuration t = TDuration.ofSeconds(seconds, nanos);
         t = t.plusMillis(amount);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
     }
     @Test(dataProvider="PlusMillis")
     public void plusMillis_long_oneMore(long seconds, int nanos, long amount, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.ofSeconds(seconds + 1, nanos);
+        TDuration t = TDuration.ofSeconds(seconds + 1, nanos);
         t = t.plusMillis(amount);
         assertEquals(t.getSeconds(), expectedSeconds + 1);
         assertEquals(t.getNano(), expectedNanoOfSecond);
     }
     @Test(dataProvider="PlusMillis")
     public void plusMillis_long_minusOneLess(long seconds, int nanos, long amount, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.ofSeconds(seconds - 1, nanos);
+        TDuration t = TDuration.ofSeconds(seconds - 1, nanos);
         t = t.plusMillis(amount);
         assertEquals(t.getSeconds(), expectedSeconds - 1);
         assertEquals(t.getNano(), expectedNanoOfSecond);
@@ -1001,7 +998,7 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void plusMillis_long_max() {
-        Duration t = Duration.ofSeconds(Long.MAX_VALUE, 998999999);
+        TDuration t = TDuration.ofSeconds(Long.MAX_VALUE, 998999999);
         t = t.plusMillis(1);
         assertEquals(t.getSeconds(), Long.MAX_VALUE);
         assertEquals(t.getNano(), 999999999);
@@ -1009,13 +1006,13 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void plusMillis_long_overflowTooBig() {
-        Duration t = Duration.ofSeconds(Long.MAX_VALUE, 999000000);
+        TDuration t = TDuration.ofSeconds(Long.MAX_VALUE, 999000000);
         t.plusMillis(1);
     }
 
     @Test
     public void plusMillis_long_min() {
-        Duration t = Duration.ofSeconds(Long.MIN_VALUE, 1000000);
+        TDuration t = TDuration.ofSeconds(Long.MIN_VALUE, 1000000);
         t = t.plusMillis(-1);
         assertEquals(t.getSeconds(), Long.MIN_VALUE);
         assertEquals(t.getNano(), 0);
@@ -1023,7 +1020,7 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void plusMillis_long_overflowTooSmall() {
-        Duration t = Duration.ofSeconds(Long.MIN_VALUE, 0);
+        TDuration t = TDuration.ofSeconds(Long.MIN_VALUE, 0);
         t.plusMillis(-1);
     }
 
@@ -1105,7 +1102,7 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="PlusNanos")
     public void plusNanos_long(long seconds, int nanos, long amount, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.ofSeconds(seconds, nanos);
+        TDuration t = TDuration.ofSeconds(seconds, nanos);
         t = t.plusNanos(amount);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
@@ -1113,13 +1110,13 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void plusNanos_long_overflowTooBig() {
-        Duration t = Duration.ofSeconds(Long.MAX_VALUE, 999999999);
+        TDuration t = TDuration.ofSeconds(Long.MAX_VALUE, 999999999);
         t.plusNanos(1);
     }
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void plusNanos_long_overflowTooSmall() {
-        Duration t = Duration.ofSeconds(Long.MIN_VALUE, 0);
+        TDuration t = TDuration.ofSeconds(Long.MIN_VALUE, 0);
         t.plusNanos(-1);
     }
 
@@ -1311,27 +1308,27 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="Minus")
     public void minus(long seconds, int nanos, long otherSeconds, int otherNanos, long expectedSeconds, int expectedNanoOfSecond) {
-       Duration t = Duration.ofSeconds(seconds, nanos).minus(Duration.ofSeconds(otherSeconds, otherNanos));
+       TDuration t = TDuration.ofSeconds(seconds, nanos).minus(TDuration.ofSeconds(otherSeconds, otherNanos));
        assertEquals(t.getSeconds(), expectedSeconds);
        assertEquals(t.getNano(), expectedNanoOfSecond);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void minusOverflowTooSmall() {
-       Duration t = Duration.ofSeconds(Long.MIN_VALUE);
-       t.minus(Duration.ofSeconds(0, 1));
+       TDuration t = TDuration.ofSeconds(Long.MIN_VALUE);
+       t.minus(TDuration.ofSeconds(0, 1));
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void minusOverflowTooBig() {
-       Duration t = Duration.ofSeconds(Long.MAX_VALUE, 999999999);
-       t.minus(Duration.ofSeconds(-1, 999999999));
+       TDuration t = TDuration.ofSeconds(Long.MAX_VALUE, 999999999);
+       t.minus(TDuration.ofSeconds(-1, 999999999));
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void minus_longTemporalUnit_seconds() {
-        Duration t = Duration.ofSeconds(1);
+        TDuration t = TDuration.ofSeconds(1);
         t = t.minus(1, SECONDS);
         assertEquals(0, t.getSeconds());
         assertEquals(0, t.getNano());
@@ -1339,7 +1336,7 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void minus_longTemporalUnit_millis() {
-        Duration t = Duration.ofSeconds(1);
+        TDuration t = TDuration.ofSeconds(1);
         t = t.minus(1, MILLIS);
         assertEquals(0, t.getSeconds());
         assertEquals(999000000, t.getNano());
@@ -1347,7 +1344,7 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void minus_longTemporalUnit_micros() {
-        Duration t = Duration.ofSeconds(1);
+        TDuration t = TDuration.ofSeconds(1);
         t = t.minus(1, MICROS);
         assertEquals(0, t.getSeconds());
         assertEquals(999999000, t.getNano());
@@ -1355,7 +1352,7 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void minus_longTemporalUnit_nanos() {
-        Duration t = Duration.ofSeconds(1);
+        TDuration t = TDuration.ofSeconds(1);
         t = t.minus(1, NANOS);
         assertEquals(0, t.getSeconds());
         assertEquals(999999999, t.getNano());
@@ -1363,8 +1360,8 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void minus_longTemporalUnit_null() {
-       Duration t = Duration.ofSeconds(1);
-       t.minus(1, (TemporalUnit) null);
+       TDuration t = TDuration.ofSeconds(1);
+       t.minus(1, (TTemporalUnit) null);
     }
 
     //-----------------------------------------------------------------------
@@ -1396,7 +1393,7 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="MinusSeconds")
     public void minusSeconds_long(long seconds, int nanos, long amount, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.ofSeconds(seconds, nanos);
+        TDuration t = TDuration.ofSeconds(seconds, nanos);
         t = t.minusSeconds(amount);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
@@ -1404,13 +1401,13 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void minusSeconds_long_overflowTooBig() {
-        Duration t = Duration.ofSeconds(1, 0);
+        TDuration t = TDuration.ofSeconds(1, 0);
         t.minusSeconds(Long.MIN_VALUE + 1);
     }
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void minusSeconds_long_overflowTooSmall() {
-        Duration t = Duration.ofSeconds(-2, 0);
+        TDuration t = TDuration.ofSeconds(-2, 0);
         t.minusSeconds(Long.MAX_VALUE);
     }
 
@@ -1472,21 +1469,21 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="MinusMillis")
     public void minusMillis_long(long seconds, int nanos, long amount, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.ofSeconds(seconds, nanos);
+        TDuration t = TDuration.ofSeconds(seconds, nanos);
         t = t.minusMillis(amount);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
     }
     @Test(dataProvider="MinusMillis")
     public void minusMillis_long_oneMore(long seconds, int nanos, long amount, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.ofSeconds(seconds + 1, nanos);
+        TDuration t = TDuration.ofSeconds(seconds + 1, nanos);
         t = t.minusMillis(amount);
         assertEquals(t.getSeconds(), expectedSeconds + 1);
         assertEquals(t.getNano(), expectedNanoOfSecond);
     }
     @Test(dataProvider="MinusMillis")
     public void minusMillis_long_minusOneLess(long seconds, int nanos, long amount, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.ofSeconds(seconds - 1, nanos);
+        TDuration t = TDuration.ofSeconds(seconds - 1, nanos);
         t = t.minusMillis(amount);
         assertEquals(t.getSeconds(), expectedSeconds - 1);
         assertEquals(t.getNano(), expectedNanoOfSecond);
@@ -1494,7 +1491,7 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void minusMillis_long_max() {
-        Duration t = Duration.ofSeconds(Long.MAX_VALUE, 998999999);
+        TDuration t = TDuration.ofSeconds(Long.MAX_VALUE, 998999999);
         t = t.minusMillis(-1);
         assertEquals(t.getSeconds(), Long.MAX_VALUE);
         assertEquals(t.getNano(), 999999999);
@@ -1502,13 +1499,13 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void minusMillis_long_overflowTooBig() {
-        Duration t = Duration.ofSeconds(Long.MAX_VALUE, 999000000);
+        TDuration t = TDuration.ofSeconds(Long.MAX_VALUE, 999000000);
         t.minusMillis(-1);
     }
 
     @Test
     public void minusMillis_long_min() {
-        Duration t = Duration.ofSeconds(Long.MIN_VALUE, 1000000);
+        TDuration t = TDuration.ofSeconds(Long.MIN_VALUE, 1000000);
         t = t.minusMillis(1);
         assertEquals(t.getSeconds(), Long.MIN_VALUE);
         assertEquals(t.getNano(), 0);
@@ -1516,7 +1513,7 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void minusMillis_long_overflowTooSmall() {
-        Duration t = Duration.ofSeconds(Long.MIN_VALUE, 0);
+        TDuration t = TDuration.ofSeconds(Long.MIN_VALUE, 0);
         t.minusMillis(1);
     }
 
@@ -1598,7 +1595,7 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="MinusNanos")
     public void minusNanos_long(long seconds, int nanos, long amount, long expectedSeconds, int expectedNanoOfSecond) {
-        Duration t = Duration.ofSeconds(seconds, nanos);
+        TDuration t = TDuration.ofSeconds(seconds, nanos);
         t = t.minusNanos(amount);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanoOfSecond);
@@ -1606,13 +1603,13 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void minusNanos_long_overflowTooBig() {
-        Duration t = Duration.ofSeconds(Long.MAX_VALUE, 999999999);
+        TDuration t = TDuration.ofSeconds(Long.MAX_VALUE, 999999999);
         t.minusNanos(-1);
     }
 
     @Test(expectedExceptions = {ArithmeticException.class})
     public void minusNanos_long_overflowTooSmall() {
-        Duration t = Duration.ofSeconds(Long.MIN_VALUE, 0);
+        TDuration t = TDuration.ofSeconds(Long.MIN_VALUE, 0);
         t.minusNanos(1);
     }
 
@@ -1714,7 +1711,7 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="MultipliedBy")
     public void multipliedBy(long seconds, int nanos, int multiplicand, long expectedSeconds, int expectedNanos) {
-        Duration t = Duration.ofSeconds(seconds, nanos);
+        TDuration t = TDuration.ofSeconds(seconds, nanos);
         t = t.multipliedBy(multiplicand);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanos);
@@ -1722,25 +1719,25 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void multipliedBy_max() {
-        Duration test = Duration.ofSeconds(1);
-        assertEquals(test.multipliedBy(Long.MAX_VALUE), Duration.ofSeconds(Long.MAX_VALUE));
+        TDuration test = TDuration.ofSeconds(1);
+        assertEquals(test.multipliedBy(Long.MAX_VALUE), TDuration.ofSeconds(Long.MAX_VALUE));
     }
 
     @Test
     public void multipliedBy_min() {
-        Duration test = Duration.ofSeconds(1);
-        assertEquals(test.multipliedBy(Long.MIN_VALUE), Duration.ofSeconds(Long.MIN_VALUE));
+        TDuration test = TDuration.ofSeconds(1);
+        assertEquals(test.multipliedBy(Long.MIN_VALUE), TDuration.ofSeconds(Long.MIN_VALUE));
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void multipliedBy_tooBig() {
-        Duration test = Duration.ofSeconds(1, 1);
+        TDuration test = TDuration.ofSeconds(1, 1);
         test.multipliedBy(Long.MAX_VALUE);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void multipliedBy_tooBig_negative() {
-        Duration test = Duration.ofSeconds(1, 1);
+        TDuration test = TDuration.ofSeconds(1, 1);
         test.multipliedBy(Long.MIN_VALUE);
     }
 
@@ -1831,7 +1828,7 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="DividedBy")
     public void dividedBy(long seconds, int nanos, int divisor, long expectedSeconds, int expectedNanos) {
-        Duration t = Duration.ofSeconds(seconds, nanos);
+        TDuration t = TDuration.ofSeconds(seconds, nanos);
         t = t.dividedBy(divisor);
         assertEquals(t.getSeconds(), expectedSeconds);
         assertEquals(t.getNano(), expectedNanos);
@@ -1839,15 +1836,15 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="DividedBy", expectedExceptions=ArithmeticException.class)
     public void dividedByZero(long seconds, int nanos, int divisor, long expectedSeconds, int expectedNanos) {
-       Duration t = Duration.ofSeconds(seconds, nanos);
+       TDuration t = TDuration.ofSeconds(seconds, nanos);
        t.dividedBy(0);
        fail(t + " divided by zero did not throw ArithmeticException");
     }
 
     @Test
     public void dividedBy_max() {
-        Duration test = Duration.ofSeconds(Long.MAX_VALUE);
-        assertEquals(test.dividedBy(Long.MAX_VALUE), Duration.ofSeconds(1));
+        TDuration test = TDuration.ofSeconds(Long.MAX_VALUE);
+        assertEquals(test.dividedBy(Long.MAX_VALUE), TDuration.ofSeconds(1));
     }
 
     //-----------------------------------------------------------------------
@@ -1855,19 +1852,19 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_negated() {
-        assertEquals(Duration.ofSeconds(0).negated(), Duration.ofSeconds(0));
-        assertEquals(Duration.ofSeconds(12).negated(), Duration.ofSeconds(-12));
-        assertEquals(Duration.ofSeconds(-12).negated(), Duration.ofSeconds(12));
-        assertEquals(Duration.ofSeconds(12, 20).negated(), Duration.ofSeconds(-12, -20));
-        assertEquals(Duration.ofSeconds(12, -20).negated(), Duration.ofSeconds(-12, 20));
-        assertEquals(Duration.ofSeconds(-12, -20).negated(), Duration.ofSeconds(12, 20));
-        assertEquals(Duration.ofSeconds(-12, 20).negated(), Duration.ofSeconds(12, -20));
-        assertEquals(Duration.ofSeconds(Long.MAX_VALUE).negated(), Duration.ofSeconds(-Long.MAX_VALUE));
+        assertEquals(TDuration.ofSeconds(0).negated(), TDuration.ofSeconds(0));
+        assertEquals(TDuration.ofSeconds(12).negated(), TDuration.ofSeconds(-12));
+        assertEquals(TDuration.ofSeconds(-12).negated(), TDuration.ofSeconds(12));
+        assertEquals(TDuration.ofSeconds(12, 20).negated(), TDuration.ofSeconds(-12, -20));
+        assertEquals(TDuration.ofSeconds(12, -20).negated(), TDuration.ofSeconds(-12, 20));
+        assertEquals(TDuration.ofSeconds(-12, -20).negated(), TDuration.ofSeconds(12, 20));
+        assertEquals(TDuration.ofSeconds(-12, 20).negated(), TDuration.ofSeconds(12, -20));
+        assertEquals(TDuration.ofSeconds(Long.MAX_VALUE).negated(), TDuration.ofSeconds(-Long.MAX_VALUE));
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void test_negated_overflow() {
-        Duration.ofSeconds(Long.MIN_VALUE).negated();
+        TDuration.ofSeconds(Long.MIN_VALUE).negated();
     }
 
     //-----------------------------------------------------------------------
@@ -1875,19 +1872,19 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_abs() {
-        assertEquals(Duration.ofSeconds(0).abs(), Duration.ofSeconds(0));
-        assertEquals(Duration.ofSeconds(12).abs(), Duration.ofSeconds(12));
-        assertEquals(Duration.ofSeconds(-12).abs(), Duration.ofSeconds(12));
-        assertEquals(Duration.ofSeconds(12, 20).abs(), Duration.ofSeconds(12, 20));
-        assertEquals(Duration.ofSeconds(12, -20).abs(), Duration.ofSeconds(12, -20));
-        assertEquals(Duration.ofSeconds(-12, -20).abs(), Duration.ofSeconds(12, 20));
-        assertEquals(Duration.ofSeconds(-12, 20).abs(), Duration.ofSeconds(12, -20));
-        assertEquals(Duration.ofSeconds(Long.MAX_VALUE).abs(), Duration.ofSeconds(Long.MAX_VALUE));
+        assertEquals(TDuration.ofSeconds(0).abs(), TDuration.ofSeconds(0));
+        assertEquals(TDuration.ofSeconds(12).abs(), TDuration.ofSeconds(12));
+        assertEquals(TDuration.ofSeconds(-12).abs(), TDuration.ofSeconds(12));
+        assertEquals(TDuration.ofSeconds(12, 20).abs(), TDuration.ofSeconds(12, 20));
+        assertEquals(TDuration.ofSeconds(12, -20).abs(), TDuration.ofSeconds(12, -20));
+        assertEquals(TDuration.ofSeconds(-12, -20).abs(), TDuration.ofSeconds(12, 20));
+        assertEquals(TDuration.ofSeconds(-12, 20).abs(), TDuration.ofSeconds(12, -20));
+        assertEquals(TDuration.ofSeconds(Long.MAX_VALUE).abs(), TDuration.ofSeconds(Long.MAX_VALUE));
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void test_abs_overflow() {
-        Duration.ofSeconds(Long.MIN_VALUE).abs();
+        TDuration.ofSeconds(Long.MIN_VALUE).abs();
     }
 
     //-----------------------------------------------------------------------
@@ -1895,19 +1892,19 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_toNanos() {
-        Duration test = Duration.ofSeconds(321, 123456789);
+        TDuration test = TDuration.ofSeconds(321, 123456789);
         assertEquals(test.toNanos(), 321123456789L);
     }
 
     @Test
     public void test_toNanos_max() {
-        Duration test = Duration.ofSeconds(0, Long.MAX_VALUE);
+        TDuration test = TDuration.ofSeconds(0, Long.MAX_VALUE);
         assertEquals(test.toNanos(), Long.MAX_VALUE);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void test_toNanos_tooBig() {
-        Duration test = Duration.ofSeconds(0, Long.MAX_VALUE).plusNanos(1);
+        TDuration test = TDuration.ofSeconds(0, Long.MAX_VALUE).plusNanos(1);
         test.toNanos();
     }
 
@@ -1916,19 +1913,19 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_toMillis() {
-        Duration test = Duration.ofSeconds(321, 123456789);
+        TDuration test = TDuration.ofSeconds(321, 123456789);
         assertEquals(test.toMillis(), 321000 + 123);
     }
 
     @Test
     public void test_toMillis_max() {
-        Duration test = Duration.ofSeconds(Long.MAX_VALUE / 1000, (Long.MAX_VALUE % 1000) * 1000000);
+        TDuration test = TDuration.ofSeconds(Long.MAX_VALUE / 1000, (Long.MAX_VALUE % 1000) * 1000000);
         assertEquals(test.toMillis(), Long.MAX_VALUE);
     }
 
     @Test(expectedExceptions=ArithmeticException.class)
     public void test_toMillis_tooBig() {
-        Duration test = Duration.ofSeconds(Long.MAX_VALUE / 1000, ((Long.MAX_VALUE % 1000) + 1) * 1000000);
+        TDuration test = TDuration.ofSeconds(Long.MAX_VALUE / 1000, ((Long.MAX_VALUE % 1000) + 1) * 1000000);
         test.toMillis();
     }
 
@@ -1938,27 +1935,27 @@ public class TestDuration extends AbstractTest {
     @Test
     public void test_comparisons() {
         doTest_comparisons_Duration(
-            Duration.ofSeconds(-2L, 0),
-            Duration.ofSeconds(-2L, 999999998),
-            Duration.ofSeconds(-2L, 999999999),
-            Duration.ofSeconds(-1L, 0),
-            Duration.ofSeconds(-1L, 1),
-            Duration.ofSeconds(-1L, 999999998),
-            Duration.ofSeconds(-1L, 999999999),
-            Duration.ofSeconds(0L, 0),
-            Duration.ofSeconds(0L, 1),
-            Duration.ofSeconds(0L, 2),
-            Duration.ofSeconds(0L, 999999999),
-            Duration.ofSeconds(1L, 0),
-            Duration.ofSeconds(2L, 0)
+            TDuration.ofSeconds(-2L, 0),
+            TDuration.ofSeconds(-2L, 999999998),
+            TDuration.ofSeconds(-2L, 999999999),
+            TDuration.ofSeconds(-1L, 0),
+            TDuration.ofSeconds(-1L, 1),
+            TDuration.ofSeconds(-1L, 999999998),
+            TDuration.ofSeconds(-1L, 999999999),
+            TDuration.ofSeconds(0L, 0),
+            TDuration.ofSeconds(0L, 1),
+            TDuration.ofSeconds(0L, 2),
+            TDuration.ofSeconds(0L, 999999999),
+            TDuration.ofSeconds(1L, 0),
+            TDuration.ofSeconds(2L, 0)
         );
     }
 
-    void doTest_comparisons_Duration(Duration... durations) {
+    void doTest_comparisons_Duration(TDuration... durations) {
         for (int i = 0; i < durations.length; i++) {
-            Duration a = durations[i];
+            TDuration a = durations[i];
             for (int j = 0; j < durations.length; j++) {
-                Duration b = durations[j];
+                TDuration b = durations[j];
                 if (i < j) {
                     assertEquals(a.compareTo(b)< 0, true, a + " <=> " + b);
                     assertEquals(a.equals(b), false, a + " <=> " + b);
@@ -1975,14 +1972,14 @@ public class TestDuration extends AbstractTest {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_compareTo_ObjectNull() {
-        Duration a = Duration.ofSeconds(0L, 0);
+        TDuration a = TDuration.ofSeconds(0L, 0);
         a.compareTo(null);
     }
 
     @Test(expectedExceptions=ClassCastException.class)
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void compareToNonDuration() {
-       Comparable c = Duration.ofSeconds(0L);
+       Comparable c = TDuration.ofSeconds(0L);
        c.compareTo(new Object());
     }
 
@@ -1991,10 +1988,10 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_equals() {
-        Duration test5a = Duration.ofSeconds(5L, 20);
-        Duration test5b = Duration.ofSeconds(5L, 20);
-        Duration test5n = Duration.ofSeconds(5L, 30);
-        Duration test6 = Duration.ofSeconds(6L, 20);
+        TDuration test5a = TDuration.ofSeconds(5L, 20);
+        TDuration test5b = TDuration.ofSeconds(5L, 20);
+        TDuration test5n = TDuration.ofSeconds(5L, 30);
+        TDuration test6 = TDuration.ofSeconds(6L, 20);
 
         assertEquals(test5a.equals(test5a), true);
         assertEquals(test5a.equals(test5b), true);
@@ -2019,13 +2016,13 @@ public class TestDuration extends AbstractTest {
 
     @Test
     public void test_equals_null() {
-        Duration test5 = Duration.ofSeconds(5L, 20);
+        TDuration test5 = TDuration.ofSeconds(5L, 20);
         assertEquals(test5.equals(null), false);
     }
 
     @Test
     public void test_equals_otherClass() {
-        Duration test5 = Duration.ofSeconds(5L, 20);
+        TDuration test5 = TDuration.ofSeconds(5L, 20);
         assertEquals(test5.equals(""), false);
     }
 
@@ -2034,10 +2031,10 @@ public class TestDuration extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_hashCode() {
-        Duration test5a = Duration.ofSeconds(5L, 20);
-        Duration test5b = Duration.ofSeconds(5L, 20);
-        Duration test5n = Duration.ofSeconds(5L, 30);
-        Duration test6 = Duration.ofSeconds(6L, 20);
+        TDuration test5a = TDuration.ofSeconds(5L, 20);
+        TDuration test5b = TDuration.ofSeconds(5L, 20);
+        TDuration test5n = TDuration.ofSeconds(5L, 30);
+        TDuration test6 = TDuration.ofSeconds(6L, 20);
 
         assertEquals(test5a.hashCode() == test5a.hashCode(), true);
         assertEquals(test5a.hashCode() == test5b.hashCode(), true);
@@ -2086,7 +2083,7 @@ public class TestDuration extends AbstractTest {
 
     @Test(dataProvider="ToString")
     public void test_toString(long seconds, int nanos, String expected) {
-        Duration t = Duration.ofSeconds(seconds, nanos);
+        TDuration t = TDuration.ofSeconds(seconds, nanos);
         assertEquals(t.toString(), expected);
     }
 

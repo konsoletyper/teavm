@@ -29,38 +29,35 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
-import static org.threeten.bp.temporal.ChronoField.NANO_OF_SECOND;
-import static org.threeten.bp.temporal.ChronoField.SECOND_OF_MINUTE;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_SECOND;
+import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_MINUTE;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.format.DateTimeFormatterBuilder.FractionPrinterParser;
-import org.threeten.bp.temporal.MockFieldValue;
-import org.threeten.bp.temporal.TemporalField;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.TLocalTime;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.FractionPrinterParser;
+import org.teavm.classlib.java.time.temporal.MockFieldValue;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
 
-/**
- * Test FractionPrinterParser.
- */
 @Test
 public class TestFractionPrinterParser extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
     // print
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void test_print_emptyCalendrical() throws Exception {
         FractionPrinterParser pp = new FractionPrinterParser(NANO_OF_SECOND, 0, 9, true);
         pp.print(printEmptyContext, buf);
     }
 
     public void test_print_append() throws Exception {
-        printContext.setDateTime(LocalTime.of(12, 30, 40, 3));
+        printContext.setDateTime(TLocalTime.of(12, 30, 40, 3));
         FractionPrinterParser pp = new FractionPrinterParser(NANO_OF_SECOND, 0, 9, true);
         buf.append("EXISTING");
         pp.print(printContext, buf);
@@ -276,7 +273,7 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
         assertParsed(parseContext, SECOND_OF_MINUTE, value == 0 && minWidth == 0 ? null : (long) value);
     }
 
-    private void assertParsed(DateTimeParseContext context, TemporalField field, Long value) {
+    private void assertParsed(TDateTimeParseContext context, TTemporalField field, Long value) {
         if (value == null) {
             assertEquals(context.getParsed(field), null);
         } else {

@@ -29,13 +29,10 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
 import java.io.IOException;
 
-/**
- * Mock Appendable that throws IOException.
- */
 public class MockIOExceptionAppendable implements Appendable {
 
     public Appendable append(CharSequence csq) throws IOException {

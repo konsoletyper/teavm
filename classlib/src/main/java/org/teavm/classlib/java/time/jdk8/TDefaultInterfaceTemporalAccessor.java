@@ -29,41 +29,37 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.jdk8;
+package org.teavm.classlib.java.time.jdk8;
 
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.TemporalAccessor;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.TemporalQueries;
-import org.threeten.bp.temporal.TemporalQuery;
-import org.threeten.bp.temporal.UnsupportedTemporalTypeException;
-import org.threeten.bp.temporal.ValueRange;
+import org.teavm.classlib.java.time.temporal.TChronoField;
+import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.classlib.java.time.temporal.TTemporalQuery;
+import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
+import org.teavm.classlib.java.time.temporal.TValueRange;
 
-/**
- * A temporary class providing implementations that will become default interface
- * methods once integrated into JDK 8.
- */
-public abstract class DefaultInterfaceTemporalAccessor implements TemporalAccessor {
+public abstract class TDefaultInterfaceTemporalAccessor implements TTemporalAccessor {
 
     @Override
-    public ValueRange range(TemporalField field) {
-        if (field instanceof ChronoField) {
+    public TValueRange range(TTemporalField field) {
+        if (field instanceof TChronoField) {
             if (isSupported(field)) {
                 return field.range();
             }
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+            throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.rangeRefinedBy(this);
     }
 
     @Override
-    public int get(TemporalField field) {
+    public int get(TTemporalField field) {
         return range(field).checkValidIntValue(getLong(field), field);
     }
 
     @Override
-    public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQueries.zoneId() || query == TemporalQueries.chronology() || query == TemporalQueries.precision()) {
+    public <R> R query(TTemporalQuery<R> query) {
+        if (query == TTemporalQueries.zoneId() || query == TTemporalQueries.chronology() || query == TTemporalQueries.precision()) {
             return null;
         }
         return query.queryFrom(this);

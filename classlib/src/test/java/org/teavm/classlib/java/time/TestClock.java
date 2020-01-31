@@ -29,35 +29,32 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-/**
- * Test Clock.
- */
 @Test
 public class TestClock {
 
-    static class MockInstantClock extends Clock {
+    static class MockInstantClock extends TClock {
         final long millis;
-        final ZoneId zone;
-        MockInstantClock(long millis, ZoneId zone) {
+        final TZoneId zone;
+        MockInstantClock(long millis, TZoneId zone) {
             this.millis = millis;
             this.zone = zone;
         }
         @Override
-        public Instant instant() {
-            return Instant.ofEpochMilli(millis);
+        public TInstant instant() {
+            return TInstant.ofEpochMilli(millis);
         }
         @Override
-        public ZoneId getZone() {
+        public TZoneId getZone() {
             return zone;
         }
         @Override
-        public Clock withZone(ZoneId timeZone) {
+        public TClock withZone(TZoneId timeZone) {
             return new MockInstantClock(millis, timeZone);
         }
         @Override
@@ -74,9 +71,9 @@ public class TestClock {
         }
     }
 
-    private static final Instant INSTANT = Instant.ofEpochSecond(1873687, 357000000);
-    private static final ZoneId ZONE = ZoneId.of("Europe/Paris");
-    private static final Clock MOCK_INSTANT = new MockInstantClock(INSTANT.toEpochMilli(), ZONE);
+    private static final TInstant INSTANT = TInstant.ofEpochSecond(1873687, 357000000);
+    private static final TZoneId ZONE = TZoneId.of("Europe/Paris");
+    private static final TClock MOCK_INSTANT = new MockInstantClock(INSTANT.toEpochMilli(), ZONE);
 
     //-----------------------------------------------------------------------
     @Test
@@ -88,8 +85,8 @@ public class TestClock {
 
     @Test
     public void test_mockInstantClock_withZone() {
-        ZoneId london = ZoneId.of("Europe/London");
-        Clock changed = MOCK_INSTANT.withZone(london);
+        TZoneId london = TZoneId.of("Europe/London");
+        TClock changed = MOCK_INSTANT.withZone(london);
         assertEquals(MOCK_INSTANT.instant(), INSTANT);
         assertEquals(MOCK_INSTANT.millis(), INSTANT.toEpochMilli());
         assertEquals(changed.getZone(), london);

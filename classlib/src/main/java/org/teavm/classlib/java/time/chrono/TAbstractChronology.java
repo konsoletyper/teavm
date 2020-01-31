@@ -29,16 +29,8 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.chrono;
+package org.teavm.classlib.java.time.chrono;
 
-/**
- * An abstract implementation of {@code Chronology}.
- *
- * <h3>Specification for implementors</h3>
- * This class must be implemented with care to ensure other classes operate correctly.
- * All implementations that can be instantiated must be final, immutable and thread-safe.
- * Subclasses should be Serializable wherever possible.
- */
-public abstract class AbstractChronology extends Chronology {
+public abstract class TAbstractChronology extends TChronology {
 
 }

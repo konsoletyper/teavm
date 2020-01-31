@@ -29,42 +29,19 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.zone;
+package org.teavm.classlib.java.time.zone;
 
-import org.threeten.bp.DateTimeException;
+import org.teavm.classlib.java.time.TDateTimeException;
 
-/**
- * Thrown to indicate a problem with time-zone configuration.
- * <p>
- * This exception is used to indicate a problems with the configured
- * time-zone rules.
- *
- * <h3>Specification for implementors</h3>
- * This class is intended for use in a single thread.
- */
-public class ZoneRulesException extends DateTimeException {
+public class TZoneRulesException extends TDateTimeException {
 
-    /**
-     * Serialization version.
-     */
     private static final long serialVersionUID = -1632418723876261839L;
 
-    /**
-     * Constructs a new date-time exception with the specified message.
-     *
-     * @param message  the message to use for this exception, may be null
-     */
-    public ZoneRulesException(String message) {
+    public TZoneRulesException(String message) {
         super(message);
     }
 
-    /**
-     * Constructs a new date-time exception with the specified message and cause.
-     *
-     * @param message  the message to use for this exception, may be null
-     * @param cause  the cause of the exception, may be null
-     */
-    public ZoneRulesException(String message, Throwable cause) {
+    public TZoneRulesException(String message, Throwable cause) {
         super(message, cause);
     }
 

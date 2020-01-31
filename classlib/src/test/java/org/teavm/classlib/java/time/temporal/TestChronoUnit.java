@@ -29,31 +29,28 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.temporal;
+package org.teavm.classlib.java.time.temporal;
 
-import static org.testng.Assert.assertEquals;
-import static org.threeten.bp.Month.AUGUST;
-import static org.threeten.bp.Month.FEBRUARY;
-import static org.threeten.bp.Month.JULY;
-import static org.threeten.bp.Month.JUNE;
-import static org.threeten.bp.Month.MARCH;
-import static org.threeten.bp.Month.OCTOBER;
-import static org.threeten.bp.Month.SEPTEMBER;
-import static org.threeten.bp.temporal.ChronoUnit.DAYS;
-import static org.threeten.bp.temporal.ChronoUnit.FOREVER;
-import static org.threeten.bp.temporal.ChronoUnit.MONTHS;
-import static org.threeten.bp.temporal.ChronoUnit.WEEKS;
-import static org.threeten.bp.temporal.ChronoUnit.YEARS;
+import static org.junit.Assert.assertEquals;
+import static org.teavm.classlib.java.time.TMonth.AUGUST;
+import static org.teavm.classlib.java.time.TMonth.FEBRUARY;
+import static org.teavm.classlib.java.time.TMonth.JULY;
+import static org.teavm.classlib.java.time.TMonth.JUNE;
+import static org.teavm.classlib.java.time.TMonth.MARCH;
+import static org.teavm.classlib.java.time.TMonth.OCTOBER;
+import static org.teavm.classlib.java.time.TMonth.SEPTEMBER;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.FOREVER;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.Month;
-import org.threeten.bp.ZoneOffset;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TLocalDate;
+import org.teavm.classlib.java.time.TMonth;
+import org.teavm.classlib.java.time.TZoneOffset;
 
-/**
- * Test.
- */
 @Test
 public class TestChronoUnit {
 
@@ -80,22 +77,22 @@ public class TestChronoUnit {
     }
 
     @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetween(LocalDate start, LocalDate end, long expected) {
+    public void test_yearsBetween(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(YEARS.between(start, end), expected);
     }
 
     @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetweenReversed(LocalDate start, LocalDate end, long expected) {
+    public void test_yearsBetweenReversed(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(YEARS.between(end, start), -expected);
     }
 
     @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetween_LocalDateTimeSameTime(LocalDate start, LocalDate end, long expected) {
+    public void test_yearsBetween_LocalDateTimeSameTime(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(YEARS.between(start.atTime(12, 30), end.atTime(12, 30)), expected);
     }
 
     @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetween_LocalDateTimeLaterTime(LocalDate start, LocalDate end, long expected) {
+    public void test_yearsBetween_LocalDateTimeLaterTime(TLocalDate start, TLocalDate end, long expected) {
         if (end.isAfter(start)) {
             assertEquals(YEARS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
         } else {
@@ -104,17 +101,17 @@ public class TestChronoUnit {
     }
 
     @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetween_ZonedDateSameOffset(LocalDate start, LocalDate end, long expected) {
-        assertEquals(YEARS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(2))), expected);
+    public void test_yearsBetween_ZonedDateSameOffset(TLocalDate start, TLocalDate end, long expected) {
+        assertEquals(YEARS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
     }
 
     @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetween_ZonedDateLaterOffset(LocalDate start, LocalDate end, long expected) {
+    public void test_yearsBetween_ZonedDateLaterOffset(TLocalDate start, TLocalDate end, long expected) {
         // +01:00 is later than +02:00
         if (end.isAfter(start)) {
-            assertEquals(YEARS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(1))), expected);
+            assertEquals(YEARS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(1))), expected);
         } else {
-            assertEquals(YEARS.between(start.atStartOfDay(ZoneOffset.ofHours(1)), end.atStartOfDay(ZoneOffset.ofHours(2))), expected);
+            assertEquals(YEARS.between(start.atStartOfDay(TZoneOffset.ofHours(1)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
         }
     }
 
@@ -153,22 +150,22 @@ public class TestChronoUnit {
     }
 
     @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetween(LocalDate start, LocalDate end, long expected) {
+    public void test_monthsBetween(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(MONTHS.between(start, end), expected);
     }
 
     @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetweenReversed(LocalDate start, LocalDate end, long expected) {
+    public void test_monthsBetweenReversed(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(MONTHS.between(end, start), -expected);
     }
 
     @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetween_LocalDateTimeSameTime(LocalDate start, LocalDate end, long expected) {
+    public void test_monthsBetween_LocalDateTimeSameTime(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(MONTHS.between(start.atTime(12, 30), end.atTime(12, 30)), expected);
     }
 
     @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetween_LocalDateTimeLaterTime(LocalDate start, LocalDate end, long expected) {
+    public void test_monthsBetween_LocalDateTimeLaterTime(TLocalDate start, TLocalDate end, long expected) {
         if (end.isAfter(start)) {
             assertEquals(MONTHS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
         } else {
@@ -177,17 +174,17 @@ public class TestChronoUnit {
     }
 
     @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetween_ZonedDateSameOffset(LocalDate start, LocalDate end, long expected) {
-        assertEquals(MONTHS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(2))), expected);
+    public void test_monthsBetween_ZonedDateSameOffset(TLocalDate start, TLocalDate end, long expected) {
+        assertEquals(MONTHS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
     }
 
     @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetween_ZonedDateLaterOffset(LocalDate start, LocalDate end, long expected) {
+    public void test_monthsBetween_ZonedDateLaterOffset(TLocalDate start, TLocalDate end, long expected) {
         // +01:00 is later than +02:00
         if (end.isAfter(start)) {
-            assertEquals(MONTHS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(1))), expected);
+            assertEquals(MONTHS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(1))), expected);
         } else {
-            assertEquals(MONTHS.between(start.atStartOfDay(ZoneOffset.ofHours(1)), end.atStartOfDay(ZoneOffset.ofHours(2))), expected);
+            assertEquals(MONTHS.between(start.atStartOfDay(TZoneOffset.ofHours(1)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
         }
     }
 
@@ -220,12 +217,12 @@ public class TestChronoUnit {
     }
 
     @Test(dataProvider = "weeksBetween")
-    public void test_weeksBetween(LocalDate start, LocalDate end, long expected) {
+    public void test_weeksBetween(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(WEEKS.between(start, end), expected);
     }
 
     @Test(dataProvider = "weeksBetween")
-    public void test_weeksBetweenReversed(LocalDate start, LocalDate end, long expected) {
+    public void test_weeksBetweenReversed(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(WEEKS.between(end, start), -expected);
     }
 
@@ -263,22 +260,22 @@ public class TestChronoUnit {
     }
 
     @Test(dataProvider = "daysBetween")
-    public void test_daysBetween(LocalDate start, LocalDate end, long expected) {
+    public void test_daysBetween(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(DAYS.between(start, end), expected);
     }
 
     @Test(dataProvider = "daysBetween")
-    public void test_daysBetweenReversed(LocalDate start, LocalDate end, long expected) {
+    public void test_daysBetweenReversed(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(DAYS.between(end, start), -expected);
     }
 
     @Test(dataProvider = "daysBetween")
-    public void test_daysBetween_LocalDateTimeSameTime(LocalDate start, LocalDate end, long expected) {
+    public void test_daysBetween_LocalDateTimeSameTime(TLocalDate start, TLocalDate end, long expected) {
         assertEquals(DAYS.between(start.atTime(12, 30), end.atTime(12, 30)), expected);
     }
 
     @Test(dataProvider = "daysBetween")
-    public void test_daysBetween_LocalDateTimeLaterTime(LocalDate start, LocalDate end, long expected) {
+    public void test_daysBetween_LocalDateTimeLaterTime(TLocalDate start, TLocalDate end, long expected) {
         if (end.isAfter(start)) {
             assertEquals(DAYS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
         } else {
@@ -287,24 +284,24 @@ public class TestChronoUnit {
     }
 
     @Test(dataProvider = "daysBetween")
-    public void test_daysBetween_ZonedDateSameOffset(LocalDate start, LocalDate end, long expected) {
-        assertEquals(DAYS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(2))), expected);
+    public void test_daysBetween_ZonedDateSameOffset(TLocalDate start, TLocalDate end, long expected) {
+        assertEquals(DAYS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
     }
 
     @Test(dataProvider = "daysBetween")
-    public void test_daysBetween_ZonedDateLaterOffset(LocalDate start, LocalDate end, long expected) {
+    public void test_daysBetween_ZonedDateLaterOffset(TLocalDate start, TLocalDate end, long expected) {
         // +01:00 is later than +02:00
         if (end.isAfter(start)) {
-            assertEquals(DAYS.between(start.atStartOfDay(ZoneOffset.ofHours(2)), end.atStartOfDay(ZoneOffset.ofHours(1))), expected);
+            assertEquals(DAYS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(1))), expected);
         } else {
-            assertEquals(DAYS.between(start.atStartOfDay(ZoneOffset.ofHours(1)), end.atStartOfDay(ZoneOffset.ofHours(2))), expected);
+            assertEquals(DAYS.between(start.atStartOfDay(TZoneOffset.ofHours(1)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
         }
     }
 
     //-------------------------------------------------------------------------
     @Test
     public void test_isDateBased() {
-        for (ChronoUnit unit : ChronoUnit.values()) {
+        for (TChronoUnit unit : TChronoUnit.values()) {
             if (unit.getDuration().getSeconds() < 86400) {
                 assertEquals(unit.isDateBased(), false);
             } else if (unit == FOREVER) {
@@ -317,7 +314,7 @@ public class TestChronoUnit {
 
     @Test
     public void test_isTimeBased() {
-        for (ChronoUnit unit : ChronoUnit.values()) {
+        for (TChronoUnit unit : TChronoUnit.values()) {
             if (unit.getDuration().getSeconds() < 86400) {
                 assertEquals(unit.isTimeBased(), true);
             } else if (unit == FOREVER) {
@@ -329,8 +326,8 @@ public class TestChronoUnit {
     }
 
     //-----------------------------------------------------------------------
-    private static LocalDate date(int year, Month month, int dom) {
-        return LocalDate.of(year, month, dom);
+    private static TLocalDate date(int year, TMonth month, int dom) {
+        return TLocalDate.of(year, month, dom);
     }
 
 }

@@ -29,98 +29,48 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import java.sql.Timestamp;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
+import org.teavm.classlib.java.sql.TTimestamp;
+import org.teavm.classlib.java.util.TCalendar;
+import org.teavm.classlib.java.util.TDate;
+import org.teavm.classlib.java.util.TGregorianCalendar;
+import org.teavm.classlib.java.util.TTimeZone;
 
-/**
- * A set of utilities to assist in bridging the gap to Java 8.
- * <p>
- * This class is not found in Java SE 8 but provides methods that are.
- */
-public final class DateTimeUtils {
+public final class TDateTimeUtils {
 
-    /**
-     * Restricted constructor.
-     */
-    private DateTimeUtils() {
+    private TDateTimeUtils() {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Converts a {@code java.util.Date} to an {@code Instant}.
-     *
-     * @param utilDate  the util date, not null
-     * @return the instant, not null
-     */
-    public static Instant toInstant(Date utilDate) {
-        return Instant.ofEpochMilli(utilDate.getTime());
+    public static TInstant toInstant(TDate utilDate) {
+        return TInstant.ofEpochMilli(utilDate.getTime());
     }
 
-    /**
-     * Converts an {@code Instant} to a {@code java.util.Date}.
-     * <p>
-     * Fractions of the instant smaller than milliseconds will be dropped.
-     *
-     * @param instant  the instant, not null
-     * @return the util date, not null
-     * @throws IllegalArgumentException if the conversion fails
-     */
-    public static Date toDate(Instant instant) {
+    public static TDate toDate(TInstant instant) {
         try {
-            return new Date(instant.toEpochMilli());
+            return new TDate(instant.toEpochMilli());
         } catch (ArithmeticException ex) {
             throw new IllegalArgumentException(ex);
         }
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Converts a {@code Calendar} to an {@code Instant}.
-     *
-     * @param calendar  the calendar, not null
-     * @return the instant, not null
-     */
-    public static Instant toInstant(Calendar calendar) {
-        return Instant.ofEpochMilli(calendar.getTimeInMillis());
+    public static TInstant toInstant(TCalendar calendar) {
+        return TInstant.ofEpochMilli(calendar.getTimeInMillis());
     }
 
-    /**
-     * Converts a {@code Calendar} to a {@code ZonedDateTime}.
-     * <p>
-     * Note that {@code GregorianCalendar} supports a Julian-Gregorian cutover
-     * date and {@code ZonedDateTime} does not so some differences will occur.
-     *
-     * @param calendar  the calendar, not null
-     * @return the instant, not null
-     */
-    public static ZonedDateTime toZonedDateTime(Calendar calendar) {
-        Instant instant = Instant.ofEpochMilli(calendar.getTimeInMillis());
-        ZoneId zone = toZoneId(calendar.getTimeZone());
-        return ZonedDateTime.ofInstant(instant, zone);
+    public static TZonedDateTime toZonedDateTime(TCalendar calendar) {
+        TInstant instant = TInstant.ofEpochMilli(calendar.getTimeInMillis());
+        TZoneId zone = toZoneId(calendar.getTimeZone());
+        return TZonedDateTime.ofInstant(instant, zone);
     }
 
-    /**
-     * Converts a {@code ZonedDateTime} to a {@code Calendar}.
-     * <p>
-     * The resulting {@code GregorianCalendar} is pure Gregorian and uses
-     * ISO week definitions, starting on Monday and with 4 days in a minimal week.
-     * <p>
-     * Fractions of the instant smaller than milliseconds will be dropped.
-     *
-     * @param zdt  the zoned date-time, not null
-     * @return the calendar, not null
-     * @throws IllegalArgumentException if the conversion fails
-     */
-    public static GregorianCalendar toGregorianCalendar(ZonedDateTime zdt) {
-        TimeZone zone = toTimeZone(zdt.getZone());
-        GregorianCalendar cal = new GregorianCalendar(zone);
-        cal.setGregorianChange(new Date(Long.MIN_VALUE));
-        cal.setFirstDayOfWeek(Calendar.MONDAY);
+    public static TGregorianCalendar toGregorianCalendar(TZonedDateTime zdt) {
+        TTimeZone zone = toTimeZone(zdt.getZone());
+        TGregorianCalendar cal = new TGregorianCalendar(zone);
+        cal.setGregorianChange(new TDate(Long.MIN_VALUE));
+        cal.setFirstDayOfWeek(TCalendar.MONDAY);
         cal.setMinimalDaysInFirstWeek(4);
         try {
             cal.setTimeInMillis(zdt.toInstant().toEpochMilli());
@@ -131,88 +81,46 @@ public final class DateTimeUtils {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Converts a {@code TimeZone} to a {@code ZoneId}.
-     * 
-     * @param timeZone  the time-zone, not null
-     * @return the zone, not null
-     */
-    public static ZoneId toZoneId(TimeZone timeZone) {
-        return ZoneId.of(timeZone.getID(), ZoneId.SHORT_IDS);
+    public static TZoneId toZoneId(TTimeZone timeZone) {
+        return TZoneId.of(timeZone.getID(), TZoneId.SHORT_IDS);
     }
 
-    /**
-     * Converts a {@code ZoneId} to a {@code TimeZone}.
-     * 
-     * @param zoneId  the zone, not null
-     * @return the time-zone, not null
-     */
-    public static TimeZone toTimeZone(ZoneId zoneId) {
+    public static TTimeZone toTimeZone(TZoneId zoneId) {
         String tzid = zoneId.getId();
         if (tzid.startsWith("+") || tzid.startsWith("-")) {
             tzid = "GMT" + tzid;
         } else if (tzid.equals("Z")) {
             tzid = "UTC";
         }
-        return TimeZone.getTimeZone(tzid);
+        return TTimeZone.getTimeZone(tzid);
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Converts a {@code java.sql.Date} to a {@code LocalDate}.
-     *
-     * @param sqlDate  the SQL date, not null
-     * @return the local date, not null
-     */
     @SuppressWarnings("deprecation")
-    public static LocalDate toLocalDate(java.sql.Date sqlDate) {
-        return LocalDate.of(sqlDate.getYear() + 1900, sqlDate.getMonth() + 1, sqlDate.getDate());
+    public static TLocalDate toLocalDate(java.sql.TDate sqlDate) {
+        return TLocalDate.of(sqlDate.getYear() + 1900, sqlDate.getMonth() + 1, sqlDate.getDate());
     }
 
-    /**
-     * Converts a {@code LocalDate} to a {@code java.sql.Date}.
-     *
-     * @param date  the local date, not null
-     * @return the SQL date, not null
-     */
     @SuppressWarnings("deprecation")
-    public static java.sql.Date toSqlDate(LocalDate date) {
-        return new java.sql.Date(date.getYear() - 1900, date.getMonthValue() -1, date.getDayOfMonth());
+    public static java.sql.TDate toSqlDate(TLocalDate date) {
+        return new java.sql.TDate(date.getYear() - 1900, date.getMonthValue() -1, date.getDayOfMonth());
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Converts a {@code java.sql.Time} to a {@code LocalTime}.
-     *
-     * @param sqlTime  the SQL time, not null
-     * @return the local time, not null
-     */
     @SuppressWarnings("deprecation")
-    public static LocalTime toLocalTime(java.sql.Time sqlTime) {
-        return LocalTime.of(sqlTime.getHours(), sqlTime.getMinutes(), sqlTime.getSeconds());
+    public static TLocalTime toLocalTime(java.sql.Time sqlTime) {
+        return TLocalTime.of(sqlTime.getHours(), sqlTime.getMinutes(), sqlTime.getSeconds());
     }
 
-    /**
-     * Converts a {@code LocalTime} to a {@code java.sql.Time}.
-     *
-     * @param time  the local time, not null
-     * @return the SQL time, not null
-     */
     @SuppressWarnings("deprecation")
-    public static java.sql.Time toSqlTime(LocalTime time) {
+    public static java.sql.Time toSqlTime(TLocalTime time) {
         return new java.sql.Time(time.getHour(), time.getMinute(), time.getSecond());
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Converts a {@code LocalDateTime} to a {@code java.sql.Timestamp}.
-     *
-     * @param dateTime  the local date-time, not null
-     * @return the SQL timestamp, not null
-     */
     @SuppressWarnings("deprecation")
-    public static Timestamp toSqlTimestamp(LocalDateTime dateTime) {
-        return new Timestamp(
+    public static TTimestamp toSqlTimestamp(TLocalDateTime dateTime) {
+        return new TTimestamp(
                 dateTime.getYear() - 1900,
                 dateTime.getMonthValue() - 1,
                 dateTime.getDayOfMonth(),
@@ -222,15 +130,9 @@ public final class DateTimeUtils {
                 dateTime.getNano());
     }
 
-    /**
-     * Converts a {@code java.sql.Timestamp} to a {@code LocalDateTime}.
-     *
-     * @param sqlTimestamp  the SQL timestamp, not null
-     * @return the local date-time, not null
-     */
     @SuppressWarnings("deprecation")
-    public static LocalDateTime toLocalDateTime(Timestamp sqlTimestamp) {
-        return LocalDateTime.of(
+    public static TLocalDateTime toLocalDateTime(TTimestamp sqlTimestamp) {
+        return TLocalDateTime.of(
                 sqlTimestamp.getYear() + 1900,
                 sqlTimestamp.getMonth() + 1,
                 sqlTimestamp.getDate(),
@@ -240,15 +142,9 @@ public final class DateTimeUtils {
                 sqlTimestamp.getNanos());
     }
 
-    /**
-     * Converts an {@code Instant} to a {@code java.sql.Timestamp}.
-     *
-     * @param instant  the instant, not null
-     * @return the SQL timestamp, not null
-     */
-    public static Timestamp toSqlTimestamp(Instant instant) {
+    public static TTimestamp toSqlTimestamp(TInstant instant) {
         try {
-            Timestamp ts = new Timestamp(instant.getEpochSecond() * 1000);
+            TTimestamp ts = new TTimestamp(instant.getEpochSecond() * 1000);
             ts.setNanos(instant.getNano());
             return ts;
         } catch (ArithmeticException ex) {
@@ -256,14 +152,8 @@ public final class DateTimeUtils {
         }
     }
 
-    /**
-     * Converts a {@code java.sql.Timestamp} to an {@code Instant}.
-     *
-     * @param sqlTimestamp  the SQL timestamp, not null
-     * @return the instant, not null
-     */
-    public static Instant toInstant(Timestamp sqlTimestamp) {
-        return Instant.ofEpochSecond(sqlTimestamp.getTime() / 1000, sqlTimestamp.getNanos());
+    public static TInstant toInstant(TTimestamp sqlTimestamp) {
+        return TInstant.ofEpochSecond(sqlTimestamp.getTime() / 1000, sqlTimestamp.getNanos());
     }
 
 }

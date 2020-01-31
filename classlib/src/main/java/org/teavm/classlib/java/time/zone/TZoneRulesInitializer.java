@@ -29,47 +29,21 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.zone;
+package org.teavm.classlib.java.time.zone;
 
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
-/**
- * Controls how the time-zone rules are initialized.
- * <p>
- * The default behavior is to use {@link ServiceLoader} to find instances of {@link ZoneRulesProvider}.
- * Use the {@link #setInitializer(ZoneRulesInitializer)} method to replace this behavior.
- * The initializer instance must perform the work of creating the {@code ZoneRulesProvider} within
- * the {@link #initializeProviders()} method to ensure that the provider is not initialized too early.
- * <p>
- * <b>The initializer must be set before class loading of any other ThreeTen-Backport class to have any effect!</b>
- * <p>
- * This class has been added primarily for the benefit of Android.
- */
-public abstract class ZoneRulesInitializer {
+public abstract class TZoneRulesInitializer {
 
-    /**
-     * An instance that does nothing.
-     * Call {@link #setInitializer(ZoneRulesInitializer)} with this instance to
-     * block the service loader search. This will leave the system with no providers.
-     */
-    public static final ZoneRulesInitializer DO_NOTHING = new DoNothingZoneRulesInitializer();
+    public static final TZoneRulesInitializer DO_NOTHING = new DoNothingZoneRulesInitializer();
 
     private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
-    private static final AtomicReference<ZoneRulesInitializer> INITIALIZER = new AtomicReference<ZoneRulesInitializer>();
+    private static final AtomicReference<TZoneRulesInitializer> INITIALIZER = new AtomicReference<TZoneRulesInitializer>();
 
-    /**
-     * Sets the initializer to use.
-     * <p>
-     * This can only be invoked before the {@link ZoneRulesProvider} class is loaded.
-     * Invoking this method at a later point will throw an exception.
-     * 
-     * @param initializer  the initializer to use
-     * @throws IllegalStateException if initialization has already occurred or another initializer has been set
-     */
-    public static void setInitializer(ZoneRulesInitializer initializer) {
+    public static void setInitializer(TZoneRulesInitializer initializer) {
         if (INITIALIZED.get()) {
             throw new IllegalStateException("Already initialized");
         }
@@ -89,40 +63,24 @@ public abstract class ZoneRulesInitializer {
         INITIALIZER.get().initializeProviders();
     }
 
-    /**
-     * Initialize the providers.
-     * <p>
-     * The implementation should perform whatever work is necessary to initialize the providers.
-     * This will result in one or more calls to {@link ZoneRulesProvider#registerProvider(ZoneRulesProvider)}.
-     * <p>
-     * It is vital that the instance of {@link ZoneRulesProvider} is not created until this method is invoked.
-     * <p>
-     * It is guaranteed that this method will be invoked once and only once.
-     */
     protected abstract void initializeProviders();
 
     //-----------------------------------------------------------------------
-    /**
-     * Implementation that does nothing.
-     */
-    static class DoNothingZoneRulesInitializer extends ZoneRulesInitializer {
+    static class DoNothingZoneRulesInitializer extends TZoneRulesInitializer {
 
         @Override
         protected void initializeProviders() {
         }
     }
 
-    /**
-     * Implementation that uses the service loader.
-     */
-    static class ServiceLoaderZoneRulesInitializer extends ZoneRulesInitializer {
+    static class ServiceLoaderZoneRulesInitializer extends TZoneRulesInitializer {
 
         @Override
         protected void initializeProviders() {
-            ServiceLoader<ZoneRulesProvider> loader = ServiceLoader.load(ZoneRulesProvider.class, ZoneRulesProvider.class.getClassLoader());
-            for (ZoneRulesProvider provider : loader) {
+            ServiceLoader<TZoneRulesProvider> loader = ServiceLoader.load(TZoneRulesProvider.class, TZoneRulesProvider.class.getClassLoader());
+            for (TZoneRulesProvider provider : loader) {
                 try {
-                    ZoneRulesProvider.registerProvider(provider);
+                    TZoneRulesProvider.registerProvider(provider);
                 } catch (ServiceConfigurationError ex) {
                     if (!(ex.getCause() instanceof SecurityException)) {
                         throw ex;

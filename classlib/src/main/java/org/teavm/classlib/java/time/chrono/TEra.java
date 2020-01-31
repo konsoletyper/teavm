@@ -29,67 +29,18 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.chrono;
+package org.teavm.classlib.java.time.chrono;
 
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 
-import org.threeten.bp.format.TextStyle;
-import org.threeten.bp.temporal.TemporalAccessor;
-import org.threeten.bp.temporal.TemporalAdjuster;
+import org.teavm.classlib.java.time.format.TTextStyle;
+import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
+import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
 
-/**
- * An era of the time-line.
- * <p>
- * Most calendar systems have a single epoch dividing the time-line into two eras.
- * However, some calendar systems, have multiple eras, such as one for the reign
- * of each leader.
- * In all cases, the era is conceptually the largest division of the time-line.
- * Each chronology defines the Era's that are known Eras and a
- * {@link Chronology#eras Chrono.eras} to get the valid eras.
- * <p>
- * For example, the Thai Buddhist calendar system divides time into two eras,
- * before and after a single date. By contrast, the Japanese calendar system
- * has one era for the reign of each Emperor.
- * <p>
- * Instances of {@code Era} may be compared using the {@code ==} operator.
- *
- * <h3>Specification for implementors</h3>
- * This interface must be implemented with care to ensure other classes operate correctly.
- * All implementations must be singletons - final, immutable and thread-safe.
- * It is recommended to use an enum whenever possible.
- */
-public interface Era extends TemporalAccessor, TemporalAdjuster {
+public interface TEra extends TTemporalAccessor, TTemporalAdjuster {
 
-    /**
-     * Gets the numeric value associated with the era as defined by the chronology.
-     * Each chronology defines the predefined Eras and methods to list the Eras
-     * of the chronology.
-     * <p>
-     * All fields, including eras, have an associated numeric value.
-     * The meaning of the numeric value for era is determined by the chronology
-     * according to these principles:
-     * <p><ul>
-     * <li>The era in use at the epoch 1970-01-01 (ISO) has the value 1.
-     * <li>Later eras have sequentially higher values.
-     * <li>Earlier eras have sequentially lower values, which may be negative.
-     * </ul><p>
-     *
-     * @return the numeric era value
-     */
     int getValue();
 
-    /**
-     * Gets the textual representation of this era.
-     * <p>
-     * This returns the textual name used to identify the era.
-     * The parameters control the style of the returned text and the locale.
-     * <p>
-     * If no textual mapping is found then the {@link #getValue() numeric value} is returned.
-     *
-     * @param style  the style of the text required, not null
-     * @param locale  the locale to use, not null
-     * @return the text value of the era, not null
-     */
-    String getDisplayName(TextStyle style, Locale locale);
+    String getDisplayName(TTextStyle style, TLocale locale);
 
 }

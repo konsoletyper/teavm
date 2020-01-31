@@ -29,69 +29,66 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.zone;
+package org.teavm.classlib.java.time.zone;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.threeten.bp.DayOfWeek.FRIDAY;
-import static org.threeten.bp.DayOfWeek.MONDAY;
-import static org.threeten.bp.DayOfWeek.SATURDAY;
-import static org.threeten.bp.DayOfWeek.SUNDAY;
-import static org.threeten.bp.DayOfWeek.THURSDAY;
-import static org.threeten.bp.DayOfWeek.TUESDAY;
-import static org.threeten.bp.Month.APRIL;
-import static org.threeten.bp.Month.AUGUST;
-import static org.threeten.bp.Month.FEBRUARY;
-import static org.threeten.bp.Month.MARCH;
-import static org.threeten.bp.Month.MAY;
-import static org.threeten.bp.Month.NOVEMBER;
-import static org.threeten.bp.Month.OCTOBER;
-import static org.threeten.bp.Month.SEPTEMBER;
-import static org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition.STANDARD;
-import static org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition.UTC;
-import static org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition.WALL;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.teavm.classlib.java.time.TDayOfWeek.FRIDAY;
+import static org.teavm.classlib.java.time.TDayOfWeek.MONDAY;
+import static org.teavm.classlib.java.time.TDayOfWeek.SATURDAY;
+import static org.teavm.classlib.java.time.TDayOfWeek.SUNDAY;
+import static org.teavm.classlib.java.time.TDayOfWeek.THURSDAY;
+import static org.teavm.classlib.java.time.TDayOfWeek.TUESDAY;
+import static org.teavm.classlib.java.time.TMonth.APRIL;
+import static org.teavm.classlib.java.time.TMonth.AUGUST;
+import static org.teavm.classlib.java.time.TMonth.FEBRUARY;
+import static org.teavm.classlib.java.time.TMonth.MARCH;
+import static org.teavm.classlib.java.time.TMonth.MAY;
+import static org.teavm.classlib.java.time.TMonth.NOVEMBER;
+import static org.teavm.classlib.java.time.TMonth.OCTOBER;
+import static org.teavm.classlib.java.time.TMonth.SEPTEMBER;
+import static org.teavm.classlib.java.time.zone.TZoneOffsetTransitionRule.TimeDefinition.STANDARD;
+import static org.teavm.classlib.java.time.zone.TZoneOffsetTransitionRule.TimeDefinition.UTC;
+import static org.teavm.classlib.java.time.zone.TZoneOffsetTransitionRule.TimeDefinition.WALL;
 
 import java.util.List;
 
-import org.testng.annotations.Test;
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.LocalDateTime;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.Month;
-import org.threeten.bp.Year;
-import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.TLocalDateTime;
+import org.teavm.classlib.java.time.TLocalTime;
+import org.teavm.classlib.java.time.TMonth;
+import org.teavm.classlib.java.time.TYear;
+import org.teavm.classlib.java.time.TZoneOffset;
+import org.teavm.classlib.java.time.zone.TZoneOffsetTransitionRule.TimeDefinition;
 
-/**
- * Test ZoneRulesBuilder.
- */
 @Test
 public class TestZoneRulesBuilder {
 
-    private static final ZoneOffset OFFSET_1 = ZoneOffset.ofHours(1);
-    private static final ZoneOffset OFFSET_2 = ZoneOffset.ofHours(2);
-    private static final ZoneOffset OFFSET_1_15 = ZoneOffset.ofHoursMinutes(1, 15);
-    private static final ZoneOffset OFFSET_2_30 = ZoneOffset.ofHoursMinutes(2, 30);
+    private static final TZoneOffset OFFSET_1 = TZoneOffset.ofHours(1);
+    private static final TZoneOffset OFFSET_2 = TZoneOffset.ofHours(2);
+    private static final TZoneOffset OFFSET_1_15 = TZoneOffset.ofHoursMinutes(1, 15);
+    private static final TZoneOffset OFFSET_2_30 = TZoneOffset.ofHoursMinutes(2, 30);
     private static final int PERIOD_0 = 0;
     private static final int PERIOD_1HOUR = 60 * 60;
     private static final int PERIOD_1HOUR30MIN = ((1 * 60) + 30) * 60;
-    private static final LocalDateTime DATE_TIME_FIRST = dateTime(Year.MIN_VALUE, 1, 1, 0, 0);
-    private static final LocalDateTime DATE_TIME_LAST = dateTime(Year.MAX_VALUE, 12, 31, 23, 59);
-    private static final LocalDateTime DATE_TIME_2008_01_01 = dateTime(2008, 1, 1, 0, 0);
-    private static final LocalDateTime DATE_TIME_2008_07_01 = dateTime(2008, 7, 1, 0, 0);
+    private static final TLocalDateTime DATE_TIME_FIRST = dateTime(TYear.MIN_VALUE, 1, 1, 0, 0);
+    private static final TLocalDateTime DATE_TIME_LAST = dateTime(TYear.MAX_VALUE, 12, 31, 23, 59);
+    private static final TLocalDateTime DATE_TIME_2008_01_01 = dateTime(2008, 1, 1, 0, 0);
+    private static final TLocalDateTime DATE_TIME_2008_07_01 = dateTime(2008, 7, 1, 0, 0);
 
     //-----------------------------------------------------------------------
     // toRules()
     //-----------------------------------------------------------------------
     @Test(expectedExceptions=IllegalStateException.class)
     public void test_toRules_noWindows() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.toRules("Europe/London");
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_toRules_null() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_2_30);
         b.toRules(null);
     }
@@ -101,10 +98,10 @@ public class TestZoneRulesBuilder {
     //-----------------------------------------------------------------------
     @Test
     public void test_combined_singleCutover() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(1950, 1, 1, 1, 0), STANDARD);
         b.addWindowForever(OFFSET_2);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertGap(test, 1950, 1, 1, 1, 30, OFFSET_1, OFFSET_2);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_2);
@@ -112,13 +109,13 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_combined_localFixedRules() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1_15, dateTime(1920, 1, 1, 1, 0), WALL);
         b.addWindow(OFFSET_1, dateTime(1950, 1, 1, 1, 0), WALL);
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_0);
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1_15);
         assertOverlap(test, 1920, 1, 1, 0, 55, OFFSET_1_15, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
@@ -134,12 +131,12 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_combined_windowChangeDuringDST() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(2000, 7, 1, 1, 0), WALL);
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/Dublin");
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
+        TZoneRules test = b.toRules("Europe/Dublin");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
 
@@ -153,13 +150,13 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_combined_windowChangeWithinDST() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(2000, 7, 1, 1, 0), WALL);
         b.addWindow(OFFSET_1, dateTime(2000, 8, 1, 2, 0), WALL);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
         b.addWindowForever(OFFSET_1);
-        ZoneRules test = b.toRules("Europe/Dublin");
+        TZoneRules test = b.toRules("Europe/Dublin");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
 
@@ -173,12 +170,12 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_combined_endsInSavings() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1_15, dateTime(1920, 1, 1, 1, 0), WALL);
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_0);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR);
-        ZoneRules test = b.toRules("Pacific/Auckland");
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_0);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR);
+        TZoneRules test = b.toRules("Pacific/Auckland");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1_15);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_2);
         assertOverlap(test, 1920, 1, 1, 0, 55, OFFSET_1_15, OFFSET_1);
@@ -191,12 +188,12 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_combined_closeTransitions() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(1920, 1, 1, 1, 0), WALL);
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, 20, time(2, 0), false, WALL, PERIOD_1HOUR);
         b.addRuleToWindow(2000, MARCH, 20, time(4, 2), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
         assertOffsetInfo(test, dateTime(2000, 3, 20, 1, 59), OFFSET_1);
@@ -211,12 +208,12 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_combined_closeTransitionsMeet() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(1920, 1, 1, 1, 0), WALL);
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, 20, time(2, 0), false, WALL, PERIOD_1HOUR);
         b.addRuleToWindow(2000, MARCH, 20, time(4, 0), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
         assertOffsetInfo(test, dateTime(2000, 3, 20, 1, 59), OFFSET_1);
@@ -233,7 +230,7 @@ public class TestZoneRulesBuilder {
 //        b.addWindowForever(OFFSET_1);
 //        b.addRuleToWindow(2000, MARCH, 20, time(2, 0), WALL, PERIOD_1HOUR);
 //        b.addRuleToWindow(2000, MARCH, 20, time(3, 30), WALL, PERIOD_0);
-//        ZoneRules test = b.toRules("Europe/London");
+//        TZoneRules test = b.toRules("Europe/London");
 //        assertOffsetInfo(test, DATE_TIME_FIRST), OFFSET_1);
 //        assertOffsetInfo(test, DATE_TIME_LAST), OFFSET_1);
 //        assertOffsetInfo(test, dateTime(2000, 3, 20, 1, 59)), OFFSET_1);
@@ -248,13 +245,13 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_combined_weirdSavingsBeforeLast() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(1920, 1, 1, 1, 0), WALL);
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(1998, MARCH, 20, time(2, 0), false, WALL, PERIOD_1HOUR30MIN);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, 20, null, time(2, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, OCTOBER, 20, null, time(2, 0), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, 20, null, time(2, 0), false, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, OCTOBER, 20, null, time(2, 0), false, WALL, PERIOD_0);
+        TZoneRules test = b.toRules("Europe/London");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
@@ -268,16 +265,16 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_combined_differentLengthLastRules1() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(1920, 1, 1, 1, 0), WALL);
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(1998, MARCH, 20, time(2, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(1998, Year.MAX_VALUE, OCTOBER, 30, null, time(2, 0), false, WALL, PERIOD_0);
+        b.addRuleToWindow(1998, TYear.MAX_VALUE, OCTOBER, 30, null, time(2, 0), false, WALL, PERIOD_0);
         b.addRuleToWindow(1999, MARCH, 21, time(2, 0), false, WALL, PERIOD_1HOUR);
         b.addRuleToWindow(2000, MARCH, 22, time(2, 0), false, WALL, PERIOD_1HOUR);
         b.addRuleToWindow(2001, MARCH, 23, time(2, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(2002, Year.MAX_VALUE, MARCH, 24, null, time(2, 0), false, WALL, PERIOD_1HOUR);
-        ZoneRules test = b.toRules("Europe/London");
+        b.addRuleToWindow(2002, TYear.MAX_VALUE, MARCH, 24, null, time(2, 0), false, WALL, PERIOD_1HOUR);
+        TZoneRules test = b.toRules("Europe/London");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
@@ -302,16 +299,16 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_combined_differentLengthLastRules2() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(1920, 1, 1, 1, 0), WALL);
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(1998, Year.MAX_VALUE, MARCH, 30, null, time(2, 0), false, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(1998, TYear.MAX_VALUE, MARCH, 30, null, time(2, 0), false, WALL, PERIOD_1HOUR);
         b.addRuleToWindow(1998, OCTOBER, 20, time(2, 0), false, WALL, PERIOD_0);
         b.addRuleToWindow(1999, OCTOBER, 21, time(2, 0), false, WALL, PERIOD_0);
         b.addRuleToWindow(2000, OCTOBER, 22, time(2, 0), false, WALL, PERIOD_0);
         b.addRuleToWindow(2001, OCTOBER, 23, time(2, 0), false, WALL, PERIOD_0);
-        b.addRuleToWindow(2002, Year.MAX_VALUE, OCTOBER, 24, null, time(2, 0), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        b.addRuleToWindow(2002, TYear.MAX_VALUE, OCTOBER, 24, null, time(2, 0), false, WALL, PERIOD_0);
+        TZoneRules test = b.toRules("Europe/London");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
@@ -337,13 +334,13 @@ public class TestZoneRulesBuilder {
     @Test
     public void test_twoChangesSameDay() {
         // ensures that TZRule.compare works
-        ZoneOffset plus2 = ZoneOffset.ofHours(2);
-        ZoneOffset plus3 = ZoneOffset.ofHours(3);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset plus2 = TZoneOffset.ofHours(2);
+        TZoneOffset plus3 = TZoneOffset.ofHours(3);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(plus2);
         b.addRuleToWindow(2010, 2010, SEPTEMBER, 10, null, time(12, 0), false, STANDARD, PERIOD_1HOUR);
         b.addRuleToWindow(2010, 2010, SEPTEMBER, 10, null, time(23, 0), false, STANDARD, PERIOD_0);
-        ZoneRules test = b.toRules("Africa/Cairo");
+        TZoneRules test = b.toRules("Africa/Cairo");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, plus2);
         assertOffsetInfo(test, DATE_TIME_LAST, plus2);
@@ -355,13 +352,13 @@ public class TestZoneRulesBuilder {
     @Test
     public void test_twoChangesDifferentDefinition() {
         // ensures that TZRule.compare works
-        ZoneOffset plus2 = ZoneOffset.ofHours(2);
-        ZoneOffset plus3 = ZoneOffset.ofHours(3);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset plus2 = TZoneOffset.ofHours(2);
+        TZoneOffset plus3 = TZoneOffset.ofHours(3);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(plus2);
         b.addRuleToWindow(2010, 2010, SEPTEMBER, -1, TUESDAY, time(0, 0), false, STANDARD, PERIOD_1HOUR);
         b.addRuleToWindow(2010, 2010, SEPTEMBER, 29, null, time(23, 0), false, STANDARD, PERIOD_0);
-        ZoneRules test = b.toRules("Africa/Cairo");
+        TZoneRules test = b.toRules("Africa/Cairo");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, plus2);
         assertOffsetInfo(test, DATE_TIME_LAST, plus2);
@@ -375,7 +372,7 @@ public class TestZoneRulesBuilder {
     public void test_argentina() {
         //  # On October 3, 1999, 0:00 local, Argentina implemented daylight savings time,
         //  # which did not result in the switch of a time zone, as they stayed 9 hours
-        //  # from the International Date Line.
+        //  # from the International TDate Line.
         //    Rule    Arg     1989    1993    -       Mar     Sun>=1  0:00    0       -
         //    Rule    Arg     1989    1992    -       Oct     Sun>=15 0:00    1:00    S
         //    Rule    Arg     1999    only    -       Oct     Sun>=1  0:00    1:00    S
@@ -384,9 +381,9 @@ public class TestZoneRulesBuilder {
         //                -3:00   Arg AR%sT   1999 Oct  3
         //                -4:00   Arg AR%sT   2000 Mar  3
 
-        ZoneOffset minus3 = ZoneOffset.ofHours(-3);
-        ZoneOffset minus4 = ZoneOffset.ofHours(-4);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset minus3 = TZoneOffset.ofHours(-3);
+        TZoneOffset minus4 = TZoneOffset.ofHours(-4);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(minus3, dateTime(1900, 1, 1, 0, 0), WALL);
         b.addWindow(minus3, dateTime(1999, 10, 3, 0, 0), WALL);
         b.addRuleToWindow(1993, MARCH, 3, time(0, 0), false, WALL, PERIOD_0);
@@ -397,7 +394,7 @@ public class TestZoneRulesBuilder {
         b.addRuleToWindow(1999, OCTOBER, 3, time(0, 0), false, WALL, PERIOD_1HOUR);
         b.addRuleToWindow(2000, MARCH, 3, time(0, 0), false, WALL, PERIOD_0);
         b.addWindowForever(minus3);
-        ZoneRules test = b.toRules("America/Argentina/Tucuman");
+        TZoneRules test = b.toRules("America/Argentina/Tucuman");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, minus3);
         assertOffsetInfo(test, DATE_TIME_LAST, minus3);
@@ -419,13 +416,13 @@ public class TestZoneRulesBuilder {
         //    Rule    Egypt   2008    max -   Aug lastThu 23:00s  0   -
         //    Zone    Africa/Cairo    2:05:00 -     LMT   1900  Oct
         //                            2:00    Egypt EE%sT
-        ZoneOffset plus2 = ZoneOffset.ofHours(2);
-        ZoneOffset plus3 = ZoneOffset.ofHours(3);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset plus2 = TZoneOffset.ofHours(2);
+        TZoneOffset plus3 = TZoneOffset.ofHours(3);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(plus2);
-        b.addRuleToWindow(2008, Year.MAX_VALUE, APRIL, -1, FRIDAY, time(0, 0), false, STANDARD, PERIOD_1HOUR);
-        b.addRuleToWindow(2008, Year.MAX_VALUE, AUGUST, -1, THURSDAY, time(23, 0), false, STANDARD, PERIOD_0);
-        ZoneRules test = b.toRules("Africa/Cairo");
+        b.addRuleToWindow(2008, TYear.MAX_VALUE, APRIL, -1, FRIDAY, time(0, 0), false, STANDARD, PERIOD_1HOUR);
+        b.addRuleToWindow(2008, TYear.MAX_VALUE, AUGUST, -1, THURSDAY, time(23, 0), false, STANDARD, PERIOD_0);
+        TZoneRules test = b.toRules("Africa/Cairo");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, plus2);
         assertOffsetInfo(test, DATE_TIME_LAST, plus2);
@@ -442,14 +439,14 @@ public class TestZoneRulesBuilder {
         //    Rule    Egypt    2010    only    -    Sep    lastThu  23:00s    0      -
         //    Zone    Africa/Cairo    2:05:00 -     LMT   1900  Oct
         //                            2:00    Egypt EE%sT
-        ZoneOffset plus2 = ZoneOffset.ofHours(2);
-        ZoneOffset plus3 = ZoneOffset.ofHours(3);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset plus2 = TZoneOffset.ofHours(2);
+        TZoneOffset plus3 = TZoneOffset.ofHours(3);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(plus2);
         b.addRuleToWindow(2010, 2010, AUGUST, 11, null, time(0, 0), false, STANDARD, PERIOD_0);
         b.addRuleToWindow(2010, 2010, SEPTEMBER, 10, null, time(0, 0), false, STANDARD, PERIOD_1HOUR);
         b.addRuleToWindow(2010, 2010, SEPTEMBER, -1, THURSDAY, time(23, 0), false, STANDARD, PERIOD_0);
-        ZoneRules test = b.toRules("Africa/Cairo");
+        TZoneRules test = b.toRules("Africa/Cairo");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, plus2);
         assertOffsetInfo(test, DATE_TIME_LAST, plus2);
@@ -469,16 +466,16 @@ public class TestZoneRulesBuilder {
         //        Zone    Europe/Sofia
         //        2:00    E-Eur   EE%sT   1997
         //        2:00    EU      EE%sT
-          ZoneOffset plus2 = ZoneOffset.ofHours(2);
-          ZoneOffset plus3 = ZoneOffset.ofHours(3);
-          ZoneRulesBuilder b = new ZoneRulesBuilder();
+          TZoneOffset plus2 = TZoneOffset.ofHours(2);
+          TZoneOffset plus3 = TZoneOffset.ofHours(3);
+          TZoneRulesBuilder b = new TZoneRulesBuilder();
           b.addWindow(plus2, dateTime(1997, 1, 1, 0, 0), WALL);
-          b.addRuleToWindow(1996, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR);
-          b.addRuleToWindow(1996, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_0);
+          b.addRuleToWindow(1996, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR);
+          b.addRuleToWindow(1996, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_0);
           b.addWindowForever(plus2);
-          b.addRuleToWindow(1996, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, UTC, PERIOD_1HOUR);
-          b.addRuleToWindow(1996, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, UTC, PERIOD_0);
-          ZoneRules test = b.toRules("Europe/Sofia");
+          b.addRuleToWindow(1996, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, UTC, PERIOD_1HOUR);
+          b.addRuleToWindow(1996, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, UTC, PERIOD_0);
+          TZoneRules test = b.toRules("Europe/Sofia");
 
           assertOffsetInfo(test, DATE_TIME_FIRST, plus2);
           assertOffsetInfo(test, DATE_TIME_LAST, plus2);
@@ -505,9 +502,9 @@ public class TestZoneRulesBuilder {
         //                            1:00    C-Eur CE%sT 1944 Sep 17 2:00s
         //                            1:00    Czech CE%sT 1979
         //                            1:00    EU    CE%sT
-        ZoneOffset plus1 = ZoneOffset.ofHours(1);
-        ZoneOffset plus2 = ZoneOffset.ofHours(2);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset plus1 = TZoneOffset.ofHours(1);
+        TZoneOffset plus2 = TZoneOffset.ofHours(2);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(plus1, dateTime(1944, 9, 17, 2, 0), STANDARD);
         b.addRuleToWindow(1944, 1945, APRIL, 1, MONDAY, time(2, 0), false, STANDARD, PERIOD_1HOUR);
         b.addRuleToWindow(1944, OCTOBER, 2, time(2, 0), false, STANDARD, PERIOD_0);
@@ -516,7 +513,7 @@ public class TestZoneRulesBuilder {
         b.addRuleToWindow(1945, APRIL, 8, time(2, 0), false, STANDARD, PERIOD_1HOUR);
         b.addRuleToWindow(1945, NOVEMBER, 18, time(2, 0), false, STANDARD, PERIOD_0);
         b.addWindowForever(plus1);
-        ZoneRules test = b.toRules("Europe/Sofia");
+        TZoneRules test = b.toRules("Europe/Sofia");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, plus1);
         assertOffsetInfo(test, DATE_TIME_LAST, plus1);
@@ -544,18 +541,18 @@ public class TestZoneRulesBuilder {
         //    4:00 E-EurAsia  GE%sT   2004 Jun 27
         //    3:00 RussiaAsia GE%sT   2005 Mar lastSun 2:00
         //    4:00    -   GET
-        ZoneOffset plus4 = ZoneOffset.ofHours(4);
-        ZoneOffset plus5 = ZoneOffset.ofHours(5);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset plus4 = TZoneOffset.ofHours(4);
+        TZoneOffset plus5 = TZoneOffset.ofHours(5);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(plus4, dateTime(1996, 10, 27, 0, 0), WALL);
-        b.addRuleToWindow(1996, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(0, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(1996, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(0, 0), false, WALL, PERIOD_0);
+        b.addRuleToWindow(1996, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(0, 0), false, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(1996, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(0, 0), false, WALL, PERIOD_0);
         b.addWindow(plus4, dateTime(1997, 3, 30, 0, 0), WALL);
         b.setFixedSavingsToWindow(PERIOD_1HOUR);
         b.addWindowForever(plus4);
-        b.addRuleToWindow(1996, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(0, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(1996, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(0, 0), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/Sofia");
+        b.addRuleToWindow(1996, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(0, 0), false, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(1996, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(0, 0), false, WALL, PERIOD_0);
+        TZoneRules test = b.toRules("Europe/Sofia");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, plus4);
         assertOffsetInfo(test, DATE_TIME_LAST, plus4);
@@ -582,16 +579,16 @@ public class TestZoneRulesBuilder {
         //    -5:00   -   EST 2006 Apr  2 2:00
         //    -6:00   US  C%sT    2007 Nov  4 2:00
         //    -5:00   US  E%sT
-        ZoneOffset minus5 = ZoneOffset.ofHours(-5);
-        ZoneOffset minus6 = ZoneOffset.ofHours(-6);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset minus5 = TZoneOffset.ofHours(-5);
+        TZoneOffset minus6 = TZoneOffset.ofHours(-6);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(minus6, dateTime(2007, 11, 4, 2, 0), WALL);
-        b.addRuleToWindow(2007, Year.MAX_VALUE, MARCH, 8, SUNDAY, time(2, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(2007, Year.MAX_VALUE, NOVEMBER, 1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
+        b.addRuleToWindow(2007, TYear.MAX_VALUE, MARCH, 8, SUNDAY, time(2, 0), false, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(2007, TYear.MAX_VALUE, NOVEMBER, 1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
         b.addWindowForever(minus5);
-        b.addRuleToWindow(2007, Year.MAX_VALUE, MARCH, 8, SUNDAY, time(2, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(2007, Year.MAX_VALUE, NOVEMBER, 1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("America/Indiana/Vincennes");
+        b.addRuleToWindow(2007, TYear.MAX_VALUE, MARCH, 8, SUNDAY, time(2, 0), false, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(2007, TYear.MAX_VALUE, NOVEMBER, 1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
+        TZoneRules test = b.toRules("America/Indiana/Vincennes");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, minus6);
         assertOffsetInfo(test, DATE_TIME_LAST, minus5);
@@ -613,17 +610,17 @@ public class TestZoneRulesBuilder {
         //      Rule    NT_YK   1980   2006 -   Oct lastSun 2:00    0     S
         //                    -5:00   NT_YK   E%sT    1999 Oct 31 2:00
         //                    -6:00   Canada  C%sT
-        ZoneOffset minus4 = ZoneOffset.ofHours(-4);
-        ZoneOffset minus5 = ZoneOffset.ofHours(-5);
-        ZoneOffset minus6 = ZoneOffset.ofHours(-6);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset minus4 = TZoneOffset.ofHours(-4);
+        TZoneOffset minus5 = TZoneOffset.ofHours(-5);
+        TZoneOffset minus6 = TZoneOffset.ofHours(-6);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(minus5, dateTime(1999, 10, 31, 2, 0), WALL);
-        b.addRuleToWindow(1987, Year.MAX_VALUE, APRIL, 1, SUNDAY, time(2, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(1987, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
+        b.addRuleToWindow(1987, TYear.MAX_VALUE, APRIL, 1, SUNDAY, time(2, 0), false, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(1987, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
         b.addWindowForever(minus6);
-        b.addRuleToWindow(1987, Year.MAX_VALUE, APRIL, 1, SUNDAY, time(2, 0), false, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(1987, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("America/Iqaluit");
+        b.addRuleToWindow(1987, TYear.MAX_VALUE, APRIL, 1, SUNDAY, time(2, 0), false, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(1987, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(2, 0), false, WALL, PERIOD_0);
+        TZoneRules test = b.toRules("America/Iqaluit");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, minus5);
         assertOffsetInfo(test, DATE_TIME_LAST, minus6);
@@ -643,13 +640,13 @@ public class TestZoneRulesBuilder {
         //    Rule    Jordan  2002    max -   Sep lastFri 0:00s   0   -
         //    # Zone  NAME        GMTOFF  RULES   FORMAT  [UNTIL]
         //                2:00    Jordan  EE%sT
-        ZoneOffset plus2 = ZoneOffset.ofHours(2);
-        ZoneOffset plus3 = ZoneOffset.ofHours(3);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset plus2 = TZoneOffset.ofHours(2);
+        TZoneOffset plus3 = TZoneOffset.ofHours(3);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(plus2);
-        b.addRuleToWindow(2002, Year.MAX_VALUE, MARCH, -1, THURSDAY, time(0, 0), true, WALL, PERIOD_1HOUR);
-        b.addRuleToWindow(2002, Year.MAX_VALUE, SEPTEMBER, -1, FRIDAY, time(0, 0), false, STANDARD, PERIOD_0);
-        ZoneRules test = b.toRules("Asia/Amman");
+        b.addRuleToWindow(2002, TYear.MAX_VALUE, MARCH, -1, THURSDAY, time(0, 0), true, WALL, PERIOD_1HOUR);
+        b.addRuleToWindow(2002, TYear.MAX_VALUE, SEPTEMBER, -1, FRIDAY, time(0, 0), false, STANDARD, PERIOD_0);
+        TZoneRules test = b.toRules("Asia/Amman");
 
         assertOffsetInfo(test, DATE_TIME_FIRST, plus2);
         assertOffsetInfo(test, DATE_TIME_LAST, plus2);
@@ -670,15 +667,15 @@ public class TestZoneRulesBuilder {
         //    Rule  Japan   1948    1951    -   Sep Sat>=8  25:00   0   S
         //    Rule  Japan   1949    only    -   Apr Sat>=1  24:00   1:00    D
         //    Rule  Japan   1950    1951    -   May Sat>=1  24:00   1:00    D
-        ZoneOffset plus9 = ZoneOffset.ofHours(9);
-        ZoneOffset plus10 = ZoneOffset.ofHours(10);
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneOffset plus9 = TZoneOffset.ofHours(9);
+        TZoneOffset plus10 = TZoneOffset.ofHours(10);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(plus9);
         b.addRuleToWindow(1948, 1948, MAY, 1, SATURDAY, time(0, 0), true, WALL, PERIOD_1HOUR);
         b.addRuleToWindow(1948, 1951, SEPTEMBER, 8, SATURDAY, time(1, 0), 1, WALL, PERIOD_0);
         b.addRuleToWindow(1949, 1949, APRIL, 1, SATURDAY, time(0, 0), true, WALL, PERIOD_1HOUR);
         b.addRuleToWindow(1950, 1951, MAY, 1, SATURDAY, time(0, 0), true, WALL, PERIOD_1HOUR);
-        ZoneRules test = b.toRules("Japan");
+        TZoneRules test = b.toRules("Japan");
          assertOffsetInfo(test, DATE_TIME_FIRST, plus9);
         assertOffsetInfo(test, DATE_TIME_LAST, plus9);
          // Sat>=1 => May 1st
@@ -700,12 +697,12 @@ public class TestZoneRulesBuilder {
     //-----------------------------------------------------------------------
     @Test
     public void test_addWindow_constrainedRules() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(1800, 7, 1, 0, 0), WALL);
         b.addWindow(OFFSET_1, dateTime(2008, 6, 30, 0, 0), STANDARD);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_0);
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_2_30);
         assertOffsetInfo(test, DATE_TIME_2008_01_01, OFFSET_1);
@@ -718,10 +715,10 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_addWindow_noRules() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(1800, 7, 1, 0, 0), WALL);
         b.addWindow(OFFSET_1, dateTime(2008, 6, 30, 0, 0), STANDARD);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_2008_01_01, OFFSET_1);
@@ -730,19 +727,19 @@ public class TestZoneRulesBuilder {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addWindow_nullOffset() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
-        b.addWindow((ZoneOffset) null, dateTime(2008, 6, 30, 0, 0), STANDARD);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
+        b.addWindow((TZoneOffset) null, dateTime(2008, 6, 30, 0, 0), STANDARD);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addWindow_nullTime() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
-        b.addWindow(OFFSET_1, (LocalDateTime) null, STANDARD);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
+        b.addWindow(OFFSET_1, (TLocalDateTime) null, STANDARD);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addWindow_nullTimeDefinition() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(2008, 6, 30, 0, 0), (TimeDefinition) null);
     }
 
@@ -751,9 +748,9 @@ public class TestZoneRulesBuilder {
     //-----------------------------------------------------------------------
     @Test
     public void test_addWindowForever_noRules() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_2008_01_01, OFFSET_1);
@@ -762,11 +759,11 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_addWindowForever_rules() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, OCTOBER, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_0);
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_2008_01_01, OFFSET_1);
@@ -777,8 +774,8 @@ public class TestZoneRulesBuilder {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addWindowForever_nullOffset() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
-        b.addWindowForever((ZoneOffset) null);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
+        b.addWindowForever((TZoneOffset) null);
     }
 
     //-----------------------------------------------------------------------
@@ -786,11 +783,11 @@ public class TestZoneRulesBuilder {
     //-----------------------------------------------------------------------
     @Test
     public void test_setFixedSavingsToWindow() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindow(OFFSET_1, dateTime(1800, 7, 1, 0, 0), WALL);
         b.addWindowForever(OFFSET_1);
         b.setFixedSavingsToWindow(PERIOD_1HOUR30MIN);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_1);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_2_30);
         assertOffsetInfo(test, DATE_TIME_2008_01_01, OFFSET_2_30);
@@ -800,23 +797,23 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_setFixedSavingsToWindow_first() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.setFixedSavingsToWindow(PERIOD_1HOUR30MIN);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, DATE_TIME_FIRST, OFFSET_2_30);
         assertOffsetInfo(test, DATE_TIME_LAST, OFFSET_2_30);
     }
 
     @Test(expectedExceptions=IllegalStateException.class)
     public void test_setFixedSavingsToWindow_noWindow() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.setFixedSavingsToWindow(PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=IllegalStateException.class)
     public void test_setFixedSavingsToWindow_cannotMixSavingsWithRule() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2020, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
         b.setFixedSavingsToWindow(PERIOD_1HOUR30MIN);
@@ -824,9 +821,9 @@ public class TestZoneRulesBuilder {
 
     @Test(expectedExceptions=IllegalStateException.class)
     public void test_setFixedSavingsToWindow_cannotMixSavingsWithLastRule() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
         b.setFixedSavingsToWindow(PERIOD_1HOUR30MIN);
     }
 
@@ -835,11 +832,11 @@ public class TestZoneRulesBuilder {
     //-----------------------------------------------------------------------
     @Test
     public void test_addRuleToWindow_endOfMonth() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2001, MARCH, -1, SUNDAY, time(1, 0), false, UTC, PERIOD_1HOUR);
         b.addRuleToWindow(2000, 2001, OCTOBER, -1, SUNDAY, time(1, 0), false, UTC, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, dateTime(1999, 7, 1, 0, 0), OFFSET_1);
 
         assertOffsetInfo(test, dateTime(2000, 1, 1, 0, 0), OFFSET_1);
@@ -857,11 +854,11 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_addRuleToWindow_endOfMonthFeb() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2004, 2005, FEBRUARY, -1, SUNDAY, time(1, 0), false, UTC, PERIOD_1HOUR);
         b.addRuleToWindow(2004, 2005, OCTOBER, -1, SUNDAY, time(1, 0), false, UTC, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, dateTime(2003, 7, 1, 0, 0), OFFSET_1);
 
         assertOffsetInfo(test, dateTime(2004, 1, 1, 0, 0), OFFSET_1);
@@ -879,11 +876,11 @@ public class TestZoneRulesBuilder {
 
     @Test
     public void test_addRuleToWindow_fromDayOfMonth() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2001, MARCH, 10, SUNDAY, time(1, 0), false, UTC, PERIOD_1HOUR);
         b.addRuleToWindow(2000, 2001, OCTOBER, 10, SUNDAY, time(1, 0), false, UTC, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, dateTime(1999, 7, 1, 0, 0), OFFSET_1);
 
         assertOffsetInfo(test, dateTime(2000, 1, 1, 0, 0), OFFSET_1);
@@ -901,79 +898,79 @@ public class TestZoneRulesBuilder {
 
     @Test(expectedExceptions=IllegalStateException.class)
     public void test_addRuleToWindow_noWindow() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=IllegalStateException.class)
     public void test_addRuleToWindow_cannotMixRuleWithSavings() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.setFixedSavingsToWindow(PERIOD_1HOUR30MIN);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void test_addRuleToWindow_illegalYear1() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(Year.MIN_VALUE - 1, 2008, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(TYear.MIN_VALUE - 1, 2008, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void test_addRuleToWindow_illegalYear2() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, Year.MIN_VALUE - 1, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, TYear.MIN_VALUE - 1, MARCH, -1, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_addRuleToWindow_illegalDayOfMonth_tooSmall() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2008, MARCH, -29, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_addRuleToWindow_illegalDayOfMonth_zero() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2008, MARCH, 0, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_addRuleToWindow_illegalDayOfMonth_tooLarge() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2008, MARCH, 32, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addRuleToWindow_nullMonth() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, (Month) null, 31, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, (TMonth) null, 31, SUNDAY, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addRuleToWindow_nullTime() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, (LocalTime) null, false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, (TLocalTime) null, false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_addRuleToWindow_illegalEndOfDayTime() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, 2008, MARCH, 1, SUNDAY, time(1, 0), true, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addRuleToWindow_nullTimeDefinition() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, Year.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, (TimeDefinition) null, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, TYear.MAX_VALUE, MARCH, -1, SUNDAY, time(1, 0), false, (TimeDefinition) null, PERIOD_1HOUR30MIN);
     }
 
     //-----------------------------------------------------------------------
@@ -981,11 +978,11 @@ public class TestZoneRulesBuilder {
     //-----------------------------------------------------------------------
     @Test
     public void test_addRuleToWindow_singleYearObject() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(dateTime(2000, MARCH, 26, 1, 0), UTC, PERIOD_1HOUR);
         b.addRuleToWindow(dateTime(2000, OCTOBER, 29, 1, 0), UTC, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, dateTime(1999, 7, 1, 0, 0), OFFSET_1);
 
         assertOffsetInfo(test, dateTime(2000, 1, 1, 0, 0), OFFSET_1);
@@ -998,14 +995,14 @@ public class TestZoneRulesBuilder {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addRuleToWindow_singleYearObject_nullTime() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow((LocalDateTime) null, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow((TLocalDateTime) null, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addRuleToWindow_singleYearObject_nullTimeDefinition() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(dateTime(2000, MARCH, 31, 1, 0), (TimeDefinition) null, PERIOD_1HOUR30MIN);
     }
@@ -1015,11 +1012,11 @@ public class TestZoneRulesBuilder {
     //-----------------------------------------------------------------------
     @Test
     public void test_addRuleToWindow_singleYear() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, 26, time(1, 0), false, UTC, PERIOD_1HOUR);
         b.addRuleToWindow(2000, OCTOBER, 29, time(1, 0), false, UTC, PERIOD_0);
-        ZoneRules test = b.toRules("Europe/London");
+        TZoneRules test = b.toRules("Europe/London");
         assertOffsetInfo(test, dateTime(1999, 7, 1, 0, 0), OFFSET_1);
 
         assertOffsetInfo(test, dateTime(2000, 1, 1, 0, 0), OFFSET_1);
@@ -1032,103 +1029,103 @@ public class TestZoneRulesBuilder {
 
     @Test(expectedExceptions=IllegalStateException.class)
     public void test_addRuleToWindow_singleYear_noWindow() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addRuleToWindow(2000, MARCH, 31, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=IllegalStateException.class)
     public void test_addRuleToWindow_singleYear_cannotMixRuleWithSavings() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.setFixedSavingsToWindow(PERIOD_1HOUR30MIN);
         b.addRuleToWindow(2000, MARCH, 31, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void test_addRuleToWindow_singleYear_illegalYear() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(Year.MIN_VALUE - 1, MARCH, 31, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(TYear.MIN_VALUE - 1, MARCH, 31, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_addRuleToWindow_singleYear_illegalDayOfMonth_tooSmall() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, -29, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_addRuleToWindow_singleYear_illegalDayOfMonth_zero() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, 0, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=IllegalArgumentException.class)
     public void test_addRuleToWindow_singleYear_illegalDayOfMonth_tooLarge() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, 32, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addRuleToWindow_singleYear_nullMonth() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, (Month) null, 31, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, (TMonth) null, 31, time(1, 0), false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addRuleToWindow_singleYear_nullTime() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
-        b.addRuleToWindow(2000, MARCH, 31, (LocalTime) null, false, WALL, PERIOD_1HOUR30MIN);
+        b.addRuleToWindow(2000, MARCH, 31, (TLocalTime) null, false, WALL, PERIOD_1HOUR30MIN);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_addRuleToWindow_singleYear_nullTimeDefinition() {
-        ZoneRulesBuilder b = new ZoneRulesBuilder();
+        TZoneRulesBuilder b = new TZoneRulesBuilder();
         b.addWindowForever(OFFSET_1);
         b.addRuleToWindow(2000, MARCH, 31, time(1, 0), false, (TimeDefinition) null, PERIOD_1HOUR30MIN);
     }
 
     //-----------------------------------------------------------------------
-    private static void assertGap(ZoneRules test, int y, int m, int d, int hr, int min, ZoneOffset before, ZoneOffset after) {
-        LocalDateTime dt = dateTime(y, m, d, hr, min);
-        ZoneOffsetTransition zot = test.getTransition(dt);
+    private static void assertGap(TZoneRules test, int y, int m, int d, int hr, int min, TZoneOffset before, TZoneOffset after) {
+        TLocalDateTime dt = dateTime(y, m, d, hr, min);
+        TZoneOffsetTransition zot = test.getTransition(dt);
         assertNotNull(zot);
         assertEquals(zot.isGap(), true);
         assertEquals(zot.getOffsetBefore(), before);
         assertEquals(zot.getOffsetAfter(), after);
     }
 
-    private static void assertOverlap(ZoneRules test, int y, int m, int d, int hr, int min, ZoneOffset before, ZoneOffset after) {
-        LocalDateTime dt = dateTime(y, m, d, hr, min);
-        ZoneOffsetTransition zot = test.getTransition(dt);
+    private static void assertOverlap(TZoneRules test, int y, int m, int d, int hr, int min, TZoneOffset before, TZoneOffset after) {
+        TLocalDateTime dt = dateTime(y, m, d, hr, min);
+        TZoneOffsetTransition zot = test.getTransition(dt);
         assertNotNull(zot);
         assertEquals(zot.isOverlap(), true);
         assertEquals(zot.getOffsetBefore(), before);
         assertEquals(zot.getOffsetAfter(), after);
     }
 
-    private void assertOffsetInfo(ZoneRules test, LocalDateTime dateTime, ZoneOffset offset) {
-        List<ZoneOffset> offsets = test.getValidOffsets(dateTime);
+    private void assertOffsetInfo(TZoneRules test, TLocalDateTime dateTime, TZoneOffset offset) {
+        List<TZoneOffset> offsets = test.getValidOffsets(dateTime);
         assertEquals(offsets.size(), 1);
         assertEquals(offsets.get(0), offset);
     }
 
     //-----------------------------------------------------------------------
-    private static LocalTime time(int h, int m) {
-        return LocalTime.of(h, m);
+    private static TLocalTime time(int h, int m) {
+        return TLocalTime.of(h, m);
     }
 
-    private static LocalDateTime dateTime(int year, int month, int day, int h, int m) {
-        return LocalDateTime.of(year, month, day, h, m);
+    private static TLocalDateTime dateTime(int year, int month, int day, int h, int m) {
+        return TLocalDateTime.of(year, month, day, h, m);
     }
 
-    private static LocalDateTime dateTime(int year, Month month, int day, int h, int m) {
-        return LocalDateTime.of(year, month, day, h, m);
+    private static TLocalDateTime dateTime(int year, TMonth month, int day, int h, int m) {
+        return TLocalDateTime.of(year, month, day, h, m);
     }
 
 }

@@ -29,95 +29,92 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_WEEK;
-import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
+import static org.junit.Assert.assertEquals;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 
 import java.util.HashMap;
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
-import org.testng.annotations.BeforeMethod;
+import org.junit.Before;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.LocalDateTime;
-import org.threeten.bp.Month;
-import org.threeten.bp.temporal.TemporalField;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TLocalDateTime;
+import org.teavm.classlib.java.time.TMonth;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
 
-/**
- * Test text printing.
- */
 @Test
 public class TestDateTimeTextPrinting {
 
-    private DateTimeFormatterBuilder builder;
+    private TDateTimeFormatterBuilder builder;
 
-    @BeforeMethod
+    @Before
     public void setUp() {
-        builder = new DateTimeFormatterBuilder();
+        builder = new TDateTimeFormatterBuilder();
     }
 
     //-----------------------------------------------------------------------
     @DataProvider(name="printText")
     Object[][] data_text() {
         return new Object[][] {
-            {DAY_OF_WEEK, TextStyle.FULL, 1, "Monday"},
-            {DAY_OF_WEEK, TextStyle.FULL, 2, "Tuesday"},
-            {DAY_OF_WEEK, TextStyle.FULL, 3, "Wednesday"},
-            {DAY_OF_WEEK, TextStyle.FULL, 4, "Thursday"},
-            {DAY_OF_WEEK, TextStyle.FULL, 5, "Friday"},
-            {DAY_OF_WEEK, TextStyle.FULL, 6, "Saturday"},
-            {DAY_OF_WEEK, TextStyle.FULL, 7, "Sunday"},
+            {DAY_OF_WEEK, TTextStyle.FULL, 1, "Monday"},
+            {DAY_OF_WEEK, TTextStyle.FULL, 2, "Tuesday"},
+            {DAY_OF_WEEK, TTextStyle.FULL, 3, "Wednesday"},
+            {DAY_OF_WEEK, TTextStyle.FULL, 4, "Thursday"},
+            {DAY_OF_WEEK, TTextStyle.FULL, 5, "Friday"},
+            {DAY_OF_WEEK, TTextStyle.FULL, 6, "Saturday"},
+            {DAY_OF_WEEK, TTextStyle.FULL, 7, "Sunday"},
 
-            {DAY_OF_WEEK, TextStyle.SHORT, 1, "Mon"},
-            {DAY_OF_WEEK, TextStyle.SHORT, 2, "Tue"},
-            {DAY_OF_WEEK, TextStyle.SHORT, 3, "Wed"},
-            {DAY_OF_WEEK, TextStyle.SHORT, 4, "Thu"},
-            {DAY_OF_WEEK, TextStyle.SHORT, 5, "Fri"},
-            {DAY_OF_WEEK, TextStyle.SHORT, 6, "Sat"},
-            {DAY_OF_WEEK, TextStyle.SHORT, 7, "Sun"},
+            {DAY_OF_WEEK, TTextStyle.SHORT, 1, "Mon"},
+            {DAY_OF_WEEK, TTextStyle.SHORT, 2, "Tue"},
+            {DAY_OF_WEEK, TTextStyle.SHORT, 3, "Wed"},
+            {DAY_OF_WEEK, TTextStyle.SHORT, 4, "Thu"},
+            {DAY_OF_WEEK, TTextStyle.SHORT, 5, "Fri"},
+            {DAY_OF_WEEK, TTextStyle.SHORT, 6, "Sat"},
+            {DAY_OF_WEEK, TTextStyle.SHORT, 7, "Sun"},
 
-            {DAY_OF_MONTH, TextStyle.FULL, 1, "1"},
-            {DAY_OF_MONTH, TextStyle.FULL, 2, "2"},
-            {DAY_OF_MONTH, TextStyle.FULL, 3, "3"},
-            {DAY_OF_MONTH, TextStyle.FULL, 28, "28"},
-            {DAY_OF_MONTH, TextStyle.FULL, 29, "29"},
-            {DAY_OF_MONTH, TextStyle.FULL, 30, "30"},
-            {DAY_OF_MONTH, TextStyle.FULL, 31, "31"},
+            {DAY_OF_MONTH, TTextStyle.FULL, 1, "1"},
+            {DAY_OF_MONTH, TTextStyle.FULL, 2, "2"},
+            {DAY_OF_MONTH, TTextStyle.FULL, 3, "3"},
+            {DAY_OF_MONTH, TTextStyle.FULL, 28, "28"},
+            {DAY_OF_MONTH, TTextStyle.FULL, 29, "29"},
+            {DAY_OF_MONTH, TTextStyle.FULL, 30, "30"},
+            {DAY_OF_MONTH, TTextStyle.FULL, 31, "31"},
 
-            {DAY_OF_MONTH, TextStyle.SHORT, 1, "1"},
-            {DAY_OF_MONTH, TextStyle.SHORT, 2, "2"},
-            {DAY_OF_MONTH, TextStyle.SHORT, 3, "3"},
-            {DAY_OF_MONTH, TextStyle.SHORT, 28, "28"},
-            {DAY_OF_MONTH, TextStyle.SHORT, 29, "29"},
-            {DAY_OF_MONTH, TextStyle.SHORT, 30, "30"},
-            {DAY_OF_MONTH, TextStyle.SHORT, 31, "31"},
+            {DAY_OF_MONTH, TTextStyle.SHORT, 1, "1"},
+            {DAY_OF_MONTH, TTextStyle.SHORT, 2, "2"},
+            {DAY_OF_MONTH, TTextStyle.SHORT, 3, "3"},
+            {DAY_OF_MONTH, TTextStyle.SHORT, 28, "28"},
+            {DAY_OF_MONTH, TTextStyle.SHORT, 29, "29"},
+            {DAY_OF_MONTH, TTextStyle.SHORT, 30, "30"},
+            {DAY_OF_MONTH, TTextStyle.SHORT, 31, "31"},
 
-            {MONTH_OF_YEAR, TextStyle.FULL, 1, "January"},
-            {MONTH_OF_YEAR, TextStyle.FULL, 12, "December"},
+            {MONTH_OF_YEAR, TTextStyle.FULL, 1, "January"},
+            {MONTH_OF_YEAR, TTextStyle.FULL, 12, "December"},
 
-            {MONTH_OF_YEAR, TextStyle.SHORT, 1, "Jan"},
-            {MONTH_OF_YEAR, TextStyle.SHORT, 12, "Dec"},
+            {MONTH_OF_YEAR, TTextStyle.SHORT, 1, "Jan"},
+            {MONTH_OF_YEAR, TTextStyle.SHORT, 12, "Dec"},
        };
     }
 
     @Test(dataProvider="printText")
-    public void test_appendText2arg_print(TemporalField field, TextStyle style, int value, String expected) throws Exception {
-        DateTimeFormatter f = builder.appendText(field, style).toFormatter(Locale.ENGLISH);
-        LocalDateTime dt = LocalDateTime.of(2010, 1, 1, 0, 0);
+    public void test_appendText2arg_print(TTemporalField field, TTextStyle style, int value, String expected) throws Exception {
+        TDateTimeFormatter f = builder.appendText(field, style).toFormatter(TLocale.ENGLISH);
+        TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
         dt = dt.with(field, value);
         String text = f.format(dt);
         assertEquals(text, expected);
     }
 
     @Test(dataProvider="printText")
-    public void test_appendText1arg_print(TemporalField field, TextStyle style, int value, String expected) throws Exception {
-        if (style == TextStyle.FULL) {
-            DateTimeFormatter f = builder.appendText(field).toFormatter(Locale.ENGLISH);
-            LocalDateTime dt = LocalDateTime.of(2010, 1, 1, 0, 0);
+    public void test_appendText1arg_print(TTemporalField field, TTextStyle style, int value, String expected) throws Exception {
+        if (style == TTextStyle.FULL) {
+            TDateTimeFormatter f = builder.appendText(field).toFormatter(TLocale.ENGLISH);
+            TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
             dt = dt.with(field, value);
             String text = f.format(dt);
             assertEquals(text, expected);
@@ -127,16 +124,16 @@ public class TestDateTimeTextPrinting {
     //-----------------------------------------------------------------------
     @Test
     public void test_print_appendText2arg_french_long() throws Exception {
-        DateTimeFormatter f = builder.appendText(MONTH_OF_YEAR, TextStyle.FULL).toFormatter(Locale.FRENCH);
-        LocalDateTime dt = LocalDateTime.of(2010, 1, 1, 0, 0);
+        TDateTimeFormatter f = builder.appendText(MONTH_OF_YEAR, TTextStyle.FULL).toFormatter(TLocale.FRENCH);
+        TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
         String text = f.format(dt);
         assertEquals(text, "janvier");
     }
 
     @Test
     public void test_print_appendText2arg_french_short() throws Exception {
-        DateTimeFormatter f = builder.appendText(MONTH_OF_YEAR, TextStyle.SHORT).toFormatter(Locale.FRENCH);
-        LocalDateTime dt = LocalDateTime.of(2010, 1, 1, 0, 0);
+        TDateTimeFormatter f = builder.appendText(MONTH_OF_YEAR, TTextStyle.SHORT).toFormatter(TLocale.FRENCH);
+        TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
         String text = f.format(dt);
         assertEquals(text, "janv.");
     }
@@ -158,9 +155,9 @@ public class TestDateTimeTextPrinting {
         map.put(11L, "NVR");
         map.put(12L, "DBR");
         builder.appendText(MONTH_OF_YEAR, map);
-        DateTimeFormatter f = builder.toFormatter();
-        LocalDateTime dt = LocalDateTime.of(2010, 1, 1, 0, 0);
-        for (Month month : Month.values()) {
+        TDateTimeFormatter f = builder.toFormatter();
+        TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
+        for (TMonth month : TMonth.values()) {
             assertEquals(f.format(dt.with(month)), map.get((long) month.getValue()));
         }
     }
@@ -172,8 +169,8 @@ public class TestDateTimeTextPrinting {
         map.put(2L, "2nd");
         map.put(3L, "3rd");
         builder.appendText(DAY_OF_MONTH, map);
-        DateTimeFormatter f = builder.toFormatter();
-        LocalDateTime dt = LocalDateTime.of(2010, 1, 1, 0, 0);
+        TDateTimeFormatter f = builder.toFormatter();
+        TLocalDateTime dt = TLocalDateTime.of(2010, 1, 1, 0, 0);
         assertEquals(f.format(dt.withDayOfMonth(1)), "1st");
         assertEquals(f.format(dt.withDayOfMonth(2)), "2nd");
         assertEquals(f.format(dt.withDayOfMonth(3)), "3rd");
@@ -184,8 +181,8 @@ public class TestDateTimeTextPrinting {
         Map<Long, String> map = new HashMap<Long, String>();
         map.put(1L, "JNY");
         builder.appendText(MONTH_OF_YEAR, map);
-        DateTimeFormatter f = builder.toFormatter();
-        LocalDateTime dt = LocalDateTime.of(2010, 2, 1, 0, 0);
+        TDateTimeFormatter f = builder.toFormatter();
+        TLocalDateTime dt = TLocalDateTime.of(2010, 2, 1, 0, 0);
         assertEquals(f.format(dt), "2");
     }
 

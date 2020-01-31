@@ -29,39 +29,36 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_WEEK;
-import static org.threeten.bp.temporal.ChronoField.EPOCH_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
+import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
 
 import java.io.PrintStream;
 import java.util.Set;
 
-import org.threeten.bp.chrono.Chronology;
-import org.threeten.bp.chrono.ChronoLocalDate;
-import org.threeten.bp.chrono.HijrahChronology;
-import org.threeten.bp.chrono.IsoChronology;
-import org.threeten.bp.chrono.JapaneseChronology;
-import org.threeten.bp.chrono.MinguoChronology;
-import org.threeten.bp.chrono.ThaiBuddhistChronology;
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.ChronoUnit;
-import org.threeten.bp.temporal.JulianFields;
+import org.teavm.classlib.java.time.chrono.TChronology;
+import org.teavm.classlib.java.time.chrono.TChronoLocalDate;
+import org.teavm.classlib.java.time.chrono.THijrahChronology;
+import org.teavm.classlib.java.time.chrono.TIsoChronology;
+import org.teavm.classlib.java.time.chrono.TJapaneseChronology;
+import org.teavm.classlib.java.time.chrono.TMinguoChronology;
+import org.teavm.classlib.java.time.chrono.TThaiBuddhistChronology;
+import org.teavm.classlib.java.time.temporal.TChronoField;
+import org.teavm.classlib.java.time.temporal.TChronoUnit;
+import org.teavm.classlib.java.time.temporal.TJulianFields;
 
-/**
- * Usability class for package.
- */
 public final class UsabilityChrono {
 
     public static void main(String[] args) {
-        System.out.println("------");
+        TSystem.out.println("------");
         newPackagePluggable();
-        System.out.println("------");
+        TSystem.out.println("------");
         epochDays();
-        System.out.println("------");
+        TSystem.out.println("------");
         printMinguoCal();
-        System.out.println("------");
+        TSystem.out.println("------");
         example1();
     }
 
@@ -69,126 +66,115 @@ public final class UsabilityChrono {
     }
 
     static {
-        Chronology c = JapaneseChronology.INSTANCE;
-        c = MinguoChronology.INSTANCE;
-        c = ThaiBuddhistChronology.INSTANCE;
-        c = JapaneseChronology.INSTANCE;
-        c = MinguoChronology.INSTANCE;
-        c = HijrahChronology.INSTANCE;
-        c = IsoChronology.INSTANCE;
+        TChronology c = TJapaneseChronology.INSTANCE;
+        c = TMinguoChronology.INSTANCE;
+        c = TThaiBuddhistChronology.INSTANCE;
+        c = TJapaneseChronology.INSTANCE;
+        c = TMinguoChronology.INSTANCE;
+        c = THijrahChronology.INSTANCE;
+        c = TIsoChronology.INSTANCE;
         c.toString();
     }
 
     private static void newPackagePluggable() {
-        Chronology chrono = MinguoChronology.INSTANCE;
+        TChronology chrono = TMinguoChronology.INSTANCE;
 
-        ChronoLocalDate date = chrono.dateNow();
-        System.out.printf("now: %s%n", date);
+        TChronoLocalDate date = chrono.dateNow();
+        TSystem.out.printf("now: %s%n", date);
 
         date = date.with(DAY_OF_MONTH, 1);
-        System.out.printf("first of month: %s%n", date);
+        TSystem.out.printf("first of month: %s%n", date);
 
-        int month = (int) date.get(ChronoField.MONTH_OF_YEAR);
+        int month = (int) date.get(TChronoField.MONTH_OF_YEAR);
         date = date.with(DAY_OF_WEEK, 1);
-        System.out.printf("start of first week: %s%n", date);
+        TSystem.out.printf("start of first week: %s%n", date);
 
-        while (date.get(ChronoField.MONTH_OF_YEAR) <= month) {
+        while (date.get(TChronoField.MONTH_OF_YEAR) <= month) {
             String row = "";
             for (int i = 0; i < 7; i++) {
-                row += date.get(ChronoField.DAY_OF_MONTH) + " ";
-                date = date.plus(1, ChronoUnit.DAYS);
+                row += date.get(TChronoField.DAY_OF_MONTH) + " ";
+                date = date.plus(1, TChronoUnit.DAYS);
             }
-            System.out.println(row);
+            TSystem.out.println(row);
         }
     }
 
     private static void epochDays() {
-        output(LocalDate.now());
-        output(LocalDate.of(1945, 11, 12));
-        output(LocalDate.of(-4713, 11, 24));
-        output(LocalDate.of(1858, 11, 17));
-        output(LocalDate.of(1970, 1, 1));
-        output(LocalDate.of(1, 1, 1));
+        output(TLocalDate.now());
+        output(TLocalDate.of(1945, 11, 12));
+        output(TLocalDate.of(-4713, 11, 24));
+        output(TLocalDate.of(1858, 11, 17));
+        output(TLocalDate.of(1970, 1, 1));
+        output(TLocalDate.of(1, 1, 1));
     }
 
-    protected static void output(LocalDate date) {
-        System.out.println(date);
-        System.out.println("EPOCH_DAY " + date.getLong(EPOCH_DAY));
-        System.out.println("JDN " + date.getLong(JulianFields.JULIAN_DAY));
-        System.out.println("MJD " + date.getLong(JulianFields.MODIFIED_JULIAN_DAY));
-        System.out.println("RD  " + date.getLong(JulianFields.RATA_DIE));
-        System.out.println();
+    protected static void output(TLocalDate date) {
+        TSystem.out.println(date);
+        TSystem.out.println("EPOCH_DAY " + date.getLong(EPOCH_DAY));
+        TSystem.out.println("JDN " + date.getLong(TJulianFields.JULIAN_DAY));
+        TSystem.out.println("MJD " + date.getLong(TJulianFields.MODIFIED_JULIAN_DAY));
+        TSystem.out.println("RD  " + date.getLong(TJulianFields.RATA_DIE));
+        TSystem.out.println();
     }
 
 
-    /**
-     * Example code.
-     */
     static void example1() {
-        System.out.printf("Available Calendars%n");
+        TSystem.out.printf("Available Calendars%n");
 
         // Print the Minguo date
-        ChronoLocalDate now1 = MinguoChronology.INSTANCE.dateNow();
-        int day = now1.get(ChronoField.DAY_OF_MONTH);
-        int dow = now1.get(ChronoField.DAY_OF_WEEK);
-        int month = now1.get(ChronoField.MONTH_OF_YEAR);
-        int year = now1.get(ChronoField.YEAR);
-        System.out.printf("  Today is %s %s %d-%s-%d%n", now1.getChronology().getId(),
-                DayOfWeek.of(dow), year, month, day);
+        TChronoLocalDate now1 = TMinguoChronology.INSTANCE.dateNow();
+        int day = now1.get(TChronoField.DAY_OF_MONTH);
+        int dow = now1.get(TChronoField.DAY_OF_WEEK);
+        int month = now1.get(TChronoField.MONTH_OF_YEAR);
+        int year = now1.get(TChronoField.YEAR);
+        TSystem.out.printf("  Today is %s %s %d-%s-%d%n", now1.getChronology().getId(),
+                TDayOfWeek.of(dow), year, month, day);
 
-        // Print today's date and the last day of the year for the Minguo Calendar.
-        ChronoLocalDate first = now1
-                .with(ChronoField.DAY_OF_MONTH, 1)
-                .with(ChronoField.MONTH_OF_YEAR, 1);
-        ChronoLocalDate last = first
-                .plus(1, ChronoUnit.YEARS)
-                .minus(1, ChronoUnit.DAYS);
-        System.out.printf("  1st of year: %s; end of year: %s%n", first, last);
+        // Print today's date and the last day of the year for the Minguo TCalendar.
+        TChronoLocalDate first = now1
+                .with(TChronoField.DAY_OF_MONTH, 1)
+                .with(TChronoField.MONTH_OF_YEAR, 1);
+        TChronoLocalDate last = first
+                .plus(1, TChronoUnit.YEARS)
+                .minus(1, TChronoUnit.DAYS);
+        TSystem.out.printf("  1st of year: %s; end of year: %s%n", first, last);
 
         // Enumerate the list of available calendars and print today for each
-        LocalDate  before = LocalDate.of(-500, 1, 1);
-        Set<Chronology> chronos = Chronology.getAvailableChronologies();
-        for (Chronology chrono : chronos) {
-            ChronoLocalDate date = chrono.dateNow();
-            ChronoLocalDate date2 = chrono.date(before);
-            System.out.printf("   %20s: %22s, %22s%n", chrono.getId(), date, date2);
+        TLocalDate  before = TLocalDate.of(-500, 1, 1);
+        Set<TChronology> chronos = TChronology.getAvailableChronologies();
+        for (TChronology chrono : chronos) {
+            TChronoLocalDate date = chrono.dateNow();
+            TChronoLocalDate date2 = chrono.date(before);
+            TSystem.out.printf("   %20s: %22s, %22s%n", chrono.getId(), date, date2);
         }
     }
 
-    /**
-     * Prints a Minguo calendar for the current month.
-     */
     private static void printMinguoCal() {
         String chronoName = "Minguo";
-        Chronology chrono = Chronology.of(chronoName);
-        ChronoLocalDate today = chrono.dateNow();
-        printMonthCal(today, System.out);
+        TChronology chrono = TChronology.of(chronoName);
+        TChronoLocalDate today = chrono.dateNow();
+        printMonthCal(today, TSystem.out);
     }
 
-    /**
-     * Print a month calendar with complete week rows.
-     * @param date A date in some calendar
-     * @param out a PrintStream
-     */
-    private static void printMonthCal(ChronoLocalDate date, PrintStream out) {
+    private static void printMonthCal(TChronoLocalDate date, PrintStream out) {
 
         int lengthOfMonth = (int) date.lengthOfMonth();
-        ChronoLocalDate end = date.with(ChronoField.DAY_OF_MONTH, lengthOfMonth);
-        end = end.plus(7 - end.get(ChronoField.DAY_OF_WEEK), ChronoUnit.DAYS);
+        TChronoLocalDate end = date.with(TChronoField.DAY_OF_MONTH, lengthOfMonth);
+        end = end.plus(7 - end.get(TChronoField.DAY_OF_WEEK), TChronoUnit.DAYS);
         // Back up to the beginning of the week including the 1st of the month
-        ChronoLocalDate start = date.with(ChronoField.DAY_OF_MONTH, 1);
-        start = start.minus(start.get(ChronoField.DAY_OF_WEEK), ChronoUnit.DAYS);
+        TChronoLocalDate start = date.with(TChronoField.DAY_OF_MONTH, 1);
+        start = start.minus(start.get(TChronoField.DAY_OF_WEEK), TChronoUnit.DAYS);
 
-        out.printf("%9s Month %2d, %4d%n", date.getChronology().getId(),
-                date.get(ChronoField.MONTH_OF_YEAR),
-                date.get(ChronoField.YEAR));
+        out.printf("%9s TMonth %2d, %4d%n", date.getChronology().getId(),
+                date.get(TChronoField.MONTH_OF_YEAR),
+                date.get(TChronoField.YEAR));
         String[] colText = {"Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"};
         printMonthRow(colText, " ", out);
 
         String[] cell = new String[7];
-        for ( ; start.compareTo(end) <= 0; start = start.plus(1, ChronoUnit.DAYS)) {
-            int ndx = start.get(ChronoField.DAY_OF_WEEK) - 1;
-            cell[ndx] = Integer.toString((int) start.get(ChronoField.DAY_OF_MONTH));
+        for ( ; start.compareTo(end) <= 0; start = start.plus(1, TChronoUnit.DAYS)) {
+            int ndx = start.get(TChronoField.DAY_OF_WEEK) - 1;
+            cell[ndx] = Integer.toString((int) start.get(TChronoField.DAY_OF_MONTH));
             if (ndx == 6) {
                 printMonthRow(cell, "|", out);
             }

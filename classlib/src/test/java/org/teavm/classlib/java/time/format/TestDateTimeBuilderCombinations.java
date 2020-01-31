@@ -29,57 +29,54 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_WEEK_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_WEEK;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.EPOCH_DAY;
-import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.PROLEPTIC_MONTH;
-import static org.threeten.bp.temporal.ChronoField.YEAR;
+import static org.junit.Assert.assertEquals;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_WEEK_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_WEEK_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.PROLEPTIC_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.Instant;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.ZoneId;
-import org.threeten.bp.ZonedDateTime;
-import org.threeten.bp.chrono.IsoChronology;
-import org.threeten.bp.temporal.TemporalAccessor;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.TemporalQuery;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TInstant;
+import org.teavm.classlib.java.time.TLocalDate;
+import org.teavm.classlib.java.time.TZoneId;
+import org.teavm.classlib.java.time.TZonedDateTime;
+import org.teavm.classlib.java.time.chrono.TIsoChronology;
+import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 
-/**
- * Test.
- */
 public class TestDateTimeBuilderCombinations {
 
-    private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
+    private static final TZoneId PARIS = TZoneId.of("Europe/Paris");
 
     @DataProvider(name = "combine")
     Object[][] data_combine() {
         return new Object[][] {
-            {YEAR, 2012, MONTH_OF_YEAR, 6, DAY_OF_MONTH, 3, null, null, LocalDate.FROM, LocalDate.of(2012, 6, 3)},
-            {PROLEPTIC_MONTH, 2012 * 12 + 6 - 1, DAY_OF_MONTH, 3, null, null, null, null, LocalDate.FROM, LocalDate.of(2012, 6, 3)},
-            {YEAR, 2012, ALIGNED_WEEK_OF_YEAR, 6, DAY_OF_WEEK, 3, null, null, LocalDate.FROM, LocalDate.of(2012, 2, 8)},
-            {YEAR, 2012, DAY_OF_YEAR, 155, null, null, null, null, LocalDate.FROM, LocalDate.of(2012, 6, 3)},
-//            {ERA, 1, YEAR_OF_ERA, 2012, DAY_OF_YEAR, 155, null, null, LocalDate.FROM, LocalDate.of(2012, 6, 3)},
-//            {YEAR, 2012, MONTH_OF_YEAR, 6, null, null, null, null, LocalDate.FROM, null},
-            {EPOCH_DAY, 12, null, null, null, null, null, null, LocalDate.FROM, LocalDate.of(1970, 1, 13)},
+            {YEAR, 2012, MONTH_OF_YEAR, 6, DAY_OF_MONTH, 3, null, null, TLocalDate.FROM, TLocalDate.of(2012, 6, 3)},
+            {PROLEPTIC_MONTH, 2012 * 12 + 6 - 1, DAY_OF_MONTH, 3, null, null, null, null, TLocalDate.FROM, TLocalDate.of(2012, 6, 3)},
+            {YEAR, 2012, ALIGNED_WEEK_OF_YEAR, 6, DAY_OF_WEEK, 3, null, null, TLocalDate.FROM, TLocalDate.of(2012, 2, 8)},
+            {YEAR, 2012, DAY_OF_YEAR, 155, null, null, null, null, TLocalDate.FROM, TLocalDate.of(2012, 6, 3)},
+//            {ERA, 1, YEAR_OF_ERA, 2012, DAY_OF_YEAR, 155, null, null, TLocalDate.FROM, TLocalDate.of(2012, 6, 3)},
+//            {YEAR, 2012, MONTH_OF_YEAR, 6, null, null, null, null, TLocalDate.FROM, null},
+            {EPOCH_DAY, 12, null, null, null, null, null, null, TLocalDate.FROM, TLocalDate.of(1970, 1, 13)},
         };
     }
 
     @Test(dataProvider = "combine")
-    public void test_derive(TemporalField field1, Number value1, TemporalField field2, Number value2,
-            TemporalField field3, Number value3, TemporalField field4, Number value4, TemporalQuery<?> query, Object expectedVal) {
-        DateTimeBuilder builder = new DateTimeBuilder(field1, value1.longValue());
-        builder.chrono = IsoChronology.INSTANCE;
+    public void test_derive(TTemporalField field1, Number value1, TTemporalField field2, Number value2,
+            TTemporalField field3, Number value3, TTemporalField field4, Number value4, TTemporalQuery<?> query, Object expectedVal) {
+        TDateTimeBuilder builder = new TDateTimeBuilder(field1, value1.longValue());
+        builder.chrono = TIsoChronology.INSTANCE;
         if (field2 != null) {
             builder.addFieldValue(field2, value2.longValue());
         }
@@ -89,7 +86,7 @@ public class TestDateTimeBuilderCombinations {
         if (field4 != null) {
             builder.addFieldValue(field4, value4.longValue());
         }
-        builder.resolve(ResolverStyle.SMART, null);
+        builder.resolve(TResolverStyle.SMART, null);
         assertEquals(builder.build(query), expectedVal);
     }
 
@@ -113,17 +110,17 @@ public class TestDateTimeBuilderCombinations {
     }
 
     @Test(dataProvider = "normalized")
-    public void test_normalized(TemporalField field1, Number value1, TemporalField field2, Number value2,
-            TemporalField field3, Number value3, TemporalField query, Number expectedVal) {
-        DateTimeBuilder builder = new DateTimeBuilder(field1, value1.longValue());
-        builder.chrono = IsoChronology.INSTANCE;
+    public void test_normalized(TTemporalField field1, Number value1, TTemporalField field2, Number value2,
+            TTemporalField field3, Number value3, TTemporalField query, Number expectedVal) {
+        TDateTimeBuilder builder = new TDateTimeBuilder(field1, value1.longValue());
+        builder.chrono = TIsoChronology.INSTANCE;
         if (field2 != null) {
             builder.addFieldValue(field2, value2.longValue());
         }
         if (field3 != null) {
             builder.addFieldValue(field3, value3.longValue());
         }
-        builder.resolve(ResolverStyle.SMART, null);
+        builder.resolve(TResolverStyle.SMART, null);
         if (expectedVal != null) {
             assertEquals(builder.getLong(query), expectedVal.longValue());
         } else {
@@ -133,16 +130,16 @@ public class TestDateTimeBuilderCombinations {
 
     @Test
     public void test_parse_ZDT_withZone() {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(PARIS);
-        TemporalAccessor acc = fmt.parse("2014-06-30 01:02:03");
-        assertEquals(ZonedDateTime.from(acc), ZonedDateTime.of(2014, 6, 30, 1, 2, 3, 0, PARIS));
+        TDateTimeFormatter fmt = TDateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(PARIS);
+        TTemporalAccessor acc = fmt.parse("2014-06-30 01:02:03");
+        assertEquals(TZonedDateTime.from(acc), TZonedDateTime.of(2014, 6, 30, 1, 2, 3, 0, PARIS));
     }
 
     @Test
     public void test_parse_Instant_withZone() {
-        DateTimeFormatter fmt = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(PARIS);
-        TemporalAccessor acc = fmt.parse("2014-06-30 01:02:03");
-        assertEquals(Instant.from(acc), ZonedDateTime.of(2014, 6, 30, 1, 2, 3, 0, PARIS).toInstant());
+        TDateTimeFormatter fmt = TDateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(PARIS);
+        TTemporalAccessor acc = fmt.parse("2014-06-30 01:02:03");
+        assertEquals(TInstant.from(acc), TZonedDateTime.of(2014, 6, 30, 1, 2, 3, 0, PARIS).toInstant());
     }
 
 }

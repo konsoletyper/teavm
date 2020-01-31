@@ -29,35 +29,14 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.jdk8;
+package org.teavm.classlib.java.time.jdk8;
 
-/**
- * A set of utility methods that provide additional functionality for working
- * with dates and times.
- * <p>
- * The contents of this class replace functionality available in JDK 8.
- *
- * <h3>Specification for implementors</h3>
- * This is a thread-safe utility class.
- * All returned classes are immutable and thread-safe.
- */
-public final class Jdk8Methods {
+public final class TJdk8Methods {
 
-    /**
-     * Private constructor since this is a utility class.
-     */
-    private Jdk8Methods() {
+    private TJdk8Methods() {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Ensures that the argument is non-null.
-     *
-     * @param <T>  the value type
-     * @param value  the value to check
-     * @return the checked non-null value
-     * @throws NullPointerException if the value is null
-     */
     public static <T> T requireNonNull(T value) {
         if (value == null) {
             throw new NullPointerException("Value must not be null");
@@ -65,15 +44,6 @@ public final class Jdk8Methods {
         return value;
     }
 
-    /**
-     * Ensures that the argument is non-null.
-     *
-     * @param <T>  the value type
-     * @param value  the value to check
-     * @param parameterName  the name of the parameter
-     * @return the checked non-null value
-     * @throws NullPointerException if the value is null
-     */
     public static <T> T requireNonNull(T value, String parameterName) {
         if (value == null) {
             throw new NullPointerException(parameterName + " must not be null");
@@ -82,13 +52,6 @@ public final class Jdk8Methods {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Compares two objects.
-     *
-     * @param a  the first value
-     * @param b  the second value
-     * @return the result
-     */
     public static boolean equals(Object a, Object b) {
         if (a == null) {
             return b == null;
@@ -99,13 +62,6 @@ public final class Jdk8Methods {
         return a.equals(b);
     }
 
-    /**
-     * Compares two ints.
-     *
-     * @param a  the first value
-     * @param b  the second value
-     * @return the result
-     */
     public static int compareInts(int a, int b) {
         if (a < b) {
             return -1;
@@ -116,13 +72,6 @@ public final class Jdk8Methods {
         return 0;
     }
 
-    /**
-     * Compares two longs.
-     *
-     * @param a  the first value
-     * @param b  the second value
-     * @return the result
-     */
     public static int compareLongs(long a, long b) {
         if (a < b) {
             return -1;
@@ -134,14 +83,6 @@ public final class Jdk8Methods {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Safely adds two int values.
-     *
-     * @param a  the first value
-     * @param b  the second value
-     * @return the result
-     * @throws ArithmeticException if the result overflows an int
-     */
     public static int safeAdd(int a, int b) {
         int sum = a + b;
         // check for a change of sign in the result when the inputs have the same sign
@@ -151,14 +92,6 @@ public final class Jdk8Methods {
         return sum;
     }
 
-    /**
-     * Safely adds two long values.
-     *
-     * @param a  the first value
-     * @param b  the second value
-     * @return the result
-     * @throws ArithmeticException if the result overflows a long
-     */
     public static long safeAdd(long a, long b) {
         long sum = a + b;
         // check for a change of sign in the result when the inputs have the same sign
@@ -169,14 +102,6 @@ public final class Jdk8Methods {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Safely subtracts one int from another.
-     *
-     * @param a  the first value
-     * @param b  the second value to subtract from the first
-     * @return the result
-     * @throws ArithmeticException if the result overflows an int
-     */
     public static int safeSubtract(int a, int b) {
         int result = a - b;
         // check for a change of sign in the result when the inputs have the different signs
@@ -186,14 +111,6 @@ public final class Jdk8Methods {
         return result;
     }
 
-    /**
-     * Safely subtracts one long from another.
-     *
-     * @param a  the first value
-     * @param b  the second value to subtract from the first
-     * @return the result
-     * @throws ArithmeticException if the result overflows a long
-     */
     public static long safeSubtract(long a, long b) {
         long result = a - b;
         // check for a change of sign in the result when the inputs have the different signs
@@ -204,14 +121,6 @@ public final class Jdk8Methods {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Safely multiply one int by another.
-     *
-     * @param a  the first value
-     * @param b  the second value
-     * @return the result
-     * @throws ArithmeticException if the result overflows an int
-     */
     public static int safeMultiply(int a, int b) {
         long total = (long) a * (long) b;
         if (total < Integer.MIN_VALUE || total > Integer.MAX_VALUE) {
@@ -220,14 +129,6 @@ public final class Jdk8Methods {
         return (int) total;
     }
 
-    /**
-     * Safely multiply a long by an int.
-     *
-     * @param a  the first value
-     * @param b  the second value
-     * @return the new total
-     * @throws ArithmeticException if the result overflows a long
-     */
     public static long safeMultiply(long a, int b) {
         switch (b) {
             case -1:
@@ -247,14 +148,6 @@ public final class Jdk8Methods {
         return total;
     }
 
-    /**
-     * Multiply two values throwing an exception if overflow occurs.
-     *
-     * @param a  the first value
-     * @param b  the second value
-     * @return the new total
-     * @throws ArithmeticException if the result overflows a long
-     */
     public static long safeMultiply(long a, long b) {
         if (b == 1) {
             return a;
@@ -273,13 +166,6 @@ public final class Jdk8Methods {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Safely convert a long to an int.
-     *
-     * @param value  the value to convert
-     * @return the int value
-     * @throws ArithmeticException if the result overflows an int
-     */
     public static int safeToInt(long value) {
         if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
             throw new ArithmeticException("Calculation overflows an int: " + value);
@@ -288,95 +174,22 @@ public final class Jdk8Methods {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Returns the floor division.
-     * <p>
-     * This returns {@code 0} for {@code floorDiv(0, 4)}.<br />
-     * This returns {@code -1} for {@code floorDiv(-1, 4)}.<br />
-     * This returns {@code -1} for {@code floorDiv(-2, 4)}.<br />
-     * This returns {@code -1} for {@code floorDiv(-3, 4)}.<br />
-     * This returns {@code -1} for {@code floorDiv(-4, 4)}.<br />
-     * This returns {@code -2} for {@code floorDiv(-5, 4)}.<br />
-     *
-     * @param a  the dividend
-     * @param b  the divisor
-     * @return the floor division
-     */
     public static long floorDiv(long a, long b) {
         return (a >= 0 ? a / b : ((a + 1) / b) - 1);
     }
 
-    /**
-     * Returns the floor modulus.
-     * <p>
-     * This returns {@code 0} for {@code floorMod(0, 4)}.<br />
-     * This returns {@code 1} for {@code floorMod(-1, 4)}.<br />
-     * This returns {@code 2} for {@code floorMod(-2, 4)}.<br />
-     * This returns {@code 3} for {@code floorMod(-3, 4)}.<br />
-     * This returns {@code 0} for {@code floorMod(-4, 4)}.<br />
-     *
-     * @param a  the dividend
-     * @param b  the divisor
-     * @return the floor modulus (positive)
-     */
     public static long floorMod(long a, long b) {
         return ((a % b) + b) % b;
     }
 
-    /**
-     * Returns the floor modulus.
-     * <p>
-     * This returns {@code 0} for {@code floorMod(0, 4)}.<br />
-     * This returns {@code 3} for {@code floorMod(-1, 4)}.<br />
-     * This returns {@code 2} for {@code floorMod(-2, 4)}.<br />
-     * This returns {@code 1} for {@code floorMod(-3, 4)}.<br />
-     * This returns {@code 0} for {@code floorMod(-4, 4)}.<br />
-     * This returns {@code 3} for {@code floorMod(-5, 4)}.<br />
-     *
-     * @param a  the dividend
-     * @param b  the divisor
-     * @return the floor modulus (positive)
-     */
     public static int floorMod(long a, int b) {
         return (int) (((a % b) + b) % b);
     }
 
-    /**
-     * Returns the floor division.
-     * <p>
-     * This returns {@code 1} for {@code floorDiv(3, 3)}.<br />
-     * This returns {@code 0} for {@code floorDiv(2, 3)}.<br />
-     * This returns {@code 0} for {@code floorDiv(1, 3)}.<br />
-     * This returns {@code 0} for {@code floorDiv(0, 3)}.<br />
-     * This returns {@code -1} for {@code floorDiv(-1, 3)}.<br />
-     * This returns {@code -1} for {@code floorDiv(-2, 3)}.<br />
-     * This returns {@code -1} for {@code floorDiv(-3, 3)}.<br />
-     * This returns {@code -2} for {@code floorDiv(-4, 3)}.<br />
-     *
-     * @param a  the dividend
-     * @param b  the divisor
-     * @return the floor division
-     */
     public static int floorDiv(int a, int b) {
         return (a >= 0 ? a / b : ((a + 1) / b) - 1);
     }
 
-    /**
-     * Returns the floor modulus.
-     * <p>
-     * This returns {@code 0} for {@code floorMod(3, 3)}.<br />
-     * This returns {@code 2} for {@code floorMod(2, 3)}.<br />
-     * This returns {@code 1} for {@code floorMod(1, 3)}.<br />
-     * This returns {@code 0} for {@code floorMod(0, 3)}.<br />
-     * This returns {@code 2} for {@code floorMod(-1, 3)}.<br />
-     * This returns {@code 1} for {@code floorMod(-2, 3)}.<br />
-     * This returns {@code 0} for {@code floorMod(-3, 3)}.<br />
-     * This returns {@code 2} for {@code floorMod(-4, 3)}.<br />
-     *
-     * @param a  the dividend
-     * @param b  the divisor
-     * @return the floor modulus (positive)
-     */
     public static int floorMod(int a, int b) {
         return ((a % b) + b) % b;
     }

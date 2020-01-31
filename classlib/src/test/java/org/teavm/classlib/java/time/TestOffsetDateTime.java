@@ -29,44 +29,44 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.threeten.bp.Month.DECEMBER;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_WEEK_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.AMPM_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.CLOCK_HOUR_OF_AMPM;
-import static org.threeten.bp.temporal.ChronoField.CLOCK_HOUR_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_WEEK;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.EPOCH_DAY;
-import static org.threeten.bp.temporal.ChronoField.PROLEPTIC_MONTH;
-import static org.threeten.bp.temporal.ChronoField.ERA;
-import static org.threeten.bp.temporal.ChronoField.HOUR_OF_AMPM;
-import static org.threeten.bp.temporal.ChronoField.HOUR_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.INSTANT_SECONDS;
-import static org.threeten.bp.temporal.ChronoField.MICRO_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.MICRO_OF_SECOND;
-import static org.threeten.bp.temporal.ChronoField.MILLI_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.MILLI_OF_SECOND;
-import static org.threeten.bp.temporal.ChronoField.MINUTE_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.MINUTE_OF_HOUR;
-import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.NANO_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.NANO_OF_SECOND;
-import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
-import static org.threeten.bp.temporal.ChronoField.SECOND_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.SECOND_OF_MINUTE;
-import static org.threeten.bp.temporal.ChronoField.YEAR;
-import static org.threeten.bp.temporal.ChronoField.YEAR_OF_ERA;
-import static org.threeten.bp.temporal.ChronoUnit.DAYS;
-import static org.threeten.bp.temporal.ChronoUnit.NANOS;
-import static org.threeten.bp.temporal.ChronoUnit.SECONDS;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.teavm.classlib.java.time.TMonth.DECEMBER;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_WEEK_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_WEEK_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.AMPM_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.CLOCK_HOUR_OF_AMPM;
+import static org.teavm.classlib.java.time.temporal.TChronoField.CLOCK_HOUR_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.PROLEPTIC_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ERA;
+import static org.teavm.classlib.java.time.temporal.TChronoField.HOUR_OF_AMPM;
+import static org.teavm.classlib.java.time.temporal.TChronoField.HOUR_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.INSTANT_SECONDS;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MICRO_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MICRO_OF_SECOND;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MILLI_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MILLI_OF_SECOND;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MINUTE_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MINUTE_OF_HOUR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_SECOND;
+import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
+import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_MINUTE;
+import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR_OF_ERA;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.SECONDS;
 
 import java.io.IOException;
 import java.lang.reflect.Constructor;
@@ -75,50 +75,47 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
-import org.testng.annotations.BeforeMethod;
+import org.junit.Before;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.chrono.IsoChronology;
-import org.threeten.bp.format.DateTimeFormatter;
-import org.threeten.bp.format.DateTimeParseException;
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.ChronoUnit;
-import org.threeten.bp.temporal.JulianFields;
-import org.threeten.bp.temporal.Temporal;
-import org.threeten.bp.temporal.TemporalAccessor;
-import org.threeten.bp.temporal.TemporalAdjuster;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.TemporalQueries;
+import org.junit.Test;
+import org.teavm.classlib.java.time.chrono.TIsoChronology;
+import org.teavm.classlib.java.time.format.TDateTimeFormatter;
+import org.teavm.classlib.java.time.format.TDateTimeParseException;
+import org.teavm.classlib.java.time.temporal.TChronoField;
+import org.teavm.classlib.java.time.temporal.TChronoUnit;
+import org.teavm.classlib.java.time.temporal.TJulianFields;
+import org.teavm.classlib.java.time.temporal.TTemporal;
+import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
+import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 
-/**
- * Test OffsetDateTime.
- */
 @Test
 public class TestOffsetDateTime extends AbstractDateTimeTest {
 
-    private static final ZoneId ZONE_PARIS = ZoneId.of("Europe/Paris");
-    private static final ZoneId ZONE_GAZA = ZoneId.of("Asia/Gaza");
-    private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
-    private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
-    private static final ZoneOffset OFFSET_MONE = ZoneOffset.ofHours(-1);
-    private static final ZoneOffset OFFSET_MTWO = ZoneOffset.ofHours(-2);
-    private OffsetDateTime TEST_2008_6_30_11_30_59_000000500;
+    private static final TZoneId ZONE_PARIS = TZoneId.of("Europe/Paris");
+    private static final TZoneId ZONE_GAZA = TZoneId.of("Asia/Gaza");
+    private static final TZoneOffset OFFSET_PONE = TZoneOffset.ofHours(1);
+    private static final TZoneOffset OFFSET_PTWO = TZoneOffset.ofHours(2);
+    private static final TZoneOffset OFFSET_MONE = TZoneOffset.ofHours(-1);
+    private static final TZoneOffset OFFSET_MTWO = TZoneOffset.ofHours(-2);
+    private TOffsetDateTime TEST_2008_6_30_11_30_59_000000500;
 
-    @BeforeMethod
+    @Before
     public void setUp() {
-        TEST_2008_6_30_11_30_59_000000500 = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 500), OFFSET_PONE);
+        TEST_2008_6_30_11_30_59_000000500 = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59, 500), OFFSET_PONE);
     }
 
     //-----------------------------------------------------------------------
     @Override
-    protected List<TemporalAccessor> samples() {
-        TemporalAccessor[] array = {TEST_2008_6_30_11_30_59_000000500, OffsetDateTime.MIN, OffsetDateTime.MAX};
+    protected List<TTemporalAccessor> samples() {
+        TTemporalAccessor[] array = {TEST_2008_6_30_11_30_59_000000500, TOffsetDateTime.MIN, TOffsetDateTime.MAX};
         return Arrays.asList(array);
     }
 
     @Override
-    protected List<TemporalField> validFields() {
-        TemporalField[] array = {
+    protected List<TTemporalField> validFields() {
+        TTemporalField[] array = {
             NANO_OF_SECOND,
             NANO_OF_DAY,
             MICRO_OF_SECOND,
@@ -149,16 +146,16 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
             ERA,
             OFFSET_SECONDS,
             INSTANT_SECONDS,
-            JulianFields.JULIAN_DAY,
-            JulianFields.MODIFIED_JULIAN_DAY,
-            JulianFields.RATA_DIE,
+            TJulianFields.JULIAN_DAY,
+            TJulianFields.MODIFIED_JULIAN_DAY,
+            TJulianFields.RATA_DIE,
         };
         return Arrays.asList(array);
     }
 
     @Override
-    protected List<TemporalField> invalidFields() {
-        List<TemporalField> list = new ArrayList<TemporalField>(Arrays.<TemporalField>asList(ChronoField.values()));
+    protected List<TTemporalField> invalidFields() {
+        List<TTemporalField> list = new ArrayList<TTemporalField>(Arrays.<TTemporalField>asList(TChronoField.values()));
         list.removeAll(validFields());
         return list;
     }
@@ -167,16 +164,16 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     @Test
     public void test_serialization() throws Exception {
         assertSerializable(TEST_2008_6_30_11_30_59_000000500);
-        assertSerializable(OffsetDateTime.MIN);
-        assertSerializable(OffsetDateTime.MAX);
+        assertSerializable(TOffsetDateTime.MIN);
+        assertSerializable(TOffsetDateTime.MAX);
     }
 
     @Test
     public void test_serialization_format() throws ClassNotFoundException, IOException {
-        LocalDate date = LocalDate.of(2012, 9, 16);
-        LocalTime time = LocalTime.of(22, 17, 59, 464 * 1000000);
-        ZoneOffset offset = ZoneOffset.of("+01:00");
-        assertEqualsSerialisedForm(OffsetDateTime.of(date, time, offset));
+        TLocalDate date = TLocalDate.of(2012, 9, 16);
+        TLocalTime time = TLocalTime.of(22, 17, 59, 464 * 1000000);
+        TZoneOffset offset = TZoneOffset.of("+01:00");
+        assertEqualsSerialisedForm(TOffsetDateTime.of(date, time, offset));
     }
 
     //-----------------------------------------------------------------------
@@ -184,46 +181,46 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void now() {
-        OffsetDateTime expected = OffsetDateTime.now(Clock.systemDefaultZone());
-        OffsetDateTime test = OffsetDateTime.now();
+        TOffsetDateTime expected = TOffsetDateTime.now(TClock.systemDefaultZone());
+        TOffsetDateTime test = TOffsetDateTime.now();
         long diff = Math.abs(test.toLocalTime().toNanoOfDay() - expected.toLocalTime().toNanoOfDay());
         if (diff >= 100000000) {
             // may be date change
-            expected = OffsetDateTime.now(Clock.systemDefaultZone());
-            test = OffsetDateTime.now();
+            expected = TOffsetDateTime.now(TClock.systemDefaultZone());
+            test = TOffsetDateTime.now();
             diff = Math.abs(test.toLocalTime().toNanoOfDay() - expected.toLocalTime().toNanoOfDay());
         }
         assertTrue(diff < 100000000);  // less than 0.1 secs
     }
 
     //-----------------------------------------------------------------------
-    // now(Clock)
+    // now(TClock)
     //-----------------------------------------------------------------------
     @Test
     public void now_Clock_allSecsInDay_utc() {
         for (int i = 0; i < (2 * 24 * 60 * 60); i++) {
-            Instant instant = Instant.ofEpochSecond(i).plusNanos(123456789L);
-            Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
-            OffsetDateTime test = OffsetDateTime.now(clock);
+            TInstant instant = TInstant.ofEpochSecond(i).plusNanos(123456789L);
+            TClock clock = TClock.fixed(instant, TZoneOffset.UTC);
+            TOffsetDateTime test = TOffsetDateTime.now(clock);
             assertEquals(test.getYear(), 1970);
-            assertEquals(test.getMonth(), Month.JANUARY);
+            assertEquals(test.getMonth(), TMonth.JANUARY);
             assertEquals(test.getDayOfMonth(), (i < 24 * 60 * 60 ? 1 : 2));
             assertEquals(test.getHour(), (i / (60 * 60)) % 24);
             assertEquals(test.getMinute(), (i / 60) % 60);
             assertEquals(test.getSecond(), i % 60);
             assertEquals(test.getNano(), 123456789);
-            assertEquals(test.getOffset(), ZoneOffset.UTC);
+            assertEquals(test.getOffset(), TZoneOffset.UTC);
         }
     }
 
     @Test
     public void now_Clock_allSecsInDay_offset() {
         for (int i = 0; i < (2 * 24 * 60 * 60); i++) {
-            Instant instant = Instant.ofEpochSecond(i).plusNanos(123456789L);
-            Clock clock = Clock.fixed(instant.minusSeconds(OFFSET_PONE.getTotalSeconds()), OFFSET_PONE);
-            OffsetDateTime test = OffsetDateTime.now(clock);
+            TInstant instant = TInstant.ofEpochSecond(i).plusNanos(123456789L);
+            TClock clock = TClock.fixed(instant.minusSeconds(OFFSET_PONE.getTotalSeconds()), OFFSET_PONE);
+            TOffsetDateTime test = TOffsetDateTime.now(clock);
             assertEquals(test.getYear(), 1970);
-            assertEquals(test.getMonth(), Month.JANUARY);
+            assertEquals(test.getMonth(), TMonth.JANUARY);
             assertEquals(test.getDayOfMonth(), (i < 24 * 60 * 60) ? 1 : 2);
             assertEquals(test.getHour(), (i / (60 * 60)) % 24);
             assertEquals(test.getMinute(), (i / 60) % 60);
@@ -235,27 +232,27 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void now_Clock_allSecsInDay_beforeEpoch() {
-        LocalTime expected = LocalTime.MIDNIGHT.plusNanos(123456789L);
+        TLocalTime expected = TLocalTime.MIDNIGHT.plusNanos(123456789L);
         for (int i =-1; i >= -(24 * 60 * 60); i--) {
-            Instant instant = Instant.ofEpochSecond(i).plusNanos(123456789L);
-            Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
-            OffsetDateTime test = OffsetDateTime.now(clock);
+            TInstant instant = TInstant.ofEpochSecond(i).plusNanos(123456789L);
+            TClock clock = TClock.fixed(instant, TZoneOffset.UTC);
+            TOffsetDateTime test = TOffsetDateTime.now(clock);
             assertEquals(test.getYear(), 1969);
-            assertEquals(test.getMonth(), Month.DECEMBER);
+            assertEquals(test.getMonth(), TMonth.DECEMBER);
             assertEquals(test.getDayOfMonth(), 31);
             expected = expected.minusSeconds(1);
             assertEquals(test.toLocalTime(), expected);
-            assertEquals(test.getOffset(), ZoneOffset.UTC);
+            assertEquals(test.getOffset(), TZoneOffset.UTC);
         }
     }
 
     @Test
     public void now_Clock_offsets() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(1970, 1, 1), LocalTime.of(12, 0), ZoneOffset.UTC);
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(1970, 1, 1), TLocalTime.of(12, 0), TZoneOffset.UTC);
         for (int i = -9; i < 15; i++) {
-            ZoneOffset offset = ZoneOffset.ofHours(i);
-            Clock clock = Clock.fixed(base.toInstant(), offset);
-            OffsetDateTime test = OffsetDateTime.now(clock);
+            TZoneOffset offset = TZoneOffset.ofHours(i);
+            TClock clock = TClock.fixed(base.toInstant(), offset);
+            TOffsetDateTime test = TOffsetDateTime.now(clock);
             assertEquals(test.getHour(), (12 + i) % 24);
             assertEquals(test.getMinute(), 0);
             assertEquals(test.getSecond(), 0);
@@ -266,16 +263,16 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void now_Clock_nullZoneId() {
-        OffsetDateTime.now((ZoneId) null);
+        TOffsetDateTime.now((TZoneId) null);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void now_Clock_nullClock() {
-        OffsetDateTime.now((Clock) null);
+        TOffsetDateTime.now((TClock) null);
     }
 
     //-----------------------------------------------------------------------
-    private void check(OffsetDateTime test, int y, int mo, int d, int h, int m, int s, int n, ZoneOffset offset) {
+    private void check(TOffsetDateTime test, int y, int mo, int d, int h, int m, int s, int n, TZoneOffset offset) {
         assertEquals(test.getYear(), y);
         assertEquals(test.getMonth().getValue(), mo);
         assertEquals(test.getDayOfMonth(), d);
@@ -286,7 +283,7 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(test.getOffset(), offset);
         assertEquals(test, test);
         assertEquals(test.hashCode(), test.hashCode());
-        assertEquals(OffsetDateTime.of(LocalDateTime.of(y, mo, d, h, m, s, n), offset), test);
+        assertEquals(TOffsetDateTime.of(TLocalDateTime.of(y, mo, d, h, m, s, n), offset), test);
     }
 
     //-----------------------------------------------------------------------
@@ -294,93 +291,93 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void factory_of_intMonthIntHM() {
-        OffsetDateTime test = OffsetDateTime.of(LocalDate.of(2008, Month.JUNE, 30),
-                LocalTime.of(11, 30), OFFSET_PONE);
+        TOffsetDateTime test = TOffsetDateTime.of(TLocalDate.of(2008, TMonth.JUNE, 30),
+                TLocalTime.of(11, 30), OFFSET_PONE);
         check(test, 2008, 6, 30, 11, 30, 0, 0, OFFSET_PONE);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void factory_of_intMonthIntHMS() {
-        OffsetDateTime test = OffsetDateTime.of(LocalDate.of(2008, Month.JUNE, 30),
-                LocalTime.of(11, 30, 10), OFFSET_PONE);
+        TOffsetDateTime test = TOffsetDateTime.of(TLocalDate.of(2008, TMonth.JUNE, 30),
+                TLocalTime.of(11, 30, 10), OFFSET_PONE);
         check(test, 2008, 6, 30, 11, 30, 10, 0, OFFSET_PONE);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void factory_of_intMonthIntHMSN() {
-        OffsetDateTime test = OffsetDateTime.of(LocalDate.of(2008, Month.JUNE, 30),
-                LocalTime.of(11, 30, 10, 500), OFFSET_PONE);
+        TOffsetDateTime test = TOffsetDateTime.of(TLocalDate.of(2008, TMonth.JUNE, 30),
+                TLocalTime.of(11, 30, 10, 500), OFFSET_PONE);
         check(test, 2008, 6, 30, 11, 30, 10, 500, OFFSET_PONE);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void factory_of_intsHM() {
-        OffsetDateTime test = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30), OFFSET_PONE);
+        TOffsetDateTime test = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30), OFFSET_PONE);
         check(test, 2008, 6, 30, 11, 30, 0, 0, OFFSET_PONE);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void factory_of_intsHMS() {
-        OffsetDateTime test = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 10), OFFSET_PONE);
+        TOffsetDateTime test = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 10), OFFSET_PONE);
         check(test, 2008, 6, 30, 11, 30, 10, 0, OFFSET_PONE);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void factory_of_intsHMSN() {
-        OffsetDateTime test = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 10, 500), OFFSET_PONE);
+        TOffsetDateTime test = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 10, 500), OFFSET_PONE);
         check(test, 2008, 6, 30, 11, 30, 10, 500, OFFSET_PONE);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void factory_of_LocalDateLocalTimeZoneOffset() {
-        LocalDate date = LocalDate.of(2008, 6, 30);
-        LocalTime time = LocalTime.of(11, 30, 10, 500);
-        OffsetDateTime test = OffsetDateTime.of(date, time, OFFSET_PONE);
+        TLocalDate date = TLocalDate.of(2008, 6, 30);
+        TLocalTime time = TLocalTime.of(11, 30, 10, 500);
+        TOffsetDateTime test = TOffsetDateTime.of(date, time, OFFSET_PONE);
         check(test, 2008, 6, 30, 11, 30, 10, 500, OFFSET_PONE);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_of_LocalDateLocalTimeZoneOffset_nullLocalDate() {
-        LocalTime time = LocalTime.of(11, 30, 10, 500);
-        OffsetDateTime.of((LocalDate) null, time, OFFSET_PONE);
+        TLocalTime time = TLocalTime.of(11, 30, 10, 500);
+        TOffsetDateTime.of((TLocalDate) null, time, OFFSET_PONE);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_of_LocalDateLocalTimeZoneOffset_nullLocalTime() {
-        LocalDate date = LocalDate.of(2008, 6, 30);
-        OffsetDateTime.of(date, (LocalTime) null, OFFSET_PONE);
+        TLocalDate date = TLocalDate.of(2008, 6, 30);
+        TOffsetDateTime.of(date, (TLocalTime) null, OFFSET_PONE);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_of_LocalDateLocalTimeZoneOffset_nullOffset() {
-        LocalDate date = LocalDate.of(2008, 6, 30);
-        LocalTime time = LocalTime.of(11, 30, 10, 500);
-        OffsetDateTime.of(date, time, (ZoneOffset) null);
+        TLocalDate date = TLocalDate.of(2008, 6, 30);
+        TLocalTime time = TLocalTime.of(11, 30, 10, 500);
+        TOffsetDateTime.of(date, time, (TZoneOffset) null);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void factory_of_LocalDateTimeZoneOffset() {
-        LocalDateTime dt = LocalDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 10, 500));
-        OffsetDateTime test = OffsetDateTime.of(dt, OFFSET_PONE);
+        TLocalDateTime dt = TLocalDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 10, 500));
+        TOffsetDateTime test = TOffsetDateTime.of(dt, OFFSET_PONE);
         check(test, 2008, 6, 30, 11, 30, 10, 500, OFFSET_PONE);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_of_LocalDateTimeZoneOffset_nullProvider() {
-        OffsetDateTime.of((LocalDateTime) null, OFFSET_PONE);
+        TOffsetDateTime.of((TLocalDateTime) null, OFFSET_PONE);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_of_LocalDateTimeZoneOffset_nullOffset() {
-        LocalDateTime dt = LocalDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 10, 500));
-        OffsetDateTime.of(dt, (ZoneOffset) null);
+        TLocalDateTime dt = TLocalDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 10, 500));
+        TOffsetDateTime.of(dt, (TZoneOffset) null);
     }
 
     //-----------------------------------------------------------------------
@@ -388,19 +385,19 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_factory_CalendricalObject() {
-        assertEquals(OffsetDateTime.from(
-                OffsetDateTime.of(LocalDate.of(2007, 7, 15), LocalTime.of(17, 30), OFFSET_PONE)),
-                OffsetDateTime.of(LocalDate.of(2007, 7, 15), LocalTime.of(17, 30), OFFSET_PONE));
+        assertEquals(TOffsetDateTime.from(
+                TOffsetDateTime.of(TLocalDate.of(2007, 7, 15), TLocalTime.of(17, 30), OFFSET_PONE)),
+                TOffsetDateTime.of(TLocalDate.of(2007, 7, 15), TLocalTime.of(17, 30), OFFSET_PONE));
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void test_factory_CalendricalObject_invalid_noDerive() {
-        OffsetDateTime.from(LocalTime.of(12, 30));
+        TOffsetDateTime.from(TLocalTime.of(12, 30));
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_factory_Calendricals_null() {
-        OffsetDateTime.from((TemporalAccessor) null);
+        TOffsetDateTime.from((TTemporalAccessor) null);
     }
 
     //-----------------------------------------------------------------------
@@ -408,7 +405,7 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test(dataProvider="sampleToString")
     public void test_parse(int y, int month, int d, int h, int m, int s, int n, String offsetId, String text) {
-        OffsetDateTime t = OffsetDateTime.parse(text);
+        TOffsetDateTime t = TOffsetDateTime.parse(text);
         assertEquals(t.getYear(), y);
         assertEquals(t.getMonth().getValue(), month);
         assertEquals(t.getDayOfMonth(), d);
@@ -419,46 +416,46 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(t.getOffset().getId(), offsetId);
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class)
+    @Test(expectedExceptions=TDateTimeParseException.class)
     public void factory_parse_illegalValue() {
-        OffsetDateTime.parse("2008-06-32T11:15+01:00");
+        TOffsetDateTime.parse("2008-06-32T11:15+01:00");
     }
 
-    @Test(expectedExceptions=DateTimeParseException.class)
+    @Test(expectedExceptions=TDateTimeParseException.class)
     public void factory_parse_invalidValue() {
-        OffsetDateTime.parse("2008-06-31T11:15+01:00");
+        TOffsetDateTime.parse("2008-06-31T11:15+01:00");
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_parse_nullText() {
-        OffsetDateTime.parse((String) null);
+        TOffsetDateTime.parse((String) null);
     }
 
     //-----------------------------------------------------------------------
-    // parse(DateTimeFormatter)
+    // parse(TDateTimeFormatter)
     //-----------------------------------------------------------------------
     @Test
     public void factory_parse_formatter() {
-        DateTimeFormatter f = DateTimeFormatter.ofPattern("u M d H m s XXX");
-        OffsetDateTime test = OffsetDateTime.parse("2010 12 3 11 30 0 +01:00", f);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2010, 12, 3), LocalTime.of(11, 30), ZoneOffset.ofHours(1)));
+        TDateTimeFormatter f = TDateTimeFormatter.ofPattern("u M d H m s XXX");
+        TOffsetDateTime test = TOffsetDateTime.parse("2010 12 3 11 30 0 +01:00", f);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2010, 12, 3), TLocalTime.of(11, 30), TZoneOffset.ofHours(1)));
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_parse_formatter_nullText() {
-        DateTimeFormatter f = DateTimeFormatter.ofPattern("u M d H m s");
-        OffsetDateTime.parse((String) null, f);
+        TDateTimeFormatter f = TDateTimeFormatter.ofPattern("u M d H m s");
+        TOffsetDateTime.parse((String) null, f);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void factory_parse_formatter_nullFormatter() {
-        OffsetDateTime.parse("ANY", null);
+        TOffsetDateTime.parse("ANY", null);
     }
 
     //-----------------------------------------------------------------------
     @Test(expectedExceptions=NullPointerException.class)
     public void constructor_nullTime() throws Throwable  {
-        Constructor<OffsetDateTime> con = OffsetDateTime.class.getDeclaredConstructor(LocalDateTime.class, ZoneOffset.class);
+        Constructor<TOffsetDateTime> con = TOffsetDateTime.class.getDeclaredConstructor(TLocalDateTime.class, TZoneOffset.class);
         con.setAccessible(true);
         try {
             con.newInstance(null, OFFSET_PONE);
@@ -469,10 +466,10 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void constructor_nullOffset() throws Throwable  {
-        Constructor<OffsetDateTime> con = OffsetDateTime.class.getDeclaredConstructor(LocalDateTime.class, ZoneOffset.class);
+        Constructor<TOffsetDateTime> con = TOffsetDateTime.class.getDeclaredConstructor(TLocalDateTime.class, TZoneOffset.class);
         con.setAccessible(true);
         try {
-            con.newInstance(LocalDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30)), null);
+            con.newInstance(TLocalDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30)), null);
         } catch (InvocationTargetException ex) {
             throw ex.getCause();
         }
@@ -492,11 +489,11 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     }
 
     @Test(dataProvider="sampleTimes")
-    public void test_get(int y, int o, int d, int h, int m, int s, int n, ZoneOffset offset) {
-        LocalDate localDate = LocalDate.of(y, o, d);
-        LocalTime localTime = LocalTime.of(h, m, s, n);
-        LocalDateTime localDateTime = LocalDateTime.of(localDate, localTime);
-        OffsetDateTime a = OffsetDateTime.of(localDateTime, offset);
+    public void test_get(int y, int o, int d, int h, int m, int s, int n, TZoneOffset offset) {
+        TLocalDate localDate = TLocalDate.of(y, o, d);
+        TLocalTime localTime = TLocalTime.of(h, m, s, n);
+        TLocalDateTime localDateTime = TLocalDateTime.of(localDate, localTime);
+        TOffsetDateTime a = TOffsetDateTime.of(localDateTime, offset);
 
         assertEquals(a.getYear(), localDate.getYear());
         assertEquals(a.getMonth(), localDate.getMonth());
@@ -509,64 +506,64 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
         assertEquals(a.getSecond(), localDateTime.getSecond());
         assertEquals(a.getNano(), localDateTime.getNano());
 
-        assertEquals(a.toOffsetTime(), OffsetTime.of(localTime, offset));
+        assertEquals(a.toOffsetTime(), TOffsetTime.of(localTime, offset));
         assertEquals(a.toString(), localDateTime.toString() + offset.toString());
     }
 
     //-----------------------------------------------------------------------
-    // get(TemporalField)
+    // get(TTemporalField)
     //-----------------------------------------------------------------------
     @Test
     public void test_get_TemporalField() {
-        OffsetDateTime test = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(12, 30, 40, 987654321), OFFSET_PONE);
-        assertEquals(test.get(ChronoField.YEAR), 2008);
-        assertEquals(test.get(ChronoField.MONTH_OF_YEAR), 6);
-        assertEquals(test.get(ChronoField.DAY_OF_MONTH), 30);
-        assertEquals(test.get(ChronoField.DAY_OF_WEEK), 1);
-        assertEquals(test.get(ChronoField.DAY_OF_YEAR), 182);
+        TOffsetDateTime test = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(12, 30, 40, 987654321), OFFSET_PONE);
+        assertEquals(test.get(TChronoField.YEAR), 2008);
+        assertEquals(test.get(TChronoField.MONTH_OF_YEAR), 6);
+        assertEquals(test.get(TChronoField.DAY_OF_MONTH), 30);
+        assertEquals(test.get(TChronoField.DAY_OF_WEEK), 1);
+        assertEquals(test.get(TChronoField.DAY_OF_YEAR), 182);
 
-        assertEquals(test.get(ChronoField.HOUR_OF_DAY), 12);
-        assertEquals(test.get(ChronoField.MINUTE_OF_HOUR), 30);
-        assertEquals(test.get(ChronoField.SECOND_OF_MINUTE), 40);
-        assertEquals(test.get(ChronoField.NANO_OF_SECOND), 987654321);
-        assertEquals(test.get(ChronoField.HOUR_OF_AMPM), 0);
-        assertEquals(test.get(ChronoField.AMPM_OF_DAY), 1);
+        assertEquals(test.get(TChronoField.HOUR_OF_DAY), 12);
+        assertEquals(test.get(TChronoField.MINUTE_OF_HOUR), 30);
+        assertEquals(test.get(TChronoField.SECOND_OF_MINUTE), 40);
+        assertEquals(test.get(TChronoField.NANO_OF_SECOND), 987654321);
+        assertEquals(test.get(TChronoField.HOUR_OF_AMPM), 0);
+        assertEquals(test.get(TChronoField.AMPM_OF_DAY), 1);
 
-        assertEquals(test.get(ChronoField.OFFSET_SECONDS), 3600);
+        assertEquals(test.get(TChronoField.OFFSET_SECONDS), 3600);
     }
 
     @Test
     public void test_getLong_TemporalField() {
-        OffsetDateTime test = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(12, 30, 40, 987654321), OFFSET_PONE);
-        assertEquals(test.getLong(ChronoField.YEAR), 2008);
-        assertEquals(test.getLong(ChronoField.MONTH_OF_YEAR), 6);
-        assertEquals(test.getLong(ChronoField.DAY_OF_MONTH), 30);
-        assertEquals(test.getLong(ChronoField.DAY_OF_WEEK), 1);
-        assertEquals(test.getLong(ChronoField.DAY_OF_YEAR), 182);
+        TOffsetDateTime test = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(12, 30, 40, 987654321), OFFSET_PONE);
+        assertEquals(test.getLong(TChronoField.YEAR), 2008);
+        assertEquals(test.getLong(TChronoField.MONTH_OF_YEAR), 6);
+        assertEquals(test.getLong(TChronoField.DAY_OF_MONTH), 30);
+        assertEquals(test.getLong(TChronoField.DAY_OF_WEEK), 1);
+        assertEquals(test.getLong(TChronoField.DAY_OF_YEAR), 182);
 
-        assertEquals(test.getLong(ChronoField.HOUR_OF_DAY), 12);
-        assertEquals(test.getLong(ChronoField.MINUTE_OF_HOUR), 30);
-        assertEquals(test.getLong(ChronoField.SECOND_OF_MINUTE), 40);
-        assertEquals(test.getLong(ChronoField.NANO_OF_SECOND), 987654321);
-        assertEquals(test.getLong(ChronoField.HOUR_OF_AMPM), 0);
-        assertEquals(test.getLong(ChronoField.AMPM_OF_DAY), 1);
+        assertEquals(test.getLong(TChronoField.HOUR_OF_DAY), 12);
+        assertEquals(test.getLong(TChronoField.MINUTE_OF_HOUR), 30);
+        assertEquals(test.getLong(TChronoField.SECOND_OF_MINUTE), 40);
+        assertEquals(test.getLong(TChronoField.NANO_OF_SECOND), 987654321);
+        assertEquals(test.getLong(TChronoField.HOUR_OF_AMPM), 0);
+        assertEquals(test.getLong(TChronoField.AMPM_OF_DAY), 1);
 
-        assertEquals(test.getLong(ChronoField.INSTANT_SECONDS), test.toEpochSecond());
-        assertEquals(test.getLong(ChronoField.OFFSET_SECONDS), 3600);
+        assertEquals(test.getLong(TChronoField.INSTANT_SECONDS), test.toEpochSecond());
+        assertEquals(test.getLong(TChronoField.OFFSET_SECONDS), 3600);
     }
 
     //-----------------------------------------------------------------------
-    // query(TemporalQuery)
+    // query(TTemporalQuery)
     //-----------------------------------------------------------------------
     @Test
     public void test_query() {
-        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TemporalQueries.chronology()), IsoChronology.INSTANCE);
-        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TemporalQueries.localDate()), TEST_2008_6_30_11_30_59_000000500.toLocalDate());
-        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TemporalQueries.localTime()), TEST_2008_6_30_11_30_59_000000500.toLocalTime());
-        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TemporalQueries.offset()), TEST_2008_6_30_11_30_59_000000500.getOffset());
-        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TemporalQueries.precision()), ChronoUnit.NANOS);
-        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TemporalQueries.zone()), TEST_2008_6_30_11_30_59_000000500.getOffset());
-        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TemporalQueries.zoneId()), null);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TTemporalQueries.chronology()), TIsoChronology.INSTANCE);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TTemporalQueries.localDate()), TEST_2008_6_30_11_30_59_000000500.toLocalDate());
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TTemporalQueries.localTime()), TEST_2008_6_30_11_30_59_000000500.toLocalTime());
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TTemporalQueries.offset()), TEST_2008_6_30_11_30_59_000000500.getOffset());
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TTemporalQueries.precision()), TChronoUnit.NANOS);
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TTemporalQueries.zone()), TEST_2008_6_30_11_30_59_000000500.getOffset());
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.query(TTemporalQueries.zoneId()), null);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
@@ -579,10 +576,10 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_with_adjustment() {
-        final OffsetDateTime sample = OffsetDateTime.of(LocalDate.of(2012, 3, 4), LocalTime.of(23, 5), OFFSET_PONE);
-        TemporalAdjuster adjuster = new TemporalAdjuster() {
+        final TOffsetDateTime sample = TOffsetDateTime.of(TLocalDate.of(2012, 3, 4), TLocalTime.of(23, 5), OFFSET_PONE);
+        TTemporalAdjuster adjuster = new TTemporalAdjuster() {
             @Override
-            public Temporal adjustInto(Temporal dateTime) {
+            public TTemporal adjustInto(TTemporal dateTime) {
                 return sample;
             }
         };
@@ -591,54 +588,54 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_with_adjustment_LocalDate() {
-        OffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(LocalDate.of(2012, 9, 3));
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2012, 9, 3), LocalTime.of(11, 30, 59, 500), OFFSET_PONE));
+        TOffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(TLocalDate.of(2012, 9, 3));
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2012, 9, 3), TLocalTime.of(11, 30, 59, 500), OFFSET_PONE));
     }
 
     @Test
     public void test_with_adjustment_LocalTime() {
-        OffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(LocalTime.of(19, 15));
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(19, 15), OFFSET_PONE));
+        TOffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(TLocalTime.of(19, 15));
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(19, 15), OFFSET_PONE));
     }
 
     @Test
     public void test_with_adjustment_LocalDateTime() {
-        OffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(LocalDateTime.of(LocalDate.of(2012, 9, 3), LocalTime.of(19, 15)));
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2012, 9, 3), LocalTime.of(19, 15), OFFSET_PONE));
+        TOffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(TLocalDateTime.of(TLocalDate.of(2012, 9, 3), TLocalTime.of(19, 15)));
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2012, 9, 3), TLocalTime.of(19, 15), OFFSET_PONE));
     }
 
     @Test
     public void test_with_adjustment_OffsetTime() {
-        OffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(OffsetTime.of(LocalTime.of(19, 15), OFFSET_PTWO));
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(19, 15), OFFSET_PTWO));
+        TOffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(TOffsetTime.of(TLocalTime.of(19, 15), OFFSET_PTWO));
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(19, 15), OFFSET_PTWO));
     }
 
     @Test
     public void test_with_adjustment_OffsetDateTime() {
-        OffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(OffsetDateTime.of(LocalDate.of(2012, 9, 3), LocalTime.of(19, 15), OFFSET_PTWO));
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2012, 9, 3), LocalTime.of(19, 15), OFFSET_PTWO));
+        TOffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(TOffsetDateTime.of(TLocalDate.of(2012, 9, 3), TLocalTime.of(19, 15), OFFSET_PTWO));
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2012, 9, 3), TLocalTime.of(19, 15), OFFSET_PTWO));
     }
 
     @Test
     public void test_with_adjustment_Month() {
-        OffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(DECEMBER);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 12, 30),LocalTime.of(11, 30, 59, 500), OFFSET_PONE));
+        TOffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(DECEMBER);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 12, 30),TLocalTime.of(11, 30, 59, 500), OFFSET_PONE));
     }
 
     @Test
     public void test_with_adjustment_ZoneOffset() {
-        OffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(OFFSET_PTWO);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 500), OFFSET_PTWO));
+        TOffsetDateTime test = TEST_2008_6_30_11_30_59_000000500.with(OFFSET_PTWO);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59, 500), OFFSET_PTWO));
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_with_adjustment_null() {
-        TEST_2008_6_30_11_30_59_000000500.with((TemporalAdjuster) null);
+        TEST_2008_6_30_11_30_59_000000500.with((TTemporalAdjuster) null);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_withOffsetSameLocal_null() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
         base.withOffsetSameLocal(null);
     }
 
@@ -647,15 +644,15 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withOffsetSameInstant() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.withOffsetSameInstant(OFFSET_PTWO);
-        OffsetDateTime expected = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(12, 30, 59), OFFSET_PTWO);
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.withOffsetSameInstant(OFFSET_PTWO);
+        TOffsetDateTime expected = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(12, 30, 59), OFFSET_PTWO);
         assertEquals(test, expected);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_withOffsetSameInstant_null() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
         base.withOffsetSameInstant(null);
     }
 
@@ -664,9 +661,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withYear_normal() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.withYear(2007);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2007, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.withYear(2007);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2007, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -674,9 +671,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withMonth_normal() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.withMonth(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 1, 30), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.withMonth(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 1, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -684,9 +681,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withDayOfMonth_normal() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.withDayOfMonth(15);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 15), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.withDayOfMonth(15);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 15), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -694,18 +691,18 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withDayOfYear_normal() {
-        OffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.withDayOfYear(33);
-        assertEquals(t, OffsetDateTime.of(LocalDate.of(2008, 2, 2), LocalTime.of(11, 30, 59, 500), OFFSET_PONE));
+        TOffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.withDayOfYear(33);
+        assertEquals(t, TOffsetDateTime.of(TLocalDate.of(2008, 2, 2), TLocalTime.of(11, 30, 59, 500), OFFSET_PONE));
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void test_withDayOfYear_illegal() {
         TEST_2008_6_30_11_30_59_000000500.withDayOfYear(367);
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void test_withDayOfYear_invalid() {
-        OffsetDateTime.of(LocalDate.of(2007, 2, 2), LocalTime.of(11, 30), OFFSET_PONE).withDayOfYear(366);
+        TOffsetDateTime.of(TLocalDate.of(2007, 2, 2), TLocalTime.of(11, 30), OFFSET_PONE).withDayOfYear(366);
     }
 
     //-----------------------------------------------------------------------
@@ -713,9 +710,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withHour_normal() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.withHour(15);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(15, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.withHour(15);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(15, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -723,9 +720,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withMinute_normal() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.withMinute(15);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 15, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.withMinute(15);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 15, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -733,9 +730,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withSecond_normal() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.withSecond(15);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 15), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.withSecond(15);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 15), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -743,19 +740,19 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_withNanoOfSecond_normal() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 1), OFFSET_PONE);
-        OffsetDateTime test = base.withNano(15);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 15), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59, 1), OFFSET_PONE);
+        TOffsetDateTime test = base.withNano(15);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59, 15), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
-    // truncatedTo(TemporalUnit)
+    // truncatedTo(TTemporalUnit)
     //-----------------------------------------------------------------------
     @Test
     public void test_truncatedTo_normal() {
         assertEquals(TEST_2008_6_30_11_30_59_000000500.truncatedTo(NANOS), TEST_2008_6_30_11_30_59_000000500);
         assertEquals(TEST_2008_6_30_11_30_59_000000500.truncatedTo(SECONDS), TEST_2008_6_30_11_30_59_000000500.withNano(0));
-        assertEquals(TEST_2008_6_30_11_30_59_000000500.truncatedTo(DAYS), TEST_2008_6_30_11_30_59_000000500.with(LocalTime.MIDNIGHT));
+        assertEquals(TEST_2008_6_30_11_30_59_000000500.truncatedTo(DAYS), TEST_2008_6_30_11_30_59_000000500.with(TLocalTime.MIDNIGHT));
     }
 
     @Test(expectedExceptions=NullPointerException.class)
@@ -764,34 +761,34 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     }
 
     //-----------------------------------------------------------------------
-    // plus(Period)
+    // plus(TPeriod)
     //-----------------------------------------------------------------------
     @Test
     public void test_plus_Period() {
-        MockSimplePeriod period = MockSimplePeriod.of(7, ChronoUnit.MONTHS);
-        OffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.plus(period);
-        assertEquals(t, OffsetDateTime.of(LocalDate.of(2009, 1, 30), LocalTime.of(11, 30, 59, 500), OFFSET_PONE));
+        MockSimplePeriod period = MockSimplePeriod.of(7, TChronoUnit.MONTHS);
+        TOffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.plus(period);
+        assertEquals(t, TOffsetDateTime.of(TLocalDate.of(2009, 1, 30), TLocalTime.of(11, 30, 59, 500), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
-    // plus(Duration)
+    // plus(TDuration)
     //-----------------------------------------------------------------------
     @Test
     public void test_plus_Duration() {
-        Duration dur = Duration.ofSeconds(62, 3);
-        OffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.plus(dur);
-        assertEquals(t, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 32, 1, 503), OFFSET_PONE));
+        TDuration dur = TDuration.ofSeconds(62, 3);
+        TOffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.plus(dur);
+        assertEquals(t, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 32, 1, 503), OFFSET_PONE));
     }
 
     @Test
     public void test_plus_Duration_zero() {
-        OffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.plus(Duration.ZERO);
+        TOffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.plus(TDuration.ZERO);
         assertEquals(t, TEST_2008_6_30_11_30_59_000000500);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_plus_Duration_null() {
-        TEST_2008_6_30_11_30_59_000000500.plus((Duration) null);
+        TEST_2008_6_30_11_30_59_000000500.plus((TDuration) null);
     }
 
     //-----------------------------------------------------------------------
@@ -799,9 +796,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_plusYears() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.plusYears(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2009, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.plusYears(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2009, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -809,9 +806,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_plusMonths() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.plusMonths(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 7, 30), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.plusMonths(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 7, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -819,9 +816,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_plusWeeks() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.plusWeeks(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 7, 7), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.plusWeeks(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 7, 7), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -829,9 +826,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_plusDays() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.plusDays(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 7, 1), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.plusDays(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 7, 1), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -839,9 +836,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_plusHours() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.plusHours(13);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 7, 1), LocalTime.of(0, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.plusHours(13);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 7, 1), TLocalTime.of(0, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -849,9 +846,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_plusMinutes() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.plusMinutes(30);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(12, 0, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.plusMinutes(30);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(12, 0, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -859,9 +856,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_plusSeconds() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.plusSeconds(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 31, 0), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.plusSeconds(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 31, 0), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -869,40 +866,40 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_plusNanos() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 0), OFFSET_PONE);
-        OffsetDateTime test = base.plusNanos(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 1), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59, 0), OFFSET_PONE);
+        TOffsetDateTime test = base.plusNanos(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59, 1), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
-    // minus(Period)
+    // minus(TPeriod)
     //-----------------------------------------------------------------------
     @Test
     public void test_minus_Period() {
-        MockSimplePeriod period = MockSimplePeriod.of(7, ChronoUnit.MONTHS);
-        OffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.minus(period);
-        assertEquals(t, OffsetDateTime.of(LocalDate.of(2007, 11, 30), LocalTime.of(11, 30, 59, 500), OFFSET_PONE));
+        MockSimplePeriod period = MockSimplePeriod.of(7, TChronoUnit.MONTHS);
+        TOffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.minus(period);
+        assertEquals(t, TOffsetDateTime.of(TLocalDate.of(2007, 11, 30), TLocalTime.of(11, 30, 59, 500), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
-    // minus(Duration)
+    // minus(TDuration)
     //-----------------------------------------------------------------------
     @Test
     public void test_minus_Duration() {
-        Duration dur = Duration.ofSeconds(62, 3);
-        OffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.minus(dur);
-        assertEquals(t, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 29, 57, 497), OFFSET_PONE));
+        TDuration dur = TDuration.ofSeconds(62, 3);
+        TOffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.minus(dur);
+        assertEquals(t, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 29, 57, 497), OFFSET_PONE));
     }
 
     @Test
     public void test_minus_Duration_zero() {
-        OffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.minus(Duration.ZERO);
+        TOffsetDateTime t = TEST_2008_6_30_11_30_59_000000500.minus(TDuration.ZERO);
         assertEquals(t, TEST_2008_6_30_11_30_59_000000500);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_minus_Duration_null() {
-        TEST_2008_6_30_11_30_59_000000500.minus((Duration) null);
+        TEST_2008_6_30_11_30_59_000000500.minus((TDuration) null);
     }
 
     //-----------------------------------------------------------------------
@@ -910,9 +907,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_minusYears() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.minusYears(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2007, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.minusYears(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2007, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -920,9 +917,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_minusMonths() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.minusMonths(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 5, 30), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.minusMonths(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 5, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -930,9 +927,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_minusWeeks() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.minusWeeks(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 23), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.minusWeeks(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 23), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -940,9 +937,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_minusDays() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.minusDays(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 29), LocalTime.of(11, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.minusDays(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 29), TLocalTime.of(11, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -950,9 +947,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_minusHours() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.minusHours(13);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 29), LocalTime.of(22, 30, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.minusHours(13);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 29), TLocalTime.of(22, 30, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -960,9 +957,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_minusMinutes() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.minusMinutes(30);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 0, 59), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.minusMinutes(30);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 0, 59), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -970,9 +967,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_minusSeconds() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
-        OffsetDateTime test = base.minusSeconds(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 58), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime test = base.minusSeconds(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 58), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -980,9 +977,9 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_minusNanos() {
-        OffsetDateTime base = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 0), OFFSET_PONE);
-        OffsetDateTime test = base.minusNanos(1);
-        assertEquals(test, OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 58, 999999999), OFFSET_PONE));
+        TOffsetDateTime base = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59, 0), OFFSET_PONE);
+        TOffsetDateTime test = base.minusNanos(1);
+        assertEquals(test, TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 58, 999999999), OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -990,15 +987,15 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_atZone() {
-        OffsetDateTime t = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30), OFFSET_MTWO);
+        TOffsetDateTime t = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30), OFFSET_MTWO);
         assertEquals(t.atZoneSameInstant(ZONE_PARIS),
-                ZonedDateTime.of(LocalDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(15, 30)), ZONE_PARIS));
+                TZonedDateTime.of(TLocalDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(15, 30)), ZONE_PARIS));
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_atZone_nullTimeZone() {
-        OffsetDateTime t = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30), OFFSET_PTWO);
-        t.atZoneSameInstant((ZoneId) null);
+        TOffsetDateTime t = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30), OFFSET_PTWO);
+        t.atZoneSameInstant((TZoneId) null);
     }
 
     //-----------------------------------------------------------------------
@@ -1006,21 +1003,21 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_atZoneSimilarLocal() {
-        OffsetDateTime t = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30), OFFSET_MTWO);
+        TOffsetDateTime t = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30), OFFSET_MTWO);
         assertEquals(t.atZoneSimilarLocal(ZONE_PARIS),
-                ZonedDateTime.of(LocalDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30)), ZONE_PARIS));
+                TZonedDateTime.of(TLocalDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30)), ZONE_PARIS));
     }
 
     @Test
     public void test_atZoneSimilarLocal_dstGap() {
-        OffsetDateTime t = OffsetDateTime.of(LocalDate.of(2007, 4, 1), LocalTime.of(0, 0), OFFSET_MTWO);
+        TOffsetDateTime t = TOffsetDateTime.of(TLocalDate.of(2007, 4, 1), TLocalTime.of(0, 0), OFFSET_MTWO);
         assertEquals(t.atZoneSimilarLocal(ZONE_GAZA),
-                ZonedDateTime.of(LocalDateTime.of(LocalDate.of(2007, 4, 1), LocalTime.of(1, 0)), ZONE_GAZA));
+                TZonedDateTime.of(TLocalDateTime.of(TLocalDate.of(2007, 4, 1), TLocalTime.of(1, 0)), ZONE_GAZA));
     }
 
     @Test
     public void test_atZone_dstOverlapSummer() {
-        OffsetDateTime t = OffsetDateTime.of(LocalDate.of(2007, 10, 28), LocalTime.of(2, 30), OFFSET_PTWO);
+        TOffsetDateTime t = TOffsetDateTime.of(TLocalDate.of(2007, 10, 28), TLocalTime.of(2, 30), OFFSET_PTWO);
         assertEquals(t.atZoneSimilarLocal(ZONE_PARIS).toLocalDateTime(), t.toLocalDateTime());
         assertEquals(t.atZoneSimilarLocal(ZONE_PARIS).getOffset(), OFFSET_PTWO);
         assertEquals(t.atZoneSimilarLocal(ZONE_PARIS).getZone(), ZONE_PARIS);
@@ -1028,7 +1025,7 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_atZone_dstOverlapWinter() {
-        OffsetDateTime t = OffsetDateTime.of(LocalDate.of(2007, 10, 28), LocalTime.of(2, 30), OFFSET_PONE);
+        TOffsetDateTime t = TOffsetDateTime.of(TLocalDate.of(2007, 10, 28), TLocalTime.of(2, 30), OFFSET_PONE);
         assertEquals(t.atZoneSimilarLocal(ZONE_PARIS).toLocalDateTime(), t.toLocalDateTime());
         assertEquals(t.atZoneSimilarLocal(ZONE_PARIS).getOffset(), OFFSET_PONE);
         assertEquals(t.atZoneSimilarLocal(ZONE_PARIS).getZone(), ZONE_PARIS);
@@ -1036,8 +1033,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_atZoneSimilarLocal_nullTimeZone() {
-        OffsetDateTime t = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30), OFFSET_PTWO);
-        t.atZoneSimilarLocal((ZoneId) null);
+        TOffsetDateTime t = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30), OFFSET_PTWO);
+        t.atZoneSimilarLocal((TZoneId) null);
     }
 
     //-----------------------------------------------------------------------
@@ -1046,7 +1043,7 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     @Test
     public void test_toEpochSecond_afterEpoch() {
         for (int i = 0; i < 100000; i++) {
-            OffsetDateTime a = OffsetDateTime.of(LocalDate.of(1970, 1, 1), LocalTime.of(0, 0), ZoneOffset.UTC).plusSeconds(i);
+            TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(1970, 1, 1), TLocalTime.of(0, 0), TZoneOffset.UTC).plusSeconds(i);
             assertEquals(a.toEpochSecond(), i);
         }
     }
@@ -1054,7 +1051,7 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     @Test
     public void test_toEpochSecond_beforeEpoch() {
         for (int i = 0; i < 100000; i++) {
-            OffsetDateTime a = OffsetDateTime.of(LocalDate.of(1970, 1, 1), LocalTime.of(0, 0), ZoneOffset.UTC).minusSeconds(i);
+            TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(1970, 1, 1), TLocalTime.of(0, 0), TZoneOffset.UTC).minusSeconds(i);
             assertEquals(a.toEpochSecond(), -i);
         }
     }
@@ -1064,8 +1061,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_compareTo_timeMins() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 29, 3), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 2), OFFSET_PONE);  // a is before b due to time
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 29, 3), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 2), OFFSET_PONE);  // a is before b due to time
         assertEquals(a.compareTo(b) < 0, true);
         assertEquals(b.compareTo(a) > 0, true);
         assertEquals(a.compareTo(a) == 0, true);
@@ -1075,8 +1072,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_timeSecs() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 29, 2), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 29, 3), OFFSET_PONE);  // a is before b due to time
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 29, 2), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 29, 3), OFFSET_PONE);  // a is before b due to time
         assertEquals(a.compareTo(b) < 0, true);
         assertEquals(b.compareTo(a) > 0, true);
         assertEquals(a.compareTo(a) == 0, true);
@@ -1086,8 +1083,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_timeNanos() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 29, 40, 4), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 29, 40, 5), OFFSET_PONE);  // a is before b due to time
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 29, 40, 4), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 29, 40, 5), OFFSET_PONE);  // a is before b due to time
         assertEquals(a.compareTo(b) < 0, true);
         assertEquals(b.compareTo(a) > 0, true);
         assertEquals(a.compareTo(a) == 0, true);
@@ -1097,8 +1094,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_offset() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30), OFFSET_PTWO);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30), OFFSET_PONE);  // a is before b due to offset
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30), OFFSET_PTWO);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30), OFFSET_PONE);  // a is before b due to offset
         assertEquals(a.compareTo(b) < 0, true);
         assertEquals(b.compareTo(a) > 0, true);
         assertEquals(a.compareTo(a) == 0, true);
@@ -1108,8 +1105,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_offsetNanos() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 40, 6), OFFSET_PTWO);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 40, 5), OFFSET_PONE);  // a is before b due to offset
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 40, 6), OFFSET_PTWO);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 40, 5), OFFSET_PONE);  // a is before b due to offset
         assertEquals(a.compareTo(b) < 0, true);
         assertEquals(b.compareTo(a) > 0, true);
         assertEquals(a.compareTo(a) == 0, true);
@@ -1119,8 +1116,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_both() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 50), OFFSET_PTWO);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 20), OFFSET_PONE);  // a is before b on instant scale
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 50), OFFSET_PTWO);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 20), OFFSET_PONE);  // a is before b on instant scale
         assertEquals(a.compareTo(b) < 0, true);
         assertEquals(b.compareTo(a) > 0, true);
         assertEquals(a.compareTo(a) == 0, true);
@@ -1130,8 +1127,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_bothNanos() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 20, 40, 4), OFFSET_PTWO);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(10, 20, 40, 5), OFFSET_PONE);  // a is before b on instant scale
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 20, 40, 4), OFFSET_PTWO);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(10, 20, 40, 5), OFFSET_PONE);  // a is before b on instant scale
         assertEquals(a.compareTo(b) < 0, true);
         assertEquals(b.compareTo(a) > 0, true);
         assertEquals(a.compareTo(a) == 0, true);
@@ -1141,8 +1138,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_hourDifference() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(10, 0), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 0), OFFSET_PTWO);  // a is before b despite being same time-line time
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(10, 0), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 0), OFFSET_PTWO);  // a is before b despite being same time-line time
         assertEquals(a.compareTo(b) < 0, true);
         assertEquals(b.compareTo(a) > 0, true);
         assertEquals(a.compareTo(a) == 0, true);
@@ -1152,8 +1149,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_max() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(Year.MAX_VALUE, 12, 31), LocalTime.of(23, 59), OFFSET_MONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(Year.MAX_VALUE, 12, 31), LocalTime.of(23, 59), OFFSET_MTWO);  // a is before b due to offset
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(TYear.MAX_VALUE, 12, 31), TLocalTime.of(23, 59), OFFSET_MONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(TYear.MAX_VALUE, 12, 31), TLocalTime.of(23, 59), OFFSET_MTWO);  // a is before b due to offset
         assertEquals(a.compareTo(b) < 0, true);
         assertEquals(b.compareTo(a) > 0, true);
         assertEquals(a.compareTo(a) == 0, true);
@@ -1162,8 +1159,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_compareTo_min() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(Year.MIN_VALUE, 1, 1), LocalTime.of(0, 0), OFFSET_PTWO);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(Year.MIN_VALUE, 1, 1), LocalTime.of(0, 0), OFFSET_PONE);  // a is before b due to offset
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(TYear.MIN_VALUE, 1, 1), TLocalTime.of(0, 0), OFFSET_PTWO);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(TYear.MIN_VALUE, 1, 1), TLocalTime.of(0, 0), OFFSET_PONE);  // a is before b due to offset
         assertEquals(a.compareTo(b) < 0, true);
         assertEquals(b.compareTo(a) > 0, true);
         assertEquals(a.compareTo(a) == 0, true);
@@ -1172,7 +1169,7 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_compareTo_null() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
         a.compareTo(null);
     }
 
@@ -1188,8 +1185,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_isBeforeIsAfterIsEqual1() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 58, 3), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 2), OFFSET_PONE);  // a is before b due to time
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 58, 3), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59, 2), OFFSET_PONE);  // a is before b due to time
         assertEquals(a.isBefore(b), true);
         assertEquals(a.isEqual(b), false);
         assertEquals(a.isAfter(b), false);
@@ -1210,8 +1207,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_isBeforeIsAfterIsEqual2() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 2), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59, 3), OFFSET_PONE);  // a is before b due to time
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59, 2), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59, 3), OFFSET_PONE);  // a is before b due to time
         assertEquals(a.isBefore(b), true);
         assertEquals(a.isEqual(b), false);
         assertEquals(a.isAfter(b), false);
@@ -1232,8 +1229,8 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test
     public void test_isBeforeIsAfterIsEqual_instantComparison() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(10, 0), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 0), OFFSET_PTWO);  // a is same instant as b
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(10, 0), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 0), OFFSET_PTWO);  // a is same instant as b
         assertEquals(a.isBefore(b), false);
         assertEquals(a.isEqual(b), true);
         assertEquals(a.isAfter(b), false);
@@ -1254,19 +1251,19 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_isBefore_null() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
         a.isBefore(null);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_isEqual_null() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
         a.isEqual(null);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_isAfter_null() {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30, 59), OFFSET_PONE);
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(2008, 6, 30), TLocalTime.of(11, 30, 59), OFFSET_PONE);
         a.isAfter(null);
     }
 
@@ -1274,50 +1271,50 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     // equals() / hashCode()
     //-----------------------------------------------------------------------
     @Test(dataProvider="sampleTimes")
-    public void test_equals_true(int y, int o, int d, int h, int m, int s, int n, ZoneOffset ignored) {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n), OFFSET_PONE);
+    public void test_equals_true(int y, int o, int d, int h, int m, int s, int n, TZoneOffset ignored) {
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n), OFFSET_PONE);
         assertEquals(a.equals(b), true);
         assertEquals(a.hashCode() == b.hashCode(), true);
     }
     @Test(dataProvider="sampleTimes")
-    public void test_equals_false_year_differs(int y, int o, int d, int h, int m, int s, int n, ZoneOffset ignored) {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(y + 1, o, d), LocalTime.of(h, m, s, n), OFFSET_PONE);
+    public void test_equals_false_year_differs(int y, int o, int d, int h, int m, int s, int n, TZoneOffset ignored) {
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(y + 1, o, d), TLocalTime.of(h, m, s, n), OFFSET_PONE);
         assertEquals(a.equals(b), false);
     }
     @Test(dataProvider="sampleTimes")
-    public void test_equals_false_hour_differs(int y, int o, int d, int h, int m, int s, int n, ZoneOffset ignored) {
+    public void test_equals_false_hour_differs(int y, int o, int d, int h, int m, int s, int n, TZoneOffset ignored) {
         h = (h == 23 ? 22 : h);
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h + 1, m, s, n), OFFSET_PONE);
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h + 1, m, s, n), OFFSET_PONE);
         assertEquals(a.equals(b), false);
     }
     @Test(dataProvider="sampleTimes")
-    public void test_equals_false_minute_differs(int y, int o, int d, int h, int m, int s, int n, ZoneOffset ignored) {
+    public void test_equals_false_minute_differs(int y, int o, int d, int h, int m, int s, int n, TZoneOffset ignored) {
         m = (m == 59 ? 58 : m);
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m + 1, s, n), OFFSET_PONE);
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m + 1, s, n), OFFSET_PONE);
         assertEquals(a.equals(b), false);
     }
     @Test(dataProvider="sampleTimes")
-    public void test_equals_false_second_differs(int y, int o, int d, int h, int m, int s, int n, ZoneOffset ignored) {
+    public void test_equals_false_second_differs(int y, int o, int d, int h, int m, int s, int n, TZoneOffset ignored) {
         s = (s == 59 ? 58 : s);
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s + 1, n), OFFSET_PONE);
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s + 1, n), OFFSET_PONE);
         assertEquals(a.equals(b), false);
     }
     @Test(dataProvider="sampleTimes")
-    public void test_equals_false_nano_differs(int y, int o, int d, int h, int m, int s, int n, ZoneOffset ignored) {
+    public void test_equals_false_nano_differs(int y, int o, int d, int h, int m, int s, int n, TZoneOffset ignored) {
         n = (n == 999999999 ? 999999998 : n);
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n + 1), OFFSET_PONE);
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n + 1), OFFSET_PONE);
         assertEquals(a.equals(b), false);
     }
     @Test(dataProvider="sampleTimes")
-    public void test_equals_false_offset_differs(int y, int o, int d, int h, int m, int s, int n, ZoneOffset ignored) {
-        OffsetDateTime a = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n), OFFSET_PONE);
-        OffsetDateTime b = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n), OFFSET_PTWO);
+    public void test_equals_false_offset_differs(int y, int o, int d, int h, int m, int s, int n, TZoneOffset ignored) {
+        TOffsetDateTime a = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n), OFFSET_PONE);
+        TOffsetDateTime b = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n), OFFSET_PTWO);
         assertEquals(a.equals(b), false);
     }
 
@@ -1355,24 +1352,24 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
 
     @Test(dataProvider="sampleToString")
     public void test_toString(int y, int o, int d, int h, int m, int s, int n, String offsetId, String expected) {
-        OffsetDateTime t = OffsetDateTime.of(LocalDate.of(y, o, d), LocalTime.of(h, m, s, n), ZoneOffset.of(offsetId));
+        TOffsetDateTime t = TOffsetDateTime.of(TLocalDate.of(y, o, d), TLocalTime.of(h, m, s, n), TZoneOffset.of(offsetId));
         String str = t.toString();
         assertEquals(str, expected);
     }
 
     //-----------------------------------------------------------------------
-    // format(DateTimeFormatter)
+    // format(TDateTimeFormatter)
     //-----------------------------------------------------------------------
     @Test
     public void test_format_formatter() {
-        DateTimeFormatter f = DateTimeFormatter.ofPattern("y M d H m s");
-        String t = OffsetDateTime.of(LocalDate.of(2010, 12, 3), LocalTime.of(11, 30), OFFSET_PONE).format(f);
+        TDateTimeFormatter f = TDateTimeFormatter.ofPattern("y M d H m s");
+        String t = TOffsetDateTime.of(TLocalDate.of(2010, 12, 3), TLocalTime.of(11, 30), OFFSET_PONE).format(f);
         assertEquals(t, "2010 12 3 11 30 0");
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_format_formatter_null() {
-        OffsetDateTime.of(LocalDate.of(2010, 12, 3), LocalTime.of(11, 30), OFFSET_PONE).format(null);
+        TOffsetDateTime.of(TLocalDate.of(2010, 12, 3), TLocalTime.of(11, 30), OFFSET_PONE).format(null);
     }
 
 }

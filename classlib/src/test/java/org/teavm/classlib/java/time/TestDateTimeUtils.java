@@ -29,132 +29,129 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
-import java.util.TimeZone;
+import org.teavm.classlib.java.util.TCalendar;
+import org.teavm.classlib.java.util.TDate;
+import org.teavm.classlib.java.util.TGregorianCalendar;
+import org.teavm.classlib.java.util.TTimeZone;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-/**
- * Test.
- */
 @Test
 public class TestDateTimeUtils {
 
-    private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
-    private static final TimeZone PARIS_TZ = TimeZone.getTimeZone("Europe/Paris");
+    private static final TZoneId PARIS = TZoneId.of("Europe/Paris");
+    private static final TTimeZone PARIS_TZ = TTimeZone.getTimeZone("Europe/Paris");
 
     //-----------------------------------------------------------------------
     public void test_toInstant_Date() {
-        Date date = new Date(123456);
-        assertEquals(DateTimeUtils.toInstant(date), Instant.ofEpochMilli(123456));
+        TDate date = new TDate(123456);
+        assertEquals(TDateTimeUtils.toInstant(date), TInstant.ofEpochMilli(123456));
     }
 
     public void test_toDate_Instant() {
-        Instant instant = Instant.ofEpochMilli(123456);
-        assertEquals(DateTimeUtils.toDate(instant), new Date(123456));
+        TInstant instant = TInstant.ofEpochMilli(123456);
+        assertEquals(TDateTimeUtils.toDate(instant), new TDate(123456));
     }
 
     //-----------------------------------------------------------------------
     public void test_toInstant_Calendar() {
-        Calendar calendar = GregorianCalendar.getInstance();
+        TCalendar calendar = TGregorianCalendar.getInstance();
         calendar.setTimeInMillis(123456);
-        assertEquals(DateTimeUtils.toInstant(calendar), Instant.ofEpochMilli(123456));
+        assertEquals(TDateTimeUtils.toInstant(calendar), TInstant.ofEpochMilli(123456));
     }
 
     public void test_toZDT_Calendar() {
-        ZonedDateTime zdt = ZonedDateTime.of(2012, 6, 30, 11, 30, 40, 0, PARIS);
-        Calendar calendar = GregorianCalendar.getInstance(PARIS_TZ);
-        calendar.setFirstDayOfWeek(Calendar.MONDAY);
+        TZonedDateTime zdt = TZonedDateTime.of(2012, 6, 30, 11, 30, 40, 0, PARIS);
+        TCalendar calendar = TGregorianCalendar.getInstance(PARIS_TZ);
+        calendar.setFirstDayOfWeek(TCalendar.MONDAY);
         calendar.setMinimalDaysInFirstWeek(4);
         calendar.clear();
         calendar.set(2012, 6 - 1, 30, 11, 30, 40);
-        assertEquals(DateTimeUtils.toZonedDateTime(calendar), zdt);
+        assertEquals(TDateTimeUtils.toZonedDateTime(calendar), zdt);
     }
 
     public void test_toCalendar_ZDT() {
-        ZonedDateTime zdt = ZonedDateTime.of(2012, 6, 30, 11, 30, 40, 0, PARIS);
-        GregorianCalendar calendar = new GregorianCalendar(PARIS_TZ);
-        calendar.setFirstDayOfWeek(Calendar.MONDAY);
+        TZonedDateTime zdt = TZonedDateTime.of(2012, 6, 30, 11, 30, 40, 0, PARIS);
+        TGregorianCalendar calendar = new TGregorianCalendar(PARIS_TZ);
+        calendar.setFirstDayOfWeek(TCalendar.MONDAY);
         calendar.setMinimalDaysInFirstWeek(4);
         calendar.set(2012, 6 - 1, 30, 11, 30, 40);
-        calendar.set(Calendar.MILLISECOND, 0);
+        calendar.set(TCalendar.MILLISECOND, 0);
         calendar.setTimeInMillis(calendar.getTimeInMillis());
-        calendar.setGregorianChange(new Date(Long.MIN_VALUE));
-        GregorianCalendar test = DateTimeUtils.toGregorianCalendar(zdt);
+        calendar.setGregorianChange(new TDate(Long.MIN_VALUE));
+        TGregorianCalendar test = TDateTimeUtils.toGregorianCalendar(zdt);
         assertEquals(test, calendar);
     }
 
     //-----------------------------------------------------------------------
     public void test_toZoneId_TimeZone() {
-        assertEquals(DateTimeUtils.toZoneId(PARIS_TZ), PARIS);
+        assertEquals(TDateTimeUtils.toZoneId(PARIS_TZ), PARIS);
     }
 
     public void test_toTimeZone_ZoneId() {
-        assertEquals(DateTimeUtils.toTimeZone(PARIS), PARIS_TZ);
+        assertEquals(TDateTimeUtils.toTimeZone(PARIS), PARIS_TZ);
     }
 
     //-----------------------------------------------------------------------
     public void test_toLocalDate_SqlDate() {
         @SuppressWarnings("deprecation")
-        java.sql.Date sqlDate = new java.sql.Date(2012 - 1900, 6 - 1, 30);
-        LocalDate localDate = LocalDate.of(2012, 6, 30);
-        assertEquals(DateTimeUtils.toLocalDate(sqlDate), localDate);
+        java.sql.TDate sqlDate = new java.sql.TDate(2012 - 1900, 6 - 1, 30);
+        TLocalDate localDate = TLocalDate.of(2012, 6, 30);
+        assertEquals(TDateTimeUtils.toLocalDate(sqlDate), localDate);
     }
 
     public void test_toSqlDate_LocalDate() {
         @SuppressWarnings("deprecation")
-        java.sql.Date sqlDate = new java.sql.Date(2012 - 1900, 6 - 1, 30);
-        LocalDate localDate = LocalDate.of(2012, 6, 30);
-        assertEquals(DateTimeUtils.toSqlDate(localDate), sqlDate);
+        java.sql.TDate sqlDate = new java.sql.TDate(2012 - 1900, 6 - 1, 30);
+        TLocalDate localDate = TLocalDate.of(2012, 6, 30);
+        assertEquals(TDateTimeUtils.toSqlDate(localDate), sqlDate);
     }
 
     //-----------------------------------------------------------------------
     public void test_toLocalTime_SqlTime() {
         @SuppressWarnings("deprecation")
         java.sql.Time sqlTime = new java.sql.Time(11, 30, 40);
-        LocalTime localTime = LocalTime.of(11, 30, 40);
-        assertEquals(DateTimeUtils.toLocalTime(sqlTime), localTime);
+        TLocalTime localTime = TLocalTime.of(11, 30, 40);
+        assertEquals(TDateTimeUtils.toLocalTime(sqlTime), localTime);
     }
 
     public void test_toSqlTime_LocalTime() {
         @SuppressWarnings("deprecation")
         java.sql.Time sqlTime = new java.sql.Time(11, 30, 40);
-        LocalTime localTime = LocalTime.of(11, 30, 40);
-        assertEquals(DateTimeUtils.toSqlTime(localTime), sqlTime);
+        TLocalTime localTime = TLocalTime.of(11, 30, 40);
+        assertEquals(TDateTimeUtils.toSqlTime(localTime), sqlTime);
     }
 
     //-----------------------------------------------------------------------
     public void test_toLocalDateTime_SqlTimestamp() {
         @SuppressWarnings("deprecation")
-        java.sql.Timestamp sqlDateTime = new java.sql.Timestamp(2012 - 1900, 6 - 1, 30, 11, 30, 40, 0);
-        LocalDateTime localDateTime = LocalDateTime.of(2012, 6, 30, 11, 30, 40, 0);
-        assertEquals(DateTimeUtils.toLocalDateTime(sqlDateTime), localDateTime);
+        java.sql.TTimestamp sqlDateTime = new java.sql.TTimestamp(2012 - 1900, 6 - 1, 30, 11, 30, 40, 0);
+        TLocalDateTime localDateTime = TLocalDateTime.of(2012, 6, 30, 11, 30, 40, 0);
+        assertEquals(TDateTimeUtils.toLocalDateTime(sqlDateTime), localDateTime);
     }
 
     public void test_toSqlTimestamp_LocalDateTime() {
         @SuppressWarnings("deprecation")
-        java.sql.Timestamp sqlDateTime = new java.sql.Timestamp(2012 - 1900, 6 - 1, 30, 11, 30, 40, 0);
-        LocalDateTime localDateTime = LocalDateTime.of(2012, 6, 30, 11, 30, 40, 0);
-        assertEquals(DateTimeUtils.toSqlTimestamp(localDateTime), sqlDateTime);
+        java.sql.TTimestamp sqlDateTime = new java.sql.TTimestamp(2012 - 1900, 6 - 1, 30, 11, 30, 40, 0);
+        TLocalDateTime localDateTime = TLocalDateTime.of(2012, 6, 30, 11, 30, 40, 0);
+        assertEquals(TDateTimeUtils.toSqlTimestamp(localDateTime), sqlDateTime);
     }
 
     //-----------------------------------------------------------------------
     public void test_toInstant_SqlTimestamp() {
         @SuppressWarnings("deprecation")
-        java.sql.Timestamp sqlDateTime = new java.sql.Timestamp(2012 - 1900, 6 - 1, 30, 11, 30, 40, 0);
-        assertEquals(DateTimeUtils.toInstant(sqlDateTime), Instant.ofEpochMilli(sqlDateTime.getTime()));
+        java.sql.TTimestamp sqlDateTime = new java.sql.TTimestamp(2012 - 1900, 6 - 1, 30, 11, 30, 40, 0);
+        assertEquals(TDateTimeUtils.toInstant(sqlDateTime), TInstant.ofEpochMilli(sqlDateTime.getTime()));
     }
 
     public void test_toSqlTimestamp_Instant() {
-        Instant instant = Instant.ofEpochMilli(123456);
-        java.sql.Timestamp sqlDateTime = new java.sql.Timestamp(instant.toEpochMilli());
-        assertEquals(DateTimeUtils.toSqlTimestamp(instant), sqlDateTime);
+        TInstant instant = TInstant.ofEpochMilli(123456);
+        java.sql.TTimestamp sqlDateTime = new java.sql.TTimestamp(instant.toEpochMilli());
+        assertEquals(TDateTimeUtils.toSqlTimestamp(instant), sqlDateTime);
     }
 
 }

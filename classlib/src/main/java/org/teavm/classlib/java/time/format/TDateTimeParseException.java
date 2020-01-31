@@ -29,76 +29,34 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import org.threeten.bp.DateTimeException;
+import org.teavm.classlib.java.time.TDateTimeException;
 
-/**
- * An exception thrown when an error occurs during parsing.
- * <p>
- * This exception includes the text being parsed and the error index.
- *
- * <h3>Specification for implementors</h3>
- * This class is intended for use in a single thread.
- */
-public class DateTimeParseException extends DateTimeException {
+public class TDateTimeParseException extends TDateTimeException {
 
-    /**
-     * Serialization version.
-     */
     private static final long serialVersionUID = 4304633501674722597L;
 
-    /**
-     * The text that was being parsed.
-     */
     private final String parsedString;
-    /**
-     * The error index in the text.
-     */
     private final int errorIndex;
 
-    /**
-     * Constructs a new exception with the specified message.
-     *
-     * @param message  the message to use for this exception, may be null
-     * @param parsedData  the parsed text, should not be null
-     * @param errorIndex  the index in the parsed string that was invalid, should be a valid index
-     */
-    public DateTimeParseException(String message, CharSequence parsedData, int errorIndex) {
+    public TDateTimeParseException(String message, CharSequence parsedData, int errorIndex) {
         super(message);
         this.parsedString = parsedData.toString();
         this.errorIndex = errorIndex;
     }
 
-    /**
-     * Constructs a new exception with the specified message and cause.
-     *
-     * @param message  the message to use for this exception, may be null
-     * @param parsedData  the parsed text, should not be null
-     * @param errorIndex  the index in the parsed string that was invalid, should be a valid index
-     * @param cause  the cause exception, may be null
-     */
-    public DateTimeParseException(String message, CharSequence parsedData, int errorIndex, Throwable cause) {
+    public TDateTimeParseException(String message, CharSequence parsedData, int errorIndex, Throwable cause) {
         super(message, cause);
         this.parsedString = parsedData.toString();
         this.errorIndex = errorIndex;
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Returns the string that was being parsed.
-     *
-     * @return the string that was being parsed, should not be null.
-     */
     public String getParsedString() {
         return parsedString;
     }
 
-    /**
-     * Returns the index where the error was found.
-     *
-     * @return the index in the parsed string that was invalid, should be a valid index
-     */
     public int getErrorIndex() {
         return errorIndex;
     }

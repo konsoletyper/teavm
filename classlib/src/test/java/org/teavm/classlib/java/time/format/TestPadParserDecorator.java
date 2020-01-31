@@ -29,20 +29,17 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
-import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
+import static org.junit.Assert.assertEquals;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 
-import org.testng.annotations.Test;
-import org.threeten.bp.format.DateTimeFormatterBuilder.CharLiteralPrinterParser;
-import org.threeten.bp.format.DateTimeFormatterBuilder.NumberPrinterParser;
-import org.threeten.bp.format.DateTimeFormatterBuilder.PadPrinterParserDecorator;
-import org.threeten.bp.temporal.TemporalField;
+import org.junit.Test;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.CharLiteralPrinterParser;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.NumberPrinterParser;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.PadPrinterParserDecorator;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
 
-/**
- * Test PadPrinterParserDecorator.
- */
 @Test
 public class TestPadParserDecorator extends AbstractTestPrinterParser {
 
@@ -61,39 +58,39 @@ public class TestPadParserDecorator extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
     public void test_parse() throws Exception {
-        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, SignStyle.NEVER), 3, '-');
+        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
         int result = pp.parse(parseContext, "--2", 0);
         assertEquals(result, 3);
         assertParsed(MONTH_OF_YEAR, 2L);
     }
 
     public void test_parse_noReadBeyond() throws Exception {
-        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, SignStyle.NEVER), 3, '-');
+        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
         int result = pp.parse(parseContext, "--22", 0);
         assertEquals(result, 3);
         assertParsed(MONTH_OF_YEAR, 2L);
     }
 
     public void test_parse_textLessThanPadWidth() throws Exception {
-        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, SignStyle.NEVER), 3, '-');
+        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
         int result = pp.parse(parseContext, "-1", 0);
         assertEquals(result, ~0);
     }
 
     public void test_parse_decoratedErrorPassedBack() throws Exception {
-        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, SignStyle.NEVER), 3, '-');
+        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
         int result = pp.parse(parseContext, "--A", 0);
         assertEquals(result, ~2);
     }
 
     public void test_parse_decoratedDidNotParseToPadWidth() throws Exception {
-        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, SignStyle.NEVER), 3, '-');
+        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
         int result = pp.parse(parseContext, "-1X", 0);
         assertEquals(result, ~1);
     }
 
     //-----------------------------------------------------------------------
-    private void assertParsed(TemporalField field, Long value) {
+    private void assertParsed(TTemporalField field, Long value) {
         if (value == null) {
             assertEquals(parseContext.getParsed(field), null);
         } else {

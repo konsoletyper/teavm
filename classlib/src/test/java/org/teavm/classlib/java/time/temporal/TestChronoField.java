@@ -29,23 +29,20 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.temporal;
+package org.teavm.classlib.java.time.temporal;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-/**
- * Test.
- */
 @Test
 public class TestChronoField {
 
     //-------------------------------------------------------------------------
     @Test
     public void test_isDateBased() {
-        for (ChronoField field : ChronoField.values()) {
-            if (field == ChronoField.INSTANT_SECONDS || field == ChronoField.OFFSET_SECONDS) {
+        for (TChronoField field : TChronoField.values()) {
+            if (field == TChronoField.INSTANT_SECONDS || field == TChronoField.OFFSET_SECONDS) {
                 assertEquals(field.isTimeBased(), false);
             } else {
                 assertEquals(field.isDateBased(), field.getBaseUnit().isDateBased());
@@ -55,8 +52,8 @@ public class TestChronoField {
 
     @Test
     public void test_isTimeBased() {
-        for (ChronoField field : ChronoField.values()) {
-            if (field == ChronoField.INSTANT_SECONDS || field == ChronoField.OFFSET_SECONDS) {
+        for (TChronoField field : TChronoField.values()) {
+            if (field == TChronoField.INSTANT_SECONDS || field == TChronoField.OFFSET_SECONDS) {
                 assertEquals(field.isTimeBased(), false);
             } else {
                 assertEquals(field.isTimeBased(), field.getBaseUnit().isTimeBased());

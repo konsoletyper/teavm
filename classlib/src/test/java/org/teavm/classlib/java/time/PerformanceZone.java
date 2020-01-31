@@ -29,37 +29,27 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
 import java.text.NumberFormat;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.GregorianCalendar;
+import org.teavm.classlib.java.util.TCalendar;
+import org.teavm.classlib.java.util.TDate;
+import org.teavm.classlib.java.util.TGregorianCalendar;
 
-import org.threeten.bp.zone.ZoneRules;
+import org.teavm.classlib.java.time.zone.TZoneRules;
 
-/**
- * Test Performance.
- */
 public class PerformanceZone {
 
-    /** The year to test. */
     private static final int YEAR = 1980;
-    /** Size. */
     private static final NumberFormat NF = NumberFormat.getIntegerInstance();
     static {
         NF.setGroupingUsed(true);
     }
-    /** Size. */
     private static final int SIZE = 200000;
 
-    /**
-     * Main.
-     * @param args  the arguments
-     */
     public static void main(String[] args) {
-        LocalTime time = LocalTime.of(12, 30, 20);
-        System.out.println(time);
+        TLocalTime time = TLocalTime.of(12, 30, 20);
+        TSystem.out.println(time);
 
         for (int i = 0; i < 6; i++) {
             jsrLocalGetOffset();
@@ -68,87 +58,87 @@ public class PerformanceZone {
             jsrRulesInstantGetOffset();
             jdkLocalGetOffset();
             jdkInstantGetOffset();
-            System.out.println();
+            TSystem.out.println();
         }
     }
 
     //-----------------------------------------------------------------------
     private static void jsrLocalGetOffset() {
-        LocalDateTime dt = LocalDateTime.of(YEAR, 6, 1, 12, 0);
-        ZoneId tz = ZoneId.of("Europe/London");
-        ZoneOffset[] list = new ZoneOffset[SIZE];
-        long start = System.nanoTime();
+        TLocalDateTime dt = TLocalDateTime.of(YEAR, 6, 1, 12, 0);
+        TZoneId tz = TZoneId.of("Europe/London");
+        TZoneOffset[] list = new TZoneOffset[SIZE];
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
             list[i] = tz.getRules().getOffset(dt);
         }
-        long end = System.nanoTime();
-        System.out.println("JSR-Loc: Setup:  " + NF.format(end - start) + " ns" + list[0]);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("JSR-Loc: Setup:  " + NF.format(end - start) + " ns" + list[0]);
     }
 
     //-----------------------------------------------------------------------
     private static void jsrInstantGetOffset() {
-        Instant instant = LocalDateTime.of(YEAR, 6, 1, 12, 0).toInstant(ZoneOffset.ofHours(1));
-        ZoneId tz = ZoneId.of("Europe/London");
-        ZoneOffset[] list = new ZoneOffset[SIZE];
-        long start = System.nanoTime();
+        TInstant instant = TLocalDateTime.of(YEAR, 6, 1, 12, 0).toInstant(TZoneOffset.ofHours(1));
+        TZoneId tz = TZoneId.of("Europe/London");
+        TZoneOffset[] list = new TZoneOffset[SIZE];
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
             list[i] = tz.getRules().getOffset(instant);
         }
-        long end = System.nanoTime();
-        System.out.println("JSR-Ins: Setup:  " + NF.format(end - start) + " ns" + list[0]);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("JSR-Ins: Setup:  " + NF.format(end - start) + " ns" + list[0]);
     }
 
     //-----------------------------------------------------------------------
     private static void jsrRulesLocalGetOffset() {
-        LocalDateTime dt = LocalDateTime.of(YEAR, 6, 1, 12, 0);
-        ZoneRules tz = ZoneId.of("Europe/London").getRules();
-        ZoneOffset[] list = new ZoneOffset[SIZE];
-        long start = System.nanoTime();
+        TLocalDateTime dt = TLocalDateTime.of(YEAR, 6, 1, 12, 0);
+        TZoneRules tz = TZoneId.of("Europe/London").getRules();
+        TZoneOffset[] list = new TZoneOffset[SIZE];
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
             list[i] = tz.getOffset(dt);
         }
-        long end = System.nanoTime();
-        System.out.println("JSR-LoR: Setup:  " + NF.format(end - start) + " ns" + list[0]);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("JSR-LoR: Setup:  " + NF.format(end - start) + " ns" + list[0]);
     }
 
     //-----------------------------------------------------------------------
     private static void jsrRulesInstantGetOffset() {
-        Instant instant = LocalDateTime.of(YEAR, 6, 1, 12, 0).toInstant(ZoneOffset.ofHours(1));
-        ZoneRules tz = ZoneId.of("Europe/London").getRules();
-        ZoneOffset[] list = new ZoneOffset[SIZE];
-        long start = System.nanoTime();
+        TInstant instant = TLocalDateTime.of(YEAR, 6, 1, 12, 0).toInstant(TZoneOffset.ofHours(1));
+        TZoneRules tz = TZoneId.of("Europe/London").getRules();
+        TZoneOffset[] list = new TZoneOffset[SIZE];
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
             list[i] = tz.getOffset(instant);
         }
-        long end = System.nanoTime();
-        System.out.println("JSR-InR: Setup:  " + NF.format(end - start) + " ns" + list[0]);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("JSR-InR: Setup:  " + NF.format(end - start) + " ns" + list[0]);
     }
 
     //-----------------------------------------------------------------------
     private static void jdkLocalGetOffset() {
-        java.util.TimeZone tz = java.util.TimeZone.getTimeZone("Europe/London");
+        java.util.TTimeZone tz = java.util.TTimeZone.getTimeZone("Europe/London");
         int[] list = new int[SIZE];
-        long start = System.nanoTime();
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
-            list[i] = tz.getOffset(GregorianCalendar.AD, YEAR, 0, 11, Calendar.SUNDAY, 0);
+            list[i] = tz.getOffset(TGregorianCalendar.AD, YEAR, 0, 11, TCalendar.SUNDAY, 0);
         }
-        long end = System.nanoTime();
-        System.out.println("GCalLoc: Setup:  " + NF.format(end - start) + " ns" + list[0]);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("GCalLoc: Setup:  " + NF.format(end - start) + " ns" + list[0]);
     }
 
     //-----------------------------------------------------------------------
     private static void jdkInstantGetOffset() {
-        java.util.TimeZone tz = java.util.TimeZone.getTimeZone("Europe/London");
-        GregorianCalendar dt = new GregorianCalendar(tz);
-        dt.setGregorianChange(new Date(Long.MIN_VALUE));
+        java.util.TTimeZone tz = java.util.TTimeZone.getTimeZone("Europe/London");
+        TGregorianCalendar dt = new TGregorianCalendar(tz);
+        dt.setGregorianChange(new TDate(Long.MIN_VALUE));
         dt.set(YEAR, 5, 1, 12, 0);
         int[] list = new int[SIZE];
-        long start = System.nanoTime();
+        long start = TSystem.nanoTime();
         for (int i = 0; i < SIZE; i++) {
             list[i] = tz.getOffset(dt.getTimeInMillis());
         }
-        long end = System.nanoTime();
-        System.out.println("GCalIns: Setup:  " + NF.format(end - start) + " ns" + list[0]);
+        long end = TSystem.nanoTime();
+        TSystem.out.println("GCalIns: Setup:  " + NF.format(end - start) + " ns" + list[0]);
     }
 
 }

@@ -29,21 +29,18 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.temporal;
+package org.teavm.classlib.java.time.temporal;
 
-import static org.threeten.bp.temporal.ChronoUnit.MONTHS;
-import static org.threeten.bp.temporal.ChronoUnit.WEEKS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
 
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.format.ResolverStyle;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.format.TResolverStyle;
 
-/**
- * Mock DateTimeField that returns null.
- */
-public enum MockFieldNoValue implements TemporalField {
+public enum MockFieldNoValue implements TTemporalField {
 
     INSTANCE;
 
@@ -53,18 +50,18 @@ public enum MockFieldNoValue implements TemporalField {
     }
 
     @Override
-    public TemporalUnit getBaseUnit() {
+    public TTemporalUnit getBaseUnit() {
         return WEEKS;
     }
 
     @Override
-    public TemporalUnit getRangeUnit() {
+    public TTemporalUnit getRangeUnit() {
         return MONTHS;
     }
 
     @Override
-    public ValueRange range() {
-        return ValueRange.of(1, 20);
+    public TValueRange range() {
+        return TValueRange.of(1, 20);
     }
 
     //-----------------------------------------------------------------------
@@ -79,34 +76,34 @@ public enum MockFieldNoValue implements TemporalField {
     }
 
     @Override
-    public boolean isSupportedBy(TemporalAccessor dateTime) {
+    public boolean isSupportedBy(TTemporalAccessor dateTime) {
         return true;
     }
 
     @Override
-    public ValueRange rangeRefinedBy(TemporalAccessor dateTime) {
-        return ValueRange.of(1, 20);
+    public TValueRange rangeRefinedBy(TTemporalAccessor dateTime) {
+        return TValueRange.of(1, 20);
     }
 
     @Override
-    public long getFrom(TemporalAccessor dateTime) {
-        throw new DateTimeException("Mock");
+    public long getFrom(TTemporalAccessor dateTime) {
+        throw new TDateTimeException("Mock");
     }
 
     @Override
-    public <R extends Temporal> R adjustInto(R dateTime, long newValue) {
-        throw new DateTimeException("Mock");
+    public <R extends TTemporal> R adjustInto(R dateTime, long newValue) {
+        throw new TDateTimeException("Mock");
     }
 
     @Override
-    public String getDisplayName(Locale locale) {
+    public String getDisplayName(TLocale locale) {
         return "Mock";
     }
 
     //-----------------------------------------------------------------------
     @Override
-    public TemporalAccessor resolve(Map<TemporalField, Long> fieldValues,
-                    TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
+    public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues,
+                    TTemporalAccessor partialTemporal, TResolverStyle resolverStyle) {
         return null;
     }
 

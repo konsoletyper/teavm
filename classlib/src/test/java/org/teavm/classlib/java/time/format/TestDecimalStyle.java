@@ -29,32 +29,29 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 import java.util.Set;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-/**
- * Test DecimalStyle.
- */
 @Test
 public class TestDecimalStyle {
 
     @Test
     public void test_getAvailableLocales() {
-        Set<Locale> locales = DecimalStyle.getAvailableLocales();
+        Set<TLocale> locales = TDecimalStyle.getAvailableLocales();
         assertEquals(locales.size() > 0, true);
-        assertEquals(locales.contains(Locale.US), true);
+        assertEquals(locales.contains(TLocale.US), true);
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_of_Locale() {
-        DecimalStyle loc1 = DecimalStyle.of(Locale.CANADA);
+        TDecimalStyle loc1 = TDecimalStyle.of(TLocale.CANADA);
         assertEquals(loc1.getZeroDigit(), '0');
         assertEquals(loc1.getPositiveSign(), '+');
         assertEquals(loc1.getNegativeSign(), '-');
@@ -64,7 +61,7 @@ public class TestDecimalStyle {
     //-----------------------------------------------------------------------
     @Test
     public void test_STANDARD() {
-        DecimalStyle loc1 = DecimalStyle.STANDARD;
+        TDecimalStyle loc1 = TDecimalStyle.STANDARD;
         assertEquals(loc1.getZeroDigit(), '0');
         assertEquals(loc1.getPositiveSign(), '+');
         assertEquals(loc1.getNegativeSign(), '-');
@@ -74,32 +71,32 @@ public class TestDecimalStyle {
     //-----------------------------------------------------------------------
     @Test
     public void test_zeroDigit() {
-        DecimalStyle base = DecimalStyle.STANDARD;
+        TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.withZeroDigit('A').getZeroDigit(), 'A');
     }
 
     @Test
     public void test_positiveSign() {
-        DecimalStyle base = DecimalStyle.STANDARD;
+        TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.withPositiveSign('A').getPositiveSign(), 'A');
     }
 
     @Test
     public void test_negativeSign() {
-        DecimalStyle base = DecimalStyle.STANDARD;
+        TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.withNegativeSign('A').getNegativeSign(), 'A');
     }
 
     @Test
     public void test_decimalSeparator() {
-        DecimalStyle base = DecimalStyle.STANDARD;
+        TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.withDecimalSeparator('A').getDecimalSeparator(), 'A');
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_convertToDigit_base() {
-        DecimalStyle base = DecimalStyle.STANDARD;
+        TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.convertToDigit('0'), 0);
         assertEquals(base.convertToDigit('1'), 1);
         assertEquals(base.convertToDigit('9'), 9);
@@ -109,7 +106,7 @@ public class TestDecimalStyle {
 
     @Test
     public void test_convertToDigit_altered() {
-        DecimalStyle base = DecimalStyle.STANDARD.withZeroDigit('A');
+        TDecimalStyle base = TDecimalStyle.STANDARD.withZeroDigit('A');
         assertEquals(base.convertToDigit('A'), 0);
         assertEquals(base.convertToDigit('B'), 1);
         assertEquals(base.convertToDigit('J'), 9);
@@ -120,21 +117,21 @@ public class TestDecimalStyle {
     //-----------------------------------------------------------------------
     @Test
     public void test_convertNumberToI18N_base() {
-        DecimalStyle base = DecimalStyle.STANDARD;
+        TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.convertNumberToI18N("134"), "134");
     }
 
     @Test
     public void test_convertNumberToI18N_altered() {
-        DecimalStyle base = DecimalStyle.STANDARD.withZeroDigit('A');
+        TDecimalStyle base = TDecimalStyle.STANDARD.withZeroDigit('A');
         assertEquals(base.convertNumberToI18N("134"), "BDE");
     }
 
     //-----------------------------------------------------------------------
     @Test
     public void test_equalsHashCode1() {
-        DecimalStyle a = DecimalStyle.STANDARD;
-        DecimalStyle b = DecimalStyle.STANDARD;
+        TDecimalStyle a = TDecimalStyle.STANDARD;
+        TDecimalStyle b = TDecimalStyle.STANDARD;
         assertEquals(a.equals(b), true);
         assertEquals(b.equals(a), true);
         assertEquals(a.hashCode(), b.hashCode());
@@ -142,8 +139,8 @@ public class TestDecimalStyle {
 
     @Test
     public void test_equalsHashCode2() {
-        DecimalStyle a = DecimalStyle.STANDARD.withZeroDigit('A');
-        DecimalStyle b = DecimalStyle.STANDARD.withZeroDigit('A');
+        TDecimalStyle a = TDecimalStyle.STANDARD.withZeroDigit('A');
+        TDecimalStyle b = TDecimalStyle.STANDARD.withZeroDigit('A');
         assertEquals(a.equals(b), true);
         assertEquals(b.equals(a), true);
         assertEquals(a.hashCode(), b.hashCode());
@@ -151,15 +148,15 @@ public class TestDecimalStyle {
 
     @Test
     public void test_equalsHashCode3() {
-        DecimalStyle a = DecimalStyle.STANDARD.withZeroDigit('A');
-        DecimalStyle b = DecimalStyle.STANDARD.withDecimalSeparator('A');
+        TDecimalStyle a = TDecimalStyle.STANDARD.withZeroDigit('A');
+        TDecimalStyle b = TDecimalStyle.STANDARD.withDecimalSeparator('A');
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
     }
 
     @Test
     public void test_equalsHashCode_bad() {
-        DecimalStyle a = DecimalStyle.STANDARD;
+        TDecimalStyle a = TDecimalStyle.STANDARD;
         assertEquals(a.equals(""), false);
         assertEquals(a.equals(null), false);
     }
@@ -167,14 +164,14 @@ public class TestDecimalStyle {
     //-----------------------------------------------------------------------
     @Test
     public void test_toString_base() {
-        DecimalStyle base = DecimalStyle.STANDARD;
-        assertEquals(base.toString(), "DecimalStyle[0+-.]");
+        TDecimalStyle base = TDecimalStyle.STANDARD;
+        assertEquals(base.toString(), "TDecimalStyle[0+-.]");
     }
 
     @Test
     public void test_toString_altered() {
-        DecimalStyle base = DecimalStyle.of(Locale.US).withZeroDigit('A').withDecimalSeparator('@');
-        assertEquals(base.toString(), "DecimalStyle[A+-@]");
+        TDecimalStyle base = TDecimalStyle.of(TLocale.US).withZeroDigit('A').withDecimalSeparator('@');
+        assertEquals(base.toString(), "TDecimalStyle[A+-@]");
     }
 
 }

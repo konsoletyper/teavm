@@ -29,10 +29,10 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.chrono;
+package org.teavm.classlib.java.time.chrono;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -40,29 +40,26 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
-import org.testng.Assert;
+import org.junit.Assert;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.Duration;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.LocalDateTime;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.format.ResolverStyle;
-import org.threeten.bp.temporal.ChronoUnit;
-import org.threeten.bp.temporal.Temporal;
-import org.threeten.bp.temporal.TemporalAccessor;
-import org.threeten.bp.temporal.TemporalAdjuster;
-import org.threeten.bp.temporal.TemporalAmount;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.TemporalUnit;
-import org.threeten.bp.temporal.ValueRange;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TDuration;
+import org.teavm.classlib.java.time.TLocalDate;
+import org.teavm.classlib.java.time.TLocalDateTime;
+import org.teavm.classlib.java.time.TLocalTime;
+import org.teavm.classlib.java.time.format.TResolverStyle;
+import org.teavm.classlib.java.time.temporal.TChronoUnit;
+import org.teavm.classlib.java.time.temporal.TTemporal;
+import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
+import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
+import org.teavm.classlib.java.time.temporal.TTemporalAmount;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.time.temporal.TTemporalUnit;
+import org.teavm.classlib.java.time.temporal.TValueRange;
 
-/**
- * Test assertions that must be true for all built-in chronologies.
- */
 @SuppressWarnings("rawtypes")
 @Test
 public class TestChronoLocalDateTime {
@@ -70,23 +67,23 @@ public class TestChronoLocalDateTime {
     // regular data factory for names and descriptions of available calendars
     //-----------------------------------------------------------------------
     @DataProvider(name = "calendars")
-    Chronology[][] data_of_calendars() {
-        return new Chronology[][]{
-                    {HijrahChronology.INSTANCE},
-                    {IsoChronology.INSTANCE},
-                    {JapaneseChronology.INSTANCE},
-                    {MinguoChronology.INSTANCE},
-                    {ThaiBuddhistChronology.INSTANCE}};
+    TChronology[][] data_of_calendars() {
+        return new TChronology[][]{
+                    {THijrahChronology.INSTANCE},
+                    {TIsoChronology.INSTANCE},
+                    {TJapaneseChronology.INSTANCE},
+                    {TMinguoChronology.INSTANCE},
+                    {TThaiBuddhistChronology.INSTANCE}};
     }
 
     @Test(dataProvider="calendars")
-    public void test_badWithAdjusterChrono(Chronology chrono) {
-        LocalDate refDate = LocalDate.of(1900, 1, 1);
-        ChronoLocalDateTime cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chronology[] clist : data_of_calendars()) {
-            Chronology chrono2 = clist[0];
-            ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
-            TemporalAdjuster adjuster = new FixedAdjuster(cdt2);
+    public void test_badWithAdjusterChrono(TChronology chrono) {
+        TLocalDate refDate = TLocalDate.of(1900, 1, 1);
+        TChronoLocalDateTime cdt = chrono.date(refDate).atTime(TLocalTime.NOON);
+        for (TChronology[] clist : data_of_calendars()) {
+            TChronology chrono2 = clist[0];
+            TChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(TLocalTime.NOON);
+            TTemporalAdjuster adjuster = new FixedAdjuster(cdt2);
             if (chrono != chrono2) {
                 try {
                     cdt.with(adjuster);
@@ -97,20 +94,20 @@ public class TestChronoLocalDateTime {
                 }
             } else {
                 // Same chronology,
-                ChronoLocalDateTime<?> result = cdt.with(adjuster);
+                TChronoLocalDateTime<?> result = cdt.with(adjuster);
                 assertEquals(result, cdt2, "WithAdjuster failed to replace date");
             }
         }
     }
 
     @Test(dataProvider="calendars")
-    public void test_badPlusAdjusterChrono(Chronology chrono) {
-        LocalDate refDate = LocalDate.of(1900, 1, 1);
-        ChronoLocalDateTime cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chronology[] clist : data_of_calendars()) {
-            Chronology chrono2 = clist[0];
-            ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
-            TemporalAmount adjuster = new FixedAdjuster(cdt2);
+    public void test_badPlusAdjusterChrono(TChronology chrono) {
+        TLocalDate refDate = TLocalDate.of(1900, 1, 1);
+        TChronoLocalDateTime cdt = chrono.date(refDate).atTime(TLocalTime.NOON);
+        for (TChronology[] clist : data_of_calendars()) {
+            TChronology chrono2 = clist[0];
+            TChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(TLocalTime.NOON);
+            TTemporalAmount adjuster = new FixedAdjuster(cdt2);
             if (chrono != chrono2) {
                 try {
                     cdt.plus(adjuster);
@@ -121,20 +118,20 @@ public class TestChronoLocalDateTime {
                 }
             } else {
                 // Same chronology,
-                ChronoLocalDateTime<?> result = cdt.plus(adjuster);
+                TChronoLocalDateTime<?> result = cdt.plus(adjuster);
                 assertEquals(result, cdt2, "WithAdjuster failed to replace date time");
             }
         }
     }
 
     @Test(dataProvider="calendars")
-    public void test_badMinusAdjusterChrono(Chronology chrono) {
-        LocalDate refDate = LocalDate.of(1900, 1, 1);
-        ChronoLocalDateTime cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chronology[] clist : data_of_calendars()) {
-            Chronology chrono2 = clist[0];
-            ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
-            TemporalAmount adjuster = new FixedAdjuster(cdt2);
+    public void test_badMinusAdjusterChrono(TChronology chrono) {
+        TLocalDate refDate = TLocalDate.of(1900, 1, 1);
+        TChronoLocalDateTime cdt = chrono.date(refDate).atTime(TLocalTime.NOON);
+        for (TChronology[] clist : data_of_calendars()) {
+            TChronology chrono2 = clist[0];
+            TChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(TLocalTime.NOON);
+            TTemporalAmount adjuster = new FixedAdjuster(cdt2);
             if (chrono != chrono2) {
                 try {
                     cdt.minus(adjuster);
@@ -145,20 +142,20 @@ public class TestChronoLocalDateTime {
                 }
             } else {
                 // Same chronology,
-                ChronoLocalDateTime<?> result = cdt.minus(adjuster);
+                TChronoLocalDateTime<?> result = cdt.minus(adjuster);
                 assertEquals(result, cdt2, "WithAdjuster failed to replace date");
             }
         }
     }
 
     @Test(dataProvider="calendars")
-    public void test_badPlusPeriodUnitChrono(Chronology chrono) {
-        LocalDate refDate = LocalDate.of(1900, 1, 1);
-        ChronoLocalDateTime cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chronology[] clist : data_of_calendars()) {
-            Chronology chrono2 = clist[0];
-            ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
-            TemporalUnit adjuster = new FixedPeriodUnit(cdt2);
+    public void test_badPlusPeriodUnitChrono(TChronology chrono) {
+        TLocalDate refDate = TLocalDate.of(1900, 1, 1);
+        TChronoLocalDateTime cdt = chrono.date(refDate).atTime(TLocalTime.NOON);
+        for (TChronology[] clist : data_of_calendars()) {
+            TChronology chrono2 = clist[0];
+            TChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(TLocalTime.NOON);
+            TTemporalUnit adjuster = new FixedPeriodUnit(cdt2);
             if (chrono != chrono2) {
                 try {
                     cdt.plus(1, adjuster);
@@ -169,20 +166,20 @@ public class TestChronoLocalDateTime {
                 }
             } else {
                 // Same chronology,
-                ChronoLocalDateTime<?> result = cdt.plus(1, adjuster);
+                TChronoLocalDateTime<?> result = cdt.plus(1, adjuster);
                 assertEquals(result, cdt2, "WithAdjuster failed to replace date");
             }
         }
     }
 
     @Test(dataProvider="calendars")
-    public void test_badMinusPeriodUnitChrono(Chronology chrono) {
-        LocalDate refDate = LocalDate.of(1900, 1, 1);
-        ChronoLocalDateTime cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chronology[] clist : data_of_calendars()) {
-            Chronology chrono2 = clist[0];
-            ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
-            TemporalUnit adjuster = new FixedPeriodUnit(cdt2);
+    public void test_badMinusPeriodUnitChrono(TChronology chrono) {
+        TLocalDate refDate = TLocalDate.of(1900, 1, 1);
+        TChronoLocalDateTime cdt = chrono.date(refDate).atTime(TLocalTime.NOON);
+        for (TChronology[] clist : data_of_calendars()) {
+            TChronology chrono2 = clist[0];
+            TChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(TLocalTime.NOON);
+            TTemporalUnit adjuster = new FixedPeriodUnit(cdt2);
             if (chrono != chrono2) {
                 try {
                     cdt.minus(1, adjuster);
@@ -193,20 +190,20 @@ public class TestChronoLocalDateTime {
                 }
             } else {
                 // Same chronology,
-                ChronoLocalDateTime<?> result = cdt.minus(1, adjuster);
+                TChronoLocalDateTime<?> result = cdt.minus(1, adjuster);
                 assertEquals(result, cdt2, "WithAdjuster failed to replace date");
             }
         }
     }
 
     @Test(dataProvider="calendars")
-    public void test_badDateTimeFieldChrono(Chronology chrono) {
-        LocalDate refDate = LocalDate.of(1900, 1, 1);
-        ChronoLocalDateTime cdt = chrono.date(refDate).atTime(LocalTime.NOON);
-        for (Chronology[] clist : data_of_calendars()) {
-            Chronology chrono2 = clist[0];
-            ChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(LocalTime.NOON);
-            TemporalField adjuster = new FixedDateTimeField(cdt2);
+    public void test_badDateTimeFieldChrono(TChronology chrono) {
+        TLocalDate refDate = TLocalDate.of(1900, 1, 1);
+        TChronoLocalDateTime cdt = chrono.date(refDate).atTime(TLocalTime.NOON);
+        for (TChronology[] clist : data_of_calendars()) {
+            TChronology chrono2 = clist[0];
+            TChronoLocalDateTime<?> cdt2 = chrono2.date(refDate).atTime(TLocalTime.NOON);
+            TTemporalField adjuster = new FixedDateTimeField(cdt2);
             if (chrono != chrono2) {
                 try {
                     cdt.with(adjuster, 1);
@@ -217,7 +214,7 @@ public class TestChronoLocalDateTime {
                 }
             } else {
                 // Same chronology,
-                ChronoLocalDateTime<?> result = cdt.with(adjuster, 1);
+                TChronoLocalDateTime<?> result = cdt.with(adjuster, 1);
                 assertEquals(result, cdt2, "DateTimeField doSet failed to replace date");
             }
         }
@@ -227,51 +224,51 @@ public class TestChronoLocalDateTime {
     // isBefore, isAfter, isEqual
     //-----------------------------------------------------------------------
     @Test(dataProvider="calendars")
-    public void test_datetime_comparisons(Chronology chrono) {
-        List<ChronoLocalDateTime<?>> dates = new ArrayList<ChronoLocalDateTime<?>>();
+    public void test_datetime_comparisons(TChronology chrono) {
+        List<TChronoLocalDateTime<?>> dates = new ArrayList<TChronoLocalDateTime<?>>();
 
-        ChronoLocalDateTime<?> date = chrono.date(LocalDate.of(1900, 1, 1)).atTime(LocalTime.MIN);
+        TChronoLocalDateTime<?> date = chrono.date(TLocalDate.of(1900, 1, 1)).atTime(TLocalTime.MIN);
 
         // Insert dates in order, no duplicates
-        if (chrono != JapaneseChronology.INSTANCE) {
-            dates.add(date.minus(100, ChronoUnit.YEARS));
+        if (chrono != TJapaneseChronology.INSTANCE) {
+            dates.add(date.minus(100, TChronoUnit.YEARS));
         }
-        dates.add(date.minus(1, ChronoUnit.YEARS));
-        dates.add(date.minus(1, ChronoUnit.MONTHS));
-        dates.add(date.minus(1, ChronoUnit.WEEKS));
-        dates.add(date.minus(1, ChronoUnit.DAYS));
-        dates.add(date.minus(1, ChronoUnit.HOURS));
-        dates.add(date.minus(1, ChronoUnit.MINUTES));
-        dates.add(date.minus(1, ChronoUnit.SECONDS));
-        dates.add(date.minus(1, ChronoUnit.NANOS));
+        dates.add(date.minus(1, TChronoUnit.YEARS));
+        dates.add(date.minus(1, TChronoUnit.MONTHS));
+        dates.add(date.minus(1, TChronoUnit.WEEKS));
+        dates.add(date.minus(1, TChronoUnit.DAYS));
+        dates.add(date.minus(1, TChronoUnit.HOURS));
+        dates.add(date.minus(1, TChronoUnit.MINUTES));
+        dates.add(date.minus(1, TChronoUnit.SECONDS));
+        dates.add(date.minus(1, TChronoUnit.NANOS));
         dates.add(date);
-        dates.add(date.plus(1, ChronoUnit.NANOS));
-        dates.add(date.plus(1, ChronoUnit.SECONDS));
-        dates.add(date.plus(1, ChronoUnit.MINUTES));
-        dates.add(date.plus(1, ChronoUnit.HOURS));
-        dates.add(date.plus(1, ChronoUnit.DAYS));
-        dates.add(date.plus(1, ChronoUnit.WEEKS));
-        dates.add(date.plus(1, ChronoUnit.MONTHS));
-        dates.add(date.plus(1, ChronoUnit.YEARS));
-        dates.add(date.plus(100, ChronoUnit.YEARS));
+        dates.add(date.plus(1, TChronoUnit.NANOS));
+        dates.add(date.plus(1, TChronoUnit.SECONDS));
+        dates.add(date.plus(1, TChronoUnit.MINUTES));
+        dates.add(date.plus(1, TChronoUnit.HOURS));
+        dates.add(date.plus(1, TChronoUnit.DAYS));
+        dates.add(date.plus(1, TChronoUnit.WEEKS));
+        dates.add(date.plus(1, TChronoUnit.MONTHS));
+        dates.add(date.plus(1, TChronoUnit.YEARS));
+        dates.add(date.plus(100, TChronoUnit.YEARS));
 
         // Check these dates against the corresponding dates for every calendar
-        for (Chronology[] clist : data_of_calendars()) {
-            List<ChronoLocalDateTime<?>> otherDates = new ArrayList<ChronoLocalDateTime<?>>();
-            Chronology chrono2 = clist[0];
-            if (chrono2 == JapaneseChronology.INSTANCE) {
+        for (TChronology[] clist : data_of_calendars()) {
+            List<TChronoLocalDateTime<?>> otherDates = new ArrayList<TChronoLocalDateTime<?>>();
+            TChronology chrono2 = clist[0];
+            if (chrono2 == TJapaneseChronology.INSTANCE) {
                 continue;
             }
-            for (ChronoLocalDateTime<?> d : dates) {
+            for (TChronoLocalDateTime<?> d : dates) {
                 otherDates.add(chrono2.date(d).atTime(d.toLocalTime()));
             }
 
             // Now compare  the sequence of original dates with the sequence of converted dates
             for (int i = 0; i < dates.size(); i++) {
-                ChronoLocalDateTime<?> a = dates.get(i);
+                TChronoLocalDateTime<?> a = dates.get(i);
                 for (int j = 0; j < otherDates.size(); j++) {
-                    ChronoLocalDateTime<?> b = otherDates.get(j);
-                    int cmp = ChronoLocalDateTime.timeLineOrder().compare(a, b);
+                    TChronoLocalDateTime<?> b = otherDates.get(j);
+                    int cmp = TChronoLocalDateTime.timeLineOrder().compare(a, b);
                     if (i < j) {
                         assertTrue(cmp < 0, a + " compare " + b);
                         assertEquals(a.isBefore(b), true, a + " isBefore " + b);
@@ -297,65 +294,57 @@ public class TestChronoLocalDateTime {
     // Test Serialization of ISO via chrono API
     //-----------------------------------------------------------------------
     @Test( dataProvider="calendars")
-    public void test_ChronoLocalDateTimeSerialization(Chronology chrono) throws Exception {
-        LocalDateTime ref = LocalDate.of(2000, 1, 5).atTime(12, 1, 2, 3);
-        ChronoLocalDateTime<?> orginal = chrono.date(ref).atTime(ref.toLocalTime());
+    public void test_ChronoLocalDateTimeSerialization(TChronology chrono) throws Exception {
+        TLocalDateTime ref = TLocalDate.of(2000, 1, 5).atTime(12, 1, 2, 3);
+        TChronoLocalDateTime<?> orginal = chrono.date(ref).atTime(ref.toLocalTime());
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(baos);
         out.writeObject(orginal);
         out.close();
         ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
         ObjectInputStream in = new ObjectInputStream(bais);
-        ChronoLocalDateTime<?> ser = (ChronoLocalDateTime<?>) in.readObject();
+        TChronoLocalDateTime<?> ser = (TChronoLocalDateTime<?>) in.readObject();
         assertEquals(ser, orginal, "deserialized date is wrong");
     }
 
 
-    /**
-     * FixedAdjusted returns a fixed DateTime in all adjustments.
-     * Construct an adjuster with the DateTime that should be returned.
-     */
-    static class FixedAdjuster implements TemporalAdjuster, TemporalAmount {
-        private Temporal datetime;
+    static class FixedAdjuster implements TTemporalAdjuster, TTemporalAmount {
+        private TTemporal datetime;
 
-        FixedAdjuster(Temporal datetime) {
+        FixedAdjuster(TTemporal datetime) {
             this.datetime = datetime;
         }
 
         @Override
-        public Temporal adjustInto(Temporal ignore) {
+        public TTemporal adjustInto(TTemporal ignore) {
             return datetime;
         }
 
         @Override
-        public Temporal addTo(Temporal ignore) {
+        public TTemporal addTo(TTemporal ignore) {
             return datetime;
         }
 
         @Override
-        public Temporal subtractFrom(Temporal ignore) {
+        public TTemporal subtractFrom(TTemporal ignore) {
             return datetime;
         }
 
         @Override
-        public List<TemporalUnit> getUnits() {
+        public List<TTemporalUnit> getUnits() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public long get(TemporalUnit unit) {
+        public long get(TTemporalUnit unit) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
-    /**
-     * FixedPeriodUnit returns a fixed DateTime in all adjustments.
-     * Construct an FixedPeriodUnit with the DateTime that should be returned.
-     */
-    static class FixedPeriodUnit implements TemporalUnit {
-        private Temporal dateTime;
+    static class FixedPeriodUnit implements TTemporalUnit {
+        private TTemporal dateTime;
 
-        FixedPeriodUnit(Temporal dateTime) {
+        FixedPeriodUnit(TTemporal dateTime) {
             this.dateTime = dateTime;
         }
 
@@ -365,7 +354,7 @@ public class TestChronoLocalDateTime {
         }
 
         @Override
-        public Duration getDuration() {
+        public TDuration getDuration() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -385,29 +374,25 @@ public class TestChronoLocalDateTime {
         }
 
         @Override
-        public boolean isSupportedBy(Temporal dateTime) {
+        public boolean isSupportedBy(TTemporal dateTime) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <R extends Temporal> R addTo(R dateTime, long periodToAdd) {
+        public <R extends TTemporal> R addTo(R dateTime, long periodToAdd) {
             return (R) this.dateTime;
         }
 
         @Override
-        public long between(Temporal temporal1, Temporal temporal2) {
+        public long between(TTemporal temporal1, TTemporal temporal2) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
     }
 
-    /**
-     * FixedDateTimeField returns a fixed DateTime in all adjustments.
-     * Construct an FixedDateTimeField with the DateTime that should be returned from doSet.
-     */
-    static class FixedDateTimeField implements TemporalField {
-        private Temporal dateTime;
-        FixedDateTimeField(Temporal dateTime) {
+    static class FixedDateTimeField implements TTemporalField {
+        private TTemporal dateTime;
+        FixedDateTimeField(TTemporal dateTime) {
             this.dateTime = dateTime;
         }
 
@@ -417,17 +402,17 @@ public class TestChronoLocalDateTime {
         }
 
         @Override
-        public TemporalUnit getBaseUnit() {
+        public TTemporalUnit getBaseUnit() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public TemporalUnit getRangeUnit() {
+        public TTemporalUnit getRangeUnit() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public ValueRange range() {
+        public TValueRange range() {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
@@ -442,34 +427,34 @@ public class TestChronoLocalDateTime {
         }
 
         @Override
-        public boolean isSupportedBy(TemporalAccessor dateTime) {
+        public boolean isSupportedBy(TTemporalAccessor dateTime) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public ValueRange rangeRefinedBy(TemporalAccessor dateTime) {
+        public TValueRange rangeRefinedBy(TTemporalAccessor dateTime) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public long getFrom(TemporalAccessor dateTime) {
+        public long getFrom(TTemporalAccessor dateTime) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <R extends Temporal> R adjustInto(R dateTime, long newValue) {
+        public <R extends TTemporal> R adjustInto(R dateTime, long newValue) {
             return (R) this.dateTime;
         }
 
         @Override
-        public String getDisplayName(Locale locale) {
+        public String getDisplayName(TLocale locale) {
             throw new UnsupportedOperationException("Not supported yet.");
         }
 
         @Override
-        public TemporalAccessor resolve(Map<TemporalField, Long> fieldValues,
-                        TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
+        public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues,
+                        TTemporalAccessor partialTemporal, TResolverStyle resolverStyle) {
             return null;
         }
     }

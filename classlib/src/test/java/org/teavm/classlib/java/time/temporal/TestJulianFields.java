@@ -29,27 +29,24 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.temporal;
+package org.teavm.classlib.java.time.temporal;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-import org.testng.annotations.BeforeMethod;
+import org.junit.Before;
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.LocalDate;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TLocalDate;
 
-/**
- * Test.
- */
 @Test
 public class TestJulianFields {
 
-    private static final LocalDate JAN01_1970 = LocalDate.of(1970, 1, 1);
-    private static final LocalDate DEC31_1969 = LocalDate.of(1969, 12, 31);
-    private static final LocalDate NOV12_1945 = LocalDate.of(1945, 11, 12);
-    private static final LocalDate JAN01_0001 = LocalDate.of(1, 1, 1);
+    private static final TLocalDate JAN01_1970 = TLocalDate.of(1970, 1, 1);
+    private static final TLocalDate DEC31_1969 = TLocalDate.of(1969, 12, 31);
+    private static final TLocalDate NOV12_1945 = TLocalDate.of(1945, 11, 12);
+    private static final TLocalDate JAN01_0001 = TLocalDate.of(1, 1, 1);
 
-    @BeforeMethod
+    @Before
     public void setUp() {
     }
 
@@ -57,37 +54,37 @@ public class TestJulianFields {
     @DataProvider(name="samples")
     Object[][] data_samples() {
         return new Object[][] {
-            {ChronoField.EPOCH_DAY, JAN01_1970, 0L},
-            {JulianFields.JULIAN_DAY, JAN01_1970, 2400001L + 40587L},
-            {JulianFields.MODIFIED_JULIAN_DAY, JAN01_1970, 40587L},
-            {JulianFields.RATA_DIE, JAN01_1970, 710347L + (40587L - 31771L)},
+            {TChronoField.EPOCH_DAY, JAN01_1970, 0L},
+            {TJulianFields.JULIAN_DAY, JAN01_1970, 2400001L + 40587L},
+            {TJulianFields.MODIFIED_JULIAN_DAY, JAN01_1970, 40587L},
+            {TJulianFields.RATA_DIE, JAN01_1970, 710347L + (40587L - 31771L)},
 
-            {ChronoField.EPOCH_DAY, DEC31_1969, -1L},
-            {JulianFields.JULIAN_DAY, DEC31_1969, 2400001L + 40586L},
-            {JulianFields.MODIFIED_JULIAN_DAY, DEC31_1969, 40586L},
-            {JulianFields.RATA_DIE, DEC31_1969, 710347L + (40586L - 31771L)},
+            {TChronoField.EPOCH_DAY, DEC31_1969, -1L},
+            {TJulianFields.JULIAN_DAY, DEC31_1969, 2400001L + 40586L},
+            {TJulianFields.MODIFIED_JULIAN_DAY, DEC31_1969, 40586L},
+            {TJulianFields.RATA_DIE, DEC31_1969, 710347L + (40586L - 31771L)},
 
-            {ChronoField.EPOCH_DAY, NOV12_1945, (-24 * 365 - 6) - 31 - 30 + 11},
-            {JulianFields.JULIAN_DAY, NOV12_1945, 2431772L},
-            {JulianFields.MODIFIED_JULIAN_DAY, NOV12_1945, 31771L},
-            {JulianFields.RATA_DIE, NOV12_1945, 710347L},
+            {TChronoField.EPOCH_DAY, NOV12_1945, (-24 * 365 - 6) - 31 - 30 + 11},
+            {TJulianFields.JULIAN_DAY, NOV12_1945, 2431772L},
+            {TJulianFields.MODIFIED_JULIAN_DAY, NOV12_1945, 31771L},
+            {TJulianFields.RATA_DIE, NOV12_1945, 710347L},
 
-            {ChronoField.EPOCH_DAY, JAN01_0001, (-24 * 365 - 6) - 31 - 30 + 11 - 710346L},
-            {JulianFields.JULIAN_DAY, JAN01_0001, 2431772L - 710346L},
-            {JulianFields.MODIFIED_JULIAN_DAY, JAN01_0001, 31771L - 710346L},
-            {JulianFields.RATA_DIE, JAN01_0001, 1},
+            {TChronoField.EPOCH_DAY, JAN01_0001, (-24 * 365 - 6) - 31 - 30 + 11 - 710346L},
+            {TJulianFields.JULIAN_DAY, JAN01_0001, 2431772L - 710346L},
+            {TJulianFields.MODIFIED_JULIAN_DAY, JAN01_0001, 31771L - 710346L},
+            {TJulianFields.RATA_DIE, JAN01_0001, 1},
         };
     }
 
     @Test(dataProvider="samples")
-    public void test_samples_get(TemporalField field, LocalDate date, long expected) {
+    public void test_samples_get(TTemporalField field, TLocalDate date, long expected) {
         assertEquals(date.getLong(field), expected);
     }
 
     @Test(dataProvider="samples")
-    public void test_samples_set(TemporalField field, LocalDate date, long value) {
-        assertEquals(field.adjustInto(LocalDate.MAX, value), date);
-        assertEquals(field.adjustInto(LocalDate.MIN, value), date);
+    public void test_samples_set(TTemporalField field, TLocalDate date, long value) {
+        assertEquals(field.adjustInto(TLocalDate.MAX, value), date);
+        assertEquals(field.adjustInto(TLocalDate.MIN, value), date);
         assertEquals(field.adjustInto(JAN01_1970, value), date);
         assertEquals(field.adjustInto(DEC31_1969, value), date);
         assertEquals(field.adjustInto(NOV12_1945, value), date);
@@ -98,9 +95,9 @@ public class TestJulianFields {
     //-----------------------------------------------------------------------
     @Test
     public void test_toString() {
-        assertEquals(JulianFields.JULIAN_DAY.toString(), "JulianDay");
-        assertEquals(JulianFields.MODIFIED_JULIAN_DAY.toString(), "ModifiedJulianDay");
-        assertEquals(JulianFields.RATA_DIE.toString(), "RataDie");
+        assertEquals(TJulianFields.JULIAN_DAY.toString(), "JulianDay");
+        assertEquals(TJulianFields.MODIFIED_JULIAN_DAY.toString(), "ModifiedJulianDay");
+        assertEquals(TJulianFields.RATA_DIE.toString(), "RataDie");
     }
 
 }

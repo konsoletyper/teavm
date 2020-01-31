@@ -29,12 +29,12 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.zone;
+package org.teavm.classlib.java.time.zone;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertNotNull;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Collections;
 import java.util.HashSet;
@@ -42,12 +42,9 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 
-import org.testng.annotations.Test;
-import org.threeten.bp.ZoneOffset;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TZoneOffset;
 
-/**
- * Test ZoneRulesProvider.
- */
 @Test
 public class TestZoneRulesProvider {
 
@@ -56,7 +53,7 @@ public class TestZoneRulesProvider {
     //-----------------------------------------------------------------------
     @Test
     public void test_getAvailableGroupIds() {
-        Set<String> zoneIds = ZoneRulesProvider.getAvailableZoneIds();
+        Set<String> zoneIds = TZoneRulesProvider.getAvailableZoneIds();
         assertEquals(zoneIds.contains("Europe/London"), true);
         try {
             zoneIds.clear();
@@ -64,7 +61,7 @@ public class TestZoneRulesProvider {
         } catch (UnsupportedOperationException ex) {
             // ignore
         }
-        Set<String> zoneIds2 = ZoneRulesProvider.getAvailableZoneIds();
+        Set<String> zoneIds2 = TZoneRulesProvider.getAvailableZoneIds();
         assertEquals(zoneIds2.contains("Europe/London"), true);
     }
 
@@ -73,20 +70,20 @@ public class TestZoneRulesProvider {
     //-----------------------------------------------------------------------
     @Test
     public void test_getRules_String() {
-        ZoneRules rules = ZoneRulesProvider.getRules("Europe/London", false);
+        TZoneRules rules = TZoneRulesProvider.getRules("Europe/London", false);
         assertNotNull(rules);
-        ZoneRules rules2 = ZoneRulesProvider.getRules("Europe/London", false);
+        TZoneRules rules2 = TZoneRulesProvider.getRules("Europe/London", false);
         assertEquals(rules2, rules);
     }
 
-    @Test(expectedExceptions=ZoneRulesException.class)
+    @Test(expectedExceptions=TZoneRulesException.class)
     public void test_getRules_String_unknownId() {
-        ZoneRulesProvider.getRules("Europe/Lon", false);
+        TZoneRulesProvider.getRules("Europe/Lon", false);
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_getRules_String_null() {
-        ZoneRulesProvider.getRules(null, false);
+        TZoneRulesProvider.getRules(null, false);
     }
 
     //-----------------------------------------------------------------------
@@ -94,26 +91,26 @@ public class TestZoneRulesProvider {
     //-----------------------------------------------------------------------
     @Test
     public void test_getVersions_String() {
-        NavigableMap<String, ZoneRules> versions = ZoneRulesProvider.getVersions("Europe/London");
+        NavigableMap<String, TZoneRules> versions = TZoneRulesProvider.getVersions("Europe/London");
         assertTrue(versions.size() >= 1);
-        ZoneRules rules = ZoneRulesProvider.getRules("Europe/London", false);
+        TZoneRules rules = TZoneRulesProvider.getRules("Europe/London", false);
         assertEquals(versions.lastEntry().getValue(), rules);
 
-        NavigableMap<String, ZoneRules> copy = new TreeMap<String, ZoneRules>(versions);
+        NavigableMap<String, TZoneRules> copy = new TreeMap<String, TZoneRules>(versions);
         versions.clear();
         assertEquals(versions.size(), 0);
-        NavigableMap<String, ZoneRules> versions2 = ZoneRulesProvider.getVersions("Europe/London");
+        NavigableMap<String, TZoneRules> versions2 = TZoneRulesProvider.getVersions("Europe/London");
         assertEquals(versions2, copy);
     }
 
-    @Test(expectedExceptions=ZoneRulesException.class)
+    @Test(expectedExceptions=TZoneRulesException.class)
     public void test_getVersions_String_unknownId() {
-        ZoneRulesProvider.getVersions("Europe/Lon");
+        TZoneRulesProvider.getVersions("Europe/Lon");
     }
 
     @Test(expectedExceptions=NullPointerException.class)
     public void test_getVersions_String_null() {
-        ZoneRulesProvider.getVersions(null);
+        TZoneRulesProvider.getVersions(null);
     }
 
     //-----------------------------------------------------------------------
@@ -121,7 +118,7 @@ public class TestZoneRulesProvider {
     //-----------------------------------------------------------------------
     @Test
     public void test_refresh() {
-        assertEquals(ZoneRulesProvider.refresh(), false);
+        assertEquals(TZoneRulesProvider.refresh(), false);
     }
 
     //-----------------------------------------------------------------------
@@ -129,33 +126,33 @@ public class TestZoneRulesProvider {
     //-----------------------------------------------------------------------
     @Test
     public void test_registerProvider() {
-        Set<String> pre = ZoneRulesProvider.getAvailableZoneIds();
+        Set<String> pre = TZoneRulesProvider.getAvailableZoneIds();
         assertEquals(pre.contains("FooLocation"), false);
-        ZoneRulesProvider.registerProvider(new MockTempProvider());
-        Set<String> post = ZoneRulesProvider.getAvailableZoneIds();
+        TZoneRulesProvider.registerProvider(new MockTempProvider());
+        Set<String> post = TZoneRulesProvider.getAvailableZoneIds();
         assertEquals(post.contains("FooLocation"), true);
 
-        assertEquals(ZoneRulesProvider.getRules("FooLocation", false), ZoneOffset.of("+01:45").getRules());
+        assertEquals(TZoneRulesProvider.getRules("FooLocation", false), TZoneOffset.of("+01:45").getRules());
     }
 
-    static class MockTempProvider extends ZoneRulesProvider {
-        final ZoneRules rules = ZoneOffset.of("+01:45").getRules();
+    static class MockTempProvider extends TZoneRulesProvider {
+        final TZoneRules rules = TZoneOffset.of("+01:45").getRules();
         @Override
         public Set<String> provideZoneIds() {
             return new HashSet<String>(Collections.singleton("FooLocation"));
         }
         @Override
-        protected NavigableMap<String, ZoneRules> provideVersions(String zoneId) {
-            NavigableMap<String, ZoneRules> result = new TreeMap<String, ZoneRules>();
+        protected NavigableMap<String, TZoneRules> provideVersions(String zoneId) {
+            NavigableMap<String, TZoneRules> result = new TreeMap<String, TZoneRules>();
             result.put("BarVersion", rules);
             return result;
         }
         @Override
-        protected ZoneRules provideRules(String zoneId, boolean forCaching) {
+        protected TZoneRules provideRules(String zoneId, boolean forCaching) {
             if (zoneId.equals("FooLocation")) {
                 return rules;
             }
-            throw new ZoneRulesException("Invalid");
+            throw new TZoneRulesException("Invalid");
         }
     }
 

@@ -29,44 +29,38 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.chrono;
+package org.teavm.classlib.java.time.chrono;
 
-import static org.threeten.bp.temporal.ChronoUnit.DAYS;
-import static org.threeten.bp.temporal.ChronoUnit.MONTHS;
-import static org.threeten.bp.temporal.ChronoUnit.YEARS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
 import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.jdk8.Jdk8Methods;
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.Temporal;
-import org.threeten.bp.temporal.TemporalAmount;
-import org.threeten.bp.temporal.TemporalQueries;
-import org.threeten.bp.temporal.TemporalUnit;
-import org.threeten.bp.temporal.UnsupportedTemporalTypeException;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import org.teavm.classlib.java.time.temporal.TChronoField;
+import org.teavm.classlib.java.time.temporal.TTemporal;
+import org.teavm.classlib.java.time.temporal.TTemporalAmount;
+import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.classlib.java.time.temporal.TTemporalUnit;
+import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 
-/**
- * An implementation of {@code ChronoPeriod}.
- */
-final class ChronoPeriodImpl
-        extends ChronoPeriod
+final class TChronoPeriodImpl
+        extends TChronoPeriod
         implements Serializable {
 
-    /**
-     * Serialization version.
-     */
     private static final long serialVersionUID = 275618735781L;
 
-    private final Chronology chronology;
+    private final TChronology chronology;
     private final int years;
     private final int months;
     private final int days;
 
-    public ChronoPeriodImpl(Chronology chronology, int years, int months, int days) {
+    public TChronoPeriodImpl(TChronology chronology, int years, int months, int days) {
         this.chronology = chronology;
         this.years = years;
         this.months = months;
@@ -75,7 +69,7 @@ final class ChronoPeriodImpl
 
     //-------------------------------------------------------------------------
     @Override
-    public long get(TemporalUnit unit) {
+    public long get(TTemporalUnit unit) {
         if (unit == YEARS) {
             return years;
         }
@@ -85,77 +79,77 @@ final class ChronoPeriodImpl
         if (unit == DAYS) {
             return days;
         }
-        throw new UnsupportedTemporalTypeException("Unsupported unit: " + unit);
+        throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
     }
 
     @Override
-    public List<TemporalUnit> getUnits() {
-        return Collections.unmodifiableList(Arrays.<TemporalUnit>asList(YEARS, MONTHS, DAYS));
+    public List<TTemporalUnit> getUnits() {
+        return Collections.unmodifiableList(Arrays.<TTemporalUnit>asList(YEARS, MONTHS, DAYS));
     }
 
     @Override
-    public Chronology getChronology() {
+    public TChronology getChronology() {
         return chronology;
     }
 
     //-------------------------------------------------------------------------
     @Override
-    public ChronoPeriod plus(TemporalAmount amountToAdd) {
-        if (amountToAdd instanceof ChronoPeriodImpl) {
-            ChronoPeriodImpl amount = (ChronoPeriodImpl) amountToAdd;
+    public TChronoPeriod plus(TTemporalAmount amountToAdd) {
+        if (amountToAdd instanceof TChronoPeriodImpl) {
+            TChronoPeriodImpl amount = (TChronoPeriodImpl) amountToAdd;
             if (amount.getChronology().equals(getChronology())) {
-                return new ChronoPeriodImpl(
+                return new TChronoPeriodImpl(
                         chronology,
-                        Jdk8Methods.safeAdd(years, amount.years),
-                        Jdk8Methods.safeAdd(months, amount.months),
-                        Jdk8Methods.safeAdd(days, amount.days));
+                        TJdk8Methods.safeAdd(years, amount.years),
+                        TJdk8Methods.safeAdd(months, amount.months),
+                        TJdk8Methods.safeAdd(days, amount.days));
             }
         }
-        throw new DateTimeException("Unable to add amount: " + amountToAdd);
+        throw new TDateTimeException("Unable to add amount: " + amountToAdd);
     }
 
     @Override
-    public ChronoPeriod minus(TemporalAmount amountToSubtract) {
-        if (amountToSubtract instanceof ChronoPeriodImpl) {
-            ChronoPeriodImpl amount = (ChronoPeriodImpl) amountToSubtract;
+    public TChronoPeriod minus(TTemporalAmount amountToSubtract) {
+        if (amountToSubtract instanceof TChronoPeriodImpl) {
+            TChronoPeriodImpl amount = (TChronoPeriodImpl) amountToSubtract;
             if (amount.getChronology().equals(getChronology())) {
-                return new ChronoPeriodImpl(
+                return new TChronoPeriodImpl(
                         chronology,
-                        Jdk8Methods.safeSubtract(years, amount.years),
-                        Jdk8Methods.safeSubtract(months, amount.months),
-                        Jdk8Methods.safeSubtract(days, amount.days));
+                        TJdk8Methods.safeSubtract(years, amount.years),
+                        TJdk8Methods.safeSubtract(months, amount.months),
+                        TJdk8Methods.safeSubtract(days, amount.days));
             }
         }
-        throw new DateTimeException("Unable to subtract amount: " + amountToSubtract);
+        throw new TDateTimeException("Unable to subtract amount: " + amountToSubtract);
     }
 
     @Override
-    public ChronoPeriod multipliedBy(int scalar) {
-        return new ChronoPeriodImpl(
+    public TChronoPeriod multipliedBy(int scalar) {
+        return new TChronoPeriodImpl(
                 chronology,
-                Jdk8Methods.safeMultiply(years, scalar),
-                Jdk8Methods.safeMultiply(months, scalar),
-                Jdk8Methods.safeMultiply(days, scalar));
+                TJdk8Methods.safeMultiply(years, scalar),
+                TJdk8Methods.safeMultiply(months, scalar),
+                TJdk8Methods.safeMultiply(days, scalar));
     }
 
     @Override
-    public ChronoPeriod normalized() {
-        if (chronology.range(ChronoField.MONTH_OF_YEAR).isFixed()) {
-            long monthLength = chronology.range(ChronoField.MONTH_OF_YEAR).getMaximum() - chronology.range(ChronoField.MONTH_OF_YEAR).getMinimum() + 1;
+    public TChronoPeriod normalized() {
+        if (chronology.range(TChronoField.MONTH_OF_YEAR).isFixed()) {
+            long monthLength = chronology.range(TChronoField.MONTH_OF_YEAR).getMaximum() - chronology.range(TChronoField.MONTH_OF_YEAR).getMinimum() + 1;
             long total = years * monthLength + months;
-            int years = Jdk8Methods.safeToInt(total / monthLength);
-            int months = Jdk8Methods.safeToInt(total % monthLength);
-            return new ChronoPeriodImpl(chronology, years, months, days);
+            int years = TJdk8Methods.safeToInt(total / monthLength);
+            int months = TJdk8Methods.safeToInt(total % monthLength);
+            return new TChronoPeriodImpl(chronology, years, months, days);
         }
         return this;
     }
 
     @Override
-    public Temporal addTo(Temporal temporal) {
-        Jdk8Methods.requireNonNull(temporal, "temporal");
-        Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
+    public TTemporal addTo(TTemporal temporal) {
+        TJdk8Methods.requireNonNull(temporal, "temporal");
+        TChronology temporalChrono = temporal.query(TTemporalQueries.chronology());
         if (temporalChrono != null && chronology.equals(temporalChrono) == false) {
-            throw new DateTimeException("Invalid chronology, required: " + chronology.getId() + ", but was: " + temporalChrono.getId());
+            throw new TDateTimeException("Invalid chronology, required: " + chronology.getId() + ", but was: " + temporalChrono.getId());
         }
         if (years != 0) {
             temporal = temporal.plus(years, YEARS);
@@ -170,11 +164,11 @@ final class ChronoPeriodImpl
     }
 
     @Override
-    public Temporal subtractFrom(Temporal temporal) {
-        Jdk8Methods.requireNonNull(temporal, "temporal");
-        Chronology temporalChrono = temporal.query(TemporalQueries.chronology());
+    public TTemporal subtractFrom(TTemporal temporal) {
+        TJdk8Methods.requireNonNull(temporal, "temporal");
+        TChronology temporalChrono = temporal.query(TTemporalQueries.chronology());
         if (temporalChrono != null && chronology.equals(temporalChrono) == false) {
-            throw new DateTimeException("Invalid chronology, required: " + chronology.getId() + ", but was: " + temporalChrono.getId());
+            throw new TDateTimeException("Invalid chronology, required: " + chronology.getId() + ", but was: " + temporalChrono.getId());
         }
         if (years != 0) {
             temporal = temporal.minus(years, YEARS);
@@ -194,8 +188,8 @@ final class ChronoPeriodImpl
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ChronoPeriodImpl) {
-            ChronoPeriodImpl other = (ChronoPeriodImpl) obj;
+        if (obj instanceof TChronoPeriodImpl) {
+            TChronoPeriodImpl other = (TChronoPeriodImpl) obj;
             return years == other.years && months == other.months &&
                     days == other.days && chronology.equals(other.chronology);
         }

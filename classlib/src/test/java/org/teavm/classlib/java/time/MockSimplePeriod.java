@@ -29,62 +29,37 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import static org.threeten.bp.temporal.ChronoUnit.DAYS;
-import static org.threeten.bp.temporal.ChronoUnit.FOREVER;
-import static org.threeten.bp.temporal.ChronoUnit.SECONDS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.FOREVER;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.SECONDS;
 
 import java.util.Collections;
 import java.util.List;
 
-import org.threeten.bp.jdk8.Jdk8Methods;
-import org.threeten.bp.temporal.Temporal;
-import org.threeten.bp.temporal.TemporalAmount;
-import org.threeten.bp.temporal.TemporalUnit;
+import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import org.teavm.classlib.java.time.temporal.TTemporal;
+import org.teavm.classlib.java.time.temporal.TTemporalAmount;
+import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 
-/**
- * Mock period of time measured using a single unit, such as {@code 3 Days}.
- */
 public final class MockSimplePeriod
-        implements TemporalAmount, Comparable<MockSimplePeriod> {
+        implements TTemporalAmount, Comparable<MockSimplePeriod> {
 
-    /**
-     * A constant for a period of zero, measured in days.
-     */
     public static final MockSimplePeriod ZERO_DAYS = new MockSimplePeriod(0, DAYS);
-    /**
-     * A constant for a period of zero, measured in seconds.
-     */
     public static final MockSimplePeriod ZERO_SECONDS = new MockSimplePeriod(0, SECONDS);
 
-    /**
-     * The amount of the period.
-     */
     private final long amount;
-    /**
-     * The unit the period is measured in.
-     */
-    private final TemporalUnit unit;
+    private final TTemporalUnit unit;
 
-    /**
-     * Obtains a {@code MockSimplePeriod} from an amount and unit.
-     * <p>
-     * The parameters represent the two parts of a phrase like '6 Days'.
-     *
-     * @param amount  the amount of the period, measured in terms of the unit, positive or negative
-     * @param unit  the unit that the period is measured in, must not be the 'Forever' unit, not null
-     * @return the {@code MockSimplePeriod} instance, not null
-     * @throws DateTimeException if the period unit is {@link org.threeten.bp.temporal.ChronoUnit#FOREVER}.
-     */
-    public static MockSimplePeriod of(long amount, TemporalUnit unit) {
+    public static MockSimplePeriod of(long amount, TTemporalUnit unit) {
         return new MockSimplePeriod(amount, unit);
     }
 
-    private MockSimplePeriod(long amount, TemporalUnit unit) {
-        Jdk8Methods.requireNonNull(unit, "unit");
+    private MockSimplePeriod(long amount, TTemporalUnit unit) {
+        TJdk8Methods.requireNonNull(unit, "unit");
         if (unit == FOREVER) {
-            throw new DateTimeException("Cannot create a period of the Forever unit");
+            throw new TDateTimeException("Cannot create a period of the Forever unit");
         }
         this.amount = amount;
         this.unit = unit;
@@ -92,16 +67,16 @@ public final class MockSimplePeriod
 
     //-----------------------------------------------------------------------
     @Override
-    public List<TemporalUnit> getUnits() {
+    public List<TTemporalUnit> getUnits() {
         return Collections.singletonList(unit);
     }
 
     @Override
-    public long get(TemporalUnit unit) {
+    public long get(TTemporalUnit unit) {
         if (this.unit.equals(unit)) {
             return amount;
         }
-        throw new DateTimeException("Unsupported unit: " + unit);
+        throw new TDateTimeException("Unsupported unit: " + unit);
     }
 
     //-----------------------------------------------------------------------
@@ -109,18 +84,18 @@ public final class MockSimplePeriod
         return amount;
     }
 
-    public TemporalUnit getUnit() {
+    public TTemporalUnit getUnit() {
         return unit;
     }
 
     //-------------------------------------------------------------------------
     @Override
-    public Temporal addTo(Temporal dateTime) {
+    public TTemporal addTo(TTemporal dateTime) {
         return dateTime.plus(amount, unit);
     }
 
     @Override
-    public Temporal subtractFrom(Temporal dateTime) {
+    public TTemporal subtractFrom(TTemporal dateTime) {
         return dateTime.minus(amount, unit);
     }
 
@@ -130,7 +105,7 @@ public final class MockSimplePeriod
         if (unit.equals(otherPeriod.getUnit()) == false) {
             throw new IllegalArgumentException("Units cannot be compared: " + unit + " and " + otherPeriod.getUnit());
         }
-        return Jdk8Methods.compareLongs(amount, otherPeriod.amount);
+        return TJdk8Methods.compareLongs(amount, otherPeriod.amount);
     }
 
     @Override

@@ -29,38 +29,34 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.jdk8;
+package org.teavm.classlib.java.time.jdk8;
 
-import org.threeten.bp.temporal.Temporal;
-import org.threeten.bp.temporal.TemporalAdjuster;
-import org.threeten.bp.temporal.TemporalAmount;
-import org.threeten.bp.temporal.TemporalUnit;
+import org.teavm.classlib.java.time.temporal.TTemporal;
+import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
+import org.teavm.classlib.java.time.temporal.TTemporalAmount;
+import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 
-/**
- * A temporary class providing implementations that will become default interface
- * methods once integrated into JDK 8.
- */
-public abstract class DefaultInterfaceTemporal
-        extends DefaultInterfaceTemporalAccessor
-        implements Temporal {
+public abstract class TDefaultInterfaceTemporal
+        extends TDefaultInterfaceTemporalAccessor
+        implements TTemporal {
 
     @Override
-    public Temporal with(TemporalAdjuster adjuster) {
+    public TTemporal with(TTemporalAdjuster adjuster) {
         return adjuster.adjustInto(this);
     }
 
     @Override
-    public Temporal plus(TemporalAmount amount) {
+    public TTemporal plus(TTemporalAmount amount) {
         return amount.addTo(this);
     }
 
     @Override
-    public Temporal minus(TemporalAmount amount) {
+    public TTemporal minus(TTemporalAmount amount) {
         return amount.subtractFrom(this);
     }
 
     @Override
-    public Temporal minus(long amountToSubtract, TemporalUnit unit) {
+    public TTemporal minus(long amountToSubtract, TTemporalUnit unit) {
         return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
     }
 

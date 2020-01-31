@@ -29,7 +29,7 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.zone;
+package org.teavm.classlib.java.time.zone;
 
 import java.io.ByteArrayInputStream;
 import java.io.DataInputStream;
@@ -49,80 +49,40 @@ import java.util.concurrent.ConcurrentSkipListMap;
 import java.util.concurrent.CopyOnWriteArraySet;
 import java.util.concurrent.atomic.AtomicReferenceArray;
 
-import org.threeten.bp.jdk8.Jdk8Methods;
+import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
-/**
- * Loads time-zone rules for 'TZDB'.
- * <p>
- * This class is public for the service loader to access.
- *
- * <h3>Specification for implementors</h3>
- * This class is immutable and thread-safe.
- */
-public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
+public final class TTzdbZoneRulesProvider extends TZoneRulesProvider {
     // TODO: can this be private/hidden in any way?
     // service loader seems to need it to be public
 
-    /**
-     * All the regions that are available.
-     */
     private List<String> regionIds;
-    /**
-     * All the versions that are available.
-     */
     private final ConcurrentNavigableMap<String, Version> versions = new ConcurrentSkipListMap<String, Version>();
-    /**
-     * All the URLs that have been loaded.
-     * Uses String to avoid equals() on URL.
-     */
     private Set<String> loadedUrls = new CopyOnWriteArraySet<String>();
 
-    /**
-     * Creates an instance.
-     * Created by the {@code ServiceLoader}.
-     *
-     * @throws ZoneRulesException if unable to load
-     */
-    public TzdbZoneRulesProvider() {
+    public TTzdbZoneRulesProvider() {
         super();
-        if (load(ZoneRulesProvider.class.getClassLoader()) == false) {
-            throw new ZoneRulesException("No time-zone rules found for 'TZDB'");
+        if (load(TZoneRulesProvider.class.getClassLoader()) == false) {
+            throw new TZoneRulesException("No time-zone rules found for 'TZDB'");
         }
     }
 
-    /**
-     * Creates an instance and loads the specified URL.
-     * <p>
-     * This could be used to wrap this provider in another instance.
-     *
-     * @param url  the URL to load, not null
-     * @throws ZoneRulesException if unable to load
-     */
-    public TzdbZoneRulesProvider(URL url) {
+    public TTzdbZoneRulesProvider(URL url) {
         super();
         try {
             if (load(url) == false) {
-                throw new ZoneRulesException("No time-zone rules found: " + url);
+                throw new TZoneRulesException("No time-zone rules found: " + url);
             }
         } catch (Exception ex) {
-            throw new ZoneRulesException("Unable to load TZDB time-zone rules: " + url, ex);
+            throw new TZoneRulesException("Unable to load TZDB time-zone rules: " + url, ex);
         }
     }
 
-    /**
-     * Creates an instance and loads the specified input stream.
-     * <p>
-     * This could be used to wrap this provider in another instance.
-     *
-     * @param stream  the stream to load, not null, not closed after use
-     * @throws ZoneRulesException if unable to load
-     */
-    public TzdbZoneRulesProvider(InputStream stream) {
+    public TTzdbZoneRulesProvider(InputStream stream) {
         super();
         try {
             load(stream);
         } catch (Exception ex) {
-            throw new ZoneRulesException("Unable to load TZDB time-zone rules", ex);
+            throw new TZoneRulesException("Unable to load TZDB time-zone rules", ex);
         }
     }
 
@@ -133,20 +93,20 @@ public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
     }
 
     @Override
-    protected ZoneRules provideRules(String zoneId, boolean forCaching) {
-        Jdk8Methods.requireNonNull(zoneId, "zoneId");
-        ZoneRules rules = versions.lastEntry().getValue().getRules(zoneId);
+    protected TZoneRules provideRules(String zoneId, boolean forCaching) {
+        TJdk8Methods.requireNonNull(zoneId, "zoneId");
+        TZoneRules rules = versions.lastEntry().getValue().getRules(zoneId);
         if (rules == null) {
-            throw new ZoneRulesException("Unknown time-zone ID: " + zoneId);
+            throw new TZoneRulesException("Unknown time-zone ID: " + zoneId);
         }
         return rules;
     }
 
     @Override
-    protected NavigableMap<String, ZoneRules> provideVersions(String zoneId) {
-        TreeMap<String, ZoneRules> map = new TreeMap<String, ZoneRules>();
+    protected NavigableMap<String, TZoneRules> provideVersions(String zoneId) {
+        TreeMap<String, TZoneRules> map = new TreeMap<String, TZoneRules>();
         for (Version version : versions.values()) {
-            ZoneRules rules = version.getRules(zoneId);
+            TZoneRules rules = version.getRules(zoneId);
             if (rules != null) {
                 map.put(version.versionId, rules);
             }
@@ -155,13 +115,6 @@ public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
     }
 
     //-------------------------------------------------------------------------
-    /**
-     * Loads the rules.
-     *
-     * @param classLoader  the class loader to use, not null
-     * @return true if updated
-     * @throws ZoneRulesException if unable to load
-     */
     private boolean load(ClassLoader classLoader) {
         boolean updated = false;
         URL url = null;
@@ -172,21 +125,12 @@ public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
                 updated |= load(url);
             }
         } catch (Exception ex) {
-            throw new ZoneRulesException("Unable to load TZDB time-zone rules: " + url, ex);
+            throw new TZoneRulesException("Unable to load TZDB time-zone rules: " + url, ex);
         }
         return updated;
     }
 
-    /**
-     * Loads the rules from a URL, often in a jar file.
-     *
-     * @param url  the jar file to load, not null
-     * @return true if updated
-     * @throws ClassNotFoundException if a classpath error occurs
-     * @throws IOException if an IO error occurs
-     * @throws ZoneRulesException if the data is already loaded for the version
-     */
-    private boolean load(URL url) throws ClassNotFoundException, IOException, ZoneRulesException {
+    private boolean load(URL url) throws ClassNotFoundException, IOException, TZoneRulesException {
         boolean updated = false;
         if (loadedUrls.add(url.toExternalForm())) {
             InputStream in = null;
@@ -202,12 +146,6 @@ public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
         return updated;
     }
 
-    /**
-     * Loads the rules from an input stream.
-     *
-     * @param in  the stream to load, not null, not closed after use
-     * @throws Exception if an error occurs
-     */
     private boolean load(InputStream in) throws IOException, StreamCorruptedException {
         boolean updated = false;
         Iterable<Version> loadedVersions = loadData(in);
@@ -216,19 +154,13 @@ public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
             // multiple versions of lib on classpath
             Version existing = versions.putIfAbsent(loadedVersion.versionId, loadedVersion);
             if (existing != null && !existing.versionId.equals(loadedVersion.versionId)) {
-                throw new ZoneRulesException("Data already loaded for TZDB time-zone rules version: " + loadedVersion.versionId);
+                throw new TZoneRulesException("Data already loaded for TZDB time-zone rules version: " + loadedVersion.versionId);
             }
             updated = true;
         }
         return updated;
     }
 
-    /**
-     * Loads the rules from an input stream.
-     *
-     * @param in  the stream to load, not null, not closed after use
-     * @throws Exception if an error occurs
-     */
     private Iterable<Version> loadData(InputStream in) throws IOException, StreamCorruptedException {
         DataInputStream dis = new DataInputStream(in);
         if (dis.readByte() != 1) {
@@ -282,9 +214,6 @@ public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * A version of the TZDB rules.
-     */
     static class Version {
         private final String versionId;
         private final String[] regionArray;
@@ -298,7 +227,7 @@ public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
             this.ruleIndices = ruleIndices;
         }
 
-        ZoneRules getRules(String regionId) {
+        TZoneRules getRules(String regionId) {
             int regionIndex = Arrays.binarySearch(regionArray, regionId);
             if (regionIndex < 0) {
                 return null;
@@ -306,11 +235,11 @@ public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
             try {
                 return createRule(ruleIndices[regionIndex]);
             } catch (Exception ex) {
-                throw new ZoneRulesException("Invalid binary time-zone data: TZDB:" + regionId + ", version: " + versionId, ex);
+                throw new TZoneRulesException("Invalid binary time-zone data: TZDB:" + regionId + ", version: " + versionId, ex);
             }
         }
 
-        ZoneRules createRule(short index) throws Exception {
+        TZoneRules createRule(short index) throws Exception {
             Object obj = ruleData.get(index);
             if (obj instanceof byte[]) {
                 byte[] bytes = (byte[]) obj;
@@ -318,7 +247,7 @@ public final class TzdbZoneRulesProvider extends ZoneRulesProvider {
                 obj = Ser.read(dis);
                 ruleData.set(index, obj);
             }
-            return (ZoneRules) obj;
+            return (TZoneRules) obj;
         }
 
         @Override

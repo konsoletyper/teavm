@@ -29,44 +29,38 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.jdk8;
+package org.teavm.classlib.java.time.jdk8;
 
-import static org.threeten.bp.temporal.ChronoField.ERA;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ERA;
 
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 
-import org.threeten.bp.chrono.Era;
-import org.threeten.bp.format.DateTimeFormatterBuilder;
-import org.threeten.bp.format.TextStyle;
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.ChronoUnit;
-import org.threeten.bp.temporal.Temporal;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.TemporalQueries;
-import org.threeten.bp.temporal.TemporalQuery;
-import org.threeten.bp.temporal.UnsupportedTemporalTypeException;
+import org.teavm.classlib.java.time.chrono.TEra;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
+import org.teavm.classlib.java.time.format.TTextStyle;
+import org.teavm.classlib.java.time.temporal.TChronoField;
+import org.teavm.classlib.java.time.temporal.TChronoUnit;
+import org.teavm.classlib.java.time.temporal.TTemporal;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.classlib.java.time.temporal.TTemporalQuery;
+import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 
-/**
- * A temporary class providing implementations that will become default interface
- * methods once integrated into JDK 8.
- *
- * @param  the chronology of this era
- */
-public abstract class DefaultInterfaceEra
-        extends DefaultInterfaceTemporalAccessor
-        implements Era {
+public abstract class TDefaultInterfaceEra
+        extends TDefaultInterfaceTemporalAccessor
+        implements TEra {
 
     //-----------------------------------------------------------------------
     @Override
-    public boolean isSupported(TemporalField field) {
-        if (field instanceof ChronoField) {
+    public boolean isSupported(TTemporalField field) {
+        if (field instanceof TChronoField) {
             return field == ERA;
         }
         return field != null && field.isSupportedBy(this);
     }
 
     @Override
-    public int get(TemporalField field) {
+    public int get(TTemporalField field) {
         if (field == ERA) {
             return getValue();
         }
@@ -74,30 +68,30 @@ public abstract class DefaultInterfaceEra
     }
 
     @Override
-    public long getLong(TemporalField field) {
+    public long getLong(TTemporalField field) {
         if (field == ERA) {
             return getValue();
-        } else if (field instanceof ChronoField) {
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        } else if (field instanceof TChronoField) {
+            throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.getFrom(this);
     }
 
     //-------------------------------------------------------------------------
     @Override
-    public Temporal adjustInto(Temporal temporal) {
+    public TTemporal adjustInto(TTemporal temporal) {
         return temporal.with(ERA, getValue());
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQueries.precision()) {
-            return (R) ChronoUnit.ERAS;
+    public <R> R query(TTemporalQuery<R> query) {
+        if (query == TTemporalQueries.precision()) {
+            return (R) TChronoUnit.ERAS;
         }
-        if (query == TemporalQueries.chronology() || query == TemporalQueries.zone() ||
-                query == TemporalQueries.zoneId() || query == TemporalQueries.offset() ||
-                query == TemporalQueries.localDate() || query == TemporalQueries.localTime()) {
+        if (query == TTemporalQueries.chronology() || query == TTemporalQueries.zone() ||
+                query == TTemporalQueries.zoneId() || query == TTemporalQueries.offset() ||
+                query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime()) {
             return null;
         }
         return query.queryFrom(this);
@@ -105,8 +99,8 @@ public abstract class DefaultInterfaceEra
 
     //-----------------------------------------------------------------------
     @Override
-    public String getDisplayName(TextStyle style, Locale locale) {
-        return new DateTimeFormatterBuilder().appendText(ERA, style).toFormatter(locale).format(this);
+    public String getDisplayName(TTextStyle style, TLocale locale) {
+        return new TDateTimeFormatterBuilder().appendText(ERA, style).toFormatter(locale).format(this);
     }
 
 }

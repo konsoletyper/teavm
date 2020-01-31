@@ -29,28 +29,25 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.jdk8.Jdk8Methods;
+import org.junit.Test;
+import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
-/**
- * Test.
- */
 @Test
 public class TestDateTimes_implementation {
 
     @SuppressWarnings("rawtypes")
     public void test_constructor() throws Exception {
-        for (Constructor constructor : Jdk8Methods.class.getDeclaredConstructors()) {
+        for (Constructor constructor : TJdk8Methods.class.getDeclaredConstructors()) {
             assertTrue(Modifier.isPrivate(constructor.getModifiers()));
             constructor.setAccessible(true);
             constructor.newInstance(Collections.nCopies(constructor.getParameterTypes().length, null).toArray());
@@ -73,7 +70,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeAddIntProvider")
     public void test_safeAddInt(int a, int b, int expected) {
-        assertEquals(Jdk8Methods.safeAdd(a, b), expected);
+        assertEquals(TJdk8Methods.safeAdd(a, b), expected);
     }
 
     @DataProvider(name="safeAddIntProviderOverflow")
@@ -88,7 +85,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeAddIntProviderOverflow", expectedExceptions=ArithmeticException.class)
     public void test_safeAddInt_overflow(int a, int b) {
-        Jdk8Methods.safeAdd(a, b);
+        TJdk8Methods.safeAdd(a, b);
     }
 
     @DataProvider(name="safeAddLongProvider")
@@ -104,7 +101,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeAddLongProvider")
     public void test_safeAddLong(long a, long b, long expected) {
-        assertEquals(Jdk8Methods.safeAdd(a, b), expected);
+        assertEquals(TJdk8Methods.safeAdd(a, b), expected);
     }
 
     @DataProvider(name="safeAddLongProviderOverflow")
@@ -119,7 +116,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeAddLongProviderOverflow", expectedExceptions=ArithmeticException.class)
     public void test_safeAddLong_overflow(long a, long b) {
-        Jdk8Methods.safeAdd(a, b);
+        TJdk8Methods.safeAdd(a, b);
     }
 
     //-----------------------------------------------------------------------
@@ -138,7 +135,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeSubtractIntProvider")
     public void test_safeSubtractInt(int a, int b, int expected) {
-        assertEquals(Jdk8Methods.safeSubtract(a, b), expected);
+        assertEquals(TJdk8Methods.safeSubtract(a, b), expected);
     }
 
     @DataProvider(name="safeSubtractIntProviderOverflow")
@@ -153,7 +150,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeSubtractIntProviderOverflow", expectedExceptions=ArithmeticException.class)
     public void test_safeSubtractInt_overflow(int a, int b) {
-        Jdk8Methods.safeSubtract(a, b);
+        TJdk8Methods.safeSubtract(a, b);
     }
 
     @DataProvider(name="safeSubtractLongProvider")
@@ -169,7 +166,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeSubtractLongProvider")
     public void test_safeSubtractLong(long a, long b, long expected) {
-        assertEquals(Jdk8Methods.safeSubtract(a, b), expected);
+        assertEquals(TJdk8Methods.safeSubtract(a, b), expected);
     }
 
     @DataProvider(name="safeSubtractLongProviderOverflow")
@@ -184,7 +181,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeSubtractLongProviderOverflow", expectedExceptions=ArithmeticException.class)
     public void test_safeSubtractLong_overflow(long a, long b) {
-        Jdk8Methods.safeSubtract(a, b);
+        TJdk8Methods.safeSubtract(a, b);
     }
 
     //-----------------------------------------------------------------------
@@ -209,7 +206,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeMultiplyIntProvider")
     public void test_safeMultiplyInt(int a, int b, int expected) {
-        assertEquals(Jdk8Methods.safeMultiply(a, b), expected);
+        assertEquals(TJdk8Methods.safeMultiply(a, b), expected);
     }
 
     @DataProvider(name="safeMultiplyIntProviderOverflow")
@@ -226,7 +223,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeMultiplyIntProviderOverflow", expectedExceptions=ArithmeticException.class)
     public void test_safeMultiplyInt_overflow(int a, int b) {
-        Jdk8Methods.safeMultiply(a, b);
+        TJdk8Methods.safeMultiply(a, b);
     }
 
     //-----------------------------------------------------------------------
@@ -250,7 +247,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeMultiplyLongProvider")
     public void test_safeMultiplyLong(long a, int b, long expected) {
-        assertEquals(Jdk8Methods.safeMultiply(a, b), expected);
+        assertEquals(TJdk8Methods.safeMultiply(a, b), expected);
     }
 
     @DataProvider(name="safeMultiplyLongProviderOverflow")
@@ -266,7 +263,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeMultiplyLongProviderOverflow", expectedExceptions=ArithmeticException.class)
     public void test_safeMultiplyLong_overflow(long a, int b) {
-        Jdk8Methods.safeMultiply(a, b);
+        TJdk8Methods.safeMultiply(a, b);
     }
 
     //-----------------------------------------------------------------------
@@ -289,7 +286,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeMultiplyLongLongProvider")
     public void test_safeMultiplyLongLong(long a, long b, long expected) {
-        assertEquals(Jdk8Methods.safeMultiply(a, b), expected);
+        assertEquals(TJdk8Methods.safeMultiply(a, b), expected);
     }
 
     @DataProvider(name="safeMultiplyLongLongProviderOverflow")
@@ -306,7 +303,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeMultiplyLongLongProviderOverflow", expectedExceptions=ArithmeticException.class)
     public void test_safeMultiplyLongLong_overflow(long a, long b) {
-        Jdk8Methods.safeMultiply(a, b);
+        TJdk8Methods.safeMultiply(a, b);
     }
 
     //-----------------------------------------------------------------------
@@ -327,7 +324,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeToIntProvider")
     public void test_safeToInt(long l) {
-        assertEquals(Jdk8Methods.safeToInt(l), l);
+        assertEquals(TJdk8Methods.safeToInt(l), l);
     }
 
     @DataProvider(name="safeToIntProviderOverflow")
@@ -342,7 +339,7 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="safeToIntProviderOverflow", expectedExceptions=ArithmeticException.class)
     public void test_safeToInt_overflow(long l) {
-        Jdk8Methods.safeToInt(l);
+        TJdk8Methods.safeToInt(l);
     }
 
     //-----------------------------------------------------------------------
@@ -369,7 +366,7 @@ public class TestDateTimes_implementation {
             int a = values[i];
             for (int j = 0; j < values.length; j++) {
                 int b = values[j];
-                assertEquals(Jdk8Methods.compareInts(a, b), a < b ? -1 : (a > b ? 1 : 0), a + " <=> " + b);
+                assertEquals(TJdk8Methods.compareInts(a, b), a < b ? -1 : (a > b ? 1 : 0), a + " <=> " + b);
             }
         }
     }
@@ -401,7 +398,7 @@ public class TestDateTimes_implementation {
             long a = values[i];
             for (int j = 0; j < values.length; j++) {
                 long b = values[j];
-                assertEquals(Jdk8Methods.compareLongs(a, b), a < b ? -1 : (a > b ? 1 : 0), a + " <=> " + b);
+                assertEquals(TJdk8Methods.compareLongs(a, b), a < b ? -1 : (a > b ? 1 : 0), a + " <=> " + b);
             }
         }
     }
@@ -426,13 +423,13 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="FloorDiv")
     public void test_floorDiv_long(long a, int b, long expected) {
-        assertEquals(Jdk8Methods.floorDiv(a, b), expected);
+        assertEquals(TJdk8Methods.floorDiv(a, b), expected);
     }
 
     @Test(dataProvider="FloorDiv")
     public void test_floorDiv_int(long a, int b, long expected) {
         if (a <= Integer.MAX_VALUE && a >= Integer.MIN_VALUE) {
-            assertEquals(Jdk8Methods.floorDiv((int) a, b), (int) expected);
+            assertEquals(TJdk8Methods.floorDiv((int) a, b), (int) expected);
         }
     }
 
@@ -456,18 +453,18 @@ public class TestDateTimes_implementation {
 
     @Test(dataProvider="FloorMod")
     public void test_floorMod_long(long a, long b, int expected) {
-        assertEquals(Jdk8Methods.floorMod(a, b), expected);
+        assertEquals(TJdk8Methods.floorMod(a, b), expected);
     }
 
     @Test(dataProvider="FloorMod")
     public void test_floorMod_long(long a, int b, int expected) {
-        assertEquals(Jdk8Methods.floorMod(a, b), expected);
+        assertEquals(TJdk8Methods.floorMod(a, b), expected);
     }
 
     @Test(dataProvider="FloorMod")
     public void test_floorMod_int(long a, int b, int expected) {
         if (a <= Integer.MAX_VALUE && a >= Integer.MIN_VALUE) {
-            assertEquals(Jdk8Methods.floorMod((int) a, b), expected);
+            assertEquals(TJdk8Methods.floorMod((int) a, b), expected);
         }
     }
 

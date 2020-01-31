@@ -29,27 +29,24 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
-import static org.threeten.bp.temporal.ChronoField.YEAR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.format.DateTimeFormatterBuilder.ReducedPrinterParser;
-import org.threeten.bp.temporal.MockFieldValue;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.TLocalDate;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.ReducedPrinterParser;
+import org.teavm.classlib.java.time.temporal.MockFieldValue;
 
-/**
- * Test ReducedPrinterParser.
- */
 @Test
 public class TestReducedPrinter extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void test_print_emptyCalendrical() throws Exception {
         ReducedPrinterParser pp = new ReducedPrinterParser(YEAR, 2, 2, 2010, null);
         pp.print(printEmptyContext, buf);
@@ -57,7 +54,7 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
     public void test_print_append() throws Exception {
-        printContext.setDateTime(LocalDate.of(2012, 1, 1));
+        printContext.setDateTime(TLocalDate.of(2012, 1, 1));
         ReducedPrinterParser pp = new ReducedPrinterParser(YEAR, 2, 2, 2010, null);
         buf.append("EXISTING");
         pp.print(printContext, buf);
@@ -134,7 +131,7 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
                 fail("Expected exception");
             }
             assertEquals(buf.toString(), result);
-        } catch (DateTimeException ex) {
+        } catch (TDateTimeException ex) {
             if (result == null || value < 0) {
                 assertEquals(ex.getMessage().contains(YEAR.toString()), true);
             } else {
@@ -146,7 +143,7 @@ public class TestReducedPrinter extends AbstractTestPrinterParser {
     //-----------------------------------------------------------------------
     public void test_toString() throws Exception {
         ReducedPrinterParser pp = new ReducedPrinterParser(YEAR, 2, 2, 2005, null);
-        assertEquals(pp.toString(), "ReducedValue(Year,2,2,2005)");
+        assertEquals(pp.toString(), "ReducedValue(TYear,2,2,2005)");
     }
 
 }

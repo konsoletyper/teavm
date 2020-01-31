@@ -29,26 +29,26 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.threeten.bp.temporal.ChronoField.AMPM_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.CLOCK_HOUR_OF_AMPM;
-import static org.threeten.bp.temporal.ChronoField.CLOCK_HOUR_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.EPOCH_DAY;
-import static org.threeten.bp.temporal.ChronoField.HOUR_OF_AMPM;
-import static org.threeten.bp.temporal.ChronoField.HOUR_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.INSTANT_SECONDS;
-import static org.threeten.bp.temporal.ChronoField.MICRO_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.MICRO_OF_SECOND;
-import static org.threeten.bp.temporal.ChronoField.MILLI_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.MILLI_OF_SECOND;
-import static org.threeten.bp.temporal.ChronoField.MINUTE_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.MINUTE_OF_HOUR;
-import static org.threeten.bp.temporal.ChronoField.NANO_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.NANO_OF_SECOND;
-import static org.threeten.bp.temporal.ChronoField.OFFSET_SECONDS;
-import static org.threeten.bp.temporal.ChronoField.SECOND_OF_DAY;
-import static org.threeten.bp.temporal.ChronoField.SECOND_OF_MINUTE;
+import static org.teavm.classlib.java.time.temporal.TChronoField.AMPM_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.CLOCK_HOUR_OF_AMPM;
+import static org.teavm.classlib.java.time.temporal.TChronoField.CLOCK_HOUR_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.HOUR_OF_AMPM;
+import static org.teavm.classlib.java.time.temporal.TChronoField.HOUR_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.INSTANT_SECONDS;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MICRO_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MICRO_OF_SECOND;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MILLI_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MILLI_OF_SECOND;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MINUTE_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MINUTE_OF_HOUR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_SECOND;
+import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
+import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_MINUTE;
 
 import java.util.HashMap;
 import java.util.Iterator;
@@ -56,148 +56,76 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
 
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.Instant;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.Period;
-import org.threeten.bp.ZoneId;
-import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.chrono.ChronoLocalDate;
-import org.threeten.bp.chrono.ChronoLocalDateTime;
-import org.threeten.bp.chrono.ChronoZonedDateTime;
-import org.threeten.bp.chrono.Chronology;
-import org.threeten.bp.chrono.IsoChronology;
-import org.threeten.bp.jdk8.DefaultInterfaceTemporalAccessor;
-import org.threeten.bp.jdk8.Jdk8Methods;
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.TemporalAccessor;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.TemporalQueries;
-import org.threeten.bp.temporal.TemporalQuery;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.TInstant;
+import org.teavm.classlib.java.time.TLocalDate;
+import org.teavm.classlib.java.time.TLocalTime;
+import org.teavm.classlib.java.time.TPeriod;
+import org.teavm.classlib.java.time.TZoneId;
+import org.teavm.classlib.java.time.TZoneOffset;
+import org.teavm.classlib.java.time.chrono.TChronoLocalDate;
+import org.teavm.classlib.java.time.chrono.TChronoLocalDateTime;
+import org.teavm.classlib.java.time.chrono.TChronoZonedDateTime;
+import org.teavm.classlib.java.time.chrono.TChronology;
+import org.teavm.classlib.java.time.chrono.TIsoChronology;
+import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
+import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import org.teavm.classlib.java.time.temporal.TChronoField;
+import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 
-/**
- * Builder that can holds date and time fields and related date and time objects.
- * <p>
- * The builder is used to hold onto different elements of date and time.
- * It is designed as two separate maps:
- * <p><ul>
- * <li>from {@link TemporalField} to {@code long} value, where the value may be
- * outside the valid range for the field
- * <li>from {@code Class} to {@link TemporalAccessor}, holding larger scale objects
- * like {@code LocalDateTime}.
- * </ul><p>
- *
- * <h3>Specification for implementors</h3>
- * This class is mutable and not thread-safe.
- * It should only be used from a single thread.
- */
-final class DateTimeBuilder
-        extends DefaultInterfaceTemporalAccessor
-        implements TemporalAccessor, Cloneable {
+final class TDateTimeBuilder
+        extends TDefaultInterfaceTemporalAccessor
+        implements TTemporalAccessor, Cloneable {
 
-    /**
-     * The map of other fields.
-     */
-    final Map<TemporalField, Long> fieldValues = new HashMap<TemporalField, Long>();
-    /**
-     * The chronology.
-     */
-    Chronology chrono;
-    /**
-     * The zone.
-     */
-    ZoneId zone;
-    /**
-     * The date.
-     */
-    ChronoLocalDate date;
-    /**
-     * The time.
-     */
-    LocalTime time;
-    /**
-     * The leap second flag.
-     */
+    final Map<TTemporalField, Long> fieldValues = new HashMap<TTemporalField, Long>();
+    TChronology chrono;
+    TZoneId zone;
+    TChronoLocalDate date;
+    TLocalTime time;
     boolean leapSecond;
-    /**
-     * The excess days.
-     */
-    Period excessDays;
+    TPeriod excessDays;
 
     //-----------------------------------------------------------------------
-    /**
-     * Creates an empty instance of the builder.
-     */
-    public DateTimeBuilder() {
+    public TDateTimeBuilder() {
     }
 
-    /**
-     * Creates a new instance of the builder with a single field-value.
-     * <p>
-     * This is equivalent to using {@link #addFieldValue(TemporalField, long)} on an empty builder.
-     *
-     * @param field  the field to add, not null
-     * @param value  the value to add, not null
-     */
-    public DateTimeBuilder(TemporalField field, long value) {
+    public TDateTimeBuilder(TTemporalField field, long value) {
         addFieldValue(field, value);
     }
 
     //-----------------------------------------------------------------------
-    private Long getFieldValue0(TemporalField field) {
+    private Long getFieldValue0(TTemporalField field) {
         return fieldValues.get(field);
     }
 
-    /**
-     * Adds a field-value pair to the builder.
-     * <p>
-     * This adds a field to the builder.
-     * If the field is not already present, then the field-value pair is added to the map.
-     * If the field is already present and it has the same value as that specified, no action occurs.
-     * If the field is already present and it has a different value to that specified, then
-     * an exception is thrown.
-     *
-     * @param field  the field to add, not null
-     * @param value  the value to add, not null
-     * @return {@code this}, for method chaining
-     * @throws DateTimeException if the field is already present with a different value
-     */
-    DateTimeBuilder addFieldValue(TemporalField field, long value) {
-        Jdk8Methods.requireNonNull(field, "field");
+    TDateTimeBuilder addFieldValue(TTemporalField field, long value) {
+        TJdk8Methods.requireNonNull(field, "field");
         Long old = getFieldValue0(field);  // check first for better error message
         if (old != null && old.longValue() != value) {
-            throw new DateTimeException("Conflict found: " + field + " " + old + " differs from " + field + " " + value + ": " + this);
+            throw new TDateTimeException("Conflict found: " + field + " " + old + " differs from " + field + " " + value + ": " + this);
         }
         return putFieldValue0(field, value);
     }
 
-    private DateTimeBuilder putFieldValue0(TemporalField field, long value) {
+    private TDateTimeBuilder putFieldValue0(TTemporalField field, long value) {
         fieldValues.put(field, value);
         return this;
     }
 
     //-----------------------------------------------------------------------
-    void addObject(ChronoLocalDate date) {
+    void addObject(TChronoLocalDate date) {
         this.date = date;
     }
 
-    void addObject(LocalTime time) {
+    void addObject(TLocalTime time) {
         this.time = time;
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Resolves the builder, evaluating the date and time.
-     * <p>
-     * This examines the contents of the builder and resolves it to produce the best
-     * available date and time, throwing an exception if a problem occurs.
-     * Calling this method changes the state of the builder.
-     *
-     * @param resolverStyle how to resolve
-     * @return {@code this}, for method chaining
-     */
-    public DateTimeBuilder resolve(ResolverStyle resolverStyle, Set<TemporalField> resolverFields) {
+    public TDateTimeBuilder resolve(TResolverStyle resolverStyle, Set<TTemporalField> resolverFields) {
         if (resolverFields != null) {
             fieldValues.keySet().retainAll(resolverFields);
         }
@@ -214,48 +142,48 @@ final class DateTimeBuilder
         crossCheck();
         if (excessDays != null && excessDays.isZero() == false && date != null && time != null) {
             date = date.plus(excessDays);
-            excessDays = Period.ZERO;
+            excessDays = TPeriod.ZERO;
         }
         resolveFractional();
         resolveInstant();
         return this;
     }
 
-    private boolean resolveFields(ResolverStyle resolverStyle) {
+    private boolean resolveFields(TResolverStyle resolverStyle) {
         int changes = 0;
         outer:
         while (changes < 100) {
-            for (Map.Entry<TemporalField, Long> entry : fieldValues.entrySet()) {
-                TemporalField targetField = entry.getKey();
-                TemporalAccessor resolvedObject = targetField.resolve(fieldValues, this, resolverStyle);
+            for (Map.Entry<TTemporalField, Long> entry : fieldValues.entrySet()) {
+                TTemporalField targetField = entry.getKey();
+                TTemporalAccessor resolvedObject = targetField.resolve(fieldValues, this, resolverStyle);
                 if (resolvedObject != null) {
-                    if (resolvedObject instanceof ChronoZonedDateTime) {
-                        ChronoZonedDateTime<?> czdt = (ChronoZonedDateTime<?>) resolvedObject;
+                    if (resolvedObject instanceof TChronoZonedDateTime) {
+                        TChronoZonedDateTime<?> czdt = (TChronoZonedDateTime<?>) resolvedObject;
                         if (zone == null) {
                             zone = czdt.getZone();
                         } else if (zone.equals(czdt.getZone()) == false) {
-                            throw new DateTimeException("ChronoZonedDateTime must use the effective parsed zone: " + zone);
+                            throw new TDateTimeException("TChronoZonedDateTime must use the effective parsed zone: " + zone);
                         }
                         resolvedObject = czdt.toLocalDateTime();
                     }
-                    if (resolvedObject instanceof ChronoLocalDate) {
-                        resolveMakeChanges(targetField, (ChronoLocalDate) resolvedObject);
+                    if (resolvedObject instanceof TChronoLocalDate) {
+                        resolveMakeChanges(targetField, (TChronoLocalDate) resolvedObject);
                         changes++;
                         continue outer;  // have to restart to avoid concurrent modification
                     }
-                    if (resolvedObject instanceof LocalTime) {
-                        resolveMakeChanges(targetField, (LocalTime) resolvedObject);
+                    if (resolvedObject instanceof TLocalTime) {
+                        resolveMakeChanges(targetField, (TLocalTime) resolvedObject);
                         changes++;
                         continue outer;  // have to restart to avoid concurrent modification
                     }
-                    if (resolvedObject instanceof ChronoLocalDateTime<?>) {
-                        ChronoLocalDateTime<?> cldt = (ChronoLocalDateTime<?>) resolvedObject;
+                    if (resolvedObject instanceof TChronoLocalDateTime<?>) {
+                        TChronoLocalDateTime<?> cldt = (TChronoLocalDateTime<?>) resolvedObject;
                         resolveMakeChanges(targetField, cldt.toLocalDate());
                         resolveMakeChanges(targetField, cldt.toLocalTime());
                         changes++;
                         continue outer;  // have to restart to avoid concurrent modification
                     }
-                    throw new DateTimeException("Unknown type: " + resolvedObject.getClass().getName());
+                    throw new TDateTimeException("Unknown type: " + resolvedObject.getClass().getName());
                 } else if (fieldValues.containsKey(targetField) == false) {
                     changes++;
                     continue outer;  // have to restart to avoid concurrent modification
@@ -264,60 +192,60 @@ final class DateTimeBuilder
             break;
         }
         if (changes == 100) {
-            throw new DateTimeException("Badly written field");
+            throw new TDateTimeException("Badly written field");
         }
         return changes > 0;
     }
 
-    private void resolveMakeChanges(TemporalField targetField, ChronoLocalDate date) {
+    private void resolveMakeChanges(TTemporalField targetField, TChronoLocalDate date) {
         if (chrono.equals(date.getChronology()) == false) {
-            throw new DateTimeException("ChronoLocalDate must use the effective parsed chronology: " + chrono);
+            throw new TDateTimeException("TChronoLocalDate must use the effective parsed chronology: " + chrono);
         }
         long epochDay = date.toEpochDay();
-        Long old = fieldValues.put(ChronoField.EPOCH_DAY, epochDay);
+        Long old = fieldValues.put(TChronoField.EPOCH_DAY, epochDay);
         if (old != null && old.longValue() != epochDay) {
-            throw new DateTimeException("Conflict found: " + LocalDate.ofEpochDay(old) +
-                    " differs from " + LocalDate.ofEpochDay(epochDay) +
+            throw new TDateTimeException("Conflict found: " + TLocalDate.ofEpochDay(old) +
+                    " differs from " + TLocalDate.ofEpochDay(epochDay) +
                     " while resolving  " + targetField);
         }
     }
 
-    private void resolveMakeChanges(TemporalField targetField, LocalTime time) {
+    private void resolveMakeChanges(TTemporalField targetField, TLocalTime time) {
         long nanOfDay = time.toNanoOfDay();
-        Long old = fieldValues.put(ChronoField.NANO_OF_DAY, nanOfDay);
+        Long old = fieldValues.put(TChronoField.NANO_OF_DAY, nanOfDay);
         if (old != null && old.longValue() != nanOfDay) {
-            throw new DateTimeException("Conflict found: " + LocalTime.ofNanoOfDay(old) +
+            throw new TDateTimeException("Conflict found: " + TLocalTime.ofNanoOfDay(old) +
                     " differs from " + time +
                     " while resolving  " + targetField);
         }
     }
 
-    private void mergeDate(ResolverStyle resolverStyle) {
-        if (chrono instanceof IsoChronology) {
-            checkDate(IsoChronology.INSTANCE.resolveDate(fieldValues, resolverStyle));
+    private void mergeDate(TResolverStyle resolverStyle) {
+        if (chrono instanceof TIsoChronology) {
+            checkDate(TIsoChronology.INSTANCE.resolveDate(fieldValues, resolverStyle));
         } else {
             if (fieldValues.containsKey(EPOCH_DAY)) {
-                checkDate(LocalDate.ofEpochDay(fieldValues.remove(EPOCH_DAY)));
+                checkDate(TLocalDate.ofEpochDay(fieldValues.remove(EPOCH_DAY)));
                 return;
             }
         }
     }
 
-    private void checkDate(LocalDate date) {
+    private void checkDate(TLocalDate date) {
         if (date != null) {
             addObject(date);
-            for (TemporalField field : fieldValues.keySet()) {
-                if (field instanceof ChronoField) {
+            for (TTemporalField field : fieldValues.keySet()) {
+                if (field instanceof TChronoField) {
                     if (field.isDateBased()) {
                         long val1;
                         try {
                             val1 = date.getLong(field);
-                        } catch (DateTimeException ex) {
+                        } catch (TDateTimeException ex) {
                             continue;
                         }
                         Long val2 = fieldValues.get(field);
                         if (val1 != val2) {
-                            throw new DateTimeException("Conflict found: Field " + field + " " + val1 + " differs from " + field + " " + val2 + " derived from " + date);
+                            throw new TDateTimeException("Conflict found: Field " + field + " " + val1 + " differs from " + field + " " + val2 + " derived from " + date);
                         }
                     }
                 }
@@ -325,11 +253,11 @@ final class DateTimeBuilder
         }
     }
 
-    private void mergeTime(ResolverStyle resolverStyle) {
+    private void mergeTime(TResolverStyle resolverStyle) {
         if (fieldValues.containsKey(CLOCK_HOUR_OF_DAY)) {
             long ch = fieldValues.remove(CLOCK_HOUR_OF_DAY);
-            if (resolverStyle != ResolverStyle.LENIENT) {
-                if (resolverStyle == ResolverStyle.SMART && ch == 0) {
+            if (resolverStyle != TResolverStyle.LENIENT) {
+                if (resolverStyle == TResolverStyle.SMART && ch == 0) {
                     // ok
                 } else {
                     CLOCK_HOUR_OF_DAY.checkValidValue(ch);
@@ -339,8 +267,8 @@ final class DateTimeBuilder
         }
         if (fieldValues.containsKey(CLOCK_HOUR_OF_AMPM)) {
             long ch = fieldValues.remove(CLOCK_HOUR_OF_AMPM);
-            if (resolverStyle != ResolverStyle.LENIENT) {
-                if (resolverStyle == ResolverStyle.SMART && ch == 0) {
+            if (resolverStyle != TResolverStyle.LENIENT) {
+                if (resolverStyle == TResolverStyle.SMART && ch == 0) {
                     // ok
                 } else {
                     CLOCK_HOUR_OF_AMPM.checkValidValue(ch);
@@ -348,7 +276,7 @@ final class DateTimeBuilder
             }
             addFieldValue(HOUR_OF_AMPM, ch == 12 ? 0 : ch);
         }
-        if (resolverStyle != ResolverStyle.LENIENT) {
+        if (resolverStyle != TResolverStyle.LENIENT) {
             if (fieldValues.containsKey(AMPM_OF_DAY)) {
                 AMPM_OF_DAY.checkValidValue(fieldValues.get(AMPM_OF_DAY));
             }
@@ -373,7 +301,7 @@ final class DateTimeBuilder
 //        }
         if (fieldValues.containsKey(NANO_OF_DAY)) {
             long nod = fieldValues.remove(NANO_OF_DAY);
-            if (resolverStyle != ResolverStyle.LENIENT) {
+            if (resolverStyle != TResolverStyle.LENIENT) {
                 NANO_OF_DAY.checkValidValue(nod);
             }
             addFieldValue(SECOND_OF_DAY, nod / 1000000000L);
@@ -381,7 +309,7 @@ final class DateTimeBuilder
         }
         if (fieldValues.containsKey(MICRO_OF_DAY)) {
             long cod = fieldValues.remove(MICRO_OF_DAY);
-            if (resolverStyle != ResolverStyle.LENIENT) {
+            if (resolverStyle != TResolverStyle.LENIENT) {
                 MICRO_OF_DAY.checkValidValue(cod);
             }
             addFieldValue(SECOND_OF_DAY, cod / 1000000L);
@@ -389,7 +317,7 @@ final class DateTimeBuilder
         }
         if (fieldValues.containsKey(MILLI_OF_DAY)) {
             long lod = fieldValues.remove(MILLI_OF_DAY);
-            if (resolverStyle != ResolverStyle.LENIENT) {
+            if (resolverStyle != TResolverStyle.LENIENT) {
                 MILLI_OF_DAY.checkValidValue(lod);
             }
             addFieldValue(SECOND_OF_DAY, lod / 1000);
@@ -397,7 +325,7 @@ final class DateTimeBuilder
         }
         if (fieldValues.containsKey(SECOND_OF_DAY)) {
             long sod = fieldValues.remove(SECOND_OF_DAY);
-            if (resolverStyle != ResolverStyle.LENIENT) {
+            if (resolverStyle != TResolverStyle.LENIENT) {
                 SECOND_OF_DAY.checkValidValue(sod);
             }
             addFieldValue(HOUR_OF_DAY, sod / 3600);
@@ -406,7 +334,7 @@ final class DateTimeBuilder
         }
         if (fieldValues.containsKey(MINUTE_OF_DAY)) {
             long mod = fieldValues.remove(MINUTE_OF_DAY);
-            if (resolverStyle != ResolverStyle.LENIENT) {
+            if (resolverStyle != TResolverStyle.LENIENT) {
                 MINUTE_OF_DAY.checkValidValue(mod);
             }
             addFieldValue(HOUR_OF_DAY, mod / 60);
@@ -418,7 +346,7 @@ final class DateTimeBuilder
 //            addFieldValue(MINUTE_OF_HOUR, (sod / 60) % 60);
 //            addFieldValue(SECOND_OF_MINUTE, sod % 60);
 //            addFieldValue(NANO_OF_SECOND, nod % 1000000000L);
-        if (resolverStyle != ResolverStyle.LENIENT) {
+        if (resolverStyle != TResolverStyle.LENIENT) {
             if (fieldValues.containsKey(MILLI_OF_SECOND)) {
                 MILLI_OF_SECOND.checkValidValue(fieldValues.get(MILLI_OF_SECOND));
             }
@@ -450,7 +378,7 @@ final class DateTimeBuilder
         }
     }
 
-    private void resolveTimeInferZeroes(ResolverStyle resolverStyle) {
+    private void resolveTimeInferZeroes(TResolverStyle resolverStyle) {
         Long hod = fieldValues.get(HOUR_OF_DAY);
         Long moh = fieldValues.get(MINUTE_OF_HOUR);
         Long som = fieldValues.get(SECOND_OF_MINUTE);
@@ -464,15 +392,15 @@ final class DateTimeBuilder
         if (moh != null && som == null && nos != null) {
             return;
         }
-        if (resolverStyle != ResolverStyle.LENIENT) {
+        if (resolverStyle != TResolverStyle.LENIENT) {
             if (hod != null) {
-                if (resolverStyle == ResolverStyle.SMART &&
+                if (resolverStyle == TResolverStyle.SMART &&
                                 hod.longValue() == 24 && 
                                 (moh == null || moh.longValue() == 0) && 
                                 (som == null || som.longValue() == 0) && 
                                 (nos == null || nos.longValue() == 0)) {
                     hod = 0L;
-                    excessDays = Period.ofDays(1);
+                    excessDays = TPeriod.ofDays(1);
                 }
                 int hodVal = HOUR_OF_DAY.checkValidIntValue(hod);
                 if (moh != null) {
@@ -481,18 +409,18 @@ final class DateTimeBuilder
                         int somVal = SECOND_OF_MINUTE.checkValidIntValue(som);
                         if (nos != null) {
                             int nosVal = NANO_OF_SECOND.checkValidIntValue(nos);
-                            addObject(LocalTime.of(hodVal, mohVal, somVal, nosVal));
+                            addObject(TLocalTime.of(hodVal, mohVal, somVal, nosVal));
                         } else {
-                            addObject(LocalTime.of(hodVal, mohVal, somVal));
+                            addObject(TLocalTime.of(hodVal, mohVal, somVal));
                         }
                     } else {
                         if (nos == null) {
-                            addObject(LocalTime.of(hodVal, mohVal));
+                            addObject(TLocalTime.of(hodVal, mohVal));
                         }
                     }
                 } else {
                     if (som == null && nos == null) {
-                        addObject(LocalTime.of(hodVal, 0));
+                        addObject(TLocalTime.of(hodVal, 0));
                     }
                 }
             }
@@ -504,27 +432,27 @@ final class DateTimeBuilder
                         if (nos == null) {
                             nos = 0L;
                         }
-                        long totalNanos = Jdk8Methods.safeMultiply(hodVal, 3600000000000L);
-                        totalNanos = Jdk8Methods.safeAdd(totalNanos, Jdk8Methods.safeMultiply(moh, 60000000000L));
-                        totalNanos = Jdk8Methods.safeAdd(totalNanos, Jdk8Methods.safeMultiply(som, 1000000000L));
-                        totalNanos = Jdk8Methods.safeAdd(totalNanos, nos);
-                        int excessDays = (int) Jdk8Methods.floorDiv(totalNanos, 86400000000000L);  // safe int cast
-                        long nod = Jdk8Methods.floorMod(totalNanos, 86400000000000L);
-                        addObject(LocalTime.ofNanoOfDay(nod));
-                        this.excessDays = Period.ofDays(excessDays);
+                        long totalNanos = TJdk8Methods.safeMultiply(hodVal, 3600000000000L);
+                        totalNanos = TJdk8Methods.safeAdd(totalNanos, TJdk8Methods.safeMultiply(moh, 60000000000L));
+                        totalNanos = TJdk8Methods.safeAdd(totalNanos, TJdk8Methods.safeMultiply(som, 1000000000L));
+                        totalNanos = TJdk8Methods.safeAdd(totalNanos, nos);
+                        int excessDays = (int) TJdk8Methods.floorDiv(totalNanos, 86400000000000L);  // safe int cast
+                        long nod = TJdk8Methods.floorMod(totalNanos, 86400000000000L);
+                        addObject(TLocalTime.ofNanoOfDay(nod));
+                        this.excessDays = TPeriod.ofDays(excessDays);
                     } else {
-                        long totalSecs = Jdk8Methods.safeMultiply(hodVal, 3600L);
-                        totalSecs = Jdk8Methods.safeAdd(totalSecs, Jdk8Methods.safeMultiply(moh, 60L));
-                        int excessDays = (int) Jdk8Methods.floorDiv(totalSecs, 86400L);  // safe int cast
-                        long sod = Jdk8Methods.floorMod(totalSecs, 86400L);
-                        addObject(LocalTime.ofSecondOfDay(sod));
-                        this.excessDays = Period.ofDays(excessDays);
+                        long totalSecs = TJdk8Methods.safeMultiply(hodVal, 3600L);
+                        totalSecs = TJdk8Methods.safeAdd(totalSecs, TJdk8Methods.safeMultiply(moh, 60L));
+                        int excessDays = (int) TJdk8Methods.floorDiv(totalSecs, 86400L);  // safe int cast
+                        long sod = TJdk8Methods.floorMod(totalSecs, 86400L);
+                        addObject(TLocalTime.ofSecondOfDay(sod));
+                        this.excessDays = TPeriod.ofDays(excessDays);
                     }
                 } else {
-                    int excessDays = Jdk8Methods.safeToInt(Jdk8Methods.floorDiv(hodVal, 24L));
-                    hodVal = Jdk8Methods.floorMod(hodVal, 24);
-                    addObject(LocalTime.of((int) hodVal, 0));
-                    this.excessDays = Period.ofDays(excessDays);
+                    int excessDays = TJdk8Methods.safeToInt(TJdk8Methods.floorDiv(hodVal, 24L));
+                    hodVal = TJdk8Methods.floorMod(hodVal, 24);
+                    addObject(TLocalTime.of((int) hodVal, 0));
+                    this.excessDays = TPeriod.ofDays(excessDays);
                 }
             }
         }
@@ -542,16 +470,16 @@ final class DateTimeBuilder
             } else {
                 Long offsetSecs = fieldValues.get(OFFSET_SECONDS);
                 if (offsetSecs != null) {
-                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(offsetSecs.intValue());
+                    TZoneOffset offset = TZoneOffset.ofTotalSeconds(offsetSecs.intValue());
                     mergeInstantFields0(offset);
                 }
             }
         }
     }
 
-    private void mergeInstantFields0(ZoneId selectedZone) {
-        Instant instant = Instant.ofEpochSecond(fieldValues.remove(INSTANT_SECONDS));
-        ChronoZonedDateTime<?> zdt = chrono.zonedDateTime(instant, selectedZone);
+    private void mergeInstantFields0(TZoneId selectedZone) {
+        TInstant instant = TInstant.ofEpochSecond(fieldValues.remove(INSTANT_SECONDS));
+        TChronoZonedDateTime<?> zdt = chrono.zonedDateTime(instant, selectedZone);
         if (date == null) {
             addObject(zdt.toLocalDate());
         } else {
@@ -573,11 +501,11 @@ final class DateTimeBuilder
         }
     }
 
-    private void crossCheck(TemporalAccessor temporal) {
-        Iterator<Entry<TemporalField, Long>> it = fieldValues.entrySet().iterator();
+    private void crossCheck(TTemporalAccessor temporal) {
+        Iterator<Entry<TTemporalField, Long>> it = fieldValues.entrySet().iterator();
         while (it.hasNext()) {
-            Entry<TemporalField, Long> entry = it.next();
-            TemporalField field = entry.getKey();
+            Entry<TTemporalField, Long> entry = it.next();
+            TTemporalField field = entry.getKey();
             long value = entry.getValue();
             if (temporal.isSupported(field)) {
                 long temporalValue;
@@ -587,7 +515,7 @@ final class DateTimeBuilder
                     continue;
                 }
                 if (temporalValue != value) {
-                    throw new DateTimeException("Cross check failed: " +
+                    throw new TDateTimeException("Cross check failed: " +
                             field + " " + temporalValue + " vs " + field + " " + value);
                 }
                 it.remove();
@@ -616,35 +544,24 @@ final class DateTimeBuilder
         if (date != null && time != null) {
             Long offsetSecs = fieldValues.get(OFFSET_SECONDS);
             if (offsetSecs != null) {
-                ZoneOffset offset = ZoneOffset.ofTotalSeconds(offsetSecs.intValue());
-                long instant = date.atTime(time).atZone(offset).getLong(ChronoField.INSTANT_SECONDS);
+                TZoneOffset offset = TZoneOffset.ofTotalSeconds(offsetSecs.intValue());
+                long instant = date.atTime(time).atZone(offset).getLong(TChronoField.INSTANT_SECONDS);
                 fieldValues.put(INSTANT_SECONDS, instant);
             }  else if (zone != null) {
-                long instant = date.atTime(time).atZone(zone).getLong(ChronoField.INSTANT_SECONDS);
+                long instant = date.atTime(time).atZone(zone).getLong(TChronoField.INSTANT_SECONDS);
                 fieldValues.put(INSTANT_SECONDS, instant);
             }
         }
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Builds the specified type from the values in this builder.
-     * <p>
-     * This attempts to build the specified type from this builder.
-     * If the builder cannot return the type, an exception is thrown.
-     *
-     * @param <R>  the type to return
-     * @param type  the type to invoke {@code from} on, not null
-     * @return the extracted value, not null
-     * @throws DateTimeException if an error occurs
-     */
-    public <R> R build(TemporalQuery<R> type) {
+    public <R> R build(TTemporalQuery<R> type) {
         return type.queryFrom(this);
     }
 
     //-----------------------------------------------------------------------
     @Override
-    public boolean isSupported(TemporalField field) {
+    public boolean isSupported(TTemporalField field) {
         if (field == null) {
             return false;
         }
@@ -654,8 +571,8 @@ final class DateTimeBuilder
     }
 
     @Override
-    public long getLong(TemporalField field) {
-        Jdk8Methods.requireNonNull(field, "field");
+    public long getLong(TTemporalField field) {
+        TJdk8Methods.requireNonNull(field, "field");
         Long value = getFieldValue0(field);
         if (value == null) {
             if (date != null && date.isSupported(field)) {
@@ -664,28 +581,28 @@ final class DateTimeBuilder
             if (time != null && time.isSupported(field)) {
                 return time.getLong(field);
             }
-            throw new DateTimeException("Field not found: " + field);
+            throw new TDateTimeException("Field not found: " + field);
         }
         return value;
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQueries.zoneId()) {
+    public <R> R query(TTemporalQuery<R> query) {
+        if (query == TTemporalQueries.zoneId()) {
             return (R) zone;
-        } else if (query == TemporalQueries.chronology()) {
+        } else if (query == TTemporalQueries.chronology()) {
             return (R) chrono;
-        } else if (query == TemporalQueries.localDate()) {
-            return date != null ? (R) LocalDate.from(date) : null;
-        } else if (query == TemporalQueries.localTime()) {
+        } else if (query == TTemporalQueries.localDate()) {
+            return date != null ? (R) TLocalDate.from(date) : null;
+        } else if (query == TTemporalQueries.localTime()) {
             return (R) time;
-        } else if (query == TemporalQueries.zone() || query == TemporalQueries.offset()) {
+        } else if (query == TTemporalQueries.zone() || query == TTemporalQueries.offset()) {
             return query.queryFrom(this);
-        } else if (query == TemporalQueries.precision()) {
+        } else if (query == TTemporalQueries.precision()) {
             return null;  // not a complete date/time
         }
-        // inline TemporalAccessor.super.query(query) as an optimization
+        // inline TTemporalAccessor.super.query(query) as an optimization
         // non-JDK classes are not permitted to make this optimization
         return query.queryFrom(this);
     }
@@ -694,7 +611,7 @@ final class DateTimeBuilder
     @Override
     public String toString() {
         StringBuilder buf = new StringBuilder(128);
-        buf.append("DateTimeBuilder[");
+        buf.append("TDateTimeBuilder[");
         if (fieldValues.size() > 0) {
             buf.append("fields=").append(fieldValues);
         }

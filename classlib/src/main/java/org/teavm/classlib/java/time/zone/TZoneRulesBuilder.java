@@ -29,11 +29,11 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.zone;
+package org.teavm.classlib.java.time.zone;
 
-import static org.threeten.bp.temporal.ChronoField.YEAR;
-import static org.threeten.bp.temporal.TemporalAdjusters.nextOrSame;
-import static org.threeten.bp.temporal.TemporalAdjusters.previousOrSame;
+import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
+import static org.teavm.classlib.java.time.temporal.TTemporalAdjusters.nextOrSame;
+import static org.teavm.classlib.java.time.temporal.TTemporalAdjusters.previousOrSame;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -41,85 +41,35 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.DayOfWeek;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.LocalDateTime;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.Month;
-import org.threeten.bp.Year;
-import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.chrono.IsoChronology;
-import org.threeten.bp.jdk8.Jdk8Methods;
-import org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.TDayOfWeek;
+import org.teavm.classlib.java.time.TLocalDate;
+import org.teavm.classlib.java.time.TLocalDateTime;
+import org.teavm.classlib.java.time.TLocalTime;
+import org.teavm.classlib.java.time.TMonth;
+import org.teavm.classlib.java.time.TYear;
+import org.teavm.classlib.java.time.TZoneOffset;
+import org.teavm.classlib.java.time.chrono.TIsoChronology;
+import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import org.teavm.classlib.java.time.zone.TZoneOffsetTransitionRule.TimeDefinition;
 
-/**
- * A mutable builder used to create all the rules for a historic time-zone.
- * <p>
- * The rules of a time-zone describe how the offset changes over time.
- * The rules are created by building windows on the time-line within which
- * the different rules apply. The rules may be one of two kinds:
- * <p><ul>
- * <li>Fixed savings - A single fixed amount of savings from the standard offset will apply.</li>
- * <li>Rules - A set of one or more rules describe how daylight savings changes during the window.</li>
- * </ul><p>
- *
- * <h3>Specification for implementors</h3>
- * This class is a mutable builder used to create zone instances.
- * It must only be used from a single thread.
- * The created instances are immutable and thread-safe.
- */
-class ZoneRulesBuilder {
+class TZoneRulesBuilder {
 
-    /**
-     * The list of windows.
-     */
-    private List<TZWindow> windowList = new ArrayList<ZoneRulesBuilder.TZWindow>();
-    /**
-     * A map for deduplicating the output.
-     */
+    private List<TZWindow> windowList = new ArrayList<TZoneRulesBuilder.TZWindow>();
     private Map<Object, Object> deduplicateMap;
 
     //-----------------------------------------------------------------------
-    /**
-     * Constructs an instance of the builder that can be used to create zone rules.
-     * <p>
-     * The builder is used by adding one or more windows representing portions
-     * of the time-line. The standard offset from UTC/Greenwich will be constant
-     * within a window, although two adjacent windows can have the same standard offset.
-     * <p>
-     * Within each window, there can either be a
-     * {@link #setFixedSavingsToWindow fixed savings amount} or a
-     * {@link #addRuleToWindow list of rules}.
-     */
-    public ZoneRulesBuilder() {
+    public TZoneRulesBuilder() {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Adds a window to the builder that can be used to filter a set of rules.
-     * <p>
-     * This method defines and adds a window to the zone where the standard offset is specified.
-     * The window limits the effect of subsequent additions of transition rules
-     * or fixed savings. If neither rules or fixed savings are added to the window
-     * then the window will default to no savings.
-     * <p>
-     * Each window must be added sequentially, as the start instant of the window
-     * is derived from the until instant of the previous window.
-     *
-     * @param standardOffset  the standard offset, not null
-     * @param until  the date-time that the offset applies until, not null
-     * @param untilDefinition  the time type for the until date-time, not null
-     * @return this, for chaining
-     * @throws IllegalStateException if the window order is invalid
-     */
-    public ZoneRulesBuilder addWindow(
-            ZoneOffset standardOffset,
-            LocalDateTime until,
+    public TZoneRulesBuilder addWindow(
+            TZoneOffset standardOffset,
+            TLocalDateTime until,
             TimeDefinition untilDefinition) {
-        Jdk8Methods.requireNonNull(standardOffset, "standardOffset");
-        Jdk8Methods.requireNonNull(until, "until");
-        Jdk8Methods.requireNonNull(untilDefinition, "untilDefinition");
+        TJdk8Methods.requireNonNull(standardOffset, "standardOffset");
+        TJdk8Methods.requireNonNull(until, "until");
+        TJdk8Methods.requireNonNull(untilDefinition, "untilDefinition");
         TZWindow window = new TZWindow(standardOffset, until, untilDefinition);
         if (windowList.size() > 0) {
             TZWindow previous = windowList.get(windowList.size() - 1);
@@ -129,42 +79,12 @@ class ZoneRulesBuilder {
         return this;
     }
 
-    /**
-     * Adds a window that applies until the end of time to the builder that can be
-     * used to filter a set of rules.
-     * <p>
-     * This method defines and adds a window to the zone where the standard offset is specified.
-     * The window limits the effect of subsequent additions of transition rules
-     * or fixed savings. If neither rules or fixed savings are added to the window
-     * then the window will default to no savings.
-     * <p>
-     * This must be added after all other windows.
-     * No more windows can be added after this one.
-     *
-     * @param standardOffset  the standard offset, not null
-     * @return this, for chaining
-     * @throws IllegalStateException if a forever window has already been added
-     */
-    public ZoneRulesBuilder addWindowForever(ZoneOffset standardOffset) {
-        return addWindow(standardOffset, LocalDateTime.MAX, TimeDefinition.WALL);
+    public TZoneRulesBuilder addWindowForever(TZoneOffset standardOffset) {
+        return addWindow(standardOffset, TLocalDateTime.MAX, TimeDefinition.WALL);
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Sets the previously added window to have fixed savings.
-     * <p>
-     * Setting a window to have fixed savings simply means that a single daylight
-     * savings amount applies throughout the window. The window could be small,
-     * such as a single summer, or large, such as a multi-year daylight savings.
-     * <p>
-     * A window can either have fixed savings or rules but not both.
-     *
-     * @param fixedSavingAmountSecs  the amount of saving to use for the whole window, not null
-     * @return this, for chaining
-     * @throws IllegalStateException if no window has yet been added
-     * @throws IllegalStateException if the window already has rules
-     */
-    public ZoneRulesBuilder setFixedSavingsToWindow(int fixedSavingAmountSecs) {
+    public TZoneRulesBuilder setFixedSavingsToWindow(int fixedSavingAmountSecs) {
         if (windowList.isEmpty()) {
             throw new IllegalStateException("Must add a window before setting the fixed savings");
         }
@@ -174,105 +94,47 @@ class ZoneRulesBuilder {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Adds a single transition rule to the current window.
-     * <p>
-     * This adds a rule such that the offset, expressed as a daylight savings amount,
-     * changes at the specified date-time.
-     *
-     * @param transitionDateTime  the date-time that the transition occurs as defined by timeDefintion, not null
-     * @param timeDefinition  the definition of how to convert local to actual time, not null
-     * @param savingAmountSecs  the amount of saving from the standard offset after the transition in seconds
-     * @return this, for chaining
-     * @throws IllegalStateException if no window has yet been added
-     * @throws IllegalStateException if the window already has fixed savings
-     * @throws IllegalStateException if the window has reached the maximum capacity of 2000 rules
-     */
-    public ZoneRulesBuilder addRuleToWindow(
-            LocalDateTime transitionDateTime,
+    public TZoneRulesBuilder addRuleToWindow(
+            TLocalDateTime transitionDateTime,
             TimeDefinition timeDefinition,
             int savingAmountSecs) {
-        Jdk8Methods.requireNonNull(transitionDateTime, "transitionDateTime");
+        TJdk8Methods.requireNonNull(transitionDateTime, "transitionDateTime");
         return addRuleToWindow(
                 transitionDateTime.getYear(), transitionDateTime.getYear(),
                 transitionDateTime.getMonth(), transitionDateTime.getDayOfMonth(),
                 null, transitionDateTime.toLocalTime(), false, timeDefinition, savingAmountSecs);
     }
 
-    /**
-     * Adds a single transition rule to the current window.
-     * <p>
-     * This adds a rule such that the offset, expressed as a daylight savings amount,
-     * changes at the specified date-time.
-     *
-     * @param year  the year of the transition, from MIN_VALUE to MAX_VALUE
-     * @param month  the month of the transition, not null
-     * @param dayOfMonthIndicator  the day-of-month of the transition, adjusted by dayOfWeek,
-     *   from 1 to 31 adjusted later, or -1 to -28 adjusted earlier from the last day of the month
-     * @param time  the time that the transition occurs as defined by timeDefintion, not null
-     * @param timeEndOfDay  whether midnight is at the end of day
-     * @param timeDefinition  the definition of how to convert local to actual time, not null
-     * @param savingAmountSecs  the amount of saving from the standard offset after the transition in seconds
-     * @return this, for chaining
-     * @throws DateTimeException if a date-time field is out of range
-     * @throws IllegalStateException if no window has yet been added
-     * @throws IllegalStateException if the window already has fixed savings
-     * @throws IllegalStateException if the window has reached the maximum capacity of 2000 rules
-     */
-    public ZoneRulesBuilder addRuleToWindow(
+    public TZoneRulesBuilder addRuleToWindow(
             int year,
-            Month month,
+            TMonth month,
             int dayOfMonthIndicator,
-            LocalTime time,
+            TLocalTime time,
             boolean timeEndOfDay,
             TimeDefinition timeDefinition,
             int savingAmountSecs) {
         return addRuleToWindow(year, year, month, dayOfMonthIndicator, null, time, timeEndOfDay, timeDefinition, savingAmountSecs);
     }
 
-    /**
-     * Adds a multi-year transition rule to the current window.
-     * <p>
-     * This adds a rule such that the offset, expressed as a daylight savings amount,
-     * changes at the specified date-time for each year in the range.
-     *
-     * @param startYear  the start year of the rule, from MIN_VALUE to MAX_VALUE
-     * @param endYear  the end year of the rule, from MIN_VALUE to MAX_VALUE
-     * @param month  the month of the transition, not null
-     * @param dayOfMonthIndicator  the day-of-month of the transition, adjusted by dayOfWeek,
-     *   from 1 to 31 adjusted later, or -1 to -28 adjusted earlier from the last day of the month
-     * @param dayOfWeek  the day-of-week to adjust to, null if day-of-month should not be adjusted
-     * @param time  the time that the transition occurs as defined by timeDefintion, not null
-     * @param timeEndOfDay  whether midnight is at the end of day
-     * @param timeDefinition  the definition of how to convert local to actual time, not null
-     * @param savingAmountSecs  the amount of saving from the standard offset after the transition in seconds
-     * @return this, for chaining
-     * @throws DateTimeException if a date-time field is out of range
-     * @throws IllegalArgumentException if the day of month indicator is invalid
-     * @throws IllegalArgumentException if the end of day midnight flag does not match the time
-     * @throws IllegalStateException if no window has yet been added
-     * @throws IllegalStateException if the window already has fixed savings
-     * @throws IllegalStateException if the window has reached the maximum capacity of 2000 rules
-     */
-    public ZoneRulesBuilder addRuleToWindow(
+    public TZoneRulesBuilder addRuleToWindow(
             int startYear,
             int endYear,
-            Month month,
+            TMonth month,
             int dayOfMonthIndicator,
-            DayOfWeek dayOfWeek,
-            LocalTime time,
+            TDayOfWeek dayOfWeek,
+            TLocalTime time,
             boolean timeEndOfDay,
             TimeDefinition timeDefinition,
             int savingAmountSecs) {
-        Jdk8Methods.requireNonNull(month, "month");
-        Jdk8Methods.requireNonNull(time, "time");
-        Jdk8Methods.requireNonNull(timeDefinition, "timeDefinition");
+        TJdk8Methods.requireNonNull(month, "month");
+        TJdk8Methods.requireNonNull(time, "time");
+        TJdk8Methods.requireNonNull(timeDefinition, "timeDefinition");
         YEAR.checkValidValue(startYear);
         YEAR.checkValidValue(endYear);
         if (dayOfMonthIndicator < -28 || dayOfMonthIndicator > 31 || dayOfMonthIndicator == 0) {
             throw new IllegalArgumentException("Day of month indicator must be between -28 and 31 inclusive excluding zero");
         }
-        if (timeEndOfDay && time.equals(LocalTime.MIDNIGHT) == false) {
+        if (timeEndOfDay && time.equals(TLocalTime.MIDNIGHT) == false) {
             throw new IllegalArgumentException("Time must be midnight when end of day flag is true");
         }
         if (windowList.isEmpty()) {
@@ -283,18 +145,18 @@ class ZoneRulesBuilder {
         return this;
     }
 
-    ZoneRulesBuilder addRuleToWindow(
+    TZoneRulesBuilder addRuleToWindow(
             int startYear,
             int endYear,
-            Month month,
+            TMonth month,
             int dayOfMonthIndicator,
-            DayOfWeek dayOfWeek,
-            LocalTime time,
+            TDayOfWeek dayOfWeek,
+            TLocalTime time,
             int adjustDays,
             TimeDefinition timeDefinition,
             int savingAmountSecs) {
-        Jdk8Methods.requireNonNull(month, "month");
-        Jdk8Methods.requireNonNull(timeDefinition, "timeDefinition");
+        TJdk8Methods.requireNonNull(month, "month");
+        TJdk8Methods.requireNonNull(timeDefinition, "timeDefinition");
         YEAR.checkValidValue(startYear);
         YEAR.checkValidValue(endYear);
         if (dayOfMonthIndicator < -28 || dayOfMonthIndicator > 31 || dayOfMonthIndicator == 0) {
@@ -309,54 +171,31 @@ class ZoneRulesBuilder {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Completes the build converting the builder to a set of time-zone rules.
-     * <p>
-     * Calling this method alters the state of the builder.
-     * Further rules should not be added to this builder once this method is called.
-     *
-     * @param zoneId  the time-zone ID, not null
-     * @return the zone rules, not null
-     * @throws IllegalStateException if no windows have been added
-     * @throws IllegalStateException if there is only one rule defined as being forever for any given window
-     */
-    public ZoneRules toRules(String zoneId) {
+    public TZoneRules toRules(String zoneId) {
         return toRules(zoneId, new HashMap<Object, Object>());
     }
 
-    /**
-     * Completes the build converting the builder to a set of time-zone rules.
-     * <p>
-     * Calling this method alters the state of the builder.
-     * Further rules should not be added to this builder once this method is called.
-     *
-     * @param zoneId  the time-zone ID, not null
-     * @param deduplicateMap  a map for deduplicating the values, not null
-     * @return the zone rules, not null
-     * @throws IllegalStateException if no windows have been added
-     * @throws IllegalStateException if there is only one rule defined as being forever for any given window
-     */
-    ZoneRules toRules(String zoneId, Map<Object, Object> deduplicateMap) {
-        Jdk8Methods.requireNonNull(zoneId, "zoneId");
+    TZoneRules toRules(String zoneId, Map<Object, Object> deduplicateMap) {
+        TJdk8Methods.requireNonNull(zoneId, "zoneId");
         this.deduplicateMap = deduplicateMap;
         if (windowList.isEmpty()) {
             throw new IllegalStateException("No windows have been added to the builder");
         }
 
-        final List<ZoneOffsetTransition> standardTransitionList = new ArrayList<ZoneOffsetTransition>(4);
-        final List<ZoneOffsetTransition> transitionList = new ArrayList<ZoneOffsetTransition>(256);
-        final List<ZoneOffsetTransitionRule> lastTransitionRuleList = new ArrayList<ZoneOffsetTransitionRule>(2);
+        final List<TZoneOffsetTransition> standardTransitionList = new ArrayList<TZoneOffsetTransition>(4);
+        final List<TZoneOffsetTransition> transitionList = new ArrayList<TZoneOffsetTransition>(256);
+        final List<TZoneOffsetTransitionRule> lastTransitionRuleList = new ArrayList<TZoneOffsetTransitionRule>(2);
 
         // initialize the standard offset calculation
         final TZWindow firstWindow = windowList.get(0);
-        ZoneOffset loopStandardOffset = firstWindow.standardOffset;
+        TZoneOffset loopStandardOffset = firstWindow.standardOffset;
         int loopSavings = 0;
         if (firstWindow.fixedSavingAmountSecs != null) {
             loopSavings = firstWindow.fixedSavingAmountSecs;
         }
-        final ZoneOffset firstWallOffset = deduplicate(ZoneOffset.ofTotalSeconds(loopStandardOffset.getTotalSeconds() + loopSavings));
-        LocalDateTime loopWindowStart = deduplicate(LocalDateTime.of(Year.MIN_VALUE, 1, 1, 0, 0));
-        ZoneOffset loopWindowOffset = firstWallOffset;
+        final TZoneOffset firstWallOffset = deduplicate(TZoneOffset.ofTotalSeconds(loopStandardOffset.getTotalSeconds() + loopSavings));
+        TLocalDateTime loopWindowStart = deduplicate(TLocalDateTime.of(TYear.MIN_VALUE, 1, 1, 0, 0));
+        TZoneOffset loopWindowOffset = firstWallOffset;
 
         // build the windows and rules to interesting data
         for (TZWindow window : windowList) {
@@ -371,7 +210,7 @@ class ZoneRulesBuilder {
                 // at start of this window
                 effectiveSavings = 0;
                 for (TZRule rule : window.ruleList) {
-                    ZoneOffsetTransition trans = rule.toTransition(loopStandardOffset, loopSavings);
+                    TZoneOffsetTransition trans = rule.toTransition(loopStandardOffset, loopSavings);
                     if (trans.toEpochSecond() > loopWindowStart.toEpochSecond(loopWindowOffset)) {
                         // previous savings amount found, which could be the savings amount at
                         // the instant that the window starts (hence isAfter)
@@ -384,24 +223,24 @@ class ZoneRulesBuilder {
             // check if standard offset changed, and update it
             if (loopStandardOffset.equals(window.standardOffset) == false) {
                 standardTransitionList.add(deduplicate(
-                    new ZoneOffsetTransition(
-                        LocalDateTime.ofEpochSecond(loopWindowStart.toEpochSecond(loopWindowOffset), 0, loopStandardOffset),
+                    new TZoneOffsetTransition(
+                        TLocalDateTime.ofEpochSecond(loopWindowStart.toEpochSecond(loopWindowOffset), 0, loopStandardOffset),
                         loopStandardOffset, window.standardOffset)));
                 loopStandardOffset = deduplicate(window.standardOffset);
             }
 
             // check if the start of the window represents a transition
-            ZoneOffset effectiveWallOffset = deduplicate(ZoneOffset.ofTotalSeconds(loopStandardOffset.getTotalSeconds() + effectiveSavings));
+            TZoneOffset effectiveWallOffset = deduplicate(TZoneOffset.ofTotalSeconds(loopStandardOffset.getTotalSeconds() + effectiveSavings));
             if (loopWindowOffset.equals(effectiveWallOffset) == false) {
-                ZoneOffsetTransition trans = deduplicate(
-                    new ZoneOffsetTransition(loopWindowStart, loopWindowOffset, effectiveWallOffset));
+                TZoneOffsetTransition trans = deduplicate(
+                    new TZoneOffsetTransition(loopWindowStart, loopWindowOffset, effectiveWallOffset));
                 transitionList.add(trans);
             }
             loopSavings = effectiveSavings;
 
             // apply rules within the window
             for (TZRule rule : window.ruleList) {
-                ZoneOffsetTransition trans = deduplicate(rule.toTransition(loopStandardOffset, loopSavings));
+                TZoneOffsetTransition trans = deduplicate(rule.toTransition(loopStandardOffset, loopSavings));
                 if (trans.toEpochSecond() < loopWindowStart.toEpochSecond(loopWindowOffset) == false &&
                         trans.toEpochSecond() < window.createDateTimeEpochSecond(loopSavings) &&
                         trans.getOffsetBefore().equals(trans.getOffsetAfter()) == false) {
@@ -412,28 +251,21 @@ class ZoneRulesBuilder {
 
             // calculate last rules
             for (TZRule lastRule : window.lastRuleList) {
-                ZoneOffsetTransitionRule transitionRule = deduplicate(lastRule.toTransitionRule(loopStandardOffset, loopSavings));
+                TZoneOffsetTransitionRule transitionRule = deduplicate(lastRule.toTransitionRule(loopStandardOffset, loopSavings));
                 lastTransitionRuleList.add(transitionRule);
                 loopSavings = lastRule.savingAmountSecs;
             }
 
             // finally we can calculate the true end of the window, passing it to the next window
             loopWindowOffset = deduplicate(window.createWallOffset(loopSavings));
-            loopWindowStart = deduplicate(LocalDateTime.ofEpochSecond(
+            loopWindowStart = deduplicate(TLocalDateTime.ofEpochSecond(
                     window.createDateTimeEpochSecond(loopSavings), 0, loopWindowOffset));
         }
-        return new StandardZoneRules(
+        return new TStandardZoneRules(
                 firstWindow.standardOffset, firstWallOffset, standardTransitionList,
                 transitionList, lastTransitionRuleList);
     }
 
-    /**
-     * Deduplicates an object instance.
-     *
-     * @param <T> the generic type
-     * @param object  the object to deduplicate
-     * @return the deduplicated object
-     */
     @SuppressWarnings("unchecked")
     <T> T deduplicate(T object) {
         if (deduplicateMap.containsKey(object) == false) {
@@ -443,38 +275,19 @@ class ZoneRulesBuilder {
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * A definition of a window in the time-line.
-     * The window will have one standard offset and will either have a
-     * fixed DST savings or a set of rules.
-     */
     class TZWindow {
-        /** The standard offset during the window, not null. */
-        private final ZoneOffset standardOffset;
-        /** The end local time, not null. */
-        private final LocalDateTime windowEnd;
-        /** The type of the end time, not null. */
+        private final TZoneOffset standardOffset;
+        private final TLocalDateTime windowEnd;
         private final TimeDefinition timeDefinition;
 
-        /** The fixed amount of the saving to be applied during this window. */
         private Integer fixedSavingAmountSecs;
-        /** The rules for the current window. */
         private List<TZRule> ruleList = new ArrayList<TZRule>();
-        /** The latest year that the last year starts at. */
-        private int maxLastRuleStartYear = Year.MIN_VALUE;
-        /** The last rules. */
+        private int maxLastRuleStartYear = TYear.MIN_VALUE;
         private List<TZRule> lastRuleList = new ArrayList<TZRule>();
 
-        /**
-         * Constructor.
-         *
-         * @param standardOffset  the standard offset applicable during the window, not null
-         * @param windowEnd  the end of the window, relative to the time definition, null if forever
-         * @param timeDefinition  the time definition for calculating the true end, not null
-         */
         TZWindow(
-                ZoneOffset standardOffset,
-                LocalDateTime windowEnd,
+                TZoneOffset standardOffset,
+                TLocalDateTime windowEnd,
                 TimeDefinition timeDefinition) {
             super();
             this.windowEnd = windowEnd;
@@ -482,12 +295,6 @@ class ZoneRulesBuilder {
             this.standardOffset = standardOffset;
         }
 
-        /**
-         * Sets the fixed savings amount for the window.
-         *
-         * @param fixedSavingAmount  the amount of daylight saving to apply throughout the window, may be null
-         * @throws IllegalStateException if the window already has rules
-         */
         void setFixedSavings(int fixedSavingAmount) {
             if (ruleList.size() > 0 || lastRuleList.size() > 0) {
                 throw new IllegalStateException("Window has DST rules, so cannot have fixed savings");
@@ -495,29 +302,13 @@ class ZoneRulesBuilder {
             this.fixedSavingAmountSecs = fixedSavingAmount;
         }
 
-        /**
-         * Adds a rule to the current window.
-         *
-         * @param startYear  the start year of the rule, from MIN_VALUE to MAX_VALUE
-         * @param endYear  the end year of the rule, from MIN_VALUE to MAX_VALUE
-         * @param month  the month of the transition, not null
-         * @param dayOfMonthIndicator  the day-of-month of the transition, adjusted by dayOfWeek,
-         *   from 1 to 31 adjusted later, or -1 to -28 adjusted earlier from the last day of the month
-         * @param dayOfWeek  the day-of-week to adjust to, null if day-of-month should not be adjusted
-         * @param time  the time that the transition occurs as defined by timeDefintion, not null
-         * @param adjustDays  the time days adjustment
-         * @param timeDefinition  the definition of how to convert local to actual time, not null
-         * @param savingAmountSecs  the amount of saving from the standard offset in seconds
-         * @throws IllegalStateException if the window already has fixed savings
-         * @throws IllegalStateException if the window has reached the maximum capacity of 2000 rules
-         */
         void addRule(
                 int startYear,
                 int endYear,
-                Month month,
+                TMonth month,
                 int dayOfMonthIndicator,
-                DayOfWeek dayOfWeek,
-                LocalTime time,
+                TDayOfWeek dayOfWeek,
+                TLocalTime time,
                 int adjustDays,
                 TimeDefinition timeDefinition,
                 int savingAmountSecs) {
@@ -529,7 +320,7 @@ class ZoneRulesBuilder {
                 throw new IllegalStateException("Window has reached the maximum number of allowed rules");
             }
             boolean lastRule = false;
-            if (endYear == Year.MAX_VALUE) {
+            if (endYear == TYear.MAX_VALUE) {
                 lastRule = true;
                 endYear = startYear;
             }
@@ -546,12 +337,6 @@ class ZoneRulesBuilder {
             }
         }
 
-        /**
-         * Validates that this window is after the previous one.
-         *
-         * @param previous  the previous window, not null
-         * @throws IllegalStateException if the window order is invalid
-         */
         void validateWindowOrder(TZWindow previous) {
             if (windowEnd.isBefore(previous.windowEnd)) {
                 throw new IllegalStateException("Windows must be added in date-time order: " +
@@ -559,20 +344,13 @@ class ZoneRulesBuilder {
             }
         }
 
-        /**
-         * Adds rules to make the last rules all start from the same year.
-         * Also add one more year to avoid weird case where penultimate year has odd offset.
-         *
-         * @param windowStartYear  the window start year
-         * @throws IllegalStateException if there is only one rule defined as being forever
-         */
         void tidy(int windowStartYear) {
             if (lastRuleList.size() == 1) {
                 throw new IllegalStateException("Cannot have only one rule defined as being forever");
             }
 
             // handle last rules
-            if (windowEnd.equals(LocalDateTime.MAX)) {
+            if (windowEnd.equals(TLocalDateTime.MAX)) {
                 // setup at least one real rule, which closes off other windows nicely
                 maxLastRuleStartYear = Math.max(maxLastRuleStartYear, windowStartYear) + 1;
                 for (TZRule lastRule : lastRuleList) {
@@ -580,7 +358,7 @@ class ZoneRulesBuilder {
                         lastRule.dayOfWeek, lastRule.time, lastRule.adjustDays, lastRule.timeDefinition, lastRule.savingAmountSecs);
                     lastRule.year = maxLastRuleStartYear + 1;
                 }
-                if (maxLastRuleStartYear == Year.MAX_VALUE) {
+                if (maxLastRuleStartYear == TYear.MAX_VALUE) {
                     lastRuleList.clear();
                 } else {
                     maxLastRuleStartYear++;
@@ -593,7 +371,7 @@ class ZoneRulesBuilder {
                         lastRule.dayOfWeek, lastRule.time, lastRule.adjustDays, lastRule.timeDefinition, lastRule.savingAmountSecs);
                 }
                 lastRuleList.clear();
-                maxLastRuleStartYear = Year.MAX_VALUE;
+                maxLastRuleStartYear = TYear.MAX_VALUE;
             }
 
             // ensure lists are sorted
@@ -606,76 +384,35 @@ class ZoneRulesBuilder {
             }
         }
 
-        /**
-         * Checks if the window is empty.
-         *
-         * @return true if the window is only a standard offset
-         */
         boolean isSingleWindowStandardOffset() {
-            return windowEnd.equals(LocalDateTime.MAX) && timeDefinition == TimeDefinition.WALL &&
+            return windowEnd.equals(TLocalDateTime.MAX) && timeDefinition == TimeDefinition.WALL &&
                     fixedSavingAmountSecs == null && lastRuleList.isEmpty() && ruleList.isEmpty();
         }
 
-        /**
-         * Creates the wall offset for the local date-time at the end of the window.
-         *
-         * @param savingsSecs  the amount of savings in use in seconds
-         * @return the created date-time epoch second in the wall offset, not null
-         */
-        ZoneOffset createWallOffset(int savingsSecs) {
-            return ZoneOffset.ofTotalSeconds(standardOffset.getTotalSeconds() + savingsSecs);
+        TZoneOffset createWallOffset(int savingsSecs) {
+            return TZoneOffset.ofTotalSeconds(standardOffset.getTotalSeconds() + savingsSecs);
         }
 
-        /**
-         * Creates the offset date-time for the local date-time at the end of the window.
-         *
-         * @param savingsSecs  the amount of savings in use in seconds
-         * @return the created date-time epoch second in the wall offset, not null
-         */
         long createDateTimeEpochSecond(int savingsSecs) {
-            ZoneOffset wallOffset = createWallOffset(savingsSecs);
-            LocalDateTime ldt = timeDefinition.createDateTime(windowEnd, standardOffset, wallOffset);
+            TZoneOffset wallOffset = createWallOffset(savingsSecs);
+            TLocalDateTime ldt = timeDefinition.createDateTime(windowEnd, standardOffset, wallOffset);
             return ldt.toEpochSecond(wallOffset);
         }
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * A definition of the way a local time can be converted to an offset time.
-     */
     class TZRule implements Comparable<TZRule> {
-        /** The year. */
         private int year;
-        /** The month. */
-        private Month month;
-        /** The day-of-month. */
+        private TMonth month;
         private int dayOfMonthIndicator;
-        /** The day-of-month. */
-        private DayOfWeek dayOfWeek;
-        /** The local time. */
-        private LocalTime time;
-        /** The local time days adjustment. */
+        private TDayOfWeek dayOfWeek;
+        private TLocalTime time;
         private int adjustDays;
-        /** The type of the time. */
         private TimeDefinition timeDefinition;
-        /** The amount of the saving to be applied after this point. */
         private int savingAmountSecs;
 
-        /**
-         * Constructor.
-         *
-         * @param year  the year
-         * @param month  the month, not null
-         * @param dayOfMonthIndicator  the day-of-month of the transition, adjusted by dayOfWeek,
-         *   from 1 to 31 adjusted later, or -1 to -28 adjusted earlier from the last day of the month
-         * @param dayOfWeek  the day-of-week, null if day-of-month is exact
-         * @param time  the time, not null
-         * @param adjustDays  the time day adjustment
-         * @param timeDefinition  the time definition, not null
-         * @param savingAfterSecs  the savings amount in seconds
-         */
-        TZRule(int year, Month month, int dayOfMonthIndicator,
-                DayOfWeek dayOfWeek, LocalTime time, int adjustDays,
+        TZRule(int year, TMonth month, int dayOfMonthIndicator,
+                TDayOfWeek dayOfWeek, TLocalTime time, int adjustDays,
                 TimeDefinition timeDefinition, int savingAfterSecs) {
             super();
             this.year = year;
@@ -688,42 +425,28 @@ class ZoneRulesBuilder {
             this.savingAmountSecs = savingAfterSecs;
         }
 
-        /**
-         * Converts this to a transition.
-         *
-         * @param standardOffset  the active standard offset, not null
-         * @param savingsBeforeSecs  the active savings in seconds
-         * @return the transition, not null
-         */
-        ZoneOffsetTransition toTransition(ZoneOffset standardOffset, int savingsBeforeSecs) {
-            // copy of code in ZoneOffsetTransitionRule to avoid infinite loop
-            LocalDate date = toLocalDate();
+        TZoneOffsetTransition toTransition(TZoneOffset standardOffset, int savingsBeforeSecs) {
+            // copy of code in TZoneOffsetTransitionRule to avoid infinite loop
+            TLocalDate date = toLocalDate();
             date = deduplicate(date);
-            LocalDateTime ldt = deduplicate(LocalDateTime.of(date.plusDays(adjustDays), time));
-            ZoneOffset wallOffset = deduplicate(ZoneOffset.ofTotalSeconds(standardOffset.getTotalSeconds() + savingsBeforeSecs));
-            LocalDateTime dt = deduplicate(timeDefinition.createDateTime(ldt, standardOffset, wallOffset));
-            ZoneOffset offsetAfter = deduplicate(ZoneOffset.ofTotalSeconds(standardOffset.getTotalSeconds() + savingAmountSecs));
-            return new ZoneOffsetTransition(dt, wallOffset, offsetAfter);
+            TLocalDateTime ldt = deduplicate(TLocalDateTime.of(date.plusDays(adjustDays), time));
+            TZoneOffset wallOffset = deduplicate(TZoneOffset.ofTotalSeconds(standardOffset.getTotalSeconds() + savingsBeforeSecs));
+            TLocalDateTime dt = deduplicate(timeDefinition.createDateTime(ldt, standardOffset, wallOffset));
+            TZoneOffset offsetAfter = deduplicate(TZoneOffset.ofTotalSeconds(standardOffset.getTotalSeconds() + savingAmountSecs));
+            return new TZoneOffsetTransition(dt, wallOffset, offsetAfter);
         }
 
-        /**
-         * Converts this to a transition rule.
-         *
-         * @param standardOffset  the active standard offset, not null
-         * @param savingsBeforeSecs  the active savings before the transition in seconds
-         * @return the transition, not null
-         */
-        ZoneOffsetTransitionRule toTransitionRule(ZoneOffset standardOffset, int savingsBeforeSecs) {
+        TZoneOffsetTransitionRule toTransitionRule(TZoneOffset standardOffset, int savingsBeforeSecs) {
             // optimize stored format
             if (dayOfMonthIndicator < 0) {
-                if (month != Month.FEBRUARY) {
+                if (month != TMonth.FEBRUARY) {
                     dayOfMonthIndicator = month.maxLength() - 6;
                 }
             }
 
             // build rule
-            ZoneOffsetTransition trans = toTransition(standardOffset, savingsBeforeSecs);
-            return new ZoneOffsetTransitionRule(
+            TZoneOffsetTransition trans = toTransition(standardOffset, savingsBeforeSecs);
+            return new TZoneOffsetTransitionRule(
                     month, dayOfMonthIndicator, dayOfWeek, time, adjustDays, timeDefinition,
                     standardOffset, trans.getOffsetBefore(), trans.getOffsetAfter());
         }
@@ -733,8 +456,8 @@ class ZoneRulesBuilder {
             cmp = (cmp == 0 ? month.compareTo(other.month) : cmp);
             if (cmp == 0) {
                 // convert to date to handle dow/domIndicator/timeEndOfDay
-                LocalDate thisDate = toLocalDate();
-                LocalDate otherDate = other.toLocalDate();
+                TLocalDate thisDate = toLocalDate();
+                TLocalDate otherDate = other.toLocalDate();
                 cmp = thisDate.compareTo(otherDate);
             }
             if (cmp != 0) {
@@ -745,16 +468,16 @@ class ZoneRulesBuilder {
             return timeSecs1 < timeSecs2 ? -1 : (timeSecs1 > timeSecs2 ? 1 : 0);
         }
 
-        private LocalDate toLocalDate() {
-            LocalDate date;
+        private TLocalDate toLocalDate() {
+            TLocalDate date;
             if (dayOfMonthIndicator < 0) {
-                int monthLen = month.length(IsoChronology.INSTANCE.isLeapYear(year));
-                date = LocalDate.of(year, month, monthLen + 1 + dayOfMonthIndicator);
+                int monthLen = month.length(TIsoChronology.INSTANCE.isLeapYear(year));
+                date = TLocalDate.of(year, month, monthLen + 1 + dayOfMonthIndicator);
                 if (dayOfWeek != null) {
                     date = date.with(previousOrSame(dayOfWeek));
                 }
             } else {
-                date = LocalDate.of(year, month, dayOfMonthIndicator);
+                date = TLocalDate.of(year, month, dayOfMonthIndicator);
                 if (dayOfWeek != null) {
                     date = date.with(nextOrSame(dayOfWeek));
                 }

@@ -29,9 +29,9 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.temporal;
+package org.teavm.classlib.java.time.temporal;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,12 +39,9 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.AbstractTest;
+import org.junit.Test;
+import org.teavm.classlib.java.time.AbstractTest;
 
-/**
- * Test.
- */
 @Test
 public class TestValueRange extends AbstractTest {
 
@@ -53,14 +50,14 @@ public class TestValueRange extends AbstractTest {
     //-----------------------------------------------------------------------
     @Test
     public void test_immutable() {
-        assertImmutable(ValueRange.class);
+        assertImmutable(TValueRange.class);
     }
 
     //-----------------------------------------------------------------------
     // Serialization
     //-----------------------------------------------------------------------
     public void test_serialization() throws Exception {
-        Object obj = ValueRange.of(1, 2, 3, 4);
+        Object obj = TValueRange.of(1, 2, 3, 4);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream oos = new ObjectOutputStream(baos);
         oos.writeObject(obj);
@@ -73,7 +70,7 @@ public class TestValueRange extends AbstractTest {
     // of(long,long)
     //-----------------------------------------------------------------------
     public void test_of_longlong() {
-        ValueRange test = ValueRange.of(1, 12);
+        TValueRange test = TValueRange.of(1, 12);
         assertEquals(test.getMinimum(), 1);
         assertEquals(test.getLargestMinimum(), 1);
         assertEquals(test.getSmallestMaximum(), 12);
@@ -83,7 +80,7 @@ public class TestValueRange extends AbstractTest {
     }
 
     public void test_of_longlong_big() {
-        ValueRange test = ValueRange.of(1, 123456789012345L);
+        TValueRange test = TValueRange.of(1, 123456789012345L);
         assertEquals(test.getMinimum(), 1);
         assertEquals(test.getLargestMinimum(), 1);
         assertEquals(test.getSmallestMaximum(), 123456789012345L);
@@ -94,14 +91,14 @@ public class TestValueRange extends AbstractTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void test_of_longlong_minGtMax() {
-        ValueRange.of(12, 1);
+        TValueRange.of(12, 1);
     }
 
     //-----------------------------------------------------------------------
     // of(long,long,long)
     //-----------------------------------------------------------------------
     public void test_of_longlonglong() {
-        ValueRange test = ValueRange.of(1, 28, 31);
+        TValueRange test = TValueRange.of(1, 28, 31);
         assertEquals(test.getMinimum(), 1);
         assertEquals(test.getLargestMinimum(), 1);
         assertEquals(test.getSmallestMaximum(), 28);
@@ -112,12 +109,12 @@ public class TestValueRange extends AbstractTest {
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void test_of_longlonglong_minGtMax() {
-        ValueRange.of(12, 1, 2);
+        TValueRange.of(12, 1, 2);
     }
 
     @Test(expectedExceptions = IllegalArgumentException.class)
     public void test_of_longlonglong_smallestmaxminGtMax() {
-        ValueRange.of(1, 31, 28);
+        TValueRange.of(1, 31, 28);
     }
 
     //-----------------------------------------------------------------------
@@ -140,7 +137,7 @@ public class TestValueRange extends AbstractTest {
 
     @Test(dataProvider="valid")
     public void test_of_longlonglonglong(long sMin, long lMin, long sMax, long lMax) {
-        ValueRange test = ValueRange.of(sMin, lMin, sMax, lMax);
+        TValueRange test = TValueRange.of(sMin, lMin, sMax, lMax);
         assertEquals(test.getMinimum(), sMin);
         assertEquals(test.getLargestMinimum(), lMin);
         assertEquals(test.getSmallestMaximum(), sMax);
@@ -165,14 +162,14 @@ public class TestValueRange extends AbstractTest {
 
     @Test(dataProvider="invalid", expectedExceptions=IllegalArgumentException.class)
     public void test_of_longlonglonglong_invalid(long sMin, long lMin, long sMax, long lMax) {
-        ValueRange.of(sMin, lMin, sMax, lMax);
+        TValueRange.of(sMin, lMin, sMax, lMax);
     }
 
     //-----------------------------------------------------------------------
     // isValidValue(long)
     //-----------------------------------------------------------------------
     public void test_isValidValue_long() {
-        ValueRange test = ValueRange.of(1, 28, 31);
+        TValueRange test = TValueRange.of(1, 28, 31);
         assertEquals(test.isValidValue(0), false);
         assertEquals(test.isValidValue(1), true);
         assertEquals(test.isValidValue(2), true);
@@ -185,7 +182,7 @@ public class TestValueRange extends AbstractTest {
     // isValidIntValue(long)
     //-----------------------------------------------------------------------
     public void test_isValidValue_long_int() {
-        ValueRange test = ValueRange.of(1, 28, 31);
+        TValueRange test = TValueRange.of(1, 28, 31);
         assertEquals(test.isValidValue(0), false);
         assertEquals(test.isValidValue(1), true);
         assertEquals(test.isValidValue(31), true);
@@ -193,7 +190,7 @@ public class TestValueRange extends AbstractTest {
     }
 
     public void test_isValidValue_long_long() {
-        ValueRange test = ValueRange.of(1, 28, Integer.MAX_VALUE + 1L);
+        TValueRange test = TValueRange.of(1, 28, Integer.MAX_VALUE + 1L);
         assertEquals(test.isValidIntValue(0), false);
         assertEquals(test.isValidIntValue(1), false);
         assertEquals(test.isValidIntValue(31), false);
@@ -204,8 +201,8 @@ public class TestValueRange extends AbstractTest {
     // equals() / hashCode()
     //-----------------------------------------------------------------------
     public void test_equals1() {
-        ValueRange a = ValueRange.of(1, 2, 3, 4);
-        ValueRange b = ValueRange.of(1, 2, 3, 4);
+        TValueRange a = TValueRange.of(1, 2, 3, 4);
+        TValueRange b = TValueRange.of(1, 2, 3, 4);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), true);
         assertEquals(b.equals(a), true);
@@ -214,20 +211,20 @@ public class TestValueRange extends AbstractTest {
     }
 
     public void test_equals2() {
-        ValueRange a = ValueRange.of(1, 2, 3, 4);
-        assertEquals(a.equals(ValueRange.of(0, 2, 3, 4)), false);
-        assertEquals(a.equals(ValueRange.of(1, 3, 3, 4)), false);
-        assertEquals(a.equals(ValueRange.of(1, 2, 4, 4)), false);
-        assertEquals(a.equals(ValueRange.of(1, 2, 3, 5)), false);
+        TValueRange a = TValueRange.of(1, 2, 3, 4);
+        assertEquals(a.equals(TValueRange.of(0, 2, 3, 4)), false);
+        assertEquals(a.equals(TValueRange.of(1, 3, 3, 4)), false);
+        assertEquals(a.equals(TValueRange.of(1, 2, 4, 4)), false);
+        assertEquals(a.equals(TValueRange.of(1, 2, 3, 5)), false);
     }
 
     public void test_equals_otherType() {
-        ValueRange a = ValueRange.of(1, 12);
+        TValueRange a = TValueRange.of(1, 12);
         assertEquals(a.equals("Rubbish"), false);
     }
 
     public void test_equals_null() {
-        ValueRange a = ValueRange.of(1, 12);
+        TValueRange a = TValueRange.of(1, 12);
         assertEquals(a.equals(null), false);
     }
 
@@ -235,10 +232,10 @@ public class TestValueRange extends AbstractTest {
     // toString()
     //-----------------------------------------------------------------------
     public void test_toString() {
-        assertEquals(ValueRange.of(1, 1, 4, 4).toString(), "1 - 4");
-        assertEquals(ValueRange.of(1, 1, 3, 4).toString(), "1 - 3/4");
-        assertEquals(ValueRange.of(1, 2, 3, 4).toString(), "1/2 - 3/4");
-        assertEquals(ValueRange.of(1, 2, 4, 4).toString(), "1/2 - 4");
+        assertEquals(TValueRange.of(1, 1, 4, 4).toString(), "1 - 4");
+        assertEquals(TValueRange.of(1, 1, 3, 4).toString(), "1 - 3/4");
+        assertEquals(TValueRange.of(1, 2, 3, 4).toString(), "1/2 - 3/4");
+        assertEquals(TValueRange.of(1, 2, 4, 4).toString(), "1/2 - 4");
     }
 
 }

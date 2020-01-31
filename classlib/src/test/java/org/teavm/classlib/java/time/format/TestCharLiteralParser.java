@@ -29,19 +29,16 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.format.DateTimeFormatterBuilder.CharLiteralPrinterParser;
-import org.threeten.bp.temporal.TemporalQueries;
+import org.junit.Test;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.CharLiteralPrinterParser;
+import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 
-/**
- * Test CharLiteralPrinterParser.
- */
 @Test
 public class TestCharLiteralParser extends AbstractTestPrinterParser {
 
@@ -73,8 +70,8 @@ public class TestCharLiteralParser extends AbstractTestPrinterParser {
         parseContext.setCaseSensitive(caseSensitive);
         int result = pp.parse(parseContext, text, pos);
         assertEquals(result, expectedPos);
-        assertEquals(parseContext.toParsed().query(TemporalQueries.chronology()), null);
-        assertEquals(parseContext.toParsed().query(TemporalQueries.zoneId()), null);
+        assertEquals(parseContext.toParsed().query(TTemporalQueries.chronology()), null);
+        assertEquals(parseContext.toParsed().query(TTemporalQueries.zoneId()), null);
     }
 
     //-----------------------------------------------------------------------
@@ -92,8 +89,8 @@ public class TestCharLiteralParser extends AbstractTestPrinterParser {
             pp.parse(parseContext, text, pos);
         } catch (RuntimeException ex) {
             assertTrue(expected.isInstance(ex));
-            assertEquals(parseContext.toParsed().query(TemporalQueries.chronology()), null);
-            assertEquals(parseContext.toParsed().query(TemporalQueries.zoneId()), null);
+            assertEquals(parseContext.toParsed().query(TTemporalQueries.chronology()), null);
+            assertEquals(parseContext.toParsed().query(TTemporalQueries.zoneId()), null);
         }
     }
 

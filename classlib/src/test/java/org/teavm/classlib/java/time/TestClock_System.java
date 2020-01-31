@@ -29,40 +29,37 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertSame;
-import static org.testng.Assert.fail;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.fail;
 
 import java.io.IOException;
 
-import org.testng.annotations.Test;
+import org.junit.Test;
 
-/**
- * Test system clock.
- */
 @Test
 public class TestClock_System extends AbstractTest {
 
-    private static final ZoneId MOSCOW = ZoneId.of("Europe/Moscow");
-    private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
+    private static final TZoneId MOSCOW = TZoneId.of("Europe/Moscow");
+    private static final TZoneId PARIS = TZoneId.of("Europe/Paris");
 
     //-----------------------------------------------------------------------
     public void test_isSerializable() throws IOException, ClassNotFoundException {
-        assertSerializable(Clock.systemUTC());
-        assertSerializable(Clock.systemDefaultZone());
-        assertSerializable(Clock.system(PARIS));
+        assertSerializable(TClock.systemUTC());
+        assertSerializable(TClock.systemDefaultZone());
+        assertSerializable(TClock.system(PARIS));
     }
 
     //-----------------------------------------------------------------------
     public void test_instant() {
-        Clock system = Clock.systemUTC();
-        assertEquals(system.getZone(), ZoneOffset.UTC);
+        TClock system = TClock.systemUTC();
+        assertEquals(system.getZone(), TZoneOffset.UTC);
         for (int i = 0; i < 10000; i++) {
             // assume can eventually get these within 10 milliseconds
-            Instant instant = system.instant();
-            long systemMillis = System.currentTimeMillis();
+            TInstant instant = system.instant();
+            long systemMillis = TSystem.currentTimeMillis();
             if (systemMillis - instant.toEpochMilli() < 10) {
                 return;  // success
             }
@@ -71,12 +68,12 @@ public class TestClock_System extends AbstractTest {
     }
 
     public void test_millis() {
-        Clock system = Clock.systemUTC();
-        assertEquals(system.getZone(), ZoneOffset.UTC);
+        TClock system = TClock.systemUTC();
+        assertEquals(system.getZone(), TZoneOffset.UTC);
         for (int i = 0; i < 10000; i++) {
             // assume can eventually get these within 10 milliseconds
             long instant = system.millis();
-            long systemMillis = System.currentTimeMillis();
+            long systemMillis = TSystem.currentTimeMillis();
             if (systemMillis - instant < 10) {
                 return;  // success
             }
@@ -86,63 +83,63 @@ public class TestClock_System extends AbstractTest {
 
     //-------------------------------------------------------------------------
     public void test_systemUTC() {
-        Clock test = Clock.systemUTC();
-        assertEquals(test.getZone(), ZoneOffset.UTC);
-        assertEquals(test, Clock.system(ZoneOffset.UTC));
+        TClock test = TClock.systemUTC();
+        assertEquals(test.getZone(), TZoneOffset.UTC);
+        assertEquals(test, TClock.system(TZoneOffset.UTC));
     }
 
     public void test_systemDefaultZone() {
-        Clock test = Clock.systemDefaultZone();
-        assertEquals(test.getZone(), ZoneId.systemDefault());
-        assertEquals(test, Clock.system(ZoneId.systemDefault()));
+        TClock test = TClock.systemDefaultZone();
+        assertEquals(test.getZone(), TZoneId.systemDefault());
+        assertEquals(test, TClock.system(TZoneId.systemDefault()));
     }
 
     public void test_system_ZoneId() {
-        Clock test = Clock.system(PARIS);
+        TClock test = TClock.system(PARIS);
         assertEquals(test.getZone(), PARIS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void test_zoneId_nullZoneId() {
-        Clock.system(null);
+        TClock.system(null);
     }
 
     //-------------------------------------------------------------------------
     public void test_withZone() {
-        Clock test = Clock.system(PARIS);
-        Clock changed = test.withZone(MOSCOW);
+        TClock test = TClock.system(PARIS);
+        TClock changed = test.withZone(MOSCOW);
         assertEquals(test.getZone(), PARIS);
         assertEquals(changed.getZone(), MOSCOW);
     }
 
     public void test_withZone_same() {
-        Clock test = Clock.system(PARIS);
-        Clock changed = test.withZone(PARIS);
+        TClock test = TClock.system(PARIS);
+        TClock changed = test.withZone(PARIS);
         assertSame(test, changed);
     }
 
     public void test_withZone_fromUTC() {
-        Clock test = Clock.systemUTC();
-        Clock changed = test.withZone(PARIS);
+        TClock test = TClock.systemUTC();
+        TClock changed = test.withZone(PARIS);
         assertEquals(changed.getZone(), PARIS);
     }
 
     @Test(expectedExceptions = NullPointerException.class)
     public void test_withZone_null() {
-        Clock.systemUTC().withZone(null);
+        TClock.systemUTC().withZone(null);
     }
 
     //-----------------------------------------------------------------------
     public void test_equals() {
-        Clock a = Clock.systemUTC();
-        Clock b = Clock.systemUTC();
+        TClock a = TClock.systemUTC();
+        TClock b = TClock.systemUTC();
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), true);
         assertEquals(b.equals(a), true);
         assertEquals(b.equals(b), true);
 
-        Clock c = Clock.system(PARIS);
-        Clock d = Clock.system(PARIS);
+        TClock c = TClock.system(PARIS);
+        TClock d = TClock.system(PARIS);
         assertEquals(c.equals(c), true);
         assertEquals(c.equals(d), true);
         assertEquals(d.equals(c), true);
@@ -153,22 +150,22 @@ public class TestClock_System extends AbstractTest {
 
         assertEquals(a.equals(null), false);
         assertEquals(a.equals("other type"), false);
-        assertEquals(a.equals(Clock.fixed(Instant.now(), ZoneOffset.UTC)), false);
+        assertEquals(a.equals(TClock.fixed(TInstant.now(), TZoneOffset.UTC)), false);
     }
 
     public void test_hashCode() {
-        Clock a = Clock.system(ZoneOffset.UTC);
-        Clock b = Clock.system(ZoneOffset.UTC);
+        TClock a = TClock.system(TZoneOffset.UTC);
+        TClock b = TClock.system(TZoneOffset.UTC);
         assertEquals(a.hashCode(), a.hashCode());
         assertEquals(a.hashCode(), b.hashCode());
 
-        Clock c = Clock.system(PARIS);
+        TClock c = TClock.system(PARIS);
         assertEquals(a.hashCode() == c.hashCode(), false);
     }
 
     //-----------------------------------------------------------------------
     public void test_toString() {
-        Clock test = Clock.system(PARIS);
+        TClock test = TClock.system(PARIS);
         assertEquals(test.toString(), "SystemClock[Europe/Paris]");
     }
 

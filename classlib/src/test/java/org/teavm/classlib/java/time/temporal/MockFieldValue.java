@@ -29,46 +29,43 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.temporal;
+package org.teavm.classlib.java.time.temporal;
 
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.jdk8.DefaultInterfaceTemporalAccessor;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 
-/**
- * Mock simple date-time with one field-value.
- */
-public final class MockFieldValue extends DefaultInterfaceTemporalAccessor {
+public final class MockFieldValue extends TDefaultInterfaceTemporalAccessor {
 
-    private final TemporalField field;
+    private final TTemporalField field;
     private final long value;
 
-    public MockFieldValue(TemporalField field, long value) {
+    public MockFieldValue(TTemporalField field, long value) {
         this.field = field;
         this.value = value;
     }
 
     @Override
-    public boolean isSupported(TemporalField field) {
+    public boolean isSupported(TTemporalField field) {
         return field != null && field.equals(this.field);
     }
 
     @Override
-    public ValueRange range(TemporalField field) {
-        if (field instanceof ChronoField) {
+    public TValueRange range(TTemporalField field) {
+        if (field instanceof TChronoField) {
             if (isSupported(field)) {
                 return field.range();
             }
-            throw new DateTimeException("Unsupported field: " + field);
+            throw new TDateTimeException("Unsupported field: " + field);
         }
         return field.rangeRefinedBy(this);
     }
 
     @Override
-    public long getLong(TemporalField field) {
+    public long getLong(TTemporalField field) {
         if (this.field.equals(field)) {
             return value;
         }
-        throw new DateTimeException("Unsupported field: " + field);
+        throw new TDateTimeException("Unsupported field: " + field);
     }
 
 }

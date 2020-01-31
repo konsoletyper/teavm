@@ -29,14 +29,14 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
 import java.io.DataInputStream;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.GregorianCalendar;
+import org.teavm.classlib.java.util.TGregorianCalendar;
 import java.util.HashMap;
 import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
@@ -44,12 +44,8 @@ import java.util.concurrent.locks.ReentrantLock;
 import java.util.regex.Pattern;
 import java.util.zip.ZipInputStream;
 
-import org.threeten.bp.temporal.TemporalAccessor;
+import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 
-/**
- * Test Class loading.
- * Use "-verbose:class".
- */
 public class ClassLoaderChecker {
 
     @SuppressWarnings({ "rawtypes", "unchecked" })
@@ -89,34 +85,34 @@ public class ClassLoaderChecker {
         }
         a.toString();
 
-        System.out.println("************************************************************");
-        a = TemporalAccessor.class;
+        TSystem.out.println("************************************************************");
+        a = TTemporalAccessor.class;
 
-        System.out.println("************************************************************");
-        Month.of(5);
+        TSystem.out.println("************************************************************");
+        TMonth.of(5);
 
-        System.out.println("************************************************************");
-        a = LocalDate.class;
+        TSystem.out.println("************************************************************");
+        a = TLocalDate.class;
 
-        System.out.println("************************************************************");
-        LocalDate d = LocalDate.of(2011, 12, 20);
+        TSystem.out.println("************************************************************");
+        TLocalDate d = TLocalDate.of(2011, 12, 20);
 
-        System.out.println("************************************************************");
-        LocalTime t = LocalTime.of(12, 20);
+        TSystem.out.println("************************************************************");
+        TLocalTime t = TLocalTime.of(12, 20);
 
-        System.out.println("************************************************************");
-        LocalDateTime ldt = LocalDateTime.of(d, t);
+        TSystem.out.println("************************************************************");
+        TLocalDateTime ldt = TLocalDateTime.of(d, t);
 
-        System.out.println("************************************************************");
-        a = GregorianCalendar.class;
+        TSystem.out.println("************************************************************");
+        a = TGregorianCalendar.class;
 
-        System.out.println("************************************************************");
-        new GregorianCalendar();
+        TSystem.out.println("************************************************************");
+        new TGregorianCalendar();
 
-        System.out.println("************************************************************");
-        ldt.atZone(ZoneId.of("Europe/Paris"));
+        TSystem.out.println("************************************************************");
+        ldt.atZone(TZoneId.of("Europe/Paris"));
 
-        System.out.println("************************************************************");
+        TSystem.out.println("************************************************************");
     }
 
 }

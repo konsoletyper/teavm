@@ -29,84 +29,42 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.chrono;
+package org.teavm.classlib.java.time.chrono;
 
-import static org.threeten.bp.temporal.ChronoField.ERA;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ERA;
 
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.format.DateTimeFormatterBuilder;
-import org.threeten.bp.format.TextStyle;
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.ChronoUnit;
-import org.threeten.bp.temporal.Temporal;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.TemporalQueries;
-import org.threeten.bp.temporal.TemporalQuery;
-import org.threeten.bp.temporal.UnsupportedTemporalTypeException;
-import org.threeten.bp.temporal.ValueRange;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
+import org.teavm.classlib.java.time.format.TTextStyle;
+import org.teavm.classlib.java.time.temporal.TChronoField;
+import org.teavm.classlib.java.time.temporal.TChronoUnit;
+import org.teavm.classlib.java.time.temporal.TTemporal;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.classlib.java.time.temporal.TTemporalQuery;
+import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
+import org.teavm.classlib.java.time.temporal.TValueRange;
 
-/**
- * An era in the ISO calendar system.
- * <p>
- * The ISO-8601 standard does not define eras.
- * A definition has therefore been created with two eras - 'Current era' (CE) for
- * years from 0001-01-01 (ISO) and 'Before current era' (BCE) for years before that.
- * <p>
- * <b>Do not use {@code ordinal()} to obtain the numeric representation of {@code IsoEra}.
- * Use {@code getValue()} instead.</b>
- *
- * <h3>Specification for implementors</h3>
- * This is an immutable and thread-safe enum.
- */
-public enum IsoEra implements Era {
+public enum TIsoEra implements TEra {
 
-    /**
-     * The singleton instance for the era BCE, 'Before Current Era'.
-     * The 'ISO' part of the name emphasizes that this differs from the BCE
-     * era in the Gregorian calendar system.
-     * This has the numeric value of {@code 0}.
-     */
     BCE,
-    /**
-     * The singleton instance for the era CE, 'Current Era'.
-     * The 'ISO' part of the name emphasizes that this differs from the CE
-     * era in the Gregorian calendar system.
-     * This has the numeric value of {@code 1}.
-     */
     CE;
 
     //-----------------------------------------------------------------------
-    /**
-     * Obtains an instance of {@code IsoEra} from an {@code int} value.
-     * <p>
-     * {@code IsoEra} is an enum representing the ISO eras of BCE/CE.
-     * This factory allows the enum to be obtained from the {@code int} value.
-     *
-     * @param era  the BCE/CE value to represent, from 0 (BCE) to 1 (CE)
-     * @return the era singleton, not null
-     * @throws DateTimeException if the value is invalid
-     */
-    public static IsoEra of(int era) {
+    public static TIsoEra of(int era) {
         switch (era) {
             case 0:
                 return BCE;
             case 1:
                 return CE;
             default:
-                throw new DateTimeException("Invalid era: " + era);
+                throw new TDateTimeException("Invalid era: " + era);
         }
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Gets the numeric era {@code int} value.
-     * <p>
-     * The era BCE has the value 0, while the era CE has the value 1.
-     *
-     * @return the era value, from 0 (BCE) to 1 (CE)
-     */
     @Override
     public int getValue() {
         return ordinal();
@@ -114,25 +72,25 @@ public enum IsoEra implements Era {
 
     //-----------------------------------------------------------------------
     @Override
-    public boolean isSupported(TemporalField field) {
-        if (field instanceof ChronoField) {
+    public boolean isSupported(TTemporalField field) {
+        if (field instanceof TChronoField) {
             return field == ERA;
         }
         return field != null && field.isSupportedBy(this);
     }
 
     @Override
-    public ValueRange range(TemporalField field) {
+    public TValueRange range(TTemporalField field) {
         if (field == ERA) {
             return field.range();
-        } else if (field instanceof ChronoField) {
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        } else if (field instanceof TChronoField) {
+            throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.rangeRefinedBy(this);
     }
 
     @Override
-    public int get(TemporalField field) {
+    public int get(TTemporalField field) {
         if (field == ERA) {
             return getValue();
         }
@@ -140,30 +98,30 @@ public enum IsoEra implements Era {
     }
 
     @Override
-    public long getLong(TemporalField field) {
+    public long getLong(TTemporalField field) {
         if (field == ERA) {
             return getValue();
-        } else if (field instanceof ChronoField) {
-            throw new UnsupportedTemporalTypeException("Unsupported field: " + field);
+        } else if (field instanceof TChronoField) {
+            throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.getFrom(this);
     }
 
     //-------------------------------------------------------------------------
     @Override
-    public Temporal adjustInto(Temporal temporal) {
+    public TTemporal adjustInto(TTemporal temporal) {
         return temporal.with(ERA, getValue());
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <R> R query(TemporalQuery<R> query) {
-        if (query == TemporalQueries.precision()) {
-            return (R) ChronoUnit.ERAS;
+    public <R> R query(TTemporalQuery<R> query) {
+        if (query == TTemporalQueries.precision()) {
+            return (R) TChronoUnit.ERAS;
         }
-        if (query == TemporalQueries.chronology() || query == TemporalQueries.zone() ||
-                query == TemporalQueries.zoneId() || query == TemporalQueries.offset() ||
-                query == TemporalQueries.localDate() || query == TemporalQueries.localTime()) {
+        if (query == TTemporalQueries.chronology() || query == TTemporalQueries.zone() ||
+                query == TTemporalQueries.zoneId() || query == TTemporalQueries.offset() ||
+                query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime()) {
             return null;
         }
         return query.queryFrom(this);
@@ -171,8 +129,8 @@ public enum IsoEra implements Era {
 
     //-----------------------------------------------------------------------
     @Override
-    public String getDisplayName(TextStyle style, Locale locale) {
-        return new DateTimeFormatterBuilder().appendText(ERA, style).toFormatter(locale).format(this);
+    public String getDisplayName(TTextStyle style, TLocale locale) {
+        return new TDateTimeFormatterBuilder().appendText(ERA, style).toFormatter(locale).format(this);
     }
 
 }

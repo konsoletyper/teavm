@@ -29,170 +29,62 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.temporal;
+package org.teavm.classlib.java.time.temporal;
 
-import static org.threeten.bp.temporal.ChronoField.EPOCH_DAY;
-import static org.threeten.bp.temporal.ChronoUnit.DAYS;
-import static org.threeten.bp.temporal.ChronoUnit.FOREVER;
+import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.FOREVER;
 
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.chrono.Chronology;
-import org.threeten.bp.format.ResolverStyle;
-import org.threeten.bp.jdk8.Jdk8Methods;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.chrono.TChronology;
+import org.teavm.classlib.java.time.format.TResolverStyle;
+import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
-/**
- * A set of date fields that provide access to Julian Days.
- * <p>
- * The Julian Day is a standard way of expressing date and time commonly used in the scientific community.
- * It is expressed as a decimal number of whole days where days start at midday.
- * This class represents variations on Julian Days that count whole days from midnight.
- *
- * <h3>Specification for implementors</h3>
- * This is an immutable and thread-safe class.
- */
-public final class JulianFields {
+public final class TJulianFields {
 
-    /**
-     * Julian Day field.
-     * <p>
-     * This is an integer-based version of the Julian Day Number.
-     * Julian Day is a well-known system that represents the count of whole days since day 0,
-     * which is defined to be January 1, 4713 BCE in the Julian calendar, and -4713-11-24 Gregorian.
-     * The field  has "JulianDay" as 'name', and 'DAYS' as 'baseUnit'.
-     * The field always refers to the local date-time, ignoring the offset or zone.
-     * <p>
-     * For date-times, 'JULIAN_DAY.getFrom()' assumes the same value from
-     * midnight until just before the next midnight.
-     * When 'JULIAN_DAY.adjustInto()' is applied to a date-time, the time of day portion remains unaltered.
-     * 'JULIAN_DAY.adjustInto()' and 'JULIAN_DAY.getFrom()' only apply to {@code Temporal} objects that
-     * can be converted into {@link ChronoField#EPOCH_DAY}.
-     * A {@link DateTimeException} is thrown for any other type of object.
-     * <p>
-     * <h3>Astronomical and Scientific Notes</h3>
-     * The standard astronomical definition uses a fraction to indicate the time-of-day,
-     * thus 3.25 would represent the time 18:00, since days start at midday.
-     * This implementation uses an integer and days starting at midnight.
-     * The integer value for the Julian Day Number is the astronomical Julian Day value at midday
-     * of the date in question.
-     * This amounts to the astronomical Julian Day, rounded to an integer {@code JDN = floor(JD + 0.5)}.
-     * <p>
-     * <pre>
-     *  | ISO date          |  Julian Day Number | Astronomical Julian Day |
-     *  | 1970-01-01T00:00  |         2,440,588  |         2,440,587.5     |
-     *  | 1970-01-01T06:00  |         2,440,588  |         2,440,587.75    |
-     *  | 1970-01-01T12:00  |         2,440,588  |         2,440,588.0     |
-     *  | 1970-01-01T18:00  |         2,440,588  |         2,440,588.25    |
-     *  | 1970-01-02T00:00  |         2,440,589  |         2,440,588.5     |
-     *  | 1970-01-02T06:00  |         2,440,589  |         2,440,588.75    |
-     *  | 1970-01-02T12:00  |         2,440,589  |         2,440,589.0     |
-     * </pre>
-     * <p>
-     * Julian Days are sometimes taken to imply Universal Time or UTC, but this
-     * implementation always uses the Julian Day number for the local date,
-     * regardless of the offset or time-zone.
-     */
-    public static final TemporalField JULIAN_DAY = Field.JULIAN_DAY;
-    /**
-     * Modified Julian Day field.
-     * <p>
-     * This is an integer-based version of the Modified Julian Day Number.
-     * Modified Julian Day (MJD) is a well-known system that counts days continuously.
-     * It is defined relative to astronomical Julian Day as  {@code MJD = JD - 2400000.5}.
-     * Each Modified Julian Day runs from midnight to midnight.
-     * The field always refers to the local date-time, ignoring the offset or zone.
-     * <p>
-     * For date-times, 'MODIFIED_JULIAN_DAY.getFrom()' assumes the same value from
-     * midnight until just before the next midnight.
-     * When 'MODIFIED_JULIAN_DAY.adjustInto()' is applied to a date-time, the time of day portion remains unaltered.
-     * 'MODIFIED_JULIAN_DAY.adjustInto()' and 'MODIFIED_JULIAN_DAY.getFrom()' only apply to {@code Temporal} objects
-     * that can be converted into {@link ChronoField#EPOCH_DAY}.
-     * A {@link DateTimeException} is thrown for any other type of object.
-     * <p>
-     * This implementation is an integer version of MJD with the decimal part rounded to floor.
-     * <p>
-     * <h3>Astronomical and Scientific Notes</h3>
-     * <pre>
-     *  | ISO date          | Modified Julian Day |      Decimal MJD |
-     *  | 1970-01-01T00:00  |             40,587  |       40,587.0   |
-     *  | 1970-01-01T06:00  |             40,587  |       40,587.25  |
-     *  | 1970-01-01T12:00  |             40,587  |       40,587.5   |
-     *  | 1970-01-01T18:00  |             40,587  |       40,587.75  |
-     *  | 1970-01-02T00:00  |             40,588  |       40,588.0   |
-     *  | 1970-01-02T06:00  |             40,588  |       40,588.25  |
-     *  | 1970-01-02T12:00  |             40,588  |       40,588.5   |
-     * </pre>
-     * <p>
-     * Modified Julian Days are sometimes taken to imply Universal Time or UTC, but this
-     * implementation always uses the Modified Julian Day for the local date,
-     * regardless of the offset or time-zone.
-     */
-    public static final TemporalField MODIFIED_JULIAN_DAY = Field.MODIFIED_JULIAN_DAY;
-    /**
-     * Rata Die field.
-     * <p>
-     * Rata Die counts whole days continuously starting day 1 at midnight at the beginning of 0001-01-01 (ISO).
-     * The field always refers to the local date-time, ignoring the offset or zone.
-     * <p>
-     * For date-times, 'RATA_DIE.getFrom()' assumes the same value from
-     * midnight until just before the next midnight.
-     * When 'RATA_DIE.adjustInto()' is applied to a date-time, the time of day portion remains unaltered.
-     * 'MODIFIED_JULIAN_DAY.adjustInto()' and 'RATA_DIE.getFrom()' only apply to {@code Temporal} objects
-     * that can be converted into {@link ChronoField#EPOCH_DAY}.
-     * A {@link DateTimeException} is thrown for any other type of object.
-     */
-    public static final TemporalField RATA_DIE = Field.RATA_DIE;
+    public static final TTemporalField JULIAN_DAY = Field.JULIAN_DAY;
+    public static final TTemporalField MODIFIED_JULIAN_DAY = Field.MODIFIED_JULIAN_DAY;
+    public static final TTemporalField RATA_DIE = Field.RATA_DIE;
 
-    /**
-     * Hidden implementation.
-     */
-    private static enum Field implements TemporalField {
-        /**
-         * Julian Day field.
-         */
+    private static enum Field implements TTemporalField {
         // 719163L + 1721425L = 2440588L
         JULIAN_DAY("JulianDay", DAYS, FOREVER, 2440588L),
-        /**
-         * Modified Julian Day field.
-         */
         // 719163L - 678576L = 40587L
         MODIFIED_JULIAN_DAY("ModifiedJulianDay", DAYS, FOREVER, 40587L),
-        /**
-         * Rata Die field.
-         */
         RATA_DIE("RataDie", DAYS, FOREVER, 719163L),
         // lots of others Truncated,Lilian, ANSI COBOL (also dotnet related), Excel?
         ;
 
         private final String name;
-        private final TemporalUnit baseUnit;
-        private final TemporalUnit rangeUnit;
-        private final ValueRange range;
+        private final TTemporalUnit baseUnit;
+        private final TTemporalUnit rangeUnit;
+        private final TValueRange range;
         private final long offset;
 
-        private Field(String name, TemporalUnit baseUnit, TemporalUnit rangeUnit, long offset) {
+        private Field(String name, TTemporalUnit baseUnit, TTemporalUnit rangeUnit, long offset) {
             this.name = name;
             this.baseUnit = baseUnit;
             this.rangeUnit = rangeUnit;
-            this.range = ValueRange.of(-365243219162L + offset, 365241780471L + offset);
+            this.range = TValueRange.of(-365243219162L + offset, 365241780471L + offset);
             this.offset = offset;
         }
 
         //-----------------------------------------------------------------------
         @Override
-        public TemporalUnit getBaseUnit() {
+        public TTemporalUnit getBaseUnit() {
             return baseUnit;
         }
 
         @Override
-        public TemporalUnit getRangeUnit() {
+        public TTemporalUnit getRangeUnit() {
             return rangeUnit;
         }
 
         @Override
-        public ValueRange range() {
+        public TValueRange range() {
             return range;
         }
 
@@ -208,45 +100,45 @@ public final class JulianFields {
 
         //-----------------------------------------------------------------------
         @Override
-        public boolean isSupportedBy(TemporalAccessor temporal) {
+        public boolean isSupportedBy(TTemporalAccessor temporal) {
             return temporal.isSupported(EPOCH_DAY);
         }
 
         @Override
-        public ValueRange rangeRefinedBy(TemporalAccessor temporal) {
+        public TValueRange rangeRefinedBy(TTemporalAccessor temporal) {
             if (isSupportedBy(temporal) == false) {
-                throw new UnsupportedTemporalTypeException("Unsupported field: " + this);
+                throw new TUnsupportedTemporalTypeException("Unsupported field: " + this);
             }
             return range();
         }
 
         @Override
-        public long getFrom(TemporalAccessor temporal) {
+        public long getFrom(TTemporalAccessor temporal) {
             return temporal.getLong(EPOCH_DAY) + offset;
         }
 
         @SuppressWarnings("unchecked")
         @Override
-        public <R extends Temporal> R adjustInto(R dateTime, long newValue) {
+        public <R extends TTemporal> R adjustInto(R dateTime, long newValue) {
             if (range().isValidValue(newValue) == false) {
-                throw new DateTimeException("Invalid value: " + name + " " + newValue);
+                throw new TDateTimeException("Invalid value: " + name + " " + newValue);
             }
-            return (R) dateTime.with(EPOCH_DAY, Jdk8Methods.safeSubtract(newValue, offset));
+            return (R) dateTime.with(EPOCH_DAY, TJdk8Methods.safeSubtract(newValue, offset));
         }
 
         @Override
-        public String getDisplayName(Locale locale) {
-            Jdk8Methods.requireNonNull(locale, "locale");
+        public String getDisplayName(TLocale locale) {
+            TJdk8Methods.requireNonNull(locale, "locale");
             return toString();
         }
 
         //-----------------------------------------------------------------------
         @Override
-        public TemporalAccessor resolve(Map<TemporalField, Long> fieldValues,
-                        TemporalAccessor partialTemporal, ResolverStyle resolverStyle) {
+        public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues,
+                        TTemporalAccessor partialTemporal, TResolverStyle resolverStyle) {
             long value = fieldValues.remove(this);
-            Chronology chrono = Chronology.from(partialTemporal);
-            return chrono.dateEpochDay(Jdk8Methods.safeSubtract(value, offset));
+            TChronology chrono = TChronology.from(partialTemporal);
+            return chrono.dateEpochDay(TJdk8Methods.safeSubtract(value, offset));
         }
 
         //-----------------------------------------------------------------------

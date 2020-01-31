@@ -29,7 +29,7 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp;
+package org.teavm.classlib.java.time;
 
 import java.io.DataInput;
 import java.io.DataOutput;
@@ -39,127 +39,66 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.regex.Pattern;
 
-import org.threeten.bp.jdk8.Jdk8Methods;
-import org.threeten.bp.zone.ZoneRules;
-import org.threeten.bp.zone.ZoneRulesException;
-import org.threeten.bp.zone.ZoneRulesProvider;
+import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import org.teavm.classlib.java.time.zone.TZoneRules;
+import org.teavm.classlib.java.time.zone.TZoneRulesException;
+import org.teavm.classlib.java.time.zone.TZoneRulesProvider;
 
-/**
- * A geographical region where the same time-zone rules apply.
- * <p>
- * Time-zone information is categorized as a set of rules defining when and
- * how the offset from UTC/Greenwich changes. These rules are accessed using
- * identifiers based on geographical regions, such as countries or states.
- * The most common region classification is the Time Zone Database (TZDB),
- * which defines regions such as 'Europe/Paris' and 'Asia/Tokyo'.
- * <p>
- * The region identifier, modeled by this class, is distinct from the
- * underlying rules, modeled by {@link ZoneRules}.
- * The rules are defined by governments and change frequently.
- * By contrast, the region identifier is well-defined and long-lived.
- * This separation also allows rules to be shared between regions if appropriate.
- *
- * <h3>Specification for implementors</h3>
- * This class is immutable and thread-safe.
- */
-final class ZoneRegion extends ZoneId implements Serializable {
+final class TZoneRegion extends TZoneId implements Serializable {
 
-    /**
-     * Serialization version.
-     */
     private static final long serialVersionUID = 8386373296231747096L;
-    /**
-     * The regex pattern for region IDs.
-     */
     private static final Pattern PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9~/._+-]+");
 
-    /**
-     * The time-zone ID, not null.
-     */
     private final String id;
-    /**
-     * The time-zone rules, null if zone ID was loaded leniently.
-     */
-    private final transient ZoneRules rules;
+    private final transient TZoneRules rules;
 
-    /**
-     * Obtains an instance of {@code ZoneRegion} from an identifier without checking
-     * if the time-zone has available rules.
-     * <p>
-     * This method parses the ID and applies any appropriate normalization.
-     * It does not validate the ID against the known set of IDsfor which rules are available.
-     * <p>
-     * This method is intended for advanced use cases.
-     * For example, consider a system that always retrieves time-zone rules from a remote server.
-     * Using this factory would allow a {@code ZoneRegion}, and thus a {@code ZonedDateTime},
-     * to be created without loading the rules from the remote server.
-     *
-     * @param zoneId  the time-zone ID, not null
-     * @return the zone ID, not null
-     * @throws DateTimeException if the ID format is invalid
-     */
-    private static ZoneRegion ofLenient(String zoneId) {
+    private static TZoneRegion ofLenient(String zoneId) {
         if (zoneId.equals("Z") || zoneId.startsWith("+") || zoneId.startsWith("-")) {
-            throw new DateTimeException("Invalid ID for region-based ZoneId, invalid format: " + zoneId);
+            throw new TDateTimeException("Invalid ID for region-based TZoneId, invalid format: " + zoneId);
         }
         if (zoneId.equals("UTC") || zoneId.equals("GMT") || zoneId.equals("UT")) {
-            return new ZoneRegion(zoneId, ZoneOffset.UTC.getRules());
+            return new TZoneRegion(zoneId, TZoneOffset.UTC.getRules());
         }
         if (zoneId.startsWith("UTC+") || zoneId.startsWith("GMT+") ||
                 zoneId.startsWith("UTC-") || zoneId.startsWith("GMT-")) {
-            ZoneOffset offset = ZoneOffset.of(zoneId.substring(3));
+            TZoneOffset offset = TZoneOffset.of(zoneId.substring(3));
             if (offset.getTotalSeconds() == 0) {
-                return new ZoneRegion(zoneId.substring(0, 3), offset.getRules());
+                return new TZoneRegion(zoneId.substring(0, 3), offset.getRules());
             }
-            return new ZoneRegion(zoneId.substring(0, 3) + offset.getId(), offset.getRules());
+            return new TZoneRegion(zoneId.substring(0, 3) + offset.getId(), offset.getRules());
         }
         if (zoneId.startsWith("UT+") || zoneId.startsWith("UT-")) {
-            ZoneOffset offset = ZoneOffset.of(zoneId.substring(2));
+            TZoneOffset offset = TZoneOffset.of(zoneId.substring(2));
             if (offset.getTotalSeconds() == 0) {
-                return new ZoneRegion("UT", offset.getRules());
+                return new TZoneRegion("UT", offset.getRules());
             }
-            return new ZoneRegion("UT" + offset.getId(), offset.getRules());
+            return new TZoneRegion("UT" + offset.getId(), offset.getRules());
         }
         return ofId(zoneId, false);
     }
 
-    /**
-     * Obtains an instance of {@code ZoneId} from an identifier.
-     *
-     * @param zoneId  the time-zone ID, not null
-     * @param checkAvailable  whether to check if the zone ID is available
-     * @return the zone ID, not null
-     * @throws DateTimeException if the ID format is invalid
-     * @throws DateTimeException if checking availability and the ID cannot be found
-     */
-    static ZoneRegion ofId(String zoneId, boolean checkAvailable) {
-        Jdk8Methods.requireNonNull(zoneId, "zoneId");
+    static TZoneRegion ofId(String zoneId, boolean checkAvailable) {
+        TJdk8Methods.requireNonNull(zoneId, "zoneId");
         if (zoneId.length() < 2 || PATTERN.matcher(zoneId).matches() == false) {
-            throw new DateTimeException("Invalid ID for region-based ZoneId, invalid format: " + zoneId);
+            throw new TDateTimeException("Invalid ID for region-based TZoneId, invalid format: " + zoneId);
         }
-        ZoneRules rules = null;
+        TZoneRules rules = null;
         try {
             // always attempt load for better behavior after deserialization
-            rules = ZoneRulesProvider.getRules(zoneId, true);
-        } catch (ZoneRulesException ex) {
+            rules = TZoneRulesProvider.getRules(zoneId, true);
+        } catch (TZoneRulesException ex) {
             // special case as removed from data file
             if (zoneId.equals("GMT0")) {
-                rules = ZoneOffset.UTC.getRules();
+                rules = TZoneOffset.UTC.getRules();
             } else if (checkAvailable) {
                 throw ex;
             }
         }
-        return new ZoneRegion(zoneId, rules);
+        return new TZoneRegion(zoneId, rules);
     }
 
     //-------------------------------------------------------------------------
-    /**
-     * Constructor.
-     *
-     * @param id  the time-zone ID, not null
-     * @param rules  the rules, null for lazy lookup
-     */
-    ZoneRegion(String id, ZoneRules rules) {
+    TZoneRegion(String id, TZoneRules rules) {
         this.id = id;
         this.rules = rules;
     }
@@ -171,10 +110,10 @@ final class ZoneRegion extends ZoneId implements Serializable {
     }
 
     @Override
-    public ZoneRules getRules() {
+    public TZoneRules getRules() {
         // additional query for group provider when null allows for possibility
-        // that the provider was added after the ZoneId was created
-        return (rules != null ? rules : ZoneRulesProvider.getRules(id, false));
+        // that the provider was added after the TZoneId was created
+        return (rules != null ? rules : TZoneRulesProvider.getRules(id, false));
     }
 
     //-----------------------------------------------------------------------
@@ -182,11 +121,6 @@ final class ZoneRegion extends ZoneId implements Serializable {
         return new Ser(Ser.ZONE_REGION_TYPE, this);
     }
 
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
     private Object readResolve() throws ObjectStreamException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
@@ -201,7 +135,7 @@ final class ZoneRegion extends ZoneId implements Serializable {
         out.writeUTF(id);
     }
 
-    static ZoneId readExternal(DataInput in) throws IOException {
+    static TZoneId readExternal(DataInput in) throws IOException {
         String id = in.readUTF();
         return ofLenient(id);
     }

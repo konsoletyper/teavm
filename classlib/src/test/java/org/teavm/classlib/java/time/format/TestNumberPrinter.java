@@ -29,36 +29,33 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.fail;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.HOUR_OF_DAY;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.HOUR_OF_DAY;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.format.DateTimeFormatterBuilder.NumberPrinterParser;
-import org.threeten.bp.temporal.MockFieldValue;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.TLocalDate;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.NumberPrinterParser;
+import org.teavm.classlib.java.time.temporal.MockFieldValue;
 
-/**
- * Test SimpleNumberPrinterParser.
- */
 @Test
 public class TestNumberPrinter extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void test_print_emptyCalendrical() throws Exception {
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, 1, 2, SignStyle.NEVER);
+        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, 1, 2, TSignStyle.NEVER);
         pp.print(printEmptyContext, buf);
     }
 
     public void test_print_append() throws Exception {
-        printContext.setDateTime(LocalDate.of(2012, 1, 3));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, 1, 2, SignStyle.NEVER);
+        printContext.setDateTime(TLocalDate.of(2012, 1, 3));
+        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, 1, 2, TSignStyle.NEVER);
         buf.append("EXISTING");
         pp.print(printContext, buf);
         assertEquals(buf.toString(), "EXISTING3");
@@ -158,14 +155,14 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
     @Test(dataProvider="Pad")
     public void test_pad_NOT_NEGATIVE(int minPad, int maxPad, long value, String result) throws Exception {
         printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, SignStyle.NOT_NEGATIVE);
+        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.NOT_NEGATIVE);
         try {
             pp.print(printContext, buf);
             if (result == null || value < 0) {
                 fail("Expected exception");
             }
             assertEquals(buf.toString(), result);
-        } catch (DateTimeException ex) {
+        } catch (TDateTimeException ex) {
             if (result == null || value < 0) {
                 assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
             } else {
@@ -177,14 +174,14 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
     @Test(dataProvider="Pad")
     public void test_pad_NEVER(int minPad, int maxPad, long value, String result) throws Exception {
         printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, SignStyle.NEVER);
+        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.NEVER);
         try {
             pp.print(printContext, buf);
             if (result == null) {
                 fail("Expected exception");
             }
             assertEquals(buf.toString(), result);
-        } catch (DateTimeException ex) {
+        } catch (TDateTimeException ex) {
             if (result != null) {
                 throw ex;
             }
@@ -195,14 +192,14 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
     @Test(dataProvider="Pad")
     public void test_pad_NORMAL(int minPad, int maxPad, long value, String result) throws Exception {
         printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, SignStyle.NORMAL);
+        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.NORMAL);
         try {
             pp.print(printContext, buf);
             if (result == null) {
                 fail("Expected exception");
             }
             assertEquals(buf.toString(), (value < 0 ? "-" + result : result));
-        } catch (DateTimeException ex) {
+        } catch (TDateTimeException ex) {
             if (result != null) {
                 throw ex;
             }
@@ -213,14 +210,14 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
     @Test(dataProvider="Pad")
     public void test_pad_ALWAYS(int minPad, int maxPad, long value, String result) throws Exception {
         printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, SignStyle.ALWAYS);
+        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.ALWAYS);
         try {
             pp.print(printContext, buf);
             if (result == null) {
                 fail("Expected exception");
             }
             assertEquals(buf.toString(), (value < 0 ? "-" + result : "+" + result));
-        } catch (DateTimeException ex) {
+        } catch (TDateTimeException ex) {
             if (result != null) {
                 throw ex;
             }
@@ -231,7 +228,7 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
     @Test(dataProvider="Pad")
     public void test_pad_EXCEEDS_PAD(int minPad, int maxPad, long value, String result) throws Exception {
         printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, SignStyle.EXCEEDS_PAD);
+        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.EXCEEDS_PAD);
         try {
             pp.print(printContext, buf);
             if (result == null) {
@@ -242,7 +239,7 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
                 result = (value < 0 ? "-" + result : "+" + result);
             }
             assertEquals(buf.toString(), result);
-        } catch (DateTimeException ex) {
+        } catch (TDateTimeException ex) {
             if (result != null) {
                 throw ex;
             }
@@ -252,17 +249,17 @@ public class TestNumberPrinter extends AbstractTestPrinterParser {
 
     //-----------------------------------------------------------------------
     public void test_toString1() throws Exception {
-        NumberPrinterParser pp = new NumberPrinterParser(HOUR_OF_DAY, 1, 19, SignStyle.NORMAL);
+        NumberPrinterParser pp = new NumberPrinterParser(HOUR_OF_DAY, 1, 19, TSignStyle.NORMAL);
         assertEquals(pp.toString(), "Value(HourOfDay)");
     }
 
     public void test_toString2() throws Exception {
-        NumberPrinterParser pp = new NumberPrinterParser(HOUR_OF_DAY, 2, 2, SignStyle.NOT_NEGATIVE);
+        NumberPrinterParser pp = new NumberPrinterParser(HOUR_OF_DAY, 2, 2, TSignStyle.NOT_NEGATIVE);
         assertEquals(pp.toString(), "Value(HourOfDay,2)");
     }
 
     public void test_toString3() throws Exception {
-        NumberPrinterParser pp = new NumberPrinterParser(HOUR_OF_DAY, 1, 2, SignStyle.NOT_NEGATIVE);
+        NumberPrinterParser pp = new NumberPrinterParser(HOUR_OF_DAY, 1, 2, TSignStyle.NOT_NEGATIVE);
         assertEquals(pp.toString(), "Value(HourOfDay,1,2,NOT_NEGATIVE)");
     }
 

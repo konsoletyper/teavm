@@ -29,49 +29,40 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
-import org.threeten.bp.chrono.Chronology;
+import org.teavm.classlib.java.time.chrono.TChronology;
 
-/**
- * The Service Provider Implementation to obtain date-time formatters for a style.
- * <p>
- * This implementation is based on extraction of data from a {@link SimpleDateFormat}.
- *
- * <h3>Specification for implementors</h3>
- * This class is immutable and thread-safe.
- */
-final class SimpleDateTimeFormatStyleProvider extends DateTimeFormatStyleProvider {
+final class TSimpleDateTimeFormatStyleProvider extends TDateTimeFormatStyleProvider {
     // TODO: Better implementation based on CLDR
 
-    /** Cache of formatters. */
     private static final ConcurrentMap<String, Object> FORMATTER_CACHE =
                         new ConcurrentHashMap<String, Object>(16, 0.75f, 2);
 
     @Override
-    public Locale[] getAvailableLocales() {
+    public TLocale[] getAvailableLocales() {
         return DateFormat.getAvailableLocales();
     }
 
     @Override
-    public DateTimeFormatter getFormatter(
-            FormatStyle dateStyle, FormatStyle timeStyle, Chronology chrono, Locale locale) {
+    public TDateTimeFormatter getFormatter(
+            TFormatStyle dateStyle, TFormatStyle timeStyle, TChronology chrono, TLocale locale) {
         if (dateStyle == null && timeStyle == null) {
-            throw new IllegalArgumentException("Date and Time style must not both be null");
+            throw new IllegalArgumentException("TDate and Time style must not both be null");
         }
         String key = chrono.getId() + '|' + locale.toString() + '|' + dateStyle + timeStyle;
         Object cached = FORMATTER_CACHE.get(key);
         if (cached != null) {
             if (cached.equals("")) {
-                throw new IllegalArgumentException("Unable to convert DateFormat to DateTimeFormatter");
+                throw new IllegalArgumentException("Unable to convert DateFormat to TDateTimeFormatter");
             }
-            return (DateTimeFormatter) cached;
+            return (TDateTimeFormatter) cached;
         }
         DateFormat dateFormat;
         if (dateStyle != null) {
@@ -85,20 +76,15 @@ final class SimpleDateTimeFormatStyleProvider extends DateTimeFormatStyleProvide
         }
         if (dateFormat instanceof SimpleDateFormat) {
             String pattern = ((SimpleDateFormat) dateFormat).toPattern();
-            DateTimeFormatter formatter = new DateTimeFormatterBuilder().appendPattern(pattern).toFormatter(locale);
+            TDateTimeFormatter formatter = new TDateTimeFormatterBuilder().appendPattern(pattern).toFormatter(locale);
             FORMATTER_CACHE.putIfAbsent(key, formatter);
             return formatter;
         }
         FORMATTER_CACHE.putIfAbsent(key, "");
-        throw new IllegalArgumentException("Unable to convert DateFormat to DateTimeFormatter");
+        throw new IllegalArgumentException("Unable to convert DateFormat to TDateTimeFormatter");
     }
 
-    /**
-     * Converts the enum style to the old format style.
-     * @param style  the enum style, not null
-     * @return the int style
-     */
-    private int convertStyle(FormatStyle style) {
+    private int convertStyle(TFormatStyle style) {
         return style.ordinal();  // indices happen to align
     }
 

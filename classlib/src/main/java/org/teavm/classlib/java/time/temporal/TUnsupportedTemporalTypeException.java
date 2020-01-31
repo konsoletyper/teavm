@@ -29,39 +29,19 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.temporal;
+package org.teavm.classlib.java.time.temporal;
 
-import org.threeten.bp.DateTimeException;
+import org.teavm.classlib.java.time.TDateTimeException;
 
-/**
- * An exception that indicates a type is unsupported.
- *
- * <h3>Specification for implementors</h3>
- * This class is intended for use in a single thread.
- */
-public class UnsupportedTemporalTypeException extends DateTimeException {
+public class TUnsupportedTemporalTypeException extends TDateTimeException {
 
-    /**
-     * Serialization version.
-     */
     private static final long serialVersionUID = -189676278478L;
 
-    /**
-     * Constructs a new date-time exception with the specified message.
-     *
-     * @param message  the message to use for this exception, may be null
-     */
-    public UnsupportedTemporalTypeException(String message) {
+    public TUnsupportedTemporalTypeException(String message) {
         super(message);
     }
 
-    /**
-     * Constructs a new date-time exception with the specified message and cause.
-     *
-     * @param message  the message to use for this exception, may be null
-     * @param cause  the cause of the exception, may be null
-     */
-    public UnsupportedTemporalTypeException(String message, Throwable cause) {
+    public TUnsupportedTemporalTypeException(String message, Throwable cause) {
         super(message, cause);
     }
 

@@ -29,9 +29,9 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.chrono;
+package org.teavm.classlib.java.time.chrono;
 
-import static org.threeten.bp.temporal.ChronoUnit.SECONDS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.SECONDS;
 
 import java.io.IOException;
 import java.io.InvalidObjectException;
@@ -41,81 +41,45 @@ import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.List;
 
-import org.threeten.bp.Instant;
-import org.threeten.bp.LocalDateTime;
-import org.threeten.bp.ZoneId;
-import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.jdk8.Jdk8Methods;
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.ChronoUnit;
-import org.threeten.bp.temporal.Temporal;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.TemporalUnit;
-import org.threeten.bp.zone.ZoneOffsetTransition;
-import org.threeten.bp.zone.ZoneRules;
+import org.teavm.classlib.java.time.TInstant;
+import org.teavm.classlib.java.time.TLocalDateTime;
+import org.teavm.classlib.java.time.TZoneId;
+import org.teavm.classlib.java.time.TZoneOffset;
+import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import org.teavm.classlib.java.time.temporal.TChronoField;
+import org.teavm.classlib.java.time.temporal.TChronoUnit;
+import org.teavm.classlib.java.time.temporal.TTemporal;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.time.temporal.TTemporalUnit;
+import org.teavm.classlib.java.time.zone.TZoneOffsetTransition;
+import org.teavm.classlib.java.time.zone.TZoneRules;
 
-/**
- * A date-time with a time-zone in the calendar neutral API.
- * <p>
- * {@code ZoneChronoDateTime} is an immutable representation of a date-time with a time-zone.
- * This class stores all date and time fields, to a precision of nanoseconds,
- * as well as a time-zone and zone offset.
- * <p>
- * The purpose of storing the time-zone is to distinguish the ambiguous case where
- * the local time-line overlaps, typically as a result of the end of daylight time.
- * Information about the local-time can be obtained using methods on the time-zone.
- *
- * <h3>Specification for implementors</h3>
- * This class is immutable and thread-safe.
- *
- * @param <D> the date type
- */
-final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
-        extends ChronoZonedDateTime<D>
+final class ChronoZonedDateTimeImpl<D extends TChronoLocalDate>
+        extends TChronoZonedDateTime<D>
         implements Serializable {
 
-    /**
-     * Serialization version.
-     */
     private static final long serialVersionUID = -5261813987200935591L;
 
-    /**
-     * The local date-time.
-     */
-    private final ChronoLocalDateTimeImpl<D> dateTime;
-    /**
-     * The zone offset.
-     */
-    private final ZoneOffset offset;
-    /**
-     * The zone ID.
-     */
-    private final ZoneId zone;
+    private final TChronoLocalDateTimeImpl<D> dateTime;
+    private final TZoneOffset offset;
+    private final TZoneId zone;
 
     //-----------------------------------------------------------------------
-    /**
-     * Obtains an instance from a local date-time using the preferred offset if possible.
-     *
-     * @param localDateTime  the local date-time, not null
-     * @param zone  the zone identifier, not null
-     * @param preferredOffset  the zone offset, null if no preference
-     * @return the zoned date-time, not null
-     */
-    static <R extends ChronoLocalDate> ChronoZonedDateTime<R> ofBest(
-            ChronoLocalDateTimeImpl<R> localDateTime, ZoneId zone, ZoneOffset preferredOffset) {
-        Jdk8Methods.requireNonNull(localDateTime, "localDateTime");
-        Jdk8Methods.requireNonNull(zone, "zone");
-        if (zone instanceof ZoneOffset) {
-            return new ChronoZonedDateTimeImpl<R>(localDateTime, (ZoneOffset) zone, zone);
+    static <R extends TChronoLocalDate> TChronoZonedDateTime<R> ofBest(
+            TChronoLocalDateTimeImpl<R> localDateTime, TZoneId zone, TZoneOffset preferredOffset) {
+        TJdk8Methods.requireNonNull(localDateTime, "localDateTime");
+        TJdk8Methods.requireNonNull(zone, "zone");
+        if (zone instanceof TZoneOffset) {
+            return new ChronoZonedDateTimeImpl<R>(localDateTime, (TZoneOffset) zone, zone);
         }
-        ZoneRules rules = zone.getRules();
-        LocalDateTime isoLDT = LocalDateTime.from(localDateTime);
-        List<ZoneOffset> validOffsets = rules.getValidOffsets(isoLDT);
-        ZoneOffset offset;
+        TZoneRules rules = zone.getRules();
+        TLocalDateTime isoLDT = TLocalDateTime.from(localDateTime);
+        List<TZoneOffset> validOffsets = rules.getValidOffsets(isoLDT);
+        TZoneOffset offset;
         if (validOffsets.size() == 1) {
             offset = validOffsets.get(0);
         } else if (validOffsets.size() == 0) {
-            ZoneOffsetTransition trans = rules.getTransition(isoLDT);
+            TZoneOffsetTransition trans = rules.getTransition(isoLDT);
             localDateTime = localDateTime.plusSeconds(trans.getDuration().getSeconds());
             offset = trans.getOffsetAfter();
         } else {
@@ -125,71 +89,49 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
                 offset = validOffsets.get(0);
             }
         }
-        Jdk8Methods.requireNonNull(offset, "offset");  // protect against bad ZoneRules
+        TJdk8Methods.requireNonNull(offset, "offset");  // protect against bad TZoneRules
         return new ChronoZonedDateTimeImpl<R>(localDateTime, offset, zone);
     }
 
-    /**
-     * Obtains an instance from an instant using the specified time-zone.
-     *
-     * @param chrono  the chronology, not null
-     * @param instant  the instant, not null
-     * @param zone  the zone identifier, not null
-     * @return the zoned date-time, not null
-     */
-    static <R extends ChronoLocalDate> ChronoZonedDateTimeImpl<R> ofInstant(Chronology chrono, Instant instant, ZoneId zone) {
-        ZoneRules rules = zone.getRules();
-        ZoneOffset offset = rules.getOffset(instant);
-        Jdk8Methods.requireNonNull(offset, "offset");  // protect against bad ZoneRules
-        LocalDateTime ldt = LocalDateTime.ofEpochSecond(instant.getEpochSecond(), instant.getNano(), offset);
+    static <R extends TChronoLocalDate> ChronoZonedDateTimeImpl<R> ofInstant(TChronology chrono, TInstant instant, TZoneId zone) {
+        TZoneRules rules = zone.getRules();
+        TZoneOffset offset = rules.getOffset(instant);
+        TJdk8Methods.requireNonNull(offset, "offset");  // protect against bad TZoneRules
+        TLocalDateTime ldt = TLocalDateTime.ofEpochSecond(instant.getEpochSecond(), instant.getNano(), offset);
         @SuppressWarnings("unchecked")
-        ChronoLocalDateTimeImpl<R> cldt = (ChronoLocalDateTimeImpl<R>) chrono.localDateTime(ldt);
+        TChronoLocalDateTimeImpl<R> cldt = (TChronoLocalDateTimeImpl<R>) chrono.localDateTime(ldt);
         return new ChronoZonedDateTimeImpl<R>(cldt, offset, zone);
     }
 
-    /**
-     * Obtains an instance from an {@code Instant}.
-     *
-     * @param instant  the instant to create the date-time from, not null
-     * @param zone  the time-zone to use, validated not null
-     * @return the zoned date-time, validated not null
-     */
-    private ChronoZonedDateTimeImpl<D> create(Instant instant, ZoneId zone) {
+    private ChronoZonedDateTimeImpl<D> create(TInstant instant, TZoneId zone) {
         return ofInstant(toLocalDate().getChronology(), instant, zone);
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Constructor.
-     *
-     * @param dateTime  the date-time, not null
-     * @param offset  the zone offset, not null
-     * @param zone  the zone ID, not null
-     */
-    private ChronoZonedDateTimeImpl(ChronoLocalDateTimeImpl<D> dateTime, ZoneOffset offset, ZoneId zone) {
-        this.dateTime = Jdk8Methods.requireNonNull(dateTime, "dateTime");
-        this.offset = Jdk8Methods.requireNonNull(offset, "offset");
-        this.zone = Jdk8Methods.requireNonNull(zone, "zone");
+    private ChronoZonedDateTimeImpl(TChronoLocalDateTimeImpl<D> dateTime, TZoneOffset offset, TZoneId zone) {
+        this.dateTime = TJdk8Methods.requireNonNull(dateTime, "dateTime");
+        this.offset = TJdk8Methods.requireNonNull(offset, "offset");
+        this.zone = TJdk8Methods.requireNonNull(zone, "zone");
     }
 
     //-----------------------------------------------------------------------
     @Override
-    public boolean isSupported(TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
+    public boolean isSupported(TTemporalUnit unit) {
+        if (unit instanceof TChronoUnit) {
             return unit.isDateBased() || unit.isTimeBased();
         }
         return unit != null && unit.isSupportedBy(this);
     }
 
-    public ZoneOffset getOffset() {
+    public TZoneOffset getOffset() {
         return offset;
     }
 
     @Override
-    public ChronoZonedDateTime<D> withEarlierOffsetAtOverlap() {
-        ZoneOffsetTransition trans = getZone().getRules().getTransition(LocalDateTime.from(this));
+    public TChronoZonedDateTime<D> withEarlierOffsetAtOverlap() {
+        TZoneOffsetTransition trans = getZone().getRules().getTransition(TLocalDateTime.from(this));
         if (trans != null && trans.isOverlap()) {
-            ZoneOffset earlierOffset = trans.getOffsetBefore();
+            TZoneOffset earlierOffset = trans.getOffsetBefore();
             if (earlierOffset.equals(offset) == false) {
                 return new ChronoZonedDateTimeImpl<D>(dateTime, earlierOffset, zone);
             }
@@ -198,10 +140,10 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
     }
 
     @Override
-    public ChronoZonedDateTime<D> withLaterOffsetAtOverlap() {
-        ZoneOffsetTransition trans = getZone().getRules().getTransition(LocalDateTime.from(this));
+    public TChronoZonedDateTime<D> withLaterOffsetAtOverlap() {
+        TZoneOffsetTransition trans = getZone().getRules().getTransition(TLocalDateTime.from(this));
         if (trans != null) {
-            ZoneOffset offset = trans.getOffsetAfter();
+            TZoneOffset offset = trans.getOffsetAfter();
             if (offset.equals(getOffset()) == false) {
                 return new ChronoZonedDateTimeImpl<D>(dateTime, offset, zone);
             }
@@ -211,39 +153,39 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
 
     //-----------------------------------------------------------------------
     @Override
-    public ChronoLocalDateTime<D> toLocalDateTime() {
+    public TChronoLocalDateTime<D> toLocalDateTime() {
         return dateTime;
     }
 
-    public ZoneId getZone() {
+    public TZoneId getZone() {
         return zone;
     }
 
-    public ChronoZonedDateTime<D> withZoneSameLocal(ZoneId zone) {
+    public TChronoZonedDateTime<D> withZoneSameLocal(TZoneId zone) {
         return ofBest(dateTime, zone, offset);
     }
 
     @Override
-    public ChronoZonedDateTime<D> withZoneSameInstant(ZoneId zone) {
-        Jdk8Methods.requireNonNull(zone, "zone");
+    public TChronoZonedDateTime<D> withZoneSameInstant(TZoneId zone) {
+        TJdk8Methods.requireNonNull(zone, "zone");
         return this.zone.equals(zone) ? this : create(dateTime.toInstant(offset), zone);
     }
 
     //-----------------------------------------------------------------------
     @Override
-    public boolean isSupported(TemporalField field) {
-        return field instanceof ChronoField || (field != null && field.isSupportedBy(this));
+    public boolean isSupported(TTemporalField field) {
+        return field instanceof TChronoField || (field != null && field.isSupportedBy(this));
     }
 
     //-----------------------------------------------------------------------
     @Override
-    public ChronoZonedDateTime<D> with(TemporalField field, long newValue) {
-        if (field instanceof ChronoField) {
-            ChronoField f = (ChronoField) field;
+    public TChronoZonedDateTime<D> with(TTemporalField field, long newValue) {
+        if (field instanceof TChronoField) {
+            TChronoField f = (TChronoField) field;
             switch (f) {
                 case INSTANT_SECONDS: return plus(newValue - toEpochSecond(), SECONDS);
                 case OFFSET_SECONDS: {
-                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(f.checkValidIntValue(newValue));
+                    TZoneOffset offset = TZoneOffset.ofTotalSeconds(f.checkValidIntValue(newValue));
                     return create(dateTime.toInstant(offset), zone);
                 }
             }
@@ -254,8 +196,8 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
 
     //-----------------------------------------------------------------------
     @Override
-    public ChronoZonedDateTime<D> plus(long amountToAdd, TemporalUnit unit) {
-        if (unit instanceof ChronoUnit) {
+    public TChronoZonedDateTime<D> plus(long amountToAdd, TTemporalUnit unit) {
+        if (unit instanceof TChronoUnit) {
             return with(dateTime.plus(amountToAdd, unit));
         }
         return toLocalDate().getChronology().ensureChronoZonedDateTime(unit.addTo(this, amountToAdd));   /// TODO: Generics replacement Risk!
@@ -263,10 +205,10 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
 
     //-----------------------------------------------------------------------
     @Override
-    public long until(Temporal endExclusive, TemporalUnit unit) {
+    public long until(TTemporal endExclusive, TTemporalUnit unit) {
         @SuppressWarnings("unchecked")
-        ChronoZonedDateTime<D> end = (ChronoZonedDateTime<D>) toLocalDate().getChronology().zonedDateTime(endExclusive);
-        if (unit instanceof ChronoUnit) {
+        TChronoZonedDateTime<D> end = (TChronoZonedDateTime<D>) toLocalDate().getChronology().zonedDateTime(endExclusive);
+        if (unit instanceof TChronoUnit) {
             end = end.withZoneSameInstant(offset);
             return dateTime.until(end.toLocalDateTime(), unit);
         }
@@ -278,11 +220,6 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         return new Ser(Ser.CHRONO_ZONEDDATETIME_TYPE, this);
     }
 
-    /**
-     * Defend against malicious streams.
-     * @return never
-     * @throws InvalidObjectException always
-     */
     private Object readResolve() throws ObjectStreamException {
         throw new InvalidObjectException("Deserialization via serialization delegate");
     }
@@ -293,10 +230,10 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         out.writeObject(zone);
     }
 
-    static ChronoZonedDateTime<?> readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-        ChronoLocalDateTime<?> dateTime = (ChronoLocalDateTime<?>) in.readObject();
-        ZoneOffset offset = (ZoneOffset) in.readObject();
-        ZoneId zone = (ZoneId) in.readObject();
+    static TChronoZonedDateTime<?> readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+        TChronoLocalDateTime<?> dateTime = (TChronoLocalDateTime<?>) in.readObject();
+        TZoneOffset offset = (TZoneOffset) in.readObject();
+        TZoneId zone = (TZoneId) in.readObject();
         return dateTime.atZone(offset).withZoneSameLocal(zone);
         // TODO: ZDT uses ofLenient()
     }
@@ -307,8 +244,8 @@ final class ChronoZonedDateTimeImpl<D extends ChronoLocalDate>
         if (this == obj) {
             return true;
         }
-        if (obj instanceof ChronoZonedDateTime) {
-            return compareTo((ChronoZonedDateTime<?>) obj) == 0;
+        if (obj instanceof TChronoZonedDateTime) {
+            return compareTo((TChronoZonedDateTime<?>) obj) == 0;
         }
         return false;
     }

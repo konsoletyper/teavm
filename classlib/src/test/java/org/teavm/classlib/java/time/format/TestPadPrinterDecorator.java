@@ -29,20 +29,17 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
-import org.testng.annotations.Test;
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.format.DateTimeFormatterBuilder.CharLiteralPrinterParser;
-import org.threeten.bp.format.DateTimeFormatterBuilder.PadPrinterParserDecorator;
-import org.threeten.bp.format.DateTimeFormatterBuilder.StringLiteralPrinterParser;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.TLocalDate;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.CharLiteralPrinterParser;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.PadPrinterParserDecorator;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.StringLiteralPrinterParser;
 
-/**
- * Test PadPrinterDecorator.
- */
 @Test
 public class TestPadPrinterDecorator extends AbstractTestPrinterParser {
 
@@ -54,7 +51,7 @@ public class TestPadPrinterDecorator extends AbstractTestPrinterParser {
     }
 
     public void test_print_fullDateTime() throws Exception {
-        printContext.setDateTime(LocalDate.of(2008, 12, 3));
+        printContext.setDateTime(TLocalDate.of(2008, 12, 3));
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new CharLiteralPrinterParser('Z'), 3, '-');
         pp.print(printContext, buf);
         assertEquals(buf.toString(), "--Z");
@@ -92,7 +89,7 @@ public class TestPadPrinterDecorator extends AbstractTestPrinterParser {
         assertEquals(buf.toString(), "-WXYZ");
     }
 
-    @Test(expectedExceptions=DateTimeException.class)
+    @Test(expectedExceptions=TDateTimeException.class)
     public void test_print_overPad() throws Exception {
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new StringLiteralPrinterParser("WXYZ"), 3, '-');
         pp.print(printEmptyContext, buf);

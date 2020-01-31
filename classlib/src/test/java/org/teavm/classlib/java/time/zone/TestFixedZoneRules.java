@@ -29,9 +29,9 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.zone;
+package org.teavm.classlib.java.time.zone;
 
-import static org.testng.Assert.assertEquals;
+import static org.junit.Assert.assertEquals;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -39,28 +39,25 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.Duration;
-import org.threeten.bp.Instant;
-import org.threeten.bp.LocalDateTime;
-import org.threeten.bp.LocalTime;
-import org.threeten.bp.Month;
-import org.threeten.bp.ZoneOffset;
-import org.threeten.bp.zone.ZoneOffsetTransitionRule.TimeDefinition;
+import org.junit.Test;
+import org.teavm.classlib.java.time.TDuration;
+import org.teavm.classlib.java.time.TInstant;
+import org.teavm.classlib.java.time.TLocalDateTime;
+import org.teavm.classlib.java.time.TLocalTime;
+import org.teavm.classlib.java.time.TMonth;
+import org.teavm.classlib.java.time.TZoneOffset;
+import org.teavm.classlib.java.time.zone.TZoneOffsetTransitionRule.TimeDefinition;
 
-/**
- * Test ZoneRules for fixed offset time-zones.
- */
 @Test
 public class TestFixedZoneRules {
 
-    private static final ZoneOffset OFFSET_PONE = ZoneOffset.ofHours(1);
-    private static final ZoneOffset OFFSET_PTWO = ZoneOffset.ofHours(2);
-    private static final ZoneOffset OFFSET_M18 = ZoneOffset.ofHours(-18);
-    private static final LocalDateTime LDT = LocalDateTime.of(2010, 12, 3, 11, 30);
-    private static final Instant INSTANT = LDT.toInstant(OFFSET_PONE);
+    private static final TZoneOffset OFFSET_PONE = TZoneOffset.ofHours(1);
+    private static final TZoneOffset OFFSET_PTWO = TZoneOffset.ofHours(2);
+    private static final TZoneOffset OFFSET_M18 = TZoneOffset.ofHours(-18);
+    private static final TLocalDateTime LDT = TLocalDateTime.of(2010, 12, 3, 11, 30);
+    private static final TInstant INSTANT = LDT.toInstant(OFFSET_PONE);
 
-    private ZoneRules make(ZoneOffset offset) {
+    private TZoneRules make(TZoneOffset offset) {
         return offset.getRules();
     }
 
@@ -77,7 +74,7 @@ public class TestFixedZoneRules {
     // Basics
     //-----------------------------------------------------------------------
     @Test(dataProvider="rules")
-    public void test_serialization(ZoneRules test, ZoneOffset expectedOffset) throws Exception {
+    public void test_serialization(TZoneRules test, TZoneOffset expectedOffset) throws Exception {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         ObjectOutputStream out = new ObjectOutputStream(baos);
         out.writeObject(test);
@@ -86,7 +83,7 @@ public class TestFixedZoneRules {
 
         ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
         ObjectInputStream in = new ObjectInputStream(bais);
-        ZoneRules result = (ZoneRules) in.readObject();
+        TZoneRules result = (TZoneRules) in.readObject();
 
         assertEquals(result, test);
         assertEquals(result.getClass(), test.getClass());
@@ -97,33 +94,33 @@ public class TestFixedZoneRules {
     //-----------------------------------------------------------------------
     @Test
     public void test_data_nullInput() {
-        ZoneRules test = make(OFFSET_PONE);
-        assertEquals(test.getOffset((Instant) null), OFFSET_PONE);
-        assertEquals(test.getOffset((LocalDateTime) null), OFFSET_PONE);
+        TZoneRules test = make(OFFSET_PONE);
+        assertEquals(test.getOffset((TInstant) null), OFFSET_PONE);
+        assertEquals(test.getOffset((TLocalDateTime) null), OFFSET_PONE);
         assertEquals(test.getValidOffsets(null).size(), 1);
         assertEquals(test.getValidOffsets(null).get(0), OFFSET_PONE);
         assertEquals(test.getTransition(null), null);
         assertEquals(test.getStandardOffset(null), OFFSET_PONE);
-        assertEquals(test.getDaylightSavings(null), Duration.ZERO);
+        assertEquals(test.getDaylightSavings(null), TDuration.ZERO);
         assertEquals(test.isDaylightSavings(null), false);
         assertEquals(test.nextTransition(null), null);
         assertEquals(test.previousTransition(null), null);
     }
 
     @Test(dataProvider="rules")
-    public void test_getOffset_Instant(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_getOffset_Instant(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.getOffset(INSTANT), expectedOffset);
-        assertEquals(test.getOffset((Instant) null), expectedOffset);
+        assertEquals(test.getOffset((TInstant) null), expectedOffset);
     }
 
     @Test(dataProvider="rules")
-    public void test_getOffset_LocalDateTime(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_getOffset_LocalDateTime(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.getOffset(LDT), expectedOffset);
-        assertEquals(test.getOffset((LocalDateTime) null), expectedOffset);
+        assertEquals(test.getOffset((TLocalDateTime) null), expectedOffset);
     }
 
     @Test(dataProvider="rules")
-    public void test_getValidOffsets_LDT(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_getValidOffsets_LDT(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.getValidOffsets(LDT).size(), 1);
         assertEquals(test.getValidOffsets(LDT).get(0), expectedOffset);
         assertEquals(test.getValidOffsets(null).size(), 1);
@@ -131,74 +128,74 @@ public class TestFixedZoneRules {
     }
 
     @Test(dataProvider="rules")
-    public void test_getTransition_LDT(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_getTransition_LDT(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.getTransition(LDT), null);
         assertEquals(test.getTransition(null), null);
     }
 
     @Test(dataProvider="rules")
-    public void test_isValidOffset_LDT_ZO(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_isValidOffset_LDT_ZO(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.isValidOffset(LDT, expectedOffset), true);
-        assertEquals(test.isValidOffset(LDT, ZoneOffset.UTC), false);
+        assertEquals(test.isValidOffset(LDT, TZoneOffset.UTC), false);
         assertEquals(test.isValidOffset(LDT, null), false);
 
         assertEquals(test.isValidOffset(null, expectedOffset), true);
-        assertEquals(test.isValidOffset(null, ZoneOffset.UTC), false);
+        assertEquals(test.isValidOffset(null, TZoneOffset.UTC), false);
         assertEquals(test.isValidOffset(null, null), false);
     }
 
     @Test(dataProvider="rules")
-    public void test_getStandardOffset_Instant(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_getStandardOffset_Instant(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.getStandardOffset(INSTANT), expectedOffset);
         assertEquals(test.getStandardOffset(null), expectedOffset);
     }
 
     @Test(dataProvider="rules")
-    public void test_getDaylightSavings_Instant(ZoneRules test, ZoneOffset expectedOffset) {
-        assertEquals(test.getDaylightSavings(INSTANT), Duration.ZERO);
-        assertEquals(test.getDaylightSavings(null), Duration.ZERO);
+    public void test_getDaylightSavings_Instant(TZoneRules test, TZoneOffset expectedOffset) {
+        assertEquals(test.getDaylightSavings(INSTANT), TDuration.ZERO);
+        assertEquals(test.getDaylightSavings(null), TDuration.ZERO);
     }
 
     @Test(dataProvider="rules")
-    public void test_isDaylightSavings_Instant(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_isDaylightSavings_Instant(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.isDaylightSavings(INSTANT), false);
         assertEquals(test.isDaylightSavings(null), false);
     }
 
     //-------------------------------------------------------------------------
     @Test(dataProvider="rules")
-    public void test_nextTransition_Instant(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_nextTransition_Instant(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.nextTransition(INSTANT), null);
         assertEquals(test.nextTransition(null), null);
     }
 
     @Test(dataProvider="rules")
-    public void test_previousTransition_Instant(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_previousTransition_Instant(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.previousTransition(INSTANT), null);
         assertEquals(test.previousTransition(null), null);
     }
 
     //-------------------------------------------------------------------------
     @Test(dataProvider="rules")
-    public void test_getTransitions(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_getTransitions(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.getTransitions().size(), 0);
     }
 
     @Test(expectedExceptions=UnsupportedOperationException.class)
     public void test_getTransitions_immutable() {
-        ZoneRules test = make(OFFSET_PTWO);
-        test.getTransitions().add(ZoneOffsetTransition.of(LDT, OFFSET_PONE, OFFSET_PTWO));
+        TZoneRules test = make(OFFSET_PTWO);
+        test.getTransitions().add(TZoneOffsetTransition.of(LDT, OFFSET_PONE, OFFSET_PTWO));
     }
 
     @Test(dataProvider="rules")
-    public void test_getTransitionRules(ZoneRules test, ZoneOffset expectedOffset) {
+    public void test_getTransitionRules(TZoneRules test, TZoneOffset expectedOffset) {
         assertEquals(test.getTransitionRules().size(), 0);
     }
 
     @Test(expectedExceptions=UnsupportedOperationException.class)
     public void test_getTransitionRules_immutable() {
-        ZoneRules test = make(OFFSET_PTWO);
-        test.getTransitionRules().add(ZoneOffsetTransitionRule.of(Month.JULY, 2, null, LocalTime.of(12, 30), false, TimeDefinition.STANDARD, OFFSET_PONE, OFFSET_PTWO, OFFSET_PONE));
+        TZoneRules test = make(OFFSET_PTWO);
+        test.getTransitionRules().add(TZoneOffsetTransitionRule.of(TMonth.JULY, 2, null, TLocalTime.of(12, 30), false, TimeDefinition.STANDARD, OFFSET_PONE, OFFSET_PTWO, OFFSET_PONE));
     }
 
     //-----------------------------------------------------------------------
@@ -206,8 +203,8 @@ public class TestFixedZoneRules {
     //-----------------------------------------------------------------------
     @Test
     public void test_equalsHashCode() {
-        ZoneRules a = make(OFFSET_PONE);
-        ZoneRules b = make(OFFSET_PTWO);
+        TZoneRules a = make(OFFSET_PONE);
+        TZoneRules b = make(OFFSET_PTWO);
 
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);

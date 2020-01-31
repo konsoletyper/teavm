@@ -29,114 +29,62 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.chrono;
+package org.teavm.classlib.java.time.chrono;
 
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_WEEK_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.ALIGNED_WEEK_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_MONTH;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_WEEK;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.EPOCH_DAY;
-import static org.threeten.bp.temporal.ChronoField.ERA;
-import static org.threeten.bp.temporal.ChronoField.MONTH_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.PROLEPTIC_MONTH;
-import static org.threeten.bp.temporal.ChronoField.YEAR;
-import static org.threeten.bp.temporal.ChronoField.YEAR_OF_ERA;
-import static org.threeten.bp.temporal.ChronoUnit.DAYS;
-import static org.threeten.bp.temporal.ChronoUnit.MONTHS;
-import static org.threeten.bp.temporal.ChronoUnit.WEEKS;
-import static org.threeten.bp.temporal.TemporalAdjusters.nextOrSame;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_WEEK_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_WEEK_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
+import static org.teavm.classlib.java.time.temporal.TChronoField.ERA;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.PROLEPTIC_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR_OF_ERA;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
+import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
+import static org.teavm.classlib.java.time.temporal.TTemporalAdjusters.nextOrSame;
 
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.Calendar;
+import org.teavm.classlib.java.util.TCalendar;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
-import org.threeten.bp.Clock;
-import org.threeten.bp.DateTimeException;
-import org.threeten.bp.DayOfWeek;
-import org.threeten.bp.Instant;
-import org.threeten.bp.LocalDate;
-import org.threeten.bp.ZoneId;
-import org.threeten.bp.format.ResolverStyle;
-import org.threeten.bp.jdk8.Jdk8Methods;
-import org.threeten.bp.temporal.ChronoField;
-import org.threeten.bp.temporal.TemporalAccessor;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.ValueRange;
+import org.teavm.classlib.java.time.TClock;
+import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.TDayOfWeek;
+import org.teavm.classlib.java.time.TInstant;
+import org.teavm.classlib.java.time.TLocalDate;
+import org.teavm.classlib.java.time.TZoneId;
+import org.teavm.classlib.java.time.format.TResolverStyle;
+import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import org.teavm.classlib.java.time.temporal.TChronoField;
+import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.time.temporal.TValueRange;
 
-/**
- * The Japanese Imperial calendar system.
- * <p>
- * This chronology defines the rules of the Japanese Imperial calendar system.
- * This calendar system is primarily used in Japan.
- * The Japanese Imperial calendar system is the same as the ISO calendar system
- * apart from the era-based year numbering.
- * <p>
- * Japan introduced the Gregorian calendar starting with Meiji 6.
- * Only Meiji and later eras are supported;
- * dates before Meiji 6, January 1 are not supported.
- * <p>
- * The supported {@code ChronoField} instances are:
- * <ul>
- * <li>{@code DAY_OF_WEEK}
- * <li>{@code DAY_OF_MONTH}
- * <li>{@code DAY_OF_YEAR}
- * <li>{@code EPOCH_DAY}
- * <li>{@code MONTH_OF_YEAR}
- * <li>{@code PROLEPTIC_MONTH}
- * <li>{@code YEAR_OF_ERA}
- * <li>{@code YEAR}
- * <li>{@code ERA}
- * </ul>
- *
- * <h3>Specification for implementors</h3>
- * This class is immutable and thread-safe.
- */
-public final class JapaneseChronology extends Chronology implements Serializable {
+public final class TJapaneseChronology extends TChronology implements Serializable {
 
-    // Locale for creating a JapaneseImpericalCalendar.
-    static final Locale LOCALE = new Locale("ja", "JP", "JP");
+    // TLocale for creating a JapaneseImpericalCalendar.
+    static final TLocale LOCALE = new TLocale("ja", "JP", "JP");
 
-    /**
-     * Singleton instance for Japanese chronology.
-     */
-    public static final JapaneseChronology INSTANCE = new JapaneseChronology();
+    public static final TJapaneseChronology INSTANCE = new TJapaneseChronology();
 
-    /**
-     * Serialization version.
-     */
     private static final long serialVersionUID = 459996390165777884L;
 
-    /**
-     * Narrow names for eras.
-     */
     private static final Map<String, String[]> ERA_NARROW_NAMES = new HashMap<String, String[]>();
-    /**
-     * Short names for eras.
-     */
     private static final Map<String, String[]> ERA_SHORT_NAMES = new HashMap<String, String[]>();
-    /**
-     * Full names for eras.
-     */
     private static final Map<String, String[]> ERA_FULL_NAMES = new HashMap<String, String[]>();
-    /**
-     * Fallback language for the era names.
-     */
     private static final String FALLBACK_LANGUAGE = "en";
-    /**
-     * Language that has the era names.
-     */
     private static final String TARGET_LANGUAGE = "ja";
 
-    /**
-     * Name data.
-     */
     // TODO: replace all the hard-coded Maps with locale resources
     static {
         ERA_NARROW_NAMES.put(FALLBACK_LANGUAGE, new String[]{"Unknown", "K", "M", "T", "S", "H"});
@@ -149,48 +97,19 @@ public final class JapaneseChronology extends Chronology implements Serializable
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Restricted constructor.
-     */
-    private JapaneseChronology() {
+    private TJapaneseChronology() {
     }
 
-    /**
-     * Resolve singleton.
-     *
-     * @return the singleton instance, not null
-     */
     private Object readResolve() {
         return INSTANCE;
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Gets the ID of the chronology - 'Japanese'.
-     * <p>
-     * The ID uniquely identifies the {@code Chronology}.
-     * It can be used to lookup the {@code Chronology} using {@link #of(String)}.
-     *
-     * @return the chronology ID - 'Japanese'
-     * @see #getCalendarType()
-     */
     @Override
     public String getId() {
         return "Japanese";
     }
 
-    /**
-     * Gets the calendar type of the underlying calendar system - 'japanese'.
-     * <p>
-     * The calendar type is an identifier defined by the
-     * <em>Unicode Locale Data Markup Language (LDML)</em> specification.
-     * It can be used to lookup the {@code Chronology} using {@link #of(String)}.
-     * It can also be used as part of a locale, accessible via
-     * {@link Locale#getUnicodeLocaleType(String)} with the key 'ca'.
-     *
-     * @return the calendar system type - 'japanese'
-     * @see #getId()
-     */
     @Override
     public String getCalendarType() {
         return "japanese";
@@ -198,168 +117,112 @@ public final class JapaneseChronology extends Chronology implements Serializable
 
     //-----------------------------------------------------------------------
     @Override  // override with covariant return type
-    public JapaneseDate date(Era era, int yearOfEra, int month, int dayOfMonth) {
-        if (era instanceof JapaneseEra == false) {
-            throw new ClassCastException("Era must be JapaneseEra");
+    public TJapaneseDate date(TEra era, int yearOfEra, int month, int dayOfMonth) {
+        if (era instanceof TJapaneseEra == false) {
+            throw new ClassCastException("TEra must be TJapaneseEra");
         }
-        return JapaneseDate.of((JapaneseEra) era, yearOfEra, month, dayOfMonth);
+        return TJapaneseDate.of((TJapaneseEra) era, yearOfEra, month, dayOfMonth);
     }
 
     @Override  // override with covariant return type
-    public JapaneseDate date(int prolepticYear, int month, int dayOfMonth) {
-        return new JapaneseDate(LocalDate.of(prolepticYear, month, dayOfMonth));
+    public TJapaneseDate date(int prolepticYear, int month, int dayOfMonth) {
+        return new TJapaneseDate(TLocalDate.of(prolepticYear, month, dayOfMonth));
     }
 
-    /**
-     * Obtains a local date in Japanese calendar system from the
-     * era, year-of-era and day-of-year fields.
-     * <p>
-     * The day-of-year in this factory is expressed relative to the start of the year-of-era.
-     * This definition changes the normal meaning of day-of-year only in those years
-     * where the year-of-era is reset to one due to a change in the era.
-     * For example:
-     * <pre>
-     *  6th Jan Showa 64 = day-of-year 6
-     *  7th Jan Showa 64 = day-of-year 7
-     *  8th Jan Heisei 1 = day-of-year 1
-     *  9th Jan Heisei 1 = day-of-year 2
-     * </pre>
-     *
-     * @param era  the Japanese era, not null
-     * @param yearOfEra  the year-of-era
-     * @param dayOfYear  the day-of-year
-     * @return the Japanese local date, not null
-     * @throws DateTimeException if unable to create the date
-     * @throws ClassCastException if the {@code era} is not a {@code JapaneseEra}
-     */
     @Override
-    public JapaneseDate dateYearDay(Era era, int yearOfEra, int dayOfYear) {
-        if (era instanceof JapaneseEra == false) {
-            throw new ClassCastException("Era must be JapaneseEra");
+    public TJapaneseDate dateYearDay(TEra era, int yearOfEra, int dayOfYear) {
+        if (era instanceof TJapaneseEra == false) {
+            throw new ClassCastException("TEra must be TJapaneseEra");
         }
-        return JapaneseDate.ofYearDay((JapaneseEra) era, yearOfEra, dayOfYear);
+        return TJapaneseDate.ofYearDay((TJapaneseEra) era, yearOfEra, dayOfYear);
     }
 
-    /**
-     * Obtains a local date in Japanese calendar system from the
-     * proleptic-year and day-of-year fields.
-     * <p>
-     * The day-of-year in this factory is expressed relative to the start of the proleptic year.
-     * The Japanese proleptic year and day-of-year are the same as those in the ISO calendar system.
-     * They are not reset when the era changes.
-     *
-     * @param prolepticYear  the proleptic-year
-     * @param dayOfYear  the day-of-year
-     * @return the Japanese local date, not null
-     * @throws DateTimeException if unable to create the date
-     */
     @Override
-    public JapaneseDate dateYearDay(int prolepticYear, int dayOfYear) {
-        LocalDate date = LocalDate.ofYearDay(prolepticYear, dayOfYear);
+    public TJapaneseDate dateYearDay(int prolepticYear, int dayOfYear) {
+        TLocalDate date = TLocalDate.ofYearDay(prolepticYear, dayOfYear);
         return date(prolepticYear, date.getMonthValue(), date.getDayOfMonth());
     }
 
     @Override
-    public JapaneseDate dateEpochDay(long epochDay) {
-        return new JapaneseDate(LocalDate.ofEpochDay(epochDay));
+    public TJapaneseDate dateEpochDay(long epochDay) {
+        return new TJapaneseDate(TLocalDate.ofEpochDay(epochDay));
     }
 
     //-----------------------------------------------------------------------
     @Override  // override with covariant return type
-    public JapaneseDate date(TemporalAccessor temporal) {
-        if (temporal instanceof JapaneseDate) {
-            return (JapaneseDate) temporal;
+    public TJapaneseDate date(TTemporalAccessor temporal) {
+        if (temporal instanceof TJapaneseDate) {
+            return (TJapaneseDate) temporal;
         }
-        return new JapaneseDate(LocalDate.from(temporal));
+        return new TJapaneseDate(TLocalDate.from(temporal));
     }
 
     @SuppressWarnings("unchecked")
     @Override  // override with covariant return type
-    public ChronoLocalDateTime<JapaneseDate> localDateTime(TemporalAccessor temporal) {
-        return (ChronoLocalDateTime<JapaneseDate>) super.localDateTime(temporal);
+    public TChronoLocalDateTime<TJapaneseDate> localDateTime(TTemporalAccessor temporal) {
+        return (TChronoLocalDateTime<TJapaneseDate>) super.localDateTime(temporal);
     }
 
     @SuppressWarnings("unchecked")
     @Override  // override with covariant return type
-    public ChronoZonedDateTime<JapaneseDate> zonedDateTime(TemporalAccessor temporal) {
-        return (ChronoZonedDateTime<JapaneseDate>) super.zonedDateTime(temporal);
+    public TChronoZonedDateTime<TJapaneseDate> zonedDateTime(TTemporalAccessor temporal) {
+        return (TChronoZonedDateTime<TJapaneseDate>) super.zonedDateTime(temporal);
     }
 
     @SuppressWarnings("unchecked")
     @Override  // override with covariant return type
-    public ChronoZonedDateTime<JapaneseDate> zonedDateTime(Instant instant, ZoneId zone) {
-        return (ChronoZonedDateTime<JapaneseDate>) super.zonedDateTime(instant, zone);
+    public TChronoZonedDateTime<TJapaneseDate> zonedDateTime(TInstant instant, TZoneId zone) {
+        return (TChronoZonedDateTime<TJapaneseDate>) super.zonedDateTime(instant, zone);
     }
 
     //-----------------------------------------------------------------------
     @Override  // override with covariant return type
-    public JapaneseDate dateNow() {
-        return (JapaneseDate) super.dateNow();
+    public TJapaneseDate dateNow() {
+        return (TJapaneseDate) super.dateNow();
     }
 
     @Override  // override with covariant return type
-    public JapaneseDate dateNow(ZoneId zone) {
-        return (JapaneseDate) super.dateNow(zone);
+    public TJapaneseDate dateNow(TZoneId zone) {
+        return (TJapaneseDate) super.dateNow(zone);
     }
 
     @Override  // override with covariant return type
-    public JapaneseDate dateNow(Clock clock) {
-        Jdk8Methods.requireNonNull(clock, "clock");
-        return (JapaneseDate) super.dateNow(clock);
+    public TJapaneseDate dateNow(TClock clock) {
+        TJdk8Methods.requireNonNull(clock, "clock");
+        return (TJapaneseDate) super.dateNow(clock);
     }
 
     //-----------------------------------------------------------------------
-    /**
-     * Checks if the specified year is a leap year.
-     * <p>
-     * Japanese calendar leap years occur exactly in line with ISO leap years.
-     * This method does not validate the year passed in, and only has a
-     * well-defined result for years in the supported range.
-     *
-     * @param prolepticYear  the proleptic-year to check, not validated for range
-     * @return true if the year is a leap year
-     */
     @Override
     public boolean isLeapYear(long prolepticYear) {
-        return IsoChronology.INSTANCE.isLeapYear(prolepticYear);
+        return TIsoChronology.INSTANCE.isLeapYear(prolepticYear);
     }
 
     @Override
-    public int prolepticYear(Era era, int yearOfEra) {
-        if (era instanceof JapaneseEra == false) {
-            throw new ClassCastException("Era must be JapaneseEra");
+    public int prolepticYear(TEra era, int yearOfEra) {
+        if (era instanceof TJapaneseEra == false) {
+            throw new ClassCastException("TEra must be TJapaneseEra");
         }
-        JapaneseEra jera = (JapaneseEra) era;
+        TJapaneseEra jera = (TJapaneseEra) era;
         int isoYear = jera.startDate().getYear() + yearOfEra - 1;
-        ValueRange range = ValueRange.of(1, jera.endDate().getYear() - jera.startDate().getYear() + 1);
+        TValueRange range = TValueRange.of(1, jera.endDate().getYear() - jera.startDate().getYear() + 1);
         range.checkValidValue(yearOfEra, YEAR_OF_ERA);
         return isoYear;
     }
 
-    /**
-     * Returns the calendar system era object from the given numeric value.
-     *
-     * See the description of each Era for the numeric values of:
-     * {@link JapaneseEra#HEISEI}, {@link JapaneseEra#SHOWA},{@link JapaneseEra#TAISHO},
-     * {@link JapaneseEra#MEIJI}), only Meiji and later eras are supported.
-     *
-     * @param eraValue  the era value
-     * @return the Japanese {@code Era} for the given numeric era value
-     * @throws DateTimeException if {@code eraValue} is invalid
-     */
     @Override
-    public JapaneseEra eraOf(int eraValue) {
-        return JapaneseEra.of(eraValue);
+    public TJapaneseEra eraOf(int eraValue) {
+        return TJapaneseEra.of(eraValue);
     }
 
     @Override
-    public List<Era> eras() {
-        return Arrays.<Era>asList(JapaneseEra.values());
+    public List<TEra> eras() {
+        return Arrays.<TEra>asList(TJapaneseEra.values());
     }
 
     //-----------------------------------------------------------------------
     @Override
-    public ValueRange range(ChronoField field) {
+    public TValueRange range(TChronoField field) {
         switch (field) {
             case DAY_OF_MONTH:
             case DAY_OF_WEEK:
@@ -381,36 +244,36 @@ public final class JapaneseChronology extends Chronology implements Serializable
             case PROLEPTIC_MONTH:
                 return field.range();
         }
-        Calendar jcal = Calendar.getInstance(LOCALE);
+        TCalendar jcal = TCalendar.getInstance(LOCALE);
         switch (field) {
             case ERA: {
-                JapaneseEra[] eras = JapaneseEra.values();
-                return ValueRange.of(eras[0].getValue(), eras[eras.length - 1].getValue());
+                TJapaneseEra[] eras = TJapaneseEra.values();
+                return TValueRange.of(eras[0].getValue(), eras[eras.length - 1].getValue());
             }
             case YEAR: {
-                JapaneseEra[] eras = JapaneseEra.values();
-                return ValueRange.of(JapaneseDate.MIN_DATE.getYear(), eras[eras.length - 1].endDate().getYear());
+                TJapaneseEra[] eras = TJapaneseEra.values();
+                return TValueRange.of(TJapaneseDate.MIN_DATE.getYear(), eras[eras.length - 1].endDate().getYear());
             }
             case YEAR_OF_ERA: {
-                JapaneseEra[] eras = JapaneseEra.values();
+                TJapaneseEra[] eras = TJapaneseEra.values();
                 int maxIso = eras[eras.length - 1].endDate().getYear();
                 int maxJapanese = maxIso - eras[eras.length - 1].startDate().getYear() + 1;
                 int min = Integer.MAX_VALUE;
                 for (int i = 0; i < eras.length; i++) {
                     min = Math.min(min, eras[i].endDate().getYear() - eras[i].startDate().getYear() + 1);
                 }
-                return ValueRange.of(1, 6, min, maxJapanese);
+                return TValueRange.of(1, 6, min, maxJapanese);
             }
             case MONTH_OF_YEAR:
-                return ValueRange.of(jcal.getMinimum(Calendar.MONTH) + 1, jcal.getGreatestMinimum(Calendar.MONTH) + 1,
-                                             jcal.getLeastMaximum(Calendar.MONTH) + 1, jcal.getMaximum(Calendar.MONTH) + 1);
+                return TValueRange.of(jcal.getMinimum(TCalendar.MONTH) + 1, jcal.getGreatestMinimum(TCalendar.MONTH) + 1,
+                                             jcal.getLeastMaximum(TCalendar.MONTH) + 1, jcal.getMaximum(TCalendar.MONTH) + 1);
             case DAY_OF_YEAR: {
-                JapaneseEra[] eras = JapaneseEra.values();
+                TJapaneseEra[] eras = TJapaneseEra.values();
                 int min = 366;
                 for (int i = 0; i < eras.length; i++) {
                     min = Math.min(min, eras[i].startDate().lengthOfYear() - eras[i].startDate().getDayOfYear() + 1);
                 }
-                return ValueRange.of(1, min, 366);
+                return TValueRange.of(1, min, 366);
             }
             default:
                  // TODO: review the remaining fields
@@ -419,7 +282,7 @@ public final class JapaneseChronology extends Chronology implements Serializable
     }
 
     @Override
-    public JapaneseDate resolveDate(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle) {
+    public TJapaneseDate resolveDate(Map<TTemporalField, Long> fieldValues, TResolverStyle resolverStyle) {
         if (fieldValues.containsKey(EPOCH_DAY)) {
             return dateEpochDay(fieldValues.remove(EPOCH_DAY));
         }
@@ -427,25 +290,25 @@ public final class JapaneseChronology extends Chronology implements Serializable
         // normalize fields
         Long prolepticMonth = fieldValues.remove(PROLEPTIC_MONTH);
         if (prolepticMonth != null) {
-            if (resolverStyle != ResolverStyle.LENIENT) {
+            if (resolverStyle != TResolverStyle.LENIENT) {
                 PROLEPTIC_MONTH.checkValidValue(prolepticMonth);
             }
-            updateResolveMap(fieldValues, MONTH_OF_YEAR, Jdk8Methods.floorMod(prolepticMonth, 12) + 1);
-            updateResolveMap(fieldValues, YEAR, Jdk8Methods.floorDiv(prolepticMonth, 12));
+            updateResolveMap(fieldValues, MONTH_OF_YEAR, TJdk8Methods.floorMod(prolepticMonth, 12) + 1);
+            updateResolveMap(fieldValues, YEAR, TJdk8Methods.floorDiv(prolepticMonth, 12));
         }
 
         // eras
         Long eraLong = fieldValues.get(ERA);
-        JapaneseEra era = null;
+        TJapaneseEra era = null;
         if (eraLong != null) {
             era = eraOf(range(ERA).checkValidIntValue(eraLong, ERA));
         }
         Long yoeLong = fieldValues.get(YEAR_OF_ERA);
         if (yoeLong != null) {
             int yoe= range(YEAR_OF_ERA).checkValidIntValue(yoeLong, YEAR_OF_ERA);
-            if (era == null && resolverStyle != ResolverStyle.STRICT && fieldValues.containsKey(YEAR) == false) {
-                List<Era> eras = eras();
-                era = (JapaneseEra) eras.get(eras.size() - 1);
+            if (era == null && resolverStyle != TResolverStyle.STRICT && fieldValues.containsKey(YEAR) == false) {
+                List<TEra> eras = eras();
+                era = (TJapaneseEra) eras.get(eras.size() - 1);
             }
             // can only resolve to dates, not to proleptic-year
             if (era != null && fieldValues.containsKey(MONTH_OF_YEAR) && fieldValues.containsKey(DAY_OF_MONTH)) {
@@ -465,14 +328,14 @@ public final class JapaneseChronology extends Chronology implements Serializable
             if (fieldValues.containsKey(MONTH_OF_YEAR)) {
                 if (fieldValues.containsKey(DAY_OF_MONTH)) {
                     int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
-                    if (resolverStyle == ResolverStyle.LENIENT) {
-                        long months = Jdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
-                        long days = Jdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_MONTH), 1);
+                    if (resolverStyle == TResolverStyle.LENIENT) {
+                        long months = TJdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
+                        long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_MONTH), 1);
                         return date(y, 1, 1).plusMonths(months).plusDays(days);
                     } else {
                         int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
                         int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
-                        if (resolverStyle == ResolverStyle.SMART && dom > 28) {
+                        if (resolverStyle == TResolverStyle.SMART && dom > 28) {
                             dom = Math.min(dom, date(y, moy, 1).lengthOfMonth());
                         }
                         return date(y, moy, dom);
@@ -481,35 +344,35 @@ public final class JapaneseChronology extends Chronology implements Serializable
                 if (fieldValues.containsKey(ALIGNED_WEEK_OF_MONTH)) {
                     if (fieldValues.containsKey(ALIGNED_DAY_OF_WEEK_IN_MONTH)) {
                         int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
-                        if (resolverStyle == ResolverStyle.LENIENT) {
-                            long months = Jdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
-                            long weeks = Jdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
-                            long days = Jdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH), 1);
+                        if (resolverStyle == TResolverStyle.LENIENT) {
+                            long months = TJdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
+                            long weeks = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
+                            long days = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH), 1);
                             return date(y, 1, 1).plus(months, MONTHS).plus(weeks, WEEKS).plus(days, DAYS);
                         }
                         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
                         int aw = ALIGNED_WEEK_OF_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH));
                         int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
-                        JapaneseDate date = date(y, moy, 1).plus((aw - 1) * 7 + (ad - 1), DAYS);
-                        if (resolverStyle == ResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
-                            throw new DateTimeException("Strict mode rejected date parsed to a different month");
+                        TJapaneseDate date = date(y, moy, 1).plus((aw - 1) * 7 + (ad - 1), DAYS);
+                        if (resolverStyle == TResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
+                            throw new TDateTimeException("Strict mode rejected date parsed to a different month");
                         }
                         return date;
                     }
                     if (fieldValues.containsKey(DAY_OF_WEEK)) {
                         int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
-                        if (resolverStyle == ResolverStyle.LENIENT) {
-                            long months = Jdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
-                            long weeks = Jdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
-                            long days = Jdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_WEEK), 1);
+                        if (resolverStyle == TResolverStyle.LENIENT) {
+                            long months = TJdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
+                            long weeks = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
+                            long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_WEEK), 1);
                             return date(y, 1, 1).plus(months, MONTHS).plus(weeks, WEEKS).plus(days, DAYS);
                         }
                         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
                         int aw = ALIGNED_WEEK_OF_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH));
                         int dow = DAY_OF_WEEK.checkValidIntValue(fieldValues.remove(DAY_OF_WEEK));
-                        JapaneseDate date = date(y, moy, 1).plus(aw - 1, WEEKS).with(nextOrSame(DayOfWeek.of(dow)));
-                        if (resolverStyle == ResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
-                            throw new DateTimeException("Strict mode rejected date parsed to a different month");
+                        TJapaneseDate date = date(y, moy, 1).plus(aw - 1, WEEKS).with(nextOrSame(TDayOfWeek.of(dow)));
+                        if (resolverStyle == TResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
+                            throw new TDateTimeException("Strict mode rejected date parsed to a different month");
                         }
                         return date;
                     }
@@ -517,8 +380,8 @@ public final class JapaneseChronology extends Chronology implements Serializable
             }
             if (fieldValues.containsKey(DAY_OF_YEAR)) {
                 int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
-                if (resolverStyle == ResolverStyle.LENIENT) {
-                    long days = Jdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_YEAR), 1);
+                if (resolverStyle == TResolverStyle.LENIENT) {
+                    long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_YEAR), 1);
                     return dateYearDay(y, 1).plusDays(days);
                 }
                 int doy = DAY_OF_YEAR.checkValidIntValue(fieldValues.remove(DAY_OF_YEAR));
@@ -527,31 +390,31 @@ public final class JapaneseChronology extends Chronology implements Serializable
             if (fieldValues.containsKey(ALIGNED_WEEK_OF_YEAR)) {
                 if (fieldValues.containsKey(ALIGNED_DAY_OF_WEEK_IN_YEAR)) {
                     int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
-                    if (resolverStyle == ResolverStyle.LENIENT) {
-                        long weeks = Jdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
-                        long days = Jdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR), 1);
+                    if (resolverStyle == TResolverStyle.LENIENT) {
+                        long weeks = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
+                        long days = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR), 1);
                         return date(y, 1, 1).plus(weeks, WEEKS).plus(days, DAYS);
                     }
                     int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
                     int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
-                    JapaneseDate date = date(y, 1, 1).plusDays((aw - 1) * 7 + (ad - 1));
-                    if (resolverStyle == ResolverStyle.STRICT && date.get(YEAR) != y) {
-                        throw new DateTimeException("Strict mode rejected date parsed to a different year");
+                    TJapaneseDate date = date(y, 1, 1).plusDays((aw - 1) * 7 + (ad - 1));
+                    if (resolverStyle == TResolverStyle.STRICT && date.get(YEAR) != y) {
+                        throw new TDateTimeException("Strict mode rejected date parsed to a different year");
                     }
                     return date;
                 }
                 if (fieldValues.containsKey(DAY_OF_WEEK)) {
                     int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
-                    if (resolverStyle == ResolverStyle.LENIENT) {
-                        long weeks = Jdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
-                        long days = Jdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_WEEK), 1);
+                    if (resolverStyle == TResolverStyle.LENIENT) {
+                        long weeks = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
+                        long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_WEEK), 1);
                         return date(y, 1, 1).plus(weeks, WEEKS).plus(days, DAYS);
                     }
                     int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
                     int dow = DAY_OF_WEEK.checkValidIntValue(fieldValues.remove(DAY_OF_WEEK));
-                    JapaneseDate date = date(y, 1, 1).plus(aw - 1, WEEKS).with(nextOrSame(DayOfWeek.of(dow)));
-                    if (resolverStyle == ResolverStyle.STRICT && date.get(YEAR) != y) {
-                        throw new DateTimeException("Strict mode rejected date parsed to a different month");
+                    TJapaneseDate date = date(y, 1, 1).plus(aw - 1, WEEKS).with(nextOrSame(TDayOfWeek.of(dow)));
+                    if (resolverStyle == TResolverStyle.STRICT && date.get(YEAR) != y) {
+                        throw new TDateTimeException("Strict mode rejected date parsed to a different month");
                     }
                     return date;
                 }
@@ -560,31 +423,31 @@ public final class JapaneseChronology extends Chronology implements Serializable
         return null;
     }
 
-    private JapaneseDate resolveEYMD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle, JapaneseEra era, int yoe) {
-        if (resolverStyle == ResolverStyle.LENIENT) {
+    private TJapaneseDate resolveEYMD(Map<TTemporalField, Long> fieldValues, TResolverStyle resolverStyle, TJapaneseEra era, int yoe) {
+        if (resolverStyle == TResolverStyle.LENIENT) {
             int y = era.startDate().getYear() + yoe - 1;
-            long months = Jdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
-            long days = Jdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_MONTH), 1);
+            long months = TJdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
+            long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_MONTH), 1);
             return date(y, 1, 1).plus(months, MONTHS).plus(days, DAYS);
         }
         int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
         int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
-        if (resolverStyle == ResolverStyle.SMART) {  // previous valid
+        if (resolverStyle == TResolverStyle.SMART) {  // previous valid
             if (yoe < 1) {
-                throw new DateTimeException("Invalid YearOfEra: " + yoe);
+                throw new TDateTimeException("Invalid YearOfEra: " + yoe);
             }
             int y = era.startDate().getYear() + yoe - 1;
             if (dom > 28) {
                 dom = Math.min(dom, date(y, moy, 1).lengthOfMonth());
             }
-            JapaneseDate jd = date(y, moy, dom);
+            TJapaneseDate jd = date(y, moy, dom);
             if (jd.getEra() != era) {
                 // ensure within calendar year of change
                 if (Math.abs(jd.getEra().getValue() - era.getValue()) > 1) {
-                    throw new DateTimeException("Invalid Era/YearOfEra: " + era + " " + yoe);
+                    throw new TDateTimeException("Invalid TEra/YearOfEra: " + era + " " + yoe);
                 }
                 if (jd.get(YEAR_OF_ERA) != 1 && yoe != 1) {
-                    throw new DateTimeException("Invalid Era/YearOfEra: " + era + " " + yoe);
+                    throw new TDateTimeException("Invalid TEra/YearOfEra: " + era + " " + yoe);
                 }
             }
             return jd;
@@ -592,10 +455,10 @@ public final class JapaneseChronology extends Chronology implements Serializable
         return date(era, yoe, moy, dom);
     }
 
-    private JapaneseDate resolveEYD(Map<TemporalField, Long> fieldValues, ResolverStyle resolverStyle, JapaneseEra era, int yoe) {
-        if (resolverStyle == ResolverStyle.LENIENT) {
+    private TJapaneseDate resolveEYD(Map<TTemporalField, Long> fieldValues, TResolverStyle resolverStyle, TJapaneseEra era, int yoe) {
+        if (resolverStyle == TResolverStyle.LENIENT) {
             int y = era.startDate().getYear() + yoe - 1;
-            long days = Jdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_YEAR), 1);
+            long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_YEAR), 1);
             return dateYearDay(y, 1).plus(days, DAYS);
         }
         int doy = range(DAY_OF_YEAR).checkValidIntValue(fieldValues.remove(DAY_OF_YEAR), DAY_OF_YEAR);

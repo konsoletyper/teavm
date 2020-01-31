@@ -29,56 +29,23 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import java.util.Locale;
+import org.teavm.classlib.java.util.TLocale;
 
-import org.threeten.bp.chrono.Chronology;
+import org.teavm.classlib.java.time.chrono.TChronology;
 
-/**
- * The Service Provider Interface (SPI) to be implemented by classes providing
- * date-time formatting information.
- *
- * <h3>Specification for implementors</h3>
- * This interface is a service provider that can be called by multiple threads.
- * Implementations must be thread-safe.
- * Implementations should cache the returned formatters.
- */
- abstract class DateTimeFormatStyleProvider {
+ abstract class TDateTimeFormatStyleProvider {
 
-     /**
-      * Gets the provider.
-      *
-      * @return the provider, not null
-      */
-     static DateTimeFormatStyleProvider getInstance() {
-         return new SimpleDateTimeFormatStyleProvider();
+     static TDateTimeFormatStyleProvider getInstance() {
+         return new TSimpleDateTimeFormatStyleProvider();
      }
 
-     /**
-      * Gets the available locales.
-      * 
-      * @return the locales
-      */
-     public Locale[] getAvailableLocales() {
+     public TLocale[] getAvailableLocales() {
          throw new UnsupportedOperationException();
      }
 
-   /**
-     * Gets a localized date, time or date-time formatter.
-     * <p>
-     * The formatter will be the most appropriate to use for the date and time style in the locale.
-     * For example, some locales will use the month name while others will use the number.
-     *
-     * @param dateStyle  the date formatter style to obtain, null to obtain a time formatter
-     * @param timeStyle  the time formatter style to obtain, null to obtain a date formatter
-     * @param chrono  the chronology to use, not null
-     * @param locale  the locale to use, not null
-     * @return the date-time formatter, not null
-     * @throws IllegalArgumentException if both format styles are null
-     * @throws IllegalArgumentException if the locale is not a recognized locale
-     */
-    public abstract DateTimeFormatter getFormatter(
-            FormatStyle dateStyle, FormatStyle timeStyle, Chronology chrono, Locale locale);
+    public abstract TDateTimeFormatter getFormatter(
+            TFormatStyle dateStyle, TFormatStyle timeStyle, TChronology chrono, TLocale locale);
 
 }

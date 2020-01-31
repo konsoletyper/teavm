@@ -29,22 +29,19 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-package org.threeten.bp.format;
+package org.teavm.classlib.java.time.format;
 
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.threeten.bp.temporal.ChronoField.DAY_OF_YEAR;
-import static org.threeten.bp.temporal.ChronoField.YEAR;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 
 import org.testng.annotations.DataProvider;
-import org.testng.annotations.Test;
-import org.threeten.bp.format.DateTimeFormatterBuilder.ReducedPrinterParser;
-import org.threeten.bp.temporal.TemporalField;
-import org.threeten.bp.temporal.TemporalQueries;
+import org.junit.Test;
+import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.ReducedPrinterParser;
+import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 
-/**
- * Test ReducedPrinterParser.
- */
 @Test
 public class TestReducedParser extends AbstractTestPrinterParser {
 
@@ -63,8 +60,8 @@ public class TestReducedParser extends AbstractTestPrinterParser {
             pp.parse(parseContext, text, pos);
         } catch (RuntimeException ex) {
             assertTrue(expected.isInstance(ex));
-            assertEquals(parseContext.toParsed().query(TemporalQueries.chronology()), null);
-            assertEquals(parseContext.toParsed().query(TemporalQueries.zoneId()), null);
+            assertEquals(parseContext.toParsed().query(TTemporalQueries.chronology()), null);
+            assertEquals(parseContext.toParsed().query(TTemporalQueries.zoneId()), null);
         }
     }
 
@@ -196,7 +193,7 @@ public class TestReducedParser extends AbstractTestPrinterParser {
         assertParsed(YEAR, parseVal != null ? (long) parseVal : null);
     }
 
-    private void assertParsed(TemporalField field, Long value) {
+    private void assertParsed(TTemporalField field, Long value) {
         if (value == null) {
             assertEquals(parseContext.getParsed(field), null);
         } else {
