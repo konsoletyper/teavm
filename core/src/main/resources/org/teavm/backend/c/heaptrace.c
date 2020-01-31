@@ -4,6 +4,7 @@
 #include "definitions.h"
 #include "memory.h"
 #include "time.h"
+#include "references.h"
 #include <string.h>
 #include <stdint.h>
 #include <inttypes.h>
@@ -363,9 +364,14 @@ FILE* teavm_gc_openDumpFile(wchar_t* name) {
                     while (cls != NULL) {
                         int32_t kind = (cls->flags >> 7) & 7;
                         if (kind == 1) {
-
+                            TeaVM_Reference* reference = (TeaVM_Reference*) obj;
+                            teavm_verify(reference->next);
+                            teavm_verify(reference->object);
+                            teavm_verify(reference->queue);
                         } else if (kind == 2) {
-
+                            TeaVM_ReferenceQueue* queue = (TeaVM_ReferenceQueue*) obj;
+                            teavm_verify(queue->first);
+                            teavm_verify(queue->last);
                         } else {
                             int16_t* layout = cls->layout;
                             if (layout != NULL) {

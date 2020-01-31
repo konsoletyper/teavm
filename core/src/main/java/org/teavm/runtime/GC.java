@@ -438,7 +438,9 @@ public final class GC {
                 hasObjectsFromYoungGen |= enqueueMark(object.object);
             }
         }
-        if (object.next == null && object.object != null) {
+        if (object.next != null) {
+            hasObjectsFromYoungGen |= enqueueMark(object.next);
+        } else if (object.object != null) {
             object.next = firstWeakReference;
             firstWeakReference = object;
         }
@@ -448,9 +450,8 @@ public final class GC {
     private static boolean markReferenceQueue(RuntimeReferenceQueue object) {
         RuntimeReference reference = object.first;
         boolean hasObjectsFromYoungGen = false;
-        while (reference != null) {
+        if (reference != null) {
             hasObjectsFromYoungGen |= enqueueMark(reference);
-            reference = reference.next;
         }
         return hasObjectsFromYoungGen;
     }
@@ -519,12 +520,20 @@ public final class GC {
                         queue.first = reference;
                     } else {
                         queue.last.next = reference;
+                        makeInvalid(queue.last);
                     }
                     queue.last = reference;
+                    makeInvalid(queue);
                 }
             }
             reference = next;
         }
+    }
+
+    private static void makeInvalid(RuntimeObject object) {
+        long offset = object.toAddress().toLong() - heapAddress().toLong();
+        Address cardTableItem = cardTable().add(offset / regionSize());
+        cardTableItem.putByte((byte) (cardTableItem.getByte() & ~CARD_VALID));
     }
 
     private static void sweep() {
