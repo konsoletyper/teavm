@@ -64,7 +64,7 @@ public interface LineMigrator {
     public static LineMigrator ofPackage(String sourcePkg, String targetPkg) {
 
         return new PatternReplaceMigrator(Pattern.compile("package[ \t]+" + sourcePkg.replace(".", "\\.")),
-                        "package " + targetPkg);
+                "package " + targetPkg);
     }
 
     /**
@@ -74,8 +74,9 @@ public interface LineMigrator {
      */
     public static LineMigrator ofImport(String sourceType, String targetType) {
 
-        return new PatternReplaceMigrator(Pattern.compile("import[ \t]+" + sourceType.replace(".", "\\.")),
-                        "import " + targetType);
+        return new PatternReplaceMigrator(
+                Pattern.compile("import[ \t]+(static[ \t])?[ \t]*" + sourceType.replace(".", "\\.")),
+                "import $1" + targetType);
     }
 
     /**

@@ -80,7 +80,9 @@ public class CodeMigrator {
 
     public static void main(String[] args) {
 
-        String[] types = new String[] { "java.lang.Objects", "java.util.Locale", "java.lang.System", //
+        String[] types = new String[] { "java.lang.Objects", "java.lang.System", //
+        "java.util.Locale", "java.util.Calendar", "java.util.GregorianCalendar", "java.util.Date", "java.util.TimeZone", //
+        "java.sql.Date", "java.sql.Timestamp", //
         "java.time.Clock", "java.time.DateTimeException", "java.time.DateTimeUtils", "java.time.DayOfWeek",
         "java.time.Duration", "java.time.Instant", "java.time.LocalDate", "java.time.LocalDateTime",
         "java.time.LocalTime", "java.time.Month", "java.time.MonthDay", "java.time.OffsetDateTime",
@@ -108,15 +110,17 @@ public class CodeMigrator {
         "java.time.temporal.TemporalAmount", "java.time.temporal.TemporalField", "java.time.temporal.TemporalQueries",
         "java.time.temporal.TemporalQuery", "java.time.temporal.TemporalUnit",
         "java.time.temporal.UnsupportedTemporalTypeException", "java.time.temporal.ValueRange",
-        "java.time.temporal.WeelFields", "java.time.zone.StandardZoneRules", "java.time.zone.TzdbZoneRulesCompiler",
+        "java.time.temporal.WeekFields", "java.time.zone.StandardZoneRules", "java.time.zone.TzdbZoneRulesCompiler",
         "java.time.zone.TzdbZoneRulesProvider", "java.time.zone.ZoneOffsetTransition",
         "java.time.zone.ZoneOffsetTransitionRule", "java.time.zone.ZoneRules", "java.time.zone.ZoneRulesBuilder",
         "java.time.zone.ZoneRulesException", "java.time.zone.ZoneRulesInitializer",
         "java.time.zone.ZoneRulesProvider" };
         LineMigrator lineMigrator = new JavaDocRemover().append(
-                new StringReplaceMigrator("org.threeten.bp", "java.time"),
-                LineMigrator.ofPackage("java.time", "org.teavm.classlib.java.time"),
-                LineMigrator.ofJavaTypes4Classlib(types));
+                new StringReplaceMigrator("org.threeten.bp", "org.teavm.classlib.java.time"),
+                new StringReplaceMigrator("org.testng.Assert", "org.junit.Assert"),
+                new StringReplaceMigrator("org.testng.annotations.Test", "org.junit.Test"),
+                new StringReplaceMigrator("org.testng.annotations.BeforeMethod", "org.junit.Before"),
+                new StringReplaceMigrator("@BeforeMethod", "@Before"), LineMigrator.ofJavaTypes4Classlib(types));
         CodeMigrator migrator = new CodeMigrator(lineMigrator);
         migrator.migrate(Paths.get("src/main/java/org/teavm/classlib/java/time"));
         migrator.migrate(Paths.get("src/test/java/org/teavm/classlib/java/time"));

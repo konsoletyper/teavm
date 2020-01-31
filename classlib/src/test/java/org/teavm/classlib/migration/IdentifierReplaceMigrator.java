@@ -44,10 +44,11 @@ public class IdentifierReplaceMigrator implements LineMigrator {
     public String migrate(String line) {
 
         int start = 0;
+        int search = 0;
         int length = line.length();
         StringBuilder sb = null;
         do {
-            int index = line.indexOf(this.match, start);
+            int index = line.indexOf(this.match, search);
             int end = index + this.matchLength;
             boolean matches = (index >= 0);
             if (matches) {
@@ -68,13 +69,18 @@ public class IdentifierReplaceMigrator implements LineMigrator {
                 sb.append(line.substring(start, index));
                 sb.append(this.replacement);
                 start = end;
+                search = start;
             } else {
-                if ((start < length) && (sb != null)) {
-                    sb.append(line.substring(start));
+                if (index < 0) {
+                    if ((start < length) && (sb != null)) {
+                        sb.append(line.substring(start));
+                    }
+                    start = -1;
+                } else {
+                    search = end;
                 }
-                start = -1;
             }
-        } while (start > 0);
+        } while (start >= 0);
         if (sb == null) {
             return line;
         }
