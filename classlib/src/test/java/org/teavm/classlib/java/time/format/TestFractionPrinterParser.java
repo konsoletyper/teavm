@@ -36,9 +36,15 @@ import static org.junit.Assert.fail;
 import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_SECOND;
 import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_MINUTE;
 
+import java.util.Locale;
+
 import org.junit.Test;
 import org.teavm.classlib.java.time.TDateTimeException;
+import org.teavm.classlib.java.time.TLocalDateTime;
 import org.teavm.classlib.java.time.TLocalTime;
+import org.teavm.classlib.java.time.TZoneId;
+import org.teavm.classlib.java.time.TZonedDateTime;
+import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.FractionPrinterParser;
 import org.teavm.classlib.java.time.temporal.MockFieldValue;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
@@ -97,13 +103,14 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
             int value = (int) data[2];
             String result = (String) data[3];
 
+            StringBuilder sb = new StringBuilder();
             this.printContext.setDateTime(new MockFieldValue(NANO_OF_SECOND, value));
             FractionPrinterParser pp = new FractionPrinterParser(NANO_OF_SECOND, minWidth, maxWidth, true);
-            pp.print(this.printContext, this.buf);
+            pp.print(this.printContext, sb);
             if (result == null) {
                 fail("Expected exception");
             }
-            assertEquals(this.buf.toString(), result);
+            assertEquals(sb.toString(), result);
         }
     }
 
@@ -116,13 +123,14 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
             int value = (int) data[2];
             String result = (String) data[3];
 
+            StringBuilder sb = new StringBuilder();
             this.printContext.setDateTime(new MockFieldValue(NANO_OF_SECOND, value));
             FractionPrinterParser pp = new FractionPrinterParser(NANO_OF_SECOND, minWidth, maxWidth, false);
-            pp.print(this.printContext, this.buf);
+            pp.print(this.printContext, sb);
             if (result == null) {
                 fail("Expected exception");
             }
-            assertEquals(this.buf.toString(), (result.startsWith(".") ? result.substring(1) : result));
+            assertEquals(sb.toString(), (result.startsWith(".") ? result.substring(1) : result));
         }
     }
 
@@ -138,38 +146,44 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
     @Test
     public void test_print_seconds() {
 
+        TZonedDateTime zdt = TLocalDateTime.of(2011, 6, 30, 12, 30, 40, 0).atZone(TZoneId.of("Europe/Paris"));
         for (Object[] data : provider_seconds()) {
             int minWidth = (int) data[0];
             int maxWidth = (int) data[1];
             int value = (int) data[2];
             String result = (String) data[3];
 
+            StringBuilder sb = new StringBuilder();
+            this.printContext = new TDateTimePrintContext(zdt, Locale.ENGLISH, TDecimalStyle.STANDARD);
             this.printContext.setDateTime(new MockFieldValue(SECOND_OF_MINUTE, value));
             FractionPrinterParser pp = new FractionPrinterParser(SECOND_OF_MINUTE, minWidth, maxWidth, true);
-            pp.print(this.printContext, this.buf);
+            pp.print(this.printContext, sb);
             if (result == null) {
                 fail("Expected exception");
             }
-            assertEquals(this.buf.toString(), result);
+            assertEquals(sb.toString(), result);
         }
     }
 
     @Test
     public void test_print_seconds_noDecimalPoint() {
 
+        TZonedDateTime zdt = TLocalDateTime.of(2011, 6, 30, 12, 30, 40, 0).atZone(TZoneId.of("Europe/Paris"));
         for (Object[] data : provider_seconds()) {
             int minWidth = (int) data[0];
             int maxWidth = (int) data[1];
             int value = (int) data[2];
             String result = (String) data[3];
 
+            StringBuilder sb = new StringBuilder();
+            this.printContext = new TDateTimePrintContext(zdt, Locale.ENGLISH, TDecimalStyle.STANDARD);
             this.printContext.setDateTime(new MockFieldValue(SECOND_OF_MINUTE, value));
             FractionPrinterParser pp = new FractionPrinterParser(SECOND_OF_MINUTE, minWidth, maxWidth, false);
-            pp.print(this.printContext, this.buf);
+            pp.print(this.printContext, sb);
             if (result == null) {
                 fail("Expected exception");
             }
-            assertEquals(this.buf.toString(), (result.startsWith(".") ? result.substring(1) : result));
+            assertEquals(sb.toString(), (result.startsWith(".") ? result.substring(1) : result));
         }
     }
 
@@ -182,6 +196,8 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
             int value = (int) data[2];
             String result = (String) data[3];
 
+            this.parseContext = new TDateTimeParseContext(Locale.ENGLISH, TDecimalStyle.STANDARD,
+                    TIsoChronology.INSTANCE);
             FractionPrinterParser pp = new FractionPrinterParser(NANO_OF_SECOND, minWidth, maxWidth, true);
             int newPos = pp.parse(this.parseContext, result, 0);
             assertEquals(newPos, result.length());
@@ -199,6 +215,8 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
             int value = (int) data[2];
             String result = (String) data[3];
 
+            this.parseContext = new TDateTimeParseContext(Locale.ENGLISH, TDecimalStyle.STANDARD,
+                    TIsoChronology.INSTANCE);
             FractionPrinterParser pp = new FractionPrinterParser(NANO_OF_SECOND, minWidth, maxWidth, false);
             int newPos = pp.parse(this.parseContext, result, (result.startsWith(".") ? 1 : 0));
             assertEquals(newPos, result.length());
@@ -216,6 +234,8 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
             int value = (int) data[2];
             String result = (String) data[3];
 
+            this.parseContext = new TDateTimeParseContext(Locale.ENGLISH, TDecimalStyle.STANDARD,
+                    TIsoChronology.INSTANCE);
             FractionPrinterParser pp = new FractionPrinterParser(NANO_OF_SECOND, minWidth, maxWidth, true);
             int newPos = pp.parse(this.parseContext, result + " ", 0);
             assertEquals(newPos, result.length());
@@ -233,6 +253,8 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
             int value = (int) data[2];
             String result = (String) data[3];
 
+            this.parseContext = new TDateTimeParseContext(Locale.ENGLISH, TDecimalStyle.STANDARD,
+                    TIsoChronology.INSTANCE);
             FractionPrinterParser pp = new FractionPrinterParser(NANO_OF_SECOND, minWidth, maxWidth, true);
             int newPos = pp.parse(this.parseContext, " " + result, 1);
             assertEquals(newPos, result.length() + 1);
@@ -259,6 +281,8 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
             int value = (int) data[2];
             String result = (String) data[3];
 
+            this.parseContext = new TDateTimeParseContext(Locale.ENGLISH, TDecimalStyle.STANDARD,
+                    TIsoChronology.INSTANCE);
             FractionPrinterParser pp = new FractionPrinterParser(SECOND_OF_MINUTE, minWidth, maxWidth, true);
             int newPos = pp.parse(this.parseContext, result, 0);
             assertEquals(newPos, result.length());
@@ -289,7 +313,7 @@ public class TestFractionPrinterParser extends AbstractTestPrinterParser {
     @Test
     public void test_parse_nothing() {
 
-        for (Object[] data : provider_seconds()) {
+        for (Object[] data : provider_parseNothing()) {
             FractionPrinterParser pp = (FractionPrinterParser) data[0];
             String text = (String) data[1];
             int pos = (int) data[2];

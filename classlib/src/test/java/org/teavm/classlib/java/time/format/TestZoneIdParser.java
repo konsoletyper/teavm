@@ -34,11 +34,13 @@ package org.teavm.classlib.java.time.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+import java.util.Locale;
 import java.util.Set;
 
 import org.junit.Test;
 import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZoneOffset;
+import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.ZoneIdPrinterParser;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.zone.TZoneRulesProvider;
@@ -135,8 +137,10 @@ public class TestZoneIdParser extends AbstractTestPrinterParser {
 
         for (Object[] data : populateTestData()) {
             String parse = (String) data[0];
-            TZoneId expected = (TZoneId) data[0];
+            TZoneId expected = (TZoneId) data[1];
 
+            this.parseContext = new TDateTimeParseContext(Locale.ENGLISH, TDecimalStyle.STANDARD,
+                    TIsoChronology.INSTANCE);
             ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
             int result = pp.parse(this.parseContext, parse, 0);
             assertEquals(result, parse.length());
