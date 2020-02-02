@@ -53,7 +53,7 @@ import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 import org.teavm.classlib.java.util.TCalendar;
 
-public final class TJapaneseDate extends ChronoDateImpl<TJapaneseDate> implements TSerializable {
+public final class TJapaneseDate extends TChronoLocalDateImpl<TJapaneseDate> implements TSerializable {
 
     static final TLocalDate MIN_DATE = TLocalDate.of(1873, 1, 1);
 

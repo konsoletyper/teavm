@@ -49,7 +49,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.zone.TZoneOffsetTransition;
 import org.teavm.classlib.java.time.zone.TZoneRules;
 
-final class ChronoZonedDateTimeImpl<D extends TChronoLocalDate> extends TChronoZonedDateTime<D>
+final class TChronoZonedDateTimeImpl<D extends TChronoLocalDate> extends TChronoZonedDateTime<D>
         implements TSerializable {
 
     private final TChronoLocalDateTimeImpl<D> dateTime;
@@ -64,7 +64,7 @@ final class ChronoZonedDateTimeImpl<D extends TChronoLocalDate> extends TChronoZ
         Objects.requireNonNull(localDateTime, "localDateTime");
         Objects.requireNonNull(zone, "zone");
         if (zone instanceof TZoneOffset) {
-            return new ChronoZonedDateTimeImpl<>(localDateTime, (TZoneOffset) zone, zone);
+            return new TChronoZonedDateTimeImpl<>(localDateTime, (TZoneOffset) zone, zone);
         }
         TZoneRules rules = zone.getRules();
         TLocalDateTime isoLDT = TLocalDateTime.from(localDateTime);
@@ -84,10 +84,10 @@ final class ChronoZonedDateTimeImpl<D extends TChronoLocalDate> extends TChronoZ
             }
         }
         Objects.requireNonNull(offset, "offset"); // protect against bad TZoneRules
-        return new ChronoZonedDateTimeImpl<>(localDateTime, offset, zone);
+        return new TChronoZonedDateTimeImpl<>(localDateTime, offset, zone);
     }
 
-    static <R extends TChronoLocalDate> ChronoZonedDateTimeImpl<R> ofInstant(TChronology chrono, TInstant instant,
+    static <R extends TChronoLocalDate> TChronoZonedDateTimeImpl<R> ofInstant(TChronology chrono, TInstant instant,
             TZoneId zone) {
 
         TZoneRules rules = zone.getRules();
@@ -96,15 +96,15 @@ final class ChronoZonedDateTimeImpl<D extends TChronoLocalDate> extends TChronoZ
         TLocalDateTime ldt = TLocalDateTime.ofEpochSecond(instant.getEpochSecond(), instant.getNano(), offset);
         @SuppressWarnings("unchecked")
         TChronoLocalDateTimeImpl<R> cldt = (TChronoLocalDateTimeImpl<R>) chrono.localDateTime(ldt);
-        return new ChronoZonedDateTimeImpl<>(cldt, offset, zone);
+        return new TChronoZonedDateTimeImpl<>(cldt, offset, zone);
     }
 
-    private ChronoZonedDateTimeImpl<D> create(TInstant instant, TZoneId zone) {
+    private TChronoZonedDateTimeImpl<D> create(TInstant instant, TZoneId zone) {
 
         return ofInstant(toLocalDate().getChronology(), instant, zone);
     }
 
-    private ChronoZonedDateTimeImpl(TChronoLocalDateTimeImpl<D> dateTime, TZoneOffset offset, TZoneId zone) {
+    private TChronoZonedDateTimeImpl(TChronoLocalDateTimeImpl<D> dateTime, TZoneOffset offset, TZoneId zone) {
 
         this.dateTime = Objects.requireNonNull(dateTime, "dateTime");
         this.offset = Objects.requireNonNull(offset, "offset");
@@ -133,7 +133,7 @@ final class ChronoZonedDateTimeImpl<D extends TChronoLocalDate> extends TChronoZ
         if (trans != null && trans.isOverlap()) {
             TZoneOffset earlierOffset = trans.getOffsetBefore();
             if (earlierOffset.equals(this.offset) == false) {
-                return new ChronoZonedDateTimeImpl<>(this.dateTime, earlierOffset, this.zone);
+                return new TChronoZonedDateTimeImpl<>(this.dateTime, earlierOffset, this.zone);
             }
         }
         return this;
@@ -146,7 +146,7 @@ final class ChronoZonedDateTimeImpl<D extends TChronoLocalDate> extends TChronoZ
         if (trans != null) {
             TZoneOffset offset = trans.getOffsetAfter();
             if (offset.equals(getOffset()) == false) {
-                return new ChronoZonedDateTimeImpl<>(this.dateTime, offset, this.zone);
+                return new TChronoZonedDateTimeImpl<>(this.dateTime, offset, this.zone);
             }
         }
         return this;

@@ -64,7 +64,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class THijrahDate extends ChronoDateImpl<THijrahDate> {
+public final class THijrahDate extends TChronoLocalDateImpl<THijrahDate> {
     // this class is package-scoped so that future conversion to public
     // would not change serialization
 

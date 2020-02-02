@@ -50,7 +50,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TThaiBuddhistDate extends ChronoDateImpl<TThaiBuddhistDate> {
+public final class TThaiBuddhistDate extends TChronoLocalDateImpl<TThaiBuddhistDate> {
 
     private final TLocalDate isoDate;
 

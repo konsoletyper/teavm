@@ -266,7 +266,7 @@ final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> extends TChrono
     @Override
     public TChronoZonedDateTime<D> atZone(TZoneId zoneId) {
 
-        return ChronoZonedDateTimeImpl.ofBest(this, zoneId, null);
+        return TChronoZonedDateTimeImpl.ofBest(this, zoneId, null);
     }
 
     @Override

@@ -40,16 +40,16 @@ import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 
-abstract class ChronoDateImpl<D extends TChronoLocalDate> extends TChronoLocalDate
+abstract class TChronoLocalDateImpl<D extends TChronoLocalDate> extends TChronoLocalDate
         implements TTemporal, TTemporalAdjuster, TSerializable {
 
-    ChronoDateImpl() {
+    TChronoLocalDateImpl() {
 
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public ChronoDateImpl<D> plus(long amountToAdd, TTemporalUnit unit) {
+    public TChronoLocalDateImpl<D> plus(long amountToAdd, TTemporalUnit unit) {
 
         if (unit instanceof TChronoUnit) {
             TChronoUnit f = (TChronoUnit) unit;
@@ -74,40 +74,40 @@ abstract class ChronoDateImpl<D extends TChronoLocalDate> extends TChronoLocalDa
             }
             throw new TDateTimeException(unit + " not valid for chronology " + getChronology().getId());
         }
-        return (ChronoDateImpl<D>) ((TAbstractChronology) getChronology())
+        return (TChronoLocalDateImpl<D>) ((TAbstractChronology) getChronology())
                 .ensureChronoLocalDate(unit.addTo(this, amountToAdd));
     }
 
-    abstract ChronoDateImpl<D> plusYears(long yearsToAdd);
+    abstract TChronoLocalDateImpl<D> plusYears(long yearsToAdd);
 
-    abstract ChronoDateImpl<D> plusMonths(long monthsToAdd);
+    abstract TChronoLocalDateImpl<D> plusMonths(long monthsToAdd);
 
-    ChronoDateImpl<D> plusWeeks(long weeksToAdd) {
+    TChronoLocalDateImpl<D> plusWeeks(long weeksToAdd) {
 
         return plusDays(Math.multiplyExact(weeksToAdd, 7));
     }
 
-    abstract ChronoDateImpl<D> plusDays(long daysToAdd);
+    abstract TChronoLocalDateImpl<D> plusDays(long daysToAdd);
 
-    ChronoDateImpl<D> minusYears(long yearsToSubtract) {
+    TChronoLocalDateImpl<D> minusYears(long yearsToSubtract) {
 
         return (yearsToSubtract == Long.MIN_VALUE ? plusYears(Long.MAX_VALUE).plusYears(1)
                 : plusYears(-yearsToSubtract));
     }
 
-    ChronoDateImpl<D> minusMonths(long monthsToSubtract) {
+    TChronoLocalDateImpl<D> minusMonths(long monthsToSubtract) {
 
         return (monthsToSubtract == Long.MIN_VALUE ? plusMonths(Long.MAX_VALUE).plusMonths(1)
                 : plusMonths(-monthsToSubtract));
     }
 
-    ChronoDateImpl<D> minusWeeks(long weeksToSubtract) {
+    TChronoLocalDateImpl<D> minusWeeks(long weeksToSubtract) {
 
         return (weeksToSubtract == Long.MIN_VALUE ? plusWeeks(Long.MAX_VALUE).plusWeeks(1)
                 : plusWeeks(-weeksToSubtract));
     }
 
-    ChronoDateImpl<D> minusDays(long daysToSubtract) {
+    TChronoLocalDateImpl<D> minusDays(long daysToSubtract) {
 
         return (daysToSubtract == Long.MIN_VALUE ? plusDays(Long.MAX_VALUE).plusDays(1) : plusDays(-daysToSubtract));
     }

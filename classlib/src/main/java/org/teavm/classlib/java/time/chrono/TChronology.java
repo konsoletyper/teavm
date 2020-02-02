@@ -140,7 +140,7 @@ public interface TChronology extends TComparable<TChronology> {
             } catch (TDateTimeException ex1) {
                 TChronoLocalDateTime cldt = localDateTime(temporal);
                 TChronoLocalDateTimeImpl cldtImpl = ((TAbstractChronology) this).ensureChronoLocalDateTime(cldt);
-                return ChronoZonedDateTimeImpl.ofBest(cldtImpl, zone, null);
+                return TChronoZonedDateTimeImpl.ofBest(cldtImpl, zone, null);
             }
         } catch (TDateTimeException ex) {
             throw new TDateTimeException(
@@ -150,7 +150,7 @@ public interface TChronology extends TComparable<TChronology> {
 
     default TChronoZonedDateTime<?> zonedDateTime(TInstant instant, TZoneId zone) {
 
-        TChronoZonedDateTime<? extends TChronoLocalDate> result = ChronoZonedDateTimeImpl.ofInstant(this, instant,
+        TChronoZonedDateTime<? extends TChronoLocalDate> result = TChronoZonedDateTimeImpl.ofInstant(this, instant,
                 zone);
         return result;
     }

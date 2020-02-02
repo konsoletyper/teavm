@@ -171,10 +171,10 @@ public abstract class TAbstractChronology implements TChronology {
         return other;
     }
 
-    <D extends TChronoLocalDate> ChronoZonedDateTimeImpl<D> ensureChronoZonedDateTime(TTemporal temporal) {
+    <D extends TChronoLocalDate> TChronoZonedDateTimeImpl<D> ensureChronoZonedDateTime(TTemporal temporal) {
 
         @SuppressWarnings("unchecked")
-        ChronoZonedDateTimeImpl<D> other = (ChronoZonedDateTimeImpl<D>) temporal;
+        TChronoZonedDateTimeImpl<D> other = (TChronoZonedDateTimeImpl<D>) temporal;
         if (equals(other.toLocalDate().getChronology()) == false) {
             throw new ClassCastException("Chrono mismatch, required: " + getId() + ", supplied: "
                     + other.toLocalDate().getChronology().getId());
