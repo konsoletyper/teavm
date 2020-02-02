@@ -35,11 +35,10 @@ import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
-
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
 public final class TDecimalStyle {
 
@@ -68,7 +67,7 @@ public final class TDecimalStyle {
 
     public static TDecimalStyle of(Locale locale) {
 
-        TJdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         TDecimalStyle info = CACHE.get(locale);
         if (info == null) {
             info = create(locale);

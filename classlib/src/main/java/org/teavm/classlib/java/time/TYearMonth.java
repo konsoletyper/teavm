@@ -43,6 +43,8 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.MILLENNIA;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
+import java.util.Objects;
+
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.time.chrono.TChronology;
@@ -51,7 +53,6 @@ import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
 import org.teavm.classlib.java.time.format.TSignStyle;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -102,7 +103,7 @@ public final class TYearMonth extends TDefaultInterfaceTemporalAccessor
 
     public static TYearMonth of(int year, TMonth month) {
 
-        TJdk8Methods.requireNonNull(month, "month");
+        Objects.requireNonNull(month, "month");
         return of(year, month.getValue());
     }
 
@@ -136,7 +137,7 @@ public final class TYearMonth extends TDefaultInterfaceTemporalAccessor
 
     public static TYearMonth parse(CharSequence text, TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.parse(text, TYearMonth.FROM);
     }
 
@@ -307,13 +308,13 @@ public final class TYearMonth extends TDefaultInterfaceTemporalAccessor
                 case YEARS:
                     return plusYears(amountToAdd);
                 case DECADES:
-                    return plusYears(TJdk8Methods.safeMultiply(amountToAdd, 10));
+                    return plusYears(Math.multiplyExact(amountToAdd, 10));
                 case CENTURIES:
-                    return plusYears(TJdk8Methods.safeMultiply(amountToAdd, 100));
+                    return plusYears(Math.multiplyExact(amountToAdd, 100));
                 case MILLENNIA:
-                    return plusYears(TJdk8Methods.safeMultiply(amountToAdd, 1000));
+                    return plusYears(Math.multiplyExact(amountToAdd, 1000));
                 case ERAS:
-                    return with(ERA, TJdk8Methods.safeAdd(getLong(ERA), amountToAdd));
+                    return with(ERA, Math.addExact(getLong(ERA), amountToAdd));
             }
             throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
@@ -336,8 +337,8 @@ public final class TYearMonth extends TDefaultInterfaceTemporalAccessor
         }
         long monthCount = this.year * 12L + (this.month - 1);
         long calcMonths = monthCount + monthsToAdd; // safe overflow
-        int newYear = YEAR.checkValidIntValue(TJdk8Methods.floorDiv(calcMonths, 12));
-        int newMonth = TJdk8Methods.floorMod(calcMonths, 12) + 1;
+        int newYear = YEAR.checkValidIntValue(Math.floorDiv(calcMonths, 12));
+        int newMonth = (int) Math.floorMod(calcMonths, 12) + 1;
         return with(newYear, newMonth);
     }
 
@@ -484,7 +485,7 @@ public final class TYearMonth extends TDefaultInterfaceTemporalAccessor
 
     public String format(TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
 

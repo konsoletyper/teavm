@@ -38,6 +38,7 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -46,7 +47,6 @@ import org.teavm.classlib.java.time.chrono.TChronoPeriod;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeParseException;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAmount;
@@ -79,7 +79,7 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
 
     public static TPeriod ofWeeks(int weeks) {
 
-        return create(0, 0, TJdk8Methods.safeMultiply(weeks, 7));
+        return create(0, 0, Math.multiplyExact(weeks, 7));
     }
 
     public static TPeriod ofDays(int days) {
@@ -102,18 +102,18 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
                 throw new TDateTimeException("TPeriod requires ISO chronology: " + amount);
             }
         }
-        TJdk8Methods.requireNonNull(amount, "amount");
+        Objects.requireNonNull(amount, "amount");
         int years = 0;
         int months = 0;
         int days = 0;
         for (TTemporalUnit unit : amount.getUnits()) {
             long unitAmount = amount.get(unit);
             if (unit == TChronoUnit.YEARS) {
-                years = TJdk8Methods.safeToInt(unitAmount);
+                years = Math.toIntExact(unitAmount);
             } else if (unit == TChronoUnit.MONTHS) {
-                months = TJdk8Methods.safeToInt(unitAmount);
+                months = Math.toIntExact(unitAmount);
             } else if (unit == TChronoUnit.DAYS) {
-                days = TJdk8Methods.safeToInt(unitAmount);
+                days = Math.toIntExact(unitAmount);
             } else {
                 throw new TDateTimeException("Unit must be Years, Months or Days, but was " + unit);
             }
@@ -128,7 +128,7 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
 
     public static TPeriod parse(CharSequence text) {
 
-        TJdk8Methods.requireNonNull(text, "text");
+        Objects.requireNonNull(text, "text");
         Matcher matcher = PATTERN.matcher(text);
         if (matcher.matches()) {
             int negate = ("-".equals(matcher.group(1)) ? -1 : 1);
@@ -142,7 +142,7 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
                     int months = parseNumber(text, monthMatch, negate);
                     int weeks = parseNumber(text, weekMatch, negate);
                     int days = parseNumber(text, dayMatch, negate);
-                    days = TJdk8Methods.safeAdd(days, TJdk8Methods.safeMultiply(weeks, 7));
+                    days = Math.addExact(days, Math.multiplyExact(weeks, 7));
                     return create(years, months, days);
                 } catch (NumberFormatException ex) {
                     throw (TDateTimeParseException) new TDateTimeParseException("Text cannot be parsed to a TPeriod",
@@ -160,7 +160,7 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
         }
         int val = Integer.parseInt(str);
         try {
-            return TJdk8Methods.safeMultiply(val, negate);
+            return Math.multiplyExact(val, negate);
         } catch (ArithmeticException ex) {
             throw (TDateTimeParseException) new TDateTimeParseException("Text cannot be parsed to a TPeriod", text, 0)
                     .initCause(ex);
@@ -264,8 +264,8 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
     public TPeriod plus(TTemporalAmount amountToAdd) {
 
         TPeriod amount = TPeriod.from(amountToAdd);
-        return create(TJdk8Methods.safeAdd(this.years, amount.years), TJdk8Methods.safeAdd(this.months, amount.months),
-                TJdk8Methods.safeAdd(this.days, amount.days));
+        return create(Math.addExact(this.years, amount.years), Math.addExact(this.months, amount.months),
+                Math.addExact(this.days, amount.days));
     }
 
     public TPeriod plusYears(long yearsToAdd) {
@@ -273,7 +273,7 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
         if (yearsToAdd == 0) {
             return this;
         }
-        return create(TJdk8Methods.safeToInt(TJdk8Methods.safeAdd(this.years, yearsToAdd)), this.months, this.days);
+        return create(Math.toIntExact(Math.addExact(this.years, yearsToAdd)), this.months, this.days);
     }
 
     public TPeriod plusMonths(long monthsToAdd) {
@@ -281,7 +281,7 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
         if (monthsToAdd == 0) {
             return this;
         }
-        return create(this.years, TJdk8Methods.safeToInt(TJdk8Methods.safeAdd(this.months, monthsToAdd)), this.days);
+        return create(this.years, Math.toIntExact(Math.addExact(this.months, monthsToAdd)), this.days);
     }
 
     public TPeriod plusDays(long daysToAdd) {
@@ -289,16 +289,15 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
         if (daysToAdd == 0) {
             return this;
         }
-        return create(this.years, this.months, TJdk8Methods.safeToInt(TJdk8Methods.safeAdd(this.days, daysToAdd)));
+        return create(this.years, this.months, Math.toIntExact(Math.addExact(this.days, daysToAdd)));
     }
 
     @Override
     public TPeriod minus(TTemporalAmount amountToSubtract) {
 
         TPeriod amount = TPeriod.from(amountToSubtract);
-        return create(TJdk8Methods.safeSubtract(this.years, amount.years),
-                TJdk8Methods.safeSubtract(this.months, amount.months),
-                TJdk8Methods.safeSubtract(this.days, amount.days));
+        return create(Math.subtractExact(this.years, amount.years), Math.subtractExact(this.months, amount.months),
+                Math.subtractExact(this.days, amount.days));
     }
 
     public TPeriod minusYears(long yearsToSubtract) {
@@ -324,8 +323,8 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
         if (this == ZERO || scalar == 1) {
             return this;
         }
-        return create(TJdk8Methods.safeMultiply(this.years, scalar), TJdk8Methods.safeMultiply(this.months, scalar),
-                TJdk8Methods.safeMultiply(this.days, scalar));
+        return create(Math.multiplyExact(this.years, scalar), Math.multiplyExact(this.months, scalar),
+                Math.multiplyExact(this.days, scalar));
     }
 
     @Override
@@ -343,7 +342,7 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
         if (splitYears == this.years && splitMonths == this.months) {
             return this;
         }
-        return create(TJdk8Methods.safeToInt(splitYears), splitMonths, this.days);
+        return create(Math.toIntExact(splitYears), splitMonths, this.days);
     }
 
     public long toTotalMonths() {
@@ -354,7 +353,7 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
     @Override
     public TTemporal addTo(TTemporal temporal) {
 
-        TJdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         if (this.years != 0) {
             if (this.months != 0) {
                 temporal = temporal.plus(toTotalMonths(), MONTHS);
@@ -373,7 +372,7 @@ public final class TPeriod extends TChronoPeriod implements TSerializable {
     @Override
     public TTemporal subtractFrom(TTemporal temporal) {
 
-        TJdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         if (this.years != 0) {
             if (this.months != 0) {
                 temporal = temporal.minus(toTotalMonths(), MONTHS);

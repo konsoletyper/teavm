@@ -33,11 +33,11 @@ package org.teavm.classlib.java.time;
 
 import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
 
+import java.util.Objects;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
 import org.teavm.classlib.java.lang.TComparable;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
@@ -86,7 +86,7 @@ public final class TZoneOffset extends TZoneId
 
     public static TZoneOffset of(String offsetId) {
 
-        TJdk8Methods.requireNonNull(offsetId, "offsetId");
+        Objects.requireNonNull(offsetId, "offsetId");
         // "Z" is always in the cache
         TZoneOffset offset = ID_CACHE.get(offsetId);
         if (offset != null) {

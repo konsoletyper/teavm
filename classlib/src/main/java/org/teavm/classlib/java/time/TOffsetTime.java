@@ -39,10 +39,11 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_DAY;
 import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 
+import java.util.Objects;
+
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -88,7 +89,7 @@ public final class TOffsetTime extends TDefaultInterfaceTemporalAccessor
 
     public static TOffsetTime now(TClock clock) {
 
-        TJdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         final TInstant now = clock.instant(); // called once
         return ofInstant(now, clock.getZone().getRules().getOffset(now));
     }
@@ -105,8 +106,8 @@ public final class TOffsetTime extends TDefaultInterfaceTemporalAccessor
 
     public static TOffsetTime ofInstant(TInstant instant, TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(instant, "instant");
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(instant, "instant");
+        Objects.requireNonNull(zone, "zone");
         TZoneRules rules = zone.getRules();
         TZoneOffset offset = rules.getOffset(instant);
         long secsOfDay = instant.getEpochSecond() % SECONDS_PER_DAY;
@@ -140,14 +141,14 @@ public final class TOffsetTime extends TDefaultInterfaceTemporalAccessor
 
     public static TOffsetTime parse(CharSequence text, TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.parse(text, TOffsetTime.FROM);
     }
 
     private TOffsetTime(TLocalTime time, TZoneOffset offset) {
 
-        this.time = TJdk8Methods.requireNonNull(time, "time");
-        this.offset = TJdk8Methods.requireNonNull(offset, "offset");
+        this.time = Objects.requireNonNull(time, "time");
+        this.offset = Objects.requireNonNull(offset, "offset");
     }
 
     private TOffsetTime with(TLocalTime time, TZoneOffset offset) {
@@ -439,7 +440,7 @@ public final class TOffsetTime extends TDefaultInterfaceTemporalAccessor
         if (this.offset.equals(other.offset)) {
             return this.time.compareTo(other.time);
         }
-        int compare = TJdk8Methods.compareLongs(toEpochNano(), other.toEpochNano());
+        int compare = Long.compare(toEpochNano(), other.toEpochNano());
         if (compare == 0) {
             compare = this.time.compareTo(other.time);
         }
@@ -488,7 +489,7 @@ public final class TOffsetTime extends TDefaultInterfaceTemporalAccessor
 
     public String format(TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
 

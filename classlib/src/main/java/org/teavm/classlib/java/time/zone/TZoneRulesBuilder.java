@@ -40,6 +40,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.TDayOfWeek;
 import org.teavm.classlib.java.time.TLocalDate;
@@ -49,7 +50,6 @@ import org.teavm.classlib.java.time.TMonth;
 import org.teavm.classlib.java.time.TYear;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.zone.TZoneOffsetTransitionRule.TimeDefinition;
 
 class TZoneRulesBuilder {
@@ -65,9 +65,9 @@ class TZoneRulesBuilder {
     public TZoneRulesBuilder addWindow(TZoneOffset standardOffset, TLocalDateTime until,
             TimeDefinition untilDefinition) {
 
-        TJdk8Methods.requireNonNull(standardOffset, "standardOffset");
-        TJdk8Methods.requireNonNull(until, "until");
-        TJdk8Methods.requireNonNull(untilDefinition, "untilDefinition");
+        Objects.requireNonNull(standardOffset, "standardOffset");
+        Objects.requireNonNull(until, "until");
+        Objects.requireNonNull(untilDefinition, "untilDefinition");
         TZWindow window = new TZWindow(standardOffset, until, untilDefinition);
         if (this.windowList.size() > 0) {
             TZWindow previous = this.windowList.get(this.windowList.size() - 1);
@@ -95,7 +95,7 @@ class TZoneRulesBuilder {
     public TZoneRulesBuilder addRuleToWindow(TLocalDateTime transitionDateTime, TimeDefinition timeDefinition,
             int savingAmountSecs) {
 
-        TJdk8Methods.requireNonNull(transitionDateTime, "transitionDateTime");
+        Objects.requireNonNull(transitionDateTime, "transitionDateTime");
         return addRuleToWindow(transitionDateTime.getYear(), transitionDateTime.getYear(),
                 transitionDateTime.getMonth(), transitionDateTime.getDayOfMonth(), null,
                 transitionDateTime.toLocalTime(), false, timeDefinition, savingAmountSecs);
@@ -112,9 +112,9 @@ class TZoneRulesBuilder {
             TDayOfWeek dayOfWeek, TLocalTime time, boolean timeEndOfDay, TimeDefinition timeDefinition,
             int savingAmountSecs) {
 
-        TJdk8Methods.requireNonNull(month, "month");
-        TJdk8Methods.requireNonNull(time, "time");
-        TJdk8Methods.requireNonNull(timeDefinition, "timeDefinition");
+        Objects.requireNonNull(month, "month");
+        Objects.requireNonNull(time, "time");
+        Objects.requireNonNull(timeDefinition, "timeDefinition");
         YEAR.checkValidValue(startYear);
         YEAR.checkValidValue(endYear);
         if (dayOfMonthIndicator < -28 || dayOfMonthIndicator > 31 || dayOfMonthIndicator == 0) {
@@ -137,8 +137,8 @@ class TZoneRulesBuilder {
             TDayOfWeek dayOfWeek, TLocalTime time, int adjustDays, TimeDefinition timeDefinition,
             int savingAmountSecs) {
 
-        TJdk8Methods.requireNonNull(month, "month");
-        TJdk8Methods.requireNonNull(timeDefinition, "timeDefinition");
+        Objects.requireNonNull(month, "month");
+        Objects.requireNonNull(timeDefinition, "timeDefinition");
         YEAR.checkValidValue(startYear);
         YEAR.checkValidValue(endYear);
         if (dayOfMonthIndicator < -28 || dayOfMonthIndicator > 31 || dayOfMonthIndicator == 0) {
@@ -161,7 +161,7 @@ class TZoneRulesBuilder {
 
     TZoneRules toRules(String zoneId, Map<Object, Object> deduplicateMap) {
 
-        TJdk8Methods.requireNonNull(zoneId, "zoneId");
+        Objects.requireNonNull(zoneId, "zoneId");
         this.deduplicateMap = deduplicateMap;
         if (this.windowList.isEmpty()) {
             throw new IllegalStateException("No windows have been added to the builder");

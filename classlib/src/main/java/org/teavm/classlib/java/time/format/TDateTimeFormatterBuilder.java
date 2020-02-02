@@ -58,6 +58,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingResourceException;
+import java.util.Objects;
 import java.util.ResourceBundle;
 import java.util.Set;
 import java.util.TimeZone;
@@ -72,7 +73,6 @@ import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.chrono.TChronoLocalDate;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.format.TSimpleDateTimeTextProvider.LocaleStore;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TIsoFields;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
@@ -112,8 +112,8 @@ public final class TDateTimeFormatterBuilder {
     public static String getLocalizedDateTimePattern(TFormatStyle dateStyle, TFormatStyle timeStyle, TChronology chrono,
             Locale locale) {
 
-        TJdk8Methods.requireNonNull(locale, "locale");
-        TJdk8Methods.requireNonNull(chrono, "chrono");
+        Objects.requireNonNull(locale, "locale");
+        Objects.requireNonNull(chrono, "chrono");
         if (dateStyle == null && timeStyle == null) {
             throw new IllegalArgumentException("Either dateStyle or timeStyle must be non-null");
         }
@@ -173,21 +173,21 @@ public final class TDateTimeFormatterBuilder {
 
     public TDateTimeFormatterBuilder parseDefaulting(TTemporalField field, long value) {
 
-        TJdk8Methods.requireNonNull(field, "field");
+        Objects.requireNonNull(field, "field");
         appendInternal(new DefaultingParser(field, value));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendValue(TTemporalField field) {
 
-        TJdk8Methods.requireNonNull(field, "field");
+        Objects.requireNonNull(field, "field");
         appendValue(new NumberPrinterParser(field, 1, 19, TSignStyle.NORMAL));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendValue(TTemporalField field, int width) {
 
-        TJdk8Methods.requireNonNull(field, "field");
+        Objects.requireNonNull(field, "field");
         if (width < 1 || width > 19) {
             throw new IllegalArgumentException("The width must be from 1 to 19 inclusive but was " + width);
         }
@@ -202,8 +202,8 @@ public final class TDateTimeFormatterBuilder {
         if (minWidth == maxWidth && signStyle == TSignStyle.NOT_NEGATIVE) {
             return appendValue(field, maxWidth);
         }
-        TJdk8Methods.requireNonNull(field, "field");
-        TJdk8Methods.requireNonNull(signStyle, "signStyle");
+        Objects.requireNonNull(field, "field");
+        Objects.requireNonNull(signStyle, "signStyle");
         if (minWidth < 1 || minWidth > 19) {
             throw new IllegalArgumentException("The minimum width must be from 1 to 19 inclusive but was " + minWidth);
         }
@@ -221,7 +221,7 @@ public final class TDateTimeFormatterBuilder {
 
     public TDateTimeFormatterBuilder appendValueReduced(TTemporalField field, int width, int maxWidth, int baseValue) {
 
-        TJdk8Methods.requireNonNull(field, "field");
+        Objects.requireNonNull(field, "field");
         ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, baseValue, null);
         appendValue(pp);
         return this;
@@ -230,8 +230,8 @@ public final class TDateTimeFormatterBuilder {
     public TDateTimeFormatterBuilder appendValueReduced(TTemporalField field, int width, int maxWidth,
             TChronoLocalDate baseDate) {
 
-        TJdk8Methods.requireNonNull(field, "field");
-        TJdk8Methods.requireNonNull(baseDate, "baseDate");
+        Objects.requireNonNull(field, "field");
+        Objects.requireNonNull(baseDate, "baseDate");
         ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, 0, baseDate);
         appendValue(pp);
         return this;
@@ -281,16 +281,16 @@ public final class TDateTimeFormatterBuilder {
 
     public TDateTimeFormatterBuilder appendText(TTemporalField field, TTextStyle textStyle) {
 
-        TJdk8Methods.requireNonNull(field, "field");
-        TJdk8Methods.requireNonNull(textStyle, "textStyle");
+        Objects.requireNonNull(field, "field");
+        Objects.requireNonNull(textStyle, "textStyle");
         appendInternal(new TextPrinterParser(field, textStyle, TDateTimeTextProvider.getInstance()));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendText(TTemporalField field, Map<Long, String> textLookup) {
 
-        TJdk8Methods.requireNonNull(field, "field");
-        TJdk8Methods.requireNonNull(textLookup, "textLookup");
+        Objects.requireNonNull(field, "field");
+        Objects.requireNonNull(textLookup, "textLookup");
         Map<Long, String> copy = new LinkedHashMap<Long, String>(textLookup);
         Map<TTextStyle, Map<Long, String>> map = Collections.singletonMap(TTextStyle.FULL, copy);
         final LocaleStore store = new LocaleStore(map);
@@ -341,7 +341,7 @@ public final class TDateTimeFormatterBuilder {
 
     public TDateTimeFormatterBuilder appendLocalizedOffset(TTextStyle style) {
 
-        TJdk8Methods.requireNonNull(style, "style");
+        Objects.requireNonNull(style, "style");
         if (style != TTextStyle.FULL && style != TTextStyle.SHORT) {
             throw new IllegalArgumentException("Style must be either full or short");
         }
@@ -376,7 +376,7 @@ public final class TDateTimeFormatterBuilder {
     public TDateTimeFormatterBuilder appendZoneText(TTextStyle textStyle, Set<TZoneId> preferredZones) {
 
         // TODO: preferred zones currently ignored
-        TJdk8Methods.requireNonNull(preferredZones, "preferredZones");
+        Objects.requireNonNull(preferredZones, "preferredZones");
         appendInternal(new ZoneTextPrinterParser(textStyle));
         return this;
     }
@@ -389,7 +389,7 @@ public final class TDateTimeFormatterBuilder {
 
     public TDateTimeFormatterBuilder appendChronologyText(TTextStyle textStyle) {
 
-        TJdk8Methods.requireNonNull(textStyle, "textStyle");
+        Objects.requireNonNull(textStyle, "textStyle");
         appendInternal(new ChronoPrinterParser(textStyle));
         return this;
     }
@@ -411,7 +411,7 @@ public final class TDateTimeFormatterBuilder {
 
     public TDateTimeFormatterBuilder appendLiteral(String literal) {
 
-        TJdk8Methods.requireNonNull(literal, "literal");
+        Objects.requireNonNull(literal, "literal");
         if (literal.length() > 0) {
             if (literal.length() == 1) {
                 appendInternal(new CharLiteralPrinterParser(literal.charAt(0)));
@@ -424,21 +424,21 @@ public final class TDateTimeFormatterBuilder {
 
     public TDateTimeFormatterBuilder append(TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         appendInternal(formatter.toPrinterParser(false));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendOptional(TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         appendInternal(formatter.toPrinterParser(true));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendPattern(String pattern) {
 
-        TJdk8Methods.requireNonNull(pattern, "pattern");
+        Objects.requireNonNull(pattern, "pattern");
         parsePattern(pattern);
         return this;
     }
@@ -807,7 +807,7 @@ public final class TDateTimeFormatterBuilder {
 
     private int appendInternal(DateTimePrinterParser pp) {
 
-        TJdk8Methods.requireNonNull(pp, "pp");
+        Objects.requireNonNull(pp, "pp");
         if (this.active.padNextWidth > 0) {
             if (pp != null) {
                 pp = new PadPrinterParserDecorator(pp, this.active.padNextWidth, this.active.padNextChar);
@@ -827,7 +827,7 @@ public final class TDateTimeFormatterBuilder {
 
     public TDateTimeFormatter toFormatter(Locale locale) {
 
-        TJdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         while (this.active.parent != null) {
             optionalEnd();
         }
@@ -1513,7 +1513,7 @@ public final class TDateTimeFormatterBuilder {
 
         FractionPrinterParser(TTemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
 
-            TJdk8Methods.requireNonNull(field, "field");
+            Objects.requireNonNull(field, "field");
             if (field.range().isFixed() == false) {
                 throw new IllegalArgumentException("Field must have a fixed set of values: " + field);
             }
@@ -1741,8 +1741,8 @@ public final class TDateTimeFormatterBuilder {
             if (inSec >= -SECONDS_0000_TO_1970) {
                 // current era
                 long zeroSecs = inSec - SECONDS_PER_10000_YEARS + SECONDS_0000_TO_1970;
-                long hi = TJdk8Methods.floorDiv(zeroSecs, SECONDS_PER_10000_YEARS) + 1;
-                long lo = TJdk8Methods.floorMod(zeroSecs, SECONDS_PER_10000_YEARS);
+                long hi = Math.floorDiv(zeroSecs, SECONDS_PER_10000_YEARS) + 1;
+                long lo = Math.floorMod(zeroSecs, SECONDS_PER_10000_YEARS);
                 TLocalDateTime ldt = TLocalDateTime.ofEpochSecond(lo - SECONDS_0000_TO_1970, 0, TZoneOffset.UTC);
                 if (hi > 0) {
                     buf.append('+').append(hi);
@@ -1838,7 +1838,7 @@ public final class TDateTimeFormatterBuilder {
             try {
                 TLocalDateTime ldt = TLocalDateTime.of(year, month, day, hour, min, sec, 0).plusDays(days);
                 instantSecs = ldt.toEpochSecond(TZoneOffset.UTC);
-                instantSecs += TJdk8Methods.safeMultiply(yearParsed / 10000L, SECONDS_PER_10000_YEARS);
+                instantSecs += Math.multiplyExact(yearParsed / 10000L, SECONDS_PER_10000_YEARS);
             } catch (RuntimeException ex) {
                 return ~position;
             }
@@ -1866,8 +1866,8 @@ public final class TDateTimeFormatterBuilder {
 
         OffsetIdPrinterParser(String noOffsetText, String pattern) {
 
-            TJdk8Methods.requireNonNull(noOffsetText, "noOffsetText");
-            TJdk8Methods.requireNonNull(pattern, "pattern");
+            Objects.requireNonNull(noOffsetText, "noOffsetText");
+            Objects.requireNonNull(pattern, "pattern");
             this.noOffsetText = noOffsetText;
             this.type = checkPattern(pattern);
         }
@@ -1889,7 +1889,7 @@ public final class TDateTimeFormatterBuilder {
             if (offsetSecs == null) {
                 return false;
             }
-            int totalSecs = TJdk8Methods.safeToInt(offsetSecs);
+            int totalSecs = Math.toIntExact(offsetSecs);
             if (totalSecs == 0) {
                 buf.append(this.noOffsetText);
             } else {
@@ -2013,7 +2013,7 @@ public final class TDateTimeFormatterBuilder {
             if (this.style == TTextStyle.FULL) {
                 return new OffsetIdPrinterParser("", "+HH:MM:ss").print(context, buf);
             }
-            int totalSecs = TJdk8Methods.safeToInt(offsetSecs);
+            int totalSecs = Math.toIntExact(offsetSecs);
             if (totalSecs != 0) {
                 int absHours = Math.abs((totalSecs / 3600) % 100); // anything larger than 99 silently dropped
                 int absMinutes = Math.abs((totalSecs / 60) % 60);
@@ -2139,7 +2139,7 @@ public final class TDateTimeFormatterBuilder {
 
         ZoneTextPrinterParser(TTextStyle textStyle) {
 
-            this.textStyle = TJdk8Methods.requireNonNull(textStyle, "textStyle");
+            this.textStyle = Objects.requireNonNull(textStyle, "textStyle");
         }
 
         @Override

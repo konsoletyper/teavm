@@ -45,13 +45,13 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
 import java.util.Map;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.TDuration;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TResolverStyle;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.util.TLocale;
 
 public final class TIsoFields {
@@ -160,8 +160,8 @@ public final class TIsoFields {
                 if (resolverStyle == TResolverStyle.LENIENT) {
                     long qoy = qoyLong;
                     date = TLocalDate.of(y, 1, 1);
-                    date = date.plusMonths(TJdk8Methods.safeMultiply(TJdk8Methods.safeSubtract(qoy, 1), 3));
-                    date = date.plusDays(TJdk8Methods.safeSubtract(doq, 1));
+                    date = date.plusMonths(Math.multiplyExact(Math.subtractExact(qoy, 1), 3));
+                    date = date.plusDays(Math.subtractExact(doq, 1));
                 } else {
                     int qoy = QUARTER_OF_YEAR.range().checkValidIntValue(qoyLong, QUARTER_OF_YEAR);
                     if (resolverStyle == TResolverStyle.STRICT) {
@@ -261,7 +261,7 @@ public final class TIsoFields {
             @Override
             public String getDisplayName(TLocale locale) {
 
-                TJdk8Methods.requireNonNull(locale, "locale");
+                Objects.requireNonNull(locale, "locale");
                 return "Week";
             }
 
@@ -300,7 +300,7 @@ public final class TIsoFields {
             public <R extends TTemporal> R adjustInto(R temporal, long newValue) {
 
                 range().checkValidValue(newValue, this);
-                return (R) temporal.plus(TJdk8Methods.safeSubtract(newValue, getFrom(temporal)), WEEKS);
+                return (R) temporal.plus(Math.subtractExact(newValue, getFrom(temporal)), WEEKS);
             }
 
             @Override
@@ -413,7 +413,7 @@ public final class TIsoFields {
         @Override
         public String getDisplayName(TLocale locale) {
 
-            TJdk8Methods.requireNonNull(locale, "locale");
+            Objects.requireNonNull(locale, "locale");
             return toString();
         }
 
@@ -552,7 +552,7 @@ public final class TIsoFields {
 
             switch (this) {
                 case WEEK_BASED_YEARS:
-                    long added = TJdk8Methods.safeAdd(temporal.get(WEEK_BASED_YEAR), periodToAdd);
+                    long added = Math.addExact(temporal.get(WEEK_BASED_YEAR), periodToAdd);
                     return (R) temporal.with(WEEK_BASED_YEAR, added);
                 case QUARTER_YEARS:
                     // no overflow (256 is multiple of 4)
@@ -567,8 +567,7 @@ public final class TIsoFields {
 
             switch (this) {
                 case WEEK_BASED_YEARS:
-                    return TJdk8Methods.safeSubtract(temporal2.getLong(WEEK_BASED_YEAR),
-                            temporal1.getLong(WEEK_BASED_YEAR));
+                    return Math.subtractExact(temporal2.getLong(WEEK_BASED_YEAR), temporal1.getLong(WEEK_BASED_YEAR));
                 case QUARTER_YEARS:
                     return temporal1.until(temporal2, MONTHS) / 3;
                 default:

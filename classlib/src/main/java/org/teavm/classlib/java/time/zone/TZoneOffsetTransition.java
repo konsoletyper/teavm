@@ -34,13 +34,13 @@ package org.teavm.classlib.java.time.zone;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDuration;
 import org.teavm.classlib.java.time.TInstant;
 import org.teavm.classlib.java.time.TLocalDateTime;
 import org.teavm.classlib.java.time.TZoneOffset;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
 public final class TZoneOffsetTransition implements Comparable<TZoneOffsetTransition>, TSerializable {
 
@@ -53,9 +53,9 @@ public final class TZoneOffsetTransition implements Comparable<TZoneOffsetTransi
     public static TZoneOffsetTransition of(TLocalDateTime transition, TZoneOffset offsetBefore,
             TZoneOffset offsetAfter) {
 
-        TJdk8Methods.requireNonNull(transition, "transition");
-        TJdk8Methods.requireNonNull(offsetBefore, "offsetBefore");
-        TJdk8Methods.requireNonNull(offsetAfter, "offsetAfter");
+        Objects.requireNonNull(transition, "transition");
+        Objects.requireNonNull(offsetBefore, "offsetBefore");
+        Objects.requireNonNull(offsetAfter, "offsetAfter");
         if (offsetBefore.equals(offsetAfter)) {
             throw new IllegalArgumentException("Offsets must not be equal");
         }

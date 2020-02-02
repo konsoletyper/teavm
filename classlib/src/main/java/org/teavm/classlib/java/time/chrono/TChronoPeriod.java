@@ -32,20 +32,18 @@
 package org.teavm.classlib.java.time.chrono;
 
 import java.util.List;
+import java.util.Objects;
 
-import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
-import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAmount;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
-import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 
 public abstract class TChronoPeriod implements TTemporalAmount {
 
     public static TChronoPeriod between(TChronoLocalDate startDateInclusive, TChronoLocalDate endDateExclusive) {
-        TJdk8Methods.requireNonNull(startDateInclusive, "startDateInclusive");
-        TJdk8Methods.requireNonNull(endDateExclusive, "endDateExclusive");
+
+        Objects.requireNonNull(startDateInclusive, "startDateInclusive");
+        Objects.requireNonNull(endDateExclusive, "endDateExclusive");
         return startDateInclusive.until(endDateExclusive);
     }
 
@@ -58,6 +56,7 @@ public abstract class TChronoPeriod implements TTemporalAmount {
     public abstract TChronology getChronology();
 
     public boolean isZero() {
+
         for (TTemporalUnit unit : getUnits()) {
             if (get(unit) != 0) {
                 return false;
@@ -67,6 +66,7 @@ public abstract class TChronoPeriod implements TTemporalAmount {
     }
 
     public boolean isNegative() {
+
         for (TTemporalUnit unit : getUnits()) {
             if (get(unit) < 0) {
                 return true;
@@ -82,6 +82,7 @@ public abstract class TChronoPeriod implements TTemporalAmount {
     public abstract TChronoPeriod multipliedBy(int scalar);
 
     public TChronoPeriod negated() {
+
         return multipliedBy(-1);
     }
 

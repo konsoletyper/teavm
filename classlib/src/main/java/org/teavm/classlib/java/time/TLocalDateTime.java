@@ -42,10 +42,10 @@ import static org.teavm.classlib.java.time.TLocalTime.NANOS_PER_SECOND;
 import static org.teavm.classlib.java.time.TLocalTime.SECONDS_PER_DAY;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.chrono.TChronoLocalDateTime;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -91,7 +91,7 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
 
     public static TLocalDateTime now(TClock clock) {
 
-        TJdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         final TInstant now = clock.instant(); // called once
         TZoneOffset offset = clock.getZone().getRules().getOffset(now);
         return ofEpochSecond(now.getEpochSecond(), now.getNano(), offset);
@@ -143,15 +143,15 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
 
     public static TLocalDateTime of(TLocalDate date, TLocalTime time) {
 
-        TJdk8Methods.requireNonNull(date, "date");
-        TJdk8Methods.requireNonNull(time, "time");
+        Objects.requireNonNull(date, "date");
+        Objects.requireNonNull(time, "time");
         return new TLocalDateTime(date, time);
     }
 
     public static TLocalDateTime ofInstant(TInstant instant, TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(instant, "instant");
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(instant, "instant");
+        Objects.requireNonNull(zone, "zone");
         TZoneRules rules = zone.getRules();
         TZoneOffset offset = rules.getOffset(instant);
         return ofEpochSecond(instant.getEpochSecond(), instant.getNano(), offset);
@@ -159,10 +159,10 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
 
     public static TLocalDateTime ofEpochSecond(long epochSecond, int nanoOfSecond, TZoneOffset offset) {
 
-        TJdk8Methods.requireNonNull(offset, "offset");
+        Objects.requireNonNull(offset, "offset");
         long localSecond = epochSecond + offset.getTotalSeconds(); // overflow caught later
-        long localEpochDay = TJdk8Methods.floorDiv(localSecond, SECONDS_PER_DAY);
-        int secsOfDay = TJdk8Methods.floorMod(localSecond, SECONDS_PER_DAY);
+        long localEpochDay = Math.floorDiv(localSecond, SECONDS_PER_DAY);
+        int secsOfDay = (int) Math.floorMod(localSecond, SECONDS_PER_DAY);
         TLocalDate date = TLocalDate.ofEpochDay(localEpochDay);
         TLocalTime time = TLocalTime.ofSecondOfDay(secsOfDay, nanoOfSecond);
         return new TLocalDateTime(date, time);
@@ -192,7 +192,7 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
 
     public static TLocalDateTime parse(CharSequence text, TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.parse(text, TLocalDateTime.FROM);
     }
 
@@ -529,8 +529,8 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
                 (hours % HOURS_PER_DAY) * NANOS_PER_HOUR; // max 86400000000000
         long curNoD = this.time.toNanoOfDay(); // max 86400000000000
         totNanos = totNanos * sign + curNoD; // total 432000000000000
-        totDays += TJdk8Methods.floorDiv(totNanos, NANOS_PER_DAY);
-        long newNoD = TJdk8Methods.floorMod(totNanos, NANOS_PER_DAY);
+        totDays += Math.floorDiv(totNanos, NANOS_PER_DAY);
+        long newNoD = Math.floorMod(totNanos, NANOS_PER_DAY);
         TLocalTime newTime = (newNoD == curNoD ? this.time : TLocalTime.ofNanoOfDay(newNoD));
         return with(newDate.plusDays(totDays), newTime);
     }
@@ -570,26 +570,26 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
                 long amount = daysUntil;
                 switch (f) {
                     case NANOS:
-                        amount = TJdk8Methods.safeMultiply(amount, NANOS_PER_DAY);
-                        return TJdk8Methods.safeAdd(amount, timeUntil);
+                        amount = Math.multiplyExact(amount, NANOS_PER_DAY);
+                        return Math.addExact(amount, timeUntil);
                     case MICROS:
-                        amount = TJdk8Methods.safeMultiply(amount, MICROS_PER_DAY);
-                        return TJdk8Methods.safeAdd(amount, timeUntil / 1000);
+                        amount = Math.multiplyExact(amount, MICROS_PER_DAY);
+                        return Math.addExact(amount, timeUntil / 1000);
                     case MILLIS:
-                        amount = TJdk8Methods.safeMultiply(amount, MILLIS_PER_DAY);
-                        return TJdk8Methods.safeAdd(amount, timeUntil / 1000000);
+                        amount = Math.multiplyExact(amount, MILLIS_PER_DAY);
+                        return Math.addExact(amount, timeUntil / 1000000);
                     case SECONDS:
-                        amount = TJdk8Methods.safeMultiply(amount, SECONDS_PER_DAY);
-                        return TJdk8Methods.safeAdd(amount, timeUntil / NANOS_PER_SECOND);
+                        amount = Math.multiplyExact(amount, SECONDS_PER_DAY);
+                        return Math.addExact(amount, timeUntil / NANOS_PER_SECOND);
                     case MINUTES:
-                        amount = TJdk8Methods.safeMultiply(amount, MINUTES_PER_DAY);
-                        return TJdk8Methods.safeAdd(amount, timeUntil / NANOS_PER_MINUTE);
+                        amount = Math.multiplyExact(amount, MINUTES_PER_DAY);
+                        return Math.addExact(amount, timeUntil / NANOS_PER_MINUTE);
                     case HOURS:
-                        amount = TJdk8Methods.safeMultiply(amount, HOURS_PER_DAY);
-                        return TJdk8Methods.safeAdd(amount, timeUntil / NANOS_PER_HOUR);
+                        amount = Math.multiplyExact(amount, HOURS_PER_DAY);
+                        return Math.addExact(amount, timeUntil / NANOS_PER_HOUR);
                     case HALF_DAYS:
-                        amount = TJdk8Methods.safeMultiply(amount, 2);
-                        return TJdk8Methods.safeAdd(amount, timeUntil / (NANOS_PER_HOUR * 12));
+                        amount = Math.multiplyExact(amount, 2);
+                        return Math.addExact(amount, timeUntil / (NANOS_PER_HOUR * 12));
                 }
                 throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
             }

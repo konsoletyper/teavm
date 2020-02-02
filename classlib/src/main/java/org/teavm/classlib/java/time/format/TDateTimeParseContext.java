@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.TPeriod;
 import org.teavm.classlib.java.time.TZoneId;
@@ -43,7 +44,6 @@ import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.ReducedPrinterParser;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.temporal.TTemporalQuery;
@@ -211,18 +211,18 @@ final class TDateTimeParseContext {
 
     int setParsedField(TTemporalField field, long value, int errorPos, int successPos) {
 
-        TJdk8Methods.requireNonNull(field, "field");
+        Objects.requireNonNull(field, "field");
         Long old = currentParsed().fieldValues.put(field, value);
         return (old != null && old.longValue() != value) ? ~errorPos : successPos;
     }
 
     void setParsed(TChronology chrono) {
 
-        TJdk8Methods.requireNonNull(chrono, "chrono");
+        Objects.requireNonNull(chrono, "chrono");
         Parsed currentParsed = currentParsed();
         currentParsed.chrono = chrono;
         if (currentParsed.callbacks != null) {
-            List<Object[]> callbacks = new ArrayList<Object[]>(currentParsed.callbacks);
+            List<Object[]> callbacks = new ArrayList<>(currentParsed.callbacks);
             currentParsed.callbacks.clear();
             for (Object[] objects : callbacks) {
                 ReducedPrinterParser pp = (ReducedPrinterParser) objects[0];
@@ -236,14 +236,14 @@ final class TDateTimeParseContext {
 
         Parsed currentParsed = currentParsed();
         if (currentParsed.callbacks == null) {
-            currentParsed.callbacks = new ArrayList<Object[]>(2);
+            currentParsed.callbacks = new ArrayList<>(2);
         }
         currentParsed.callbacks.add(new Object[] { reducedPrinterParser, value, errorPos, successPos });
     }
 
     void setParsed(TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(zone, "zone");
         currentParsed().zone = zone;
     }
 
@@ -309,7 +309,7 @@ final class TDateTimeParseContext {
                 throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
             }
             long value = this.fieldValues.get(field);
-            return TJdk8Methods.safeToInt(value);
+            return Math.toIntExact(value);
         }
 
         @Override
@@ -353,7 +353,7 @@ final class TDateTimeParseContext {
     // for testing
     void setLocale(Locale locale) {
 
-        TJdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         this.locale = locale;
     }
 

@@ -34,6 +34,7 @@ package org.teavm.classlib.java.time.chrono;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.util.Calendar;
+import java.util.Objects;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TClock;
@@ -42,7 +43,6 @@ import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalTime;
 import org.teavm.classlib.java.time.TPeriod;
 import org.teavm.classlib.java.time.TZoneId;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
@@ -80,7 +80,7 @@ public final class TJapaneseDate extends ChronoDateImpl<TJapaneseDate> implement
 
     public static TJapaneseDate of(TJapaneseEra era, int yearOfEra, int month, int dayOfMonth) {
 
-        TJdk8Methods.requireNonNull(era, "era");
+        Objects.requireNonNull(era, "era");
         if (yearOfEra < 1) {
             throw new TDateTimeException("Invalid YearOfEra: " + yearOfEra);
         }
@@ -96,7 +96,7 @@ public final class TJapaneseDate extends ChronoDateImpl<TJapaneseDate> implement
 
     static TJapaneseDate ofYearDay(TJapaneseEra era, int yearOfEra, int dayOfYear) {
 
-        TJdk8Methods.requireNonNull(era, "era");
+        Objects.requireNonNull(era, "era");
         if (yearOfEra < 1) {
             throw new TDateTimeException("Invalid YearOfEra: " + yearOfEra);
         }

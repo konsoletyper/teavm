@@ -37,8 +37,8 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.SECONDS;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAmount;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
@@ -60,7 +60,7 @@ public final class MockSimplePeriod implements TTemporalAmount, Comparable<MockS
 
     private MockSimplePeriod(long amount, TTemporalUnit unit) {
 
-        TJdk8Methods.requireNonNull(unit, "unit");
+        Objects.requireNonNull(unit, "unit");
         if (unit == FOREVER) {
             throw new TDateTimeException("Cannot create a period of the Forever unit");
         }
@@ -112,7 +112,7 @@ public final class MockSimplePeriod implements TTemporalAmount, Comparable<MockS
             throw new IllegalArgumentException(
                     "Units cannot be compared: " + this.unit + " and " + otherPeriod.getUnit());
         }
-        return TJdk8Methods.compareLongs(this.amount, otherPeriod.amount);
+        return Long.compare(this.amount, otherPeriod.amount);
     }
 
     @Override

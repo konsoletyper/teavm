@@ -36,6 +36,7 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TInstant;
@@ -43,10 +44,8 @@ import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalTime;
 import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZoneOffset;
-import org.teavm.classlib.java.time.TZonedDateTime;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporal;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
@@ -59,26 +58,29 @@ import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
-        extends TDefaultInterfaceTemporal
+public abstract class TChronoZonedDateTime<D extends TChronoLocalDate> extends TDefaultInterfaceTemporal
         implements TTemporal, Comparable<TChronoZonedDateTime<?>> {
 
     public static Comparator<TChronoZonedDateTime<?>> timeLineOrder() {
+
         return INSTANT_COMPARATOR;
     }
+
     private static Comparator<TChronoZonedDateTime<?>> INSTANT_COMPARATOR = new Comparator<TChronoZonedDateTime<?>>() {
         @Override
         public int compare(TChronoZonedDateTime<?> datetime1, TChronoZonedDateTime<?> datetime2) {
-            int cmp = TJdk8Methods.compareLongs(datetime1.toEpochSecond(), datetime2.toEpochSecond());
+
+            int cmp = Long.compare(datetime1.toEpochSecond(), datetime2.toEpochSecond());
             if (cmp == 0) {
-                cmp = TJdk8Methods.compareLongs(datetime1.toLocalTime().toNanoOfDay(), datetime2.toLocalTime().toNanoOfDay());
+                cmp = Long.compare(datetime1.toLocalTime().toNanoOfDay(), datetime2.toLocalTime().toNanoOfDay());
             }
             return cmp;
         }
     };
 
     public static TChronoZonedDateTime<?> from(TTemporalAccessor temporal) {
-        TJdk8Methods.requireNonNull(temporal, "temporal");
+
+        Objects.requireNonNull(temporal, "temporal");
         if (temporal instanceof TChronoZonedDateTime) {
             return (TChronoZonedDateTime<?>) temporal;
         }
@@ -91,6 +93,7 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             if (field == INSTANT_SECONDS || field == OFFSET_SECONDS) {
                 return field.range();
@@ -102,10 +105,13 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
 
     @Override
     public int get(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             switch ((TChronoField) field) {
-                case INSTANT_SECONDS: throw new TUnsupportedTemporalTypeException("Field too large for an int: " + field);
-                case OFFSET_SECONDS: return getOffset().getTotalSeconds();
+                case INSTANT_SECONDS:
+                    throw new TUnsupportedTemporalTypeException("Field too large for an int: " + field);
+                case OFFSET_SECONDS:
+                    return getOffset().getTotalSeconds();
             }
             return toLocalDateTime().get(field);
         }
@@ -114,10 +120,13 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             switch ((TChronoField) field) {
-                case INSTANT_SECONDS: return toEpochSecond();
-                case OFFSET_SECONDS: return getOffset().getTotalSeconds();
+                case INSTANT_SECONDS:
+                    return toEpochSecond();
+                case OFFSET_SECONDS:
+                    return getOffset().getTotalSeconds();
             }
             return toLocalDateTime().getLong(field);
         }
@@ -125,16 +134,19 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
     }
 
     public D toLocalDate() {
+
         return toLocalDateTime().toLocalDate();
     }
 
     public TLocalTime toLocalTime() {
+
         return toLocalDateTime().toLocalTime();
     }
 
     public abstract TChronoLocalDateTime<D> toLocalDateTime();
 
     public TChronology getChronology() {
+
         return toLocalDate().getChronology();
     }
 
@@ -152,6 +164,7 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
 
     @Override
     public TChronoZonedDateTime<D> with(TTemporalAdjuster adjuster) {
+
         return toLocalDate().getChronology().ensureChronoZonedDateTime(super.with(adjuster));
     }
 
@@ -160,6 +173,7 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
 
     @Override
     public TChronoZonedDateTime<D> plus(TTemporalAmount amount) {
+
         return toLocalDate().getChronology().ensureChronoZonedDateTime(super.plus(amount));
     }
 
@@ -168,17 +182,20 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
 
     @Override
     public TChronoZonedDateTime<D> minus(TTemporalAmount amount) {
+
         return toLocalDate().getChronology().ensureChronoZonedDateTime(super.minus(amount));
     }
 
     @Override
     public TChronoZonedDateTime<D> minus(long amountToSubtract, TTemporalUnit unit) {
+
         return toLocalDate().getChronology().ensureChronoZonedDateTime(super.minus(amountToSubtract, unit));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
+
         if (query == TTemporalQueries.zoneId() || query == TTemporalQueries.zone()) {
             return (R) getZone();
         } else if (query == TTemporalQueries.chronology()) {
@@ -196,15 +213,18 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
     }
 
     public String format(TDateTimeFormatter formatter) {
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
 
     public TInstant toInstant() {
+
         return TInstant.ofEpochSecond(toEpochSecond(), toLocalTime().getNano());
     }
 
     public long toEpochSecond() {
+
         long epochDay = toLocalDate().toEpochDay();
         long secs = epochDay * 86400 + toLocalTime().toSecondOfDay();
         secs -= getOffset().getTotalSeconds();
@@ -213,7 +233,8 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
 
     @Override
     public int compareTo(TChronoZonedDateTime<?> other) {
-        int cmp = TJdk8Methods.compareLongs(toEpochSecond(), other.toEpochSecond());
+
+        int cmp = Long.compare(toEpochSecond(), other.toEpochSecond());
         if (cmp == 0) {
             cmp = toLocalTime().getNano() - other.toLocalTime().getNano();
             if (cmp == 0) {
@@ -230,26 +251,29 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
     }
 
     public boolean isAfter(TChronoZonedDateTime<?> other) {
+
         long thisEpochSec = toEpochSecond();
         long otherEpochSec = other.toEpochSecond();
-        return thisEpochSec > otherEpochSec ||
-            (thisEpochSec == otherEpochSec && toLocalTime().getNano() > other.toLocalTime().getNano());
+        return thisEpochSec > otherEpochSec
+                || (thisEpochSec == otherEpochSec && toLocalTime().getNano() > other.toLocalTime().getNano());
     }
 
     public boolean isBefore(TChronoZonedDateTime<?> other) {
+
         long thisEpochSec = toEpochSecond();
         long otherEpochSec = other.toEpochSecond();
-        return thisEpochSec < otherEpochSec ||
-            (thisEpochSec == otherEpochSec && toLocalTime().getNano() < other.toLocalTime().getNano());
+        return thisEpochSec < otherEpochSec
+                || (thisEpochSec == otherEpochSec && toLocalTime().getNano() < other.toLocalTime().getNano());
     }
 
     public boolean isEqual(TChronoZonedDateTime<?> other) {
-        return toEpochSecond() == other.toEpochSecond() &&
-                toLocalTime().getNano() == other.toLocalTime().getNano();
+
+        return toEpochSecond() == other.toEpochSecond() && toLocalTime().getNano() == other.toLocalTime().getNano();
     }
 
     @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
             return true;
         }
@@ -261,11 +285,13 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
 
     @Override
     public int hashCode() {
+
         return toLocalDateTime().hashCode() ^ getOffset().hashCode() ^ Integer.rotateLeft(getZone().hashCode(), 3);
     }
 
     @Override
     public String toString() {
+
         String str = toLocalDateTime().toString() + getOffset().toString();
         if (getOffset() != getZone()) {
             str += '[' + getZone().toString() + ']';

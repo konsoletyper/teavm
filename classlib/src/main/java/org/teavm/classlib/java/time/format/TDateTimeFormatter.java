@@ -52,6 +52,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 
 import org.teavm.classlib.java.time.TDateTimeException;
@@ -61,7 +62,6 @@ import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.CompositePrinterParser;
 import org.teavm.classlib.java.time.format.TDateTimeParseContext.Parsed;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TIsoFields;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
@@ -211,29 +211,29 @@ public final class TDateTimeFormatter {
 
     public static TDateTimeFormatter ofLocalizedDate(TFormatStyle dateStyle) {
 
-        TJdk8Methods.requireNonNull(dateStyle, "dateStyle");
+        Objects.requireNonNull(dateStyle, "dateStyle");
         return new TDateTimeFormatterBuilder().appendLocalized(dateStyle, null).toFormatter()
                 .withChronology(TIsoChronology.INSTANCE);
     }
 
     public static TDateTimeFormatter ofLocalizedTime(TFormatStyle timeStyle) {
 
-        TJdk8Methods.requireNonNull(timeStyle, "timeStyle");
+        Objects.requireNonNull(timeStyle, "timeStyle");
         return new TDateTimeFormatterBuilder().appendLocalized(null, timeStyle).toFormatter()
                 .withChronology(TIsoChronology.INSTANCE);
     }
 
     public static TDateTimeFormatter ofLocalizedDateTime(TFormatStyle dateTimeStyle) {
 
-        TJdk8Methods.requireNonNull(dateTimeStyle, "dateTimeStyle");
+        Objects.requireNonNull(dateTimeStyle, "dateTimeStyle");
         return new TDateTimeFormatterBuilder().appendLocalized(dateTimeStyle, dateTimeStyle).toFormatter()
                 .withChronology(TIsoChronology.INSTANCE);
     }
 
     public static TDateTimeFormatter ofLocalizedDateTime(TFormatStyle dateStyle, TFormatStyle timeStyle) {
 
-        TJdk8Methods.requireNonNull(dateStyle, "dateStyle");
-        TJdk8Methods.requireNonNull(timeStyle, "timeStyle");
+        Objects.requireNonNull(dateStyle, "dateStyle");
+        Objects.requireNonNull(timeStyle, "timeStyle");
         return new TDateTimeFormatterBuilder().appendLocalized(dateStyle, timeStyle).toFormatter()
                 .withChronology(TIsoChronology.INSTANCE);
     }
@@ -289,10 +289,10 @@ public final class TDateTimeFormatter {
     TDateTimeFormatter(CompositePrinterParser printerParser, Locale locale, TDecimalStyle decimalStyle,
             TResolverStyle resolverStyle, Set<TTemporalField> resolverFields, TChronology chrono, TZoneId zone) {
 
-        this.printerParser = TJdk8Methods.requireNonNull(printerParser, "printerParser");
-        this.locale = TJdk8Methods.requireNonNull(locale, "locale");
-        this.decimalStyle = TJdk8Methods.requireNonNull(decimalStyle, "decimalStyle");
-        this.resolverStyle = TJdk8Methods.requireNonNull(resolverStyle, "resolverStyle");
+        this.printerParser = Objects.requireNonNull(printerParser, "printerParser");
+        this.locale = Objects.requireNonNull(locale, "locale");
+        this.decimalStyle = Objects.requireNonNull(decimalStyle, "decimalStyle");
+        this.resolverStyle = Objects.requireNonNull(resolverStyle, "resolverStyle");
         this.resolverFields = resolverFields;
         this.chrono = chrono;
         this.zone = zone;
@@ -333,7 +333,7 @@ public final class TDateTimeFormatter {
 
     public TDateTimeFormatter withChronology(TChronology chrono) {
 
-        if (TJdk8Methods.equals(this.chrono, chrono)) {
+        if (Objects.equals(this.chrono, chrono)) {
             return this;
         }
         return new TDateTimeFormatter(this.printerParser, this.locale, this.decimalStyle, this.resolverStyle,
@@ -347,7 +347,7 @@ public final class TDateTimeFormatter {
 
     public TDateTimeFormatter withZone(TZoneId zone) {
 
-        if (TJdk8Methods.equals(this.zone, zone)) {
+        if (Objects.equals(this.zone, zone)) {
             return this;
         }
         return new TDateTimeFormatter(this.printerParser, this.locale, this.decimalStyle, this.resolverStyle,
@@ -361,8 +361,8 @@ public final class TDateTimeFormatter {
 
     public TDateTimeFormatter withResolverStyle(TResolverStyle resolverStyle) {
 
-        TJdk8Methods.requireNonNull(resolverStyle, "resolverStyle");
-        if (TJdk8Methods.equals(this.resolverStyle, resolverStyle)) {
+        Objects.requireNonNull(resolverStyle, "resolverStyle");
+        if (Objects.equals(this.resolverStyle, resolverStyle)) {
             return this;
         }
         return new TDateTimeFormatter(this.printerParser, this.locale, this.decimalStyle, resolverStyle,
@@ -380,8 +380,8 @@ public final class TDateTimeFormatter {
             return new TDateTimeFormatter(this.printerParser, this.locale, this.decimalStyle, this.resolverStyle, null,
                     this.chrono, this.zone);
         }
-        Set<TTemporalField> fields = new HashSet<TTemporalField>(Arrays.asList(resolverFields));
-        if (TJdk8Methods.equals(this.resolverFields, fields)) {
+        Set<TTemporalField> fields = new HashSet<>(Arrays.asList(resolverFields));
+        if (Objects.equals(this.resolverFields, fields)) {
             return this;
         }
         fields = Collections.unmodifiableSet(fields);
@@ -395,10 +395,10 @@ public final class TDateTimeFormatter {
             return new TDateTimeFormatter(this.printerParser, this.locale, this.decimalStyle, this.resolverStyle, null,
                     this.chrono, this.zone);
         }
-        if (TJdk8Methods.equals(this.resolverFields, resolverFields)) {
+        if (Objects.equals(this.resolverFields, resolverFields)) {
             return this;
         }
-        resolverFields = Collections.unmodifiableSet(new HashSet<TTemporalField>(resolverFields));
+        resolverFields = Collections.unmodifiableSet(new HashSet<>(resolverFields));
         return new TDateTimeFormatter(this.printerParser, this.locale, this.decimalStyle, this.resolverStyle,
                 resolverFields, this.chrono, this.zone);
     }
@@ -412,8 +412,8 @@ public final class TDateTimeFormatter {
 
     public void formatTo(TTemporalAccessor temporal, Appendable appendable) {
 
-        TJdk8Methods.requireNonNull(temporal, "temporal");
-        TJdk8Methods.requireNonNull(appendable, "appendable");
+        Objects.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(appendable, "appendable");
         try {
             TDateTimePrintContext context = new TDateTimePrintContext(temporal, this);
             if (appendable instanceof StringBuilder) {
@@ -431,7 +431,7 @@ public final class TDateTimeFormatter {
 
     public TTemporalAccessor parse(CharSequence text) {
 
-        TJdk8Methods.requireNonNull(text, "text");
+        Objects.requireNonNull(text, "text");
         try {
             return parseToBuilder(text, null).resolve(this.resolverStyle, this.resolverFields);
         } catch (TDateTimeParseException ex) {
@@ -443,8 +443,8 @@ public final class TDateTimeFormatter {
 
     public TTemporalAccessor parse(CharSequence text, ParsePosition position) {
 
-        TJdk8Methods.requireNonNull(text, "text");
-        TJdk8Methods.requireNonNull(position, "position");
+        Objects.requireNonNull(text, "text");
+        Objects.requireNonNull(position, "position");
         try {
             return parseToBuilder(text, position).resolve(this.resolverStyle, this.resolverFields);
         } catch (TDateTimeParseException ex) {
@@ -458,8 +458,8 @@ public final class TDateTimeFormatter {
 
     public <T> T parse(CharSequence text, TTemporalQuery<T> type) {
 
-        TJdk8Methods.requireNonNull(text, "text");
-        TJdk8Methods.requireNonNull(type, "type");
+        Objects.requireNonNull(text, "text");
+        Objects.requireNonNull(type, "type");
         try {
             TDateTimeBuilder builder = parseToBuilder(text, null).resolve(this.resolverStyle, this.resolverFields);
             return builder.build(type);
@@ -472,8 +472,8 @@ public final class TDateTimeFormatter {
 
     public TTemporalAccessor parseBest(CharSequence text, TTemporalQuery<?>... types) {
 
-        TJdk8Methods.requireNonNull(text, "text");
-        TJdk8Methods.requireNonNull(types, "types");
+        Objects.requireNonNull(text, "text");
+        Objects.requireNonNull(types, "types");
         if (types.length < 2) {
             throw new IllegalArgumentException("At least two types must be specified");
         }
@@ -537,8 +537,8 @@ public final class TDateTimeFormatter {
 
     private Parsed parseUnresolved0(CharSequence text, ParsePosition position) {
 
-        TJdk8Methods.requireNonNull(text, "text");
-        TJdk8Methods.requireNonNull(position, "position");
+        Objects.requireNonNull(text, "text");
+        Objects.requireNonNull(position, "position");
         TDateTimeParseContext context = new TDateTimeParseContext(this);
         int pos = position.getIndex();
         pos = this.printerParser.parse(context, text, pos);
@@ -562,7 +562,7 @@ public final class TDateTimeFormatter {
 
     public Format toFormat(TTemporalQuery<?> query) {
 
-        TJdk8Methods.requireNonNull(query, "query");
+        Objects.requireNonNull(query, "query");
         return new ClassicFormat(this, query);
     }
 
@@ -588,9 +588,9 @@ public final class TDateTimeFormatter {
         @Override
         public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
 
-            TJdk8Methods.requireNonNull(obj, "obj");
-            TJdk8Methods.requireNonNull(toAppendTo, "toAppendTo");
-            TJdk8Methods.requireNonNull(pos, "pos");
+            Objects.requireNonNull(obj, "obj");
+            Objects.requireNonNull(toAppendTo, "toAppendTo");
+            Objects.requireNonNull(pos, "pos");
             if (obj instanceof TTemporalAccessor == false) {
                 throw new IllegalArgumentException("Format target must implement TTemporalAccessor");
             }
@@ -607,7 +607,7 @@ public final class TDateTimeFormatter {
         @Override
         public Object parseObject(String text) throws ParseException {
 
-            TJdk8Methods.requireNonNull(text, "text");
+            Objects.requireNonNull(text, "text");
             try {
                 if (this.query == null) {
                     return this.formatter.parseToBuilder(text, null).resolve(this.formatter.getResolverStyle(),
@@ -624,7 +624,7 @@ public final class TDateTimeFormatter {
         @Override
         public Object parseObject(String text, ParsePosition pos) {
 
-            TJdk8Methods.requireNonNull(text, "text");
+            Objects.requireNonNull(text, "text");
             Parsed unresolved;
             try {
                 unresolved = this.formatter.parseUnresolved0(text, pos);

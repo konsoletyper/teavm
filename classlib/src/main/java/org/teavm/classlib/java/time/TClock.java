@@ -35,8 +35,7 @@ import static org.teavm.classlib.java.time.TLocalTime.NANOS_PER_MINUTE;
 import static org.teavm.classlib.java.time.TLocalTime.NANOS_PER_SECOND;
 
 import java.io.Serializable;
-
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import java.util.Objects;
 
 public abstract class TClock {
 
@@ -52,7 +51,7 @@ public abstract class TClock {
 
     public static TClock system(TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(zone, "zone");
         return new SystemClock(zone);
     }
 
@@ -68,8 +67,8 @@ public abstract class TClock {
 
     public static TClock tick(TClock baseClock, TDuration tickDuration) {
 
-        TJdk8Methods.requireNonNull(baseClock, "baseClock");
-        TJdk8Methods.requireNonNull(tickDuration, "tickDuration");
+        Objects.requireNonNull(baseClock, "baseClock");
+        Objects.requireNonNull(tickDuration, "tickDuration");
         if (tickDuration.isNegative()) {
             throw new IllegalArgumentException("Tick duration must not be negative");
         }
@@ -89,15 +88,15 @@ public abstract class TClock {
 
     public static TClock fixed(TInstant fixedInstant, TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(fixedInstant, "fixedInstant");
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(fixedInstant, "fixedInstant");
+        Objects.requireNonNull(zone, "zone");
         return new FixedClock(fixedInstant, zone);
     }
 
     public static TClock offset(TClock baseClock, TDuration offsetDuration) {
 
-        TJdk8Methods.requireNonNull(baseClock, "baseClock");
-        TJdk8Methods.requireNonNull(offsetDuration, "offsetDuration");
+        Objects.requireNonNull(baseClock, "baseClock");
+        Objects.requireNonNull(offsetDuration, "offsetDuration");
         if (offsetDuration.equals(TDuration.ZERO)) {
             return baseClock;
         }
@@ -284,7 +283,7 @@ public abstract class TClock {
         @Override
         public long millis() {
 
-            return TJdk8Methods.safeAdd(this.baseClock.millis(), this.offset.toMillis());
+            return Math.addExact(this.baseClock.millis(), this.offset.toMillis());
         }
 
         @Override
@@ -348,7 +347,7 @@ public abstract class TClock {
         public long millis() {
 
             long millis = this.baseClock.millis();
-            return millis - TJdk8Methods.floorMod(millis, this.tickNanos / 1000000L);
+            return millis - Math.floorMod(millis, this.tickNanos / 1000000L);
         }
 
         @Override
@@ -356,11 +355,11 @@ public abstract class TClock {
 
             if ((this.tickNanos % 1000000) == 0) {
                 long millis = this.baseClock.millis();
-                return TInstant.ofEpochMilli(millis - TJdk8Methods.floorMod(millis, this.tickNanos / 1000000L));
+                return TInstant.ofEpochMilli(millis - Math.floorMod(millis, this.tickNanos / 1000000L));
             }
             TInstant instant = this.baseClock.instant();
             long nanos = instant.getNano();
-            long adjust = TJdk8Methods.floorMod(nanos, this.tickNanos);
+            long adjust = Math.floorMod(nanos, this.tickNanos);
             return instant.minusNanos(adjust);
         }
 

@@ -42,10 +42,10 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -97,7 +97,7 @@ public final class TInstant extends TDefaultInterfaceTemporalAccessor
 
     public static TInstant now(TClock clock) {
 
-        TJdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         return clock.instant();
     }
 
@@ -108,15 +108,15 @@ public final class TInstant extends TDefaultInterfaceTemporalAccessor
 
     public static TInstant ofEpochSecond(long epochSecond, long nanoAdjustment) {
 
-        long secs = TJdk8Methods.safeAdd(epochSecond, TJdk8Methods.floorDiv(nanoAdjustment, NANOS_PER_SECOND));
-        int nos = TJdk8Methods.floorMod(nanoAdjustment, NANOS_PER_SECOND);
+        long secs = Math.addExact(epochSecond, Math.floorDiv(nanoAdjustment, NANOS_PER_SECOND));
+        int nos = (int) Math.floorMod(nanoAdjustment, NANOS_PER_SECOND);
         return create(secs, nos);
     }
 
     public static TInstant ofEpochMilli(long epochMilli) {
 
-        long secs = TJdk8Methods.floorDiv(epochMilli, 1000);
-        int mos = TJdk8Methods.floorMod(epochMilli, 1000);
+        long secs = Math.floorDiv(epochMilli, 1000);
+        int mos = (int) Math.floorMod(epochMilli, 1000);
         return create(secs, mos * NANOS_PER_MILLI);
     }
 
@@ -271,7 +271,7 @@ public final class TInstant extends TDefaultInterfaceTemporalAccessor
             throw new TDateTimeException("Unit must divide into a standard day without remainder");
         }
         long nod = (this.seconds % TLocalTime.SECONDS_PER_DAY) * TLocalTime.NANOS_PER_SECOND + this.nanos;
-        long result = TJdk8Methods.floorDiv(nod, dur) * dur;
+        long result = Math.floorDiv(nod, dur) * dur;
         return plusNanos(result - nod);
     }
 
@@ -295,13 +295,13 @@ public final class TInstant extends TDefaultInterfaceTemporalAccessor
                 case SECONDS:
                     return plusSeconds(amountToAdd);
                 case MINUTES:
-                    return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_MINUTE));
+                    return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_MINUTE));
                 case HOURS:
-                    return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_HOUR));
+                    return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_HOUR));
                 case HALF_DAYS:
-                    return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_DAY / 2));
+                    return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY / 2));
                 case DAYS:
-                    return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_DAY));
+                    return plusSeconds(Math.multiplyExact(amountToAdd, SECONDS_PER_DAY));
             }
             throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
@@ -328,8 +328,8 @@ public final class TInstant extends TDefaultInterfaceTemporalAccessor
         if ((secondsToAdd | nanosToAdd) == 0) {
             return this;
         }
-        long epochSec = TJdk8Methods.safeAdd(this.seconds, secondsToAdd);
-        epochSec = TJdk8Methods.safeAdd(epochSec, nanosToAdd / NANOS_PER_SECOND);
+        long epochSec = Math.addExact(this.seconds, secondsToAdd);
+        epochSec = Math.addExact(epochSec, nanosToAdd / NANOS_PER_SECOND);
         nanosToAdd = nanosToAdd % NANOS_PER_SECOND;
         long nanoAdjustment = this.nanos + nanosToAdd; // safe int+NANOS_PER_SECOND
         return ofEpochSecond(epochSec, nanoAdjustment);
@@ -406,7 +406,7 @@ public final class TInstant extends TDefaultInterfaceTemporalAccessor
                 case MICROS:
                     return nanosUntil(end) / 1000;
                 case MILLIS:
-                    return TJdk8Methods.safeSubtract(end.toEpochMilli(), toEpochMilli());
+                    return Math.subtractExact(end.toEpochMilli(), toEpochMilli());
                 case SECONDS:
                     return secondsUntil(end);
                 case MINUTES:
@@ -425,14 +425,14 @@ public final class TInstant extends TDefaultInterfaceTemporalAccessor
 
     private long nanosUntil(TInstant end) {
 
-        long secsDiff = TJdk8Methods.safeSubtract(end.seconds, this.seconds);
-        long totalNanos = TJdk8Methods.safeMultiply(secsDiff, NANOS_PER_SECOND);
-        return TJdk8Methods.safeAdd(totalNanos, end.nanos - this.nanos);
+        long secsDiff = Math.subtractExact(end.seconds, this.seconds);
+        long totalNanos = Math.multiplyExact(secsDiff, NANOS_PER_SECOND);
+        return Math.addExact(totalNanos, end.nanos - this.nanos);
     }
 
     private long secondsUntil(TInstant end) {
 
-        long secsDiff = TJdk8Methods.safeSubtract(end.seconds, this.seconds);
+        long secsDiff = Math.subtractExact(end.seconds, this.seconds);
         long nanosDiff = end.nanos - this.nanos;
         if (secsDiff > 0 && nanosDiff < 0) {
             secsDiff--;
@@ -455,8 +455,8 @@ public final class TInstant extends TDefaultInterfaceTemporalAccessor
     public long toEpochMilli() {
 
         if (this.seconds >= 0) {
-            long millis = TJdk8Methods.safeMultiply(this.seconds, MILLIS_PER_SEC);
-            return TJdk8Methods.safeAdd(millis, this.nanos / NANOS_PER_MILLI);
+            long millis = Math.multiplyExact(this.seconds, MILLIS_PER_SEC);
+            return Math.addExact(millis, this.nanos / NANOS_PER_MILLI);
         } else {
             // prevent an overflow in seconds * 1000
             // instead of going form the second farther away from 0
@@ -464,15 +464,15 @@ public final class TInstant extends TDefaultInterfaceTemporalAccessor
             // we go from the second closer to 0 away from 0
             // that way we always stay in the valid long range
             // seconds + 1 can not overflow because it is negative
-            long millis = TJdk8Methods.safeMultiply(this.seconds + 1, MILLIS_PER_SEC);
-            return TJdk8Methods.safeSubtract(millis, (MILLIS_PER_SEC - this.nanos / NANOS_PER_MILLI));
+            long millis = Math.multiplyExact(this.seconds + 1, MILLIS_PER_SEC);
+            return Math.subtractExact(millis, (MILLIS_PER_SEC - this.nanos / NANOS_PER_MILLI));
         }
     }
 
     @Override
     public int compareTo(TInstant otherInstant) {
 
-        int cmp = TJdk8Methods.compareLongs(this.seconds, otherInstant.seconds);
+        int cmp = Long.compare(this.seconds, otherInstant.seconds);
         if (cmp != 0) {
             return cmp;
         }

@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,7 +53,6 @@ import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
 import org.teavm.classlib.java.time.format.TResolverStyle;
 import org.teavm.classlib.java.time.format.TTextStyle;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
@@ -90,7 +90,7 @@ public abstract class TChronology implements TComparable<TChronology> {
 
     public static TChronology from(TTemporalAccessor temporal) {
 
-        TJdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         TChronology obj = temporal.query(TTemporalQueries.chronology());
         return (obj != null ? obj : TIsoChronology.INSTANCE);
     }
@@ -98,7 +98,7 @@ public abstract class TChronology implements TComparable<TChronology> {
     public static TChronology ofLocale(Locale locale) {
 
         init();
-        TJdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         String type = "iso";
         if (LOCALE_METHOD != null) {
             // JDK 7: locale.getUnicodeLocaleType("ca");
@@ -247,7 +247,7 @@ public abstract class TChronology implements TComparable<TChronology> {
 
     public TChronoLocalDate dateNow(TClock clock) {
 
-        TJdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         return date(TLocalDate.now(clock));
     }
 

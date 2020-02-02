@@ -34,6 +34,8 @@ package org.teavm.classlib.java.time;
 import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
 import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 
+import java.util.Objects;
+
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.time.chrono.TChronology;
@@ -41,7 +43,6 @@ import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
@@ -88,7 +89,7 @@ public final class TMonthDay extends TDefaultInterfaceTemporalAccessor
 
     public static TMonthDay of(TMonth month, int dayOfMonth) {
 
-        TJdk8Methods.requireNonNull(month, "month");
+        Objects.requireNonNull(month, "month");
         DAY_OF_MONTH.checkValidValue(dayOfMonth);
         if (dayOfMonth > month.maxLength()) {
             throw new TDateTimeException("Illegal value for DayOfMonth field, value " + dayOfMonth
@@ -125,7 +126,7 @@ public final class TMonthDay extends TDefaultInterfaceTemporalAccessor
 
     public static TMonthDay parse(CharSequence text, TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.parse(text, TMonthDay.FROM);
     }
 
@@ -204,7 +205,7 @@ public final class TMonthDay extends TDefaultInterfaceTemporalAccessor
 
     public TMonthDay with(TMonth month) {
 
-        TJdk8Methods.requireNonNull(month, "month");
+        Objects.requireNonNull(month, "month");
         if (month.getValue() == this.month) {
             return this;
         }
@@ -293,7 +294,7 @@ public final class TMonthDay extends TDefaultInterfaceTemporalAccessor
 
     public String format(TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
 

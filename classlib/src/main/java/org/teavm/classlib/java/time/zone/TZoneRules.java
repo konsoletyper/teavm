@@ -33,13 +33,13 @@ package org.teavm.classlib.java.time.zone;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDuration;
 import org.teavm.classlib.java.time.TInstant;
 import org.teavm.classlib.java.time.TLocalDateTime;
 import org.teavm.classlib.java.time.TZoneOffset;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
 public abstract class TZoneRules {
 
@@ -47,18 +47,18 @@ public abstract class TZoneRules {
             List<TZoneOffsetTransition> standardOffsetTransitionList, List<TZoneOffsetTransition> transitionList,
             List<TZoneOffsetTransitionRule> lastRules) {
 
-        TJdk8Methods.requireNonNull(baseStandardOffset, "baseStandardOffset");
-        TJdk8Methods.requireNonNull(baseWallOffset, "baseWallOffset");
-        TJdk8Methods.requireNonNull(standardOffsetTransitionList, "standardOffsetTransitionList");
-        TJdk8Methods.requireNonNull(transitionList, "transitionList");
-        TJdk8Methods.requireNonNull(lastRules, "lastRules");
+        Objects.requireNonNull(baseStandardOffset, "baseStandardOffset");
+        Objects.requireNonNull(baseWallOffset, "baseWallOffset");
+        Objects.requireNonNull(standardOffsetTransitionList, "standardOffsetTransitionList");
+        Objects.requireNonNull(transitionList, "transitionList");
+        Objects.requireNonNull(lastRules, "lastRules");
         return new TStandardZoneRules(baseStandardOffset, baseWallOffset, standardOffsetTransitionList, transitionList,
                 lastRules);
     }
 
     public static TZoneRules of(TZoneOffset offset) {
 
-        TJdk8Methods.requireNonNull(offset, "offset");
+        Objects.requireNonNull(offset, "offset");
         return new Fixed(offset);
     }
 

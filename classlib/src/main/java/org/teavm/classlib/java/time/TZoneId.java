@@ -36,6 +36,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.TimeZone;
 
@@ -43,7 +44,6 @@ import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
 import org.teavm.classlib.java.time.format.TTextStyle;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
@@ -109,8 +109,8 @@ public abstract class TZoneId implements TSerializable {
 
     public static TZoneId of(String zoneId, Map<String, String> aliasMap) {
 
-        TJdk8Methods.requireNonNull(zoneId, "zoneId");
-        TJdk8Methods.requireNonNull(aliasMap, "aliasMap");
+        Objects.requireNonNull(zoneId, "zoneId");
+        Objects.requireNonNull(aliasMap, "aliasMap");
         String id = aliasMap.get(zoneId);
         id = (id != null ? id : zoneId);
         return of(id);
@@ -118,7 +118,7 @@ public abstract class TZoneId implements TSerializable {
 
     public static TZoneId of(String zoneId) {
 
-        TJdk8Methods.requireNonNull(zoneId, "zoneId");
+        Objects.requireNonNull(zoneId, "zoneId");
         if (zoneId.equals("Z")) {
             return TZoneOffset.UTC;
         }
@@ -151,8 +151,8 @@ public abstract class TZoneId implements TSerializable {
 
     public static TZoneId ofOffset(String prefix, TZoneOffset offset) {
 
-        TJdk8Methods.requireNonNull(prefix, "prefix");
-        TJdk8Methods.requireNonNull(offset, "offset");
+        Objects.requireNonNull(prefix, "prefix");
+        Objects.requireNonNull(offset, "offset");
         if (prefix.length() == 0) {
             return offset;
         }

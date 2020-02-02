@@ -34,12 +34,13 @@ package org.teavm.classlib.java.time.chrono;
 import static org.teavm.classlib.java.time.chrono.TThaiBuddhistChronology.YEARS_DIFFERENCE;
 import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 
+import java.util.Objects;
+
 import org.teavm.classlib.java.time.TClock;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalTime;
 import org.teavm.classlib.java.time.TPeriod;
 import org.teavm.classlib.java.time.TZoneId;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
@@ -80,7 +81,7 @@ public final class TThaiBuddhistDate extends ChronoDateImpl<TThaiBuddhistDate> {
 
     TThaiBuddhistDate(TLocalDate date) {
 
-        TJdk8Methods.requireNonNull(date, "date");
+        Objects.requireNonNull(date, "date");
         this.isoDate = date;
     }
 

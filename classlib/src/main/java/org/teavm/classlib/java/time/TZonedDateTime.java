@@ -36,11 +36,11 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_SECOND;
 import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
 
 import java.util.List;
+import java.util.Objects;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.chrono.TChronoZonedDateTime;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -83,7 +83,7 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
 
     public static TZonedDateTime now(TClock clock) {
 
-        TJdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         final TInstant now = clock.instant(); // called once
         return ofInstant(now, clock.getZone());
     }
@@ -107,8 +107,8 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
 
     public static TZonedDateTime ofLocal(TLocalDateTime localDateTime, TZoneId zone, TZoneOffset preferredOffset) {
 
-        TJdk8Methods.requireNonNull(localDateTime, "localDateTime");
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(localDateTime, "localDateTime");
+        Objects.requireNonNull(zone, "zone");
         if (zone instanceof TZoneOffset) {
             return new TZonedDateTime(localDateTime, (TZoneOffset) zone, zone);
         }
@@ -125,7 +125,7 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
             if (preferredOffset != null && validOffsets.contains(preferredOffset)) {
                 offset = preferredOffset;
             } else {
-                offset = TJdk8Methods.requireNonNull(validOffsets.get(0), "offset"); // protect against bad TZoneRules
+                offset = Objects.requireNonNull(validOffsets.get(0), "offset"); // protect against bad TZoneRules
             }
         }
         return new TZonedDateTime(localDateTime, offset, zone);
@@ -133,16 +133,16 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
 
     public static TZonedDateTime ofInstant(TInstant instant, TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(instant, "instant");
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(instant, "instant");
+        Objects.requireNonNull(zone, "zone");
         return create(instant.getEpochSecond(), instant.getNano(), zone);
     }
 
     public static TZonedDateTime ofInstant(TLocalDateTime localDateTime, TZoneOffset offset, TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(localDateTime, "localDateTime");
-        TJdk8Methods.requireNonNull(offset, "offset");
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(localDateTime, "localDateTime");
+        Objects.requireNonNull(offset, "offset");
+        Objects.requireNonNull(zone, "zone");
         return create(localDateTime.toEpochSecond(offset), localDateTime.getNano(), zone);
     }
 
@@ -158,9 +158,9 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
 
     public static TZonedDateTime ofStrict(TLocalDateTime localDateTime, TZoneOffset offset, TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(localDateTime, "localDateTime");
-        TJdk8Methods.requireNonNull(offset, "offset");
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(localDateTime, "localDateTime");
+        Objects.requireNonNull(offset, "offset");
+        Objects.requireNonNull(zone, "zone");
         TZoneRules rules = zone.getRules();
         if (rules.isValidOffset(localDateTime, offset) == false) {
             TZoneOffsetTransition trans = rules.getTransition(localDateTime);
@@ -178,9 +178,9 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
 
     private static TZonedDateTime ofLenient(TLocalDateTime localDateTime, TZoneOffset offset, TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(localDateTime, "localDateTime");
-        TJdk8Methods.requireNonNull(offset, "offset");
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(localDateTime, "localDateTime");
+        Objects.requireNonNull(offset, "offset");
+        Objects.requireNonNull(zone, "zone");
         if (zone instanceof TZoneOffset && offset.equals(zone) == false) {
             throw new IllegalArgumentException("TZoneId must match TZoneOffset");
         }
@@ -219,7 +219,7 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
 
     public static TZonedDateTime parse(CharSequence text, TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.parse(text, TZonedDateTime.FROM);
     }
 
@@ -346,14 +346,14 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
     @Override
     public TZonedDateTime withZoneSameLocal(TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(zone, "zone");
         return this.zone.equals(zone) ? this : ofLocal(this.dateTime, zone, this.offset);
     }
 
     @Override
     public TZonedDateTime withZoneSameInstant(TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(zone, "zone");
         return this.zone.equals(zone) ? this
                 : create(this.dateTime.toEpochSecond(this.offset), this.dateTime.getNano(), zone);
     }

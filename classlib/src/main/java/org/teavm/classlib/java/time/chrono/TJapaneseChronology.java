@@ -55,6 +55,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.Objects;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TClock;
@@ -64,7 +65,6 @@ import org.teavm.classlib.java.time.TInstant;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.format.TResolverStyle;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
@@ -198,7 +198,7 @@ public final class TJapaneseChronology extends TChronology implements TSerializa
     @Override
     public TJapaneseDate dateNow(TClock clock) {
 
-        TJdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         return (TJapaneseDate) super.dateNow(clock);
     }
 
@@ -308,8 +308,8 @@ public final class TJapaneseChronology extends TChronology implements TSerializa
             if (resolverStyle != TResolverStyle.LENIENT) {
                 PROLEPTIC_MONTH.checkValidValue(prolepticMonth);
             }
-            updateResolveMap(fieldValues, MONTH_OF_YEAR, TJdk8Methods.floorMod(prolepticMonth, 12) + 1);
-            updateResolveMap(fieldValues, YEAR, TJdk8Methods.floorDiv(prolepticMonth, 12));
+            updateResolveMap(fieldValues, MONTH_OF_YEAR, Math.floorMod(prolepticMonth, 12) + 1);
+            updateResolveMap(fieldValues, YEAR, Math.floorDiv(prolepticMonth, 12));
         }
 
         // eras
@@ -344,8 +344,8 @@ public final class TJapaneseChronology extends TChronology implements TSerializa
                 if (fieldValues.containsKey(DAY_OF_MONTH)) {
                     int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
                     if (resolverStyle == TResolverStyle.LENIENT) {
-                        long months = TJdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
-                        long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_MONTH), 1);
+                        long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+                        long days = Math.subtractExact(fieldValues.remove(DAY_OF_MONTH), 1);
                         return date(y, 1, 1).plusMonths(months).plusDays(days);
                     } else {
                         int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR),
@@ -362,9 +362,9 @@ public final class TJapaneseChronology extends TChronology implements TSerializa
                     if (fieldValues.containsKey(ALIGNED_DAY_OF_WEEK_IN_MONTH)) {
                         int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
                         if (resolverStyle == TResolverStyle.LENIENT) {
-                            long months = TJdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
-                            long weeks = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
-                            long days = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH), 1);
+                            long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+                            long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
+                            long days = Math.subtractExact(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH), 1);
                             return date(y, 1, 1).plus(months, MONTHS).plus(weeks, WEEKS).plus(days, DAYS);
                         }
                         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
@@ -380,9 +380,9 @@ public final class TJapaneseChronology extends TChronology implements TSerializa
                     if (fieldValues.containsKey(DAY_OF_WEEK)) {
                         int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
                         if (resolverStyle == TResolverStyle.LENIENT) {
-                            long months = TJdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
-                            long weeks = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
-                            long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_WEEK), 1);
+                            long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+                            long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_MONTH), 1);
+                            long days = Math.subtractExact(fieldValues.remove(DAY_OF_WEEK), 1);
                             return date(y, 1, 1).plus(months, MONTHS).plus(weeks, WEEKS).plus(days, DAYS);
                         }
                         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
@@ -399,7 +399,7 @@ public final class TJapaneseChronology extends TChronology implements TSerializa
             if (fieldValues.containsKey(DAY_OF_YEAR)) {
                 int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
                 if (resolverStyle == TResolverStyle.LENIENT) {
-                    long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_YEAR), 1);
+                    long days = Math.subtractExact(fieldValues.remove(DAY_OF_YEAR), 1);
                     return dateYearDay(y, 1).plusDays(days);
                 }
                 int doy = DAY_OF_YEAR.checkValidIntValue(fieldValues.remove(DAY_OF_YEAR));
@@ -409,8 +409,8 @@ public final class TJapaneseChronology extends TChronology implements TSerializa
                 if (fieldValues.containsKey(ALIGNED_DAY_OF_WEEK_IN_YEAR)) {
                     int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
                     if (resolverStyle == TResolverStyle.LENIENT) {
-                        long weeks = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
-                        long days = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR), 1);
+                        long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
+                        long days = Math.subtractExact(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR), 1);
                         return date(y, 1, 1).plus(weeks, WEEKS).plus(days, DAYS);
                     }
                     int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
@@ -425,8 +425,8 @@ public final class TJapaneseChronology extends TChronology implements TSerializa
                 if (fieldValues.containsKey(DAY_OF_WEEK)) {
                     int y = YEAR.checkValidIntValue(fieldValues.remove(YEAR));
                     if (resolverStyle == TResolverStyle.LENIENT) {
-                        long weeks = TJdk8Methods.safeSubtract(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
-                        long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_WEEK), 1);
+                        long weeks = Math.subtractExact(fieldValues.remove(ALIGNED_WEEK_OF_YEAR), 1);
+                        long days = Math.subtractExact(fieldValues.remove(DAY_OF_WEEK), 1);
                         return date(y, 1, 1).plus(weeks, WEEKS).plus(days, DAYS);
                     }
                     int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
@@ -447,8 +447,8 @@ public final class TJapaneseChronology extends TChronology implements TSerializa
 
         if (resolverStyle == TResolverStyle.LENIENT) {
             int y = era.startDate().getYear() + yoe - 1;
-            long months = TJdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
-            long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_MONTH), 1);
+            long months = Math.subtractExact(fieldValues.remove(MONTH_OF_YEAR), 1);
+            long days = Math.subtractExact(fieldValues.remove(DAY_OF_MONTH), 1);
             return date(y, 1, 1).plus(months, MONTHS).plus(days, DAYS);
         }
         int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
@@ -481,7 +481,7 @@ public final class TJapaneseChronology extends TChronology implements TSerializa
 
         if (resolverStyle == TResolverStyle.LENIENT) {
             int y = era.startDate().getYear() + yoe - 1;
-            long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_YEAR), 1);
+            long days = Math.subtractExact(fieldValues.remove(DAY_OF_YEAR), 1);
             return dateYearDay(y, 1).plus(days, DAYS);
         }
         int doy = range(DAY_OF_YEAR).checkValidIntValue(fieldValues.remove(DAY_OF_YEAR), DAY_OF_YEAR);

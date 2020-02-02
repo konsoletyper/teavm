@@ -38,8 +38,9 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
+import java.util.Objects;
+
 import org.teavm.classlib.java.time.TDayOfWeek;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
 public final class TTemporalAdjusters {
 
@@ -120,19 +121,19 @@ public final class TTemporalAdjusters {
 
     public static TTemporalAdjuster firstInMonth(TDayOfWeek dayOfWeek) {
 
-        TJdk8Methods.requireNonNull(dayOfWeek, "dayOfWeek");
+        Objects.requireNonNull(dayOfWeek, "dayOfWeek");
         return new DayOfWeekInMonth(1, dayOfWeek);
     }
 
     public static TTemporalAdjuster lastInMonth(TDayOfWeek dayOfWeek) {
 
-        TJdk8Methods.requireNonNull(dayOfWeek, "dayOfWeek");
+        Objects.requireNonNull(dayOfWeek, "dayOfWeek");
         return new DayOfWeekInMonth(-1, dayOfWeek);
     }
 
     public static TTemporalAdjuster dayOfWeekInMonth(int ordinal, TDayOfWeek dayOfWeek) {
 
-        TJdk8Methods.requireNonNull(dayOfWeek, "dayOfWeek");
+        Objects.requireNonNull(dayOfWeek, "dayOfWeek");
         return new DayOfWeekInMonth(ordinal, dayOfWeek);
     }
 
@@ -195,7 +196,7 @@ public final class TTemporalAdjusters {
 
         private RelativeDayOfWeek(int relative, TDayOfWeek dayOfWeek) {
 
-            TJdk8Methods.requireNonNull(dayOfWeek, "dayOfWeek");
+            Objects.requireNonNull(dayOfWeek, "dayOfWeek");
             this.relative = relative;
             this.dowValue = dayOfWeek.getValue();
         }

@@ -45,12 +45,12 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.PROLEPTIC_MONTH
 import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.chrono.TChronoLocalDate;
 import org.teavm.classlib.java.time.chrono.TEra;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -102,18 +102,18 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
 
     public static TLocalDate now(TClock clock) {
 
-        TJdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         final TInstant now = clock.instant(); // called once
         TZoneOffset offset = clock.getZone().getRules().getOffset(now);
         long epochSec = now.getEpochSecond() + offset.getTotalSeconds(); // overflow caught later
-        long epochDay = TJdk8Methods.floorDiv(epochSec, SECONDS_PER_DAY);
+        long epochDay = Math.floorDiv(epochSec, SECONDS_PER_DAY);
         return TLocalDate.ofEpochDay(epochDay);
     }
 
     public static TLocalDate of(int year, TMonth month, int dayOfMonth) {
 
         YEAR.checkValidValue(year);
-        TJdk8Methods.requireNonNull(month, "month");
+        Objects.requireNonNull(month, "month");
         DAY_OF_MONTH.checkValidValue(dayOfMonth);
         return create(year, month, dayOfMonth);
     }
@@ -194,7 +194,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
 
     public static TLocalDate parse(CharSequence text, TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.parse(text, TLocalDate.FROM);
     }
 
@@ -364,7 +364,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
 
     public TDayOfWeek getDayOfWeek() {
 
-        int dow0 = TJdk8Methods.floorMod(toEpochDay() + 3, 7);
+        int dow0 = (int) Math.floorMod(toEpochDay() + 3, 7);
         return TDayOfWeek.of(dow0 + 1);
     }
 
@@ -500,13 +500,13 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
                 case YEARS:
                     return plusYears(amountToAdd);
                 case DECADES:
-                    return plusYears(TJdk8Methods.safeMultiply(amountToAdd, 10));
+                    return plusYears(Math.multiplyExact(amountToAdd, 10));
                 case CENTURIES:
-                    return plusYears(TJdk8Methods.safeMultiply(amountToAdd, 100));
+                    return plusYears(Math.multiplyExact(amountToAdd, 100));
                 case MILLENNIA:
-                    return plusYears(TJdk8Methods.safeMultiply(amountToAdd, 1000));
+                    return plusYears(Math.multiplyExact(amountToAdd, 1000));
                 case ERAS:
-                    return with(ERA, TJdk8Methods.safeAdd(getLong(ERA), amountToAdd));
+                    return with(ERA, Math.addExact(getLong(ERA), amountToAdd));
             }
             throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
@@ -529,14 +529,14 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
         }
         long monthCount = this.year * 12L + (this.month - 1);
         long calcMonths = monthCount + monthsToAdd; // safe overflow
-        int newYear = YEAR.checkValidIntValue(TJdk8Methods.floorDiv(calcMonths, 12));
-        int newMonth = TJdk8Methods.floorMod(calcMonths, 12) + 1;
+        int newYear = YEAR.checkValidIntValue(Math.floorDiv(calcMonths, 12));
+        int newMonth = (int) Math.floorMod(calcMonths, 12) + 1;
         return resolvePreviousValid(newYear, newMonth, this.day);
     }
 
     public TLocalDate plusWeeks(long weeksToAdd) {
 
-        return plusDays(TJdk8Methods.safeMultiply(weeksToAdd, 7));
+        return plusDays(Math.multiplyExact(weeksToAdd, 7));
     }
 
     public TLocalDate plusDays(long daysToAdd) {
@@ -544,7 +544,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
         if (daysToAdd == 0) {
             return this;
         }
-        long mjDay = TJdk8Methods.safeAdd(toEpochDay(), daysToAdd);
+        long mjDay = Math.addExact(toEpochDay(), daysToAdd);
         return TLocalDate.ofEpochDay(mjDay);
     }
 
@@ -656,7 +656,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
         }
         long years = totalMonths / 12; // safe
         int months = (int) (totalMonths % 12); // safe
-        return TPeriod.of(TJdk8Methods.safeToInt(years), months, days);
+        return TPeriod.of(Math.toIntExact(years), months, days);
     }
 
     @Override
@@ -692,7 +692,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
 
     public TZonedDateTime atStartOfDay(TZoneId zone) {
 
-        TJdk8Methods.requireNonNull(zone, "zone");
+        Objects.requireNonNull(zone, "zone");
         // need to handle case where there is a gap from 11:30 to 00:30
         // standard ZDT factory would result in 01:00 rather than 00:30
         TLocalDateTime ldt = atTime(TLocalTime.MIDNIGHT);

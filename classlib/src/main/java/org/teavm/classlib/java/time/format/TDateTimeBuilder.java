@@ -54,6 +54,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Objects;
 import java.util.Set;
 
 import org.teavm.classlib.java.lang.TCloneable;
@@ -70,7 +71,6 @@ import org.teavm.classlib.java.time.chrono.TChronoZonedDateTime;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
@@ -109,7 +109,7 @@ final class TDateTimeBuilder extends TDefaultInterfaceTemporalAccessor implement
 
     TDateTimeBuilder addFieldValue(TTemporalField field, long value) {
 
-        TJdk8Methods.requireNonNull(field, "field");
+        Objects.requireNonNull(field, "field");
         Long old = getFieldValue0(field); // check first for better error message
         if (old != null && old.longValue() != value) {
             throw new TDateTimeException(
@@ -446,25 +446,25 @@ final class TDateTimeBuilder extends TDefaultInterfaceTemporalAccessor implement
                         if (nos == null) {
                             nos = 0L;
                         }
-                        long totalNanos = TJdk8Methods.safeMultiply(hodVal, 3600000000000L);
-                        totalNanos = TJdk8Methods.safeAdd(totalNanos, TJdk8Methods.safeMultiply(moh, 60000000000L));
-                        totalNanos = TJdk8Methods.safeAdd(totalNanos, TJdk8Methods.safeMultiply(som, 1000000000L));
-                        totalNanos = TJdk8Methods.safeAdd(totalNanos, nos);
-                        int excessDays = (int) TJdk8Methods.floorDiv(totalNanos, 86400000000000L); // safe int cast
-                        long nod = TJdk8Methods.floorMod(totalNanos, 86400000000000L);
+                        long totalNanos = Math.multiplyExact(hodVal, 3600000000000L);
+                        totalNanos = Math.addExact(totalNanos, Math.multiplyExact(moh, 60000000000L));
+                        totalNanos = Math.addExact(totalNanos, Math.multiplyExact(som, 1000000000L));
+                        totalNanos = Math.addExact(totalNanos, nos);
+                        int excessDays = (int) Math.floorDiv(totalNanos, 86400000000000L); // safe int cast
+                        long nod = Math.floorMod(totalNanos, 86400000000000L);
                         addObject(TLocalTime.ofNanoOfDay(nod));
                         this.excessDays = TPeriod.ofDays(excessDays);
                     } else {
-                        long totalSecs = TJdk8Methods.safeMultiply(hodVal, 3600L);
-                        totalSecs = TJdk8Methods.safeAdd(totalSecs, TJdk8Methods.safeMultiply(moh, 60L));
-                        int excessDays = (int) TJdk8Methods.floorDiv(totalSecs, 86400L); // safe int cast
-                        long sod = TJdk8Methods.floorMod(totalSecs, 86400L);
+                        long totalSecs = Math.multiplyExact(hodVal, 3600L);
+                        totalSecs = Math.addExact(totalSecs, Math.multiplyExact(moh, 60L));
+                        int excessDays = (int) Math.floorDiv(totalSecs, 86400L); // safe int cast
+                        long sod = Math.floorMod(totalSecs, 86400L);
                         addObject(TLocalTime.ofSecondOfDay(sod));
                         this.excessDays = TPeriod.ofDays(excessDays);
                     }
                 } else {
-                    int excessDays = TJdk8Methods.safeToInt(TJdk8Methods.floorDiv(hodVal, 24L));
-                    hodVal = TJdk8Methods.floorMod(hodVal, 24);
+                    int excessDays = Math.toIntExact(Math.floorDiv(hodVal, 24L));
+                    hodVal = Math.floorMod(hodVal, 24);
                     addObject(TLocalTime.of((int) hodVal, 0));
                     this.excessDays = TPeriod.ofDays(excessDays);
                 }
@@ -588,7 +588,7 @@ final class TDateTimeBuilder extends TDefaultInterfaceTemporalAccessor implement
     @Override
     public long getLong(TTemporalField field) {
 
-        TJdk8Methods.requireNonNull(field, "field");
+        Objects.requireNonNull(field, "field");
         Long value = getFieldValue0(field);
         if (value == null) {
             if (this.date != null && this.date.isSupported(field)) {

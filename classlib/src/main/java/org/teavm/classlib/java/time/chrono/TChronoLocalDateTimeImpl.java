@@ -33,10 +33,11 @@ package org.teavm.classlib.java.time.chrono;
 
 import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
 
+import java.util.Objects;
+
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TLocalTime;
 import org.teavm.classlib.java.time.TZoneId;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -83,8 +84,8 @@ final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> extends TChrono
 
     private TChronoLocalDateTimeImpl(D date, TLocalTime time) {
 
-        TJdk8Methods.requireNonNull(date, "date");
-        TJdk8Methods.requireNonNull(time, "time");
+        Objects.requireNonNull(date, "date");
+        Objects.requireNonNull(time, "time");
         this.date = date;
         this.time = time;
     }
@@ -253,8 +254,8 @@ final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> extends TChrono
                 (hours % HOURS_PER_DAY) * NANOS_PER_HOUR; // max 86400000000000
         long curNoD = this.time.toNanoOfDay(); // max 86400000000000
         totNanos = totNanos + curNoD; // total 432000000000000
-        totDays += TJdk8Methods.floorDiv(totNanos, NANOS_PER_DAY);
-        long newNoD = TJdk8Methods.floorMod(totNanos, NANOS_PER_DAY);
+        totDays += Math.floorDiv(totNanos, NANOS_PER_DAY);
+        long newNoD = Math.floorMod(totNanos, NANOS_PER_DAY);
         TLocalTime newTime = (newNoD == curNoD ? this.time : TLocalTime.ofNanoOfDay(newNoD));
         return with(newDate.plus(totDays, TChronoUnit.DAYS), newTime);
     }
@@ -277,28 +278,28 @@ final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> extends TChrono
                 long amount = end.getLong(EPOCH_DAY) - this.date.getLong(EPOCH_DAY);
                 switch (f) {
                     case NANOS:
-                        amount = TJdk8Methods.safeMultiply(amount, NANOS_PER_DAY);
+                        amount = Math.multiplyExact(amount, NANOS_PER_DAY);
                         break;
                     case MICROS:
-                        amount = TJdk8Methods.safeMultiply(amount, MICROS_PER_DAY);
+                        amount = Math.multiplyExact(amount, MICROS_PER_DAY);
                         break;
                     case MILLIS:
-                        amount = TJdk8Methods.safeMultiply(amount, MILLIS_PER_DAY);
+                        amount = Math.multiplyExact(amount, MILLIS_PER_DAY);
                         break;
                     case SECONDS:
-                        amount = TJdk8Methods.safeMultiply(amount, SECONDS_PER_DAY);
+                        amount = Math.multiplyExact(amount, SECONDS_PER_DAY);
                         break;
                     case MINUTES:
-                        amount = TJdk8Methods.safeMultiply(amount, MINUTES_PER_DAY);
+                        amount = Math.multiplyExact(amount, MINUTES_PER_DAY);
                         break;
                     case HOURS:
-                        amount = TJdk8Methods.safeMultiply(amount, HOURS_PER_DAY);
+                        amount = Math.multiplyExact(amount, HOURS_PER_DAY);
                         break;
                     case HALF_DAYS:
-                        amount = TJdk8Methods.safeMultiply(amount, 2);
+                        amount = Math.multiplyExact(amount, 2);
                         break;
                 }
-                return TJdk8Methods.safeAdd(amount, this.time.until(end.toLocalTime(), unit));
+                return Math.addExact(amount, this.time.until(end.toLocalTime(), unit));
             }
             TChronoLocalDate endDate = end.toLocalDate();
             if (end.toLocalTime().isBefore(this.time)) {

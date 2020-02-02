@@ -32,9 +32,9 @@
 package org.teavm.classlib.java.time.zone;
 
 import java.util.NavigableMap;
+import java.util.Objects;
 import java.util.Set;
 
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.util.TObjects;
 
 public abstract class TZoneRulesProvider {
@@ -46,7 +46,7 @@ public abstract class TZoneRulesProvider {
 
     public static TZoneRules getRules(String zoneId, boolean forCaching) {
 
-        TJdk8Methods.requireNonNull(zoneId, "zoneId");
+        Objects.requireNonNull(zoneId, "zoneId");
         return getProvider(zoneId).provideRules(zoneId, forCaching);
     }
 

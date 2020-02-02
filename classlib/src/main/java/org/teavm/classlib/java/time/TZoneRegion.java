@@ -31,9 +31,9 @@
  */
 package org.teavm.classlib.java.time;
 
+import java.util.Objects;
 import java.util.regex.Pattern;
 
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.zone.TZoneRules;
 import org.teavm.classlib.java.time.zone.TZoneRulesException;
 import org.teavm.classlib.java.time.zone.TZoneRulesProvider;
@@ -74,7 +74,7 @@ final class TZoneRegion extends TZoneId {
 
     static TZoneRegion ofId(String zoneId, boolean checkAvailable) {
 
-        TJdk8Methods.requireNonNull(zoneId, "zoneId");
+        Objects.requireNonNull(zoneId, "zoneId");
         if (zoneId.length() < 2 || PATTERN.matcher(zoneId).matches() == false) {
             throw new TDateTimeException("Invalid ID for region-based TZoneId, invalid format: " + zoneId);
         }

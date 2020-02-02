@@ -34,6 +34,8 @@ package org.teavm.classlib.java.time.zone;
 import static org.teavm.classlib.java.time.temporal.TTemporalAdjusters.nextOrSame;
 import static org.teavm.classlib.java.time.temporal.TTemporalAdjusters.previousOrSame;
 
+import java.util.Objects;
+
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDayOfWeek;
 import org.teavm.classlib.java.time.TLocalDate;
@@ -42,7 +44,6 @@ import org.teavm.classlib.java.time.TLocalTime;
 import org.teavm.classlib.java.time.TMonth;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
 public final class TZoneOffsetTransitionRule implements TSerializable {
 
@@ -70,12 +71,12 @@ public final class TZoneOffsetTransitionRule implements TSerializable {
             TLocalTime time, boolean timeEndOfDay, TimeDefinition timeDefnition, TZoneOffset standardOffset,
             TZoneOffset offsetBefore, TZoneOffset offsetAfter) {
 
-        TJdk8Methods.requireNonNull(month, "month");
-        TJdk8Methods.requireNonNull(time, "time");
-        TJdk8Methods.requireNonNull(timeDefnition, "timeDefnition");
-        TJdk8Methods.requireNonNull(standardOffset, "standardOffset");
-        TJdk8Methods.requireNonNull(offsetBefore, "offsetBefore");
-        TJdk8Methods.requireNonNull(offsetAfter, "offsetAfter");
+        Objects.requireNonNull(month, "month");
+        Objects.requireNonNull(time, "time");
+        Objects.requireNonNull(timeDefnition, "timeDefnition");
+        Objects.requireNonNull(standardOffset, "standardOffset");
+        Objects.requireNonNull(offsetBefore, "offsetBefore");
+        Objects.requireNonNull(offsetAfter, "offsetAfter");
         if (dayOfMonthIndicator < -28 || dayOfMonthIndicator > 31 || dayOfMonthIndicator == 0) {
             throw new IllegalArgumentException(
                     "Day of month indicator must be between -28 and 31 inclusive excluding zero");
@@ -225,9 +226,9 @@ public final class TZoneOffsetTransitionRule implements TSerializable {
             buf.append(this.time);
         } else {
             long timeOfDaysMins = this.time.toSecondOfDay() / 60 + this.adjustDays * 24 * 60;
-            appendZeroPad(buf, TJdk8Methods.floorDiv(timeOfDaysMins, 60));
+            appendZeroPad(buf, Math.floorDiv(timeOfDaysMins, 60));
             buf.append(':');
-            appendZeroPad(buf, TJdk8Methods.floorMod(timeOfDaysMins, 60));
+            appendZeroPad(buf, Math.floorMod(timeOfDaysMins, 60));
         }
         buf.append(" ").append(this.timeDefinition).append(", standard offset ").append(this.standardOffset)
                 .append(']');

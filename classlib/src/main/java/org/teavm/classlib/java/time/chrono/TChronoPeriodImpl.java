@@ -39,9 +39,9 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAmount;
@@ -49,18 +49,20 @@ import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 
-final class TChronoPeriodImpl
-        extends TChronoPeriod
-        implements Serializable {
+final class TChronoPeriodImpl extends TChronoPeriod implements Serializable {
 
     private static final long serialVersionUID = 275618735781L;
 
     private final TChronology chronology;
+
     private final int years;
+
     private final int months;
+
     private final int days;
 
     public TChronoPeriodImpl(TChronology chronology, int years, int months, int days) {
+
         this.chronology = chronology;
         this.years = years;
         this.months = months;
@@ -69,38 +71,39 @@ final class TChronoPeriodImpl
 
     @Override
     public long get(TTemporalUnit unit) {
+
         if (unit == YEARS) {
-            return years;
+            return this.years;
         }
         if (unit == MONTHS) {
-            return months;
+            return this.months;
         }
         if (unit == DAYS) {
-            return days;
+            return this.days;
         }
         throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
     }
 
     @Override
     public List<TTemporalUnit> getUnits() {
-        return Collections.unmodifiableList(Arrays.<TTemporalUnit>asList(YEARS, MONTHS, DAYS));
+
+        return Collections.unmodifiableList(Arrays.<TTemporalUnit> asList(YEARS, MONTHS, DAYS));
     }
 
     @Override
     public TChronology getChronology() {
-        return chronology;
+
+        return this.chronology;
     }
 
     @Override
     public TChronoPeriod plus(TTemporalAmount amountToAdd) {
+
         if (amountToAdd instanceof TChronoPeriodImpl) {
             TChronoPeriodImpl amount = (TChronoPeriodImpl) amountToAdd;
             if (amount.getChronology().equals(getChronology())) {
-                return new TChronoPeriodImpl(
-                        chronology,
-                        TJdk8Methods.safeAdd(years, amount.years),
-                        TJdk8Methods.safeAdd(months, amount.months),
-                        TJdk8Methods.safeAdd(days, amount.days));
+                return new TChronoPeriodImpl(this.chronology, Math.addExact(this.years, amount.years),
+                        Math.addExact(this.months, amount.months), Math.addExact(this.days, amount.days));
             }
         }
         throw new TDateTimeException("Unable to add amount: " + amountToAdd);
@@ -108,14 +111,12 @@ final class TChronoPeriodImpl
 
     @Override
     public TChronoPeriod minus(TTemporalAmount amountToSubtract) {
+
         if (amountToSubtract instanceof TChronoPeriodImpl) {
             TChronoPeriodImpl amount = (TChronoPeriodImpl) amountToSubtract;
             if (amount.getChronology().equals(getChronology())) {
-                return new TChronoPeriodImpl(
-                        chronology,
-                        TJdk8Methods.safeSubtract(years, amount.years),
-                        TJdk8Methods.safeSubtract(months, amount.months),
-                        TJdk8Methods.safeSubtract(days, amount.days));
+                return new TChronoPeriodImpl(this.chronology, Math.subtractExact(this.years, amount.years),
+                        Math.subtractExact(this.months, amount.months), Math.subtractExact(this.days, amount.days));
             }
         }
         throw new TDateTimeException("Unable to subtract amount: " + amountToSubtract);
@@ -123,96 +124,104 @@ final class TChronoPeriodImpl
 
     @Override
     public TChronoPeriod multipliedBy(int scalar) {
-        return new TChronoPeriodImpl(
-                chronology,
-                TJdk8Methods.safeMultiply(years, scalar),
-                TJdk8Methods.safeMultiply(months, scalar),
-                TJdk8Methods.safeMultiply(days, scalar));
+
+        return new TChronoPeriodImpl(this.chronology, Math.multiplyExact(this.years, scalar),
+                Math.multiplyExact(this.months, scalar), Math.multiplyExact(this.days, scalar));
     }
 
     @Override
     public TChronoPeriod normalized() {
-        if (chronology.range(TChronoField.MONTH_OF_YEAR).isFixed()) {
-            long monthLength = chronology.range(TChronoField.MONTH_OF_YEAR).getMaximum() - chronology.range(TChronoField.MONTH_OF_YEAR).getMinimum() + 1;
-            long total = years * monthLength + months;
-            int years = TJdk8Methods.safeToInt(total / monthLength);
-            int months = TJdk8Methods.safeToInt(total % monthLength);
-            return new TChronoPeriodImpl(chronology, years, months, days);
+
+        if (this.chronology.range(TChronoField.MONTH_OF_YEAR).isFixed()) {
+            long monthLength = this.chronology.range(TChronoField.MONTH_OF_YEAR).getMaximum()
+                    - this.chronology.range(TChronoField.MONTH_OF_YEAR).getMinimum() + 1;
+            long total = this.years * monthLength + this.months;
+            int years = Math.toIntExact(total / monthLength);
+            int months = Math.toIntExact(total % monthLength);
+            return new TChronoPeriodImpl(this.chronology, years, months, this.days);
         }
         return this;
     }
 
     @Override
     public TTemporal addTo(TTemporal temporal) {
-        TJdk8Methods.requireNonNull(temporal, "temporal");
+
+        Objects.requireNonNull(temporal, "temporal");
         TChronology temporalChrono = temporal.query(TTemporalQueries.chronology());
-        if (temporalChrono != null && chronology.equals(temporalChrono) == false) {
-            throw new TDateTimeException("Invalid chronology, required: " + chronology.getId() + ", but was: " + temporalChrono.getId());
+        if (temporalChrono != null && this.chronology.equals(temporalChrono) == false) {
+            throw new TDateTimeException("Invalid chronology, required: " + this.chronology.getId() + ", but was: "
+                    + temporalChrono.getId());
         }
-        if (years != 0) {
-            temporal = temporal.plus(years, YEARS);
+        if (this.years != 0) {
+            temporal = temporal.plus(this.years, YEARS);
         }
-        if (months != 0) {
-            temporal = temporal.plus(months, MONTHS);
+        if (this.months != 0) {
+            temporal = temporal.plus(this.months, MONTHS);
         }
-        if (days != 0) {
-            temporal = temporal.plus(days, DAYS);
+        if (this.days != 0) {
+            temporal = temporal.plus(this.days, DAYS);
         }
         return temporal;
     }
 
     @Override
     public TTemporal subtractFrom(TTemporal temporal) {
-        TJdk8Methods.requireNonNull(temporal, "temporal");
+
+        Objects.requireNonNull(temporal, "temporal");
         TChronology temporalChrono = temporal.query(TTemporalQueries.chronology());
-        if (temporalChrono != null && chronology.equals(temporalChrono) == false) {
-            throw new TDateTimeException("Invalid chronology, required: " + chronology.getId() + ", but was: " + temporalChrono.getId());
+        if (temporalChrono != null && this.chronology.equals(temporalChrono) == false) {
+            throw new TDateTimeException("Invalid chronology, required: " + this.chronology.getId() + ", but was: "
+                    + temporalChrono.getId());
         }
-        if (years != 0) {
-            temporal = temporal.minus(years, YEARS);
+        if (this.years != 0) {
+            temporal = temporal.minus(this.years, YEARS);
         }
-        if (months != 0) {
-            temporal = temporal.minus(months, MONTHS);
+        if (this.months != 0) {
+            temporal = temporal.minus(this.months, MONTHS);
         }
-        if (days != 0) {
-            temporal = temporal.minus(days, DAYS);
+        if (this.days != 0) {
+            temporal = temporal.minus(this.days, DAYS);
         }
         return temporal;
     }
 
     @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
             return true;
         }
         if (obj instanceof TChronoPeriodImpl) {
             TChronoPeriodImpl other = (TChronoPeriodImpl) obj;
-            return years == other.years && months == other.months &&
-                    days == other.days && chronology.equals(other.chronology);
+            return this.years == other.years && this.months == other.months && this.days == other.days
+                    && this.chronology.equals(other.chronology);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return chronology.hashCode() + Integer.rotateLeft(years, 16) + Integer.rotateLeft(months, 8) + days;
+
+        return this.chronology.hashCode() + Integer.rotateLeft(this.years, 16) + Integer.rotateLeft(this.months, 8)
+                + this.days;
     }
 
     @Override
     public String toString() {
+
         if (isZero()) {
-            return chronology + " P0D";
+            return this.chronology + " P0D";
         } else {
             StringBuilder buf = new StringBuilder();
-            buf.append(chronology).append(' ').append('P');
-            if (years != 0) {
-                buf.append(years).append('Y');
+            buf.append(this.chronology).append(' ').append('P');
+            if (this.years != 0) {
+                buf.append(this.years).append('Y');
             }
-            if (months != 0) {
-                buf.append(months).append('M');
+            if (this.months != 0) {
+                buf.append(this.months).append('M');
             }
-            if (days != 0) {
-                buf.append(days).append('D');
+            if (this.days != 0) {
+                buf.append(this.days).append('D');
             }
             return buf.toString();
         }

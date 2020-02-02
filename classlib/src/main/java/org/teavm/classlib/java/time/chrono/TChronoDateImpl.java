@@ -35,7 +35,6 @@ import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalTime;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
@@ -58,17 +57,17 @@ abstract class ChronoDateImpl<D extends TChronoLocalDate> extends TChronoLocalDa
                 case DAYS:
                     return plusDays(amountToAdd);
                 case WEEKS:
-                    return plusDays(TJdk8Methods.safeMultiply(amountToAdd, 7));
+                    return plusDays(Math.multiplyExact(amountToAdd, 7));
                 case MONTHS:
                     return plusMonths(amountToAdd);
                 case YEARS:
                     return plusYears(amountToAdd);
                 case DECADES:
-                    return plusYears(TJdk8Methods.safeMultiply(amountToAdd, 10));
+                    return plusYears(Math.multiplyExact(amountToAdd, 10));
                 case CENTURIES:
-                    return plusYears(TJdk8Methods.safeMultiply(amountToAdd, 100));
+                    return plusYears(Math.multiplyExact(amountToAdd, 100));
                 case MILLENNIA:
-                    return plusYears(TJdk8Methods.safeMultiply(amountToAdd, 1000));
+                    return plusYears(Math.multiplyExact(amountToAdd, 1000));
                 // case ERAS: throw new TDateTimeException("Unable to add era, standard calendar system only has one
                 // era");
                 // case FOREVER: return (period == 0 ? this : (period > 0 ? TLocalDate.MAX_DATE : TLocalDate.MIN_DATE));
@@ -84,7 +83,7 @@ abstract class ChronoDateImpl<D extends TChronoLocalDate> extends TChronoLocalDa
 
     ChronoDateImpl<D> plusWeeks(long weeksToAdd) {
 
-        return plusDays(TJdk8Methods.safeMultiply(weeksToAdd, 7));
+        return plusDays(Math.multiplyExact(weeksToAdd, 7));
     }
 
     abstract ChronoDateImpl<D> plusDays(long daysToAdd);

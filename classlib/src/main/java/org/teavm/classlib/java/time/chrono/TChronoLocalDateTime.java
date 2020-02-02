@@ -36,6 +36,7 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_DAY;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 
 import java.util.Comparator;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TInstant;
@@ -45,7 +46,6 @@ import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporal;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
@@ -67,11 +67,9 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate> extends T
         @Override
         public int compare(TChronoLocalDateTime<?> datetime1, TChronoLocalDateTime<?> datetime2) {
 
-            int cmp = TJdk8Methods.compareLongs(datetime1.toLocalDate().toEpochDay(),
-                    datetime2.toLocalDate().toEpochDay());
+            int cmp = Long.compare(datetime1.toLocalDate().toEpochDay(), datetime2.toLocalDate().toEpochDay());
             if (cmp == 0) {
-                cmp = TJdk8Methods.compareLongs(datetime1.toLocalTime().toNanoOfDay(),
-                        datetime2.toLocalTime().toNanoOfDay());
+                cmp = Long.compare(datetime1.toLocalTime().toNanoOfDay(), datetime2.toLocalTime().toNanoOfDay());
             }
             return cmp;
         }
@@ -79,7 +77,7 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate> extends T
 
     public static TChronoLocalDateTime<?> from(TTemporalAccessor temporal) {
 
-        TJdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         if (temporal instanceof TChronoLocalDateTime) {
             return (TChronoLocalDateTime<?>) temporal;
         }
@@ -156,7 +154,7 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate> extends T
 
     public String format(TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
 
@@ -169,7 +167,7 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate> extends T
 
     public long toEpochSecond(TZoneOffset offset) {
 
-        TJdk8Methods.requireNonNull(offset, "offset");
+        Objects.requireNonNull(offset, "offset");
         long epochDay = toLocalDate().toEpochDay();
         long secs = epochDay * 86400 + toLocalTime().toSecondOfDay();
         secs -= offset.getTotalSeconds();

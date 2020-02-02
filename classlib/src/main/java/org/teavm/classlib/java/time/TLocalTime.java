@@ -41,10 +41,10 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_MINUT
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 
 import java.io.Serializable;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -132,7 +132,7 @@ public final class TLocalTime extends TDefaultInterfaceTemporalAccessor
 
     public static TLocalTime now(TClock clock) {
 
-        TJdk8Methods.requireNonNull(clock, "clock");
+        Objects.requireNonNull(clock, "clock");
         // inline TOffsetTime factory to avoid creating object and InstantProvider checks
         final TInstant now = clock.instant(); // called once
         TZoneOffset offset = clock.getZone().getRules().getOffset(now);
@@ -224,7 +224,7 @@ public final class TLocalTime extends TDefaultInterfaceTemporalAccessor
 
     public static TLocalTime parse(CharSequence text, TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.parse(text, TLocalTime.FROM);
     }
 
@@ -659,13 +659,13 @@ public final class TLocalTime extends TDefaultInterfaceTemporalAccessor
     @Override
     public int compareTo(TLocalTime other) {
 
-        int cmp = TJdk8Methods.compareInts(this.hour, other.hour);
+        int cmp = Integer.compare(this.hour, other.hour);
         if (cmp == 0) {
-            cmp = TJdk8Methods.compareInts(this.minute, other.minute);
+            cmp = Integer.compare(this.minute, other.minute);
             if (cmp == 0) {
-                cmp = TJdk8Methods.compareInts(this.second, other.second);
+                cmp = Integer.compare(this.second, other.second);
                 if (cmp == 0) {
-                    cmp = TJdk8Methods.compareInts(this.nano, other.nano);
+                    cmp = Integer.compare(this.nano, other.nano);
                 }
             }
         }
@@ -731,7 +731,7 @@ public final class TLocalTime extends TDefaultInterfaceTemporalAccessor
 
     public String format(TDateTimeFormatter formatter) {
 
-        TJdk8Methods.requireNonNull(formatter, "formatter");
+        Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
 

@@ -44,6 +44,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.text.ParseException;
 import java.util.HashMap;
+import java.util.Objects;
 import java.util.StringTokenizer;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -54,7 +55,6 @@ import org.teavm.classlib.java.time.TDayOfWeek;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalTime;
 import org.teavm.classlib.java.time.TZoneId;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
@@ -226,7 +226,7 @@ public final class THijrahDate extends ChronoDateImpl<THijrahDate> {
 
     static THijrahDate of(THijrahEra era, int yearOfEra, int monthOfYear, int dayOfMonth) {
 
-        TJdk8Methods.requireNonNull(era, "era");
+        Objects.requireNonNull(era, "era");
         checkValidYearOfEra(yearOfEra);
         checkValidMonth(monthOfYear);
         checkValidDayOfMonth(dayOfMonth);
@@ -471,7 +471,7 @@ public final class THijrahDate extends ChronoDateImpl<THijrahDate> {
         if (years == 0) {
             return this;
         }
-        int newYear = TJdk8Methods.safeAdd(this.yearOfEra, (int) years);
+        int newYear = Math.addExact(this.yearOfEra, (int) years);
         return THijrahDate.of(this.era, newYear, this.monthOfYear, this.dayOfMonth);
     }
 
@@ -487,9 +487,9 @@ public final class THijrahDate extends ChronoDateImpl<THijrahDate> {
         newMonth = newMonth % 12;
         while (newMonth < 0) {
             newMonth += 12;
-            years = TJdk8Methods.safeSubtract(years, 1);
+            years = Math.subtractExact(years, 1);
         }
-        int newYear = TJdk8Methods.safeAdd(this.yearOfEra, years);
+        int newYear = Math.addExact(this.yearOfEra, years);
         return THijrahDate.of(this.era, newYear, newMonth + 1, this.dayOfMonth);
     }
 

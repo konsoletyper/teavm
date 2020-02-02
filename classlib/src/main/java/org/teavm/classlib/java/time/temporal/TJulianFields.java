@@ -36,11 +36,11 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.FOREVER;
 
 import java.util.Map;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.format.TResolverStyle;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.util.TLocale;
 
 public final class TJulianFields {
@@ -136,13 +136,13 @@ public final class TJulianFields {
             if (range().isValidValue(newValue) == false) {
                 throw new TDateTimeException("Invalid value: " + this.name + " " + newValue);
             }
-            return (R) dateTime.with(EPOCH_DAY, TJdk8Methods.safeSubtract(newValue, this.offset));
+            return (R) dateTime.with(EPOCH_DAY, Math.subtractExact(newValue, this.offset));
         }
 
         @Override
         public String getDisplayName(TLocale locale) {
 
-            TJdk8Methods.requireNonNull(locale, "locale");
+            Objects.requireNonNull(locale, "locale");
             return toString();
         }
 
@@ -152,7 +152,7 @@ public final class TJulianFields {
 
             long value = fieldValues.remove(this);
             TChronology chrono = TChronology.from(partialTemporal);
-            return chrono.dateEpochDay(TJdk8Methods.safeSubtract(value, this.offset));
+            return chrono.dateEpochDay(Math.subtractExact(value, this.offset));
         }
 
         @Override

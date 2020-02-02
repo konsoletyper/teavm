@@ -32,13 +32,13 @@
 package org.teavm.classlib.java.time.chrono;
 
 import java.util.Arrays;
+import java.util.Objects;
 import java.util.concurrent.atomic.AtomicReference;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceEra;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TValueRange;
@@ -92,8 +92,8 @@ public final class TJapaneseEra extends TDefaultInterfaceEra implements TSeriali
         if (known.length > 4) {
             throw new TDateTimeException("Only one additional Japanese era can be added");
         }
-        TJdk8Methods.requireNonNull(since, "since");
-        TJdk8Methods.requireNonNull(name, "name");
+        Objects.requireNonNull(since, "since");
+        Objects.requireNonNull(name, "name");
         if (!since.isAfter(HEISEI.since)) {
             throw new TDateTimeException("Invalid since date for additional Japanese era, must be after Heisei");
         }
@@ -117,7 +117,7 @@ public final class TJapaneseEra extends TDefaultInterfaceEra implements TSeriali
 
     public static TJapaneseEra valueOf(String japaneseEra) {
 
-        TJdk8Methods.requireNonNull(japaneseEra, "japaneseEra");
+        Objects.requireNonNull(japaneseEra, "japaneseEra");
         TJapaneseEra[] known = KNOWN_ERAS.get();
         for (TJapaneseEra era : known) {
             if (japaneseEra.equals(era.name)) {

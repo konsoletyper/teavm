@@ -46,10 +46,10 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
 import java.util.Map;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.TYear;
 import org.teavm.classlib.java.time.format.TResolverStyle;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.util.TLocale;
 
 public enum TChronoField implements TTemporalField {
@@ -170,7 +170,7 @@ public enum TChronoField implements TTemporalField {
     @Override
     public String getDisplayName(TLocale locale) {
 
-        TJdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         return toString();
     }
 

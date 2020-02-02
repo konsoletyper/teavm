@@ -35,6 +35,7 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
 import static org.teavm.classlib.java.time.temporal.TChronoField.INSTANT_SECONDS;
 
 import java.util.Locale;
+import java.util.Objects;
 
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TInstant;
@@ -44,7 +45,6 @@ import org.teavm.classlib.java.time.chrono.TChronoLocalDate;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
-import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
@@ -90,10 +90,10 @@ final class TDateTimePrintContext {
         // ensure minimal change
         TChronology temporalChrono = temporal.query(TTemporalQueries.chronology());
         TZoneId temporalZone = temporal.query(TTemporalQueries.zoneId());
-        if (TJdk8Methods.equals(temporalChrono, overrideChrono)) {
+        if (Objects.equals(temporalChrono, overrideChrono)) {
             overrideChrono = null;
         }
-        if (TJdk8Methods.equals(temporalZone, overrideZone)) {
+        if (Objects.equals(temporalZone, overrideZone)) {
             overrideZone = null;
         }
         if (overrideChrono == null && overrideZone == null) {
@@ -239,13 +239,13 @@ final class TDateTimePrintContext {
     // for testing
     void setDateTime(TTemporalAccessor temporal) {
 
-        TJdk8Methods.requireNonNull(temporal, "temporal");
+        Objects.requireNonNull(temporal, "temporal");
         this.temporal = temporal;
     }
 
     void setLocale(Locale locale) {
 
-        TJdk8Methods.requireNonNull(locale, "locale");
+        Objects.requireNonNull(locale, "locale");
         this.locale = locale;
     }
 
