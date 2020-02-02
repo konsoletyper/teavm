@@ -333,6 +333,90 @@ public final class TMath extends TObject {
     public static float nextUp(float d) {
         return d + ulp(d);
     }
+    
+    public static int floorDiv(int a, int b) {
+        return (a >= 0 ? a / b : ((a + 1) / b) - 1);
+    }
+
+    public static long floorDiv(long a, long b) {
+        return (a >= 0 ? a / b : ((a + 1) / b) - 1);
+    }
+
+    public static int floorMod(int a, int b) {
+        return ((a % b) + b) % b;
+    }
+
+    public static long floorMod(long a, long b) {
+        return ((a % b) + b) % b;
+    }
+
+    public static int toIntExact(long value) {
+        if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
+            throw new ArithmeticException("Calculation overflows an int: " + value);
+        }
+        return (int) value;
+    }
+
+    public static int addExact(int a, int b) {
+        int sum = a + b;
+        // check for a change of sign in the result when the inputs have the same sign
+        if ((a ^ sum) < 0 && (a ^ b) >= 0) {
+            throw new ArithmeticException("Addition overflows an int: " + a + " + " + b);
+        }
+        return sum;
+    }
+
+    public static long addExact(long a, long b) {
+        long sum = a + b;
+        // check for a change of sign in the result when the inputs have the same sign
+        if ((a ^ sum) < 0 && (a ^ b) >= 0) {
+            throw new ArithmeticException("Addition overflows a long: " + a + " + " + b);
+        }
+        return sum;
+    }
+
+    public static int subtractExact(int a, int b) {
+        int result = a - b;
+        // check for a change of sign in the result when the inputs have the different signs
+        if ((a ^ result) < 0 && (a ^ b) < 0) {
+            throw new ArithmeticException("Subtraction overflows an int: " + a + " - " + b);
+        }
+        return result;
+    }
+
+    public static long subtractExact(long a, long b) {
+        long result = a - b;
+        // check for a change of sign in the result when the inputs have the different signs
+        if ((a ^ result) < 0 && (a ^ b) < 0) {
+            throw new ArithmeticException("Subtraction overflows a long: " + a + " - " + b);
+        }
+        return result;
+    }
+
+    public static int multiplyExact(int a, int b) {
+        long total = (long) a * (long) b;
+        if (total < Integer.MIN_VALUE || total > Integer.MAX_VALUE) {
+            throw new ArithmeticException("Multiplication overflows an int: " + a + " * " + b);
+        }
+        return (int) total;
+    }
+
+    public static long multiplyExact(long a, long b) {
+        if (b == 1) {
+            return a;
+        }
+        if (a == 1) {
+            return b;
+        }
+        if (a == 0 || b == 0) {
+            return 0;
+        }
+        long total = a * b;
+        if (total / b != a || (a == Long.MIN_VALUE && b == -1) || (b == Long.MIN_VALUE && a == -1)) {
+            throw new ArithmeticException("Multiplication overflows a long: " + a + " * " + b);
+        }
+        return total;
+    }
 
     private static class ExponentConstants {
         public static double[] exponents = { 0x1p1, 0x1p2, 0x1p4, 0x1p8, 0x1p16, 0x1p32, 0x1p64, 0x1p128,
