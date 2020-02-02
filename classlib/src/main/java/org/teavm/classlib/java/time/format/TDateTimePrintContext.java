@@ -44,7 +44,6 @@ import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.chrono.TChronoLocalDate;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
@@ -138,7 +137,7 @@ final class TDateTimePrintContext {
         }
 
         // need class here to handle non-standard cases
-        return new TDefaultInterfaceTemporalAccessor() {
+        return new TTemporalAccessor() {
             @Override
             public boolean isSupported(TTemporalField field) {
 

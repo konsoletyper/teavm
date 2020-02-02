@@ -52,7 +52,6 @@ import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
 import org.teavm.classlib.java.time.format.TSignStyle;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -66,8 +65,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TYearMonth extends TDefaultInterfaceTemporalAccessor
-        implements TTemporal, TTemporalAdjuster, TComparable<TYearMonth>, TSerializable {
+public final class TYearMonth implements TTemporal, TTemporalAdjuster, TComparable<TYearMonth>, TSerializable {
 
     public static final TTemporalQuery<TYearMonth> FROM = new TTemporalQuery<TYearMonth>() {
         @Override
@@ -181,7 +179,7 @@ public final class TYearMonth extends TDefaultInterfaceTemporalAccessor
         if (field == YEAR_OF_ERA) {
             return (getYear() <= 0 ? TValueRange.of(1, TYear.MAX_VALUE + 1) : TValueRange.of(1, TYear.MAX_VALUE));
         }
-        return super.range(field);
+        return TTemporal.super.range(field);
     }
 
     @Override
@@ -380,7 +378,7 @@ public final class TYearMonth extends TDefaultInterfaceTemporalAccessor
                 || query == TTemporalQueries.offset()) {
             return null;
         }
-        return super.query(query);
+        return TTemporal.super.query(query);
     }
 
     @Override

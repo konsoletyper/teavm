@@ -71,11 +71,6 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.MINUTES;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.SECONDS;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -172,18 +167,6 @@ public class TestLocalDateTime extends AbstractDateTimeTest {
     private TLocalDateTime createDateMidnight(int year, int month, int day) {
 
         return TLocalDateTime.of(year, month, day, 0, 0);
-    }
-
-    @Test
-    public void test_serialization() throws IOException, ClassNotFoundException {
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(this.TEST_2007_07_15_12_30_40_987654321);
-        oos.close();
-
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
-        assertEquals(ois.readObject(), this.TEST_2007_07_15_12_30_40_987654321);
     }
 
     @Test

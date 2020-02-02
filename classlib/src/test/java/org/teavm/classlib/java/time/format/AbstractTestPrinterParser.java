@@ -39,7 +39,6 @@ import org.teavm.classlib.java.time.TLocalDateTime;
 import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZonedDateTime;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 
@@ -63,7 +62,7 @@ public class AbstractTestPrinterParser {
         this.buf = new StringBuilder();
     }
 
-    private static final TTemporalAccessor EMPTY = new TDefaultInterfaceTemporalAccessor() {
+    private static final TTemporalAccessor EMPTY = new TTemporalAccessor() {
         @Override
         public boolean isSupported(TTemporalField field) {
 

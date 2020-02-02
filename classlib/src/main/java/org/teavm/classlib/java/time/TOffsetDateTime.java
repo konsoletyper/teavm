@@ -43,7 +43,6 @@ import java.util.Objects;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporal;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -57,8 +56,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 import org.teavm.classlib.java.time.zone.TZoneRules;
 
-public final class TOffsetDateTime extends TDefaultInterfaceTemporal
-        implements TTemporal, TTemporalAdjuster, Comparable<TOffsetDateTime>, TSerializable {
+public final class TOffsetDateTime implements TTemporal, TTemporalAdjuster, Comparable<TOffsetDateTime>, TSerializable {
 
     public static final TOffsetDateTime MIN = TLocalDateTime.MIN.atOffset(TZoneOffset.MAX);
 
@@ -222,7 +220,7 @@ public final class TOffsetDateTime extends TDefaultInterfaceTemporal
             }
             return this.dateTime.get(field);
         }
-        return super.get(field);
+        return TTemporal.super.get(field);
     }
 
     @Override
@@ -513,7 +511,7 @@ public final class TOffsetDateTime extends TDefaultInterfaceTemporal
         } else if (query == TTemporalQueries.zoneId()) {
             return null;
         }
-        return super.query(query);
+        return TTemporal.super.query(query);
     }
 
     @Override

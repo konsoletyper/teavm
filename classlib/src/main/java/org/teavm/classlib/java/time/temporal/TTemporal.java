@@ -35,17 +35,30 @@ public interface TTemporal extends TTemporalAccessor {
 
     boolean isSupported(TTemporalUnit unit);
 
-    TTemporal with(TTemporalAdjuster adjuster);
+    default TTemporal with(TTemporalAdjuster adjuster) {
+
+        return adjuster.adjustInto(this);
+    }
 
     TTemporal with(TTemporalField field, long newValue);
 
-    TTemporal plus(TTemporalAmount amount);
+    default TTemporal plus(TTemporalAmount amount) {
+
+        return amount.addTo(this);
+    }
 
     TTemporal plus(long amountToAdd, TTemporalUnit unit);
 
-    TTemporal minus(TTemporalAmount amount);
+    default TTemporal minus(TTemporalAmount amount) {
 
-    TTemporal minus(long amountToSubtract, TTemporalUnit unit);
+        return amount.subtractFrom(this);
+    }
+
+    default TTemporal minus(long amountToSubtract, TTemporalUnit unit) {
+
+        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit));
+    }
 
     long until(TTemporal endTemporal, TTemporalUnit unit);
 

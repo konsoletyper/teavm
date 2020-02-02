@@ -43,7 +43,6 @@ import java.util.TimeZone;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
 import org.teavm.classlib.java.time.format.TTextStyle;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
@@ -189,7 +188,7 @@ public abstract class TZoneId implements TSerializable {
     public String getDisplayName(TTextStyle style, Locale locale) {
 
         return new TDateTimeFormatterBuilder().appendZoneText(style).toFormatter(locale)
-                .format(new TDefaultInterfaceTemporalAccessor() {
+                .format(new TTemporalAccessor() {
                     @Override
                     public boolean isSupported(TTemporalField field) {
 
@@ -209,7 +208,7 @@ public abstract class TZoneId implements TSerializable {
                         if (query == TTemporalQueries.zoneId()) {
                             return (R) TZoneId.this;
                         }
-                        return super.query(query);
+                        return TTemporalAccessor.super.query(query);
                     }
                 });
     }

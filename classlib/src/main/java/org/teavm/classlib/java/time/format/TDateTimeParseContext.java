@@ -43,7 +43,7 @@ import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.ReducedPrinterParser;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
+import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.temporal.TTemporalQuery;
@@ -263,12 +263,12 @@ final class TDateTimeParseContext {
         return currentParsed().toString();
     }
 
-    final class Parsed extends TDefaultInterfaceTemporalAccessor {
+    final class Parsed implements TTemporalAccessor {
         TChronology chrono = null;
 
         TZoneId zone = null;
 
-        final Map<TTemporalField, Long> fieldValues = new HashMap<TTemporalField, Long>();
+        final Map<TTemporalField, Long> fieldValues = new HashMap<>();
 
         boolean leapSecond;
 
@@ -331,7 +331,7 @@ final class TDateTimeParseContext {
             if (query == TTemporalQueries.zoneId() || query == TTemporalQueries.zone()) {
                 return (R) this.zone;
             }
-            return super.query(query);
+            return TTemporalAccessor.super.query(query);
         }
 
         TDateTimeBuilder toBuilder() {

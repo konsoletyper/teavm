@@ -52,7 +52,6 @@ import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
 import org.teavm.classlib.java.time.format.TResolverStyle;
 import org.teavm.classlib.java.time.format.TTextStyle;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
@@ -307,7 +306,7 @@ public abstract class TChronology implements TComparable<TChronology> {
     public String getDisplayName(TTextStyle style, Locale locale) {
 
         return new TDateTimeFormatterBuilder().appendChronologyText(style).toFormatter(locale)
-                .format(new TDefaultInterfaceTemporalAccessor() {
+                .format(new TTemporalAccessor() {
                     @Override
                     public boolean isSupported(TTemporalField field) {
 
@@ -327,7 +326,7 @@ public abstract class TChronology implements TComparable<TChronology> {
                         if (query == TTemporalQueries.chronology()) {
                             return (R) TChronology.this;
                         }
-                        return super.query(query);
+                        return TTemporalAccessor.super.query(query);
                     }
                 });
     }

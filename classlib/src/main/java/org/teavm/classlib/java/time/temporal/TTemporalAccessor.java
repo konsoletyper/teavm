@@ -31,16 +31,43 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
+import static org.teavm.classlib.java.time.temporal.TChronoField.ERA;
+
 public interface TTemporalAccessor {
 
-    boolean isSupported(TTemporalField field);
+    default boolean isSupported(TTemporalField field) {
 
-    TValueRange range(TTemporalField field);
+        if (field instanceof TChronoField) {
+            return field == ERA;
+        }
+        return field != null && field.isSupportedBy(this);
+    }
 
-    int get(TTemporalField field);
+    default TValueRange range(TTemporalField field) {
+
+        if (field instanceof TChronoField) {
+            if (isSupported(field)) {
+                return field.range();
+            }
+            throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
+        }
+        return field.rangeRefinedBy(this);
+    }
+
+    default int get(TTemporalField field) {
+
+        return range(field).checkValidIntValue(getLong(field), field);
+    }
 
     long getLong(TTemporalField field);
 
-    <R> R query(TTemporalQuery<R> query);
+    default <R> R query(TTemporalQuery<R> query) {
+
+        if (query == TTemporalQueries.zoneId() || query == TTemporalQueries.chronology()
+                || query == TTemporalQueries.precision()) {
+            return null;
+        }
+        return query.queryFrom(this);
+    }
 
 }

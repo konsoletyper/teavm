@@ -61,7 +61,6 @@ import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.TZonedDateTime;
 import org.teavm.classlib.java.time.chrono.TChronology;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TIsoFields;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
@@ -1005,7 +1004,7 @@ public class TestDateTimeFormatters {
     @Test
     public void test_print_isoOrdinalDate_fields() {
 
-        TTemporalAccessor test = new TDefaultInterfaceTemporalAccessor() {
+        TTemporalAccessor test = new TTemporalAccessor() {
             @Override
             public boolean isSupported(TTemporalField field) {
 
@@ -1377,7 +1376,7 @@ public class TestDateTimeFormatters {
         assertEquals(parsed.query(TTemporalQueries.zoneId()), expected.zone);
     }
 
-    static class MockAccessor extends TDefaultInterfaceTemporalAccessor {
+    static class MockAccessor implements TTemporalAccessor {
         Map<TTemporalField, Long> fields = new HashMap<>();
 
         TZoneId zoneId;
@@ -1449,7 +1448,7 @@ public class TestDateTimeFormatters {
             if (query == TTemporalQueries.zoneId()) {
                 return (R) this.zoneId;
             }
-            return super.query(query);
+            return TTemporalAccessor.super.query(query);
         }
 
         @Override

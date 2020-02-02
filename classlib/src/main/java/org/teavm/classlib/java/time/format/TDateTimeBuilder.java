@@ -70,14 +70,13 @@ import org.teavm.classlib.java.time.chrono.TChronoLocalDateTime;
 import org.teavm.classlib.java.time.chrono.TChronoZonedDateTime;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 
-final class TDateTimeBuilder extends TDefaultInterfaceTemporalAccessor implements TTemporalAccessor, TCloneable {
+final class TDateTimeBuilder implements TTemporalAccessor, TCloneable {
 
     final Map<TTemporalField, Long> fieldValues = new HashMap<>();
 

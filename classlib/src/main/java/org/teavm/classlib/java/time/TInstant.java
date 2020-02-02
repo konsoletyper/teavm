@@ -41,11 +41,10 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_SECOND;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 
-import java.io.Serializable;
 import java.util.Objects;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -57,10 +56,9 @@ import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
-import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TInstant extends TDefaultInterfaceTemporalAccessor
-        implements TTemporal, TTemporalAdjuster, Comparable<TInstant>, Serializable {
+public final class TInstant
+        implements TTemporalAccessor, TTemporal, TTemporalAdjuster, Comparable<TInstant>, TSerializable {
 
     public static final TInstant EPOCH = new TInstant(0, 0);
 
@@ -174,13 +172,7 @@ public final class TInstant extends TDefaultInterfaceTemporalAccessor
         return unit != null && unit.isSupportedBy(this);
     }
 
-    @Override // override for Javadoc
-    public TValueRange range(TTemporalField field) {
-
-        return super.range(field);
-    }
-
-    @Override // override for Javadoc and performance
+    @Override
     public int get(TTemporalField field) {
 
         if (field instanceof TChronoField) {

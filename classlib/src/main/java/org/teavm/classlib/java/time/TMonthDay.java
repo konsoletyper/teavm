@@ -42,7 +42,6 @@ import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
@@ -53,8 +52,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TMonthDay extends TDefaultInterfaceTemporalAccessor
-        implements TTemporalAccessor, TTemporalAdjuster, TComparable<TMonthDay>, TSerializable {
+public final class TMonthDay implements TTemporalAccessor, TTemporalAdjuster, TComparable<TMonthDay>, TSerializable {
 
     public static final TTemporalQuery<TMonthDay> FROM = new TTemporalQuery<TMonthDay>() {
         @Override
@@ -153,7 +151,7 @@ public final class TMonthDay extends TDefaultInterfaceTemporalAccessor
         } else if (field == DAY_OF_MONTH) {
             return TValueRange.of(1, getMonth().minLength(), getMonth().maxLength());
         }
-        return super.range(field);
+        return TTemporalAccessor.super.range(field);
     }
 
     @Override
@@ -228,7 +226,7 @@ public final class TMonthDay extends TDefaultInterfaceTemporalAccessor
         if (query == TTemporalQueries.chronology()) {
             return (R) TIsoChronology.INSTANCE;
         }
-        return super.query(query);
+        return TTemporalAccessor.super.query(query);
     }
 
     @Override

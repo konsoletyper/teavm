@@ -78,7 +78,6 @@ import org.junit.Test;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.format.TDateTimeParseException;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.MockFieldNoValue;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
@@ -563,7 +562,7 @@ public class TestZonedDateTime extends AbstractDateTimeTest {
     @Test
     public void factory_from_DateTimeAccessor_LDT_ZoneId() {
 
-        assertEquals(TZonedDateTime.from(new TDefaultInterfaceTemporalAccessor() {
+        assertEquals(TZonedDateTime.from(new TTemporalAccessor() {
             @Override
             public boolean isSupported(TTemporalField field) {
 
@@ -583,7 +582,7 @@ public class TestZonedDateTime extends AbstractDateTimeTest {
                 if (query == TTemporalQueries.zoneId()) {
                     return (R) TestZonedDateTime.this.TEST_DATE_TIME_PARIS.getZone();
                 }
-                return super.query(query);
+                return TTemporalAccessor.super.query(query);
             }
         }), this.TEST_DATE_TIME_PARIS);
     }
@@ -591,7 +590,7 @@ public class TestZonedDateTime extends AbstractDateTimeTest {
     @Test
     public void factory_from_DateTimeAccessor_Instant_ZoneId() {
 
-        assertEquals(TZonedDateTime.from(new TDefaultInterfaceTemporalAccessor() {
+        assertEquals(TZonedDateTime.from(new TTemporalAccessor() {
             @Override
             public boolean isSupported(TTemporalField field) {
 
@@ -611,7 +610,7 @@ public class TestZonedDateTime extends AbstractDateTimeTest {
                 if (query == TTemporalQueries.zoneId()) {
                     return (R) TestZonedDateTime.this.TEST_DATE_TIME_PARIS.getZone();
                 }
-                return super.query(query);
+                return TTemporalAccessor.super.query(query);
             }
         }), this.TEST_DATE_TIME_PARIS);
     }

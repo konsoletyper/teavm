@@ -45,7 +45,6 @@ import org.teavm.classlib.java.time.TLocalTime;
 import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
@@ -55,7 +54,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 
-public abstract class TChronoLocalDateTime<D extends TChronoLocalDate> extends TDefaultInterfaceTemporal
+public abstract class TChronoLocalDateTime<D extends TChronoLocalDate>
         implements TTemporal, TTemporalAdjuster, Comparable<TChronoLocalDateTime<?>> {
 
     public static Comparator<TChronoLocalDateTime<?>> timeLineOrder() {
@@ -100,7 +99,7 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate> extends T
     @Override
     public TChronoLocalDateTime<D> with(TTemporalAdjuster adjuster) {
 
-        return toLocalDate().getChronology().ensureChronoLocalDateTime(super.with(adjuster));
+        return toLocalDate().getChronology().ensureChronoLocalDateTime(TTemporal.super.with(adjuster));
     }
 
     @Override
@@ -109,7 +108,7 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate> extends T
     @Override
     public TChronoLocalDateTime<D> plus(TTemporalAmount amount) {
 
-        return toLocalDate().getChronology().ensureChronoLocalDateTime(super.plus(amount));
+        return toLocalDate().getChronology().ensureChronoLocalDateTime(TTemporal.super.plus(amount));
     }
 
     @Override
@@ -118,13 +117,13 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate> extends T
     @Override
     public TChronoLocalDateTime<D> minus(TTemporalAmount amount) {
 
-        return toLocalDate().getChronology().ensureChronoLocalDateTime(super.minus(amount));
+        return toLocalDate().getChronology().ensureChronoLocalDateTime(TTemporal.super.minus(amount));
     }
 
     @Override
     public TChronoLocalDateTime<D> minus(long amountToSubtract, TTemporalUnit unit) {
 
-        return toLocalDate().getChronology().ensureChronoLocalDateTime(super.minus(amountToSubtract, unit));
+        return toLocalDate().getChronology().ensureChronoLocalDateTime(TTemporal.super.minus(amountToSubtract, unit));
     }
 
     @SuppressWarnings("unchecked")
@@ -143,7 +142,7 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate> extends T
                 || query == TTemporalQueries.offset()) {
             return null;
         }
-        return super.query(query);
+        return TTemporal.super.query(query);
     }
 
     @Override

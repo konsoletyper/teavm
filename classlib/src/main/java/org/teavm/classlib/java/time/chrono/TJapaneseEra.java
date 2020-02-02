@@ -38,12 +38,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceEra;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TJapaneseEra extends TDefaultInterfaceEra implements TSerializable {
+public final class TJapaneseEra implements TEra, TSerializable {
 
     // The offset value to 0-based index from the era value.
     // i.e., getValue() + ERA_OFFSET == 0-based index; except that -999 is mapped to zero
@@ -180,7 +179,7 @@ public final class TJapaneseEra extends TDefaultInterfaceEra implements TSeriali
         if (field == TChronoField.ERA) {
             return TJapaneseChronology.INSTANCE.range(TChronoField.ERA);
         }
-        return super.range(field);
+        return TEra.super.range(field);
     }
 
     @Override

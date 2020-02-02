@@ -43,7 +43,6 @@ import java.util.Objects;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -58,8 +57,7 @@ import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 import org.teavm.classlib.java.time.zone.TZoneRules;
 
-public final class TOffsetTime extends TDefaultInterfaceTemporalAccessor
-        implements TTemporal, TTemporalAdjuster, Comparable<TOffsetTime>, TSerializable {
+public final class TOffsetTime implements TTemporal, TTemporalAdjuster, Comparable<TOffsetTime>, TSerializable {
 
     public static final TOffsetTime MIN = TLocalTime.MIN.atOffset(TZoneOffset.MAX);
 
@@ -187,12 +185,6 @@ public final class TOffsetTime extends TDefaultInterfaceTemporalAccessor
             return this.time.range(field);
         }
         return field.rangeRefinedBy(this);
-    }
-
-    @Override
-    public int get(TTemporalField field) {
-
-        return super.get(field);
     }
 
     @Override
@@ -381,7 +373,7 @@ public final class TOffsetTime extends TDefaultInterfaceTemporalAccessor
                 || query == TTemporalQueries.zoneId()) {
             return null;
         }
-        return super.query(query);
+        return TTemporal.super.query(query);
     }
 
     @Override

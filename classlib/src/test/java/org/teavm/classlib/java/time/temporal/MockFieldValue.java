@@ -32,25 +32,28 @@
 package org.teavm.classlib.java.time.temporal;
 
 import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 
-public final class MockFieldValue extends TDefaultInterfaceTemporalAccessor {
+public final class MockFieldValue implements TTemporalAccessor {
 
     private final TTemporalField field;
+
     private final long value;
 
     public MockFieldValue(TTemporalField field, long value) {
+
         this.field = field;
         this.value = value;
     }
 
     @Override
     public boolean isSupported(TTemporalField field) {
+
         return field != null && field.equals(this.field);
     }
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             if (isSupported(field)) {
                 return field.range();
@@ -62,8 +65,9 @@ public final class MockFieldValue extends TDefaultInterfaceTemporalAccessor {
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (this.field.equals(field)) {
-            return value;
+            return this.value;
         }
         throw new TDateTimeException("Unsupported field: " + field);
     }

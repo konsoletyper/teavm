@@ -40,11 +40,10 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_DAY;
 import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_MINUTE;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 
-import java.io.Serializable;
 import java.util.Objects;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -56,10 +55,8 @@ import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
-import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TLocalTime extends TDefaultInterfaceTemporalAccessor
-        implements TTemporal, TTemporalAdjuster, Comparable<TLocalTime>, Serializable {
+public final class TLocalTime implements TTemporal, TTemporalAdjuster, Comparable<TLocalTime>, TSerializable {
 
     public static final TLocalTime MIN;
 
@@ -263,18 +260,12 @@ public final class TLocalTime extends TDefaultInterfaceTemporalAccessor
     }
 
     @Override
-    public TValueRange range(TTemporalField field) {
-
-        return super.range(field);
-    }
-
-    @Override
     public int get(TTemporalField field) {
 
         if (field instanceof TChronoField) {
             return get0(field);
         }
-        return super.get(field);
+        return TTemporal.super.get(field);
     }
 
     @Override
