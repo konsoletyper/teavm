@@ -46,8 +46,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> extends TChronoLocalDateTime<D>
-        implements TTemporal, TTemporalAdjuster, TSerializable {
+final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> implements TChronoLocalDateTime<D>, TSerializable {
 
     private static final int HOURS_PER_DAY = 24;
 
@@ -311,6 +310,30 @@ final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> extends TChrono
             return this.date.until(endDate, unit);
         }
         return unit.between(this, end);
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof TChronoLocalDateTime) {
+            return compareTo((TChronoLocalDateTime<?>) obj) == 0;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+
+        return toLocalDate().hashCode() ^ toLocalTime().hashCode();
+    }
+
+    @Override
+    public String toString() {
+
+        return toLocalDate().toString() + 'T' + toLocalTime().toString();
     }
 
 }

@@ -41,9 +41,9 @@ import static org.teavm.classlib.java.time.TLocalTime.NANOS_PER_MINUTE;
 import static org.teavm.classlib.java.time.TLocalTime.NANOS_PER_SECOND;
 import static org.teavm.classlib.java.time.TLocalTime.SECONDS_PER_DAY;
 
-import java.io.Serializable;
 import java.util.Objects;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.chrono.TChronoLocalDateTime;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.temporal.TChronoField;
@@ -60,8 +60,8 @@ import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 import org.teavm.classlib.java.time.zone.TZoneRules;
 
-public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
-        implements TTemporal, TTemporalAdjuster, Serializable {
+public final class TLocalDateTime
+        implements TChronoLocalDateTime<TLocalDate>, TTemporal, TTemporalAdjuster, TSerializable {
 
     public static final TLocalDateTime MIN = TLocalDateTime.of(TLocalDate.MIN, TLocalTime.MIN);
 
@@ -243,7 +243,7 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
         if (field instanceof TChronoField) {
             return (field.isTimeBased() ? this.time.get(field) : this.date.get(field));
         }
-        return super.get(field);
+        return TChronoLocalDateTime.super.get(field);
     }
 
     @Override
@@ -542,13 +542,13 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
         if (query == TTemporalQueries.localDate()) {
             return (R) toLocalDate();
         }
-        return super.query(query);
+        return TChronoLocalDateTime.super.query(query);
     }
 
     @Override
     public TTemporal adjustInto(TTemporal temporal) {
 
-        return super.adjustInto(temporal);
+        return TChronoLocalDateTime.super.adjustInto(temporal);
     }
 
     @Override
@@ -633,7 +633,7 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
         if (other instanceof TLocalDateTime) {
             return compareTo0((TLocalDateTime) other);
         }
-        return super.compareTo(other);
+        return TChronoLocalDateTime.super.compareTo(other);
     }
 
     private int compareTo0(TLocalDateTime other) {
@@ -651,7 +651,7 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
         if (other instanceof TLocalDateTime) {
             return compareTo0((TLocalDateTime) other) > 0;
         }
-        return super.isAfter(other);
+        return TChronoLocalDateTime.super.isAfter(other);
     }
 
     @Override
@@ -660,7 +660,7 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
         if (other instanceof TLocalDateTime) {
             return compareTo0((TLocalDateTime) other) < 0;
         }
-        return super.isBefore(other);
+        return TChronoLocalDateTime.super.isBefore(other);
     }
 
     @Override
@@ -669,7 +669,7 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
         if (other instanceof TLocalDateTime) {
             return compareTo0((TLocalDateTime) other) == 0;
         }
-        return super.isEqual(other);
+        return TChronoLocalDateTime.super.isEqual(other);
     }
 
     @Override
@@ -700,7 +700,7 @@ public final class TLocalDateTime extends TChronoLocalDateTime<TLocalDate>
     @Override
     public String format(TDateTimeFormatter formatter) {
 
-        return super.format(formatter);
+        return TChronoLocalDateTime.super.format(formatter);
     }
 
 }
