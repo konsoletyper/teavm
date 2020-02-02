@@ -69,7 +69,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class THijrahChronology extends TChronology implements Serializable {
+public final class THijrahChronology extends TAbstractChronology implements Serializable {
 
     public static final THijrahChronology INSTANCE = new THijrahChronology();
 

@@ -71,7 +71,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 import org.teavm.classlib.java.util.TCalendar;
 
-public final class TJapaneseChronology extends TChronology implements TSerializable {
+public final class TJapaneseChronology extends TAbstractChronology implements TSerializable {
 
     // TLocale for creating a JapaneseImpericalCalendar.
     static final Locale LOCALE = new Locale("ja", "JP", "JP");

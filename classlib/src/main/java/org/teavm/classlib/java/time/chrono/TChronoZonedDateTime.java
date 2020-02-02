@@ -164,7 +164,7 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
     @Override
     public TChronoZonedDateTime<D> with(TTemporalAdjuster adjuster) {
 
-        return toLocalDate().getChronology().ensureChronoZonedDateTime(TTemporal.super.with(adjuster));
+        return ((TAbstractChronology) getChronology()).ensureChronoZonedDateTime(TTemporal.super.with(adjuster));
     }
 
     @Override
@@ -173,7 +173,7 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
     @Override
     public TChronoZonedDateTime<D> plus(TTemporalAmount amount) {
 
-        return toLocalDate().getChronology().ensureChronoZonedDateTime(TTemporal.super.plus(amount));
+        return ((TAbstractChronology) getChronology()).ensureChronoZonedDateTime(TTemporal.super.plus(amount));
     }
 
     @Override
@@ -182,13 +182,14 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
     @Override
     public TChronoZonedDateTime<D> minus(TTemporalAmount amount) {
 
-        return toLocalDate().getChronology().ensureChronoZonedDateTime(TTemporal.super.minus(amount));
+        return ((TAbstractChronology) getChronology()).ensureChronoZonedDateTime(TTemporal.super.minus(amount));
     }
 
     @Override
     public TChronoZonedDateTime<D> minus(long amountToSubtract, TTemporalUnit unit) {
 
-        return toLocalDate().getChronology().ensureChronoZonedDateTime(TTemporal.super.minus(amountToSubtract, unit));
+        return ((TAbstractChronology) getChronology())
+                .ensureChronoZonedDateTime(TTemporal.super.minus(amountToSubtract, unit));
     }
 
     @SuppressWarnings("unchecked")

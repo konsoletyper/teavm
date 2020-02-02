@@ -198,7 +198,7 @@ final class ChronoZonedDateTimeImpl<D extends TChronoLocalDate> extends TChronoZ
             }
             return ofBest(this.dateTime.with(field, newValue), this.zone, this.offset);
         }
-        return toLocalDate().getChronology().ensureChronoZonedDateTime(field.adjustInto(this, newValue));
+        return ((TAbstractChronology) getChronology()).ensureChronoZonedDateTime(field.adjustInto(this, newValue));
     }
 
     @Override
@@ -207,7 +207,7 @@ final class ChronoZonedDateTimeImpl<D extends TChronoLocalDate> extends TChronoZ
         if (unit instanceof TChronoUnit) {
             return with(this.dateTime.plus(amountToAdd, unit));
         }
-        return toLocalDate().getChronology().ensureChronoZonedDateTime(unit.addTo(this, amountToAdd));
+        return ((TAbstractChronology) getChronology()).ensureChronoZonedDateTime(unit.addTo(this, amountToAdd));
     }
 
     @Override

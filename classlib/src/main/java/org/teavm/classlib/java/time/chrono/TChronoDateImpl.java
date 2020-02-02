@@ -74,7 +74,8 @@ abstract class ChronoDateImpl<D extends TChronoLocalDate> extends TChronoLocalDa
             }
             throw new TDateTimeException(unit + " not valid for chronology " + getChronology().getId());
         }
-        return (ChronoDateImpl<D>) getChronology().ensureChronoLocalDate(unit.addTo(this, amountToAdd));
+        return (ChronoDateImpl<D>) ((TAbstractChronology) getChronology())
+                .ensureChronoLocalDate(unit.addTo(this, amountToAdd));
     }
 
     abstract ChronoDateImpl<D> plusYears(long yearsToAdd);

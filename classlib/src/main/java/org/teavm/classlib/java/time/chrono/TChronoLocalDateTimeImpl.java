@@ -96,8 +96,8 @@ final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> extends TChrono
             return this;
         }
         // Validate that the new DateTime is a TChronoLocalDate (and not something else)
-        D cd = this.date.getChronology().ensureChronoLocalDate(newDate);
-        return new TChronoLocalDateTimeImpl<D>(cd, newTime);
+        D cd = ((TAbstractChronology) this.date.getChronology()).ensureChronoLocalDate(newDate);
+        return new TChronoLocalDateTimeImpl<>(cd, newTime);
     }
 
     @Override
@@ -166,9 +166,10 @@ final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> extends TChrono
         } else if (adjuster instanceof TLocalTime) {
             return with(this.date, (TLocalTime) adjuster);
         } else if (adjuster instanceof TChronoLocalDateTimeImpl) {
-            return this.date.getChronology().ensureChronoLocalDateTime((TChronoLocalDateTimeImpl<?>) adjuster);
+            return ((TAbstractChronology) this.date.getChronology())
+                    .ensureChronoLocalDateTime((TChronoLocalDateTimeImpl<?>) adjuster);
         }
-        return this.date.getChronology()
+        return ((TAbstractChronology) this.date.getChronology())
                 .ensureChronoLocalDateTime((TChronoLocalDateTimeImpl<?>) adjuster.adjustInto(this));
     }
 
@@ -182,7 +183,8 @@ final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> extends TChrono
                 return with(this.date.with(field, newValue), this.time);
             }
         }
-        return this.date.getChronology().ensureChronoLocalDateTime(field.adjustInto(this, newValue));
+        return ((TAbstractChronology) this.date.getChronology())
+                .ensureChronoLocalDateTime(field.adjustInto(this, newValue));
     }
 
     @Override
@@ -209,7 +211,8 @@ final class TChronoLocalDateTimeImpl<D extends TChronoLocalDate> extends TChrono
             }
             return with(this.date.plus(amountToAdd, unit), this.time);
         }
-        return this.date.getChronology().ensureChronoLocalDateTime(unit.addTo(this, amountToAdd));
+        return ((TAbstractChronology) this.date.getChronology())
+                .ensureChronoLocalDateTime(unit.addTo(this, amountToAdd));
     }
 
     private TChronoLocalDateTimeImpl<D> plusDays(long days) {

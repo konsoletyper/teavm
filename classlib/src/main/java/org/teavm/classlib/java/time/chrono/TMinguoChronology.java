@@ -67,7 +67,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TMinguoChronology extends TChronology implements TSerializable {
+public final class TMinguoChronology extends TAbstractChronology implements TSerializable {
 
     public static final TMinguoChronology INSTANCE = new TMinguoChronology();
 

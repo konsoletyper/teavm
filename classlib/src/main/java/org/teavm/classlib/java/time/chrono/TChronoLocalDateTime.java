@@ -99,7 +99,7 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate>
     @Override
     public TChronoLocalDateTime<D> with(TTemporalAdjuster adjuster) {
 
-        return toLocalDate().getChronology().ensureChronoLocalDateTime(TTemporal.super.with(adjuster));
+        return ((TAbstractChronology) getChronology()).ensureChronoLocalDateTime(TTemporal.super.with(adjuster));
     }
 
     @Override
@@ -108,7 +108,7 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate>
     @Override
     public TChronoLocalDateTime<D> plus(TTemporalAmount amount) {
 
-        return toLocalDate().getChronology().ensureChronoLocalDateTime(TTemporal.super.plus(amount));
+        return ((TAbstractChronology) getChronology()).ensureChronoLocalDateTime(TTemporal.super.plus(amount));
     }
 
     @Override
@@ -117,13 +117,14 @@ public abstract class TChronoLocalDateTime<D extends TChronoLocalDate>
     @Override
     public TChronoLocalDateTime<D> minus(TTemporalAmount amount) {
 
-        return toLocalDate().getChronology().ensureChronoLocalDateTime(TTemporal.super.minus(amount));
+        return ((TAbstractChronology) getChronology()).ensureChronoLocalDateTime(TTemporal.super.minus(amount));
     }
 
     @Override
     public TChronoLocalDateTime<D> minus(long amountToSubtract, TTemporalUnit unit) {
 
-        return toLocalDate().getChronology().ensureChronoLocalDateTime(TTemporal.super.minus(amountToSubtract, unit));
+        return ((TAbstractChronology) getChronology())
+                .ensureChronoLocalDateTime(TTemporal.super.minus(amountToSubtract, unit));
     }
 
     @SuppressWarnings("unchecked")
