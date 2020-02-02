@@ -36,75 +36,93 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.SettingsParser;
 
-@Test
 public class TestSettingsParser extends AbstractTestPrinterParser {
 
-    //-----------------------------------------------------------------------
-    public void test_print_sensitive() throws Exception {
+    @Test
+    public void test_print_sensitive() {
+
         SettingsParser pp = SettingsParser.SENSITIVE;
         StringBuilder buf = new StringBuilder();
-        pp.print(printContext, buf);
+        pp.print(this.printContext, buf);
         assertEquals(buf.toString(), "");
     }
 
-    public void test_print_strict() throws Exception {
+    @Test
+    public void test_print_strict() {
+
         SettingsParser pp = SettingsParser.STRICT;
         StringBuilder buf = new StringBuilder();
-        pp.print(printContext, buf);
+        pp.print(this.printContext, buf);
         assertEquals(buf.toString(), "");
     }
 
-    public void test_print_nulls() throws Exception {
+    @Test
+    public void test_print_nulls() {
+
         SettingsParser pp = SettingsParser.SENSITIVE;
         pp.print(null, null);
     }
 
-    //-----------------------------------------------------------------------
-    public void test_parse_changeStyle_sensitive() throws Exception {
+    @Test
+    public void test_parse_changeStyle_sensitive() {
+
         SettingsParser pp = SettingsParser.SENSITIVE;
-        int result = pp.parse(parseContext, "a", 0);
+        int result = pp.parse(this.parseContext, "a", 0);
         assertEquals(result, 0);
-        assertEquals(parseContext.isCaseSensitive(), true);
+        assertEquals(this.parseContext.isCaseSensitive(), true);
     }
 
-    public void test_parse_changeStyle_insensitive() throws Exception {
+    @Test
+    public void test_parse_changeStyle_insensitive() {
+
         SettingsParser pp = SettingsParser.INSENSITIVE;
-        int result = pp.parse(parseContext, "a", 0);
+        int result = pp.parse(this.parseContext, "a", 0);
         assertEquals(result, 0);
-        assertEquals(parseContext.isCaseSensitive(), false);
+        assertEquals(this.parseContext.isCaseSensitive(), false);
     }
 
-    public void test_parse_changeStyle_strict() throws Exception {
+    @Test
+    public void test_parse_changeStyle_strict() {
+
         SettingsParser pp = SettingsParser.STRICT;
-        int result = pp.parse(parseContext, "a", 0);
+        int result = pp.parse(this.parseContext, "a", 0);
         assertEquals(result, 0);
-        assertEquals(parseContext.isStrict(), true);
+        assertEquals(this.parseContext.isStrict(), true);
     }
 
-    public void test_parse_changeStyle_lenient() throws Exception {
+    @Test
+    public void test_parse_changeStyle_lenient() {
+
         SettingsParser pp = SettingsParser.LENIENT;
-        int result = pp.parse(parseContext, "a", 0);
+        int result = pp.parse(this.parseContext, "a", 0);
         assertEquals(result, 0);
-        assertEquals(parseContext.isStrict(), false);
+        assertEquals(this.parseContext.isStrict(), false);
     }
 
-    //-----------------------------------------------------------------------
-    public void test_toString_sensitive() throws Exception {
+    @Test
+    public void test_toString_sensitive() {
+
         SettingsParser pp = SettingsParser.SENSITIVE;
         assertEquals(pp.toString(), "ParseCaseSensitive(true)");
     }
 
-    public void test_toString_insensitive() throws Exception {
+    @Test
+    public void test_toString_insensitive() {
+
         SettingsParser pp = SettingsParser.INSENSITIVE;
         assertEquals(pp.toString(), "ParseCaseSensitive(false)");
     }
 
-    public void test_toString_strict() throws Exception {
+    @Test
+    public void test_toString_strict() {
+
         SettingsParser pp = SettingsParser.STRICT;
         assertEquals(pp.toString(), "ParseStrict(true)");
     }
 
-    public void test_toString_lenient() throws Exception {
+    @Test
+    public void test_toString_lenient() {
+
         SettingsParser pp = SettingsParser.LENIENT;
         assertEquals(pp.toString(), "ParseStrict(false)");
     }

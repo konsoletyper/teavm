@@ -36,37 +36,44 @@ import static org.junit.Assert.assertEquals;
 import org.junit.Test;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.StringLiteralPrinterParser;
 
-@Test
 public class TestStringLiteralPrinter extends AbstractTestPrinterParser {
 
-    //-----------------------------------------------------------------------
-    public void test_print_emptyCalendrical() throws Exception {
-        buf.append("EXISTING");
+    @Test
+    public void test_print_emptyCalendrical() {
+
+        this.buf.append("EXISTING");
         StringLiteralPrinterParser pp = new StringLiteralPrinterParser("hello");
-        pp.print(printEmptyContext, buf);
-        assertEquals(buf.toString(), "EXISTINGhello");
+        pp.print(this.printEmptyContext, this.buf);
+        assertEquals(this.buf.toString(), "EXISTINGhello");
     }
 
-    public void test_print_dateTime() throws Exception {
-        buf.append("EXISTING");
+    @Test
+    public void test_print_dateTime() {
+
+        this.buf.append("EXISTING");
         StringLiteralPrinterParser pp = new StringLiteralPrinterParser("hello");
-        pp.print(printContext, buf);
-        assertEquals(buf.toString(), "EXISTINGhello");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "EXISTINGhello");
     }
 
-    public void test_print_emptyAppendable() throws Exception {
+    @Test
+    public void test_print_emptyAppendable() {
+
         StringLiteralPrinterParser pp = new StringLiteralPrinterParser("hello");
-        pp.print(printContext, buf);
-        assertEquals(buf.toString(), "hello");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "hello");
     }
 
-    //-----------------------------------------------------------------------
-    public void test_toString() throws Exception {
+    @Test
+    public void test_toString() {
+
         StringLiteralPrinterParser pp = new StringLiteralPrinterParser("hello");
         assertEquals(pp.toString(), "'hello'");
     }
 
-    public void test_toString_apos() throws Exception {
+    @Test
+    public void test_toString_apos() {
+
         StringLiteralPrinterParser pp = new StringLiteralPrinterParser("o'clock");
         assertEquals(pp.toString(), "'o''clock'");
     }

@@ -41,8 +41,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalAmount;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 
-public abstract class TChronoPeriod
-        implements TTemporalAmount {
+public abstract class TChronoPeriod implements TTemporalAmount {
 
     public static TChronoPeriod between(TChronoLocalDate startDateInclusive, TChronoLocalDate endDateExclusive) {
         TJdk8Methods.requireNonNull(startDateInclusive, "startDateInclusive");
@@ -50,7 +49,6 @@ public abstract class TChronoPeriod
         return startDateInclusive.until(endDateExclusive);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public abstract long get(TTemporalUnit unit);
 
@@ -59,7 +57,6 @@ public abstract class TChronoPeriod
 
     public abstract TChronology getChronology();
 
-    //-----------------------------------------------------------------------
     public boolean isZero() {
         for (TTemporalUnit unit : getUnits()) {
             if (get(unit) != 0) {
@@ -78,36 +75,30 @@ public abstract class TChronoPeriod
         return false;
     }
 
-    //-----------------------------------------------------------------------
     public abstract TChronoPeriod plus(TTemporalAmount amountToAdd);
 
     public abstract TChronoPeriod minus(TTemporalAmount amountToSubtract);
 
-    //-----------------------------------------------------------------------
     public abstract TChronoPeriod multipliedBy(int scalar);
 
     public TChronoPeriod negated() {
         return multipliedBy(-1);
     }
 
-    //-----------------------------------------------------------------------
     public abstract TChronoPeriod normalized();
 
-    //-------------------------------------------------------------------------
     @Override
     public abstract TTemporal addTo(TTemporal temporal);
 
     @Override
     public abstract TTemporal subtractFrom(TTemporal temporal);
 
-    //-----------------------------------------------------------------------
     @Override
     public abstract boolean equals(Object obj);
 
     @Override
     public abstract int hashCode();
 
-    //-----------------------------------------------------------------------
     @Override
     public abstract String toString();
 

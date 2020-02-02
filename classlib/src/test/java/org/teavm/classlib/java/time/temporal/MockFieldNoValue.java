@@ -34,11 +34,11 @@ package org.teavm.classlib.java.time.temporal;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
 
-import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.format.TResolverStyle;
+import org.teavm.classlib.java.util.TLocale;
 
 public enum MockFieldNoValue implements TTemporalField {
 
@@ -46,64 +46,74 @@ public enum MockFieldNoValue implements TTemporalField {
 
     @Override
     public String toString() {
+
         return null;
     }
 
     @Override
     public TTemporalUnit getBaseUnit() {
+
         return WEEKS;
     }
 
     @Override
     public TTemporalUnit getRangeUnit() {
+
         return MONTHS;
     }
 
     @Override
     public TValueRange range() {
+
         return TValueRange.of(1, 20);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isDateBased() {
+
         return true;
     }
 
     @Override
     public boolean isTimeBased() {
+
         return false;
     }
 
     @Override
     public boolean isSupportedBy(TTemporalAccessor dateTime) {
+
         return true;
     }
 
     @Override
     public TValueRange rangeRefinedBy(TTemporalAccessor dateTime) {
+
         return TValueRange.of(1, 20);
     }
 
     @Override
     public long getFrom(TTemporalAccessor dateTime) {
+
         throw new TDateTimeException("Mock");
     }
 
     @Override
     public <R extends TTemporal> R adjustInto(R dateTime, long newValue) {
+
         throw new TDateTimeException("Mock");
     }
 
     @Override
     public String getDisplayName(TLocale locale) {
+
         return "Mock";
     }
 
-    //-----------------------------------------------------------------------
     @Override
-    public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues,
-                    TTemporalAccessor partialTemporal, TResolverStyle resolverStyle) {
+    public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues, TTemporalAccessor partialTemporal,
+            TResolverStyle resolverStyle) {
+
         return null;
     }
 

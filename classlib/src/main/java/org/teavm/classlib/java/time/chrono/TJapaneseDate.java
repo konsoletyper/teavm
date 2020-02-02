@@ -31,17 +31,11 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
-import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
-import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
-import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
-
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.IOException;
 import java.io.ObjectInputStream;
-import java.io.Serializable;
-import org.teavm.classlib.java.util.TCalendar;
+import java.util.Calendar;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TClock;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
@@ -54,36 +48,38 @@ import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
 import org.teavm.classlib.java.time.temporal.TTemporalAmount;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
-import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
+import org.teavm.classlib.java.util.TCalendar;
 
-public final class TJapaneseDate
-        extends ChronoDateImpl<TJapaneseDate>
-        implements Serializable {
+public final class TJapaneseDate extends ChronoDateImpl<TJapaneseDate> implements TSerializable {
 
-    private static final long serialVersionUID = -305327627230580483L;
     static final TLocalDate MIN_DATE = TLocalDate.of(1873, 1, 1);
 
     private final TLocalDate isoDate;
+
     private transient TJapaneseEra era;
+
     private transient int yearOfEra;
 
-    //-----------------------------------------------------------------------
     public static TJapaneseDate now() {
+
         return now(TClock.systemDefaultZone());
     }
 
     public static TJapaneseDate now(TZoneId zone) {
+
         return now(TClock.system(zone));
     }
 
     public static TJapaneseDate now(TClock clock) {
+
         return new TJapaneseDate(TLocalDate.now(clock));
     }
 
     public static TJapaneseDate of(TJapaneseEra era, int yearOfEra, int month, int dayOfMonth) {
+
         TJdk8Methods.requireNonNull(era, "era");
         if (yearOfEra < 1) {
             throw new TDateTimeException("Invalid YearOfEra: " + yearOfEra);
@@ -99,6 +95,7 @@ public final class TJapaneseDate
     }
 
     static TJapaneseDate ofYearDay(TJapaneseEra era, int yearOfEra, int dayOfYear) {
+
         TJdk8Methods.requireNonNull(era, "era");
         if (yearOfEra < 1) {
             throw new TDateTimeException("Invalid YearOfEra: " + yearOfEra);
@@ -120,15 +117,17 @@ public final class TJapaneseDate
     }
 
     public static TJapaneseDate of(int prolepticYear, int month, int dayOfMonth) {
+
         return new TJapaneseDate(TLocalDate.of(prolepticYear, month, dayOfMonth));
     }
 
     public static TJapaneseDate from(TTemporalAccessor temporal) {
+
         return TJapaneseChronology.INSTANCE.date(temporal);
     }
 
-    //-----------------------------------------------------------------------
     TJapaneseDate(TLocalDate isoDate) {
+
         if (isoDate.isBefore(MIN_DATE)) {
             throw new TDateTimeException("Minimum supported date is January 1st Meiji 6");
         }
@@ -139,6 +138,7 @@ public final class TJapaneseDate
     }
 
     TJapaneseDate(TJapaneseEra era, int year, TLocalDate isoDate) {
+
         if (isoDate.isBefore(MIN_DATE)) {
             throw new TDateTimeException("Minimum supported date is January 1st Meiji 6");
         }
@@ -148,43 +148,45 @@ public final class TJapaneseDate
     }
 
     private void readObject(ObjectInputStream stream) throws IOException, ClassNotFoundException {
+
         stream.defaultReadObject();
-        this.era = TJapaneseEra.from(isoDate);
+        this.era = TJapaneseEra.from(this.isoDate);
         int yearOffset = this.era.startDate().getYear() - 1;
-        this.yearOfEra = isoDate.getYear() - yearOffset;
+        this.yearOfEra = this.isoDate.getYear() - yearOffset;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TJapaneseChronology getChronology() {
+
         return TJapaneseChronology.INSTANCE;
     }
 
     @Override
     public TJapaneseEra getEra() {
-        return era;
+
+        return this.era;
     }
 
     @Override
     public int lengthOfMonth() {
-        return isoDate.lengthOfMonth();
+
+        return this.isoDate.lengthOfMonth();
     }
 
     @Override
     public int lengthOfYear() {
-        TCalendar jcal = TCalendar.getInstance(TJapaneseChronology.LOCALE);
-        jcal.set(TCalendar.ERA, era.getValue() + TJapaneseEra.ERA_OFFSET);
-        jcal.set(yearOfEra, isoDate.getMonthValue() - 1, isoDate.getDayOfMonth());
-        return  jcal.getActualMaximum(TCalendar.DAY_OF_YEAR);
+
+        Calendar jcal = Calendar.getInstance(TJapaneseChronology.LOCALE);
+        jcal.set(Calendar.ERA, this.era.getValue() + TJapaneseEra.ERA_OFFSET);
+        jcal.set(this.yearOfEra, this.isoDate.getMonthValue() - 1, this.isoDate.getDayOfMonth());
+        return jcal.getActualMaximum(TCalendar.DAY_OF_YEAR);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isSupported(TTemporalField field) {
-        if (field == TChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH ||
-                field == TChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR ||
-                field == TChronoField.ALIGNED_WEEK_OF_MONTH ||
-                field == TChronoField.ALIGNED_WEEK_OF_YEAR) {
+
+        if (field == TChronoField.ALIGNED_DAY_OF_WEEK_IN_MONTH || field == TChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR
+                || field == TChronoField.ALIGNED_WEEK_OF_MONTH || field == TChronoField.ALIGNED_WEEK_OF_YEAR) {
             return false;
         }
         return super.isSupported(field);
@@ -192,6 +194,7 @@ public final class TJapaneseDate
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             if (isSupported(field)) {
                 TChronoField f = (TChronoField) field;
@@ -209,15 +212,16 @@ public final class TJapaneseDate
     }
 
     private TValueRange actualRange(int calendarField) {
-        TCalendar jcal = TCalendar.getInstance(TJapaneseChronology.LOCALE);
-        jcal.set(TCalendar.ERA, era.getValue() + TJapaneseEra.ERA_OFFSET);
-        jcal.set(yearOfEra, isoDate.getMonthValue() - 1, isoDate.getDayOfMonth());
-        return TValueRange.of(jcal.getActualMinimum(calendarField),
-                                     jcal.getActualMaximum(calendarField));
+
+        Calendar jcal = Calendar.getInstance(TJapaneseChronology.LOCALE);
+        jcal.set(TCalendar.ERA, this.era.getValue() + TJapaneseEra.ERA_OFFSET);
+        jcal.set(this.yearOfEra, this.isoDate.getMonthValue() - 1, this.isoDate.getDayOfMonth());
+        return TValueRange.of(jcal.getActualMinimum(calendarField), jcal.getActualMaximum(calendarField));
     }
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             switch ((TChronoField) field) {
                 case ALIGNED_DAY_OF_WEEK_IN_MONTH:
@@ -226,35 +230,37 @@ public final class TJapaneseDate
                 case ALIGNED_WEEK_OF_YEAR:
                     throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
                 case YEAR_OF_ERA:
-                    return yearOfEra;
+                    return this.yearOfEra;
                 case ERA:
-                    return era.getValue();
+                    return this.era.getValue();
                 case DAY_OF_YEAR:
                     return getDayOfYear();
             }
-            return isoDate.getLong(field);
+            return this.isoDate.getLong(field);
         }
         return field.getFrom(this);
     }
 
     private long getDayOfYear() {
-        if (yearOfEra == 1) {
-            return isoDate.getDayOfYear() - era.startDate().getDayOfYear() + 1;
+
+        if (this.yearOfEra == 1) {
+            return this.isoDate.getDayOfYear() - this.era.startDate().getDayOfYear() + 1;
         }
-        return isoDate.getDayOfYear();
+        return this.isoDate.getDayOfYear();
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TJapaneseDate with(TTemporalAdjuster adjuster) {
+
         return (TJapaneseDate) super.with(adjuster);
     }
 
     @Override
     public TJapaneseDate with(TTemporalField field, long newValue) {
+
         if (field instanceof TChronoField) {
             TChronoField f = (TChronoField) field;
-            if (getLong(f) == newValue) {  // validates unsupported fields
+            if (getLong(f) == newValue) { // validates unsupported fields
                 return this;
             }
             switch (f) {
@@ -264,90 +270,101 @@ public final class TJapaneseDate
                     int nvalue = getChronology().range(f).checkValidIntValue(newValue, f);
                     switch (f) {
                         case DAY_OF_YEAR:
-                            return with(isoDate.plusDays(nvalue - getDayOfYear()));
+                            return with(this.isoDate.plusDays(nvalue - getDayOfYear()));
                         case YEAR_OF_ERA:
                             return this.withYear(nvalue);
                         case ERA: {
-                            return this.withYear(TJapaneseEra.of(nvalue), yearOfEra);
+                            return this.withYear(TJapaneseEra.of(nvalue), this.yearOfEra);
                         }
                     }
                 }
             }
-            return with(isoDate.with(field, newValue));
+            return with(this.isoDate.with(field, newValue));
         }
         return field.adjustInto(this, newValue);
     }
 
     @Override
     public TJapaneseDate plus(TTemporalAmount amount) {
+
         return (TJapaneseDate) super.plus(amount);
     }
 
     @Override
     public TJapaneseDate plus(long amountToAdd, TTemporalUnit unit) {
+
         return (TJapaneseDate) super.plus(amountToAdd, unit);
     }
 
     @Override
     public TJapaneseDate minus(TTemporalAmount amount) {
+
         return (TJapaneseDate) super.minus(amount);
     }
 
     @Override
     public TJapaneseDate minus(long amountToAdd, TTemporalUnit unit) {
+
         return (TJapaneseDate) super.minus(amountToAdd, unit);
     }
 
-    //-----------------------------------------------------------------------
     private TJapaneseDate withYear(TJapaneseEra era, int yearOfEra) {
+
         int year = TJapaneseChronology.INSTANCE.prolepticYear(era, yearOfEra);
-        return with(isoDate.withYear(year));
+        return with(this.isoDate.withYear(year));
     }
 
     private TJapaneseDate withYear(int year) {
+
         return withYear(getEra(), year);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     TJapaneseDate plusYears(long years) {
-        return with(isoDate.plusYears(years));
+
+        return with(this.isoDate.plusYears(years));
     }
 
     @Override
     TJapaneseDate plusMonths(long months) {
-        return with(isoDate.plusMonths(months));
+
+        return with(this.isoDate.plusMonths(months));
     }
 
     @Override
     TJapaneseDate plusDays(long days) {
-        return with(isoDate.plusDays(days));
+
+        return with(this.isoDate.plusDays(days));
     }
 
     private TJapaneseDate with(TLocalDate newDate) {
-        return (newDate.equals(isoDate) ? this : new TJapaneseDate(newDate));
+
+        return (newDate.equals(this.isoDate) ? this : new TJapaneseDate(newDate));
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public final TChronoLocalDateTime<TJapaneseDate> atTime(TLocalTime localTime) {
-        return (TChronoLocalDateTime<TJapaneseDate>)super.atTime(localTime);
+
+        return (TChronoLocalDateTime<TJapaneseDate>) super.atTime(localTime);
     }
 
     @Override
     public TChronoPeriod until(TChronoLocalDate endDate) {
-        TPeriod period = isoDate.until(endDate);
+
+        TPeriod period = this.isoDate.until(endDate);
         return getChronology().period(period.getYears(), period.getMonths(), period.getDays());
     }
 
-    @Override  // override for performance
+    @Override
     public long toEpochDay() {
-        return isoDate.toEpochDay();
+
+        return this.isoDate.toEpochDay();
     }
 
-    //-------------------------------------------------------------------------
-    @Override  // override for performance
+    @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
             return true;
         }
@@ -358,29 +375,10 @@ public final class TJapaneseDate
         return false;
     }
 
-    @Override  // override for performance
+    @Override
     public int hashCode() {
-        return getChronology().getId().hashCode() ^ isoDate.hashCode();
-    }
 
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.JAPANESE_DATE_TYPE, this);
+        return getChronology().getId().hashCode() ^ this.isoDate.hashCode();
     }
-
-    void writeExternal(DataOutput out) throws IOException {
-        // JapaneseChrono is implicit in the JAPANESE_DATE_TYPE
-        out.writeInt(get(YEAR));
-        out.writeByte(get(MONTH_OF_YEAR));
-        out.writeByte(get(DAY_OF_MONTH));
-    }
-
-    static TChronoLocalDate readExternal(DataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-        return TJapaneseChronology.INSTANCE.date(year, month, dayOfMonth);
-    }
-
 
 }

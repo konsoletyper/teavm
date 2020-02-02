@@ -35,19 +35,13 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_DAY_OF_
 import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_DAY_OF_WEEK_IN_YEAR;
 import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_WEEK_OF_MONTH;
 import static org.teavm.classlib.java.time.temporal.TChronoField.ALIGNED_WEEK_OF_YEAR;
-import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
-import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
-import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 
 import java.io.BufferedReader;
-import java.io.DataInput;
-import java.io.DataOutput;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.Serializable;
 import java.text.ParseException;
 import java.util.HashMap;
 import java.util.StringTokenizer;
@@ -66,115 +60,74 @@ import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
 import org.teavm.classlib.java.time.temporal.TTemporalAmount;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
-import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class THijrahDate
-        extends ChronoDateImpl<THijrahDate>
-        implements Serializable {
+public final class THijrahDate extends ChronoDateImpl<THijrahDate> {
     // this class is package-scoped so that future conversion to public
     // would not change serialization
 
     private static final long serialVersionUID = -5207853542612002020L;
 
     public static final int MIN_VALUE_OF_ERA = 1;
+
     public static final int MAX_VALUE_OF_ERA = 9999;
-    private static final int NUM_DAYS[] =
-        {0, 30, 59, 89, 118, 148, 177, 207, 236, 266, 295, 325};
-    private static final int LEAP_NUM_DAYS[] =
-        {0, 30, 59, 89, 118, 148, 177, 207, 236, 266, 295, 325};
-    private static final int MONTH_LENGTH[] =
-        {30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29};
-    private static final int LEAP_MONTH_LENGTH[] =
-        {30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 30};
 
-    private static final int MIN_VALUES[] =
-        {
-        0,
-        MIN_VALUE_OF_ERA,
-        0,
-        1,
-        0,
-        1,
-        1
-        };
+    private static final int NUM_DAYS[] = { 0, 30, 59, 89, 118, 148, 177, 207, 236, 266, 295, 325 };
 
-    private static final int LEAST_MAX_VALUES[] =
-        {
-        1,
-        MAX_VALUE_OF_ERA,
-        11,
-        51,
-        5,
-        29,
-        354
-        };
+    private static final int LEAP_NUM_DAYS[] = { 0, 30, 59, 89, 118, 148, 177, 207, 236, 266, 295, 325 };
 
-    private static final int MAX_VALUES[] =
-        {
-        1,
-        MAX_VALUE_OF_ERA,
-        11,
-        52,
-        6,
-        30,
-        355
-        };
+    private static final int MONTH_LENGTH[] = { 30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 29 };
+
+    private static final int LEAP_MONTH_LENGTH[] = { 30, 29, 30, 29, 30, 29, 30, 29, 30, 29, 30, 30 };
+
+    private static final int MIN_VALUES[] = { 0, MIN_VALUE_OF_ERA, 0, 1, 0, 1, 1 };
+
+    private static final int LEAST_MAX_VALUES[] = { 1, MAX_VALUE_OF_ERA, 11, 51, 5, 29, 354 };
+
+    private static final int MAX_VALUES[] = { 1, MAX_VALUE_OF_ERA, 11, 52, 6, 30, 355 };
 
     private static final int POSITION_DAY_OF_MONTH = 5;
+
     private static final int POSITION_DAY_OF_YEAR = 6;
-    private static final int CYCLEYEAR_START_DATE[] =
-        {
-        0,
-        354,
-        709,
-        1063,
-        1417,
-        1772,
-        2126,
-        2481,
-        2835,
-        3189,
-        3544,
-        3898,
-        4252,
-        4607,
-        4961,
-        5315,
-        5670,
-        6024,
-        6379,
-        6733,
-        7087,
-        7442,
-        7796,
-        8150,
-        8505,
-        8859,
-        9214,
-        9568,
-        9922,
-        10277
-        };
+
+    private static final int CYCLEYEAR_START_DATE[] = { 0, 354, 709, 1063, 1417, 1772, 2126, 2481, 2835, 3189, 3544,
+    3898, 4252, 4607, 4961, 5315, 5670, 6024, 6379, 6733, 7087, 7442, 7796, 8150, 8505, 8859, 9214, 9568, 9922, 10277 };
 
     private static final char FILE_SEP = File.separatorChar;
+
     private static final String PATH_SEP = File.pathSeparator;
+
     private static final String DEFAULT_CONFIG_FILENAME = "hijrah_deviation.cfg";
-    private static final String DEFAULT_CONFIG_PATH = "org" + FILE_SEP + "threeten" + FILE_SEP + "bp" + FILE_SEP + "chrono";
+
+    private static final String DEFAULT_CONFIG_PATH = "org" + FILE_SEP + "threeten" + FILE_SEP + "bp" + FILE_SEP
+            + "chrono";
+
     private static final HashMap<Integer, Integer[]> ADJUSTED_MONTH_DAYS = new HashMap<Integer, Integer[]>();
+
     private static final HashMap<Integer, Integer[]> ADJUSTED_MONTH_LENGTHS = new HashMap<Integer, Integer[]>();
+
     private static final HashMap<Integer, Integer[]> ADJUSTED_CYCLE_YEARS = new HashMap<Integer, Integer[]>();
+
     private static final Long[] ADJUSTED_CYCLES;
+
     private static final Integer[] ADJUSTED_MIN_VALUES;
+
     private static final Integer[] ADJUSTED_LEAST_MAX_VALUES;
+
     private static final Integer[] ADJUSTED_MAX_VALUES;
+
     private static final Integer[] DEFAULT_MONTH_DAYS;
+
     private static final Integer[] DEFAULT_LEAP_MONTH_DAYS;
+
     private static final Integer[] DEFAULT_MONTH_LENGTHS;
+
     private static final Integer[] DEFAULT_LEAP_MONTH_LENGTHS;
+
     private static final Integer[] DEFAULT_CYCLE_YEARS;
+
     private static final int MAX_ADJUSTED_CYCLE = 334; // to support year 9999
 
     static { // Initialize the static integer array;
@@ -231,38 +184,48 @@ public final class THijrahDate
             // e.printStackTrace();
         }
     }
+
     private static final int HIJRAH_JAN_1_1_GREGORIAN_DAY = -492148;
 
     private final transient THijrahEra era;
+
     private final transient int yearOfEra;
+
     private final transient int monthOfYear;
+
     private final transient int dayOfMonth;
+
     private final transient int dayOfYear;
+
     private final transient TDayOfWeek dayOfWeek;
+
     private final long gregorianEpochDay;
+
     private final transient boolean isLeapYear;
 
-    //-----------------------------------------------------------------------
     public static THijrahDate now() {
+
         return now(TClock.systemDefaultZone());
     }
 
     public static THijrahDate now(TZoneId zone) {
+
         return now(TClock.system(zone));
     }
 
     public static THijrahDate now(TClock clock) {
+
         return THijrahChronology.INSTANCE.dateNow(clock);
     }
 
-    //-------------------------------------------------------------------------
     public static THijrahDate of(int prolepticYear, int monthOfYear, int dayOfMonth) {
-        return (prolepticYear >= 1) ?
-            THijrahDate.of(THijrahEra.AH, prolepticYear, monthOfYear, dayOfMonth) :
-            THijrahDate.of(THijrahEra.BEFORE_AH, 1 - prolepticYear, monthOfYear, dayOfMonth);
+
+        return (prolepticYear >= 1) ? THijrahDate.of(THijrahEra.AH, prolepticYear, monthOfYear, dayOfMonth)
+                : THijrahDate.of(THijrahEra.BEFORE_AH, 1 - prolepticYear, monthOfYear, dayOfMonth);
     }
 
     static THijrahDate of(THijrahEra era, int yearOfEra, int monthOfYear, int dayOfMonth) {
+
         TJdk8Methods.requireNonNull(era, "era");
         checkValidYearOfEra(yearOfEra);
         checkValidMonth(monthOfYear);
@@ -272,48 +235,52 @@ public final class THijrahDate
     }
 
     private static void checkValidYearOfEra(int yearOfEra) {
-         if (yearOfEra < MIN_VALUE_OF_ERA  ||
-                 yearOfEra > MAX_VALUE_OF_ERA) {
-             throw new TDateTimeException("Invalid year of Hijrah TEra");
-         }
+
+        if (yearOfEra < MIN_VALUE_OF_ERA || yearOfEra > MAX_VALUE_OF_ERA) {
+            throw new TDateTimeException("Invalid year of Hijrah TEra");
+        }
     }
 
     private static void checkValidDayOfYear(int dayOfYear) {
-         if (dayOfYear < 1  ||
-                 dayOfYear > getMaximumDayOfYear()) {
-             throw new TDateTimeException("Invalid day of year of Hijrah date");
-         }
+
+        if (dayOfYear < 1 || dayOfYear > getMaximumDayOfYear()) {
+            throw new TDateTimeException("Invalid day of year of Hijrah date");
+        }
     }
 
     private static void checkValidMonth(int month) {
-         if (month < 1 || month > 12) {
-             throw new TDateTimeException("Invalid month of Hijrah date");
-         }
+
+        if (month < 1 || month > 12) {
+            throw new TDateTimeException("Invalid month of Hijrah date");
+        }
     }
 
     private static void checkValidDayOfMonth(int dayOfMonth) {
-         if (dayOfMonth < 1  ||
-                 dayOfMonth > getMaximumDayOfMonth()) {
-             throw new TDateTimeException("Invalid day of month of Hijrah date, day "
-                     + dayOfMonth + " greater than " + getMaximumDayOfMonth() + " or less than 1");
-         }
+
+        if (dayOfMonth < 1 || dayOfMonth > getMaximumDayOfMonth()) {
+            throw new TDateTimeException("Invalid day of month of Hijrah date, day " + dayOfMonth + " greater than "
+                    + getMaximumDayOfMonth() + " or less than 1");
+        }
     }
 
     static THijrahDate of(TLocalDate date) {
+
         long gregorianDays = date.toEpochDay();
         return new THijrahDate(gregorianDays);
     }
 
     static THijrahDate ofEpochDay(long epochDay) {
+
         return new THijrahDate(epochDay);
     }
 
     public static THijrahDate from(TTemporalAccessor temporal) {
+
         return THijrahChronology.INSTANCE.date(temporal);
     }
 
-    //-------------------------------------------------------------------------
     private THijrahDate(long gregorianDay) {
+
         int[] dateInfo = getHijrahDateInfo(gregorianDay);
 
         checkValidYearOfEra(dateInfo[1]);
@@ -331,31 +298,33 @@ public final class THijrahDate
         this.isLeapYear = isLeapYear(this.yearOfEra);
     }
 
-    private Object readResolve() {
-        return new THijrahDate(this.gregorianEpochDay);
-    }
-
-    //-----------------------------------------------------------------------
     @Override
     public THijrahChronology getChronology() {
+
         return THijrahChronology.INSTANCE;
     }
 
     @Override
     public THijrahEra getEra() {
+
         return this.era;
     }
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             if (isSupported(field)) {
                 TChronoField f = (TChronoField) field;
                 switch (f) {
-                    case DAY_OF_MONTH: return TValueRange.of(1, lengthOfMonth());
-                    case DAY_OF_YEAR: return TValueRange.of(1, lengthOfYear());
-                    case ALIGNED_WEEK_OF_MONTH: return TValueRange.of(1, 5);  // TODO
-                    case YEAR_OF_ERA: return TValueRange.of(1, 1000);  // TODO
+                    case DAY_OF_MONTH:
+                        return TValueRange.of(1, lengthOfMonth());
+                    case DAY_OF_YEAR:
+                        return TValueRange.of(1, lengthOfYear());
+                    case ALIGNED_WEEK_OF_MONTH:
+                        return TValueRange.of(1, 5); // TODO
+                    case YEAR_OF_ERA:
+                        return TValueRange.of(1, 1000); // TODO
                 }
                 return getChronology().range(f);
             }
@@ -366,51 +335,78 @@ public final class THijrahDate
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             switch ((TChronoField) field) {
-                case DAY_OF_WEEK: return dayOfWeek.getValue();
-                case ALIGNED_DAY_OF_WEEK_IN_MONTH: return ((dayOfMonth - 1) % 7) + 1;
-                case ALIGNED_DAY_OF_WEEK_IN_YEAR: return ((dayOfYear - 1) % 7) + 1;
-                case DAY_OF_MONTH: return this.dayOfMonth;
-                case DAY_OF_YEAR: return this.dayOfYear;
-                case EPOCH_DAY: return toEpochDay();
-                case ALIGNED_WEEK_OF_MONTH: return ((dayOfMonth - 1) / 7) + 1;
-                case ALIGNED_WEEK_OF_YEAR: return ((dayOfYear - 1) / 7) + 1;
-                case MONTH_OF_YEAR: return monthOfYear;
-                case YEAR_OF_ERA: return yearOfEra;
-                case YEAR: return yearOfEra;
-                case ERA: return era.getValue();
+                case DAY_OF_WEEK:
+                    return this.dayOfWeek.getValue();
+                case ALIGNED_DAY_OF_WEEK_IN_MONTH:
+                    return ((this.dayOfMonth - 1) % 7) + 1;
+                case ALIGNED_DAY_OF_WEEK_IN_YEAR:
+                    return ((this.dayOfYear - 1) % 7) + 1;
+                case DAY_OF_MONTH:
+                    return this.dayOfMonth;
+                case DAY_OF_YEAR:
+                    return this.dayOfYear;
+                case EPOCH_DAY:
+                    return toEpochDay();
+                case ALIGNED_WEEK_OF_MONTH:
+                    return ((this.dayOfMonth - 1) / 7) + 1;
+                case ALIGNED_WEEK_OF_YEAR:
+                    return ((this.dayOfYear - 1) / 7) + 1;
+                case MONTH_OF_YEAR:
+                    return this.monthOfYear;
+                case YEAR_OF_ERA:
+                    return this.yearOfEra;
+                case YEAR:
+                    return this.yearOfEra;
+                case ERA:
+                    return this.era.getValue();
             }
             throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.getFrom(this);
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public THijrahDate with(TTemporalAdjuster adjuster) {
+
         return (THijrahDate) super.with(adjuster);
     }
 
     @Override
     public THijrahDate with(TTemporalField field, long newValue) {
+
         if (field instanceof TChronoField) {
             TChronoField f = (TChronoField) field;
-            f.checkValidValue(newValue);        // TODO: validate value
+            f.checkValidValue(newValue); // TODO: validate value
             int nvalue = (int) newValue;
             switch (f) {
-                case DAY_OF_WEEK: return plusDays(newValue - dayOfWeek.getValue());
-                case ALIGNED_DAY_OF_WEEK_IN_MONTH: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
-                case ALIGNED_DAY_OF_WEEK_IN_YEAR: return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_YEAR));
-                case DAY_OF_MONTH: return resolvePreviousValid(yearOfEra, monthOfYear, nvalue);
-                case DAY_OF_YEAR: return resolvePreviousValid(yearOfEra, ((nvalue - 1) / 30) + 1, ((nvalue - 1) % 30) + 1);
-                case EPOCH_DAY: return new THijrahDate(nvalue);
-                case ALIGNED_WEEK_OF_MONTH: return plusDays((newValue - getLong(ALIGNED_WEEK_OF_MONTH)) * 7);
-                case ALIGNED_WEEK_OF_YEAR: return plusDays((newValue - getLong(ALIGNED_WEEK_OF_YEAR)) * 7);
-                case MONTH_OF_YEAR: return resolvePreviousValid(yearOfEra, nvalue, dayOfMonth);
-                case YEAR_OF_ERA: return resolvePreviousValid(yearOfEra >= 1 ? nvalue : 1 - nvalue, monthOfYear, dayOfMonth);
-                case YEAR: return resolvePreviousValid(nvalue, monthOfYear, dayOfMonth);
-                case ERA: return resolvePreviousValid(1 - yearOfEra, monthOfYear, dayOfMonth);
+                case DAY_OF_WEEK:
+                    return plusDays(newValue - this.dayOfWeek.getValue());
+                case ALIGNED_DAY_OF_WEEK_IN_MONTH:
+                    return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_MONTH));
+                case ALIGNED_DAY_OF_WEEK_IN_YEAR:
+                    return plusDays(newValue - getLong(ALIGNED_DAY_OF_WEEK_IN_YEAR));
+                case DAY_OF_MONTH:
+                    return resolvePreviousValid(this.yearOfEra, this.monthOfYear, nvalue);
+                case DAY_OF_YEAR:
+                    return resolvePreviousValid(this.yearOfEra, ((nvalue - 1) / 30) + 1, ((nvalue - 1) % 30) + 1);
+                case EPOCH_DAY:
+                    return new THijrahDate(nvalue);
+                case ALIGNED_WEEK_OF_MONTH:
+                    return plusDays((newValue - getLong(ALIGNED_WEEK_OF_MONTH)) * 7);
+                case ALIGNED_WEEK_OF_YEAR:
+                    return plusDays((newValue - getLong(ALIGNED_WEEK_OF_YEAR)) * 7);
+                case MONTH_OF_YEAR:
+                    return resolvePreviousValid(this.yearOfEra, nvalue, this.dayOfMonth);
+                case YEAR_OF_ERA:
+                    return resolvePreviousValid(this.yearOfEra >= 1 ? nvalue : 1 - nvalue, this.monthOfYear,
+                            this.dayOfMonth);
+                case YEAR:
+                    return resolvePreviousValid(nvalue, this.monthOfYear, this.dayOfMonth);
+                case ERA:
+                    return resolvePreviousValid(1 - this.yearOfEra, this.monthOfYear, this.dayOfMonth);
             }
             throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
@@ -418,6 +414,7 @@ public final class THijrahDate
     }
 
     private static THijrahDate resolvePreviousValid(int yearOfEra, int month, int day) {
+
         int monthDays = getMonthDays(month - 1, yearOfEra);
         if (day > monthDays) {
             day = monthDays;
@@ -427,59 +424,65 @@ public final class THijrahDate
 
     @Override
     public THijrahDate plus(TTemporalAmount amount) {
+
         return (THijrahDate) super.plus(amount);
     }
 
     @Override
     public THijrahDate plus(long amountToAdd, TTemporalUnit unit) {
+
         return (THijrahDate) super.plus(amountToAdd, unit);
     }
 
     @Override
     public THijrahDate minus(TTemporalAmount amount) {
+
         return (THijrahDate) super.minus(amount);
     }
 
     @Override
     public THijrahDate minus(long amountToAdd, TTemporalUnit unit) {
+
         return (THijrahDate) super.minus(amountToAdd, unit);
     }
 
-    //-------------------------------------------------------------------------
     @Override
     @SuppressWarnings("unchecked")
     public final TChronoLocalDateTime<THijrahDate> atTime(TLocalTime localTime) {
+
         return (TChronoLocalDateTime<THijrahDate>) super.atTime(localTime);
     }
 
     @Override
     public long toEpochDay() {
-         return getGregorianEpochDay(yearOfEra, monthOfYear, dayOfMonth);
+
+        return getGregorianEpochDay(this.yearOfEra, this.monthOfYear, this.dayOfMonth);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isLeapYear() {
+
         return this.isLeapYear;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     THijrahDate plusYears(long years) {
+
         if (years == 0) {
             return this;
         }
-        int newYear = TJdk8Methods.safeAdd(this.yearOfEra, (int)years);
+        int newYear = TJdk8Methods.safeAdd(this.yearOfEra, (int) years);
         return THijrahDate.of(this.era, newYear, this.monthOfYear, this.dayOfMonth);
     }
 
     @Override
     THijrahDate plusMonths(long months) {
+
         if (months == 0) {
             return this;
         }
         int newMonth = this.monthOfYear - 1;
-        newMonth = newMonth + (int)months;
+        newMonth = newMonth + (int) months;
         int years = newMonth / 12;
         newMonth = newMonth % 12;
         while (newMonth < 0) {
@@ -492,11 +495,12 @@ public final class THijrahDate
 
     @Override
     THijrahDate plusDays(long days) {
+
         return new THijrahDate(this.gregorianEpochDay + days);
     }
 
-    //-----------------------------------------------------------------------
     private static int[] getHijrahDateInfo(long gregorianDays) {
+
         int era, year, month, date, dayOfWeek, dayOfYear;
 
         int cycleNumber, yearInCycle, dayOfCycle;
@@ -525,8 +529,7 @@ public final class THijrahDate
             dayOfYear = getDayOfYear(cycleNumber, dayOfCycle, yearInCycle);
             year = cycleNumber * 30 - yearInCycle; // negative number.
             year = 1 - year;
-            dayOfYear = (isLeapYear(year) ? (dayOfYear + 355)
-                    : (dayOfYear + 354));
+            dayOfYear = (isLeapYear(year) ? (dayOfYear + 355) : (dayOfYear + 354));
             month = getMonthOfYear(dayOfYear, year);
             date = getDayOfMonth(dayOfYear, month, year);
             ++date; // Convert from 0-based to 1-based
@@ -547,6 +550,7 @@ public final class THijrahDate
     }
 
     private static long getGregorianEpochDay(int prolepticYear, int monthOfYear, int dayOfMonth) {
+
         long day = yearToGregorianEpochDay(prolepticYear);
         day += getMonthDays(monthOfYear - 1, prolepticYear);
         day += dayOfMonth;
@@ -558,8 +562,7 @@ public final class THijrahDate
         int cycleNumber = (prolepticYear - 1) / 30; // 0-based.
         int yearInCycle = (prolepticYear - 1) % 30; // 0-based.
 
-        int dayInCycle = getAdjustedCycle(cycleNumber)[Math.abs(yearInCycle)]
-                .intValue();
+        int dayInCycle = getAdjustedCycle(cycleNumber)[Math.abs(yearInCycle)].intValue();
 
         if (yearInCycle < 0) {
             dayInCycle = -dayInCycle;
@@ -581,6 +584,7 @@ public final class THijrahDate
     }
 
     private static int getCycleNumber(long epochDay) {
+
         Long[] days = ADJUSTED_CYCLES;
         int cycleNumber;
         try {
@@ -597,6 +601,7 @@ public final class THijrahDate
     }
 
     private static int getDayOfCycle(long epochDay, int cycleNumber) {
+
         Long day;
 
         try {
@@ -611,6 +616,7 @@ public final class THijrahDate
     }
 
     private static int getYearInCycle(int cycleNumber, long dayOfCycle) {
+
         Integer[] cycles = getAdjustedCycle(cycleNumber);
         if (dayOfCycle == 0) {
             return 0;
@@ -635,6 +641,7 @@ public final class THijrahDate
     }
 
     private static Integer[] getAdjustedCycle(int cycleNumber) {
+
         Integer[] cycles;
         try {
             cycles = ADJUSTED_CYCLE_YEARS.get(Integer.valueOf(cycleNumber));
@@ -648,6 +655,7 @@ public final class THijrahDate
     }
 
     private static Integer[] getAdjustedMonthDays(int year) {
+
         Integer[] newMonths;
         try {
             newMonths = ADJUSTED_MONTH_DAYS.get(Integer.valueOf(year));
@@ -665,6 +673,7 @@ public final class THijrahDate
     }
 
     private static Integer[] getAdjustedMonthLength(int year) {
+
         Integer[] newMonths;
         try {
             newMonths = ADJUSTED_MONTH_LENGTHS.get(Integer.valueOf(year));
@@ -682,6 +691,7 @@ public final class THijrahDate
     }
 
     private static int getDayOfYear(int cycleNumber, int dayOfCycle, int yearInCycle) {
+
         Integer[] cycles = getAdjustedCycle(cycleNumber);
 
         if (dayOfCycle > 0) {
@@ -703,8 +713,7 @@ public final class THijrahDate
             }
             return 11;
         } else {
-            dayOfYear = (isLeapYear(year) ? (dayOfYear + 355)
-                    : (dayOfYear + 354));
+            dayOfYear = (isLeapYear(year) ? (dayOfYear + 355) : (dayOfYear + 354));
             for (int i = 0; i < newMonths.length; i++) {
                 if (dayOfYear < newMonths[i].intValue()) {
                     return i - 1;
@@ -725,8 +734,7 @@ public final class THijrahDate
                 return dayOfYear;
             }
         } else {
-            dayOfYear = (isLeapYear(year) ? (dayOfYear + 355)
-                    : (dayOfYear + 354));
+            dayOfYear = (isLeapYear(year) ? (dayOfYear + 355) : (dayOfYear + 354));
             if (month > 0) {
                 return dayOfYear - newMonths[month].intValue();
             } else {
@@ -736,22 +744,26 @@ public final class THijrahDate
     }
 
     static boolean isLeapYear(long year) {
+
         return (14 + 11 * (year > 0 ? year : -year)) % 30 < 11;
     }
 
     private static int getMonthDays(int month, int year) {
+
         Integer[] newMonths = getAdjustedMonthDays(year);
         return newMonths[month].intValue();
     }
 
     static int getMonthLength(int month, int year) {
-      Integer[] newMonths = getAdjustedMonthLength(year);
-      return newMonths[month].intValue();
+
+        Integer[] newMonths = getAdjustedMonthLength(year);
+        return newMonths[month].intValue();
     }
 
     @Override
     public int lengthOfMonth() {
-        return getMonthLength(monthOfYear - 1, yearOfEra);
+
+        return getMonthLength(this.monthOfYear - 1, this.yearOfEra);
     }
 
     static int getYearLength(int year) {
@@ -766,12 +778,10 @@ public final class THijrahDate
         if (cycleYears != null) {
             int yearInCycle = (year - 1) % 30;
             if (yearInCycle == 29) {
-                return ADJUSTED_CYCLES[cycleNumber + 1].intValue()
-                        - ADJUSTED_CYCLES[cycleNumber].intValue()
+                return ADJUSTED_CYCLES[cycleNumber + 1].intValue() - ADJUSTED_CYCLES[cycleNumber].intValue()
                         - cycleYears[yearInCycle].intValue();
             }
-            return cycleYears[yearInCycle + 1].intValue()
-                    - cycleYears[yearInCycle].intValue();
+            return cycleYears[yearInCycle + 1].intValue() - cycleYears[yearInCycle].intValue();
         } else {
             return isLeapYear(year) ? 355 : 354;
         }
@@ -779,29 +789,31 @@ public final class THijrahDate
 
     @Override
     public int lengthOfYear() {
-        return getYearLength(yearOfEra);  // TODO: proleptic year
+
+        return getYearLength(this.yearOfEra); // TODO: proleptic year
     }
 
     static int getMaximumDayOfMonth() {
+
         return ADJUSTED_MAX_VALUES[POSITION_DAY_OF_MONTH];
     }
 
     static int getSmallestMaximumDayOfMonth() {
+
         return ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_MONTH];
     }
 
     static int getMaximumDayOfYear() {
+
         return ADJUSTED_MAX_VALUES[POSITION_DAY_OF_YEAR];
     }
 
     static int getSmallestMaximumDayOfYear() {
+
         return ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_YEAR];
     }
 
-    // ----- Deviation handling -----//
-
-    private static void addDeviationAsHijrah(int startYear,
-            int startMonth, int endYear, int endMonth, int offset) {
+    private static void addDeviationAsHijrah(int startYear, int startMonth, int endYear, int endMonth, int offset) {
 
         if (startYear < 1) {
             throw new IllegalArgumentException("startYear < 1");
@@ -810,8 +822,7 @@ public final class THijrahDate
             throw new IllegalArgumentException("endYear < 1");
         }
         if (startMonth < 0 || startMonth > 11) {
-            throw new IllegalArgumentException(
-                    "startMonth < 0 || startMonth > 11");
+            throw new IllegalArgumentException("startMonth < 0 || startMonth > 11");
         }
         if (endMonth < 0 || endMonth > 11) {
             throw new IllegalArgumentException("endMonth < 0 || endMonth > 11");
@@ -823,16 +834,14 @@ public final class THijrahDate
             throw new IllegalArgumentException("startYear > endYear");
         }
         if (endYear == startYear && endMonth < startMonth) {
-            throw new IllegalArgumentException(
-                    "startYear == endYear && endMonth < startMonth");
+            throw new IllegalArgumentException("startYear == endYear && endMonth < startMonth");
         }
 
         // Adjusting start year.
         boolean isStartYLeap = isLeapYear(startYear);
 
         // Adjusting the number of month.
-        Integer[] orgStartMonthNums = ADJUSTED_MONTH_DAYS.get(Integer.valueOf(
-                startYear));
+        Integer[] orgStartMonthNums = ADJUSTED_MONTH_DAYS.get(Integer.valueOf(startYear));
         if (orgStartMonthNums == null) {
             if (isStartYLeap) {
                 orgStartMonthNums = new Integer[LEAP_NUM_DAYS.length];
@@ -851,12 +860,9 @@ public final class THijrahDate
 
         for (int month = 0; month < 12; month++) {
             if (month > startMonth) {
-                newStartMonthNums[month] = Integer.valueOf(orgStartMonthNums[month]
-                        .intValue()
-                        - offset);
+                newStartMonthNums[month] = Integer.valueOf(orgStartMonthNums[month].intValue() - offset);
             } else {
-                newStartMonthNums[month] = Integer.valueOf(orgStartMonthNums[month]
-                        .intValue());
+                newStartMonthNums[month] = Integer.valueOf(orgStartMonthNums[month].intValue());
             }
         }
 
@@ -864,8 +870,7 @@ public final class THijrahDate
 
         // Adjusting the days of month.
 
-        Integer[] orgStartMonthLengths = ADJUSTED_MONTH_LENGTHS.get(Integer.valueOf(
-                startYear));
+        Integer[] orgStartMonthLengths = ADJUSTED_MONTH_LENGTHS.get(Integer.valueOf(startYear));
         if (orgStartMonthLengths == null) {
             if (isStartYLeap) {
                 orgStartMonthLengths = new Integer[LEAP_MONTH_LENGTH.length];
@@ -884,23 +889,20 @@ public final class THijrahDate
 
         for (int month = 0; month < 12; month++) {
             if (month == startMonth) {
-                newStartMonthLengths[month] = Integer.valueOf(
-                        orgStartMonthLengths[month].intValue() - offset);
+                newStartMonthLengths[month] = Integer.valueOf(orgStartMonthLengths[month].intValue() - offset);
             } else {
-                newStartMonthLengths[month] = Integer.valueOf(
-                        orgStartMonthLengths[month].intValue());
+                newStartMonthLengths[month] = Integer.valueOf(orgStartMonthLengths[month].intValue());
             }
         }
 
         ADJUSTED_MONTH_LENGTHS.put(Integer.valueOf(startYear), newStartMonthLengths);
 
         if (startYear != endYear) {
-            // TSystem.out.println("over year");
+            // System.out.println("over year");
             // Adjusting starting 30 year cycle.
             int sCycleNumber = (startYear - 1) / 30;
             int sYearInCycle = (startYear - 1) % 30; // 0-based.
-            Integer[] startCycles = ADJUSTED_CYCLE_YEARS.get(Integer.valueOf(
-                    sCycleNumber));
+            Integer[] startCycles = ADJUSTED_CYCLE_YEARS.get(Integer.valueOf(sCycleNumber));
             if (startCycles == null) {
                 startCycles = new Integer[CYCLEYEAR_START_DATE.length];
                 for (int j = 0; j < startCycles.length; j++) {
@@ -912,34 +914,31 @@ public final class THijrahDate
                 startCycles[j] = Integer.valueOf(startCycles[j].intValue() - offset);
             }
 
-            // TSystem.out.println(sCycleNumber + ":" + sYearInCycle);
+            // System.out.println(sCycleNumber + ":" + sYearInCycle);
             ADJUSTED_CYCLE_YEARS.put(Integer.valueOf(sCycleNumber), startCycles);
 
             int sYearInMaxY = (startYear - 1) / 30;
             int sEndInMaxY = (endYear - 1) / 30;
 
             if (sYearInMaxY != sEndInMaxY) {
-                // TSystem.out.println("over 30");
+                // System.out.println("over 30");
                 // Adjusting starting 30 * MAX_ADJUSTED_CYCLE year cycle.
-                // TSystem.out.println(sYearInMaxY);
+                // System.out.println(sYearInMaxY);
 
                 for (int j = sYearInMaxY + 1; j < ADJUSTED_CYCLES.length; j++) {
-                    ADJUSTED_CYCLES[j] = Long.valueOf(ADJUSTED_CYCLES[j].longValue()
-                            - offset);
+                    ADJUSTED_CYCLES[j] = Long.valueOf(ADJUSTED_CYCLES[j].longValue() - offset);
                 }
 
                 // Adjusting ending 30 * MAX_ADJUSTED_CYCLE year cycles.
                 for (int j = sEndInMaxY + 1; j < ADJUSTED_CYCLES.length; j++) {
-                    ADJUSTED_CYCLES[j] = Long.valueOf(ADJUSTED_CYCLES[j].longValue()
-                            + offset);
+                    ADJUSTED_CYCLES[j] = Long.valueOf(ADJUSTED_CYCLES[j].longValue() + offset);
                 }
             }
 
             // Adjusting ending 30 year cycle.
             int eCycleNumber = (endYear - 1) / 30;
             int sEndInCycle = (endYear - 1) % 30; // 0-based.
-            Integer[] endCycles = ADJUSTED_CYCLE_YEARS.get(Integer.valueOf(
-                    eCycleNumber));
+            Integer[] endCycles = ADJUSTED_CYCLE_YEARS.get(Integer.valueOf(eCycleNumber));
             if (endCycles == null) {
                 endCycles = new Integer[CYCLEYEAR_START_DATE.length];
                 for (int j = 0; j < endCycles.length; j++) {
@@ -975,20 +974,16 @@ public final class THijrahDate
 
         for (int month = 0; month < 12; month++) {
             if (month > endMonth) {
-                newEndMonthDays[month] = Integer.valueOf(orgEndMonthDays[month]
-                        .intValue()
-                        + offset);
+                newEndMonthDays[month] = Integer.valueOf(orgEndMonthDays[month].intValue() + offset);
             } else {
-                newEndMonthDays[month] = Integer.valueOf(orgEndMonthDays[month]
-                        .intValue());
+                newEndMonthDays[month] = Integer.valueOf(orgEndMonthDays[month].intValue());
             }
         }
 
         ADJUSTED_MONTH_DAYS.put(Integer.valueOf(endYear), newEndMonthDays);
 
         // Adjusting the days of month.
-        Integer[] orgEndMonthLengths = ADJUSTED_MONTH_LENGTHS.get(Integer.valueOf(
-                endYear));
+        Integer[] orgEndMonthLengths = ADJUSTED_MONTH_LENGTHS.get(Integer.valueOf(endYear));
 
         if (orgEndMonthLengths == null) {
             if (isEndYLeap) {
@@ -1008,35 +1003,26 @@ public final class THijrahDate
 
         for (int month = 0; month < 12; month++) {
             if (month == endMonth) {
-                newEndMonthLengths[month] = Integer.valueOf(
-                        orgEndMonthLengths[month].intValue() + offset);
+                newEndMonthLengths[month] = Integer.valueOf(orgEndMonthLengths[month].intValue() + offset);
             } else {
-                newEndMonthLengths[month] = Integer.valueOf(
-                        orgEndMonthLengths[month].intValue());
+                newEndMonthLengths[month] = Integer.valueOf(orgEndMonthLengths[month].intValue());
             }
         }
 
         ADJUSTED_MONTH_LENGTHS.put(Integer.valueOf(endYear), newEndMonthLengths);
 
-        Integer[] startMonthLengths = ADJUSTED_MONTH_LENGTHS.get(Integer.valueOf(
-                startYear));
-        Integer[] endMonthLengths = ADJUSTED_MONTH_LENGTHS.get(Integer.valueOf(
-                endYear));
-        Integer[] startMonthDays = ADJUSTED_MONTH_DAYS
-                .get(Integer.valueOf(startYear));
+        Integer[] startMonthLengths = ADJUSTED_MONTH_LENGTHS.get(Integer.valueOf(startYear));
+        Integer[] endMonthLengths = ADJUSTED_MONTH_LENGTHS.get(Integer.valueOf(endYear));
+        Integer[] startMonthDays = ADJUSTED_MONTH_DAYS.get(Integer.valueOf(startYear));
         Integer[] endMonthDays = ADJUSTED_MONTH_DAYS.get(Integer.valueOf(endYear));
 
         int startMonthLength = startMonthLengths[startMonth].intValue();
         int endMonthLength = endMonthLengths[endMonth].intValue();
-        int startMonthDay = startMonthDays[11].intValue()
-                + startMonthLengths[11].intValue();
-        int endMonthDay = endMonthDays[11].intValue()
-                + endMonthLengths[11].intValue();
+        int startMonthDay = startMonthDays[11].intValue() + startMonthLengths[11].intValue();
+        int endMonthDay = endMonthDays[11].intValue() + endMonthLengths[11].intValue();
 
-        int maxMonthLength = ADJUSTED_MAX_VALUES[POSITION_DAY_OF_MONTH]
-                .intValue();
-        int leastMaxMonthLength = ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_MONTH]
-                .intValue();
+        int maxMonthLength = ADJUSTED_MAX_VALUES[POSITION_DAY_OF_MONTH].intValue();
+        int leastMaxMonthLength = ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_MONTH].intValue();
 
         if (maxMonthLength < startMonthLength) {
             maxMonthLength = startMonthLength;
@@ -1052,12 +1038,10 @@ public final class THijrahDate
         if (leastMaxMonthLength > endMonthLength) {
             leastMaxMonthLength = endMonthLength;
         }
-        ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_MONTH] = Integer.valueOf(
-                leastMaxMonthLength);
+        ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_MONTH] = Integer.valueOf(leastMaxMonthLength);
 
         int maxMonthDay = ADJUSTED_MAX_VALUES[POSITION_DAY_OF_YEAR].intValue();
-        int leastMaxMonthDay = ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_YEAR]
-                .intValue();
+        int leastMaxMonthDay = ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_YEAR].intValue();
 
         if (maxMonthDay < startMonthDay) {
             maxMonthDay = startMonthDay;
@@ -1074,11 +1058,11 @@ public final class THijrahDate
         if (leastMaxMonthDay > endMonthDay) {
             leastMaxMonthDay = endMonthDay;
         }
-        ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_YEAR] = Integer.valueOf(
-                leastMaxMonthDay);
+        ADJUSTED_LEAST_MAX_VALUES[POSITION_DAY_OF_YEAR] = Integer.valueOf(leastMaxMonthDay);
     }
 
     private static void readDeviationConfig() throws IOException, ParseException {
+
         InputStream is = getConfigFileInputStream();
         if (is != null) {
             BufferedReader br = null;
@@ -1100,27 +1084,23 @@ public final class THijrahDate
     }
 
     private static void parseLine(String line, int num) throws ParseException {
+
         StringTokenizer st = new StringTokenizer(line, ";");
         while (st.hasMoreTokens()) {
             String deviationElement = st.nextToken();
             int offsetIndex = deviationElement.indexOf(':');
             if (offsetIndex != -1) {
-                String offsetString = deviationElement.substring(
-                        offsetIndex + 1, deviationElement.length());
+                String offsetString = deviationElement.substring(offsetIndex + 1, deviationElement.length());
                 int offset;
                 try {
                     offset = Integer.parseInt(offsetString);
                 } catch (NumberFormatException ex) {
-                    throw new ParseException(
-                            "Offset is not properly set at line " + num + ".",
-                            num);
+                    throw new ParseException("Offset is not properly set at line " + num + ".", num);
                 }
                 int separatorIndex = deviationElement.indexOf('-');
                 if (separatorIndex != -1) {
-                    String startDateStg = deviationElement.substring(0,
-                            separatorIndex);
-                    String endDateStg = deviationElement.substring(
-                            separatorIndex + 1, offsetIndex);
+                    String startDateStg = deviationElement.substring(0, separatorIndex);
+                    String endDateStg = deviationElement.substring(separatorIndex + 1, offsetIndex);
                     int startDateYearSepIndex = startDateStg.indexOf('/');
                     int endDateYearSepIndex = endDateStg.indexOf('/');
                     int startYear = -1;
@@ -1128,90 +1108,64 @@ public final class THijrahDate
                     int startMonth = -1;
                     int endMonth = -1;
                     if (startDateYearSepIndex != -1) {
-                        String startYearStg = startDateStg.substring(0,
-                                startDateYearSepIndex);
-                        String startMonthStg = startDateStg.substring(
-                                startDateYearSepIndex + 1, startDateStg
-                                        .length());
+                        String startYearStg = startDateStg.substring(0, startDateYearSepIndex);
+                        String startMonthStg = startDateStg.substring(startDateYearSepIndex + 1, startDateStg.length());
                         try {
                             startYear = Integer.parseInt(startYearStg);
                         } catch (NumberFormatException ex) {
-                            throw new ParseException(
-                                    "Start year is not properly set at line "
-                                            + num + ".", num);
+                            throw new ParseException("Start year is not properly set at line " + num + ".", num);
                         }
                         try {
                             startMonth = Integer.parseInt(startMonthStg);
                         } catch (NumberFormatException ex) {
-                            throw new ParseException(
-                                    "Start month is not properly set at line "
-                                            + num + ".", num);
+                            throw new ParseException("Start month is not properly set at line " + num + ".", num);
                         }
                     } else {
-                        throw new ParseException(
-                                "Start year/month has incorrect format at line "
-                                        + num + ".", num);
+                        throw new ParseException("Start year/month has incorrect format at line " + num + ".", num);
                     }
                     if (endDateYearSepIndex != -1) {
-                        String endYearStg = endDateStg.substring(0,
-                                endDateYearSepIndex);
-                        String endMonthStg = endDateStg.substring(
-                                endDateYearSepIndex + 1, endDateStg.length());
+                        String endYearStg = endDateStg.substring(0, endDateYearSepIndex);
+                        String endMonthStg = endDateStg.substring(endDateYearSepIndex + 1, endDateStg.length());
                         try {
                             endYear = Integer.parseInt(endYearStg);
                         } catch (NumberFormatException ex) {
-                            throw new ParseException(
-                                    "End year is not properly set at line "
-                                            + num + ".", num);
+                            throw new ParseException("End year is not properly set at line " + num + ".", num);
                         }
                         try {
                             endMonth = Integer.parseInt(endMonthStg);
                         } catch (NumberFormatException ex) {
-                            throw new ParseException(
-                                    "End month is not properly set at line "
-                                            + num + ".", num);
+                            throw new ParseException("End month is not properly set at line " + num + ".", num);
                         }
                     } else {
-                        throw new ParseException(
-                                "End year/month has incorrect format at line "
-                                        + num + ".", num);
+                        throw new ParseException("End year/month has incorrect format at line " + num + ".", num);
                     }
-                    if (startYear != -1 && startMonth != -1 && endYear != -1
-                            && endMonth != -1) {
-                        addDeviationAsHijrah(startYear, startMonth, endYear,
-                                endMonth, offset);
+                    if (startYear != -1 && startMonth != -1 && endYear != -1 && endMonth != -1) {
+                        addDeviationAsHijrah(startYear, startMonth, endYear, endMonth, offset);
                     } else {
-                        throw new ParseException("Unknown error at line " + num
-                                + ".", num);
+                        throw new ParseException("Unknown error at line " + num + ".", num);
                     }
                 } else {
-                    throw new ParseException(
-                            "Start and end year/month has incorrect format at line "
-                                    + num + ".", num);
+                    throw new ParseException("Start and end year/month has incorrect format at line " + num + ".", num);
                 }
             } else {
-                throw new ParseException("Offset has incorrect format at line "
-                        + num + ".", num);
+                throw new ParseException("Offset has incorrect format at line " + num + ".", num);
             }
         }
     }
 
     private static InputStream getConfigFileInputStream() throws IOException {
 
-        String fileName = TSystem
-                .getProperty("org.teavm.classlib.java.time.i18n.THijrahDate.deviationConfigFile");
+        String fileName = System.getProperty("org.teavm.classlib.java.time.i18n.THijrahDate.deviationConfigFile");
 
         if (fileName == null) {
             fileName = DEFAULT_CONFIG_FILENAME;
         }
 
-        String dir = TSystem
-                .getProperty("org.teavm.classlib.java.time.i18n.THijrahDate.deviationConfigDir");
+        String dir = System.getProperty("org.teavm.classlib.java.time.i18n.THijrahDate.deviationConfigDir");
 
         if (dir != null) {
-            if (!(dir.length() == 0 && dir.endsWith(TSystem
-                    .getProperty("file.separator")))) {
-                dir = dir + TSystem.getProperty("file.separator");
+            if (!(dir.length() == 0 && dir.endsWith(System.getProperty("file.separator")))) {
+                dir = dir + System.getProperty("file.separator");
             }
             File file = new File(dir + FILE_SEP + fileName);
             if (file.exists()) {
@@ -1224,20 +1178,17 @@ public final class THijrahDate
                 return null;
             }
         } else {
-            String classPath = TSystem.getProperty("java.class.path");
+            String classPath = System.getProperty("java.class.path");
             StringTokenizer st = new StringTokenizer(classPath, PATH_SEP);
             while (st.hasMoreTokens()) {
                 String path = st.nextToken();
                 File file = new File(path);
                 if (file.exists()) {
                     if (file.isDirectory()) {
-                        File f = new File(
-                                path + FILE_SEP + DEFAULT_CONFIG_PATH, fileName);
+                        File f = new File(path + FILE_SEP + DEFAULT_CONFIG_PATH, fileName);
                         if (f.exists()) {
                             try {
-                                return new FileInputStream(path + FILE_SEP
-                                        + DEFAULT_CONFIG_PATH + FILE_SEP
-                                        + fileName);
+                                return new FileInputStream(path + FILE_SEP + DEFAULT_CONFIG_PATH + FILE_SEP + fileName);
                             } catch (IOException ioe) {
                                 throw ioe;
                             }
@@ -1251,8 +1202,7 @@ public final class THijrahDate
                         }
 
                         if (zip != null) {
-                            String targetFile = DEFAULT_CONFIG_PATH + FILE_SEP
-                                    + fileName;
+                            String targetFile = DEFAULT_CONFIG_PATH + FILE_SEP + fileName;
                             ZipEntry entry = zip.getEntry(targetFile);
 
                             if (entry == null) {
@@ -1277,24 +1227,6 @@ public final class THijrahDate
             }
             return null;
         }
-    }
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.HIJRAH_DATE_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        // HijrahChrono is implicit in the Hijrah_DATE_TYPE
-        out.writeInt(get(YEAR));
-        out.writeByte(get(MONTH_OF_YEAR));
-        out.writeByte(get(DAY_OF_MONTH));
-    }
-
-    static TChronoLocalDate readExternal(DataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-        return THijrahChronology.INSTANCE.date(year, month, dayOfMonth);
     }
 
 }

@@ -44,126 +44,157 @@ import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 public final class TTemporalAdjusters {
 
     private TTemporalAdjusters() {
+
     }
 
-    //-----------------------------------------------------------------------
     public static TTemporalAdjuster firstDayOfMonth() {
+
         return Impl.FIRST_DAY_OF_MONTH;
     }
 
     public static TTemporalAdjuster lastDayOfMonth() {
+
         return Impl.LAST_DAY_OF_MONTH;
     }
 
     public static TTemporalAdjuster firstDayOfNextMonth() {
+
         return Impl.FIRST_DAY_OF_NEXT_MONTH;
     }
 
-    //-----------------------------------------------------------------------
     public static TTemporalAdjuster firstDayOfYear() {
+
         return Impl.FIRST_DAY_OF_YEAR;
     }
 
     public static TTemporalAdjuster lastDayOfYear() {
+
         return Impl.LAST_DAY_OF_YEAR;
     }
 
     public static TTemporalAdjuster firstDayOfNextYear() {
+
         return Impl.FIRST_DAY_OF_NEXT_YEAR;
     }
 
-    //-----------------------------------------------------------------------
     private static class Impl implements TTemporalAdjuster {
         private static final Impl FIRST_DAY_OF_MONTH = new Impl(0);
+
         private static final Impl LAST_DAY_OF_MONTH = new Impl(1);
+
         private static final Impl FIRST_DAY_OF_NEXT_MONTH = new Impl(2);
+
         private static final Impl FIRST_DAY_OF_YEAR = new Impl(3);
+
         private static final Impl LAST_DAY_OF_YEAR = new Impl(4);
+
         private static final Impl FIRST_DAY_OF_NEXT_YEAR = new Impl(5);
+
         private final int ordinal;
+
         private Impl(int ordinal) {
+
             this.ordinal = ordinal;
         }
+
         @Override
         public TTemporal adjustInto(TTemporal temporal) {
-            switch (ordinal) {
-                case 0: return temporal.with(DAY_OF_MONTH, 1);
-                case 1: return temporal.with(DAY_OF_MONTH, temporal.range(DAY_OF_MONTH).getMaximum());
-                case 2: return temporal.with(DAY_OF_MONTH, 1).plus(1, MONTHS);
-                case 3: return temporal.with(DAY_OF_YEAR, 1);
-                case 4: return temporal.with(DAY_OF_YEAR, temporal.range(DAY_OF_YEAR).getMaximum());
-                case 5: return temporal.with(DAY_OF_YEAR, 1).plus(1, YEARS);
+
+            switch (this.ordinal) {
+                case 0:
+                    return temporal.with(DAY_OF_MONTH, 1);
+                case 1:
+                    return temporal.with(DAY_OF_MONTH, temporal.range(DAY_OF_MONTH).getMaximum());
+                case 2:
+                    return temporal.with(DAY_OF_MONTH, 1).plus(1, MONTHS);
+                case 3:
+                    return temporal.with(DAY_OF_YEAR, 1);
+                case 4:
+                    return temporal.with(DAY_OF_YEAR, temporal.range(DAY_OF_YEAR).getMaximum());
+                case 5:
+                    return temporal.with(DAY_OF_YEAR, 1).plus(1, YEARS);
             }
             throw new IllegalStateException("Unreachable");
         }
     }
 
-    //-----------------------------------------------------------------------
     public static TTemporalAdjuster firstInMonth(TDayOfWeek dayOfWeek) {
+
         TJdk8Methods.requireNonNull(dayOfWeek, "dayOfWeek");
         return new DayOfWeekInMonth(1, dayOfWeek);
     }
 
     public static TTemporalAdjuster lastInMonth(TDayOfWeek dayOfWeek) {
+
         TJdk8Methods.requireNonNull(dayOfWeek, "dayOfWeek");
         return new DayOfWeekInMonth(-1, dayOfWeek);
     }
 
     public static TTemporalAdjuster dayOfWeekInMonth(int ordinal, TDayOfWeek dayOfWeek) {
+
         TJdk8Methods.requireNonNull(dayOfWeek, "dayOfWeek");
         return new DayOfWeekInMonth(ordinal, dayOfWeek);
     }
 
     private static final class DayOfWeekInMonth implements TTemporalAdjuster {
         private final int ordinal;
+
         private final int dowValue;
 
         private DayOfWeekInMonth(int ordinal, TDayOfWeek dow) {
+
             super();
             this.ordinal = ordinal;
             this.dowValue = dow.getValue();
         }
+
         @Override
         public TTemporal adjustInto(TTemporal temporal) {
-            if (ordinal >= 0) {
+
+            if (this.ordinal >= 0) {
                 TTemporal temp = temporal.with(DAY_OF_MONTH, 1);
                 int curDow = temp.get(DAY_OF_WEEK);
-                int dowDiff = (dowValue - curDow + 7) % 7;
-                dowDiff += (ordinal - 1L) * 7L;  // safe from overflow
+                int dowDiff = (this.dowValue - curDow + 7) % 7;
+                dowDiff += (this.ordinal - 1L) * 7L; // safe from overflow
                 return temp.plus(dowDiff, DAYS);
             } else {
                 TTemporal temp = temporal.with(DAY_OF_MONTH, temporal.range(DAY_OF_MONTH).getMaximum());
                 int curDow = temp.get(DAY_OF_WEEK);
-                int daysDiff = dowValue - curDow;
+                int daysDiff = this.dowValue - curDow;
                 daysDiff = (daysDiff == 0 ? 0 : (daysDiff > 0 ? daysDiff - 7 : daysDiff));
-                daysDiff -= (-ordinal - 1L) * 7L;  // safe from overflow
+                daysDiff -= (-this.ordinal - 1L) * 7L; // safe from overflow
                 return temp.plus(daysDiff, DAYS);
             }
         }
     }
 
-    //-----------------------------------------------------------------------
     public static TTemporalAdjuster next(TDayOfWeek dayOfWeek) {
+
         return new RelativeDayOfWeek(2, dayOfWeek);
     }
 
     public static TTemporalAdjuster nextOrSame(TDayOfWeek dayOfWeek) {
+
         return new RelativeDayOfWeek(0, dayOfWeek);
     }
 
     public static TTemporalAdjuster previous(TDayOfWeek dayOfWeek) {
+
         return new RelativeDayOfWeek(3, dayOfWeek);
     }
 
     public static TTemporalAdjuster previousOrSame(TDayOfWeek dayOfWeek) {
+
         return new RelativeDayOfWeek(1, dayOfWeek);
     }
 
     private static final class RelativeDayOfWeek implements TTemporalAdjuster {
         private final int relative;
+
         private final int dowValue;
 
         private RelativeDayOfWeek(int relative, TDayOfWeek dayOfWeek) {
+
             TJdk8Methods.requireNonNull(dayOfWeek, "dayOfWeek");
             this.relative = relative;
             this.dowValue = dayOfWeek.getValue();
@@ -171,15 +202,16 @@ public final class TTemporalAdjusters {
 
         @Override
         public TTemporal adjustInto(TTemporal temporal) {
+
             int calDow = temporal.get(DAY_OF_WEEK);
-            if (relative < 2 && calDow == dowValue) {
+            if (this.relative < 2 && calDow == this.dowValue) {
                 return temporal;
             }
-            if ((relative & 1) == 0) {
-                int daysDiff = calDow - dowValue;
+            if ((this.relative & 1) == 0) {
+                int daysDiff = calDow - this.dowValue;
                 return temporal.plus(daysDiff >= 0 ? 7 - daysDiff : -daysDiff, DAYS);
             } else {
-                int daysDiff = dowValue - calDow;
+                int daysDiff = this.dowValue - calDow;
                 return temporal.minus(daysDiff >= 0 ? 7 - daysDiff : -daysDiff, DAYS);
             }
         }

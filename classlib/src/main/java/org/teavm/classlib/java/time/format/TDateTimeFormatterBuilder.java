@@ -54,13 +54,13 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.MissingResourceException;
 import java.util.ResourceBundle;
 import java.util.Set;
-import org.teavm.classlib.java.util.TTimeZone;
+import java.util.TimeZone;
 import java.util.TreeMap;
 
 import org.teavm.classlib.java.time.TDateTimeException;
@@ -82,26 +82,36 @@ import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 import org.teavm.classlib.java.time.temporal.TWeekFields;
 import org.teavm.classlib.java.time.zone.TZoneRulesProvider;
+import org.teavm.classlib.java.util.TTimeZone;
 
 public final class TDateTimeFormatterBuilder {
 
     private static final TTemporalQuery<TZoneId> QUERY_REGION_ONLY = new TTemporalQuery<TZoneId>() {
+        @Override
         public TZoneId queryFrom(TTemporalAccessor temporal) {
+
             TZoneId zone = temporal.query(TTemporalQueries.zoneId());
             return (zone != null && zone instanceof TZoneOffset == false ? zone : null);
         }
     };
 
     private TDateTimeFormatterBuilder active = this;
+
     private final TDateTimeFormatterBuilder parent;
-    private final List<DateTimePrinterParser> printerParsers = new ArrayList<TDateTimeFormatterBuilder.DateTimePrinterParser>();
+
+    private final List<DateTimePrinterParser> printerParsers = new ArrayList<>();
+
     private final boolean optional;
+
     private int padNextWidth;
+
     private char padNextChar;
+
     private int valueParserIndex = -1;
 
-    public static String getLocalizedDateTimePattern(
-                    TFormatStyle dateStyle, TFormatStyle timeStyle, TChronology chrono, TLocale locale) {
+    public static String getLocalizedDateTimePattern(TFormatStyle dateStyle, TFormatStyle timeStyle, TChronology chrono,
+            Locale locale) {
+
         TJdk8Methods.requireNonNull(locale, "locale");
         TJdk8Methods.requireNonNull(chrono, "chrono");
         if (dateStyle == null && timeStyle == null) {
@@ -123,56 +133,60 @@ public final class TDateTimeFormatterBuilder {
         throw new IllegalArgumentException("Unable to determine pattern");
     }
 
-    //-------------------------------------------------------------------------
     public TDateTimeFormatterBuilder() {
+
         super();
-        parent = null;
-        optional = false;
+        this.parent = null;
+        this.optional = false;
     }
 
     private TDateTimeFormatterBuilder(TDateTimeFormatterBuilder parent, boolean optional) {
+
         super();
         this.parent = parent;
         this.optional = optional;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder parseCaseSensitive() {
+
         appendInternal(SettingsParser.SENSITIVE);
         return this;
     }
 
     public TDateTimeFormatterBuilder parseCaseInsensitive() {
+
         appendInternal(SettingsParser.INSENSITIVE);
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder parseStrict() {
+
         appendInternal(SettingsParser.STRICT);
         return this;
     }
 
     public TDateTimeFormatterBuilder parseLenient() {
+
         appendInternal(SettingsParser.LENIENT);
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder parseDefaulting(TTemporalField field, long value) {
+
         TJdk8Methods.requireNonNull(field, "field");
         appendInternal(new DefaultingParser(field, value));
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder appendValue(TTemporalField field) {
+
         TJdk8Methods.requireNonNull(field, "field");
         appendValue(new NumberPrinterParser(field, 1, 19, TSignStyle.NORMAL));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendValue(TTemporalField field, int width) {
+
         TJdk8Methods.requireNonNull(field, "field");
         if (width < 1 || width > 19) {
             throw new IllegalArgumentException("The width must be from 1 to 19 inclusive but was " + width);
@@ -182,8 +196,9 @@ public final class TDateTimeFormatterBuilder {
         return this;
     }
 
-    public TDateTimeFormatterBuilder appendValue(
-            TTemporalField field, int minWidth, int maxWidth, TSignStyle signStyle) {
+    public TDateTimeFormatterBuilder appendValue(TTemporalField field, int minWidth, int maxWidth,
+            TSignStyle signStyle) {
+
         if (minWidth == maxWidth && signStyle == TSignStyle.NOT_NEGATIVE) {
             return appendValue(field, maxWidth);
         }
@@ -196,25 +211,25 @@ public final class TDateTimeFormatterBuilder {
             throw new IllegalArgumentException("The maximum width must be from 1 to 19 inclusive but was " + maxWidth);
         }
         if (maxWidth < minWidth) {
-            throw new IllegalArgumentException("The maximum width must exceed or equal the minimum width but " +
-                    maxWidth + " < " + minWidth);
+            throw new IllegalArgumentException(
+                    "The maximum width must exceed or equal the minimum width but " + maxWidth + " < " + minWidth);
         }
         NumberPrinterParser pp = new NumberPrinterParser(field, minWidth, maxWidth, signStyle);
         appendValue(pp);
         return this;
     }
 
-    //-----------------------------------------------------------------------
-    public TDateTimeFormatterBuilder appendValueReduced(TTemporalField field,
-            int width, int maxWidth, int baseValue) {
+    public TDateTimeFormatterBuilder appendValueReduced(TTemporalField field, int width, int maxWidth, int baseValue) {
+
         TJdk8Methods.requireNonNull(field, "field");
         ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, baseValue, null);
         appendValue(pp);
         return this;
     }
 
-    public TDateTimeFormatterBuilder appendValueReduced(
-            TTemporalField field, int width, int maxWidth, TChronoLocalDate baseDate) {
+    public TDateTimeFormatterBuilder appendValueReduced(TTemporalField field, int width, int maxWidth,
+            TChronoLocalDate baseDate) {
+
         TJdk8Methods.requireNonNull(field, "field");
         TJdk8Methods.requireNonNull(baseDate, "baseDate");
         ReducedPrinterParser pp = new ReducedPrinterParser(field, width, maxWidth, 0, baseDate);
@@ -223,47 +238,49 @@ public final class TDateTimeFormatterBuilder {
     }
 
     private TDateTimeFormatterBuilder appendValue(NumberPrinterParser pp) {
-        if (active.valueParserIndex >= 0 &&
-                active.printerParsers.get(active.valueParserIndex) instanceof NumberPrinterParser) {
-            final int activeValueParser = active.valueParserIndex;
+
+        if (this.active.valueParserIndex >= 0
+                && this.active.printerParsers.get(this.active.valueParserIndex) instanceof NumberPrinterParser) {
+            final int activeValueParser = this.active.valueParserIndex;
 
             // adjacent parsing mode, update setting in previous parsers
-            NumberPrinterParser basePP = (NumberPrinterParser) active.printerParsers.get(activeValueParser);
+            NumberPrinterParser basePP = (NumberPrinterParser) this.active.printerParsers.get(activeValueParser);
             if (pp.minWidth == pp.maxWidth && pp.signStyle == TSignStyle.NOT_NEGATIVE) {
                 // Append the width to the subsequentWidth of the active parser
                 basePP = basePP.withSubsequentWidth(pp.maxWidth);
                 // Append the new parser as a fixed width
                 appendInternal(pp.withFixedWidth());
                 // Retain the previous active parser
-                active.valueParserIndex = activeValueParser;
+                this.active.valueParserIndex = activeValueParser;
             } else {
                 // Modify the active parser to be fixed width
                 basePP = basePP.withFixedWidth();
                 // The new parser becomes the mew active parser
-                active.valueParserIndex = appendInternal(pp);
+                this.active.valueParserIndex = appendInternal(pp);
             }
             // Replace the modified parser with the updated one
-            active.printerParsers.set(activeValueParser, basePP);
+            this.active.printerParsers.set(activeValueParser, basePP);
         } else {
             // The new Parser becomes the active parser
-            active.valueParserIndex = appendInternal(pp);
+            this.active.valueParserIndex = appendInternal(pp);
         }
         return this;
     }
 
-    //-----------------------------------------------------------------------
-    public TDateTimeFormatterBuilder appendFraction(
-            TTemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
+    public TDateTimeFormatterBuilder appendFraction(TTemporalField field, int minWidth, int maxWidth,
+            boolean decimalPoint) {
+
         appendInternal(new FractionPrinterParser(field, minWidth, maxWidth, decimalPoint));
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder appendText(TTemporalField field) {
+
         return appendText(field, TTextStyle.FULL);
     }
 
     public TDateTimeFormatterBuilder appendText(TTemporalField field, TTextStyle textStyle) {
+
         TJdk8Methods.requireNonNull(field, "field");
         TJdk8Methods.requireNonNull(textStyle, "textStyle");
         appendInternal(new TextPrinterParser(field, textStyle, TDateTimeTextProvider.getInstance()));
@@ -271,6 +288,7 @@ public final class TDateTimeFormatterBuilder {
     }
 
     public TDateTimeFormatterBuilder appendText(TTemporalField field, Map<Long, String> textLookup) {
+
         TJdk8Methods.requireNonNull(field, "field");
         TJdk8Methods.requireNonNull(textLookup, "textLookup");
         Map<Long, String> copy = new LinkedHashMap<Long, String>(textLookup);
@@ -278,11 +296,15 @@ public final class TDateTimeFormatterBuilder {
         final LocaleStore store = new LocaleStore(map);
         TDateTimeTextProvider provider = new TDateTimeTextProvider() {
             @Override
-            public String getText(TTemporalField field, long value, TTextStyle style, TLocale locale) {
+            public String getText(TTemporalField field, long value, TTextStyle style, Locale locale) {
+
                 return store.getText(value, style);
             }
+
             @Override
-            public Iterator<Entry<String, Long>> getTextIterator(TTemporalField field, TTextStyle style, TLocale locale) {
+            public Iterator<Entry<String, Long>> getTextIterator(TTemporalField field, TTextStyle style,
+                    Locale locale) {
+
                 return store.getTextIterator(style);
             }
         };
@@ -290,13 +312,14 @@ public final class TDateTimeFormatterBuilder {
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder appendInstant() {
+
         appendInternal(new InstantPrinterParser(-2));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendInstant(int fractionalDigits) {
+
         if (fractionalDigits < -1 || fractionalDigits > 9) {
             throw new IllegalArgumentException("Invalid fractional digits: " + fractionalDigits);
         }
@@ -305,16 +328,19 @@ public final class TDateTimeFormatterBuilder {
     }
 
     public TDateTimeFormatterBuilder appendOffsetId() {
+
         appendInternal(OffsetIdPrinterParser.INSTANCE_ID);
         return this;
     }
 
     public TDateTimeFormatterBuilder appendOffset(String pattern, String noOffsetText) {
+
         appendInternal(new OffsetIdPrinterParser(noOffsetText, pattern));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendLocalizedOffset(TTextStyle style) {
+
         TJdk8Methods.requireNonNull(style, "style");
         if (style != TTextStyle.FULL && style != TTextStyle.SHORT) {
             throw new IllegalArgumentException("Style must be either full or short");
@@ -323,49 +349,53 @@ public final class TDateTimeFormatterBuilder {
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder appendZoneId() {
+
         appendInternal(new ZoneIdPrinterParser(TTemporalQueries.zoneId(), "TZoneId()"));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendZoneRegionId() {
+
         appendInternal(new ZoneIdPrinterParser(QUERY_REGION_ONLY, "ZoneRegionId()"));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendZoneOrOffsetId() {
+
         appendInternal(new ZoneIdPrinterParser(TTemporalQueries.zone(), "ZoneOrOffsetId()"));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendZoneText(TTextStyle textStyle) {
+
         appendInternal(new ZoneTextPrinterParser(textStyle));
         return this;
     }
 
-    public TDateTimeFormatterBuilder appendZoneText(TTextStyle textStyle,
-                                                   Set<TZoneId> preferredZones) {
+    public TDateTimeFormatterBuilder appendZoneText(TTextStyle textStyle, Set<TZoneId> preferredZones) {
+
         // TODO: preferred zones currently ignored
         TJdk8Methods.requireNonNull(preferredZones, "preferredZones");
         appendInternal(new ZoneTextPrinterParser(textStyle));
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder appendChronologyId() {
+
         appendInternal(new ChronoPrinterParser(null));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendChronologyText(TTextStyle textStyle) {
+
         TJdk8Methods.requireNonNull(textStyle, "textStyle");
         appendInternal(new ChronoPrinterParser(textStyle));
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder appendLocalized(TFormatStyle dateStyle, TFormatStyle timeStyle) {
+
         if (dateStyle == null && timeStyle == null) {
             throw new IllegalArgumentException("Either the date or time style must be non-null");
         }
@@ -373,13 +403,14 @@ public final class TDateTimeFormatterBuilder {
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder appendLiteral(char literal) {
+
         appendInternal(new CharLiteralPrinterParser(literal));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendLiteral(String literal) {
+
         TJdk8Methods.requireNonNull(literal, "literal");
         if (literal.length() > 0) {
             if (literal.length() == 1) {
@@ -391,32 +422,35 @@ public final class TDateTimeFormatterBuilder {
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder append(TDateTimeFormatter formatter) {
+
         TJdk8Methods.requireNonNull(formatter, "formatter");
         appendInternal(formatter.toPrinterParser(false));
         return this;
     }
 
     public TDateTimeFormatterBuilder appendOptional(TDateTimeFormatter formatter) {
+
         TJdk8Methods.requireNonNull(formatter, "formatter");
         appendInternal(formatter.toPrinterParser(true));
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder appendPattern(String pattern) {
+
         TJdk8Methods.requireNonNull(pattern, "pattern");
         parsePattern(pattern);
         return this;
     }
 
     private void parsePattern(String pattern) {
+
         for (int pos = 0; pos < pattern.length(); pos++) {
             char cur = pattern.charAt(pos);
             if ((cur >= 'A' && cur <= 'Z') || (cur >= 'a' && cur <= 'z')) {
                 int start = pos++;
-                for ( ; pos < pattern.length() && pattern.charAt(pos) == cur; pos++);  // short loop
+                for (; pos < pattern.length() && pattern.charAt(pos) == cur; pos++)
+                    ; // short loop
                 int count = pos - start;
                 // padding
                 if (cur == 'p') {
@@ -426,7 +460,8 @@ public final class TDateTimeFormatterBuilder {
                         if ((cur >= 'A' && cur <= 'Z') || (cur >= 'a' && cur <= 'z')) {
                             pad = count;
                             start = pos++;
-                            for ( ; pos < pattern.length() && pattern.charAt(pos) == cur; pos++);  // short loop
+                            for (; pos < pattern.length() && pattern.charAt(pos) == cur; pos++)
+                                ; // short loop
                             count = pos - start;
                         }
                     }
@@ -459,7 +494,7 @@ public final class TDateTimeFormatterBuilder {
                     } else if (count == 4) {
                         appendLocalizedOffset(TTextStyle.FULL);
                     } else if (count == 5) {
-                        appendOffset("+HH:MM:ss","Z");
+                        appendOffset("+HH:MM:ss", "Z");
                     } else {
                         throw new IllegalArgumentException("Too many pattern letters: " + cur);
                     }
@@ -502,12 +537,12 @@ public final class TDateTimeFormatterBuilder {
             } else if (cur == '\'') {
                 // parse literals
                 int start = pos++;
-                for ( ; pos < pattern.length(); pos++) {
+                for (; pos < pattern.length(); pos++) {
                     if (pattern.charAt(pos) == '\'') {
                         if (pos + 1 < pattern.length() && pattern.charAt(pos + 1) == '\'') {
                             pos++;
                         } else {
-                            break;  // end of literal
+                            break; // end of literal
                         }
                     }
                 }
@@ -525,7 +560,7 @@ public final class TDateTimeFormatterBuilder {
                 optionalStart();
 
             } else if (cur == ']') {
-                if (active.parent == null) {
+                if (this.active.parent == null) {
                     throw new IllegalArgumentException("Pattern invalid as it contains ] without previous [");
                 }
                 optionalEnd();
@@ -539,6 +574,7 @@ public final class TDateTimeFormatterBuilder {
     }
 
     private void parseField(char cur, int count, TTemporalField field) {
+
         switch (cur) {
             case 'u':
             case 'y':
@@ -730,76 +766,80 @@ public final class TDateTimeFormatterBuilder {
         FIELD_MAP.put('N', TChronoField.NANO_OF_DAY);
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder padNext(int padWidth) {
+
         return padNext(padWidth, ' ');
     }
 
     public TDateTimeFormatterBuilder padNext(int padWidth, char padChar) {
+
         if (padWidth < 1) {
             throw new IllegalArgumentException("The pad width must be at least one but was " + padWidth);
         }
-        active.padNextWidth = padWidth;
-        active.padNextChar = padChar;
-        active.valueParserIndex = -1;
+        this.active.padNextWidth = padWidth;
+        this.active.padNextChar = padChar;
+        this.active.valueParserIndex = -1;
         return this;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatterBuilder optionalStart() {
-        active.valueParserIndex = -1;
-        active = new TDateTimeFormatterBuilder(active, true);
+
+        this.active.valueParserIndex = -1;
+        this.active = new TDateTimeFormatterBuilder(this.active, true);
         return this;
     }
 
     public TDateTimeFormatterBuilder optionalEnd() {
-        if (active.parent == null) {
-            throw new IllegalStateException("Cannot call optionalEnd() as there was no previous call to optionalStart()");
+
+        if (this.active.parent == null) {
+            throw new IllegalStateException(
+                    "Cannot call optionalEnd() as there was no previous call to optionalStart()");
         }
-        if (active.printerParsers.size() > 0) {
-            CompositePrinterParser cpp = new CompositePrinterParser(active.printerParsers, active.optional);
-            active = active.parent;
+        if (this.active.printerParsers.size() > 0) {
+            CompositePrinterParser cpp = new CompositePrinterParser(this.active.printerParsers, this.active.optional);
+            this.active = this.active.parent;
             appendInternal(cpp);
         } else {
-            active = active.parent;
+            this.active = this.active.parent;
         }
         return this;
     }
 
-    //-----------------------------------------------------------------------
     private int appendInternal(DateTimePrinterParser pp) {
+
         TJdk8Methods.requireNonNull(pp, "pp");
-        if (active.padNextWidth > 0) {
+        if (this.active.padNextWidth > 0) {
             if (pp != null) {
-                pp = new PadPrinterParserDecorator(pp, active.padNextWidth, active.padNextChar);
+                pp = new PadPrinterParserDecorator(pp, this.active.padNextWidth, this.active.padNextChar);
             }
-            active.padNextWidth = 0;
-            active.padNextChar = 0;
+            this.active.padNextWidth = 0;
+            this.active.padNextChar = 0;
         }
-        active.printerParsers.add(pp);
-        active.valueParserIndex = -1;
-        return active.printerParsers.size() - 1;
+        this.active.printerParsers.add(pp);
+        this.active.valueParserIndex = -1;
+        return this.active.printerParsers.size() - 1;
     }
 
-    //-----------------------------------------------------------------------
     public TDateTimeFormatter toFormatter() {
-        return toFormatter(TLocale.getDefault());
+
+        return toFormatter(Locale.getDefault());
     }
 
-    public TDateTimeFormatter toFormatter(TLocale locale) {
+    public TDateTimeFormatter toFormatter(Locale locale) {
+
         TJdk8Methods.requireNonNull(locale, "locale");
-        while (active.parent != null) {
+        while (this.active.parent != null) {
             optionalEnd();
         }
-        CompositePrinterParser pp = new CompositePrinterParser(printerParsers, false);
+        CompositePrinterParser pp = new CompositePrinterParser(this.printerParsers, false);
         return new TDateTimeFormatter(pp, locale, TDecimalStyle.STANDARD, TResolverStyle.SMART, null, null, null);
     }
 
     TDateTimeFormatter toFormatter(TResolverStyle style) {
+
         return toFormatter().withResolverStyle(style);
     }
 
-    //-----------------------------------------------------------------------
     interface DateTimePrinterParser {
 
         boolean print(TDateTimePrintContext context, StringBuilder buf);
@@ -807,42 +847,46 @@ public final class TDateTimeFormatterBuilder {
         int parse(TDateTimeParseContext context, CharSequence text, int position);
     }
 
-    //-----------------------------------------------------------------------
     static final class CompositePrinterParser implements DateTimePrinterParser {
         private final DateTimePrinterParser[] printerParsers;
+
         private final boolean optional;
 
         CompositePrinterParser(List<DateTimePrinterParser> printerParsers, boolean optional) {
+
             this(printerParsers.toArray(new DateTimePrinterParser[printerParsers.size()]), optional);
         }
 
         CompositePrinterParser(DateTimePrinterParser[] printerParsers, boolean optional) {
+
             this.printerParsers = printerParsers;
             this.optional = optional;
         }
 
         public CompositePrinterParser withOptional(boolean optional) {
+
             if (optional == this.optional) {
                 return this;
             }
-            return new CompositePrinterParser(printerParsers, optional);
+            return new CompositePrinterParser(this.printerParsers, optional);
         }
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
+
             int length = buf.length();
-            if (optional) {
+            if (this.optional) {
                 context.startOptional();
             }
             try {
-                for (DateTimePrinterParser pp : printerParsers) {
+                for (DateTimePrinterParser pp : this.printerParsers) {
                     if (pp.print(context, buf) == false) {
-                        buf.setLength(length);  // reset buffer
+                        buf.setLength(length); // reset buffer
                         return true;
                     }
                 }
             } finally {
-                if (optional) {
+                if (this.optional) {
                     context.endOptional();
                 }
             }
@@ -851,20 +895,21 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
-            if (optional) {
+
+            if (this.optional) {
                 context.startOptional();
                 int pos = position;
-                for (DateTimePrinterParser pp : printerParsers) {
+                for (DateTimePrinterParser pp : this.printerParsers) {
                     pos = pp.parse(context, text, pos);
                     if (pos < 0) {
                         context.endOptional(false);
-                        return position;  // return original position
+                        return position; // return original position
                     }
                 }
                 context.endOptional(true);
                 return pos;
             } else {
-                for (DateTimePrinterParser pp : printerParsers) {
+                for (DateTimePrinterParser pp : this.printerParsers) {
                     position = pp.parse(context, text, position);
                     if (position < 0) {
                         break;
@@ -876,25 +921,28 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public String toString() {
+
             StringBuilder buf = new StringBuilder();
-            if (printerParsers != null) {
-                buf.append(optional ? "[" : "(");
-                for (DateTimePrinterParser pp : printerParsers) {
+            if (this.printerParsers != null) {
+                buf.append(this.optional ? "[" : "(");
+                for (DateTimePrinterParser pp : this.printerParsers) {
                     buf.append(pp);
                 }
-                buf.append(optional ? "]" : ")");
+                buf.append(this.optional ? "]" : ")");
             }
             return buf.toString();
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class PadPrinterParserDecorator implements DateTimePrinterParser {
         private final DateTimePrinterParser printerParser;
+
         private final int padWidth;
+
         private final char padChar;
 
         PadPrinterParserDecorator(DateTimePrinterParser printerParser, int padWidth, char padChar) {
+
             // input checked by TDateTimeFormatterBuilder
             this.printerParser = printerParser;
             this.padWidth = padWidth;
@@ -903,23 +951,25 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
+
             int preLen = buf.length();
-            if (printerParser.print(context, buf) == false) {
+            if (this.printerParser.print(context, buf) == false) {
                 return false;
             }
             int len = buf.length() - preLen;
-            if (len > padWidth) {
+            if (len > this.padWidth) {
                 throw new TDateTimeException(
-                    "Cannot print as output of " + len + " characters exceeds pad width of " + padWidth);
+                        "Cannot print as output of " + len + " characters exceeds pad width of " + this.padWidth);
             }
-            for (int i = 0; i < padWidth - len; i++) {
-                buf.insert(preLen, padChar);
+            for (int i = 0; i < this.padWidth - len; i++) {
+                buf.insert(preLen, this.padChar);
             }
             return true;
         }
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             // cache context before changed by decorated parser
             final boolean strict = context.isStrict();
             final boolean caseSensitive = context.isCaseSensitive();
@@ -928,115 +978,135 @@ public final class TDateTimeFormatterBuilder {
                 throw new IndexOutOfBoundsException();
             }
             if (position == text.length()) {
-                return ~position;  // no more characters in the string
+                return ~position; // no more characters in the string
             }
-            int endPos = position + padWidth;
+            int endPos = position + this.padWidth;
             if (endPos > text.length()) {
                 if (strict) {
-                    return ~position;  // not enough characters in the string to meet the parse width
+                    return ~position; // not enough characters in the string to meet the parse width
                 }
                 endPos = text.length();
             }
             int pos = position;
-            while (pos < endPos &&
-                    (caseSensitive ? text.charAt(pos) == padChar : context.charEquals(text.charAt(pos), padChar))) {
+            while (pos < endPos && (caseSensitive ? text.charAt(pos) == this.padChar
+                    : context.charEquals(text.charAt(pos), this.padChar))) {
                 pos++;
             }
             text = text.subSequence(0, endPos);
-            int resultPos = printerParser.parse(context, text, pos);
+            int resultPos = this.printerParser.parse(context, text, pos);
             if (resultPos != endPos && strict) {
-                return ~(position + pos);  // parse of decorated field didn't parse to the end
+                return ~(position + pos); // parse of decorated field didn't parse to the end
             }
             return resultPos;
         }
 
         @Override
         public String toString() {
-            return "Pad(" + printerParser + "," + padWidth + (padChar == ' ' ? ")" : ",'" + padChar + "')");
+
+            return "Pad(" + this.printerParser + "," + this.padWidth
+                    + (this.padChar == ' ' ? ")" : ",'" + this.padChar + "')");
         }
     }
 
-    //-----------------------------------------------------------------------
     static enum SettingsParser implements DateTimePrinterParser {
-        SENSITIVE,
-        INSENSITIVE,
-        STRICT,
-        LENIENT;
+        SENSITIVE, INSENSITIVE, STRICT, LENIENT;
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
-            return true;  // nothing to do here
+
+            return true; // nothing to do here
         }
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             // using ordinals to avoid javac synthetic inner class
             switch (ordinal()) {
-                case 0: context.setCaseSensitive(true); break;
-                case 1: context.setCaseSensitive(false); break;
-                case 2: context.setStrict(true); break;
-                case 3: context.setStrict(false); break;
+                case 0:
+                    context.setCaseSensitive(true);
+                    break;
+                case 1:
+                    context.setCaseSensitive(false);
+                    break;
+                case 2:
+                    context.setStrict(true);
+                    break;
+                case 3:
+                    context.setStrict(false);
+                    break;
             }
             return position;
         }
 
         @Override
         public String toString() {
+
             // using ordinals to avoid javac synthetic inner class
             switch (ordinal()) {
-                case 0: return "ParseCaseSensitive(true)";
-                case 1: return "ParseCaseSensitive(false)";
-                case 2: return "ParseStrict(true)";
-                case 3: return "ParseStrict(false)";
+                case 0:
+                    return "ParseCaseSensitive(true)";
+                case 1:
+                    return "ParseCaseSensitive(false)";
+                case 2:
+                    return "ParseStrict(true)";
+                case 3:
+                    return "ParseStrict(false)";
             }
             throw new IllegalStateException("Unreachable");
         }
     }
 
-    //-----------------------------------------------------------------------
     static class DefaultingParser implements DateTimePrinterParser {
         private final TTemporalField field;
+
         private final long value;
 
         DefaultingParser(TTemporalField field, long value) {
+
             this.field = field;
             this.value = value;
         }
 
+        @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
+
             return true;
         }
 
+        @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
-            if (context.getParsed(field) == null) {
-                context.setParsedField(field, value, position, position);
+
+            if (context.getParsed(this.field) == null) {
+                context.setParsedField(this.field, this.value, position, position);
             }
             return position;
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class CharLiteralPrinterParser implements DateTimePrinterParser {
         private final char literal;
 
         CharLiteralPrinterParser(char literal) {
+
             this.literal = literal;
         }
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
-            buf.append(literal);
+
+            buf.append(this.literal);
             return true;
         }
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             int length = text.length();
             if (position == length) {
                 return ~position;
             }
             char ch = text.charAt(position);
-            if (context.charEquals(literal, ch) == false) {
+            if (context.charEquals(this.literal, ch) == false) {
                 return ~position;
             }
             return position + 1;
@@ -1044,69 +1114,67 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public String toString() {
-            if (literal == '\'') {
+
+            if (this.literal == '\'') {
                 return "''";
             }
-            return "'" + literal + "'";
+            return "'" + this.literal + "'";
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class StringLiteralPrinterParser implements DateTimePrinterParser {
         private final String literal;
 
         StringLiteralPrinterParser(String literal) {
-            this.literal = literal;  // validated by caller
+
+            this.literal = literal; // validated by caller
         }
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
-            buf.append(literal);
+
+            buf.append(this.literal);
             return true;
         }
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             int length = text.length();
             if (position > length || position < 0) {
                 throw new IndexOutOfBoundsException();
             }
-            if (context.subSequenceEquals(text, position, literal, 0, literal.length()) == false) {
+            if (context.subSequenceEquals(text, position, this.literal, 0, this.literal.length()) == false) {
                 return ~position;
             }
-            return position + literal.length();
+            return position + this.literal.length();
         }
 
         @Override
         public String toString() {
-            String converted = literal.replace("'", "''");
+
+            String converted = this.literal.replace("'", "''");
             return "'" + converted + "'";
         }
     }
 
-    //-----------------------------------------------------------------------
     static class NumberPrinterParser implements DateTimePrinterParser {
 
-        static final int[] EXCEED_POINTS = new int[] {
-            0,
-            10,
-            100,
-            1000,
-            10000,
-            100000,
-            1000000,
-            10000000,
-            100000000,
-            1000000000,
-        };
+        static final int[] EXCEED_POINTS = new int[] { 0, 10, 100, 1000, 10000, 100000, 1000000, 10000000, 100000000,
+        1000000000, };
 
         final TTemporalField field;
+
         final int minWidth;
+
         final int maxWidth;
+
         final TSignStyle signStyle;
+
         final int subsequentWidth;
 
         NumberPrinterParser(TTemporalField field, int minWidth, int maxWidth, TSignStyle signStyle) {
+
             // validated by caller
             this.field = field;
             this.minWidth = minWidth;
@@ -1115,7 +1183,9 @@ public final class TDateTimeFormatterBuilder {
             this.subsequentWidth = 0;
         }
 
-        private NumberPrinterParser(TTemporalField field, int minWidth, int maxWidth, TSignStyle signStyle, int subsequentWidth) {
+        private NumberPrinterParser(TTemporalField field, int minWidth, int maxWidth, TSignStyle signStyle,
+                int subsequentWidth) {
+
             // validated by caller
             this.field = field;
             this.minWidth = minWidth;
@@ -1125,36 +1195,39 @@ public final class TDateTimeFormatterBuilder {
         }
 
         NumberPrinterParser withFixedWidth() {
-            if (subsequentWidth == -1) {
+
+            if (this.subsequentWidth == -1) {
                 return this;
             }
-            return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, -1);
+            return new NumberPrinterParser(this.field, this.minWidth, this.maxWidth, this.signStyle, -1);
         }
 
         NumberPrinterParser withSubsequentWidth(int subsequentWidth) {
-            return new NumberPrinterParser(field, minWidth, maxWidth, signStyle, this.subsequentWidth + subsequentWidth);
+
+            return new NumberPrinterParser(this.field, this.minWidth, this.maxWidth, this.signStyle,
+                    this.subsequentWidth + subsequentWidth);
         }
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
-            Long valueLong = context.getValue(field);
+
+            Long valueLong = context.getValue(this.field);
             if (valueLong == null) {
                 return false;
             }
             long value = getValue(context, valueLong);
             TDecimalStyle symbols = context.getSymbols();
             String str = (value == Long.MIN_VALUE ? "9223372036854775808" : Long.toString(Math.abs(value)));
-            if (str.length() > maxWidth) {
-                throw new TDateTimeException("Field " + field +
-                    " cannot be printed as the value " + value +
-                    " exceeds the maximum print width of " + maxWidth);
+            if (str.length() > this.maxWidth) {
+                throw new TDateTimeException("Field " + this.field + " cannot be printed as the value " + value
+                        + " exceeds the maximum print width of " + this.maxWidth);
             }
             str = symbols.convertNumberToI18N(str);
 
             if (value >= 0) {
-                switch (signStyle) {
+                switch (this.signStyle) {
                     case EXCEEDS_PAD:
-                        if (minWidth < 19 && value >= EXCEED_POINTS[minWidth]) {
+                        if (this.minWidth < 19 && value >= EXCEED_POINTS[this.minWidth]) {
                             buf.append(symbols.getPositiveSign());
                         }
                         break;
@@ -1163,19 +1236,18 @@ public final class TDateTimeFormatterBuilder {
                         break;
                 }
             } else {
-                switch (signStyle) {
+                switch (this.signStyle) {
                     case NORMAL:
                     case EXCEEDS_PAD:
                     case ALWAYS:
                         buf.append(symbols.getNegativeSign());
                         break;
                     case NOT_NEGATIVE:
-                        throw new TDateTimeException("Field " + field +
-                            " cannot be printed as the value " + value +
-                            " cannot be negative according to the TSignStyle");
+                        throw new TDateTimeException("Field " + this.field + " cannot be printed as the value " + value
+                                + " cannot be negative according to the TSignStyle");
                 }
             }
-            for (int i = 0; i < minWidth - str.length(); i++) {
+            for (int i = 0; i < this.minWidth - str.length(); i++) {
                 buf.append(symbols.getZeroDigit());
             }
             buf.append(str);
@@ -1183,46 +1255,50 @@ public final class TDateTimeFormatterBuilder {
         }
 
         long getValue(TDateTimePrintContext context, long value) {
+
             return value;
         }
 
         boolean isFixedWidth(TDateTimeParseContext context) {
-            return subsequentWidth == -1 ||
-                    (subsequentWidth > 0 && minWidth == maxWidth && signStyle == TSignStyle.NOT_NEGATIVE);
+
+            return this.subsequentWidth == -1 || (this.subsequentWidth > 0 && this.minWidth == this.maxWidth
+                    && this.signStyle == TSignStyle.NOT_NEGATIVE);
         }
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             int length = text.length();
             if (position == length) {
                 return ~position;
             }
-            char sign = text.charAt(position);  // IOOBE if invalid position
+            char sign = text.charAt(position); // IOOBE if invalid position
             boolean negative = false;
             boolean positive = false;
             if (sign == context.getSymbols().getPositiveSign()) {
-                if (signStyle.parse(true, context.isStrict(), minWidth == maxWidth) == false) {
+                if (this.signStyle.parse(true, context.isStrict(), this.minWidth == this.maxWidth) == false) {
                     return ~position;
                 }
                 positive = true;
                 position++;
             } else if (sign == context.getSymbols().getNegativeSign()) {
-                if (signStyle.parse(false, context.isStrict(), minWidth == maxWidth) == false) {
+                if (this.signStyle.parse(false, context.isStrict(), this.minWidth == this.maxWidth) == false) {
                     return ~position;
                 }
                 negative = true;
                 position++;
             } else {
-                if (signStyle == TSignStyle.ALWAYS && context.isStrict()) {
+                if (this.signStyle == TSignStyle.ALWAYS && context.isStrict()) {
                     return ~position;
                 }
             }
-            int effMinWidth = (context.isStrict() || isFixedWidth(context) ? minWidth : 1);
+            int effMinWidth = (context.isStrict() || isFixedWidth(context) ? this.minWidth : 1);
             int minEndPos = position + effMinWidth;
             if (minEndPos > length) {
                 return ~position;
             }
-            int effMaxWidth = (context.isStrict() || isFixedWidth(context) ? maxWidth : 9) + Math.max(subsequentWidth, 0);
+            int effMaxWidth = (context.isStrict() || isFixedWidth(context) ? this.maxWidth : 9)
+                    + Math.max(this.subsequentWidth, 0);
             long total = 0;
             BigInteger totalBig = null;
             int pos = position;
@@ -1234,7 +1310,7 @@ public final class TDateTimeFormatterBuilder {
                     if (digit < 0) {
                         pos--;
                         if (pos < minEndPos) {
-                            return ~position;  // need at least min width digits
+                            return ~position; // need at least min width digits
                         }
                         break;
                     }
@@ -1247,10 +1323,10 @@ public final class TDateTimeFormatterBuilder {
                         total = total * 10 + digit;
                     }
                 }
-                if (subsequentWidth > 0 && pass == 0) {
+                if (this.subsequentWidth > 0 && pass == 0) {
                     // re-parse now we know the correct width
                     int parseLen = pos - position;
-                    effMaxWidth = Math.max(effMinWidth, parseLen - subsequentWidth);
+                    effMaxWidth = Math.max(effMinWidth, parseLen - this.subsequentWidth);
                     pos = position;
                     total = 0;
                     totalBig = null;
@@ -1261,24 +1337,24 @@ public final class TDateTimeFormatterBuilder {
             if (negative) {
                 if (totalBig != null) {
                     if (totalBig.equals(BigInteger.ZERO) && context.isStrict()) {
-                        return ~(position - 1);  // minus zero not allowed
+                        return ~(position - 1); // minus zero not allowed
                     }
                     totalBig = totalBig.negate();
                 } else {
                     if (total == 0 && context.isStrict()) {
-                        return ~(position - 1);  // minus zero not allowed
+                        return ~(position - 1); // minus zero not allowed
                     }
                     total = -total;
                 }
-            } else if (signStyle == TSignStyle.EXCEEDS_PAD && context.isStrict()) {
+            } else if (this.signStyle == TSignStyle.EXCEEDS_PAD && context.isStrict()) {
                 int parseLen = pos - position;
                 if (positive) {
-                    if (parseLen <= minWidth) {
-                        return ~(position - 1);  // '+' only parsed if minWidth exceeded
+                    if (parseLen <= this.minWidth) {
+                        return ~(position - 1); // '+' only parsed if minWidth exceeded
                     }
                 } else {
-                    if (parseLen > minWidth) {
-                        return ~position;  // '+' must be parsed if minWidth exceeded
+                    if (parseLen > this.minWidth) {
+                        return ~position; // '+' must be parsed if minWidth exceeded
                     }
                 }
             }
@@ -1294,28 +1370,32 @@ public final class TDateTimeFormatterBuilder {
         }
 
         int setValue(TDateTimeParseContext context, long value, int errorPos, int successPos) {
-            return context.setParsedField(field, value, errorPos, successPos);
+
+            return context.setParsedField(this.field, value, errorPos, successPos);
         }
 
         @Override
         public String toString() {
-            if (minWidth == 1 && maxWidth == 19 && signStyle == TSignStyle.NORMAL) {
-                return "Value(" + field + ")";
+
+            if (this.minWidth == 1 && this.maxWidth == 19 && this.signStyle == TSignStyle.NORMAL) {
+                return "Value(" + this.field + ")";
             }
-            if (minWidth == maxWidth && signStyle == TSignStyle.NOT_NEGATIVE) {
-                return "Value(" + field + "," + minWidth + ")";
+            if (this.minWidth == this.maxWidth && this.signStyle == TSignStyle.NOT_NEGATIVE) {
+                return "Value(" + this.field + "," + this.minWidth + ")";
             }
-            return "Value(" + field + "," + minWidth + "," + maxWidth + "," + signStyle + ")";
+            return "Value(" + this.field + "," + this.minWidth + "," + this.maxWidth + "," + this.signStyle + ")";
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class ReducedPrinterParser extends NumberPrinterParser {
         static final TLocalDate BASE_DATE = TLocalDate.of(2000, 1, 1);
+
         private final int baseValue;
+
         private final TChronoLocalDate baseDate;
 
         ReducedPrinterParser(TTemporalField field, int width, int maxWidth, int baseValue, TChronoLocalDate baseDate) {
+
             super(field, width, maxWidth, TSignStyle.NOT_NEGATIVE);
             if (width < 1 || width > 10) {
                 throw new IllegalArgumentException("The width must be from 1 to 10 inclusive but was " + width);
@@ -1331,15 +1411,17 @@ public final class TDateTimeFormatterBuilder {
                     throw new IllegalArgumentException("The base value must be within the range of the field");
                 }
                 if ((((long) baseValue) + EXCEED_POINTS[width]) > Integer.MAX_VALUE) {
-                    throw new TDateTimeException("Unable to add printer-parser as the range exceeds the capacity of an int");
+                    throw new TDateTimeException(
+                            "Unable to add printer-parser as the range exceeds the capacity of an int");
                 }
             }
             this.baseValue = baseValue;
             this.baseDate = baseDate;
         }
 
-        private ReducedPrinterParser(TTemporalField field, int minWidth, int maxWidth,
-                int baseValue, TChronoLocalDate baseDate, int subsequentWidth) {
+        private ReducedPrinterParser(TTemporalField field, int minWidth, int maxWidth, int baseValue,
+                TChronoLocalDate baseDate, int subsequentWidth) {
+
             super(field, minWidth, maxWidth, TSignStyle.NOT_NEGATIVE, subsequentWidth);
             this.baseValue = baseValue;
             this.baseDate = baseDate;
@@ -1347,29 +1429,31 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         long getValue(TDateTimePrintContext context, long value) {
+
             long absValue = Math.abs(value);
             int baseValue = this.baseValue;
-            if (baseDate != null) {
+            if (this.baseDate != null) {
                 TChronology chrono = TChronology.from(context.getTemporal());
-                baseValue = chrono.date(baseDate).get(field);
+                baseValue = chrono.date(this.baseDate).get(this.field);
             }
-            if (value >= baseValue && value < baseValue + EXCEED_POINTS[minWidth]) {
-                return absValue % EXCEED_POINTS[minWidth];
+            if (value >= baseValue && value < baseValue + EXCEED_POINTS[this.minWidth]) {
+                return absValue % EXCEED_POINTS[this.minWidth];
             }
-            return absValue % EXCEED_POINTS[maxWidth];
+            return absValue % EXCEED_POINTS[this.maxWidth];
         }
 
         @Override
         int setValue(TDateTimeParseContext context, long value, int errorPos, int successPos) {
+
             int baseValue = this.baseValue;
-            if (baseDate != null) {
+            if (this.baseDate != null) {
                 TChronology chrono = context.getEffectiveChronology();
-                baseValue = chrono.date(baseDate).get(field);
+                baseValue = chrono.date(this.baseDate).get(this.field);
                 context.addChronologyChangedParser(this, value, errorPos, successPos);
             }
             int parseLen = successPos - errorPos;
-            if (parseLen == minWidth && value >= 0) {
-                long range = EXCEED_POINTS[minWidth];
+            if (parseLen == this.minWidth && value >= 0) {
+                long range = EXCEED_POINTS[this.minWidth];
                 long lastPart = baseValue % range;
                 long basePart = baseValue - lastPart;
                 if (baseValue > 0) {
@@ -1381,45 +1465,54 @@ public final class TDateTimeFormatterBuilder {
                     value += range;
                 }
             }
-            return context.setParsedField(field, value, errorPos, successPos);
+            return context.setParsedField(this.field, value, errorPos, successPos);
         }
 
         @Override
         NumberPrinterParser withFixedWidth() {
-            if (subsequentWidth == -1) {
+
+            if (this.subsequentWidth == -1) {
                 return this;
             }
-            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate, -1);
+            return new ReducedPrinterParser(this.field, this.minWidth, this.maxWidth, this.baseValue, this.baseDate,
+                    -1);
         }
 
         @Override
         ReducedPrinterParser withSubsequentWidth(int subsequentWidth) {
-            return new ReducedPrinterParser(field, minWidth, maxWidth, baseValue, baseDate,
-                this.subsequentWidth + subsequentWidth);
+
+            return new ReducedPrinterParser(this.field, this.minWidth, this.maxWidth, this.baseValue, this.baseDate,
+                    this.subsequentWidth + subsequentWidth);
         }
 
         @Override
         boolean isFixedWidth(TDateTimeParseContext context) {
-           if (context.isStrict() == false) {
-               return false;
-           }
-           return super.isFixedWidth(context);
+
+            if (context.isStrict() == false) {
+                return false;
+            }
+            return super.isFixedWidth(context);
         }
 
         @Override
         public String toString() {
-            return "ReducedValue(" + field + "," + minWidth + "," + maxWidth + "," + (baseDate != null ? baseDate : baseValue) + ")";
+
+            return "ReducedValue(" + this.field + "," + this.minWidth + "," + this.maxWidth + ","
+                    + (this.baseDate != null ? this.baseDate : this.baseValue) + ")";
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class FractionPrinterParser implements DateTimePrinterParser {
         private final TTemporalField field;
+
         private final int minWidth;
+
         private final int maxWidth;
+
         private final boolean decimalPoint;
 
         FractionPrinterParser(TTemporalField field, int minWidth, int maxWidth, boolean decimalPoint) {
+
             TJdk8Methods.requireNonNull(field, "field");
             if (field.range().isFixed() == false) {
                 throw new IllegalArgumentException("Field must have a fixed set of values: " + field);
@@ -1431,8 +1524,8 @@ public final class TDateTimeFormatterBuilder {
                 throw new IllegalArgumentException("Maximum width must be from 1 to 9 inclusive but was " + maxWidth);
             }
             if (maxWidth < minWidth) {
-                throw new IllegalArgumentException("Maximum width must exceed or equal the minimum width but " +
-                        maxWidth + " < " + minWidth);
+                throw new IllegalArgumentException(
+                        "Maximum width must exceed or equal the minimum width but " + maxWidth + " < " + minWidth);
             }
             this.field = field;
             this.minWidth = minWidth;
@@ -1442,27 +1535,28 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
-            Long value = context.getValue(field);
+
+            Long value = context.getValue(this.field);
             if (value == null) {
                 return false;
             }
             TDecimalStyle symbols = context.getSymbols();
             BigDecimal fraction = convertToFraction(value);
-            if (fraction.scale() == 0) {  // scale is zero if value is zero
-                if (minWidth > 0) {
-                    if (decimalPoint) {
+            if (fraction.scale() == 0) { // scale is zero if value is zero
+                if (this.minWidth > 0) {
+                    if (this.decimalPoint) {
                         buf.append(symbols.getDecimalSeparator());
                     }
-                    for (int i = 0; i < minWidth; i++) {
+                    for (int i = 0; i < this.minWidth; i++) {
                         buf.append(symbols.getZeroDigit());
                     }
                 }
             } else {
-                int outputScale = Math.min(Math.max(fraction.scale(), minWidth), maxWidth);
+                int outputScale = Math.min(Math.max(fraction.scale(), this.minWidth), this.maxWidth);
                 fraction = fraction.setScale(outputScale, RoundingMode.FLOOR);
                 String str = fraction.toPlainString().substring(2);
                 str = symbols.convertNumberToI18N(str);
-                if (decimalPoint) {
+                if (this.decimalPoint) {
                     buf.append(symbols.getDecimalSeparator());
                 }
                 buf.append(str);
@@ -1472,14 +1566,15 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
-            int effectiveMin = (context.isStrict() ? minWidth : 0);
-            int effectiveMax = (context.isStrict() ? maxWidth : 9);
+
+            int effectiveMin = (context.isStrict() ? this.minWidth : 0);
+            int effectiveMax = (context.isStrict() ? this.maxWidth : 9);
             int length = text.length();
             if (position == length) {
                 // valid if whole field is optional, invalid if minimum width
                 return (effectiveMin > 0 ? ~position : position);
             }
-            if (decimalPoint) {
+            if (this.decimalPoint) {
                 if (text.charAt(position) != context.getSymbols().getDecimalSeparator()) {
                     // valid if whole field is optional, invalid if minimum width
                     return (effectiveMin > 0 ? ~position : position);
@@ -1488,17 +1583,17 @@ public final class TDateTimeFormatterBuilder {
             }
             int minEndPos = position + effectiveMin;
             if (minEndPos > length) {
-                return ~position;  // need at least min width digits
+                return ~position; // need at least min width digits
             }
             int maxEndPos = Math.min(position + effectiveMax, length);
-            int total = 0;  // can use int because we are only parsing up to 9 digits
+            int total = 0; // can use int because we are only parsing up to 9 digits
             int pos = position;
             while (pos < maxEndPos) {
                 char ch = text.charAt(pos++);
                 int digit = context.getSymbols().convertToDigit(ch);
                 if (digit < 0) {
                     if (pos < minEndPos) {
-                        return ~position;  // need at least min width digits
+                        return ~position; // need at least min width digits
                     }
                     pos--;
                     break;
@@ -1507,12 +1602,13 @@ public final class TDateTimeFormatterBuilder {
             }
             BigDecimal fraction = new BigDecimal(total).movePointLeft(pos - position);
             long value = convertFromFraction(fraction);
-            return context.setParsedField(field, value, position, pos);
+            return context.setParsedField(this.field, value, position, pos);
         }
 
         private BigDecimal convertToFraction(long value) {
-            TValueRange range = field.range();
-            range.checkValidValue(value, field);
+
+            TValueRange range = this.field.range();
+            range.checkValidValue(value, this.field);
             BigDecimal minBD = BigDecimal.valueOf(range.getMinimum());
             BigDecimal rangeBD = BigDecimal.valueOf(range.getMaximum()).subtract(minBD).add(BigDecimal.ONE);
             BigDecimal valueBD = BigDecimal.valueOf(value).subtract(minBD);
@@ -1522,7 +1618,8 @@ public final class TDateTimeFormatterBuilder {
         }
 
         private long convertFromFraction(BigDecimal fraction) {
-            TValueRange range = field.range();
+
+            TValueRange range = this.field.range();
             BigDecimal minBD = BigDecimal.valueOf(range.getMinimum());
             BigDecimal rangeBD = BigDecimal.valueOf(range.getMaximum()).subtract(minBD).add(BigDecimal.ONE);
             BigDecimal valueBD = fraction.multiply(rangeBD).setScale(0, RoundingMode.FLOOR).add(minBD);
@@ -1531,19 +1628,23 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public String toString() {
-            String decimal = (decimalPoint ? ",DecimalPoint" : "");
-            return "Fraction(" + field + "," + minWidth + "," + maxWidth + decimal + ")";
+
+            String decimal = (this.decimalPoint ? ",DecimalPoint" : "");
+            return "Fraction(" + this.field + "," + this.minWidth + "," + this.maxWidth + decimal + ")";
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class TextPrinterParser implements DateTimePrinterParser {
         private final TTemporalField field;
+
         private final TTextStyle textStyle;
+
         private final TDateTimeTextProvider provider;
+
         private volatile NumberPrinterParser numberPrinterParser;
 
         TextPrinterParser(TTemporalField field, TTextStyle textStyle, TDateTimeTextProvider provider) {
+
             // validated by caller
             this.field = field;
             this.textStyle = textStyle;
@@ -1552,11 +1653,12 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
-            Long value = context.getValue(field);
+
+            Long value = context.getValue(this.field);
             if (value == null) {
                 return false;
             }
-            String text = provider.getText(field, value, textStyle, context.getLocale());
+            String text = this.provider.getText(this.field, value, this.textStyle, context.getLocale());
             if (text == null) {
                 return numberPrinterParser().print(context, buf);
             }
@@ -1566,18 +1668,20 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence parseText, int position) {
+
             int length = parseText.length();
             if (position < 0 || position > length) {
                 throw new IndexOutOfBoundsException();
             }
-            TTextStyle style = (context.isStrict() ? textStyle : null);
-            Iterator<Entry<String, Long>> it = provider.getTextIterator(field, style, context.getLocale());
+            TTextStyle style = (context.isStrict() ? this.textStyle : null);
+            Iterator<Entry<String, Long>> it = this.provider.getTextIterator(this.field, style, context.getLocale());
             if (it != null) {
                 while (it.hasNext()) {
                     Entry<String, Long> entry = it.next();
                     String itText = entry.getKey();
                     if (context.subSequenceEquals(itText, 0, parseText, position, itText.length())) {
-                        return context.setParsedField(field, entry.getValue(), position, position + itText.length());
+                        return context.setParsedField(this.field, entry.getValue(), position,
+                                position + itText.length());
                     }
                 }
                 if (context.isStrict()) {
@@ -1588,37 +1692,41 @@ public final class TDateTimeFormatterBuilder {
         }
 
         private NumberPrinterParser numberPrinterParser() {
-            if (numberPrinterParser == null) {
-                numberPrinterParser = new NumberPrinterParser(field, 1, 19, TSignStyle.NORMAL);
+
+            if (this.numberPrinterParser == null) {
+                this.numberPrinterParser = new NumberPrinterParser(this.field, 1, 19, TSignStyle.NORMAL);
             }
-            return numberPrinterParser;
+            return this.numberPrinterParser;
         }
 
         @Override
         public String toString() {
-            if (textStyle == TTextStyle.FULL) {
-                return "Text(" + field + ")";
+
+            if (this.textStyle == TTextStyle.FULL) {
+                return "Text(" + this.field + ")";
             }
-            return "Text(" + field + "," + textStyle + ")";
+            return "Text(" + this.field + "," + this.textStyle + ")";
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class InstantPrinterParser implements DateTimePrinterParser {
         // days in a 400 year cycle = 146097
         // days in a 10,000 year cycle = 146097 * 25
         // seconds per day = 86400
         private static final long SECONDS_PER_10000_YEARS = 146097L * 25L * 86400L;
+
         private static final long SECONDS_0000_TO_1970 = ((146097L * 5L) - (30L * 365L + 7L)) * 86400L;
 
         private final int fractionalDigits;
 
         InstantPrinterParser(int fractionalDigits) {
+
             this.fractionalDigits = fractionalDigits;
         }
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
+
             // use INSTANT_SECONDS, thus this code is not bound by TInstant.MAX
             Long inSecs = context.getValue(INSTANT_SECONDS);
             Long inNanos = 0L;
@@ -1664,8 +1772,8 @@ public final class TDateTimeFormatterBuilder {
                     }
                 }
             }
-            //fraction
-            if (fractionalDigits == -2) {
+            // fraction
+            if (this.fractionalDigits == -2) {
                 if (inNano != 0) {
                     buf.append('.');
                     if (inNano % 1000000 == 0) {
@@ -1676,10 +1784,10 @@ public final class TDateTimeFormatterBuilder {
                         buf.append(Integer.toString((inNano) + 1000000000).substring(1));
                     }
                 }
-            } else if (fractionalDigits > 0 || (fractionalDigits == -1 && inNano > 0)) {
+            } else if (this.fractionalDigits > 0 || (this.fractionalDigits == -1 && inNano > 0)) {
                 buf.append('.');
                 int div = 100000000;
-                for (int i = 0; ((fractionalDigits == -1 && inNano > 0) || i < fractionalDigits); i++) {
+                for (int i = 0; ((this.fractionalDigits == -1 && inNano > 0) || i < this.fractionalDigits); i++) {
                     int digit = inNano / div;
                     buf.append((char) (digit + '0'));
                     inNano = inNano - (digit * div);
@@ -1692,15 +1800,16 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             // new context to avoid overwriting fields like year/month/day
             TDateTimeParseContext newContext = context.copy();
-            int minDigits = (fractionalDigits < 0 ? 0 : fractionalDigits);
-            int maxDigits = (fractionalDigits < 0 ? 9 : fractionalDigits);
-            CompositePrinterParser parser = new TDateTimeFormatterBuilder()
-                    .append(TDateTimeFormatter.ISO_LOCAL_DATE).appendLiteral('T')
-                    .appendValue(HOUR_OF_DAY, 2).appendLiteral(':').appendValue(MINUTE_OF_HOUR, 2).appendLiteral(':')
-                    .appendValue(SECOND_OF_MINUTE, 2).appendFraction(NANO_OF_SECOND, minDigits, maxDigits, true).appendLiteral('Z')
-                    .toFormatter().toPrinterParser(false);
+            int minDigits = (this.fractionalDigits < 0 ? 0 : this.fractionalDigits);
+            int maxDigits = (this.fractionalDigits < 0 ? 9 : this.fractionalDigits);
+            CompositePrinterParser parser = new TDateTimeFormatterBuilder().append(TDateTimeFormatter.ISO_LOCAL_DATE)
+                    .appendLiteral('T').appendValue(HOUR_OF_DAY, 2).appendLiteral(':').appendValue(MINUTE_OF_HOUR, 2)
+                    .appendLiteral(':').appendValue(SECOND_OF_MINUTE, 2)
+                    .appendFraction(NANO_OF_SECOND, minDigits, maxDigits, true).appendLiteral('Z').toFormatter()
+                    .toPrinterParser(false);
             int pos = parser.parse(newContext, text, position);
             if (pos < 0) {
                 return pos;
@@ -1740,21 +1849,23 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public String toString() {
+
             return "TInstant()";
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class OffsetIdPrinterParser implements DateTimePrinterParser {
-        static final String[] PATTERNS = new String[] {
-            "+HH", "+HHmm", "+HH:mm", "+HHMM", "+HH:MM", "+HHMMss", "+HH:MM:ss", "+HHMMSS", "+HH:MM:SS",
-        };  // order used in pattern builder
+        static final String[] PATTERNS = new String[] { "+HH", "+HHmm", "+HH:mm", "+HHMM", "+HH:MM", "+HHMMss",
+        "+HH:MM:ss", "+HHMMSS", "+HH:MM:SS", }; // order used in pattern builder
+
         static final OffsetIdPrinterParser INSTANCE_ID = new OffsetIdPrinterParser("Z", "+HH:MM:ss");
 
         private final String noOffsetText;
+
         private final int type;
 
         OffsetIdPrinterParser(String noOffsetText, String pattern) {
+
             TJdk8Methods.requireNonNull(noOffsetText, "noOffsetText");
             TJdk8Methods.requireNonNull(pattern, "pattern");
             this.noOffsetText = noOffsetText;
@@ -1762,6 +1873,7 @@ public final class TDateTimeFormatterBuilder {
         }
 
         private int checkPattern(String pattern) {
+
             for (int i = 0; i < PATTERNS.length; i++) {
                 if (PATTERNS[i].equals(pattern)) {
                     return i;
@@ -1772,34 +1884,35 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
+
             Long offsetSecs = context.getValue(OFFSET_SECONDS);
             if (offsetSecs == null) {
                 return false;
             }
             int totalSecs = TJdk8Methods.safeToInt(offsetSecs);
             if (totalSecs == 0) {
-                buf.append(noOffsetText);
+                buf.append(this.noOffsetText);
             } else {
-                int absHours = Math.abs((totalSecs / 3600) % 100);  // anything larger than 99 silently dropped
+                int absHours = Math.abs((totalSecs / 3600) % 100); // anything larger than 99 silently dropped
                 int absMinutes = Math.abs((totalSecs / 60) % 60);
                 int absSeconds = Math.abs(totalSecs % 60);
                 int bufPos = buf.length();
                 int output = absHours;
-                buf.append(totalSecs < 0 ? "-" : "+")
-                    .append((char) (absHours / 10 + '0')).append((char) (absHours % 10 + '0'));
-                if (type >= 3 || (type >= 1 && absMinutes > 0)) {
-                    buf.append((type % 2) == 0 ? ":" : "")
-                        .append((char) (absMinutes / 10 + '0')).append((char) (absMinutes % 10 + '0'));
+                buf.append(totalSecs < 0 ? "-" : "+").append((char) (absHours / 10 + '0'))
+                        .append((char) (absHours % 10 + '0'));
+                if (this.type >= 3 || (this.type >= 1 && absMinutes > 0)) {
+                    buf.append((this.type % 2) == 0 ? ":" : "").append((char) (absMinutes / 10 + '0'))
+                            .append((char) (absMinutes % 10 + '0'));
                     output += absMinutes;
-                    if (type >= 7 || (type >= 5 && absSeconds > 0)) {
-                        buf.append((type % 2) == 0 ? ":" : "")
-                            .append((char) (absSeconds / 10 + '0')).append((char) (absSeconds % 10 + '0'));
+                    if (this.type >= 7 || (this.type >= 5 && absSeconds > 0)) {
+                        buf.append((this.type % 2) == 0 ? ":" : "").append((char) (absSeconds / 10 + '0'))
+                                .append((char) (absSeconds % 10 + '0'));
                         output += absSeconds;
                     }
                 }
                 if (output == 0) {
                     buf.setLength(bufPos);
-                    buf.append(noOffsetText);
+                    buf.append(this.noOffsetText);
                 }
             }
             return true;
@@ -1807,8 +1920,9 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             int length = text.length();
-            int noOffsetLen = noOffsetText.length();
+            int noOffsetLen = this.noOffsetText.length();
             if (noOffsetLen == 0) {
                 if (position == length) {
                     return context.setParsedField(OFFSET_SECONDS, 0, position, position);
@@ -1817,21 +1931,20 @@ public final class TDateTimeFormatterBuilder {
                 if (position == length) {
                     return ~position;
                 }
-                if (context.subSequenceEquals(text, position, noOffsetText, 0, noOffsetLen)) {
+                if (context.subSequenceEquals(text, position, this.noOffsetText, 0, noOffsetLen)) {
                     return context.setParsedField(OFFSET_SECONDS, 0, position, position + noOffsetLen);
                 }
             }
 
             // parse normal plus/minus offset
-            char sign = text.charAt(position);  // IOOBE if invalid position
+            char sign = text.charAt(position); // IOOBE if invalid position
             if (sign == '+' || sign == '-') {
                 // starts
                 int negative = (sign == '-' ? -1 : 1);
                 int[] array = new int[4];
                 array[0] = position + 1;
-                if ((parseNumber(array, 1, text, true) ||
-                        parseNumber(array, 2, text, type >=3) ||
-                        parseNumber(array, 3, text, false)) == false) {
+                if ((parseNumber(array, 1, text, true) || parseNumber(array, 2, text, this.type >= 3)
+                        || parseNumber(array, 3, text, false)) == false) {
                     // success
                     long offsetSecs = negative * (array[1] * 3600L + array[2] * 60L + array[3]);
                     return context.setParsedField(OFFSET_SECONDS, offsetSecs, position, array[0]);
@@ -1845,11 +1958,12 @@ public final class TDateTimeFormatterBuilder {
         }
 
         private boolean parseNumber(int[] array, int arrayIndex, CharSequence parseText, boolean required) {
-            if ((type + 3) / 2 < arrayIndex) {
-                return false;  // ignore seconds/minutes
+
+            if ((this.type + 3) / 2 < arrayIndex) {
+                return false; // ignore seconds/minutes
             }
             int pos = array[0];
-            if ((type % 2) == 0 && arrayIndex > 1) {
+            if ((this.type % 2) == 0 && arrayIndex > 1) {
                 if (pos + 1 > parseText.length() || parseText.charAt(pos) != ':') {
                     return required;
                 }
@@ -1874,41 +1988,41 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public String toString() {
-            String converted = noOffsetText.replace("'", "''");
-            return "Offset(" + PATTERNS[type] + ",'" + converted + "')";
+
+            String converted = this.noOffsetText.replace("'", "''");
+            return "Offset(" + PATTERNS[this.type] + ",'" + converted + "')";
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class LocalizedOffsetPrinterParser implements DateTimePrinterParser {
         private final TTextStyle style;
 
         public LocalizedOffsetPrinterParser(TTextStyle style) {
+
             this.style = style;
         }
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
+
             Long offsetSecs = context.getValue(OFFSET_SECONDS);
             if (offsetSecs == null) {
                 return false;
             }
             buf.append("GMT");
-            if (style == TTextStyle.FULL) {
+            if (this.style == TTextStyle.FULL) {
                 return new OffsetIdPrinterParser("", "+HH:MM:ss").print(context, buf);
             }
             int totalSecs = TJdk8Methods.safeToInt(offsetSecs);
             if (totalSecs != 0) {
-                int absHours = Math.abs((totalSecs / 3600) % 100);  // anything larger than 99 silently dropped
+                int absHours = Math.abs((totalSecs / 3600) % 100); // anything larger than 99 silently dropped
                 int absMinutes = Math.abs((totalSecs / 60) % 60);
                 int absSeconds = Math.abs(totalSecs % 60);
                 buf.append(totalSecs < 0 ? "-" : "+").append(absHours);
                 if (absMinutes > 0 || absSeconds > 0) {
-                    buf.append(":")
-                        .append((char) (absMinutes / 10 + '0')).append((char) (absMinutes % 10 + '0'));
+                    buf.append(":").append((char) (absMinutes / 10 + '0')).append((char) (absMinutes % 10 + '0'));
                     if (absSeconds > 0) {
-                        buf.append(":")
-                            .append((char) (absSeconds / 10 + '0')).append((char) (absSeconds % 10 + '0'));
+                        buf.append(":").append((char) (absSeconds / 10 + '0')).append((char) (absSeconds % 10 + '0'));
                     }
                 }
             }
@@ -1917,11 +2031,12 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             if (context.subSequenceEquals(text, position, "GMT", 0, 3) == false) {
                 return ~position;
             }
             position += 3;
-            if (style == TTextStyle.FULL) {
+            if (this.style == TTextStyle.FULL) {
                 return new OffsetIdPrinterParser("", "+HH:MM:ss").parse(context, text, position);
             }
             int end = text.length();
@@ -1943,11 +2058,11 @@ public final class TDateTimeFormatterBuilder {
                 return ~position;
             }
             position++;
-            int hour = ((int) (ch - 48));
+            int hour = (ch - 48);
             if (position != end) {
                 ch = text.charAt(position);
                 if (ch >= '0' && ch <= '9') {
-                    hour = hour * 10 + ((int) (ch - 48));
+                    hour = hour * 10 + (ch - 48);
                     if (hour > 23) {
                         return ~position;
                     }
@@ -1968,13 +2083,13 @@ public final class TDateTimeFormatterBuilder {
                 return ~position;
             }
             position++;
-            int min = ((int) (ch - 48));
+            int min = (ch - 48);
             ch = text.charAt(position);
             if (ch < '0' || ch > '9') {
                 return ~position;
             }
             position++;
-            min = min * 10 + ((int) (ch - 48));
+            min = min * 10 + (ch - 48);
             if (min > 59) {
                 return ~position;
             }
@@ -1992,13 +2107,13 @@ public final class TDateTimeFormatterBuilder {
                 return ~position;
             }
             position++;
-            int sec = ((int) (ch - 48));
+            int sec = (ch - 48);
             ch = text.charAt(position);
             if (ch < '0' || ch > '9') {
                 return ~position;
             }
             position++;
-            sec = sec * 10 + ((int) (ch - 48));
+            sec = sec * 10 + (ch - 48);
             if (sec > 59) {
                 return ~position;
             }
@@ -2007,11 +2122,11 @@ public final class TDateTimeFormatterBuilder {
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class ZoneTextPrinterParser implements DateTimePrinterParser {
         private static final Comparator<String> LENGTH_COMPARATOR = new Comparator<String>() {
             @Override
             public int compare(String str1, String str2) {
+
                 int cmp = str2.length() - str1.length();
                 if (cmp == 0) {
                     cmp = str1.compareTo(str2);
@@ -2019,15 +2134,17 @@ public final class TDateTimeFormatterBuilder {
                 return cmp;
             }
         };
+
         private final TTextStyle textStyle;
 
         ZoneTextPrinterParser(TTextStyle textStyle) {
+
             this.textStyle = TJdk8Methods.requireNonNull(textStyle, "textStyle");
         }
 
-        //-----------------------------------------------------------------------
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
+
             TZoneId zone = context.getValue(TTemporalQueries.zoneId());
             if (zone == null) {
                 return false;
@@ -2042,8 +2159,8 @@ public final class TDateTimeFormatterBuilder {
                 TInstant instant = TInstant.ofEpochSecond(temporal.getLong(INSTANT_SECONDS));
                 daylight = zone.getRules().isDaylightSavings(instant);
             }
-            TTimeZone tz = TTimeZone.getTimeZone(zone.getId());
-            int tzstyle = (textStyle.asNormal() == TTextStyle.FULL ? TTimeZone.LONG : TTimeZone.SHORT);
+            TimeZone tz = TimeZone.getTimeZone(zone.getId());
+            int tzstyle = (this.textStyle.asNormal() == TTextStyle.FULL ? TTimeZone.LONG : TTimeZone.SHORT);
             String text = tz.getDisplayName(daylight, tzstyle, context.getLocale());
             buf.append(text);
             return true;
@@ -2051,13 +2168,14 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             // this is a poor implementation that handles some but not all of the spec
             // JDK8 has a lot of extra information here
-            Map<String, String> ids = new TreeMap<String, String>(LENGTH_COMPARATOR);
+            Map<String, String> ids = new TreeMap<>(LENGTH_COMPARATOR);
             for (String id : TZoneId.getAvailableZoneIds()) {
                 ids.put(id, id);
-                TTimeZone tz = TTimeZone.getTimeZone(id);
-                int tzstyle = (textStyle.asNormal() == TTextStyle.FULL ? TTimeZone.LONG : TTimeZone.SHORT);
+                TimeZone tz = TimeZone.getTimeZone(id);
+                int tzstyle = (this.textStyle.asNormal() == TTextStyle.FULL ? TTimeZone.LONG : TTimeZone.SHORT);
                 String textWinter = tz.getDisplayName(false, tzstyle, context.getLocale());
                 if (id.startsWith("Etc/") || (!textWinter.startsWith("GMT+") && !textWinter.startsWith("GMT+"))) {
                     ids.put(textWinter, id);
@@ -2079,24 +2197,26 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public String toString() {
-            return "ZoneText(" + textStyle + ")";
+
+            return "ZoneText(" + this.textStyle + ")";
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class ZoneIdPrinterParser implements DateTimePrinterParser {
         private final TTemporalQuery<TZoneId> query;
+
         private final String description;
 
         ZoneIdPrinterParser(TTemporalQuery<TZoneId> query, String description) {
+
             this.query = query;
             this.description = description;
         }
 
-        //-----------------------------------------------------------------------
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
-            TZoneId zone = context.getValue(query);
+
+            TZoneId zone = context.getValue(this.query);
             if (zone == null) {
                 return false;
             }
@@ -2104,11 +2224,11 @@ public final class TDateTimeFormatterBuilder {
             return true;
         }
 
-        //-----------------------------------------------------------------------
         private static volatile Entry<Integer, SubstringTree> cachedSubstringTree;
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             int length = text.length();
             if (position > length) {
                 throw new IndexOutOfBoundsException();
@@ -2131,17 +2251,14 @@ public final class TDateTimeFormatterBuilder {
                 return endPos;
             } else if (length >= position + 2) {
                 char nextNextChar = text.charAt(position + 1);
-                if (context.charEquals(nextChar, 'U') &&
-                                context.charEquals(nextNextChar, 'T')) {
-                    if (length >= position + 3 &&
-                                    context.charEquals(text.charAt(position + 2), 'C')) {
+                if (context.charEquals(nextChar, 'U') && context.charEquals(nextNextChar, 'T')) {
+                    if (length >= position + 3 && context.charEquals(text.charAt(position + 2), 'C')) {
                         return parsePrefixedOffset(context, text, position, position + 3);
                     }
                     return parsePrefixedOffset(context, text, position, position + 2);
-                } else if (context.charEquals(nextChar, 'G') &&
-                        length >= position + 3 &&
-                        context.charEquals(nextNextChar, 'M') &&
-                        context.charEquals(text.charAt(position + 2), 'T')) {
+                } else if (context.charEquals(nextChar, 'G') && length >= position + 3
+                        && context.charEquals(nextNextChar, 'M')
+                        && context.charEquals(text.charAt(position + 2), 'T')) {
                     return parsePrefixedOffset(context, text, position, position + 3);
                 }
             }
@@ -2154,7 +2271,8 @@ public final class TDateTimeFormatterBuilder {
                 synchronized (this) {
                     cached = cachedSubstringTree;
                     if (cached == null || cached.getKey() != regionIdsSize) {
-                        cachedSubstringTree = cached = new SimpleImmutableEntry<Integer, SubstringTree>(regionIdsSize, prepareParser(regionIds));
+                        cachedSubstringTree = cached = new SimpleImmutableEntry<Integer, SubstringTree>(regionIdsSize,
+                                prepareParser(regionIds));
                     }
                 }
             }
@@ -2189,6 +2307,7 @@ public final class TDateTimeFormatterBuilder {
         }
 
         private TZoneId convertToZone(Set<String> regionIds, String parsedZoneId, boolean caseSensitive) {
+
             if (parsedZoneId == null) {
                 return null;
             }
@@ -2205,6 +2324,7 @@ public final class TDateTimeFormatterBuilder {
         }
 
         private int parsePrefixedOffset(TDateTimeParseContext context, CharSequence text, int prefixPos, int position) {
+
             String prefix = text.subSequence(prefixPos, position).toString().toUpperCase();
             TDateTimeParseContext newContext = context.copy();
             if (position < text.length() && context.charEquals(text.charAt(position), 'Z')) {
@@ -2222,36 +2342,40 @@ public final class TDateTimeFormatterBuilder {
             return endPos;
         }
 
-        //-----------------------------------------------------------------------
         private static final class SubstringTree {
             final int length;
-            private final Map<CharSequence, SubstringTree> substringMap = new HashMap<CharSequence, SubstringTree>();
-            private final Map<String, SubstringTree> substringMapCI = new HashMap<String, SubstringTree>();
+
+            private final Map<CharSequence, SubstringTree> substringMap = new HashMap<>();
+
+            private final Map<String, SubstringTree> substringMapCI = new HashMap<>();
 
             private SubstringTree(int length) {
+
                 this.length = length;
             }
 
             private SubstringTree get(CharSequence substring2, boolean caseSensitive) {
+
                 if (caseSensitive) {
-                    return substringMap.get(substring2);
+                    return this.substringMap.get(substring2);
                 } else {
-                    return substringMapCI.get(substring2.toString().toLowerCase(TLocale.ENGLISH));
+                    return this.substringMapCI.get(substring2.toString().toLowerCase(Locale.ENGLISH));
                 }
             }
 
             private void add(String newSubstring) {
+
                 int idLen = newSubstring.length();
-                if (idLen == length) {
-                    substringMap.put(newSubstring, null);
-                    substringMapCI.put(newSubstring.toLowerCase(TLocale.ENGLISH), null);
-                } else if (idLen > length) {
-                    String substring = newSubstring.substring(0, length);
-                    SubstringTree parserTree = substringMap.get(substring);
+                if (idLen == this.length) {
+                    this.substringMap.put(newSubstring, null);
+                    this.substringMapCI.put(newSubstring.toLowerCase(Locale.ENGLISH), null);
+                } else if (idLen > this.length) {
+                    String substring = newSubstring.substring(0, this.length);
+                    SubstringTree parserTree = this.substringMap.get(substring);
                     if (parserTree == null) {
                         parserTree = new SubstringTree(idLen);
-                        substringMap.put(substring, parserTree);
-                        substringMapCI.put(substring.toLowerCase(TLocale.ENGLISH), parserTree);
+                        this.substringMap.put(substring, parserTree);
+                        this.substringMapCI.put(substring.toLowerCase(Locale.ENGLISH), parserTree);
                     }
                     parserTree.add(newSubstring);
                 }
@@ -2259,8 +2383,9 @@ public final class TDateTimeFormatterBuilder {
         }
 
         private static SubstringTree prepareParser(Set<String> availableIDs) {
+
             // sort by length
-            List<String> ids = new ArrayList<String>(availableIDs);
+            List<String> ids = new ArrayList<>(availableIDs);
             Collections.sort(ids, LENGTH_SORT);
 
             // build the tree
@@ -2271,33 +2396,34 @@ public final class TDateTimeFormatterBuilder {
             return tree;
         }
 
-        //-----------------------------------------------------------------------
         @Override
         public String toString() {
-            return description;
+
+            return this.description;
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class ChronoPrinterParser implements DateTimePrinterParser {
         private final TTextStyle textStyle;
 
         ChronoPrinterParser(TTextStyle textStyle) {
+
             // validated by caller
             this.textStyle = textStyle;
         }
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
+
             TChronology chrono = context.getValue(TTemporalQueries.chronology());
             if (chrono == null) {
                 return false;
             }
-            if (textStyle == null) {
+            if (this.textStyle == null) {
                 buf.append(chrono.getId());
             } else {
-                ResourceBundle bundle = ResourceBundle.getBundle(
-                        "org.teavm.classlib.java.time.format.ChronologyText", context.getLocale(), TDateTimeFormatterBuilder.class.getClassLoader());
+                ResourceBundle bundle = ResourceBundle.getBundle("org.teavm.classlib.java.time.format.ChronologyText",
+                        context.getLocale(), TDateTimeFormatterBuilder.class.getClassLoader());
                 try {
                     String text = bundle.getString(chrono.getId());
                     buf.append(text);
@@ -2310,6 +2436,7 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             // simple looping parser to find the chronology
             if (position < 0 || position > text.length()) {
                 throw new IndexOutOfBoundsException();
@@ -2333,12 +2460,13 @@ public final class TDateTimeFormatterBuilder {
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class LocalizedPrinterParser implements DateTimePrinterParser {
         private final TFormatStyle dateStyle;
+
         private final TFormatStyle timeStyle;
 
         LocalizedPrinterParser(TFormatStyle dateStyle, TFormatStyle timeStyle) {
+
             // validated by caller
             this.dateStyle = dateStyle;
             this.timeStyle = timeStyle;
@@ -2346,40 +2474,46 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
+
             TChronology chrono = TChronology.from(context.getTemporal());
             return formatter(context.getLocale(), chrono).toPrinterParser(false).print(context, buf);
         }
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             TChronology chrono = context.getEffectiveChronology();
             return formatter(context.getLocale(), chrono).toPrinterParser(false).parse(context, text, position);
         }
 
-        private TDateTimeFormatter formatter(TLocale locale, TChronology chrono) {
-            return TDateTimeFormatStyleProvider.getInstance()
-                    .getFormatter(dateStyle, timeStyle, chrono, locale);
+        private TDateTimeFormatter formatter(Locale locale, TChronology chrono) {
+
+            return TDateTimeFormatStyleProvider.getInstance().getFormatter(this.dateStyle, this.timeStyle, chrono,
+                    locale);
         }
 
         @Override
         public String toString() {
-            return "Localized(" + (dateStyle != null ? dateStyle : "") + "," +
-                (timeStyle != null ? timeStyle : "") + ")";
+
+            return "Localized(" + (this.dateStyle != null ? this.dateStyle : "") + ","
+                    + (this.timeStyle != null ? this.timeStyle : "") + ")";
         }
     }
 
-    //-----------------------------------------------------------------------
     static final class WeekFieldsPrinterParser implements DateTimePrinterParser {
         private final char letter;
+
         private final int count;
 
         public WeekFieldsPrinterParser(char letter, int count) {
+
             this.letter = letter;
             this.count = count;
         }
 
         @Override
         public boolean print(TDateTimePrintContext context, StringBuilder buf) {
+
             TWeekFields weekFields = TWeekFields.of(context.getLocale());
             DateTimePrinterParser pp = evaluate(weekFields);
             return pp.print(context, buf);
@@ -2387,32 +2521,36 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public int parse(TDateTimeParseContext context, CharSequence text, int position) {
+
             TWeekFields weekFields = TWeekFields.of(context.getLocale());
             DateTimePrinterParser pp = evaluate(weekFields);
             return pp.parse(context, text, position);
         }
-        
+
         private DateTimePrinterParser evaluate(TWeekFields weekFields) {
+
             DateTimePrinterParser pp = null;
-            switch (letter) {
-                case 'e':  // day-of-week
-                    pp = new NumberPrinterParser(weekFields.dayOfWeek(), count, 2, TSignStyle.NOT_NEGATIVE);
+            switch (this.letter) {
+                case 'e': // day-of-week
+                    pp = new NumberPrinterParser(weekFields.dayOfWeek(), this.count, 2, TSignStyle.NOT_NEGATIVE);
                     break;
-                case 'c':  // day-of-week
-                    pp = new NumberPrinterParser(weekFields.dayOfWeek(), count, 2, TSignStyle.NOT_NEGATIVE);
+                case 'c': // day-of-week
+                    pp = new NumberPrinterParser(weekFields.dayOfWeek(), this.count, 2, TSignStyle.NOT_NEGATIVE);
                     break;
-                case 'w':  // week-of-year
-                    pp = new NumberPrinterParser(weekFields.weekOfWeekBasedYear(), count, 2, TSignStyle.NOT_NEGATIVE);
+                case 'w': // week-of-year
+                    pp = new NumberPrinterParser(weekFields.weekOfWeekBasedYear(), this.count, 2,
+                            TSignStyle.NOT_NEGATIVE);
                     break;
-                case 'W':  // week-of-month
+                case 'W': // week-of-month
                     pp = new NumberPrinterParser(weekFields.weekOfMonth(), 1, 2, TSignStyle.NOT_NEGATIVE);
                     break;
-                case 'Y':  // weekyear
-                    if (count == 2) {
-                        pp = new ReducedPrinterParser(weekFields.weekBasedYear(), 2, 2, 0, ReducedPrinterParser.BASE_DATE);
+                case 'Y': // weekyear
+                    if (this.count == 2) {
+                        pp = new ReducedPrinterParser(weekFields.weekBasedYear(), 2, 2, 0,
+                                ReducedPrinterParser.BASE_DATE);
                     } else {
-                        pp = new NumberPrinterParser(weekFields.weekBasedYear(), count, 19,
-                                (count < 4) ? TSignStyle.NORMAL : TSignStyle.EXCEEDS_PAD, -1);
+                        pp = new NumberPrinterParser(weekFields.weekBasedYear(), this.count, 19,
+                                (this.count < 4) ? TSignStyle.NORMAL : TSignStyle.EXCEEDS_PAD, -1);
                     }
                     break;
             }
@@ -2421,38 +2559,38 @@ public final class TDateTimeFormatterBuilder {
 
         @Override
         public String toString() {
+
             StringBuilder sb = new StringBuilder(30);
             sb.append("Localized(");
-            if (letter == 'Y') {
-                if (count == 1) {
+            if (this.letter == 'Y') {
+                if (this.count == 1) {
                     sb.append("WeekBasedYear");
-                } else if (count == 2) {
+                } else if (this.count == 2) {
                     sb.append("ReducedValue(WeekBasedYear,2,2,2000-01-01)");
                 } else {
-                    sb.append("WeekBasedYear,").append(count).append(",")
-                            .append(19).append(",")
-                            .append((count < 4) ? TSignStyle.NORMAL : TSignStyle.EXCEEDS_PAD);
+                    sb.append("WeekBasedYear,").append(this.count).append(",").append(19).append(",")
+                            .append((this.count < 4) ? TSignStyle.NORMAL : TSignStyle.EXCEEDS_PAD);
                 }
             } else {
-                if (letter == 'c' || letter == 'e') {
+                if (this.letter == 'c' || this.letter == 'e') {
                     sb.append("TDayOfWeek");
-                } else if (letter == 'w') {
+                } else if (this.letter == 'w') {
                     sb.append("WeekOfWeekBasedYear");
-                } else if (letter == 'W') {
+                } else if (this.letter == 'W') {
                     sb.append("WeekOfMonth");
                 }
                 sb.append(",");
-                sb.append(count);
+                sb.append(this.count);
             }
             sb.append(")");
             return sb.toString();
         }
     }
 
-    //-------------------------------------------------------------------------
     static final Comparator<String> LENGTH_SORT = new Comparator<String>() {
         @Override
         public int compare(String str1, String str2) {
+
             return str1.length() == str2.length() ? str1.compareTo(str2) : str1.length() - str2.length();
         }
     };

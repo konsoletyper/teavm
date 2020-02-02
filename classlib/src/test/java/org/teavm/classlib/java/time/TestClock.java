@@ -35,49 +35,65 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-@Test
 public class TestClock {
 
     static class MockInstantClock extends TClock {
         final long millis;
+
         final TZoneId zone;
+
         MockInstantClock(long millis, TZoneId zone) {
+
             this.millis = millis;
             this.zone = zone;
         }
+
         @Override
         public TInstant instant() {
-            return TInstant.ofEpochMilli(millis);
+
+            return TInstant.ofEpochMilli(this.millis);
         }
+
         @Override
         public TZoneId getZone() {
-            return zone;
+
+            return this.zone;
         }
+
         @Override
         public TClock withZone(TZoneId timeZone) {
-            return new MockInstantClock(millis, timeZone);
+
+            return new MockInstantClock(this.millis, timeZone);
         }
+
         @Override
         public boolean equals(Object obj) {
+
             return false;
         }
+
         @Override
         public int hashCode() {
+
             return 0;
         }
+
         @Override
         public String toString() {
+
             return "Mock";
         }
     }
 
     private static final TInstant INSTANT = TInstant.ofEpochSecond(1873687, 357000000);
+
     private static final TZoneId ZONE = TZoneId.of("Europe/Paris");
+
     private static final TClock MOCK_INSTANT = new MockInstantClock(INSTANT.toEpochMilli(), ZONE);
 
-    //-----------------------------------------------------------------------
     @Test
     public void test_mockInstantClock_get() {
+
         assertEquals(MOCK_INSTANT.instant(), INSTANT);
         assertEquals(MOCK_INSTANT.millis(), INSTANT.toEpochMilli());
         assertEquals(MOCK_INSTANT.getZone(), ZONE);
@@ -85,6 +101,7 @@ public class TestClock {
 
     @Test
     public void test_mockInstantClock_withZone() {
+
         TZoneId london = TZoneId.of("Europe/London");
         TClock changed = MOCK_INSTANT.withZone(london);
         assertEquals(MOCK_INSTANT.instant(), INSTANT);

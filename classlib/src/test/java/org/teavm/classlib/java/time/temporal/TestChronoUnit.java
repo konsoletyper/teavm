@@ -45,262 +45,383 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TMonth;
 import org.teavm.classlib.java.time.TZoneOffset;
 
-@Test
 public class TestChronoUnit {
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name = "yearsBetween")
     Object[][] data_yearsBetween() {
-        return new Object[][] {
-            {date(1939, SEPTEMBER, 2), date(1939, SEPTEMBER, 1), 0},
-            {date(1939, SEPTEMBER, 2), date(1939, SEPTEMBER, 2), 0},
-            {date(1939, SEPTEMBER, 2), date(1939, SEPTEMBER, 3), 0},
 
-            {date(1939, SEPTEMBER, 2), date(1940, SEPTEMBER, 1), 0},
-            {date(1939, SEPTEMBER, 2), date(1940, SEPTEMBER, 2), 1},
-            {date(1939, SEPTEMBER, 2), date(1940, SEPTEMBER, 3), 1},
+        return new Object[][] { { date(1939, SEPTEMBER, 2), date(1939, SEPTEMBER, 1), 0 },
+        { date(1939, SEPTEMBER, 2), date(1939, SEPTEMBER, 2), 0 },
+        { date(1939, SEPTEMBER, 2), date(1939, SEPTEMBER, 3), 0 },
 
-            {date(1939, SEPTEMBER, 2), date(1938, SEPTEMBER, 1), -1},
-            {date(1939, SEPTEMBER, 2), date(1938, SEPTEMBER, 2), -1},
-            {date(1939, SEPTEMBER, 2), date(1938, SEPTEMBER, 3), 0},
+        { date(1939, SEPTEMBER, 2), date(1940, SEPTEMBER, 1), 0 },
+        { date(1939, SEPTEMBER, 2), date(1940, SEPTEMBER, 2), 1 },
+        { date(1939, SEPTEMBER, 2), date(1940, SEPTEMBER, 3), 1 },
 
-            {date(1939, SEPTEMBER, 2), date(1945, SEPTEMBER, 3), 6},
-            {date(1939, SEPTEMBER, 2), date(1945, OCTOBER, 3), 6},
-            {date(1939, SEPTEMBER, 2), date(1945, AUGUST, 3), 5},
-        };
+        { date(1939, SEPTEMBER, 2), date(1938, SEPTEMBER, 1), -1 },
+        { date(1939, SEPTEMBER, 2), date(1938, SEPTEMBER, 2), -1 },
+        { date(1939, SEPTEMBER, 2), date(1938, SEPTEMBER, 3), 0 },
+
+        { date(1939, SEPTEMBER, 2), date(1945, SEPTEMBER, 3), 6 },
+        { date(1939, SEPTEMBER, 2), date(1945, OCTOBER, 3), 6 },
+        { date(1939, SEPTEMBER, 2), date(1945, AUGUST, 3), 5 }, };
     }
 
-    @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetween(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(YEARS.between(start, end), expected);
-    }
+    @Test
+    public void test_yearsBetween() {
 
-    @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetweenReversed(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(YEARS.between(end, start), -expected);
-    }
+        for (Object[] data : data_yearsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
 
-    @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetween_LocalDateTimeSameTime(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(YEARS.between(start.atTime(12, 30), end.atTime(12, 30)), expected);
-    }
-
-    @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetween_LocalDateTimeLaterTime(TLocalDate start, TLocalDate end, long expected) {
-        if (end.isAfter(start)) {
-            assertEquals(YEARS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
-        } else {
-            assertEquals(YEARS.between(start.atTime(12, 31), end.atTime(12, 30)), expected);
+            assertEquals(YEARS.between(start, end), expected);
         }
     }
 
-    @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetween_ZonedDateSameOffset(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(YEARS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
-    }
+    @Test
+    public void test_yearsBetweenReversed() {
 
-    @Test(dataProvider = "yearsBetween")
-    public void test_yearsBetween_ZonedDateLaterOffset(TLocalDate start, TLocalDate end, long expected) {
-        // +01:00 is later than +02:00
-        if (end.isAfter(start)) {
-            assertEquals(YEARS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(1))), expected);
-        } else {
-            assertEquals(YEARS.between(start.atStartOfDay(TZoneOffset.ofHours(1)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
+        for (Object[] data : data_yearsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(YEARS.between(end, start), -expected);
         }
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name = "monthsBetween")
+    @Test
+    public void test_yearsBetween_LocalDateTimeSameTime() {
+
+        for (Object[] data : data_yearsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(YEARS.between(start.atTime(12, 30), end.atTime(12, 30)), expected);
+        }
+    }
+
+    @Test
+    public void test_yearsBetween_LocalDateTimeLaterTime() {
+
+        for (Object[] data : data_yearsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            if (end.isAfter(start)) {
+                assertEquals(YEARS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
+            } else {
+                assertEquals(YEARS.between(start.atTime(12, 31), end.atTime(12, 30)), expected);
+            }
+        }
+    }
+
+    @Test
+    public void test_yearsBetween_ZonedDateSameOffset() {
+
+        for (Object[] data : data_yearsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(
+                    YEARS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(2))),
+                    expected);
+        }
+    }
+
+    @Test
+    public void test_yearsBetween_ZonedDateLaterOffset() {
+
+        for (Object[] data : data_yearsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            // +01:00 is later than +02:00
+            if (end.isAfter(start)) {
+                assertEquals(YEARS.between(start.atStartOfDay(TZoneOffset.ofHours(2)),
+                        end.atStartOfDay(TZoneOffset.ofHours(1))), expected);
+            } else {
+                assertEquals(YEARS.between(start.atStartOfDay(TZoneOffset.ofHours(1)),
+                        end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
+            }
+        }
+    }
+
     Object[][] data_monthsBetween() {
-        return new Object[][] {
-            {date(2012, JULY, 2), date(2012, JULY, 1), 0},
-            {date(2012, JULY, 2), date(2012, JULY, 2), 0},
-            {date(2012, JULY, 2), date(2012, JULY, 3), 0},
 
-            {date(2012, JULY, 2), date(2012, AUGUST, 1), 0},
-            {date(2012, JULY, 2), date(2012, AUGUST, 2), 1},
-            {date(2012, JULY, 2), date(2012, AUGUST, 3), 1},
+        return new Object[][] { { date(2012, JULY, 2), date(2012, JULY, 1), 0 },
+        { date(2012, JULY, 2), date(2012, JULY, 2), 0 }, { date(2012, JULY, 2), date(2012, JULY, 3), 0 },
 
-            {date(2012, JULY, 2), date(2012, SEPTEMBER, 1), 1},
-            {date(2012, JULY, 2), date(2012, SEPTEMBER, 2), 2},
-            {date(2012, JULY, 2), date(2012, SEPTEMBER, 3), 2},
+        { date(2012, JULY, 2), date(2012, AUGUST, 1), 0 }, { date(2012, JULY, 2), date(2012, AUGUST, 2), 1 },
+        { date(2012, JULY, 2), date(2012, AUGUST, 3), 1 },
 
-            {date(2012, JULY, 2), date(2012, JUNE, 1), -1},
-            {date(2012, JULY, 2), date(2012, JUNE, 2), -1},
-            {date(2012, JULY, 2), date(2012, JUNE, 3), 0},
+        { date(2012, JULY, 2), date(2012, SEPTEMBER, 1), 1 }, { date(2012, JULY, 2), date(2012, SEPTEMBER, 2), 2 },
+        { date(2012, JULY, 2), date(2012, SEPTEMBER, 3), 2 },
 
-            {date(2012, FEBRUARY, 27), date(2012, MARCH, 26), 0},
-            {date(2012, FEBRUARY, 27), date(2012, MARCH, 27), 1},
-            {date(2012, FEBRUARY, 27), date(2012, MARCH, 28), 1},
+        { date(2012, JULY, 2), date(2012, JUNE, 1), -1 }, { date(2012, JULY, 2), date(2012, JUNE, 2), -1 },
+        { date(2012, JULY, 2), date(2012, JUNE, 3), 0 },
 
-            {date(2012, FEBRUARY, 28), date(2012, MARCH, 27), 0},
-            {date(2012, FEBRUARY, 28), date(2012, MARCH, 28), 1},
-            {date(2012, FEBRUARY, 28), date(2012, MARCH, 29), 1},
+        { date(2012, FEBRUARY, 27), date(2012, MARCH, 26), 0 }, { date(2012, FEBRUARY, 27), date(2012, MARCH, 27), 1 },
+        { date(2012, FEBRUARY, 27), date(2012, MARCH, 28), 1 },
 
-            {date(2012, FEBRUARY, 29), date(2012, MARCH, 28), 0},
-            {date(2012, FEBRUARY, 29), date(2012, MARCH, 29), 1},
-            {date(2012, FEBRUARY, 29), date(2012, MARCH, 30), 1},
-        };
+        { date(2012, FEBRUARY, 28), date(2012, MARCH, 27), 0 }, { date(2012, FEBRUARY, 28), date(2012, MARCH, 28), 1 },
+        { date(2012, FEBRUARY, 28), date(2012, MARCH, 29), 1 },
+
+        { date(2012, FEBRUARY, 29), date(2012, MARCH, 28), 0 }, { date(2012, FEBRUARY, 29), date(2012, MARCH, 29), 1 },
+        { date(2012, FEBRUARY, 29), date(2012, MARCH, 30), 1 }, };
     }
 
-    @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetween(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(MONTHS.between(start, end), expected);
-    }
+    @Test
+    public void test_monthsBetween() {
 
-    @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetweenReversed(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(MONTHS.between(end, start), -expected);
-    }
+        for (Object[] data : data_monthsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
 
-    @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetween_LocalDateTimeSameTime(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(MONTHS.between(start.atTime(12, 30), end.atTime(12, 30)), expected);
-    }
-
-    @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetween_LocalDateTimeLaterTime(TLocalDate start, TLocalDate end, long expected) {
-        if (end.isAfter(start)) {
-            assertEquals(MONTHS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
-        } else {
-            assertEquals(MONTHS.between(start.atTime(12, 31), end.atTime(12, 30)), expected);
+            assertEquals(MONTHS.between(start, end), expected);
         }
     }
 
-    @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetween_ZonedDateSameOffset(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(MONTHS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
-    }
+    @Test
+    public void test_monthsBetweenReversed() {
 
-    @Test(dataProvider = "monthsBetween")
-    public void test_monthsBetween_ZonedDateLaterOffset(TLocalDate start, TLocalDate end, long expected) {
-        // +01:00 is later than +02:00
-        if (end.isAfter(start)) {
-            assertEquals(MONTHS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(1))), expected);
-        } else {
-            assertEquals(MONTHS.between(start.atStartOfDay(TZoneOffset.ofHours(1)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
+        for (Object[] data : data_monthsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(MONTHS.between(end, start), -expected);
         }
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name = "weeksBetween")
+    @Test
+    public void test_monthsBetween_LocalDateTimeSameTime() {
+
+        for (Object[] data : data_monthsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(MONTHS.between(start.atTime(12, 30), end.atTime(12, 30)), expected);
+        }
+    }
+
+    @Test
+    public void test_monthsBetween_LocalDateTimeLaterTime() {
+
+        for (Object[] data : data_monthsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            if (end.isAfter(start)) {
+                assertEquals(MONTHS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
+            } else {
+                assertEquals(MONTHS.between(start.atTime(12, 31), end.atTime(12, 30)), expected);
+            }
+        }
+    }
+
+    @Test
+    public void test_monthsBetween_ZonedDateSameOffset() {
+
+        for (Object[] data : data_monthsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(MONTHS.between(start.atStartOfDay(TZoneOffset.ofHours(2)),
+                    end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
+        }
+    }
+
+    @Test
+    public void test_monthsBetween_ZonedDateLaterOffset() {
+
+        for (Object[] data : data_monthsBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            // +01:00 is later than +02:00
+            if (end.isAfter(start)) {
+                assertEquals(MONTHS.between(start.atStartOfDay(TZoneOffset.ofHours(2)),
+                        end.atStartOfDay(TZoneOffset.ofHours(1))), expected);
+            } else {
+                assertEquals(MONTHS.between(start.atStartOfDay(TZoneOffset.ofHours(1)),
+                        end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
+            }
+        }
+    }
+
     Object[][] data_weeksBetween() {
-        return new Object[][] {
-            {date(2012, JULY, 2), date(2012, JUNE, 25), -1},
-            {date(2012, JULY, 2), date(2012, JUNE, 26), 0},
-            {date(2012, JULY, 2), date(2012, JULY, 2), 0},
-            {date(2012, JULY, 2), date(2012, JULY, 8), 0},
-            {date(2012, JULY, 2), date(2012, JULY, 9), 1},
 
-            {date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 21), -1},
-            {date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 22), 0},
-            {date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 28), 0},
-            {date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 29), 0},
-            {date(2012, FEBRUARY, 28), date(2012, MARCH, 1), 0},
-            {date(2012, FEBRUARY, 28), date(2012, MARCH, 5), 0},
-            {date(2012, FEBRUARY, 28), date(2012, MARCH, 6), 1},
+        return new Object[][] { { date(2012, JULY, 2), date(2012, JUNE, 25), -1 },
+        { date(2012, JULY, 2), date(2012, JUNE, 26), 0 }, { date(2012, JULY, 2), date(2012, JULY, 2), 0 },
+        { date(2012, JULY, 2), date(2012, JULY, 8), 0 }, { date(2012, JULY, 2), date(2012, JULY, 9), 1 },
 
-            {date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 22), -1},
-            {date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 23), 0},
-            {date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 28), 0},
-            {date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 29), 0},
-            {date(2012, FEBRUARY, 29), date(2012, MARCH, 1), 0},
-            {date(2012, FEBRUARY, 29), date(2012, MARCH, 6), 0},
-            {date(2012, FEBRUARY, 29), date(2012, MARCH, 7), 1},
-        };
+        { date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 21), -1 },
+        { date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 22), 0 },
+        { date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 28), 0 },
+        { date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 29), 0 },
+        { date(2012, FEBRUARY, 28), date(2012, MARCH, 1), 0 }, { date(2012, FEBRUARY, 28), date(2012, MARCH, 5), 0 },
+        { date(2012, FEBRUARY, 28), date(2012, MARCH, 6), 1 },
+
+        { date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 22), -1 },
+        { date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 23), 0 },
+        { date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 28), 0 },
+        { date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 29), 0 },
+        { date(2012, FEBRUARY, 29), date(2012, MARCH, 1), 0 }, { date(2012, FEBRUARY, 29), date(2012, MARCH, 6), 0 },
+        { date(2012, FEBRUARY, 29), date(2012, MARCH, 7), 1 }, };
     }
 
-    @Test(dataProvider = "weeksBetween")
-    public void test_weeksBetween(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(WEEKS.between(start, end), expected);
+    @Test
+    public void test_weeksBetween() {
+
+        for (Object[] data : data_weeksBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(WEEKS.between(start, end), expected);
+        }
     }
 
-    @Test(dataProvider = "weeksBetween")
-    public void test_weeksBetweenReversed(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(WEEKS.between(end, start), -expected);
+    @Test
+    public void test_weeksBetweenReversed() {
+
+        for (Object[] data : data_weeksBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(WEEKS.between(end, start), -expected);
+        }
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name = "daysBetween")
     Object[][] data_daysBetween() {
-        return new Object[][] {
-            {date(2012, JULY, 2), date(2012, JULY, 1), -1},
-            {date(2012, JULY, 2), date(2012, JULY, 2), 0},
-            {date(2012, JULY, 2), date(2012, JULY, 3), 1},
 
-            {date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 27), -1},
-            {date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 28), 0},
-            {date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 29), 1},
-            {date(2012, FEBRUARY, 28), date(2012, MARCH, 1), 2},
+        return new Object[][] { { date(2012, JULY, 2), date(2012, JULY, 1), -1 },
+        { date(2012, JULY, 2), date(2012, JULY, 2), 0 }, { date(2012, JULY, 2), date(2012, JULY, 3), 1 },
 
-            {date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 27), -2},
-            {date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 28), -1},
-            {date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 29), 0},
-            {date(2012, FEBRUARY, 29), date(2012, MARCH, 1), 1},
+        { date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 27), -1 },
+        { date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 28), 0 },
+        { date(2012, FEBRUARY, 28), date(2012, FEBRUARY, 29), 1 },
+        { date(2012, FEBRUARY, 28), date(2012, MARCH, 1), 2 },
 
-            {date(2012, MARCH, 1), date(2012, FEBRUARY, 27), -3},
-            {date(2012, MARCH, 1), date(2012, FEBRUARY, 28), -2},
-            {date(2012, MARCH, 1), date(2012, FEBRUARY, 29), -1},
-            {date(2012, MARCH, 1), date(2012, MARCH, 1), 0},
-            {date(2012, MARCH, 1), date(2012, MARCH, 2), 1},
+        { date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 27), -2 },
+        { date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 28), -1 },
+        { date(2012, FEBRUARY, 29), date(2012, FEBRUARY, 29), 0 },
+        { date(2012, FEBRUARY, 29), date(2012, MARCH, 1), 1 },
 
-            {date(2012, MARCH, 1), date(2013, FEBRUARY, 28), 364},
-            {date(2012, MARCH, 1), date(2013, MARCH, 1), 365},
+        { date(2012, MARCH, 1), date(2012, FEBRUARY, 27), -3 }, { date(2012, MARCH, 1), date(2012, FEBRUARY, 28), -2 },
+        { date(2012, MARCH, 1), date(2012, FEBRUARY, 29), -1 }, { date(2012, MARCH, 1), date(2012, MARCH, 1), 0 },
+        { date(2012, MARCH, 1), date(2012, MARCH, 2), 1 },
 
-            {date(2011, MARCH, 1), date(2012, FEBRUARY, 28), 364},
-            {date(2011, MARCH, 1), date(2012, FEBRUARY, 29), 365},
-            {date(2011, MARCH, 1), date(2012, MARCH, 1), 366},
-        };
+        { date(2012, MARCH, 1), date(2013, FEBRUARY, 28), 364 }, { date(2012, MARCH, 1), date(2013, MARCH, 1), 365 },
+
+        { date(2011, MARCH, 1), date(2012, FEBRUARY, 28), 364 },
+        { date(2011, MARCH, 1), date(2012, FEBRUARY, 29), 365 }, { date(2011, MARCH, 1), date(2012, MARCH, 1), 366 }, };
     }
 
-    @Test(dataProvider = "daysBetween")
-    public void test_daysBetween(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(DAYS.between(start, end), expected);
-    }
+    @Test
+    public void test_daysBetween() {
 
-    @Test(dataProvider = "daysBetween")
-    public void test_daysBetweenReversed(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(DAYS.between(end, start), -expected);
-    }
+        for (Object[] data : data_daysBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
 
-    @Test(dataProvider = "daysBetween")
-    public void test_daysBetween_LocalDateTimeSameTime(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(DAYS.between(start.atTime(12, 30), end.atTime(12, 30)), expected);
-    }
-
-    @Test(dataProvider = "daysBetween")
-    public void test_daysBetween_LocalDateTimeLaterTime(TLocalDate start, TLocalDate end, long expected) {
-        if (end.isAfter(start)) {
-            assertEquals(DAYS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
-        } else {
-            assertEquals(DAYS.between(start.atTime(12, 31), end.atTime(12, 30)), expected);
+            assertEquals(DAYS.between(start, end), expected);
         }
     }
 
-    @Test(dataProvider = "daysBetween")
-    public void test_daysBetween_ZonedDateSameOffset(TLocalDate start, TLocalDate end, long expected) {
-        assertEquals(DAYS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
-    }
+    @Test
+    public void test_daysBetweenReversed() {
 
-    @Test(dataProvider = "daysBetween")
-    public void test_daysBetween_ZonedDateLaterOffset(TLocalDate start, TLocalDate end, long expected) {
-        // +01:00 is later than +02:00
-        if (end.isAfter(start)) {
-            assertEquals(DAYS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(1))), expected);
-        } else {
-            assertEquals(DAYS.between(start.atStartOfDay(TZoneOffset.ofHours(1)), end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
+        for (Object[] data : data_daysBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(DAYS.between(end, start), -expected);
         }
     }
 
-    //-------------------------------------------------------------------------
+    @Test
+    public void test_daysBetween_LocalDateTimeSameTime() {
+
+        for (Object[] data : data_daysBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(DAYS.between(start.atTime(12, 30), end.atTime(12, 30)), expected);
+        }
+    }
+
+    @Test
+    public void test_daysBetween_LocalDateTimeLaterTime() {
+
+        for (Object[] data : data_daysBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            if (end.isAfter(start)) {
+                assertEquals(DAYS.between(start.atTime(12, 30), end.atTime(12, 31)), expected);
+            } else {
+                assertEquals(DAYS.between(start.atTime(12, 31), end.atTime(12, 30)), expected);
+            }
+        }
+    }
+
+    @Test
+    public void test_daysBetween_ZonedDateSameOffset() {
+
+        for (Object[] data : data_daysBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(
+                    DAYS.between(start.atStartOfDay(TZoneOffset.ofHours(2)), end.atStartOfDay(TZoneOffset.ofHours(2))),
+                    expected);
+        }
+    }
+
+    @Test
+    public void test_daysBetween_ZonedDateLaterOffset() {
+
+        for (Object[] data : data_daysBetween()) {
+            TLocalDate start = (TLocalDate) data[0];
+            TLocalDate end = (TLocalDate) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            // +01:00 is later than +02:00
+            if (end.isAfter(start)) {
+                assertEquals(DAYS.between(start.atStartOfDay(TZoneOffset.ofHours(2)),
+                        end.atStartOfDay(TZoneOffset.ofHours(1))), expected);
+            } else {
+                assertEquals(DAYS.between(start.atStartOfDay(TZoneOffset.ofHours(1)),
+                        end.atStartOfDay(TZoneOffset.ofHours(2))), expected);
+            }
+        }
+    }
+
     @Test
     public void test_isDateBased() {
+
         for (TChronoUnit unit : TChronoUnit.values()) {
             if (unit.getDuration().getSeconds() < 86400) {
                 assertEquals(unit.isDateBased(), false);
@@ -314,6 +435,7 @@ public class TestChronoUnit {
 
     @Test
     public void test_isTimeBased() {
+
         for (TChronoUnit unit : TChronoUnit.values()) {
             if (unit.getDuration().getSeconds() < 86400) {
                 assertEquals(unit.isTimeBased(), true);
@@ -325,8 +447,8 @@ public class TestChronoUnit {
         }
     }
 
-    //-----------------------------------------------------------------------
     private static TLocalDate date(int year, TMonth month, int dom) {
+
         return TLocalDate.of(year, month, dom);
     }
 

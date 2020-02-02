@@ -31,7 +31,7 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
 import org.teavm.classlib.java.time.format.TTextStyle;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
@@ -41,6 +41,6 @@ public interface TEra extends TTemporalAccessor, TTemporalAdjuster {
 
     int getValue();
 
-    String getDisplayName(TTextStyle style, TLocale locale);
+    String getDisplayName(TTextStyle style, Locale locale);
 
 }

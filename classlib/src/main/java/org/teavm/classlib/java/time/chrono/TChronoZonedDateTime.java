@@ -77,7 +77,6 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
         }
     };
 
-    //-----------------------------------------------------------------------
     public static TChronoZonedDateTime<?> from(TTemporalAccessor temporal) {
         TJdk8Methods.requireNonNull(temporal, "temporal");
         if (temporal instanceof TChronoZonedDateTime) {
@@ -90,7 +89,6 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
         return chrono.zonedDateTime(temporal);
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public TValueRange range(TTemporalField field) {
         if (field instanceof TChronoField) {
@@ -126,7 +124,6 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
         return field.getFrom(this);
     }
 
-    //-------------------------------------------------------------------------
     public D toLocalDate() {
         return toLocalDateTime().toLocalDate();
     }
@@ -145,18 +142,14 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
 
     public abstract TZoneId getZone();
 
-    //-----------------------------------------------------------------------
     public abstract TChronoZonedDateTime<D> withEarlierOffsetAtOverlap();
 
     public abstract TChronoZonedDateTime<D> withLaterOffsetAtOverlap();
 
-    //-----------------------------------------------------------------------
     public abstract TChronoZonedDateTime<D> withZoneSameLocal(TZoneId zoneId);
 
     public abstract TChronoZonedDateTime<D> withZoneSameInstant(TZoneId zoneId);
 
-    //-------------------------------------------------------------------------
-    // override for covariant return type
     @Override
     public TChronoZonedDateTime<D> with(TTemporalAdjuster adjuster) {
         return toLocalDate().getChronology().ensureChronoZonedDateTime(super.with(adjuster));
@@ -183,7 +176,6 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
         return toLocalDate().getChronology().ensureChronoZonedDateTime(super.minus(amountToSubtract, unit));
     }
 
-    //-----------------------------------------------------------------------
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
@@ -208,7 +200,6 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
         return formatter.format(this);
     }
 
-    //-----------------------------------------------------------------------
     public TInstant toInstant() {
         return TInstant.ofEpochSecond(toEpochSecond(), toLocalTime().getNano());
     }
@@ -220,7 +211,6 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
         return secs;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public int compareTo(TChronoZonedDateTime<?> other) {
         int cmp = TJdk8Methods.compareLongs(toEpochSecond(), other.toEpochSecond());
@@ -239,7 +229,6 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
         return cmp;
     }
 
-    //-----------------------------------------------------------------------
     public boolean isAfter(TChronoZonedDateTime<?> other) {
         long thisEpochSec = toEpochSecond();
         long otherEpochSec = other.toEpochSecond();
@@ -259,7 +248,6 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
                 toLocalTime().getNano() == other.toLocalTime().getNano();
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -276,7 +264,6 @@ public abstract class TChronoZonedDateTime<D extends TChronoLocalDate>
         return toLocalDateTime().hashCode() ^ getOffset().hashCode() ^ Integer.rotateLeft(getZone().hashCode(), 3);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
         String str = toLocalDateTime().toString() + getOffset().toString();

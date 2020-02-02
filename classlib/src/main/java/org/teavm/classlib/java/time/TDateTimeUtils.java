@@ -31,23 +31,27 @@
  */
 package org.teavm.classlib.java.time;
 
-import org.teavm.classlib.java.sql.TTimestamp;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
+
 import org.teavm.classlib.java.util.TCalendar;
 import org.teavm.classlib.java.util.TDate;
-import org.teavm.classlib.java.util.TGregorianCalendar;
-import org.teavm.classlib.java.util.TTimeZone;
 
 public final class TDateTimeUtils {
 
     private TDateTimeUtils() {
+
     }
 
-    //-----------------------------------------------------------------------
     public static TInstant toInstant(TDate utilDate) {
+
         return TInstant.ofEpochMilli(utilDate.getTime());
     }
 
     public static TDate toDate(TInstant instant) {
+
         try {
             return new TDate(instant.toEpochMilli());
         } catch (ArithmeticException ex) {
@@ -55,21 +59,23 @@ public final class TDateTimeUtils {
         }
     }
 
-    //-----------------------------------------------------------------------
-    public static TInstant toInstant(TCalendar calendar) {
+    public static TInstant toInstant(Calendar calendar) {
+
         return TInstant.ofEpochMilli(calendar.getTimeInMillis());
     }
 
-    public static TZonedDateTime toZonedDateTime(TCalendar calendar) {
+    public static TZonedDateTime toZonedDateTime(Calendar calendar) {
+
         TInstant instant = TInstant.ofEpochMilli(calendar.getTimeInMillis());
         TZoneId zone = toZoneId(calendar.getTimeZone());
         return TZonedDateTime.ofInstant(instant, zone);
     }
 
-    public static TGregorianCalendar toGregorianCalendar(TZonedDateTime zdt) {
-        TTimeZone zone = toTimeZone(zdt.getZone());
-        TGregorianCalendar cal = new TGregorianCalendar(zone);
-        cal.setGregorianChange(new TDate(Long.MIN_VALUE));
+    public static GregorianCalendar toGregorianCalendar(TZonedDateTime zdt) {
+
+        TimeZone zone = toTimeZone(zdt.getZone());
+        GregorianCalendar cal = new GregorianCalendar(zone);
+        cal.setGregorianChange(new Date(Long.MIN_VALUE));
         cal.setFirstDayOfWeek(TCalendar.MONDAY);
         cal.setMinimalDaysInFirstWeek(4);
         try {
@@ -80,80 +86,20 @@ public final class TDateTimeUtils {
         return cal;
     }
 
-    //-----------------------------------------------------------------------
-    public static TZoneId toZoneId(TTimeZone timeZone) {
+    public static TZoneId toZoneId(TimeZone timeZone) {
+
         return TZoneId.of(timeZone.getID(), TZoneId.SHORT_IDS);
     }
 
-    public static TTimeZone toTimeZone(TZoneId zoneId) {
+    public static TimeZone toTimeZone(TZoneId zoneId) {
+
         String tzid = zoneId.getId();
         if (tzid.startsWith("+") || tzid.startsWith("-")) {
             tzid = "GMT" + tzid;
         } else if (tzid.equals("Z")) {
             tzid = "UTC";
         }
-        return TTimeZone.getTimeZone(tzid);
-    }
-
-    //-----------------------------------------------------------------------
-    @SuppressWarnings("deprecation")
-    public static TLocalDate toLocalDate(java.sql.TDate sqlDate) {
-        return TLocalDate.of(sqlDate.getYear() + 1900, sqlDate.getMonth() + 1, sqlDate.getDate());
-    }
-
-    @SuppressWarnings("deprecation")
-    public static java.sql.TDate toSqlDate(TLocalDate date) {
-        return new java.sql.TDate(date.getYear() - 1900, date.getMonthValue() -1, date.getDayOfMonth());
-    }
-
-    //-----------------------------------------------------------------------
-    @SuppressWarnings("deprecation")
-    public static TLocalTime toLocalTime(java.sql.Time sqlTime) {
-        return TLocalTime.of(sqlTime.getHours(), sqlTime.getMinutes(), sqlTime.getSeconds());
-    }
-
-    @SuppressWarnings("deprecation")
-    public static java.sql.Time toSqlTime(TLocalTime time) {
-        return new java.sql.Time(time.getHour(), time.getMinute(), time.getSecond());
-    }
-
-    //-----------------------------------------------------------------------
-    @SuppressWarnings("deprecation")
-    public static TTimestamp toSqlTimestamp(TLocalDateTime dateTime) {
-        return new TTimestamp(
-                dateTime.getYear() - 1900,
-                dateTime.getMonthValue() - 1,
-                dateTime.getDayOfMonth(),
-                dateTime.getHour(),
-                dateTime.getMinute(),
-                dateTime.getSecond(),
-                dateTime.getNano());
-    }
-
-    @SuppressWarnings("deprecation")
-    public static TLocalDateTime toLocalDateTime(TTimestamp sqlTimestamp) {
-        return TLocalDateTime.of(
-                sqlTimestamp.getYear() + 1900,
-                sqlTimestamp.getMonth() + 1,
-                sqlTimestamp.getDate(),
-                sqlTimestamp.getHours(),
-                sqlTimestamp.getMinutes(),
-                sqlTimestamp.getSeconds(),
-                sqlTimestamp.getNanos());
-    }
-
-    public static TTimestamp toSqlTimestamp(TInstant instant) {
-        try {
-            TTimestamp ts = new TTimestamp(instant.getEpochSecond() * 1000);
-            ts.setNanos(instant.getNano());
-            return ts;
-        } catch (ArithmeticException ex) {
-            throw new IllegalArgumentException(ex);
-        }
-    }
-
-    public static TInstant toInstant(TTimestamp sqlTimestamp) {
-        return TInstant.ofEpochSecond(sqlTimestamp.getTime() / 1000, sqlTimestamp.getNanos());
+        return TimeZone.getTimeZone(tzid);
     }
 
 }

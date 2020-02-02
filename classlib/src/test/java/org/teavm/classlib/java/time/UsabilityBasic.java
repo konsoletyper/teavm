@@ -44,30 +44,33 @@ import org.teavm.classlib.java.time.temporal.TTemporalField;
 public final class UsabilityBasic {
 
     public static void main(String[] args) {
+
         simpleCalendar();
-        TSystem.out.println("------");
+        System.out.println("------");
         lookup();
-        TSystem.out.println("------");
+        System.out.println("------");
         period();
-        TSystem.out.println("------");
+        System.out.println("------");
         print1();
-        TSystem.out.println("------");
+        System.out.println("------");
         print2();
     }
 
     private UsabilityBasic() {
+
     }
 
     private static void simpleCalendar() {
+
         TLocalDate date = TLocalDate.now();
-        TSystem.out.println(date);
+        System.out.println(date);
 
         date = date.withDayOfMonth(1);
-        TSystem.out.println(date);
+        System.out.println(date);
 
         int month = date.getMonth().getValue();
         date = date.with(previousOrSame(TDayOfWeek.MONDAY));
-        TSystem.out.println(date);
+        System.out.println(date);
 
         while (date.getMonth().getValue() <= month) {
             String row = "";
@@ -75,20 +78,15 @@ public final class UsabilityBasic {
                 row += date.getDayOfMonth() + " ";
                 date = date.plusDays(1);
             }
-            TSystem.out.println(row);
+            System.out.println(row);
         }
     }
 
     private static void lookup() {
+
         TLocalDate date = TLocalDate.now();
         TLocalTime time = TLocalTime.now();
         TLocalDateTime dateTime = TLocalDateTime.now();
-//        TSystem.out.println(LocalDateField.DAY_OF_MONTH.getDateRules().get(date));
-//        TSystem.out.println(LocalDateField.MONTH_OF_YEAR.getDateRules().get(date));
-//        TSystem.out.println(LocalDateField.YEAR.getDateRules().get(date));
-//        TSystem.out.println(QuarterYearField.QUARTER_OF_YEAR.getDateRules().get(date));
-//        TSystem.out.println(QuarterYearField.MONTH_OF_QUARTER.getDateRules().get(date));
-//        TSystem.out.println(QuarterYearField.DAY_OF_QUARTER.getDateRules().get(date));
 
         output(date, TChronoField.DAY_OF_MONTH);
         output(date, TChronoField.MONTH_OF_YEAR);
@@ -99,58 +97,64 @@ public final class UsabilityBasic {
         output(time, TChronoField.MINUTE_OF_HOUR);
 
         TTemporalAccessor cal = date;
-        TSystem.out.println("DoM: " + cal.get(DAY_OF_MONTH));
+        System.out.println("DoM: " + cal.get(DAY_OF_MONTH));
     }
 
     protected static void output(TLocalDate date, TTemporalField field) {
-        TSystem.out.println(field + " " + date.getLong(field));
+
+        System.out.println(field + " " + date.getLong(field));
     }
 
     protected static void output(TLocalDateTime dateTime, TTemporalField field) {
-        TSystem.out.println(field + " " + dateTime.getLong(field));
+
+        System.out.println(field + " " + dateTime.getLong(field));
     }
 
     protected static void output(TLocalTime time, TTemporalField field) {
-        TSystem.out.println(field + " " + time.getLong(field));
+
+        System.out.println(field + " " + time.getLong(field));
     }
 
     private static void period() {
+
         TLocalDate date1 = TLocalDate.now();
         TLocalDate date2 = TLocalDate.now().plusDays(25367);
-        TSystem.out.println(TChronoUnit.DAYS.between(date1, date2));
-        TSystem.out.println(TChronoUnit.YEARS.between(date1, date2));
+        System.out.println(TChronoUnit.DAYS.between(date1, date2));
+        System.out.println(TChronoUnit.YEARS.between(date1, date2));
 
         date1 = TLocalDate.of(2012, 2, 20);
         date2 = TLocalDate.of(2014, 2, 19);
-        TSystem.out.println(TChronoUnit.YEARS.between(date1, date2));
+        System.out.println(TChronoUnit.YEARS.between(date1, date2));
         date2 = TLocalDate.of(2014, 2, 20);
-        TSystem.out.println(TChronoUnit.YEARS.between(date1, date2));
+        System.out.println(TChronoUnit.YEARS.between(date1, date2));
         date2 = TLocalDate.of(2014, 2, 21);
-        TSystem.out.println(TChronoUnit.YEARS.between(date1, date2));
+        System.out.println(TChronoUnit.YEARS.between(date1, date2));
         date2 = TLocalDate.of(2010, 2, 19);
-        TSystem.out.println(TChronoUnit.YEARS.between(date1, date2));
+        System.out.println(TChronoUnit.YEARS.between(date1, date2));
         date2 = TLocalDate.of(2010, 2, 20);
-        TSystem.out.println(TChronoUnit.YEARS.between(date1, date2));
+        System.out.println(TChronoUnit.YEARS.between(date1, date2));
         date2 = TLocalDate.of(2010, 2, 21);
-        TSystem.out.println(TChronoUnit.YEARS.between(date1, date2));
+        System.out.println(TChronoUnit.YEARS.between(date1, date2));
 
         TLocalDate date3 = TLocalDate.now().plus(3, TChronoUnit.DAYS);
-        TSystem.out.println("3 days later " + date3);
+        System.out.println("3 days later " + date3);
     }
 
     private static void print1() {
-        TDateTimeFormatter f = new TDateTimeFormatterBuilder().appendText(TChronoField.AMPM_OF_DAY)
-                .appendLiteral(' ').appendValue(TChronoField.AMPM_OF_DAY).toFormatter();
-        TSystem.out.println(f.format(TLocalTime.of(12, 30)));
-        TSystem.out.println(f.format(TZonedDateTime.now()));
+
+        TDateTimeFormatter f = new TDateTimeFormatterBuilder().appendText(TChronoField.AMPM_OF_DAY).appendLiteral(' ')
+                .appendValue(TChronoField.AMPM_OF_DAY).toFormatter();
+        System.out.println(f.format(TLocalTime.of(12, 30)));
+        System.out.println(f.format(TZonedDateTime.now()));
     }
 
     private static void print2() {
-        TDateTimeFormatter f = new TDateTimeFormatterBuilder().appendText(TChronoField.MONTH_OF_YEAR)
-                .appendLiteral(' ').appendValue(TChronoField.YEAR).toFormatter();
-        TSystem.out.println(f.format(TLocalDate.now()));
-        TSystem.out.println(f.format(TYearMonth.now()));
-        TSystem.out.println(f.format(TZonedDateTime.now()));
+
+        TDateTimeFormatter f = new TDateTimeFormatterBuilder().appendText(TChronoField.MONTH_OF_YEAR).appendLiteral(' ')
+                .appendValue(TChronoField.YEAR).toFormatter();
+        System.out.println(f.format(TLocalDate.now()));
+        System.out.println(f.format(TYearMonth.now()));
+        System.out.println(f.format(TZonedDateTime.now()));
     }
 
 }

@@ -37,10 +37,8 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
 
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalTime;
-import org.teavm.classlib.java.time.TOffsetDateTime;
 import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZoneOffset;
-import org.teavm.classlib.java.time.TZonedDateTime;
 import org.teavm.classlib.java.time.chrono.TChronology;
 
 public final class TTemporalQueries {
@@ -49,62 +47,76 @@ public final class TTemporalQueries {
     // it is also vital that each constant is different (due to the == checking)
 
     private TTemporalQueries() {
+
     }
 
-    //-----------------------------------------------------------------------
     // special constants should be used to extract information from a TTemporalAccessor
     // that cannot be derived in other ways
     // Javadoc added here, so as to pretend they are more normal than they really are
 
     public static final TTemporalQuery<TZoneId> zoneId() {
+
         return ZONE_ID;
     }
+
     static final TTemporalQuery<TZoneId> ZONE_ID = new TTemporalQuery<TZoneId>() {
         @Override
         public TZoneId queryFrom(TTemporalAccessor temporal) {
+
             return temporal.query(this);
         }
     };
 
     public static final TTemporalQuery<TChronology> chronology() {
+
         return CHRONO;
     }
+
     static final TTemporalQuery<TChronology> CHRONO = new TTemporalQuery<TChronology>() {
         @Override
         public TChronology queryFrom(TTemporalAccessor temporal) {
+
             return temporal.query(this);
         }
     };
 
     public static final TTemporalQuery<TTemporalUnit> precision() {
+
         return PRECISION;
     }
+
     static final TTemporalQuery<TTemporalUnit> PRECISION = new TTemporalQuery<TTemporalUnit>() {
         @Override
         public TTemporalUnit queryFrom(TTemporalAccessor temporal) {
+
             return temporal.query(this);
         }
     };
 
-    //-----------------------------------------------------------------------
     // non-special constants are standard queries that derive information from other information
     public static final TTemporalQuery<TZoneId> zone() {
+
         return ZONE;
     }
+
     static final TTemporalQuery<TZoneId> ZONE = new TTemporalQuery<TZoneId>() {
         @Override
         public TZoneId queryFrom(TTemporalAccessor temporal) {
+
             TZoneId zone = temporal.query(ZONE_ID);
             return (zone != null ? zone : temporal.query(OFFSET));
         }
     };
 
     public static final TTemporalQuery<TZoneOffset> offset() {
+
         return OFFSET;
     }
+
     static final TTemporalQuery<TZoneOffset> OFFSET = new TTemporalQuery<TZoneOffset>() {
         @Override
         public TZoneOffset queryFrom(TTemporalAccessor temporal) {
+
             if (temporal.isSupported(OFFSET_SECONDS)) {
                 return TZoneOffset.ofTotalSeconds(temporal.get(OFFSET_SECONDS));
             }
@@ -113,11 +125,14 @@ public final class TTemporalQueries {
     };
 
     public static final TTemporalQuery<TLocalDate> localDate() {
+
         return LOCAL_DATE;
     }
+
     static final TTemporalQuery<TLocalDate> LOCAL_DATE = new TTemporalQuery<TLocalDate>() {
         @Override
         public TLocalDate queryFrom(TTemporalAccessor temporal) {
+
             if (temporal.isSupported(EPOCH_DAY)) {
                 return TLocalDate.ofEpochDay(temporal.getLong(EPOCH_DAY));
             }
@@ -126,11 +141,14 @@ public final class TTemporalQueries {
     };
 
     public static final TTemporalQuery<TLocalTime> localTime() {
+
         return LOCAL_TIME;
     }
+
     static final TTemporalQuery<TLocalTime> LOCAL_TIME = new TTemporalQuery<TLocalTime>() {
         @Override
         public TLocalTime queryFrom(TTemporalAccessor temporal) {
+
             if (temporal.isSupported(NANO_OF_DAY)) {
                 return TLocalTime.ofNanoOfDay(temporal.getLong(NANO_OF_DAY));
             }

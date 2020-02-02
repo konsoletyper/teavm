@@ -54,7 +54,6 @@ import java.io.Serializable;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
-import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
 import org.teavm.classlib.java.time.TClock;
@@ -75,65 +74,71 @@ public final class THijrahChronology extends TChronology implements Serializable
     public static final THijrahChronology INSTANCE = new THijrahChronology();
 
     private static final long serialVersionUID = 3127340209035924785L;
+
     private static final HashMap<String, String[]> ERA_NARROW_NAMES = new HashMap<String, String[]>();
+
     private static final HashMap<String, String[]> ERA_SHORT_NAMES = new HashMap<String, String[]>();
+
     private static final HashMap<String, String[]> ERA_FULL_NAMES = new HashMap<String, String[]>();
+
     private static final String FALLBACK_LANGUAGE = "en";
 
-    //private static final String TARGET_LANGUAGE = "ar";
+    // private static final String TARGET_LANGUAGE = "ar";
     static {
-        ERA_NARROW_NAMES.put(FALLBACK_LANGUAGE, new String[]{"BH", "HE"});
-        ERA_SHORT_NAMES.put(FALLBACK_LANGUAGE, new String[]{"B.H.", "H.E."});
-        ERA_FULL_NAMES.put(FALLBACK_LANGUAGE, new String[]{"Before Hijrah", "Hijrah TEra"});
+        ERA_NARROW_NAMES.put(FALLBACK_LANGUAGE, new String[] { "BH", "HE" });
+        ERA_SHORT_NAMES.put(FALLBACK_LANGUAGE, new String[] { "B.H.", "H.E." });
+        ERA_FULL_NAMES.put(FALLBACK_LANGUAGE, new String[] { "Before Hijrah", "Hijrah TEra" });
     }
 
     private THijrahChronology() {
+
     }
 
-    private Object readResolve() {
-        return INSTANCE;
-    }
-
-    //-----------------------------------------------------------------------
     @Override
     public String getId() {
+
         return "Hijrah-umalqura";
     }
 
     @Override
     public String getCalendarType() {
+
         return "islamic-umalqura";
     }
 
-    //-----------------------------------------------------------------------
-    @Override  // override with covariant return type
+    @Override
     public THijrahDate date(TEra era, int yearOfEra, int month, int dayOfMonth) {
+
         return (THijrahDate) super.date(era, yearOfEra, month, dayOfMonth);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public THijrahDate date(int prolepticYear, int month, int dayOfMonth) {
+
         return THijrahDate.of(prolepticYear, month, dayOfMonth);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public THijrahDate dateYearDay(TEra era, int yearOfEra, int dayOfYear) {
+
         return (THijrahDate) super.dateYearDay(era, yearOfEra, dayOfYear);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public THijrahDate dateYearDay(int prolepticYear, int dayOfYear) {
-        return THijrahDate.of(prolepticYear, 1, 1).plusDays(dayOfYear - 1);  // TODO better
+
+        return THijrahDate.of(prolepticYear, 1, 1).plusDays(dayOfYear - 1); // TODO better
     }
 
     @Override
     public THijrahDate dateEpochDay(long epochDay) {
+
         return THijrahDate.of(TLocalDate.ofEpochDay(epochDay));
     }
 
-    //-----------------------------------------------------------------------
-    @Override  // override with covariant return type
+    @Override
     public THijrahDate date(TTemporalAccessor temporal) {
+
         if (temporal instanceof THijrahDate) {
             return (THijrahDate) temporal;
         }
@@ -141,48 +146,54 @@ public final class THijrahChronology extends TChronology implements Serializable
     }
 
     @SuppressWarnings("unchecked")
-    @Override  // override with covariant return type
+    @Override
     public TChronoLocalDateTime<THijrahDate> localDateTime(TTemporalAccessor temporal) {
+
         return (TChronoLocalDateTime<THijrahDate>) super.localDateTime(temporal);
     }
 
     @SuppressWarnings("unchecked")
-    @Override  // override with covariant return type
+    @Override
     public TChronoZonedDateTime<THijrahDate> zonedDateTime(TTemporalAccessor temporal) {
+
         return (TChronoZonedDateTime<THijrahDate>) super.zonedDateTime(temporal);
     }
 
     @SuppressWarnings("unchecked")
-    @Override  // override with covariant return type
+    @Override
     public TChronoZonedDateTime<THijrahDate> zonedDateTime(TInstant instant, TZoneId zone) {
+
         return (TChronoZonedDateTime<THijrahDate>) super.zonedDateTime(instant, zone);
     }
 
-    //-----------------------------------------------------------------------
-    @Override  // override with covariant return type
+    @Override
     public THijrahDate dateNow() {
+
         return (THijrahDate) super.dateNow();
     }
 
-    @Override  // override with covariant return type
+    @Override
     public THijrahDate dateNow(TZoneId zone) {
+
         return (THijrahDate) super.dateNow(zone);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public THijrahDate dateNow(TClock clock) {
+
         TJdk8Methods.requireNonNull(clock, "clock");
         return (THijrahDate) super.dateNow(clock);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isLeapYear(long prolepticYear) {
+
         return THijrahDate.isLeapYear(prolepticYear);
     }
 
     @Override
     public int prolepticYear(TEra era, int yearOfEra) {
+
         if (era instanceof THijrahEra == false) {
             throw new ClassCastException("TEra must be THijrahEra");
         }
@@ -191,6 +202,7 @@ public final class THijrahChronology extends TChronology implements Serializable
 
     @Override
     public THijrahEra eraOf(int eraValue) {
+
         switch (eraValue) {
             case 0:
                 return THijrahEra.BEFORE_AH;
@@ -203,17 +215,19 @@ public final class THijrahChronology extends TChronology implements Serializable
 
     @Override
     public List<TEra> eras() {
-        return Arrays.<TEra>asList(THijrahEra.values());
+
+        return Arrays.<TEra> asList(THijrahEra.values());
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TValueRange range(TChronoField field) {
+
         return field.range();
     }
 
     @Override
     public THijrahDate resolveDate(Map<TTemporalField, Long> fieldValues, TResolverStyle resolverStyle) {
+
         if (fieldValues.containsKey(EPOCH_DAY)) {
             return dateEpochDay(fieldValues.remove(EPOCH_DAY));
         }
@@ -240,14 +254,16 @@ public final class THijrahChronology extends TChronology implements Serializable
                 if (resolverStyle == TResolverStyle.STRICT) {
                     // do not invent era if strict, but do cross-check with year
                     if (year != null) {
-                        updateResolveMap(fieldValues, YEAR, (year > 0 ? yoeLong: TJdk8Methods.safeSubtract(1, yoeLong)));
+                        updateResolveMap(fieldValues, YEAR,
+                                (year > 0 ? yoeLong : TJdk8Methods.safeSubtract(1, yoeLong)));
                     } else {
                         // reinstate the field removed earlier, no cross-check issues
                         fieldValues.put(YEAR_OF_ERA, yoeLong);
                     }
                 } else {
                     // invent era
-                    updateResolveMap(fieldValues, YEAR, (year == null || year > 0 ? yoeLong: TJdk8Methods.safeSubtract(1, yoeLong)));
+                    updateResolveMap(fieldValues, YEAR,
+                            (year == null || year > 0 ? yoeLong : TJdk8Methods.safeSubtract(1, yoeLong)));
                 }
             } else if (era.longValue() == 1L) {
                 updateResolveMap(fieldValues, YEAR, yoeLong);
@@ -257,7 +273,7 @@ public final class THijrahChronology extends TChronology implements Serializable
                 throw new TDateTimeException("Invalid value for era: " + era);
             }
         } else if (fieldValues.containsKey(ERA)) {
-            ERA.checkValidValue(fieldValues.get(ERA));  // always validated
+            ERA.checkValidValue(fieldValues.get(ERA)); // always validated
         }
 
         // build date
@@ -270,8 +286,10 @@ public final class THijrahChronology extends TChronology implements Serializable
                         long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_MONTH), 1);
                         return date(y, 1, 1).plusMonths(months).plusDays(days);
                     } else {
-                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
-                        int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
+                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR),
+                                MONTH_OF_YEAR);
+                        int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH),
+                                DAY_OF_MONTH);
                         if (resolverStyle == TResolverStyle.SMART && dom > 28) {
                             dom = Math.min(dom, date(y, moy, 1).lengthOfMonth());
                         }
@@ -289,7 +307,8 @@ public final class THijrahChronology extends TChronology implements Serializable
                         }
                         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
                         int aw = ALIGNED_WEEK_OF_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH));
-                        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
+                        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH
+                                .checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
                         THijrahDate date = date(y, moy, 1).plus((aw - 1) * 7 + (ad - 1), DAYS);
                         if (resolverStyle == TResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
                             throw new TDateTimeException("Strict mode rejected date parsed to a different month");
@@ -333,7 +352,8 @@ public final class THijrahChronology extends TChronology implements Serializable
                         return date(y, 1, 1).plus(weeks, WEEKS).plus(days, DAYS);
                     }
                     int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
-                    int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
+                    int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR
+                            .checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
                     THijrahDate date = date(y, 1, 1).plusDays((aw - 1) * 7 + (ad - 1));
                     if (resolverStyle == TResolverStyle.STRICT && date.get(YEAR) != y) {
                         throw new TDateTimeException("Strict mode rejected date parsed to a different year");

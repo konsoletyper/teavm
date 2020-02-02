@@ -33,34 +33,34 @@ package org.teavm.classlib.java.time.format;
 
 import static org.junit.Assert.assertEquals;
 
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 import java.util.Set;
 
 import org.junit.Test;
 
-@Test
 public class TestDecimalStyle {
 
     @Test
     public void test_getAvailableLocales() {
-        Set<TLocale> locales = TDecimalStyle.getAvailableLocales();
+
+        Set<Locale> locales = TDecimalStyle.getAvailableLocales();
         assertEquals(locales.size() > 0, true);
-        assertEquals(locales.contains(TLocale.US), true);
+        assertEquals(locales.contains(Locale.US), true);
     }
 
-    //-----------------------------------------------------------------------
     @Test
     public void test_of_Locale() {
-        TDecimalStyle loc1 = TDecimalStyle.of(TLocale.CANADA);
+
+        TDecimalStyle loc1 = TDecimalStyle.of(Locale.CANADA);
         assertEquals(loc1.getZeroDigit(), '0');
         assertEquals(loc1.getPositiveSign(), '+');
         assertEquals(loc1.getNegativeSign(), '-');
         assertEquals(loc1.getDecimalSeparator(), '.');
     }
 
-    //-----------------------------------------------------------------------
     @Test
     public void test_STANDARD() {
+
         TDecimalStyle loc1 = TDecimalStyle.STANDARD;
         assertEquals(loc1.getZeroDigit(), '0');
         assertEquals(loc1.getPositiveSign(), '+');
@@ -68,34 +68,37 @@ public class TestDecimalStyle {
         assertEquals(loc1.getDecimalSeparator(), '.');
     }
 
-    //-----------------------------------------------------------------------
     @Test
     public void test_zeroDigit() {
+
         TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.withZeroDigit('A').getZeroDigit(), 'A');
     }
 
     @Test
     public void test_positiveSign() {
+
         TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.withPositiveSign('A').getPositiveSign(), 'A');
     }
 
     @Test
     public void test_negativeSign() {
+
         TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.withNegativeSign('A').getNegativeSign(), 'A');
     }
 
     @Test
     public void test_decimalSeparator() {
+
         TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.withDecimalSeparator('A').getDecimalSeparator(), 'A');
     }
 
-    //-----------------------------------------------------------------------
     @Test
     public void test_convertToDigit_base() {
+
         TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.convertToDigit('0'), 0);
         assertEquals(base.convertToDigit('1'), 1);
@@ -106,6 +109,7 @@ public class TestDecimalStyle {
 
     @Test
     public void test_convertToDigit_altered() {
+
         TDecimalStyle base = TDecimalStyle.STANDARD.withZeroDigit('A');
         assertEquals(base.convertToDigit('A'), 0);
         assertEquals(base.convertToDigit('B'), 1);
@@ -114,22 +118,23 @@ public class TestDecimalStyle {
         assertEquals(base.convertToDigit('0'), -1);
     }
 
-    //-----------------------------------------------------------------------
     @Test
     public void test_convertNumberToI18N_base() {
+
         TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.convertNumberToI18N("134"), "134");
     }
 
     @Test
     public void test_convertNumberToI18N_altered() {
+
         TDecimalStyle base = TDecimalStyle.STANDARD.withZeroDigit('A');
         assertEquals(base.convertNumberToI18N("134"), "BDE");
     }
 
-    //-----------------------------------------------------------------------
     @Test
     public void test_equalsHashCode1() {
+
         TDecimalStyle a = TDecimalStyle.STANDARD;
         TDecimalStyle b = TDecimalStyle.STANDARD;
         assertEquals(a.equals(b), true);
@@ -139,6 +144,7 @@ public class TestDecimalStyle {
 
     @Test
     public void test_equalsHashCode2() {
+
         TDecimalStyle a = TDecimalStyle.STANDARD.withZeroDigit('A');
         TDecimalStyle b = TDecimalStyle.STANDARD.withZeroDigit('A');
         assertEquals(a.equals(b), true);
@@ -148,6 +154,7 @@ public class TestDecimalStyle {
 
     @Test
     public void test_equalsHashCode3() {
+
         TDecimalStyle a = TDecimalStyle.STANDARD.withZeroDigit('A');
         TDecimalStyle b = TDecimalStyle.STANDARD.withDecimalSeparator('A');
         assertEquals(a.equals(b), false);
@@ -156,21 +163,23 @@ public class TestDecimalStyle {
 
     @Test
     public void test_equalsHashCode_bad() {
+
         TDecimalStyle a = TDecimalStyle.STANDARD;
         assertEquals(a.equals(""), false);
         assertEquals(a.equals(null), false);
     }
 
-    //-----------------------------------------------------------------------
     @Test
     public void test_toString_base() {
+
         TDecimalStyle base = TDecimalStyle.STANDARD;
         assertEquals(base.toString(), "TDecimalStyle[0+-.]");
     }
 
     @Test
     public void test_toString_altered() {
-        TDecimalStyle base = TDecimalStyle.of(TLocale.US).withZeroDigit('A').withDecimalSeparator('@');
+
+        TDecimalStyle base = TDecimalStyle.of(Locale.US).withZeroDigit('A').withDecimalSeparator('@');
         assertEquals(base.toString(), "TDecimalStyle[A+-@]");
     }
 

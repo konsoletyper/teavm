@@ -39,14 +39,12 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 import java.text.DateFormatSymbols;
 import java.util.AbstractMap.SimpleImmutableEntry;
 import java.util.ArrayList;
-import org.teavm.classlib.java.util.TCalendar;
 import java.util.Collections;
 import java.util.Comparator;
-import org.teavm.classlib.java.util.TGregorianCalendar;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.concurrent.ConcurrentHashMap;
@@ -54,23 +52,26 @@ import java.util.concurrent.ConcurrentMap;
 
 import org.teavm.classlib.java.time.temporal.TIsoFields;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
+import org.teavm.classlib.java.util.TCalendar;
+import org.teavm.classlib.java.util.TGregorianCalendar;
+import org.teavm.classlib.java.util.TLocale;
 
 final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
-     // TODO: Better implementation based on CLDR
+    // TODO: Better implementation based on CLDR
 
     private static final Comparator<Entry<String, Long>> COMPARATOR = new Comparator<Entry<String, Long>>() {
         @Override
         public int compare(Entry<String, Long> obj1, Entry<String, Long> obj2) {
-            return obj2.getKey().length() - obj1.getKey().length();  // longest to shortest
+
+            return obj2.getKey().length() - obj1.getKey().length(); // longest to shortest
         }
     };
 
-    private final ConcurrentMap<Entry<TTemporalField, TLocale>, Object> cache =
-            new ConcurrentHashMap<Entry<TTemporalField, TLocale>, Object>(16, 0.75f, 2);
+    private final ConcurrentMap<Entry<TTemporalField, Locale>, Object> cache = new ConcurrentHashMap<>(16, 0.75f, 2);
 
-    //-----------------------------------------------------------------------
     @Override
-    public String getText(TTemporalField field, long value, TTextStyle style, TLocale locale) {
+    public String getText(TTemporalField field, long value, TTextStyle style, Locale locale) {
+
         Object store = findStore(field, locale);
         if (store instanceof LocaleStore) {
             return ((LocaleStore) store).getText(value, style);
@@ -79,7 +80,8 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
     }
 
     @Override
-    public Iterator<Entry<String, Long>> getTextIterator(TTemporalField field, TTextStyle style, TLocale locale) {
+    public Iterator<Entry<String, Long>> getTextIterator(TTemporalField field, TTextStyle style, Locale locale) {
+
         Object store = findStore(field, locale);
         if (store instanceof LocaleStore) {
             return ((LocaleStore) store).getTextIterator(style);
@@ -87,22 +89,23 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
         return null;
     }
 
-    //-----------------------------------------------------------------------
-    private Object findStore(TTemporalField field, TLocale locale) {
-        Entry<TTemporalField, TLocale> key = createEntry(field, locale);
-        Object store = cache.get(key);
+    private Object findStore(TTemporalField field, Locale locale) {
+
+        Entry<TTemporalField, Locale> key = createEntry(field, locale);
+        Object store = this.cache.get(key);
         if (store == null) {
             store = createStore(field, locale);
-            cache.putIfAbsent(key, store);
-            store = cache.get(key);
+            this.cache.putIfAbsent(key, store);
+            store = this.cache.get(key);
         }
         return store;
     }
 
-    private Object createStore(TTemporalField field, TLocale locale) {
+    private Object createStore(TTemporalField field, Locale locale) {
+
         if (field == MONTH_OF_YEAR) {
             DateFormatSymbols oldSymbols = DateFormatSymbols.getInstance(locale);
-            Map<TTextStyle, Map<Long, String>> styleMap = new HashMap<TTextStyle, Map<Long,String>>();
+            Map<TTextStyle, Map<Long, String>> styleMap = new HashMap<>();
             Long f1 = 1L;
             Long f2 = 2L;
             Long f3 = 3L;
@@ -116,7 +119,7 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
             Long f11 = 11L;
             Long f12 = 12L;
             String[] array = oldSymbols.getMonths();
-            Map<Long, String> map = new HashMap<Long, String>();
+            Map<Long, String> map = new HashMap<>();
             map.put(f1, array[TCalendar.JANUARY]);
             map.put(f2, array[TCalendar.FEBRUARY]);
             map.put(f3, array[TCalendar.MARCH]);
@@ -130,8 +133,8 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
             map.put(f11, array[TCalendar.NOVEMBER]);
             map.put(f12, array[TCalendar.DECEMBER]);
             styleMap.put(TTextStyle.FULL, map);
-            
-            map = new HashMap<Long, String>();
+
+            map = new HashMap<>();
             map.put(f1, array[TCalendar.JANUARY].substring(0, 1));
             map.put(f2, array[TCalendar.FEBRUARY].substring(0, 1));
             map.put(f3, array[TCalendar.MARCH].substring(0, 1));
@@ -145,9 +148,9 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
             map.put(f11, array[TCalendar.NOVEMBER].substring(0, 1));
             map.put(f12, array[TCalendar.DECEMBER].substring(0, 1));
             styleMap.put(TTextStyle.NARROW, map);
-            
+
             array = oldSymbols.getShortMonths();
-            map = new HashMap<Long, String>();
+            map = new HashMap<>();
             map.put(f1, array[TCalendar.JANUARY]);
             map.put(f2, array[TCalendar.FEBRUARY]);
             map.put(f3, array[TCalendar.MARCH]);
@@ -165,7 +168,7 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
         }
         if (field == DAY_OF_WEEK) {
             DateFormatSymbols oldSymbols = DateFormatSymbols.getInstance(locale);
-            Map<TTextStyle, Map<Long, String>> styleMap = new HashMap<TTextStyle, Map<Long,String>>();
+            Map<TTextStyle, Map<Long, String>> styleMap = new HashMap<>();
             Long f1 = 1L;
             Long f2 = 2L;
             Long f3 = 3L;
@@ -174,7 +177,7 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
             Long f6 = 6L;
             Long f7 = 7L;
             String[] array = oldSymbols.getWeekdays();
-            Map<Long, String> map = new HashMap<Long, String>();
+            Map<Long, String> map = new HashMap<>();
             map.put(f1, array[TCalendar.MONDAY]);
             map.put(f2, array[TCalendar.TUESDAY]);
             map.put(f3, array[TCalendar.WEDNESDAY]);
@@ -183,8 +186,8 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
             map.put(f6, array[TCalendar.SATURDAY]);
             map.put(f7, array[TCalendar.SUNDAY]);
             styleMap.put(TTextStyle.FULL, map);
-            
-            map = new HashMap<Long, String>();
+
+            map = new HashMap<>();
             map.put(f1, array[TCalendar.MONDAY].substring(0, 1));
             map.put(f2, array[TCalendar.TUESDAY].substring(0, 1));
             map.put(f3, array[TCalendar.WEDNESDAY].substring(0, 1));
@@ -193,9 +196,9 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
             map.put(f6, array[TCalendar.SATURDAY].substring(0, 1));
             map.put(f7, array[TCalendar.SUNDAY].substring(0, 1));
             styleMap.put(TTextStyle.NARROW, map);
-            
+
             array = oldSymbols.getShortWeekdays();
-            map = new HashMap<Long, String>();
+            map = new HashMap<>();
             map.put(f1, array[TCalendar.MONDAY]);
             map.put(f2, array[TCalendar.TUESDAY]);
             map.put(f3, array[TCalendar.WEDNESDAY]);
@@ -208,25 +211,25 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
         }
         if (field == AMPM_OF_DAY) {
             DateFormatSymbols oldSymbols = DateFormatSymbols.getInstance(locale);
-            Map<TTextStyle, Map<Long, String>> styleMap = new HashMap<TTextStyle, Map<Long,String>>();
+            Map<TTextStyle, Map<Long, String>> styleMap = new HashMap<>();
             String[] array = oldSymbols.getAmPmStrings();
-            Map<Long, String> map = new HashMap<Long, String>();
+            Map<Long, String> map = new HashMap<>();
             map.put(0L, array[TCalendar.AM]);
             map.put(1L, array[TCalendar.PM]);
             styleMap.put(TTextStyle.FULL, map);
-            styleMap.put(TTextStyle.SHORT, map);  // re-use, as we don't have different data
+            styleMap.put(TTextStyle.SHORT, map); // re-use, as we don't have different data
             return createLocaleStore(styleMap);
         }
         if (field == ERA) {
             DateFormatSymbols oldSymbols = DateFormatSymbols.getInstance(locale);
-            Map<TTextStyle, Map<Long, String>> styleMap = new HashMap<TTextStyle, Map<Long,String>>();
+            Map<TTextStyle, Map<Long, String>> styleMap = new HashMap<>();
             String[] array = oldSymbols.getEras();
-            Map<Long, String> map = new HashMap<Long, String>();
+            Map<Long, String> map = new HashMap<>();
             map.put(0L, array[TGregorianCalendar.BC]);
             map.put(1L, array[TGregorianCalendar.AD]);
             styleMap.put(TTextStyle.SHORT, map);
             if (locale.getLanguage().equals(TLocale.ENGLISH.getLanguage())) {
-                map = new HashMap<Long, String>();
+                map = new HashMap<>();
                 map.put(0L, "Before Christ");
                 map.put(1L, "Anno Domini");
                 styleMap.put(TTextStyle.FULL, map);
@@ -234,7 +237,7 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
                 // re-use, as we don't have different data
                 styleMap.put(TTextStyle.FULL, map);
             }
-            map = new HashMap<Long, String>();
+            map = new HashMap<>();
             map.put(0L, array[TGregorianCalendar.BC].substring(0, 1));
             map.put(1L, array[TGregorianCalendar.AD].substring(0, 1));
             styleMap.put(TTextStyle.NARROW, map);
@@ -242,14 +245,14 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
         }
         // hard code English quarter text
         if (field == TIsoFields.QUARTER_OF_YEAR) {
-            Map<TTextStyle, Map<Long, String>> styleMap = new HashMap<TTextStyle, Map<Long,String>>();
-            Map<Long, String> map = new HashMap<Long, String>();
+            Map<TTextStyle, Map<Long, String>> styleMap = new HashMap<>();
+            Map<Long, String> map = new HashMap<>();
             map.put(1L, "Q1");
             map.put(2L, "Q2");
             map.put(3L, "Q3");
             map.put(4L, "Q4");
             styleMap.put(TTextStyle.SHORT, map);
-            map = new HashMap<Long, String>();
+            map = new HashMap<>();
             map.put(1L, "1st quarter");
             map.put(2L, "2nd quarter");
             map.put(3L, "3rd quarter");
@@ -257,19 +260,20 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
             styleMap.put(TTextStyle.FULL, map);
             return createLocaleStore(styleMap);
         }
-        return "";  // null marker for map
+        return ""; // null marker for map
     }
 
-    //-----------------------------------------------------------------------
     private static <A, B> Entry<A, B> createEntry(A text, B field) {
-        return new SimpleImmutableEntry<A, B>(text, field);
+
+        return new SimpleImmutableEntry<>(text, field);
     }
 
-    //-----------------------------------------------------------------------
     private static LocaleStore createLocaleStore(Map<TTextStyle, Map<Long, String>> valueTextMap) {
+
         valueTextMap.put(TTextStyle.FULL_STANDALONE, valueTextMap.get(TTextStyle.FULL));
         valueTextMap.put(TTextStyle.SHORT_STANDALONE, valueTextMap.get(TTextStyle.SHORT));
-        if (valueTextMap.containsKey(TTextStyle.NARROW) && valueTextMap.containsKey(TTextStyle.NARROW_STANDALONE) == false) {
+        if (valueTextMap.containsKey(TTextStyle.NARROW)
+                && valueTextMap.containsKey(TTextStyle.NARROW_STANDALONE) == false) {
             valueTextMap.put(TTextStyle.NARROW_STANDALONE, valueTextMap.get(TTextStyle.NARROW));
         }
         return new LocaleStore(valueTextMap);
@@ -277,21 +281,22 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
 
     static final class LocaleStore {
         private final Map<TTextStyle, Map<Long, String>> valueTextMap;
+
         private final Map<TTextStyle, List<Entry<String, Long>>> parsable;
 
-        //-----------------------------------------------------------------------
         LocaleStore(Map<TTextStyle, Map<Long, String>> valueTextMap) {
+
             this.valueTextMap = valueTextMap;
-            Map<TTextStyle, List<Entry<String, Long>>> map = new HashMap<TTextStyle, List<Entry<String,Long>>>();
-            List<Entry<String, Long>> allList = new ArrayList<Map.Entry<String,Long>>();
+            Map<TTextStyle, List<Entry<String, Long>>> map = new HashMap<>();
+            List<Entry<String, Long>> allList = new ArrayList<>();
             for (TTextStyle style : valueTextMap.keySet()) {
-                Map<String, Entry<String, Long>> reverse = new HashMap<String, Map.Entry<String,Long>>();
+                Map<String, Entry<String, Long>> reverse = new HashMap<>();
                 for (Map.Entry<Long, String> entry : valueTextMap.get(style).entrySet()) {
                     if (reverse.put(entry.getValue(), createEntry(entry.getValue(), entry.getKey())) != null) {
-                        continue;  // not parsable, try next style
+                        continue; // not parsable, try next style
                     }
                 }
-                List<Entry<String, Long>> list = new ArrayList<Map.Entry<String,Long>>(reverse.values());
+                List<Entry<String, Long>> list = new ArrayList<>(reverse.values());
                 Collections.sort(list, COMPARATOR);
                 map.put(style, list);
                 allList.addAll(list);
@@ -301,14 +306,15 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
             this.parsable = map;
         }
 
-        //-----------------------------------------------------------------------
         String getText(long value, TTextStyle style) {
-            Map<Long, String> map = valueTextMap.get(style);
+
+            Map<Long, String> map = this.valueTextMap.get(style);
             return map != null ? map.get(value) : null;
         }
 
         Iterator<Entry<String, Long>> getTextIterator(TTextStyle style) {
-            List<Entry<String, Long>> list = parsable.get(style);
+
+            List<Entry<String, Long>> list = this.parsable.get(style);
             return list != null ? list.iterator() : null;
         }
     }

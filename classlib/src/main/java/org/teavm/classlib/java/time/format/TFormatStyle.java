@@ -32,11 +32,7 @@
 package org.teavm.classlib.java.time.format;
 
 public enum TFormatStyle {
-    // ordered from large to small
 
-    FULL,
-    LONG,
-    MEDIUM,
-    SHORT;
+    FULL, LONG, MEDIUM, SHORT;
 
 }

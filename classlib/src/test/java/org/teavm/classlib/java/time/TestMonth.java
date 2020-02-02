@@ -40,9 +40,8 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TTextStyle;
@@ -53,29 +52,29 @@ import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 
-@Test
 public class TestMonth extends AbstractDateTimeTest {
 
     private static final int MAX_LENGTH = 12;
 
-    //-----------------------------------------------------------------------
     @Override
     protected List<TTemporalAccessor> samples() {
-        TTemporalAccessor[] array = {JANUARY, JUNE, DECEMBER, };
+
+        TTemporalAccessor[] array = { JANUARY, JUNE, DECEMBER, };
         return Arrays.asList(array);
     }
 
     @Override
     protected List<TTemporalField> validFields() {
-        TTemporalField[] array = {
-            MONTH_OF_YEAR,
-        };
+
+        TTemporalField[] array = { MONTH_OF_YEAR, };
         return Arrays.asList(array);
     }
 
     @Override
     protected List<TTemporalField> invalidFields() {
-        List<TTemporalField> list = new ArrayList<TTemporalField>(Arrays.<TTemporalField>asList(TChronoField.values()));
+
+        List<TTemporalField> list = new ArrayList<TTemporalField>(
+                Arrays.<TTemporalField> asList(TChronoField.values()));
         list.removeAll(validFields());
         list.add(TJulianFields.JULIAN_DAY);
         list.add(TJulianFields.MODIFIED_JULIAN_DAY);
@@ -83,59 +82,60 @@ public class TestMonth extends AbstractDateTimeTest {
         return list;
     }
 
-    //-----------------------------------------------------------------------
     @Test
     public void test_factory_int_singleton() {
+
         for (int i = 1; i <= MAX_LENGTH; i++) {
             TMonth test = TMonth.of(i);
             assertEquals(test.getValue(), i);
         }
     }
 
-    @Test(expectedExceptions=TDateTimeException.class)
+    @Test(expected = TDateTimeException.class)
     public void test_factory_int_tooLow() {
+
         TMonth.of(0);
     }
 
-    @Test(expectedExceptions=TDateTimeException.class)
+    @Test(expected = TDateTimeException.class)
     public void test_factory_int_tooHigh() {
+
         TMonth.of(13);
     }
 
-    //-----------------------------------------------------------------------
     @Test
     public void test_factory_CalendricalObject() {
+
         assertEquals(TMonth.from(TLocalDate.of(2011, 6, 6)), JUNE);
     }
 
-    @Test(expectedExceptions=TDateTimeException.class)
+    @Test(expected = TDateTimeException.class)
     public void test_factory_CalendricalObject_invalid_noDerive() {
+
         TMonth.from(TLocalTime.of(12, 30));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_factory_CalendricalObject_null() {
+
         TMonth.from((TTemporalAccessor) null);
     }
 
-    //-----------------------------------------------------------------------
-    // get(TTemporalField)
-    //-----------------------------------------------------------------------
     @Test
     public void test_get_TemporalField() {
+
         assertEquals(TMonth.JULY.get(TChronoField.MONTH_OF_YEAR), 7);
     }
 
     @Test
     public void test_getLong_TemporalField() {
+
         assertEquals(TMonth.JULY.getLong(TChronoField.MONTH_OF_YEAR), 7);
     }
 
-    //-----------------------------------------------------------------------
-    // query(TTemporalQuery)
-    //-----------------------------------------------------------------------
     @Test
     public void test_query() {
+
         assertEquals(TMonth.JUNE.query(TTemporalQueries.chronology()), TIsoChronology.INSTANCE);
         assertEquals(TMonth.JUNE.query(TTemporalQueries.localDate()), null);
         assertEquals(TMonth.JUNE.query(TTemporalQueries.localTime()), null);
@@ -145,142 +145,79 @@ public class TestMonth extends AbstractDateTimeTest {
         assertEquals(TMonth.JUNE.query(TTemporalQueries.zoneId()), null);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_query_null() {
+
         TMonth.JUNE.query(null);
     }
 
-    //-----------------------------------------------------------------------
-    // getDisplayName()
-    //-----------------------------------------------------------------------
     @Test
     public void test_getDisplayName() {
-        assertEquals(TMonth.JANUARY.getDisplayName(TTextStyle.SHORT, TLocale.US), "Jan");
+
+        assertEquals(TMonth.JANUARY.getDisplayName(TTextStyle.SHORT, Locale.US), "Jan");
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_getDisplayName_nullStyle() {
-        TMonth.JANUARY.getDisplayName(null, TLocale.US);
+
+        TMonth.JANUARY.getDisplayName(null, Locale.US);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_getDisplayName_nullLocale() {
+
         TMonth.JANUARY.getDisplayName(TTextStyle.FULL, null);
     }
 
-    //-----------------------------------------------------------------------
-    // plus(long), plus(long,unit)
-    //-----------------------------------------------------------------------
-    @DataProvider(name="plus")
     Object[][] data_plus() {
-        return new Object[][] {
-            {1, -13, 12},
-            {1, -12, 1},
-            {1, -11, 2},
-            {1, -10, 3},
-            {1, -9, 4},
-            {1, -8, 5},
-            {1, -7, 6},
-            {1, -6, 7},
-            {1, -5, 8},
-            {1, -4, 9},
-            {1, -3, 10},
-            {1, -2, 11},
-            {1, -1, 12},
-            {1, 0, 1},
-            {1, 1, 2},
-            {1, 2, 3},
-            {1, 3, 4},
-            {1, 4, 5},
-            {1, 5, 6},
-            {1, 6, 7},
-            {1, 7, 8},
-            {1, 8, 9},
-            {1, 9, 10},
-            {1, 10, 11},
-            {1, 11, 12},
-            {1, 12, 1},
-            {1, 13, 2},
 
-            {1, 1, 2},
-            {2, 1, 3},
-            {3, 1, 4},
-            {4, 1, 5},
-            {5, 1, 6},
-            {6, 1, 7},
-            {7, 1, 8},
-            {8, 1, 9},
-            {9, 1, 10},
-            {10, 1, 11},
-            {11, 1, 12},
-            {12, 1, 1},
+        return new Object[][] { { 1, -13, 12 }, { 1, -12, 1 }, { 1, -11, 2 }, { 1, -10, 3 }, { 1, -9, 4 }, { 1, -8, 5 },
+        { 1, -7, 6 }, { 1, -6, 7 }, { 1, -5, 8 }, { 1, -4, 9 }, { 1, -3, 10 }, { 1, -2, 11 }, { 1, -1, 12 },
+        { 1, 0, 1 }, { 1, 1, 2 }, { 1, 2, 3 }, { 1, 3, 4 }, { 1, 4, 5 }, { 1, 5, 6 }, { 1, 6, 7 }, { 1, 7, 8 },
+        { 1, 8, 9 }, { 1, 9, 10 }, { 1, 10, 11 }, { 1, 11, 12 }, { 1, 12, 1 }, { 1, 13, 2 },
 
-            {1, -1, 12},
-            {2, -1, 1},
-            {3, -1, 2},
-            {4, -1, 3},
-            {5, -1, 4},
-            {6, -1, 5},
-            {7, -1, 6},
-            {8, -1, 7},
-            {9, -1, 8},
-            {10, -1, 9},
-            {11, -1, 10},
-            {12, -1, 11},
-        };
+        { 1, 1, 2 }, { 2, 1, 3 }, { 3, 1, 4 }, { 4, 1, 5 }, { 5, 1, 6 }, { 6, 1, 7 }, { 7, 1, 8 }, { 8, 1, 9 },
+        { 9, 1, 10 }, { 10, 1, 11 }, { 11, 1, 12 }, { 12, 1, 1 },
+
+        { 1, -1, 12 }, { 2, -1, 1 }, { 3, -1, 2 }, { 4, -1, 3 }, { 5, -1, 4 }, { 6, -1, 5 }, { 7, -1, 6 }, { 8, -1, 7 },
+        { 9, -1, 8 }, { 10, -1, 9 }, { 11, -1, 10 }, { 12, -1, 11 }, };
     }
 
-    @Test(dataProvider="plus")
-    public void test_plus_long(int base, long amount, int expected) {
-        assertEquals(TMonth.of(base).plus(amount), TMonth.of(expected));
+    @Test
+    public void test_plus_long() {
+
+        for (Object[] data : data_plus()) {
+            int base = (int) data[0];
+            long amount = ((Number) data[1]).longValue();
+            int expected = (int) data[2];
+
+            assertEquals(TMonth.of(base).plus(amount), TMonth.of(expected));
+        }
     }
 
-    //-----------------------------------------------------------------------
-    // minus(long), minus(long,unit)
-    //-----------------------------------------------------------------------
-    @DataProvider(name="minus")
     Object[][] data_minus() {
-        return new Object[][] {
-            {1, -13, 2},
-            {1, -12, 1},
-            {1, -11, 12},
-            {1, -10, 11},
-            {1, -9, 10},
-            {1, -8, 9},
-            {1, -7, 8},
-            {1, -6, 7},
-            {1, -5, 6},
-            {1, -4, 5},
-            {1, -3, 4},
-            {1, -2, 3},
-            {1, -1, 2},
-            {1, 0, 1},
-            {1, 1, 12},
-            {1, 2, 11},
-            {1, 3, 10},
-            {1, 4, 9},
-            {1, 5, 8},
-            {1, 6, 7},
-            {1, 7, 6},
-            {1, 8, 5},
-            {1, 9, 4},
-            {1, 10, 3},
-            {1, 11, 2},
-            {1, 12, 1},
-            {1, 13, 12},
-        };
+
+        return new Object[][] { { 1, -13, 2 }, { 1, -12, 1 }, { 1, -11, 12 }, { 1, -10, 11 }, { 1, -9, 10 },
+        { 1, -8, 9 }, { 1, -7, 8 }, { 1, -6, 7 }, { 1, -5, 6 }, { 1, -4, 5 }, { 1, -3, 4 }, { 1, -2, 3 }, { 1, -1, 2 },
+        { 1, 0, 1 }, { 1, 1, 12 }, { 1, 2, 11 }, { 1, 3, 10 }, { 1, 4, 9 }, { 1, 5, 8 }, { 1, 6, 7 }, { 1, 7, 6 },
+        { 1, 8, 5 }, { 1, 9, 4 }, { 1, 10, 3 }, { 1, 11, 2 }, { 1, 12, 1 }, { 1, 13, 12 }, };
     }
 
-    @Test(dataProvider="minus")
-    public void test_minus_long(int base, long amount, int expected) {
-        assertEquals(TMonth.of(base).minus(amount), TMonth.of(expected));
+    @Test
+    public void test_minus_long() {
+
+        for (Object[] data : data_minus()) {
+            int base = (int) data[0];
+            long amount = ((Number) data[1]).longValue();
+            int expected = (int) data[2];
+
+            assertEquals(TMonth.of(base).minus(amount), TMonth.of(expected));
+        }
     }
 
-    //-----------------------------------------------------------------------
-    // length(boolean)
-    //-----------------------------------------------------------------------
     @Test
     public void test_length_boolean_notLeapYear() {
+
         assertEquals(TMonth.JANUARY.length(false), 31);
         assertEquals(TMonth.FEBRUARY.length(false), 28);
         assertEquals(TMonth.MARCH.length(false), 31);
@@ -297,6 +234,7 @@ public class TestMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_length_boolean_leapYear() {
+
         assertEquals(TMonth.JANUARY.length(true), 31);
         assertEquals(TMonth.FEBRUARY.length(true), 29);
         assertEquals(TMonth.MARCH.length(true), 31);
@@ -311,11 +249,9 @@ public class TestMonth extends AbstractDateTimeTest {
         assertEquals(TMonth.DECEMBER.length(true), 31);
     }
 
-    //-----------------------------------------------------------------------
-    // minLength()
-    //-----------------------------------------------------------------------
     @Test
     public void test_minLength() {
+
         assertEquals(TMonth.JANUARY.minLength(), 31);
         assertEquals(TMonth.FEBRUARY.minLength(), 28);
         assertEquals(TMonth.MARCH.minLength(), 31);
@@ -330,11 +266,9 @@ public class TestMonth extends AbstractDateTimeTest {
         assertEquals(TMonth.DECEMBER.minLength(), 31);
     }
 
-    //-----------------------------------------------------------------------
-    // maxLength()
-    //-----------------------------------------------------------------------
     @Test
     public void test_maxLength() {
+
         assertEquals(TMonth.JANUARY.maxLength(), 31);
         assertEquals(TMonth.FEBRUARY.maxLength(), 29);
         assertEquals(TMonth.MARCH.maxLength(), 31);
@@ -349,11 +283,9 @@ public class TestMonth extends AbstractDateTimeTest {
         assertEquals(TMonth.DECEMBER.maxLength(), 31);
     }
 
-    //-----------------------------------------------------------------------
-    // firstDayOfYear(boolean)
-    //-----------------------------------------------------------------------
     @Test
     public void test_firstDayOfYear_notLeapYear() {
+
         assertEquals(TMonth.JANUARY.firstDayOfYear(false), 1);
         assertEquals(TMonth.FEBRUARY.firstDayOfYear(false), 1 + 31);
         assertEquals(TMonth.MARCH.firstDayOfYear(false), 1 + 31 + 28);
@@ -370,6 +302,7 @@ public class TestMonth extends AbstractDateTimeTest {
 
     @Test
     public void test_firstDayOfYear_leapYear() {
+
         assertEquals(TMonth.JANUARY.firstDayOfYear(true), 1);
         assertEquals(TMonth.FEBRUARY.firstDayOfYear(true), 1 + 31);
         assertEquals(TMonth.MARCH.firstDayOfYear(true), 1 + 31 + 29);
@@ -384,11 +317,9 @@ public class TestMonth extends AbstractDateTimeTest {
         assertEquals(TMonth.DECEMBER.firstDayOfYear(true), 1 + 31 + 29 + 31 + 30 + 31 + 30 + 31 + 31 + 30 + 31 + 30);
     }
 
-    //-----------------------------------------------------------------------
-    // firstMonthOfQuarter()
-    //-----------------------------------------------------------------------
     @Test
     public void test_firstMonthOfQuarter() {
+
         assertEquals(TMonth.JANUARY.firstMonthOfQuarter(), TMonth.JANUARY);
         assertEquals(TMonth.FEBRUARY.firstMonthOfQuarter(), TMonth.JANUARY);
         assertEquals(TMonth.MARCH.firstMonthOfQuarter(), TMonth.JANUARY);
@@ -403,11 +334,9 @@ public class TestMonth extends AbstractDateTimeTest {
         assertEquals(TMonth.DECEMBER.firstMonthOfQuarter(), TMonth.OCTOBER);
     }
 
-    //-----------------------------------------------------------------------
-    // toString()
-    //-----------------------------------------------------------------------
     @Test
     public void test_toString() {
+
         assertEquals(TMonth.JANUARY.toString(), "JANUARY");
         assertEquals(TMonth.FEBRUARY.toString(), "FEBRUARY");
         assertEquals(TMonth.MARCH.toString(), "MARCH");
@@ -422,11 +351,9 @@ public class TestMonth extends AbstractDateTimeTest {
         assertEquals(TMonth.DECEMBER.toString(), "DECEMBER");
     }
 
-    //-----------------------------------------------------------------------
-    // generated methods
-    //-----------------------------------------------------------------------
     @Test
     public void test_enum() {
+
         assertEquals(TMonth.valueOf("JANUARY"), TMonth.JANUARY);
         assertEquals(TMonth.values()[0], TMonth.JANUARY);
     }

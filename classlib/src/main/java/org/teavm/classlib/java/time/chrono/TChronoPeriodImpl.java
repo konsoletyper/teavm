@@ -67,7 +67,6 @@ final class TChronoPeriodImpl
         this.days = days;
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public long get(TTemporalUnit unit) {
         if (unit == YEARS) {
@@ -92,7 +91,6 @@ final class TChronoPeriodImpl
         return chronology;
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public TChronoPeriod plus(TTemporalAmount amountToAdd) {
         if (amountToAdd instanceof TChronoPeriodImpl) {
@@ -182,7 +180,6 @@ final class TChronoPeriodImpl
         return temporal;
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {

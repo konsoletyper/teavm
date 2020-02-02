@@ -33,20 +33,21 @@ package org.teavm.classlib.java.time;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Modifier;
 import java.util.Collections;
 
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
-@Test
 public class TestDateTimes_implementation {
 
     @SuppressWarnings("rawtypes")
+    @Test
     public void test_constructor() throws Exception {
+
         for (Constructor constructor : TJdk8Methods.class.getDeclaredConstructors()) {
             assertTrue(Modifier.isPrivate(constructor.getModifiers()));
             constructor.setAccessible(true);
@@ -54,417 +55,437 @@ public class TestDateTimes_implementation {
         }
     }
 
-    //-----------------------------------------------------------------------
-    // safeAdd()
-    //-----------------------------------------------------------------------
-    @DataProvider(name="safeAddIntProvider")
     Object[][] safeAddIntProvider() {
-        return new Object[][] {
-            {Integer.MIN_VALUE, 1, Integer.MIN_VALUE + 1},
-            {-1, 1, 0},
-            {0, 0, 0},
-            {1, -1, 0},
-            {Integer.MAX_VALUE, -1, Integer.MAX_VALUE - 1},
-        };
+
+        return new Object[][] { { Integer.MIN_VALUE, 1, Integer.MIN_VALUE + 1 }, { -1, 1, 0 }, { 0, 0, 0 },
+        { 1, -1, 0 }, { Integer.MAX_VALUE, -1, Integer.MAX_VALUE - 1 }, };
     }
 
-    @Test(dataProvider="safeAddIntProvider")
-    public void test_safeAddInt(int a, int b, int expected) {
-        assertEquals(TJdk8Methods.safeAdd(a, b), expected);
+    @Test
+    public void test_safeAddInt() {
+
+        for (Object[] data : safeAddIntProvider()) {
+            int a = (int) data[0];
+            int b = (int) data[1];
+            int expected = (int) data[2];
+
+            assertEquals(TJdk8Methods.safeAdd(a, b), expected);
+        }
     }
 
-    @DataProvider(name="safeAddIntProviderOverflow")
     Object[][] safeAddIntProviderOverflow() {
-        return new Object[][] {
-            {Integer.MIN_VALUE, - 1},
-            {Integer.MIN_VALUE + 1, -2},
-            {Integer.MAX_VALUE - 1, 2},
-            {Integer.MAX_VALUE, 1},
-        };
+
+        return new Object[][] { { Integer.MIN_VALUE, -1 }, { Integer.MIN_VALUE + 1, -2 }, { Integer.MAX_VALUE - 1, 2 },
+        { Integer.MAX_VALUE, 1 }, };
     }
 
-    @Test(dataProvider="safeAddIntProviderOverflow", expectedExceptions=ArithmeticException.class)
-    public void test_safeAddInt_overflow(int a, int b) {
-        TJdk8Methods.safeAdd(a, b);
+    @Test
+    public void test_safeAddInt_overflow() {
+
+        for (Object[] data : safeAddIntProviderOverflow()) {
+            int a = (int) data[0];
+            int b = (int) data[1];
+
+            try {
+                TJdk8Methods.safeAdd(a, b);
+                fail("Expected ArithmeticException");
+            } catch (ArithmeticException e) {
+                // expected
+            }
+        }
     }
 
-    @DataProvider(name="safeAddLongProvider")
     Object[][] safeAddLongProvider() {
-        return new Object[][] {
-            {Long.MIN_VALUE, 1, Long.MIN_VALUE + 1},
-            {-1, 1, 0},
-            {0, 0, 0},
-            {1, -1, 0},
-            {Long.MAX_VALUE, -1, Long.MAX_VALUE - 1},
-        };
+
+        return new Object[][] { { Long.MIN_VALUE, 1, Long.MIN_VALUE + 1 }, { -1, 1, 0 }, { 0, 0, 0 }, { 1, -1, 0 },
+        { Long.MAX_VALUE, -1, Long.MAX_VALUE - 1 }, };
     }
 
-    @Test(dataProvider="safeAddLongProvider")
-    public void test_safeAddLong(long a, long b, long expected) {
-        assertEquals(TJdk8Methods.safeAdd(a, b), expected);
+    @Test
+    public void test_safeAddLong() {
+
+        for (Object[] data : safeAddLongProvider()) {
+            long a = ((Number) data[0]).longValue();
+            long b = ((Number) data[1]).longValue();
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(TJdk8Methods.safeAdd(a, b), expected);
+        }
     }
 
-    @DataProvider(name="safeAddLongProviderOverflow")
     Object[][] safeAddLongProviderOverflow() {
-        return new Object[][] {
-            {Long.MIN_VALUE, - 1},
-            {Long.MIN_VALUE + 1, -2},
-            {Long.MAX_VALUE - 1, 2},
-            {Long.MAX_VALUE, 1},
-        };
+
+        return new Object[][] { { Long.MIN_VALUE, -1 }, { Long.MIN_VALUE + 1, -2 }, { Long.MAX_VALUE - 1, 2 },
+        { Long.MAX_VALUE, 1 }, };
     }
 
-    @Test(dataProvider="safeAddLongProviderOverflow", expectedExceptions=ArithmeticException.class)
-    public void test_safeAddLong_overflow(long a, long b) {
-        TJdk8Methods.safeAdd(a, b);
+    @Test
+    public void test_safeAddLong_overflow() {
+
+        for (Object[] data : safeAddLongProviderOverflow()) {
+            long a = ((Number) data[0]).longValue();
+            long b = ((Number) data[1]).longValue();
+
+            try {
+                TJdk8Methods.safeAdd(a, b);
+                fail("Expected ArithmeticException");
+            } catch (ArithmeticException e) {
+                // expected
+            }
+        }
     }
 
-    //-----------------------------------------------------------------------
-    // safeSubtract()
-    //-----------------------------------------------------------------------
-    @DataProvider(name="safeSubtractIntProvider")
     Object[][] safeSubtractIntProvider() {
-        return new Object[][] {
-            {Integer.MIN_VALUE, -1, Integer.MIN_VALUE + 1},
-            {-1, -1, 0},
-            {0, 0, 0},
-            {1, 1, 0},
-            {Integer.MAX_VALUE, 1, Integer.MAX_VALUE - 1},
-        };
+
+        return new Object[][] { { Integer.MIN_VALUE, -1, Integer.MIN_VALUE + 1 }, { -1, -1, 0 }, { 0, 0, 0 },
+        { 1, 1, 0 }, { Integer.MAX_VALUE, 1, Integer.MAX_VALUE - 1 }, };
     }
 
-    @Test(dataProvider="safeSubtractIntProvider")
-    public void test_safeSubtractInt(int a, int b, int expected) {
-        assertEquals(TJdk8Methods.safeSubtract(a, b), expected);
+    @Test
+    public void test_safeSubtractInt() {
+
+        for (Object[] data : safeSubtractIntProvider()) {
+            int a = (int) data[0];
+            int b = (int) data[1];
+            int expected = (int) data[2];
+
+            assertEquals(TJdk8Methods.safeSubtract(a, b), expected);
+        }
     }
 
-    @DataProvider(name="safeSubtractIntProviderOverflow")
     Object[][] safeSubtractIntProviderOverflow() {
-        return new Object[][] {
-            {Integer.MIN_VALUE,  1},
-            {Integer.MIN_VALUE + 1, 2},
-            {Integer.MAX_VALUE - 1, -2},
-            {Integer.MAX_VALUE, -1},
-        };
+
+        return new Object[][] { { Integer.MIN_VALUE, 1 }, { Integer.MIN_VALUE + 1, 2 }, { Integer.MAX_VALUE - 1, -2 },
+        { Integer.MAX_VALUE, -1 }, };
     }
 
-    @Test(dataProvider="safeSubtractIntProviderOverflow", expectedExceptions=ArithmeticException.class)
-    public void test_safeSubtractInt_overflow(int a, int b) {
-        TJdk8Methods.safeSubtract(a, b);
+    @Test
+    public void test_safeSubtractInt_overflow() {
+
+        for (Object[] data : safeSubtractIntProviderOverflow()) {
+            int a = (int) data[0];
+            int b = (int) data[1];
+
+            try {
+                TJdk8Methods.safeSubtract(a, b);
+                fail("Expected ArithmeticException");
+            } catch (ArithmeticException e) {
+                // expected
+            }
+        }
     }
 
-    @DataProvider(name="safeSubtractLongProvider")
     Object[][] safeSubtractLongProvider() {
-        return new Object[][] {
-            {Long.MIN_VALUE, -1, Long.MIN_VALUE + 1},
-            {-1, -1, 0},
-            {0, 0, 0},
-            {1, 1, 0},
-            {Long.MAX_VALUE, 1, Long.MAX_VALUE - 1},
-        };
+
+        return new Object[][] { { Long.MIN_VALUE, -1, Long.MIN_VALUE + 1 }, { -1, -1, 0 }, { 0, 0, 0 }, { 1, 1, 0 },
+        { Long.MAX_VALUE, 1, Long.MAX_VALUE - 1 }, };
     }
 
-    @Test(dataProvider="safeSubtractLongProvider")
-    public void test_safeSubtractLong(long a, long b, long expected) {
-        assertEquals(TJdk8Methods.safeSubtract(a, b), expected);
+    @Test
+    public void test_safeSubtractLong() {
+
+        for (Object[] data : safeSubtractLongProvider()) {
+            long a = ((Number) data[0]).longValue();
+            long b = ((Number) data[1]).longValue();
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(TJdk8Methods.safeSubtract(a, b), expected);
+        }
     }
 
-    @DataProvider(name="safeSubtractLongProviderOverflow")
     Object[][] safeSubtractLongProviderOverflow() {
-        return new Object[][] {
-            {Long.MIN_VALUE, 1},
-            {Long.MIN_VALUE + 1, 2},
-            {Long.MAX_VALUE - 1, -2},
-            {Long.MAX_VALUE, -1},
-        };
+
+        return new Object[][] { { Long.MIN_VALUE, 1 }, { Long.MIN_VALUE + 1, 2 }, { Long.MAX_VALUE - 1, -2 },
+        { Long.MAX_VALUE, -1 }, };
     }
 
-    @Test(dataProvider="safeSubtractLongProviderOverflow", expectedExceptions=ArithmeticException.class)
-    public void test_safeSubtractLong_overflow(long a, long b) {
-        TJdk8Methods.safeSubtract(a, b);
+    @Test
+    public void test_safeSubtractLong_overflow() {
+
+        for (Object[] data : safeSubtractLongProviderOverflow()) {
+            long a = ((Number) data[0]).longValue();
+            long b = ((Number) data[1]).longValue();
+
+            try {
+                TJdk8Methods.safeSubtract(a, b);
+                fail("Expected ArithmeticException");
+            } catch (ArithmeticException e) {
+                // expected
+            }
+        }
     }
 
-    //-----------------------------------------------------------------------
-    // safeMultiply()
-    //-----------------------------------------------------------------------
-    @DataProvider(name="safeMultiplyIntProvider")
     Object[][] safeMultiplyIntProvider() {
-        return new Object[][] {
-            {Integer.MIN_VALUE, 1, Integer.MIN_VALUE},
-            {Integer.MIN_VALUE / 2, 2, Integer.MIN_VALUE},
-            {-1, -1, 1},
-            {-1, 1, -1},
-            {0, -1, 0},
-            {0, 0, 0},
-            {0, 1, 0},
-            {1, -1, -1},
-            {1, 1, 1},
-            {Integer.MAX_VALUE / 2, 2, Integer.MAX_VALUE - 1},
-            {Integer.MAX_VALUE, -1, Integer.MIN_VALUE + 1},
-        };
+
+        return new Object[][] { { Integer.MIN_VALUE, 1, Integer.MIN_VALUE },
+        { Integer.MIN_VALUE / 2, 2, Integer.MIN_VALUE }, { -1, -1, 1 }, { -1, 1, -1 }, { 0, -1, 0 }, { 0, 0, 0 },
+        { 0, 1, 0 }, { 1, -1, -1 }, { 1, 1, 1 }, { Integer.MAX_VALUE / 2, 2, Integer.MAX_VALUE - 1 },
+        { Integer.MAX_VALUE, -1, Integer.MIN_VALUE + 1 }, };
     }
 
-    @Test(dataProvider="safeMultiplyIntProvider")
-    public void test_safeMultiplyInt(int a, int b, int expected) {
-        assertEquals(TJdk8Methods.safeMultiply(a, b), expected);
+    @Test
+    public void test_safeMultiplyInt() {
+
+        for (Object[] data : safeMultiplyIntProvider()) {
+            int a = (int) data[0];
+            int b = (int) data[1];
+            int expected = (int) data[2];
+
+            assertEquals(TJdk8Methods.safeMultiply(a, b), expected);
+        }
     }
 
-    @DataProvider(name="safeMultiplyIntProviderOverflow")
     Object[][] safeMultiplyIntProviderOverflow() {
-        return new Object[][] {
-            {Integer.MIN_VALUE, 2},
-            {Integer.MIN_VALUE / 2 - 1, 2},
-            {Integer.MAX_VALUE, 2},
-            {Integer.MAX_VALUE / 2 + 1, 2},
-            {Integer.MIN_VALUE, -1},
-            {-1, Integer.MIN_VALUE},
-        };
+
+        return new Object[][] { { Integer.MIN_VALUE, 2 }, { Integer.MIN_VALUE / 2 - 1, 2 }, { Integer.MAX_VALUE, 2 },
+        { Integer.MAX_VALUE / 2 + 1, 2 }, { Integer.MIN_VALUE, -1 }, { -1, Integer.MIN_VALUE }, };
     }
 
-    @Test(dataProvider="safeMultiplyIntProviderOverflow", expectedExceptions=ArithmeticException.class)
-    public void test_safeMultiplyInt_overflow(int a, int b) {
-        TJdk8Methods.safeMultiply(a, b);
+    @Test
+    public void test_safeMultiplyInt_overflow() {
+
+        for (Object[] data : safeMultiplyIntProviderOverflow()) {
+            int a = (int) data[0];
+            int b = (int) data[1];
+
+            try {
+                TJdk8Methods.safeMultiply(a, b);
+                fail("Expected ArithmeticException");
+            } catch (ArithmeticException e) {
+                // expected
+            }
+        }
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="safeMultiplyLongProvider")
     Object[][] safeMultiplyLongProvider() {
-        return new Object[][] {
-            {Long.MIN_VALUE, 1, Long.MIN_VALUE},
-            {Long.MIN_VALUE / 2, 2, Long.MIN_VALUE},
-            {-1, -1, 1},
-            {-1, 1, -1},
-            {0, -1, 0},
-            {0, 0, 0},
-            {0, 1, 0},
-            {1, -1, -1},
-            {1, 1, 1},
-            {Long.MAX_VALUE / 2, 2, Long.MAX_VALUE - 1},
-            {Long.MAX_VALUE, -1, Long.MIN_VALUE + 1},
-            {-1, Integer.MIN_VALUE, -((long) Integer.MIN_VALUE)},
-        };
+
+        return new Object[][] { { Long.MIN_VALUE, 1, Long.MIN_VALUE }, { Long.MIN_VALUE / 2, 2, Long.MIN_VALUE },
+        { -1, -1, 1 }, { -1, 1, -1 }, { 0, -1, 0 }, { 0, 0, 0 }, { 0, 1, 0 }, { 1, -1, -1 }, { 1, 1, 1 },
+        { Long.MAX_VALUE / 2, 2, Long.MAX_VALUE - 1 }, { Long.MAX_VALUE, -1, Long.MIN_VALUE + 1 },
+        { -1, Integer.MIN_VALUE, -((long) Integer.MIN_VALUE) }, };
     }
 
-    @Test(dataProvider="safeMultiplyLongProvider")
-    public void test_safeMultiplyLong(long a, int b, long expected) {
-        assertEquals(TJdk8Methods.safeMultiply(a, b), expected);
+    @Test
+    public void test_safeMultiplyLong() {
+
+        for (Object[] data : safeMultiplyLongProvider()) {
+            long a = ((Number) data[0]).longValue();
+            int b = (int) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(TJdk8Methods.safeMultiply(a, b), expected);
+        }
     }
 
-    @DataProvider(name="safeMultiplyLongProviderOverflow")
     Object[][] safeMultiplyLongProviderOverflow() {
-        return new Object[][] {
-            {Long.MIN_VALUE, 2},
-            {Long.MIN_VALUE / 2 - 1, 2},
-            {Long.MAX_VALUE, 2},
-            {Long.MAX_VALUE / 2 + 1, 2},
-            {Long.MIN_VALUE, -1},
-        };
+
+        return new Object[][] { { Long.MIN_VALUE, 2 }, { Long.MIN_VALUE / 2 - 1, 2 }, { Long.MAX_VALUE, 2 },
+        { Long.MAX_VALUE / 2 + 1, 2 }, { Long.MIN_VALUE, -1 }, };
     }
 
-    @Test(dataProvider="safeMultiplyLongProviderOverflow", expectedExceptions=ArithmeticException.class)
-    public void test_safeMultiplyLong_overflow(long a, int b) {
-        TJdk8Methods.safeMultiply(a, b);
+    @Test
+    public void test_safeMultiplyLong_overflow() {
+
+        for (Object[] data : safeMultiplyLongProviderOverflow()) {
+            long a = ((Number) data[0]).longValue();
+            int b = (int) data[1];
+
+            try {
+                TJdk8Methods.safeMultiply(a, b);
+                fail("Expected ArithmeticException");
+            } catch (ArithmeticException e) {
+                // expected
+            }
+        }
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="safeMultiplyLongLongProvider")
     Object[][] safeMultiplyLongLongProvider() {
-        return new Object[][] {
-            {Long.MIN_VALUE, 1, Long.MIN_VALUE},
-            {Long.MIN_VALUE / 2, 2, Long.MIN_VALUE},
-            {-1, -1, 1},
-            {-1, 1, -1},
-            {0, -1, 0},
-            {0, 0, 0},
-            {0, 1, 0},
-            {1, -1, -1},
-            {1, 1, 1},
-            {Long.MAX_VALUE / 2, 2, Long.MAX_VALUE - 1},
-            {Long.MAX_VALUE, -1, Long.MIN_VALUE + 1},
-        };
+
+        return new Object[][] { { Long.MIN_VALUE, 1, Long.MIN_VALUE }, { Long.MIN_VALUE / 2, 2, Long.MIN_VALUE },
+        { -1, -1, 1 }, { -1, 1, -1 }, { 0, -1, 0 }, { 0, 0, 0 }, { 0, 1, 0 }, { 1, -1, -1 }, { 1, 1, 1 },
+        { Long.MAX_VALUE / 2, 2, Long.MAX_VALUE - 1 }, { Long.MAX_VALUE, -1, Long.MIN_VALUE + 1 }, };
     }
 
-    @Test(dataProvider="safeMultiplyLongLongProvider")
-    public void test_safeMultiplyLongLong(long a, long b, long expected) {
-        assertEquals(TJdk8Methods.safeMultiply(a, b), expected);
+    @Test
+    public void test_safeMultiplyLongLong() {
+
+        for (Object[] data : safeMultiplyLongLongProvider()) {
+            long a = ((Number) data[0]).longValue();
+            long b = ((Number) data[1]).longValue();
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(TJdk8Methods.safeMultiply(a, b), expected);
+        }
     }
 
-    @DataProvider(name="safeMultiplyLongLongProviderOverflow")
     Object[][] safeMultiplyLongLongProviderOverflow() {
-        return new Object[][] {
-            {Long.MIN_VALUE, 2},
-            {Long.MIN_VALUE / 2 - 1, 2},
-            {Long.MAX_VALUE, 2},
-            {Long.MAX_VALUE / 2 + 1, 2},
-            {Long.MIN_VALUE, -1},
-            {-1, Long.MIN_VALUE},
-        };
+
+        return new Object[][] { { Long.MIN_VALUE, 2 }, { Long.MIN_VALUE / 2 - 1, 2 }, { Long.MAX_VALUE, 2 },
+        { Long.MAX_VALUE / 2 + 1, 2 }, { Long.MIN_VALUE, -1 }, { -1, Long.MIN_VALUE }, };
     }
 
-    @Test(dataProvider="safeMultiplyLongLongProviderOverflow", expectedExceptions=ArithmeticException.class)
-    public void test_safeMultiplyLongLong_overflow(long a, long b) {
-        TJdk8Methods.safeMultiply(a, b);
+    @Test
+    public void test_safeMultiplyLongLong_overflow() {
+
+        for (Object[] data : safeMultiplyLongLongProviderOverflow()) {
+            long a = ((Number) data[0]).longValue();
+            long b = ((Number) data[1]).longValue();
+
+            try {
+                TJdk8Methods.safeMultiply(a, b);
+                fail("Expected ArithmeticException");
+            } catch (ArithmeticException e) {
+                // expected
+            }
+        }
     }
 
-    //-----------------------------------------------------------------------
-    // safeToInt()
-    //-----------------------------------------------------------------------
-    @DataProvider(name="safeToIntProvider")
     Object[][] safeToIntProvider() {
-        return new Object[][] {
-            {Integer.MIN_VALUE},
-            {Integer.MIN_VALUE + 1},
-            {-1},
-            {0},
-            {1},
-            {Integer.MAX_VALUE - 1},
-            {Integer.MAX_VALUE},
-        };
+
+        return new Object[][] { { Integer.MIN_VALUE }, { Integer.MIN_VALUE + 1 }, { -1 }, { 0 }, { 1 },
+        { Integer.MAX_VALUE - 1 }, { Integer.MAX_VALUE }, };
     }
 
-    @Test(dataProvider="safeToIntProvider")
-    public void test_safeToInt(long l) {
-        assertEquals(TJdk8Methods.safeToInt(l), l);
+    public void test_safeToInt() {
+
+        for (Object[] data : safeToIntProvider()) {
+            long l = ((Number) data[0]).longValue();
+
+            assertEquals(TJdk8Methods.safeToInt(l), l);
+        }
     }
 
-    @DataProvider(name="safeToIntProviderOverflow")
     Object[][] safeToIntProviderOverflow() {
-        return new Object[][] {
-            {Long.MIN_VALUE},
-            {Integer.MIN_VALUE - 1L},
-            {Integer.MAX_VALUE + 1L},
-            {Long.MAX_VALUE},
-        };
+
+        return new Object[][] { { Long.MIN_VALUE }, { Integer.MIN_VALUE - 1L }, { Integer.MAX_VALUE + 1L },
+        { Long.MAX_VALUE }, };
     }
 
-    @Test(dataProvider="safeToIntProviderOverflow", expectedExceptions=ArithmeticException.class)
-    public void test_safeToInt_overflow(long l) {
-        TJdk8Methods.safeToInt(l);
+    @Test
+    public void test_safeToInt_overflow() {
+
+        for (Object[] data : safeToIntProviderOverflow()) {
+            long l = ((Number) data[0]).longValue();
+
+            try {
+                TJdk8Methods.safeToInt(l);
+                fail("Expected ArithmeticException");
+            } catch (ArithmeticException e) {
+                // expected
+            }
+        }
     }
 
-    //-----------------------------------------------------------------------
-    // safeCompare()
-    //-----------------------------------------------------------------------
+    @Test
     public void test_safeCompare_int() {
-        doTest_safeCompare_int(
-            Integer.MIN_VALUE,
-            Integer.MIN_VALUE + 1,
-            Integer.MIN_VALUE + 2,
-            -2,
-            -1,
-            0,
-            1,
-            2,
-            Integer.MAX_VALUE - 2,
-            Integer.MAX_VALUE - 1,
-            Integer.MAX_VALUE
-        );
+
+        doTest_safeCompare_int(Integer.MIN_VALUE, Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2, -2, -1, 0, 1, 2,
+                Integer.MAX_VALUE - 2, Integer.MAX_VALUE - 1, Integer.MAX_VALUE);
     }
 
     private void doTest_safeCompare_int(int... values) {
+
         for (int i = 0; i < values.length; i++) {
             int a = values[i];
             for (int j = 0; j < values.length; j++) {
                 int b = values[j];
-                assertEquals(TJdk8Methods.compareInts(a, b), a < b ? -1 : (a > b ? 1 : 0), a + " <=> " + b);
+                assertEquals(a + " <=> " + b, TJdk8Methods.compareInts(a, b), a < b ? -1 : (a > b ? 1 : 0));
             }
         }
     }
 
+    @Test
     public void test_safeCompare_long() {
-        doTest_safeCompare_long(
-            Long.MIN_VALUE,
-            Long.MIN_VALUE + 1,
-            Long.MIN_VALUE + 2,
-            Integer.MIN_VALUE,
-            Integer.MIN_VALUE + 1,
-            Integer.MIN_VALUE + 2,
-            -2,
-            -1,
-            0,
-            1,
-            2,
-            Integer.MAX_VALUE - 2,
-            Integer.MAX_VALUE - 1,
-            Integer.MAX_VALUE,
-            Long.MAX_VALUE - 2,
-            Long.MAX_VALUE - 1,
-            Long.MAX_VALUE
-        );
+
+        doTest_safeCompare_long(Long.MIN_VALUE, Long.MIN_VALUE + 1, Long.MIN_VALUE + 2, Integer.MIN_VALUE,
+                Integer.MIN_VALUE + 1, Integer.MIN_VALUE + 2, -2, -1, 0, 1, 2, Integer.MAX_VALUE - 2,
+                Integer.MAX_VALUE - 1, Integer.MAX_VALUE, Long.MAX_VALUE - 2, Long.MAX_VALUE - 1, Long.MAX_VALUE);
     }
 
     private void doTest_safeCompare_long(long... values) {
+
         for (int i = 0; i < values.length; i++) {
             long a = values[i];
             for (int j = 0; j < values.length; j++) {
                 long b = values[j];
-                assertEquals(TJdk8Methods.compareLongs(a, b), a < b ? -1 : (a > b ? 1 : 0), a + " <=> " + b);
+                assertEquals(a + " <=> " + b, TJdk8Methods.compareLongs(a, b), a < b ? -1 : (a > b ? 1 : 0));
             }
         }
     }
 
-    //-------------------------------------------------------------------------
-    @DataProvider(name="FloorDiv")
     Object[][] data_floorDiv() {
-        return new Object[][] {
-            {5L, 4, 1L},
-            {4L, 4, 1L},
-            {3L, 4, 0L},
-            {2L, 4, 0L},
-            {1L, 4, 0L},
-            {0L, 4, 0L},
-            {-1L, 4, -1L},
-            {-2L, 4, -1L},
-            {-3L, 4, -1L},
-            {-4L, 4, -1L},
-            {-5L, 4, -2L},
-        };
+
+        return new Object[][] { { 5L, 4, 1L }, { 4L, 4, 1L }, { 3L, 4, 0L }, { 2L, 4, 0L }, { 1L, 4, 0L },
+        { 0L, 4, 0L }, { -1L, 4, -1L }, { -2L, 4, -1L }, { -3L, 4, -1L }, { -4L, 4, -1L }, { -5L, 4, -2L }, };
     }
 
-    @Test(dataProvider="FloorDiv")
-    public void test_floorDiv_long(long a, int b, long expected) {
-        assertEquals(TJdk8Methods.floorDiv(a, b), expected);
-    }
+    @Test
+    public void test_floorDiv_long() {
 
-    @Test(dataProvider="FloorDiv")
-    public void test_floorDiv_int(long a, int b, long expected) {
-        if (a <= Integer.MAX_VALUE && a >= Integer.MIN_VALUE) {
-            assertEquals(TJdk8Methods.floorDiv((int) a, b), (int) expected);
+        for (Object[] data : data_floorDiv()) {
+            long a = ((Number) data[0]).longValue();
+            int b = (int) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            assertEquals(TJdk8Methods.floorDiv(a, b), expected);
         }
     }
 
-    //-------------------------------------------------------------------------
-    @DataProvider(name="FloorMod")
+    @Test
+    public void test_floorDiv_int() {
+
+        for (Object[] data : data_floorDiv()) {
+            long a = ((Number) data[0]).longValue();
+            int b = (int) data[1];
+            long expected = ((Number) data[2]).longValue();
+
+            if (a <= Integer.MAX_VALUE && a >= Integer.MIN_VALUE) {
+                assertEquals(TJdk8Methods.floorDiv((int) a, b), (int) expected);
+            }
+        }
+    }
+
     Object[][] data_floorMod() {
-        return new Object[][] {
-            {5L, 4, 1},
-            {4L, 4, 0},
-            {3L, 4, 3},
-            {2L, 4, 2},
-            {1L, 4, 1},
-            {0L, 4, 0},
-            {-1L, 4, 3},
-            {-2L, 4, 2},
-            {-3L, 4, 1},
-            {-4L, 4, 0},
-            {-5L, 4, 3},
-        };
+
+        return new Object[][] { { 5L, 4, 1 }, { 4L, 4, 0 }, { 3L, 4, 3 }, { 2L, 4, 2 }, { 1L, 4, 1 }, { 0L, 4, 0 },
+        { -1L, 4, 3 }, { -2L, 4, 2 }, { -3L, 4, 1 }, { -4L, 4, 0 }, { -5L, 4, 3 }, };
     }
 
-    @Test(dataProvider="FloorMod")
-    public void test_floorMod_long(long a, long b, int expected) {
-        assertEquals(TJdk8Methods.floorMod(a, b), expected);
+    @Test
+    public void test_floorMod_long() {
+
+        for (Object[] data : data_floorMod()) {
+            long a = ((Number) data[0]).longValue();
+            long b = ((Number) data[1]).longValue();
+            int expected = (int) data[2];
+
+            assertEquals(TJdk8Methods.floorMod(a, b), expected);
+        }
     }
 
-    @Test(dataProvider="FloorMod")
-    public void test_floorMod_long(long a, int b, int expected) {
-        assertEquals(TJdk8Methods.floorMod(a, b), expected);
+    @Test
+    public void test_floorMod_long_int() {
+
+        for (Object[] data : data_floorMod()) {
+            long a = ((Number) data[0]).longValue();
+            int b = (int) data[1];
+            int expected = (int) data[2];
+
+            assertEquals(TJdk8Methods.floorMod(a, b), expected);
+        }
     }
 
-    @Test(dataProvider="FloorMod")
-    public void test_floorMod_int(long a, int b, int expected) {
-        if (a <= Integer.MAX_VALUE && a >= Integer.MIN_VALUE) {
-            assertEquals(TJdk8Methods.floorMod((int) a, b), expected);
+    @Test
+    public void test_floorMod_int() {
+
+        for (Object[] data : data_floorMod()) {
+            long a = ((Number) data[0]).longValue();
+            int b = (int) data[1];
+            int expected = (int) data[2];
+
+            if (a <= Integer.MAX_VALUE && a >= Integer.MIN_VALUE) {
+                assertEquals(TJdk8Methods.floorMod((int) a, b), expected);
+            }
         }
     }
 

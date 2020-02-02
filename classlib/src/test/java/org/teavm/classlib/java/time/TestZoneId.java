@@ -35,90 +35,60 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.List;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 import java.util.Map;
-import java.util.SimpleTimeZone;
-import org.teavm.classlib.java.util.TTimeZone;
 
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.format.TTextStyle;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.zone.TZoneOffsetTransition;
 import org.teavm.classlib.java.time.zone.TZoneRules;
 import org.teavm.classlib.java.time.zone.TZoneRulesException;
+import org.teavm.classlib.java.util.TTimeZone;
 
-@Test
 public class TestZoneId extends AbstractTest {
 
     private static final TZoneId ZONE_PARIS = TZoneId.of("Europe/Paris");
+
     public static final String LATEST_TZDB = "2010i";
+
     private static final int OVERLAP = 2;
+
     private static final int GAP = 0;
 
-    //-----------------------------------------------------------------------
-    // Basics
-    //-----------------------------------------------------------------------
+    @Test
     public void test_immutable() {
+
         Class<TZoneId> cls = TZoneId.class;
         assertTrue(Modifier.isPublic(cls.getModifiers()));
         Field[] fields = cls.getDeclaredFields();
         for (Field field : fields) {
             if (Modifier.isStatic(field.getModifiers()) == false) {
                 assertTrue(Modifier.isPrivate(field.getModifiers()));
-                assertTrue(Modifier.isFinal(field.getModifiers()) ||
-                        (Modifier.isVolatile(field.getModifiers()) && Modifier.isTransient(field.getModifiers())));
+                assertTrue(Modifier.isFinal(field.getModifiers())
+                        || (Modifier.isVolatile(field.getModifiers()) && Modifier.isTransient(field.getModifiers())));
             }
         }
     }
 
-    public void test_serialization_UTC() throws Exception {
-        TZoneId test = TZoneOffset.UTC;
-        assertSerializableAndSame(test);
-    }
-
-    public void test_serialization_fixed() throws Exception {
-        TZoneId test = TZoneId.of("UTC+01:30");
-        assertSerializable(test);
-    }
-
-    public void test_serialization_Europe() throws Exception {
-        TZoneId test = TZoneId.of("Europe/London");
-        assertSerializable(test);
-    }
-
-    public void test_serialization_America() throws Exception {
-        TZoneId test = TZoneId.of("America/Chicago");
-        assertSerializable(test);
-    }
-
-    @Test
-    public void test_serialization_format() throws ClassNotFoundException, IOException {
-        assertEqualsSerialisedForm(TZoneId.of("Europe/London"), TZoneId.class);
-    }
-
-    //-----------------------------------------------------------------------
-    // UTC
-    //-----------------------------------------------------------------------
     public void test_constant_UTC() {
+
         TZoneId test = TZoneOffset.UTC;
         assertEquals(test.getId(), "Z");
-        assertEquals(test.getDisplayName(TTextStyle.FULL, TLocale.UK), "Z");
+        assertEquals(test.getDisplayName(TTextStyle.FULL, Locale.UK), "Z");
         assertEquals(test.getRules().isFixedOffset(), true);
         assertEquals(test.getRules().getOffset(TInstant.ofEpochSecond(0L)), TZoneOffset.UTC);
         checkOffset(test.getRules(), createLDT(2008, 6, 30), TZoneOffset.UTC, 1);
     }
 
-    //-----------------------------------------------------------------------
-    // SHORT_IDS
-    //-----------------------------------------------------------------------
     public void test_constant_SHORT_IDS() {
+
         Map<String, String> ids = TZoneId.SHORT_IDS;
         assertEquals(ids.get("EST"), "-05:00");
         assertEquals(ids.get("MST"), "-07:00");
@@ -150,46 +120,45 @@ public class TestZoneId extends AbstractTest {
         assertEquals(ids.get("VST"), "Asia/Ho_Chi_Minh");
     }
 
-    @Test(expectedExceptions=UnsupportedOperationException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void test_constant_SHORT_IDS_immutable() {
+
         Map<String, String> ids = TZoneId.SHORT_IDS;
         ids.clear();
     }
 
-    //-----------------------------------------------------------------------
-    // system default
-    //-----------------------------------------------------------------------
     public void test_systemDefault() {
+
         TZoneId test = TZoneId.systemDefault();
         assertEquals(test.getId(), TTimeZone.getDefault().getID());
     }
 
-    @Test(expectedExceptions = TDateTimeException.class)
-    public void test_systemDefault_unableToConvert_badFormat() {
-        TTimeZone current = TTimeZone.getDefault();
-        try {
-            TTimeZone.setDefault(new SimpleTimeZone(127, "Something Weird"));
-            TZoneId.systemDefault();
-        } finally {
-            TTimeZone.setDefault(current);
-        }
-    }
+    // @Test(expected = TDateTimeException.class)
+    // public void test_systemDefault_unableToConvert_badFormat() {
+    //
+    // TTimeZone current = TTimeZone.getDefault();
+    // try {
+    // TTimeZone.setDefault(new SimpleTimeZone(127, "Something Weird"));
+    // TZoneId.systemDefault();
+    // } finally {
+    // TTimeZone.setDefault(current);
+    // }
+    // }
+    //
+    // @Test(expected = TZoneRulesException.class)
+    // public void test_systemDefault_unableToConvert_unknownId() {
+    //
+    // TTimeZone current = TTimeZone.getDefault();
+    // try {
+    // TTimeZone.setDefault(new SimpleTimeZone(127, "SomethingWeird"));
+    // TZoneId.systemDefault();
+    // } finally {
+    // TTimeZone.setDefault(current);
+    // }
+    // }
 
-    @Test(expectedExceptions = TZoneRulesException.class)
-    public void test_systemDefault_unableToConvert_unknownId() {
-        TTimeZone current = TTimeZone.getDefault();
-        try {
-            TTimeZone.setDefault(new SimpleTimeZone(127, "SomethingWeird"));
-            TZoneId.systemDefault();
-        } finally {
-            TTimeZone.setDefault(current);
-        }
-    }
-
-    //-----------------------------------------------------------------------
-    // mapped factory
-    //-----------------------------------------------------------------------
     public void test_of_string_Map() {
+
         Map<String, String> map = new HashMap<String, String>();
         map.put("LONDON", "Europe/London");
         map.put("PARIS", "Europe/Paris");
@@ -198,6 +167,7 @@ public class TestZoneId extends AbstractTest {
     }
 
     public void test_of_string_Map_lookThrough() {
+
         Map<String, String> map = new HashMap<String, String>();
         map.put("LONDON", "Europe/London");
         map.put("PARIS", "Europe/Paris");
@@ -206,232 +176,271 @@ public class TestZoneId extends AbstractTest {
     }
 
     public void test_of_string_Map_emptyMap() {
+
         Map<String, String> map = new HashMap<String, String>();
         TZoneId test = TZoneId.of("Europe/Madrid", map);
         assertEquals(test.getId(), "Europe/Madrid");
     }
 
-    @Test(expectedExceptions=TDateTimeException.class)
+    @Test(expected = TDateTimeException.class)
     public void test_of_string_Map_badFormat() {
+
         Map<String, String> map = new HashMap<String, String>();
         TZoneId.of("Not kknown", map);
     }
 
-    @Test(expectedExceptions=TZoneRulesException.class)
+    @Test(expected = TZoneRulesException.class)
     public void test_of_string_Map_unknown() {
+
         Map<String, String> map = new HashMap<String, String>();
         TZoneId.of("Unknown", map);
     }
 
-    //-----------------------------------------------------------------------
-    // regular factory
-    //-----------------------------------------------------------------------
-    @DataProvider(name="String_UTC")
     Object[][] data_of_string_UTC() {
-        return new Object[][] {
-            {""},
-            {"+00"},{"+0000"},{"+00:00"},{"+000000"},{"+00:00:00"},
-            {"-00"},{"-0000"},{"-00:00"},{"-000000"},{"-00:00:00"},
-        };
+
+        return new Object[][] { { "" }, { "+00" }, { "+0000" }, { "+00:00" }, { "+000000" }, { "+00:00:00" }, { "-00" },
+        { "-0000" }, { "-00:00" }, { "-000000" }, { "-00:00:00" }, };
     }
 
-    @Test(dataProvider="String_UTC")
-    public void test_of_string_UTC(String id) {
-        TZoneId test = TZoneId.of("UTC" + id);
-        assertEquals(test.getId(), "UTC");
-        assertEquals(test.normalized(), TZoneOffset.UTC);
+    @Test
+    public void test_of_string_UTC() {
+
+        for (Object[] data : data_of_string_UTC()) {
+            String id = (String) data[0];
+
+            TZoneId test = TZoneId.of("UTC" + id);
+            assertEquals(test.getId(), "UTC");
+            assertEquals(test.normalized(), TZoneOffset.UTC);
+        }
     }
 
-    @Test(dataProvider="String_UTC")
-    public void test_of_string_GMT(String id) {
-        TZoneId test = TZoneId.of("GMT" + id);
-        assertEquals(test.getId(), "GMT");
-        assertEquals(test.normalized(), TZoneOffset.UTC);
+    @Test
+    public void test_of_string_GMT() {
+
+        for (Object[] data : data_of_string_UTC()) {
+            String id = (String) data[0];
+
+            TZoneId test = TZoneId.of("GMT" + id);
+            assertEquals(test.getId(), "GMT");
+            assertEquals(test.normalized(), TZoneOffset.UTC);
+        }
     }
 
-    @Test(dataProvider="String_UTC")
-    public void test_of_string_UT(String id) {
-        TZoneId test = TZoneId.of("UT" + id);
-        assertEquals(test.getId(), "UT");
-        assertEquals(test.normalized(), TZoneOffset.UTC);
+    @Test
+    public void test_of_string_UT() {
+
+        for (Object[] data : data_of_string_UTC()) {
+            String id = (String) data[0];
+
+            TZoneId test = TZoneId.of("UT" + id);
+            assertEquals(test.getId(), "UT");
+            assertEquals(test.normalized(), TZoneOffset.UTC);
+        }
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="String_Fixed")
     Object[][] data_of_string_Fixed() {
-        return new Object[][] {
-            {"+0", ""},
-            {"+5", "+05:00"},
-            {"+01", "+01:00"},
-            {"+0100", "+01:00"},{"+01:00", "+01:00"},
-            {"+010000", "+01:00"},{"+01:00:00", "+01:00"},
-            {"+12", "+12:00"},
-            {"+1234", "+12:34"},{"+12:34", "+12:34"},
-            {"+123456", "+12:34:56"},{"+12:34:56", "+12:34:56"},
-            {"-02", "-02:00"},
-            {"-5", "-05:00"},
-            {"-0200", "-02:00"},{"-02:00", "-02:00"},
-            {"-020000", "-02:00"},{"-02:00:00", "-02:00"},
-        };
+
+        return new Object[][] { { "+0", "" }, { "+5", "+05:00" }, { "+01", "+01:00" }, { "+0100", "+01:00" },
+        { "+01:00", "+01:00" }, { "+010000", "+01:00" }, { "+01:00:00", "+01:00" }, { "+12", "+12:00" },
+        { "+1234", "+12:34" }, { "+12:34", "+12:34" }, { "+123456", "+12:34:56" }, { "+12:34:56", "+12:34:56" },
+        { "-02", "-02:00" }, { "-5", "-05:00" }, { "-0200", "-02:00" }, { "-02:00", "-02:00" }, { "-020000", "-02:00" },
+        { "-02:00:00", "-02:00" }, };
     }
 
-    @Test(dataProvider="String_Fixed")
-    public void test_of_string_offset(String input, String id) {
-        TZoneId test = TZoneId.of(input);
-        TZoneOffset offset = TZoneOffset.of(id.isEmpty() ? "Z" : id);
-        assertEquals(test, offset);
+    @Test
+    public void test_of_string_offset() {
+
+        for (Object[] data : data_of_string_Fixed()) {
+            String input = (String) data[0];
+            String id = (String) data[1];
+
+            TZoneId test = TZoneId.of(input);
+            TZoneOffset offset = TZoneOffset.of(id.isEmpty() ? "Z" : id);
+            assertEquals(test, offset);
+        }
     }
 
-    @Test(dataProvider="String_Fixed")
-    public void test_of_string_FixedUTC(String input, String id) {
-        TZoneId test = TZoneId.of("UTC" + input);
-        assertEquals(test.getId(), "UTC" + id);
-        assertEquals(test.getDisplayName(TTextStyle.FULL, TLocale.UK), "UTC" + id);
-        assertEquals(test.getRules().isFixedOffset(), true);
-        TZoneOffset offset = TZoneOffset.of(id.isEmpty() ? "Z" : id);
-        assertEquals(test.getRules().getOffset(TInstant.ofEpochSecond(0L)), offset);
-        checkOffset(test.getRules(), createLDT(2008, 6, 30), offset, 1);
+    @Test
+    public void test_of_string_FixedUTC() {
+
+        for (Object[] data : data_of_string_Fixed()) {
+            String input = (String) data[0];
+            String id = (String) data[1];
+
+            TZoneId test = TZoneId.of("UTC" + input);
+            assertEquals(test.getId(), "UTC" + id);
+            assertEquals(test.getDisplayName(TTextStyle.FULL, Locale.UK), "UTC" + id);
+            assertEquals(test.getRules().isFixedOffset(), true);
+            TZoneOffset offset = TZoneOffset.of(id.isEmpty() ? "Z" : id);
+            assertEquals(test.getRules().getOffset(TInstant.ofEpochSecond(0L)), offset);
+            checkOffset(test.getRules(), createLDT(2008, 6, 30), offset, 1);
+        }
     }
 
-    @Test(dataProvider="String_Fixed")
-    public void test_of_string_FixedGMT(String input, String id) {
-        TZoneId test = TZoneId.of("GMT" + input);
-        assertEquals(test.getId(), "GMT" + id);
-        assertEquals(test.getDisplayName(TTextStyle.FULL, TLocale.UK), "GMT" + id);
-        assertEquals(test.getRules().isFixedOffset(), true);
-        TZoneOffset offset = TZoneOffset.of(id.isEmpty() ? "Z" : id);
-        assertEquals(test.getRules().getOffset(TInstant.ofEpochSecond(0L)), offset);
-        checkOffset(test.getRules(), createLDT(2008, 6, 30), offset, 1);
+    @Test
+    public void test_of_string_FixedGMT() {
+
+        for (Object[] data : data_of_string_Fixed()) {
+            String input = (String) data[0];
+            String id = (String) data[1];
+
+            TZoneId test = TZoneId.of("GMT" + input);
+            assertEquals(test.getId(), "GMT" + id);
+            assertEquals(test.getDisplayName(TTextStyle.FULL, Locale.UK), "GMT" + id);
+            assertEquals(test.getRules().isFixedOffset(), true);
+            TZoneOffset offset = TZoneOffset.of(id.isEmpty() ? "Z" : id);
+            assertEquals(test.getRules().getOffset(TInstant.ofEpochSecond(0L)), offset);
+            checkOffset(test.getRules(), createLDT(2008, 6, 30), offset, 1);
+        }
     }
 
-    @Test(dataProvider="String_Fixed")
-    public void test_of_string_FixedUT(String input, String id) {
-        TZoneId test = TZoneId.of("UT" + input);
-        assertEquals(test.getId(), "UT" + id);
-        assertEquals(test.getDisplayName(TTextStyle.FULL, TLocale.UK), "UT" + id);
-        assertEquals(test.getRules().isFixedOffset(), true);
-        TZoneOffset offset = TZoneOffset.of(id.isEmpty() ? "Z" : id);
-        assertEquals(test.getRules().getOffset(TInstant.ofEpochSecond(0L)), offset);
-        checkOffset(test.getRules(), createLDT(2008, 6, 30), offset, 1);
+    @Test
+    public void test_of_string_FixedUT() {
+
+        for (Object[] data : data_of_string_Fixed()) {
+            String input = (String) data[0];
+            String id = (String) data[1];
+
+            TZoneId test = TZoneId.of("UT" + input);
+            assertEquals(test.getId(), "UT" + id);
+            assertEquals(test.getDisplayName(TTextStyle.FULL, Locale.UK), "UT" + id);
+            assertEquals(test.getRules().isFixedOffset(), true);
+            TZoneOffset offset = TZoneOffset.of(id.isEmpty() ? "Z" : id);
+            assertEquals(test.getRules().getOffset(TInstant.ofEpochSecond(0L)), offset);
+            checkOffset(test.getRules(), createLDT(2008, 6, 30), offset, 1);
+        }
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="String_UTC_Invalid")
     Object[][] data_of_string_UTC_invalid() {
-        return new Object[][] {
-                {"A"}, {"B"}, {"C"}, {"D"}, {"E"}, {"F"}, {"G"}, {"H"}, {"I"}, {"J"}, {"K"}, {"L"}, {"M"},
-                {"N"}, {"O"}, {"P"}, {"Q"}, {"R"}, {"S"}, {"T"}, {"U"}, {"V"}, {"W"}, {"X"}, {"Y"},
-                {"+0:00"}, {"+00:0"}, {"+0:0"},
-                {"+000"}, {"+00000"},
-                {"+0:00:00"}, {"+00:0:00"}, {"+00:00:0"}, {"+0:0:0"}, {"+0:0:00"}, {"+00:0:0"}, {"+0:00:0"},
-                {"+01_00"}, {"+01;00"}, {"+01@00"}, {"+01:AA"},
-                {"+19"}, {"+19:00"}, {"+18:01"}, {"+18:00:01"}, {"+1801"}, {"+180001"},
-                {"-0:00"}, {"-00:0"}, {"-0:0"},
-                {"-000"}, {"-00000"},
-                {"-0:00:00"}, {"-00:0:00"}, {"-00:00:0"}, {"-0:0:0"}, {"-0:0:00"}, {"-00:0:0"}, {"-0:00:0"},
-                {"-19"}, {"-19:00"}, {"-18:01"}, {"-18:00:01"}, {"-1801"}, {"-180001"},
-                {"-01_00"}, {"-01;00"}, {"-01@00"}, {"-01:AA"},
-                {"@01:00"},
-        };
+
+        return new Object[][] { { "A" }, { "B" }, { "C" }, { "D" }, { "E" }, { "F" }, { "G" }, { "H" }, { "I" },
+        { "J" }, { "K" }, { "L" }, { "M" }, { "N" }, { "O" }, { "P" }, { "Q" }, { "R" }, { "S" }, { "T" }, { "U" },
+        { "V" }, { "W" }, { "X" }, { "Y" }, { "+0:00" }, { "+00:0" }, { "+0:0" }, { "+000" }, { "+00000" },
+        { "+0:00:00" }, { "+00:0:00" }, { "+00:00:0" }, { "+0:0:0" }, { "+0:0:00" }, { "+00:0:0" }, { "+0:00:0" },
+        { "+01_00" }, { "+01;00" }, { "+01@00" }, { "+01:AA" }, { "+19" }, { "+19:00" }, { "+18:01" }, { "+18:00:01" },
+        { "+1801" }, { "+180001" }, { "-0:00" }, { "-00:0" }, { "-0:0" }, { "-000" }, { "-00000" }, { "-0:00:00" },
+        { "-00:0:00" }, { "-00:00:0" }, { "-0:0:0" }, { "-0:0:00" }, { "-00:0:0" }, { "-0:00:0" }, { "-19" },
+        { "-19:00" }, { "-18:01" }, { "-18:00:01" }, { "-1801" }, { "-180001" }, { "-01_00" }, { "-01;00" },
+        { "-01@00" }, { "-01:AA" }, { "@01:00" }, };
     }
 
-    @Test(dataProvider="String_UTC_Invalid", expectedExceptions=TDateTimeException.class)
-    public void test_of_string_UTC_invalid(String id) {
-        TZoneId.of("UTC" + id);
+    @Test
+    public void test_of_string_UTC_invalid() {
+
+        for (Object[] data : data_of_string_UTC_invalid()) {
+            String id = (String) data[0];
+
+            try {
+                TZoneId.of("UTC" + id);
+                fail("Expected TDateTimeException");
+            } catch (TDateTimeException e) {
+                // expected
+            }
+        }
     }
 
-    @Test(dataProvider="String_UTC_Invalid", expectedExceptions=TDateTimeException.class)
-    public void test_of_string_GMT_invalid(String id) {
-        TZoneId.of("GMT" + id);
+    @Test
+    public void test_of_string_GMT_invalid() {
+
+        for (Object[] data : data_of_string_UTC_invalid()) {
+            String id = (String) data[0];
+
+            try {
+                TZoneId.of("GMT" + id);
+                fail("Expected TDateTimeException");
+            } catch (TDateTimeException e) {
+                // expected
+            }
+        }
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="String_Invalid")
     Object[][] data_of_string_invalid() {
+
         // \u00ef is a random unicode character
-        return new Object[][] {
-                {""}, {":"}, {"#"},
-                {"\u00ef"}, {"`"}, {"!"}, {"\""}, {"\u00ef"}, {"$"}, {"^"}, {"&"}, {"*"}, {"("}, {")"}, {"="},
-                {"\\"}, {"|"}, {","}, {"<"}, {">"}, {"?"}, {";"}, {"'"}, {"["}, {"]"}, {"{"}, {"}"},
-                {"\u00ef:A"}, {"`:A"}, {"!:A"}, {"\":A"}, {"\u00ef:A"}, {"$:A"}, {"^:A"}, {"&:A"}, {"*:A"}, {"(:A"}, {"):A"}, {"=:A"}, {"+:A"},
-                {"\\:A"}, {"|:A"}, {",:A"}, {"<:A"}, {">:A"}, {"?:A"}, {";:A"}, {"::A"}, {"':A"}, {"@:A"}, {"~:A"}, {"[:A"}, {"]:A"}, {"{:A"}, {"}:A"},
-                {"A:B#\u00ef"}, {"A:B#`"}, {"A:B#!"}, {"A:B#\""}, {"A:B#\u00ef"}, {"A:B#$"}, {"A:B#^"}, {"A:B#&"}, {"A:B#*"},
-                {"A:B#("}, {"A:B#)"}, {"A:B#="}, {"A:B#+"},
-                {"A:B#\\"}, {"A:B#|"}, {"A:B#,"}, {"A:B#<"}, {"A:B#>"}, {"A:B#?"}, {"A:B#;"}, {"A:B#:"},
-                {"A:B#'"}, {"A:B#@"}, {"A:B#~"}, {"A:B#["}, {"A:B#]"}, {"A:B#{"}, {"A:B#}"},
-        };
+        return new Object[][] { { "" }, { ":" }, { "#" }, { "\u00ef" }, { "`" }, { "!" }, { "\"" }, { "\u00ef" },
+        { "$" }, { "^" }, { "&" }, { "*" }, { "(" }, { ")" }, { "=" }, { "\\" }, { "|" }, { "," }, { "<" }, { ">" },
+        { "?" }, { ";" }, { "'" }, { "[" }, { "]" }, { "{" }, { "}" }, { "\u00ef:A" }, { "`:A" }, { "!:A" }, { "\":A" },
+        { "\u00ef:A" }, { "$:A" }, { "^:A" }, { "&:A" }, { "*:A" }, { "(:A" }, { "):A" }, { "=:A" }, { "+:A" },
+        { "\\:A" }, { "|:A" }, { ",:A" }, { "<:A" }, { ">:A" }, { "?:A" }, { ";:A" }, { "::A" }, { "':A" }, { "@:A" },
+        { "~:A" }, { "[:A" }, { "]:A" }, { "{:A" }, { "}:A" }, { "A:B#\u00ef" }, { "A:B#`" }, { "A:B#!" }, { "A:B#\"" },
+        { "A:B#\u00ef" }, { "A:B#$" }, { "A:B#^" }, { "A:B#&" }, { "A:B#*" }, { "A:B#(" }, { "A:B#)" }, { "A:B#=" },
+        { "A:B#+" }, { "A:B#\\" }, { "A:B#|" }, { "A:B#," }, { "A:B#<" }, { "A:B#>" }, { "A:B#?" }, { "A:B#;" },
+        { "A:B#:" }, { "A:B#'" }, { "A:B#@" }, { "A:B#~" }, { "A:B#[" }, { "A:B#]" }, { "A:B#{" }, { "A:B#}" }, };
     }
 
-    @Test(dataProvider="String_Invalid", expectedExceptions=TDateTimeException.class)
-    public void test_of_string_invalid(String id) {
-        TZoneId.of(id);
+    @Test
+    public void test_of_string_invalid() {
+
+        for (Object[] data : data_of_string_invalid()) {
+            String id = (String) data[0];
+
+            try {
+                TZoneId.of(id);
+                fail("Expected TDateTimeException");
+            } catch (TDateTimeException e) {
+                // expected
+            }
+        }
     }
 
-    //-----------------------------------------------------------------------
+    @Test
     public void test_of_string_GMT0() {
+
         TZoneId test = TZoneId.of("GMT0");
         assertEquals(test.getId(), "GMT0");
         assertEquals(test.getRules().isFixedOffset(), true);
         assertEquals(test.normalized(), TZoneOffset.UTC);
     }
 
-    //-----------------------------------------------------------------------
+    @Test
     public void test_of_string_London() {
+
         TZoneId test = TZoneId.of("Europe/London");
         assertEquals(test.getId(), "Europe/London");
         assertEquals(test.getRules().isFixedOffset(), false);
     }
 
-    //-----------------------------------------------------------------------
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_of_string_null() {
+
         TZoneId.of((String) null);
     }
 
-    @Test(expectedExceptions=TZoneRulesException.class)
+    @Test(expected = TZoneRulesException.class)
     public void test_of_string_unknown_simple() {
+
         TZoneId.of("Unknown");
     }
 
-    //-------------------------------------------------------------------------
-    // TODO: test by deserialization
-//    public void test_ofUnchecked_string_invalidNotChecked() {
-//        TZoneRegion test = TZoneRegion.ofLenient("Unknown");
-//        assertEquals(test.getId(), "Unknown");
-//    }
-//
-//    public void test_ofUnchecked_string_invalidNotChecked_unusualCharacters() {
-//        TZoneRegion test = TZoneRegion.ofLenient("QWERTYUIOPASDFGHJKLZXCVBNM~/._+-");
-//        assertEquals(test.getId(), "QWERTYUIOPASDFGHJKLZXCVBNM~/._+-");
-//    }
-
-    //-----------------------------------------------------------------------
-    // from()
-    //-----------------------------------------------------------------------
+    @Test
     public void test_factory_CalendricalObject() {
+
         assertEquals(TZoneId.from(createZDT(2007, 7, 15, 17, 30, 0, 0, ZONE_PARIS)), ZONE_PARIS);
     }
 
-    @Test(expectedExceptions=TDateTimeException.class)
+    @Test(expected = TDateTimeException.class)
     public void test_factory_CalendricalObject_invalid_noDerive() {
+
         TZoneId.from(TLocalTime.of(12, 30));
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_factory_CalendricalObject_null() {
+
         TZoneId.from((TTemporalAccessor) null);
     }
 
-    //-----------------------------------------------------------------------
-    // Europe/London
-    //-----------------------------------------------------------------------
+    @Test
     public void test_London() {
+
         TZoneId test = TZoneId.of("Europe/London");
         assertEquals(test.getId(), "Europe/London");
         assertEquals(test.getRules().isFixedOffset(), false);
     }
 
+    @Test
     public void test_London_getOffset() {
+
         TZoneId test = TZoneId.of("Europe/London");
         assertEquals(test.getRules().getOffset(createInstant(2008, 1, 1, TZoneOffset.UTC)), TZoneOffset.ofHours(0));
         assertEquals(test.getRules().getOffset(createInstant(2008, 2, 1, TZoneOffset.UTC)), TZoneOffset.ofHours(0));
@@ -447,7 +456,9 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 12, 1, TZoneOffset.UTC)), TZoneOffset.ofHours(0));
     }
 
+    @Test
     public void test_London_getOffset_toDST() {
+
         TZoneId test = TZoneId.of("Europe/London");
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 24, TZoneOffset.UTC)), TZoneOffset.ofHours(0));
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 25, TZoneOffset.UTC)), TZoneOffset.ofHours(0));
@@ -458,11 +469,15 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, TZoneOffset.UTC)), TZoneOffset.ofHours(0));
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 31, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
         // cutover at 01:00Z
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 0, 59, 59, 999999999, TZoneOffset.UTC)), TZoneOffset.ofHours(0));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 1, 0, 0, 0, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 0, 59, 59, 999999999, TZoneOffset.UTC)),
+                TZoneOffset.ofHours(0));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 1, 0, 0, 0, TZoneOffset.UTC)),
+                TZoneOffset.ofHours(1));
     }
 
+    @Test
     public void test_London_getOffset_fromDST() {
+
         TZoneId test = TZoneId.of("Europe/London");
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 24, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 25, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
@@ -473,11 +488,15 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 30, TZoneOffset.UTC)), TZoneOffset.ofHours(0));
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 31, TZoneOffset.UTC)), TZoneOffset.ofHours(0));
         // cutover at 01:00Z
-        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 0, 59, 59, 999999999, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 1, 0, 0, 0, TZoneOffset.UTC)), TZoneOffset.ofHours(0));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 0, 59, 59, 999999999, TZoneOffset.UTC)),
+                TZoneOffset.ofHours(1));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 1, 0, 0, 0, TZoneOffset.UTC)),
+                TZoneOffset.ofHours(0));
     }
 
+    @Test
     public void test_London_getOffsetInfo() {
+
         TZoneId test = TZoneId.of("Europe/London");
         checkOffset(test.getRules(), createLDT(2008, 1, 1), TZoneOffset.ofHours(0), 1);
         checkOffset(test.getRules(), createLDT(2008, 2, 1), TZoneOffset.ofHours(0), 1);
@@ -493,7 +512,9 @@ public class TestZoneId extends AbstractTest {
         checkOffset(test.getRules(), createLDT(2008, 12, 1), TZoneOffset.ofHours(0), 1);
     }
 
+    @Test
     public void test_London_getOffsetInfo_toDST() {
+
         TZoneId test = TZoneId.of("Europe/London");
         checkOffset(test.getRules(), createLDT(2008, 3, 24), TZoneOffset.ofHours(0), 1);
         checkOffset(test.getRules(), createLDT(2008, 3, 25), TZoneOffset.ofHours(0), 1);
@@ -509,7 +530,9 @@ public class TestZoneId extends AbstractTest {
         checkOffset(test.getRules(), TLocalDateTime.of(2008, 3, 30, 2, 0, 0, 0), TZoneOffset.ofHours(1), 1);
     }
 
+    @Test
     public void test_London_getOffsetInfo_fromDST() {
+
         TZoneId test = TZoneId.of("Europe/London");
         checkOffset(test.getRules(), createLDT(2008, 10, 24), TZoneOffset.ofHours(1), 1);
         checkOffset(test.getRules(), createLDT(2008, 10, 25), TZoneOffset.ofHours(1), 1);
@@ -525,7 +548,9 @@ public class TestZoneId extends AbstractTest {
         checkOffset(test.getRules(), TLocalDateTime.of(2008, 10, 26, 2, 0, 0, 0), TZoneOffset.ofHours(0), 1);
     }
 
+    @Test
     public void test_London_getOffsetInfo_gap() {
+
         TZoneId test = TZoneId.of("Europe/London");
         final TLocalDateTime dateTime = TLocalDateTime.of(2008, 3, 30, 1, 0, 0, 0);
         TZoneOffsetTransition trans = checkOffset(test.getRules(), dateTime, TZoneOffset.ofHours(0), GAP);
@@ -551,7 +576,9 @@ public class TestZoneId extends AbstractTest {
         assertEquals(trans.hashCode(), otherTrans.hashCode());
     }
 
+    @Test
     public void test_London_getOffsetInfo_overlap() {
+
         TZoneId test = TZoneId.of("Europe/London");
         final TLocalDateTime dateTime = TLocalDateTime.of(2008, 10, 26, 1, 0, 0, 0);
         TZoneOffsetTransition trans = checkOffset(test.getRules(), dateTime, TZoneOffset.ofHours(1), OVERLAP);
@@ -577,16 +604,17 @@ public class TestZoneId extends AbstractTest {
         assertEquals(trans.hashCode(), otherTrans.hashCode());
     }
 
-    //-----------------------------------------------------------------------
-    // Europe/Paris
-    //-----------------------------------------------------------------------
+    @Test
     public void test_Paris() {
+
         TZoneId test = TZoneId.of("Europe/Paris");
         assertEquals(test.getId(), "Europe/Paris");
         assertEquals(test.getRules().isFixedOffset(), false);
     }
 
+    @Test
     public void test_Paris_getOffset() {
+
         TZoneId test = TZoneId.of("Europe/Paris");
         assertEquals(test.getRules().getOffset(createInstant(2008, 1, 1, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
         assertEquals(test.getRules().getOffset(createInstant(2008, 2, 1, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
@@ -602,7 +630,9 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 12, 1, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
     }
 
+    @Test
     public void test_Paris_getOffset_toDST() {
+
         TZoneId test = TZoneId.of("Europe/Paris");
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 24, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 25, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
@@ -613,11 +643,15 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 31, TZoneOffset.UTC)), TZoneOffset.ofHours(2));
         // cutover at 01:00Z
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 0, 59, 59, 999999999, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 1, 0, 0, 0, TZoneOffset.UTC)), TZoneOffset.ofHours(2));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 0, 59, 59, 999999999, TZoneOffset.UTC)),
+                TZoneOffset.ofHours(1));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 30, 1, 0, 0, 0, TZoneOffset.UTC)),
+                TZoneOffset.ofHours(2));
     }
 
+    @Test
     public void test_Paris_getOffset_fromDST() {
+
         TZoneId test = TZoneId.of("Europe/Paris");
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 24, TZoneOffset.UTC)), TZoneOffset.ofHours(2));
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 25, TZoneOffset.UTC)), TZoneOffset.ofHours(2));
@@ -628,11 +662,15 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 30, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
         assertEquals(test.getRules().getOffset(createInstant(2008, 10, 31, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
         // cutover at 01:00Z
-        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 0, 59, 59, 999999999, TZoneOffset.UTC)), TZoneOffset.ofHours(2));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 1, 0, 0, 0, TZoneOffset.UTC)), TZoneOffset.ofHours(1));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 0, 59, 59, 999999999, TZoneOffset.UTC)),
+                TZoneOffset.ofHours(2));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 10, 26, 1, 0, 0, 0, TZoneOffset.UTC)),
+                TZoneOffset.ofHours(1));
     }
 
+    @Test
     public void test_Paris_getOffsetInfo() {
+
         TZoneId test = TZoneId.of("Europe/Paris");
         checkOffset(test.getRules(), createLDT(2008, 1, 1), TZoneOffset.ofHours(1), 1);
         checkOffset(test.getRules(), createLDT(2008, 2, 1), TZoneOffset.ofHours(1), 1);
@@ -648,7 +686,9 @@ public class TestZoneId extends AbstractTest {
         checkOffset(test.getRules(), createLDT(2008, 12, 1), TZoneOffset.ofHours(1), 1);
     }
 
+    @Test
     public void test_Paris_getOffsetInfo_toDST() {
+
         TZoneId test = TZoneId.of("Europe/Paris");
         checkOffset(test.getRules(), createLDT(2008, 3, 24), TZoneOffset.ofHours(1), 1);
         checkOffset(test.getRules(), createLDT(2008, 3, 25), TZoneOffset.ofHours(1), 1);
@@ -664,7 +704,9 @@ public class TestZoneId extends AbstractTest {
         checkOffset(test.getRules(), TLocalDateTime.of(2008, 3, 30, 3, 0, 0, 0), TZoneOffset.ofHours(2), 1);
     }
 
+    @Test
     public void test_Paris_getOffsetInfo_fromDST() {
+
         TZoneId test = TZoneId.of("Europe/Paris");
         checkOffset(test.getRules(), createLDT(2008, 10, 24), TZoneOffset.ofHours(2), 1);
         checkOffset(test.getRules(), createLDT(2008, 10, 25), TZoneOffset.ofHours(2), 1);
@@ -680,7 +722,9 @@ public class TestZoneId extends AbstractTest {
         checkOffset(test.getRules(), TLocalDateTime.of(2008, 10, 26, 3, 0, 0, 0), TZoneOffset.ofHours(1), 1);
     }
 
+    @Test
     public void test_Paris_getOffsetInfo_gap() {
+
         TZoneId test = TZoneId.of("Europe/Paris");
         final TLocalDateTime dateTime = TLocalDateTime.of(2008, 3, 30, 2, 0, 0, 0);
         TZoneOffsetTransition trans = checkOffset(test.getRules(), dateTime, TZoneOffset.ofHours(1), GAP);
@@ -704,7 +748,9 @@ public class TestZoneId extends AbstractTest {
         assertEquals(trans.hashCode(), otherDis.hashCode());
     }
 
+    @Test
     public void test_Paris_getOffsetInfo_overlap() {
+
         TZoneId test = TZoneId.of("Europe/Paris");
         final TLocalDateTime dateTime = TLocalDateTime.of(2008, 10, 26, 2, 0, 0, 0);
         TZoneOffsetTransition trans = checkOffset(test.getRules(), dateTime, TZoneOffset.ofHours(2), OVERLAP);
@@ -728,16 +774,17 @@ public class TestZoneId extends AbstractTest {
         assertEquals(trans.hashCode(), otherDis.hashCode());
     }
 
-    //-----------------------------------------------------------------------
-    // America/New_York
-    //-----------------------------------------------------------------------
+    @Test
     public void test_NewYork() {
+
         TZoneId test = TZoneId.of("America/New_York");
         assertEquals(test.getId(), "America/New_York");
         assertEquals(test.getRules().isFixedOffset(), false);
     }
 
+    @Test
     public void test_NewYork_getOffset() {
+
         TZoneId test = TZoneId.of("America/New_York");
         TZoneOffset offset = TZoneOffset.ofHours(-5);
         assertEquals(test.getRules().getOffset(createInstant(2008, 1, 1, offset)), TZoneOffset.ofHours(-5));
@@ -766,7 +813,9 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 12, 28, offset)), TZoneOffset.ofHours(-5));
     }
 
+    @Test
     public void test_NewYork_getOffset_toDST() {
+
         TZoneId test = TZoneId.of("America/New_York");
         TZoneOffset offset = TZoneOffset.ofHours(-5);
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 8, offset)), TZoneOffset.ofHours(-5));
@@ -777,11 +826,14 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 13, offset)), TZoneOffset.ofHours(-4));
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 14, offset)), TZoneOffset.ofHours(-4));
         // cutover at 02:00 local
-        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 9, 1, 59, 59, 999999999, offset)), TZoneOffset.ofHours(-5));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 3, 9, 1, 59, 59, 999999999, offset)),
+                TZoneOffset.ofHours(-5));
         assertEquals(test.getRules().getOffset(createInstant(2008, 3, 9, 2, 0, 0, 0, offset)), TZoneOffset.ofHours(-4));
     }
 
+    @Test
     public void test_NewYork_getOffset_fromDST() {
+
         TZoneId test = TZoneId.of("America/New_York");
         TZoneOffset offset = TZoneOffset.ofHours(-4);
         assertEquals(test.getRules().getOffset(createInstant(2008, 11, 1, offset)), TZoneOffset.ofHours(-4));
@@ -792,11 +844,15 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test.getRules().getOffset(createInstant(2008, 11, 6, offset)), TZoneOffset.ofHours(-5));
         assertEquals(test.getRules().getOffset(createInstant(2008, 11, 7, offset)), TZoneOffset.ofHours(-5));
         // cutover at 02:00 local
-        assertEquals(test.getRules().getOffset(createInstant(2008, 11, 2, 1, 59, 59, 999999999, offset)), TZoneOffset.ofHours(-4));
-        assertEquals(test.getRules().getOffset(createInstant(2008, 11, 2, 2, 0, 0, 0, offset)), TZoneOffset.ofHours(-5));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 11, 2, 1, 59, 59, 999999999, offset)),
+                TZoneOffset.ofHours(-4));
+        assertEquals(test.getRules().getOffset(createInstant(2008, 11, 2, 2, 0, 0, 0, offset)),
+                TZoneOffset.ofHours(-5));
     }
 
+    @Test
     public void test_NewYork_getOffsetInfo() {
+
         TZoneId test = TZoneId.of("America/New_York");
         checkOffset(test.getRules(), createLDT(2008, 1, 1), TZoneOffset.ofHours(-5), 1);
         checkOffset(test.getRules(), createLDT(2008, 2, 1), TZoneOffset.ofHours(-5), 1);
@@ -824,7 +880,9 @@ public class TestZoneId extends AbstractTest {
         checkOffset(test.getRules(), createLDT(2008, 12, 28), TZoneOffset.ofHours(-5), 1);
     }
 
+    @Test
     public void test_NewYork_getOffsetInfo_toDST() {
+
         TZoneId test = TZoneId.of("America/New_York");
         checkOffset(test.getRules(), createLDT(2008, 3, 8), TZoneOffset.ofHours(-5), 1);
         checkOffset(test.getRules(), createLDT(2008, 3, 9), TZoneOffset.ofHours(-5), 1);
@@ -839,7 +897,9 @@ public class TestZoneId extends AbstractTest {
         checkOffset(test.getRules(), TLocalDateTime.of(2008, 3, 9, 3, 0, 0, 0), TZoneOffset.ofHours(-4), 1);
     }
 
+    @Test
     public void test_NewYork_getOffsetInfo_fromDST() {
+
         TZoneId test = TZoneId.of("America/New_York");
         checkOffset(test.getRules(), createLDT(2008, 11, 1), TZoneOffset.ofHours(-4), 1);
         checkOffset(test.getRules(), createLDT(2008, 11, 2), TZoneOffset.ofHours(-4), 1);
@@ -854,7 +914,9 @@ public class TestZoneId extends AbstractTest {
         checkOffset(test.getRules(), TLocalDateTime.of(2008, 11, 2, 2, 0, 0, 0), TZoneOffset.ofHours(-5), 1);
     }
 
+    @Test
     public void test_NewYork_getOffsetInfo_gap() {
+
         TZoneId test = TZoneId.of("America/New_York");
         final TLocalDateTime dateTime = TLocalDateTime.of(2008, 3, 9, 2, 0, 0, 0);
         TZoneOffsetTransition trans = checkOffset(test.getRules(), dateTime, TZoneOffset.ofHours(-5), GAP);
@@ -877,7 +939,9 @@ public class TestZoneId extends AbstractTest {
         assertEquals(trans.hashCode(), otherTrans.hashCode());
     }
 
+    @Test
     public void test_NewYork_getOffsetInfo_overlap() {
+
         TZoneId test = TZoneId.of("America/New_York");
         final TLocalDateTime dateTime = TLocalDateTime.of(2008, 11, 2, 1, 0, 0, 0);
         TZoneOffsetTransition trans = checkOffset(test.getRules(), dateTime, TZoneOffset.ofHours(-4), OVERLAP);
@@ -900,25 +964,25 @@ public class TestZoneId extends AbstractTest {
         assertEquals(trans.hashCode(), otherTrans.hashCode());
     }
 
-    //-----------------------------------------------------------------------
-    // getXxx() isXxx()
-    //-----------------------------------------------------------------------
+    @Test
     public void test_get_Tzdb() {
+
         TZoneId test = TZoneId.of("Europe/London");
         assertEquals(test.getId(), "Europe/London");
         assertEquals(test.getRules().isFixedOffset(), false);
     }
 
+    @Test
     public void test_get_TzdbFixed() {
+
         TZoneId test = TZoneId.of("+01:30");
         assertEquals(test.getId(), "+01:30");
         assertEquals(test.getRules().isFixedOffset(), true);
     }
 
-    //-----------------------------------------------------------------------
-    // equals() / hashCode()
-    //-----------------------------------------------------------------------
+    @Test
     public void test_equals() {
+
         TZoneId test1 = TZoneId.of("Europe/London");
         TZoneId test2 = TZoneId.of("Europe/Paris");
         TZoneId test2b = TZoneId.of("Europe/Paris");
@@ -934,57 +998,60 @@ public class TestZoneId extends AbstractTest {
         assertEquals(test2.hashCode() == test2b.hashCode(), true);
     }
 
+    @Test
     public void test_equals_null() {
+
         assertEquals(TZoneId.of("Europe/London").equals(null), false);
     }
 
+    @Test
     public void test_equals_notTimeZone() {
+
         assertEquals(TZoneId.of("Europe/London").equals("Europe/London"), false);
     }
 
-    //-----------------------------------------------------------------------
-    // toString()
-    //-----------------------------------------------------------------------
-    @DataProvider(name="ToString")
     Object[][] data_toString() {
-        return new Object[][] {
-            {"Europe/London", "Europe/London"},
-            {"Europe/Paris", "Europe/Paris"},
-            {"Europe/Berlin", "Europe/Berlin"},
-            {"Z", "Z"},
-            {"UTC", "UTC"},
-            {"UTC+01:00", "UTC+01:00"},
-            {"GMT+01:00", "GMT+01:00"},
-            {"UT+01:00", "UT+01:00"},
-        };
+
+        return new Object[][] { { "Europe/London", "Europe/London" }, { "Europe/Paris", "Europe/Paris" },
+        { "Europe/Berlin", "Europe/Berlin" }, { "Z", "Z" }, { "UTC", "UTC" }, { "UTC+01:00", "UTC+01:00" },
+        { "GMT+01:00", "GMT+01:00" }, { "UT+01:00", "UT+01:00" }, };
     }
 
-    @Test(dataProvider="ToString")
-    public void test_toString(String id, String expected) {
-        TZoneId test = TZoneId.of(id);
-        assertEquals(test.toString(), expected);
+    @Test
+    public void test_toString() {
+
+        for (Object[] data : data_toString()) {
+            String id = (String) data[0];
+            String expected = (String) data[1];
+
+            TZoneId test = TZoneId.of(id);
+            assertEquals(test.toString(), expected);
+        }
     }
 
-    //-----------------------------------------------------------------------
-    //-----------------------------------------------------------------------
-    //-----------------------------------------------------------------------
     private TInstant createInstant(int year, int month, int day, TZoneOffset offset) {
+
         return TLocalDateTime.of(year, month, day, 0, 0).toInstant(offset);
     }
 
-    private TInstant createInstant(int year, int month, int day, int hour, int min, int sec, int nano, TZoneOffset offset) {
+    private TInstant createInstant(int year, int month, int day, int hour, int min, int sec, int nano,
+            TZoneOffset offset) {
+
         return TLocalDateTime.of(year, month, day, hour, min, sec, nano).toInstant(offset);
     }
 
     private TZonedDateTime createZDT(int year, int month, int day, int hour, int min, int sec, int nano, TZoneId zone) {
+
         return TLocalDateTime.of(year, month, day, hour, min, sec, nano).atZone(zone);
     }
 
     private TLocalDateTime createLDT(int year, int month, int day) {
+
         return TLocalDateTime.of(year, month, day, 0, 0);
     }
 
     private TZoneOffsetTransition checkOffset(TZoneRules rules, TLocalDateTime dateTime, TZoneOffset offset, int type) {
+
         List<TZoneOffset> validOffsets = rules.getValidOffsets(dateTime);
         assertEquals(validOffsets.size(), type);
         assertEquals(rules.getOffset(dateTime), offset);

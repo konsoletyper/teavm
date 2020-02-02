@@ -52,6 +52,7 @@ public class FluentAPIChecker {
 
     @SuppressWarnings("unused")
     public static void main(String[] args) {
+
         TClock clock = TClock.systemDefaultZone();
 
         TLocalTime tod = TLocalTime.now(clock);
@@ -77,14 +78,8 @@ public class FluentAPIChecker {
         date = date.with(TMonth.of(6));
         date = date.with(AUGUST);
 
-//        DateTimeFields fri13 = DateTimeFields.of(
-//                DAY_OF_WEEK, FRIDAY.getValue(), DAY_OF_MONTH, 13);
-//        if (fri13.matches(date)) {
-//            TSystem.out.println("Spooky");
-//        }
-
         TPeriod d2 = TPeriod.ofDays(3);
-        TSystem.out.println(d2);
+        System.out.println(d2);
 
         tod.withHour(12).withMinute(30);
 
@@ -98,21 +93,15 @@ public class FluentAPIChecker {
 
         TDayOfWeek dow = MONDAY;
         dow = dow.plus(1);
-//
-//        int dayIndex = day.value();
-//        int dayIndex = day.value(Territory.US);
-//        int dayIndex = day.valueIndexedFrom(SUNDAY);
-////        SundayBasedDayOfWeek.MONDAY != TDayOfWeek.MONDAY;
-//        Territory.US.dayOfWeekComparator();
 
         TZoneOffset offset = TZoneOffset.ofHours(1);
         TZoneId paris = TZoneId.of("Europe/Paris");
 
         for (TZoneOffsetTransition trans : paris.getRules().getTransitions()) {
-            TSystem.out.println("Paris transition: " + trans);
+            System.out.println("Paris transition: " + trans);
         }
-        TSystem.out.println("Summer time Paris starts: " + paris.getRules().getTransitionRules().get(0));
-        TSystem.out.println("Summer time Paris ends: " + paris.getRules().getTransitionRules().get(1));
+        System.out.println("Summer time Paris starts: " + paris.getRules().getTransitionRules().get(0));
+        System.out.println("Summer time Paris ends: " + paris.getRules().getTransitionRules().get(1));
 
         TLocalDateTime ldt = date.atTime(tod);
         TZonedDateTime zdt1 = date.atStartOfDay(paris);
@@ -127,7 +116,7 @@ public class FluentAPIChecker {
 
         TClock tickingClock = TClock.tickSeconds(paris);
         for (int i = 0; i < 20; i++) {
-            TSystem.out.println(TLocalTime.now(tickingClock));
+            System.out.println(TLocalTime.now(tickingClock));
             try {
                 Thread.sleep(500);
             } catch (InterruptedException ex) {

@@ -31,45 +31,43 @@
  */
 package org.teavm.classlib.java.time.zone;
 
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.List;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDuration;
 import org.teavm.classlib.java.time.TInstant;
 import org.teavm.classlib.java.time.TLocalDateTime;
-import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
 public abstract class TZoneRules {
 
-    public static TZoneRules of(TZoneOffset baseStandardOffset,
-                               TZoneOffset baseWallOffset,
-                               List<TZoneOffsetTransition> standardOffsetTransitionList,
-                               List<TZoneOffsetTransition> transitionList,
-                               List<TZoneOffsetTransitionRule> lastRules) {
+    public static TZoneRules of(TZoneOffset baseStandardOffset, TZoneOffset baseWallOffset,
+            List<TZoneOffsetTransition> standardOffsetTransitionList, List<TZoneOffsetTransition> transitionList,
+            List<TZoneOffsetTransitionRule> lastRules) {
+
         TJdk8Methods.requireNonNull(baseStandardOffset, "baseStandardOffset");
         TJdk8Methods.requireNonNull(baseWallOffset, "baseWallOffset");
         TJdk8Methods.requireNonNull(standardOffsetTransitionList, "standardOffsetTransitionList");
         TJdk8Methods.requireNonNull(transitionList, "transitionList");
         TJdk8Methods.requireNonNull(lastRules, "lastRules");
-        return new TStandardZoneRules(baseStandardOffset, baseWallOffset,
-                             standardOffsetTransitionList, transitionList, lastRules);
+        return new TStandardZoneRules(baseStandardOffset, baseWallOffset, standardOffsetTransitionList, transitionList,
+                lastRules);
     }
 
     public static TZoneRules of(TZoneOffset offset) {
+
         TJdk8Methods.requireNonNull(offset, "offset");
         return new Fixed(offset);
     }
 
     TZoneRules() {
+
     }
 
-    //-----------------------------------------------------------------------
     public abstract boolean isFixedOffset();
 
-    //-----------------------------------------------------------------------
     public abstract TZoneOffset getOffset(TInstant instant);
 
     public abstract TZoneOffset getOffset(TLocalDateTime localDateTime);
@@ -78,27 +76,25 @@ public abstract class TZoneRules {
 
     public abstract TZoneOffsetTransition getTransition(TLocalDateTime localDateTime);
 
-    //-----------------------------------------------------------------------
     public abstract TZoneOffset getStandardOffset(TInstant instant);
 
     public abstract TDuration getDaylightSavings(TInstant instant);
-    //    default {
-    //        TZoneOffset standardOffset = getStandardOffset(instant);
-    //        TZoneOffset actualOffset = getOffset(instant);
-    //        return actualOffset.toDuration().minus(standardOffset.toDuration()).normalized();
-    //    }
+    // default {
+    // TZoneOffset standardOffset = getStandardOffset(instant);
+    // TZoneOffset actualOffset = getOffset(instant);
+    // return actualOffset.toDuration().minus(standardOffset.toDuration()).normalized();
+    // }
 
     public abstract boolean isDaylightSavings(TInstant instant);
-    //    default {
-    //        return (getStandardOffset(instant).equals(getOffset(instant)) == false);
-    //    }
+    // default {
+    // return (getStandardOffset(instant).equals(getOffset(instant)) == false);
+    // }
 
     public abstract boolean isValidOffset(TLocalDateTime localDateTime, TZoneOffset offset);
-    //    default {
-    //        return getValidOffsets(dateTime).contains(offset);
-    //    }
+    // default {
+    // return getValidOffsets(dateTime).contains(offset);
+    // }
 
-    //-----------------------------------------------------------------------
     public abstract TZoneOffsetTransition nextTransition(TInstant instant);
 
     public abstract TZoneOffsetTransition previousTransition(TInstant instant);
@@ -107,118 +103,125 @@ public abstract class TZoneRules {
 
     public abstract List<TZoneOffsetTransitionRule> getTransitionRules();
 
-    //-----------------------------------------------------------------------
     @Override
     public abstract boolean equals(Object otherRules);
 
     @Override
     public abstract int hashCode();
 
-    //-----------------------------------------------------------------------
-    static final class Fixed extends TZoneRules implements Serializable {
-        private static final long serialVersionUID = -8733721350312276297L;
+    static final class Fixed extends TZoneRules implements TSerializable {
+
         private final TZoneOffset offset;
 
         Fixed(TZoneOffset offset) {
+
             this.offset = offset;
         }
 
-        //-------------------------------------------------------------------------
         @Override
         public boolean isFixedOffset() {
+
             return true;
         }
 
         @Override
         public TZoneOffset getOffset(TInstant instant) {
-            return offset;
+
+            return this.offset;
         }
 
         @Override
         public TZoneOffset getOffset(TLocalDateTime localDateTime) {
-            return offset;
+
+            return this.offset;
         }
 
         @Override
         public List<TZoneOffset> getValidOffsets(TLocalDateTime localDateTime) {
-            return Collections.singletonList(offset);
+
+            return Collections.singletonList(this.offset);
         }
 
         @Override
         public TZoneOffsetTransition getTransition(TLocalDateTime localDateTime) {
+
             return null;
         }
 
         @Override
         public boolean isValidOffset(TLocalDateTime dateTime, TZoneOffset offset) {
+
             return this.offset.equals(offset);
         }
 
-        //-------------------------------------------------------------------------
         @Override
         public TZoneOffset getStandardOffset(TInstant instant) {
-            return offset;
+
+            return this.offset;
         }
 
         @Override
         public TDuration getDaylightSavings(TInstant instant) {
+
             return TDuration.ZERO;
         }
 
         @Override
         public boolean isDaylightSavings(TInstant instant) {
+
             return false;
         }
 
-        //-------------------------------------------------------------------------
         @Override
         public TZoneOffsetTransition nextTransition(TInstant instant) {
+
             return null;
         }
 
         @Override
         public TZoneOffsetTransition previousTransition(TInstant instant) {
+
             return null;
         }
 
         @Override
         public List<TZoneOffsetTransition> getTransitions() {
+
             return Collections.emptyList();
         }
 
         @Override
         public List<TZoneOffsetTransitionRule> getTransitionRules() {
+
             return Collections.emptyList();
         }
 
-        //-----------------------------------------------------------------------
         @Override
         public boolean equals(Object obj) {
+
             if (this == obj) {
-               return true;
+                return true;
             }
             if (obj instanceof Fixed) {
-                return offset.equals(((Fixed) obj).offset);
+                return this.offset.equals(((Fixed) obj).offset);
             }
             if (obj instanceof TStandardZoneRules) {
                 TStandardZoneRules szr = (TStandardZoneRules) obj;
-                return szr.isFixedOffset() && offset.equals(szr.getOffset(TInstant.EPOCH));
+                return szr.isFixedOffset() && this.offset.equals(szr.getOffset(TInstant.EPOCH));
             }
             return false;
         }
 
         @Override
         public int hashCode() {
-            return 1 ^
-                    (31 + offset.hashCode()) ^
-                    1 ^
-                    (31 + offset.hashCode()) ^
-                    1;
+
+            return 1 ^ (31 + this.offset.hashCode()) ^ 1 ^ (31 + this.offset.hashCode()) ^ 1;
         }
 
         @Override
         public String toString() {
-            return "FixedRules:" + offset;
+
+            return "FixedRules:" + this.offset;
         }
     }
 

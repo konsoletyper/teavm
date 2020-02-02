@@ -40,69 +40,84 @@ import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.CharLiteral
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.PadPrinterParserDecorator;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.StringLiteralPrinterParser;
 
-@Test
 public class TestPadPrinterDecorator extends AbstractTestPrinterParser {
 
-    //-----------------------------------------------------------------------
-    public void test_print_emptyCalendrical() throws Exception {
+    @Test
+    public void test_print_emptyCalendrical() {
+
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new CharLiteralPrinterParser('Z'), 3, '-');
-        pp.print(printEmptyContext, buf);
-        assertEquals(buf.toString(), "--Z");
+        pp.print(this.printEmptyContext, this.buf);
+        assertEquals(this.buf.toString(), "--Z");
     }
 
-    public void test_print_fullDateTime() throws Exception {
-        printContext.setDateTime(TLocalDate.of(2008, 12, 3));
+    @Test
+    public void test_print_fullDateTime() {
+
+        this.printContext.setDateTime(TLocalDate.of(2008, 12, 3));
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new CharLiteralPrinterParser('Z'), 3, '-');
-        pp.print(printContext, buf);
-        assertEquals(buf.toString(), "--Z");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "--Z");
     }
 
-    public void test_print_append() throws Exception {
-        buf.append("EXISTING");
+    @Test
+    public void test_print_append() {
+
+        this.buf.append("EXISTING");
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new CharLiteralPrinterParser('Z'), 3, '-');
-        pp.print(printEmptyContext, buf);
-        assertEquals(buf.toString(), "EXISTING--Z");
+        pp.print(this.printEmptyContext, this.buf);
+        assertEquals(this.buf.toString(), "EXISTING--Z");
     }
 
-    //-----------------------------------------------------------------------
-    public void test_print_noPadRequiredSingle() throws Exception {
+    @Test
+    public void test_print_noPadRequiredSingle() {
+
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new CharLiteralPrinterParser('Z'), 1, '-');
-        pp.print(printEmptyContext, buf);
-        assertEquals(buf.toString(), "Z");
+        pp.print(this.printEmptyContext, this.buf);
+        assertEquals(this.buf.toString(), "Z");
     }
 
-    public void test_print_padRequiredSingle() throws Exception {
+    @Test
+    public void test_print_padRequiredSingle() {
+
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new CharLiteralPrinterParser('Z'), 5, '-');
-        pp.print(printEmptyContext, buf);
-        assertEquals(buf.toString(), "----Z");
+        pp.print(this.printEmptyContext, this.buf);
+        assertEquals(this.buf.toString(), "----Z");
     }
 
-    public void test_print_noPadRequiredMultiple() throws Exception {
+    @Test
+    public void test_print_noPadRequiredMultiple() {
+
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new StringLiteralPrinterParser("WXYZ"), 4, '-');
-        pp.print(printEmptyContext, buf);
-        assertEquals(buf.toString(), "WXYZ");
+        pp.print(this.printEmptyContext, this.buf);
+        assertEquals(this.buf.toString(), "WXYZ");
     }
 
-    public void test_print_padRequiredMultiple() throws Exception {
+    @Test
+    public void test_print_padRequiredMultiple() {
+
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new StringLiteralPrinterParser("WXYZ"), 5, '-');
-        pp.print(printEmptyContext, buf);
-        assertEquals(buf.toString(), "-WXYZ");
+        pp.print(this.printEmptyContext, this.buf);
+        assertEquals(this.buf.toString(), "-WXYZ");
     }
 
-    @Test(expectedExceptions=TDateTimeException.class)
-    public void test_print_overPad() throws Exception {
+    @Test(expected = TDateTimeException.class)
+    public void test_print_overPad() {
+
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new StringLiteralPrinterParser("WXYZ"), 3, '-');
-        pp.print(printEmptyContext, buf);
+        pp.print(this.printEmptyContext, this.buf);
     }
 
-    //-----------------------------------------------------------------------
-    public void test_toString1() throws Exception {
+    @Test
+    public void test_toString1() {
+
         CharLiteralPrinterParser wrapped = new CharLiteralPrinterParser('Y');
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(wrapped, 5, ' ');
         assertEquals(pp.toString(), "Pad('Y',5)");
     }
 
-    public void test_toString2() throws Exception {
+    @Test
+    public void test_toString2() {
+
         CharLiteralPrinterParser wrapped = new CharLiteralPrinterParser('Y');
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(wrapped, 5, '-');
         assertEquals(pp.toString(), "Pad('Y',5,'-')");

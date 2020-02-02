@@ -33,8 +33,6 @@ package org.teavm.classlib.java.time.zone;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.IOException;
-
 import org.junit.Test;
 import org.teavm.classlib.java.time.AbstractTest;
 import org.teavm.classlib.java.time.TDayOfWeek;
@@ -44,94 +42,89 @@ import org.teavm.classlib.java.time.TMonth;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.zone.TZoneOffsetTransitionRule.TimeDefinition;
 
-@Test
 public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     private static final TLocalTime TIME_0100 = TLocalTime.of(1, 0);
+
     private static final TZoneOffset OFFSET_0200 = TZoneOffset.ofHours(2);
+
     private static final TZoneOffset OFFSET_0300 = TZoneOffset.ofHours(3);
 
-    //-----------------------------------------------------------------------
-    // factory
-    //-----------------------------------------------------------------------
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_factory_nullMonth() {
-        TZoneOffsetTransitionRule.of(
-                null, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule.of(null, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL, OFFSET_0200,
+                OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_factory_nullTime() {
-        TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, null, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, null, false, TimeDefinition.WALL, OFFSET_0200,
+                OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_factory_nullTimeDefinition() {
-        TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, null,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, null, OFFSET_0200,
+                OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_factory_nullStandardOffset() {
-        TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                null, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL, null,
+                OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_factory_nullOffsetBefore() {
-        TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+
+        TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, null, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_factory_nullOffsetAfter() {
-        TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+
+        TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, null);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void test_factory_invalidDayOfMonthIndicator_tooSmall() {
-        TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, -29, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+
+        TZoneOffsetTransitionRule.of(TMonth.MARCH, -29, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void test_factory_invalidDayOfMonthIndicator_zero() {
-        TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 0, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+
+        TZoneOffsetTransitionRule.of(TMonth.MARCH, 0, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void test_factory_invalidDayOfMonthIndicator_tooLarge() {
-        TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 32, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
+
+        TZoneOffsetTransitionRule.of(TMonth.MARCH, 32, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
     }
 
-    @Test(expectedExceptions=IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void test_factory_invalidMidnightFlag() {
-        TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, true, TimeDefinition.WALL,
+
+        TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, true, TimeDefinition.WALL,
                 OFFSET_0200, OFFSET_0200, OFFSET_0300);
     }
 
-    //-----------------------------------------------------------------------
-    // getters
-    //-----------------------------------------------------------------------
     @Test
-    public void test_getters_floatingWeek() throws Exception {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+    public void test_getters_floatingWeek() {
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(test.getMonth(), TMonth.MARCH);
         assertEquals(test.getDayOfMonthIndicator(), 20);
         assertEquals(test.getDayOfWeek(), TDayOfWeek.SUNDAY);
@@ -141,14 +134,13 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         assertEquals(test.getStandardOffset(), OFFSET_0200);
         assertEquals(test.getOffsetBefore(), OFFSET_0200);
         assertEquals(test.getOffsetAfter(), OFFSET_0300);
-        assertSerializable(test);
     }
 
     @Test
-    public void test_getters_floatingWeekBackwards() throws Exception {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, -1, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+    public void test_getters_floatingWeekBackwards() {
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, -1, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(test.getMonth(), TMonth.MARCH);
         assertEquals(test.getDayOfMonthIndicator(), -1);
         assertEquals(test.getDayOfWeek(), TDayOfWeek.SUNDAY);
@@ -158,14 +150,13 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         assertEquals(test.getStandardOffset(), OFFSET_0200);
         assertEquals(test.getOffsetBefore(), OFFSET_0200);
         assertEquals(test.getOffsetAfter(), OFFSET_0300);
-        assertSerializable(test);
     }
 
     @Test
-    public void test_getters_fixedDate() throws Exception {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, null, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+    public void test_getters_fixedDate() {
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, null, TIME_0100, false,
+                TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(test.getMonth(), TMonth.MARCH);
         assertEquals(test.getDayOfMonthIndicator(), 20);
         assertEquals(test.getDayOfWeek(), null);
@@ -175,117 +166,75 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
         assertEquals(test.getStandardOffset(), OFFSET_0200);
         assertEquals(test.getOffsetBefore(), OFFSET_0200);
         assertEquals(test.getOffsetAfter(), OFFSET_0300);
-        assertSerializable(test);
     }
 
-    @Test
-    public void test_serialization_unusualOffsets() throws Exception {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
-                TZoneOffset.ofHoursMinutesSeconds(-12, -20, -50),
-                TZoneOffset.ofHoursMinutesSeconds(-4, -10, -34),
-                TZoneOffset.ofHours(-18));
-        assertSerializable(test);
-    }
-
-    @Test
-    public void test_serialization_endOfDay() throws Exception {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.FRIDAY, TLocalTime.MIDNIGHT, true, TimeDefinition.UTC,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertSerializable(test);
-    }
-
-    @Test
-    public void test_serialization_unusualTime() throws Exception {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.WEDNESDAY, TLocalTime.of(13, 34, 56), false, TimeDefinition.STANDARD,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertSerializable(test);
-    }
-
-    @Test
-    public void test_serialization_format() throws ClassNotFoundException, IOException {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                        TMonth.MARCH, 20, TDayOfWeek.TUESDAY, TLocalTime.of(13, 34, 56), false, TimeDefinition.STANDARD,
-                        OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEqualsSerialisedForm(test);
-    }
-
-    //-----------------------------------------------------------------------
-    // createTransition()
-    //-----------------------------------------------------------------------
     @Test
     public void test_createTransition_floatingWeek_gap_notEndOfDay() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransition trans = new TZoneOffsetTransition(
-                TLocalDateTime.of(2000, TMonth.MARCH, 26, 1, 0), OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransition trans = new TZoneOffsetTransition(TLocalDateTime.of(2000, TMonth.MARCH, 26, 1, 0),
+                OFFSET_0200, OFFSET_0300);
         assertEquals(test.createTransition(2000), trans);
     }
 
     @Test
     public void test_createTransition_floatingWeek_overlap_endOfDay() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TLocalTime.MIDNIGHT, true, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0300, OFFSET_0200);
-        TZoneOffsetTransition trans = new TZoneOffsetTransition(
-                TLocalDateTime.of(2000, TMonth.MARCH, 27, 0, 0), OFFSET_0300, OFFSET_0200);
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY,
+                TLocalTime.MIDNIGHT, true, TimeDefinition.WALL, OFFSET_0200, OFFSET_0300, OFFSET_0200);
+        TZoneOffsetTransition trans = new TZoneOffsetTransition(TLocalDateTime.of(2000, TMonth.MARCH, 27, 0, 0),
+                OFFSET_0300, OFFSET_0200);
         assertEquals(test.createTransition(2000), trans);
     }
 
     @Test
     public void test_createTransition_floatingWeekBackwards_last() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, -1, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransition trans = new TZoneOffsetTransition(
-                TLocalDateTime.of(2000, TMonth.MARCH, 26, 1, 0), OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, -1, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransition trans = new TZoneOffsetTransition(TLocalDateTime.of(2000, TMonth.MARCH, 26, 1, 0),
+                OFFSET_0200, OFFSET_0300);
         assertEquals(test.createTransition(2000), trans);
     }
 
     @Test
     public void test_createTransition_floatingWeekBackwards_seventhLast() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, -7, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransition trans = new TZoneOffsetTransition(
-                TLocalDateTime.of(2000, TMonth.MARCH, 19, 1, 0), OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, -7, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransition trans = new TZoneOffsetTransition(TLocalDateTime.of(2000, TMonth.MARCH, 19, 1, 0),
+                OFFSET_0200, OFFSET_0300);
         assertEquals(test.createTransition(2000), trans);
     }
 
     @Test
     public void test_createTransition_floatingWeekBackwards_secondLast() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, -2, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransition trans = new TZoneOffsetTransition(
-                TLocalDateTime.of(2000, TMonth.MARCH, 26, 1, 0), OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, -2, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransition trans = new TZoneOffsetTransition(TLocalDateTime.of(2000, TMonth.MARCH, 26, 1, 0),
+                OFFSET_0200, OFFSET_0300);
         assertEquals(test.createTransition(2000), trans);
     }
 
     @Test
     public void test_createTransition_fixedDate() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransition trans = new TZoneOffsetTransition(
-                TLocalDateTime.of(2000, TMonth.MARCH, 20, 1, 0), OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, null, TIME_0100, false,
+                TimeDefinition.STANDARD, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransition trans = new TZoneOffsetTransition(TLocalDateTime.of(2000, TMonth.MARCH, 20, 1, 0),
+                OFFSET_0200, OFFSET_0300);
         assertEquals(test.createTransition(2000), trans);
     }
 
-    //-----------------------------------------------------------------------
-    // equals()
-    //-----------------------------------------------------------------------
     @Test
     public void test_equals_monthDifferent() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.APRIL, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.APRIL, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
@@ -294,12 +243,11 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     @Test
     public void test_equals_dayOfMonthDifferent() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 21, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 21, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
@@ -308,12 +256,11 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     @Test
     public void test_equals_dayOfWeekDifferent() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SATURDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SATURDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
@@ -322,12 +269,11 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     @Test
     public void test_equals_dayOfWeekDifferentNull() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, null, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, null, TIME_0100, false,
+                TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
@@ -336,12 +282,11 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     @Test
     public void test_equals_localTimeDifferent() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TLocalTime.MIDNIGHT, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY,
+                TLocalTime.MIDNIGHT, false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
@@ -350,12 +295,11 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     @Test
     public void test_equals_endOfDayDifferent() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TLocalTime.MIDNIGHT, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TLocalTime.MIDNIGHT, true, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY,
+                TLocalTime.MIDNIGHT, false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY,
+                TLocalTime.MIDNIGHT, true, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
@@ -364,12 +308,11 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     @Test
     public void test_equals_timeDefinitionDifferent() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.STANDARD,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.STANDARD, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
@@ -378,12 +321,11 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     @Test
     public void test_equals_standardOffsetDifferent() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0300, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0300, OFFSET_0200, OFFSET_0300);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
@@ -392,12 +334,11 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     @Test
     public void test_equals_offsetBeforeDifferent() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0300, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0300, OFFSET_0300);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
@@ -406,12 +347,11 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     @Test
     public void test_equals_offsetAfterDifferent() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0200);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0200);
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), false);
         assertEquals(b.equals(a), false);
@@ -420,108 +360,103 @@ public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     @Test
     public void test_equals_string_false() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.equals("TZDB"), false);
     }
 
     @Test
     public void test_equals_null_false() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.equals(null), false);
     }
 
-    //-----------------------------------------------------------------------
-    // hashCode()
-    //-----------------------------------------------------------------------
     @Test
     public void test_hashCode_floatingWeek_gap_notEndOfDay() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.hashCode(), b.hashCode());
     }
 
     @Test
     public void test_hashCode_floatingWeek_overlap_endOfDay_nullDayOfWeek() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.OCTOBER, 20, null, TLocalTime.MIDNIGHT, true, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0300, OFFSET_0200);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.OCTOBER, 20, null, TLocalTime.MIDNIGHT, true, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0300, OFFSET_0200);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.OCTOBER, 20, null, TLocalTime.MIDNIGHT, true,
+                TimeDefinition.WALL, OFFSET_0200, OFFSET_0300, OFFSET_0200);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.OCTOBER, 20, null, TLocalTime.MIDNIGHT, true,
+                TimeDefinition.WALL, OFFSET_0200, OFFSET_0300, OFFSET_0200);
         assertEquals(a.hashCode(), b.hashCode());
     }
 
     @Test
     public void test_hashCode_floatingWeekBackwards() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, -1, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, -1, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, -1, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, -1, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.hashCode(), b.hashCode());
     }
 
     @Test
     public void test_hashCode_fixedDate() {
-        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
+
+        TZoneOffsetTransitionRule a = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, null, TIME_0100, false,
+                TimeDefinition.STANDARD, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        TZoneOffsetTransitionRule b = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, null, TIME_0100, false,
+                TimeDefinition.STANDARD, OFFSET_0200, OFFSET_0200, OFFSET_0300);
         assertEquals(a.hashCode(), b.hashCode());
     }
 
-    //-----------------------------------------------------------------------
-    // toString()
-    //-----------------------------------------------------------------------
     @Test
     public void test_toString_floatingWeek_gap_notEndOfDay() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, SUNDAY on or after MARCH 20 at 01:00 WALL, standard offset +02:00]");
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        assertEquals(test.toString(),
+                "TransitionRule[Gap +02:00 to +03:00, SUNDAY on or after MARCH 20 at 01:00 WALL, standard offset +02:00]");
     }
 
     @Test
     public void test_toString_floatingWeek_overlap_endOfDay() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.OCTOBER, 20, TDayOfWeek.SUNDAY, TLocalTime.MIDNIGHT, true, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0300, OFFSET_0200);
-        assertEquals(test.toString(), "TransitionRule[Overlap +03:00 to +02:00, SUNDAY on or after OCTOBER 20 at 24:00 WALL, standard offset +02:00]");
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.OCTOBER, 20, TDayOfWeek.SUNDAY,
+                TLocalTime.MIDNIGHT, true, TimeDefinition.WALL, OFFSET_0200, OFFSET_0300, OFFSET_0200);
+        assertEquals(test.toString(),
+                "TransitionRule[Overlap +03:00 to +02:00, SUNDAY on or after OCTOBER 20 at 24:00 WALL, standard offset +02:00]");
     }
 
     @Test
     public void test_toString_floatingWeekBackwards_last() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, -1, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, SUNDAY on or before last day of MARCH at 01:00 WALL, standard offset +02:00]");
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, -1, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        assertEquals(test.toString(),
+                "TransitionRule[Gap +02:00 to +03:00, SUNDAY on or before last day of MARCH at 01:00 WALL, standard offset +02:00]");
     }
 
     @Test
     public void test_toString_floatingWeekBackwards_secondLast() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, -2, TDayOfWeek.SUNDAY, TIME_0100, false, TimeDefinition.WALL,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, SUNDAY on or before last day minus 1 of MARCH at 01:00 WALL, standard offset +02:00]");
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, -2, TDayOfWeek.SUNDAY, TIME_0100,
+                false, TimeDefinition.WALL, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        assertEquals(test.toString(),
+                "TransitionRule[Gap +02:00 to +03:00, SUNDAY on or before last day minus 1 of MARCH at 01:00 WALL, standard offset +02:00]");
     }
 
     @Test
     public void test_toString_fixedDate() {
-        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(
-                TMonth.MARCH, 20, null, TIME_0100, false, TimeDefinition.STANDARD,
-                OFFSET_0200, OFFSET_0200, OFFSET_0300);
-        assertEquals(test.toString(), "TransitionRule[Gap +02:00 to +03:00, MARCH 20 at 01:00 STANDARD, standard offset +02:00]");
+
+        TZoneOffsetTransitionRule test = TZoneOffsetTransitionRule.of(TMonth.MARCH, 20, null, TIME_0100, false,
+                TimeDefinition.STANDARD, OFFSET_0200, OFFSET_0200, OFFSET_0300);
+        assertEquals(test.toString(),
+                "TransitionRule[Gap +02:00 to +03:00, MARCH 20 at 01:00 STANDARD, standard offset +02:00]");
     }
 
 }

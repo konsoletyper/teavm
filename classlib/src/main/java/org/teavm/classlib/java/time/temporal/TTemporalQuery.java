@@ -31,8 +31,6 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import org.teavm.classlib.java.time.TDateTimeException;
-
 public interface TTemporalQuery<R> {
 
     R queryFrom(TTemporalAccessor temporal);

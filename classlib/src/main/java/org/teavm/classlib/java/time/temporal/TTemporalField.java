@@ -31,11 +31,10 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
-import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.format.TResolverStyle;
+import org.teavm.classlib.java.util.TLocale;
 
 public interface TTemporalField {
 
@@ -43,15 +42,12 @@ public interface TTemporalField {
 
     TTemporalUnit getRangeUnit();
 
-    //-----------------------------------------------------------------------
     TValueRange range();
 
-    //-----------------------------------------------------------------------
     boolean isDateBased();
 
     boolean isTimeBased();
 
-    //-----------------------------------------------------------------------
     boolean isSupportedBy(TTemporalAccessor temporal);
 
     TValueRange rangeRefinedBy(TTemporalAccessor temporal);
@@ -62,9 +58,7 @@ public interface TTemporalField {
 
     <R extends TTemporal> R adjustInto(R temporal, long newValue);
 
-    TTemporalAccessor resolve(
-                    Map<TTemporalField, Long> fieldValues,
-                    TTemporalAccessor partialTemporal,
-                    TResolverStyle resolverStyle);
+    TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues, TTemporalAccessor partialTemporal,
+            TResolverStyle resolverStyle);
 
 }

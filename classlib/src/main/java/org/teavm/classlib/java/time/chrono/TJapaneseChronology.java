@@ -49,14 +49,14 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
 import static org.teavm.classlib.java.time.temporal.TTemporalAdjusters.nextOrSame;
 
-import java.io.Serializable;
 import java.util.Arrays;
-import org.teavm.classlib.java.util.TCalendar;
+import java.util.Calendar;
 import java.util.HashMap;
 import java.util.List;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 import java.util.Map;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TClock;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TDayOfWeek;
@@ -69,88 +69,93 @@ import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TValueRange;
+import org.teavm.classlib.java.util.TCalendar;
 
-public final class TJapaneseChronology extends TChronology implements Serializable {
+public final class TJapaneseChronology extends TChronology implements TSerializable {
 
     // TLocale for creating a JapaneseImpericalCalendar.
-    static final TLocale LOCALE = new TLocale("ja", "JP", "JP");
+    static final Locale LOCALE = new Locale("ja", "JP", "JP");
 
     public static final TJapaneseChronology INSTANCE = new TJapaneseChronology();
 
-    private static final long serialVersionUID = 459996390165777884L;
+    private static final Map<String, String[]> ERA_NARROW_NAMES = new HashMap<>();
 
-    private static final Map<String, String[]> ERA_NARROW_NAMES = new HashMap<String, String[]>();
-    private static final Map<String, String[]> ERA_SHORT_NAMES = new HashMap<String, String[]>();
-    private static final Map<String, String[]> ERA_FULL_NAMES = new HashMap<String, String[]>();
+    private static final Map<String, String[]> ERA_SHORT_NAMES = new HashMap<>();
+
+    private static final Map<String, String[]> ERA_FULL_NAMES = new HashMap<>();
+
     private static final String FALLBACK_LANGUAGE = "en";
+
     private static final String TARGET_LANGUAGE = "ja";
 
     // TODO: replace all the hard-coded Maps with locale resources
     static {
-        ERA_NARROW_NAMES.put(FALLBACK_LANGUAGE, new String[]{"Unknown", "K", "M", "T", "S", "H"});
-        ERA_NARROW_NAMES.put(TARGET_LANGUAGE, new String[]{"Unknown", "K", "M", "T", "S", "H"});
-        ERA_SHORT_NAMES.put(FALLBACK_LANGUAGE, new String[]{"Unknown", "K", "M", "T", "S", "H"});
-        ERA_SHORT_NAMES.put(TARGET_LANGUAGE, new String[]{"Unknown", "\u6176", "\u660e", "\u5927", "\u662d", "\u5e73"});
-        ERA_FULL_NAMES.put(FALLBACK_LANGUAGE, new String[]{"Unknown", "Keio", "Meiji", "Taisho", "Showa", "Heisei"});
-        ERA_FULL_NAMES.put(TARGET_LANGUAGE,
-                new String[]{"Unknown", "\u6176\u5fdc", "\u660e\u6cbb", "\u5927\u6b63", "\u662d\u548c", "\u5e73\u6210"});
+        ERA_NARROW_NAMES.put(FALLBACK_LANGUAGE, new String[] { "Unknown", "K", "M", "T", "S", "H" });
+        ERA_NARROW_NAMES.put(TARGET_LANGUAGE, new String[] { "Unknown", "K", "M", "T", "S", "H" });
+        ERA_SHORT_NAMES.put(FALLBACK_LANGUAGE, new String[] { "Unknown", "K", "M", "T", "S", "H" });
+        ERA_SHORT_NAMES.put(TARGET_LANGUAGE,
+                new String[] { "Unknown", "\u6176", "\u660e", "\u5927", "\u662d", "\u5e73" });
+        ERA_FULL_NAMES.put(FALLBACK_LANGUAGE, new String[] { "Unknown", "Keio", "Meiji", "Taisho", "Showa", "Heisei" });
+        ERA_FULL_NAMES.put(TARGET_LANGUAGE, new String[] { "Unknown", "\u6176\u5fdc", "\u660e\u6cbb", "\u5927\u6b63",
+        "\u662d\u548c", "\u5e73\u6210" });
     }
 
-    //-----------------------------------------------------------------------
     private TJapaneseChronology() {
+
     }
 
-    private Object readResolve() {
-        return INSTANCE;
-    }
-
-    //-----------------------------------------------------------------------
     @Override
     public String getId() {
+
         return "Japanese";
     }
 
     @Override
     public String getCalendarType() {
+
         return "japanese";
     }
 
-    //-----------------------------------------------------------------------
-    @Override  // override with covariant return type
+    @Override
     public TJapaneseDate date(TEra era, int yearOfEra, int month, int dayOfMonth) {
+
         if (era instanceof TJapaneseEra == false) {
-            throw new ClassCastException("TEra must be TJapaneseEra");
+            throw new ClassCastException("Era must be JapaneseEra");
         }
         return TJapaneseDate.of((TJapaneseEra) era, yearOfEra, month, dayOfMonth);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TJapaneseDate date(int prolepticYear, int month, int dayOfMonth) {
+
         return new TJapaneseDate(TLocalDate.of(prolepticYear, month, dayOfMonth));
     }
 
     @Override
     public TJapaneseDate dateYearDay(TEra era, int yearOfEra, int dayOfYear) {
+
         if (era instanceof TJapaneseEra == false) {
-            throw new ClassCastException("TEra must be TJapaneseEra");
+            throw new ClassCastException("Era must be JapaneseEra");
         }
         return TJapaneseDate.ofYearDay((TJapaneseEra) era, yearOfEra, dayOfYear);
     }
 
     @Override
     public TJapaneseDate dateYearDay(int prolepticYear, int dayOfYear) {
+
         TLocalDate date = TLocalDate.ofYearDay(prolepticYear, dayOfYear);
         return date(prolepticYear, date.getMonthValue(), date.getDayOfMonth());
     }
 
     @Override
     public TJapaneseDate dateEpochDay(long epochDay) {
+
         return new TJapaneseDate(TLocalDate.ofEpochDay(epochDay));
     }
 
-    //-----------------------------------------------------------------------
-    @Override  // override with covariant return type
+    @Override
     public TJapaneseDate date(TTemporalAccessor temporal) {
+
         if (temporal instanceof TJapaneseDate) {
             return (TJapaneseDate) temporal;
         }
@@ -158,50 +163,56 @@ public final class TJapaneseChronology extends TChronology implements Serializab
     }
 
     @SuppressWarnings("unchecked")
-    @Override  // override with covariant return type
+    @Override
     public TChronoLocalDateTime<TJapaneseDate> localDateTime(TTemporalAccessor temporal) {
+
         return (TChronoLocalDateTime<TJapaneseDate>) super.localDateTime(temporal);
     }
 
     @SuppressWarnings("unchecked")
-    @Override  // override with covariant return type
+    @Override
     public TChronoZonedDateTime<TJapaneseDate> zonedDateTime(TTemporalAccessor temporal) {
+
         return (TChronoZonedDateTime<TJapaneseDate>) super.zonedDateTime(temporal);
     }
 
     @SuppressWarnings("unchecked")
-    @Override  // override with covariant return type
+    @Override
     public TChronoZonedDateTime<TJapaneseDate> zonedDateTime(TInstant instant, TZoneId zone) {
+
         return (TChronoZonedDateTime<TJapaneseDate>) super.zonedDateTime(instant, zone);
     }
 
-    //-----------------------------------------------------------------------
-    @Override  // override with covariant return type
+    @Override
     public TJapaneseDate dateNow() {
+
         return (TJapaneseDate) super.dateNow();
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TJapaneseDate dateNow(TZoneId zone) {
+
         return (TJapaneseDate) super.dateNow(zone);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TJapaneseDate dateNow(TClock clock) {
+
         TJdk8Methods.requireNonNull(clock, "clock");
         return (TJapaneseDate) super.dateNow(clock);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isLeapYear(long prolepticYear) {
+
         return TIsoChronology.INSTANCE.isLeapYear(prolepticYear);
     }
 
     @Override
     public int prolepticYear(TEra era, int yearOfEra) {
+
         if (era instanceof TJapaneseEra == false) {
-            throw new ClassCastException("TEra must be TJapaneseEra");
+            throw new ClassCastException("Era must be JapaneseEra");
         }
         TJapaneseEra jera = (TJapaneseEra) era;
         int isoYear = jera.startDate().getYear() + yearOfEra - 1;
@@ -212,17 +223,19 @@ public final class TJapaneseChronology extends TChronology implements Serializab
 
     @Override
     public TJapaneseEra eraOf(int eraValue) {
+
         return TJapaneseEra.of(eraValue);
     }
 
     @Override
     public List<TEra> eras() {
-        return Arrays.<TEra>asList(TJapaneseEra.values());
+
+        return Arrays.<TEra> asList(TJapaneseEra.values());
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TValueRange range(TChronoField field) {
+
         switch (field) {
             case DAY_OF_MONTH:
             case DAY_OF_WEEK:
@@ -244,7 +257,7 @@ public final class TJapaneseChronology extends TChronology implements Serializab
             case PROLEPTIC_MONTH:
                 return field.range();
         }
-        TCalendar jcal = TCalendar.getInstance(LOCALE);
+        Calendar jcal = Calendar.getInstance(LOCALE);
         switch (field) {
             case ERA: {
                 TJapaneseEra[] eras = TJapaneseEra.values();
@@ -265,8 +278,9 @@ public final class TJapaneseChronology extends TChronology implements Serializab
                 return TValueRange.of(1, 6, min, maxJapanese);
             }
             case MONTH_OF_YEAR:
-                return TValueRange.of(jcal.getMinimum(TCalendar.MONTH) + 1, jcal.getGreatestMinimum(TCalendar.MONTH) + 1,
-                                             jcal.getLeastMaximum(TCalendar.MONTH) + 1, jcal.getMaximum(TCalendar.MONTH) + 1);
+                return TValueRange.of(jcal.getMinimum(TCalendar.MONTH) + 1,
+                        jcal.getGreatestMinimum(TCalendar.MONTH) + 1, jcal.getLeastMaximum(TCalendar.MONTH) + 1,
+                        jcal.getMaximum(TCalendar.MONTH) + 1);
             case DAY_OF_YEAR: {
                 TJapaneseEra[] eras = TJapaneseEra.values();
                 int min = 366;
@@ -276,13 +290,14 @@ public final class TJapaneseChronology extends TChronology implements Serializab
                 return TValueRange.of(1, min, 366);
             }
             default:
-                 // TODO: review the remaining fields
+                // TODO: review the remaining fields
                 throw new UnsupportedOperationException("Unimplementable field: " + field);
         }
     }
 
     @Override
     public TJapaneseDate resolveDate(Map<TTemporalField, Long> fieldValues, TResolverStyle resolverStyle) {
+
         if (fieldValues.containsKey(EPOCH_DAY)) {
             return dateEpochDay(fieldValues.remove(EPOCH_DAY));
         }
@@ -305,7 +320,7 @@ public final class TJapaneseChronology extends TChronology implements Serializab
         }
         Long yoeLong = fieldValues.get(YEAR_OF_ERA);
         if (yoeLong != null) {
-            int yoe= range(YEAR_OF_ERA).checkValidIntValue(yoeLong, YEAR_OF_ERA);
+            int yoe = range(YEAR_OF_ERA).checkValidIntValue(yoeLong, YEAR_OF_ERA);
             if (era == null && resolverStyle != TResolverStyle.STRICT && fieldValues.containsKey(YEAR) == false) {
                 List<TEra> eras = eras();
                 era = (TJapaneseEra) eras.get(eras.size() - 1);
@@ -333,8 +348,10 @@ public final class TJapaneseChronology extends TChronology implements Serializab
                         long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_MONTH), 1);
                         return date(y, 1, 1).plusMonths(months).plusDays(days);
                     } else {
-                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
-                        int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
+                        int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR),
+                                MONTH_OF_YEAR);
+                        int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH),
+                                DAY_OF_MONTH);
                         if (resolverStyle == TResolverStyle.SMART && dom > 28) {
                             dom = Math.min(dom, date(y, moy, 1).lengthOfMonth());
                         }
@@ -352,7 +369,8 @@ public final class TJapaneseChronology extends TChronology implements Serializab
                         }
                         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
                         int aw = ALIGNED_WEEK_OF_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH));
-                        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
+                        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH
+                                .checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
                         TJapaneseDate date = date(y, moy, 1).plus((aw - 1) * 7 + (ad - 1), DAYS);
                         if (resolverStyle == TResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
                             throw new TDateTimeException("Strict mode rejected date parsed to a different month");
@@ -396,7 +414,8 @@ public final class TJapaneseChronology extends TChronology implements Serializab
                         return date(y, 1, 1).plus(weeks, WEEKS).plus(days, DAYS);
                     }
                     int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
-                    int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
+                    int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR
+                            .checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
                     TJapaneseDate date = date(y, 1, 1).plusDays((aw - 1) * 7 + (ad - 1));
                     if (resolverStyle == TResolverStyle.STRICT && date.get(YEAR) != y) {
                         throw new TDateTimeException("Strict mode rejected date parsed to a different year");
@@ -423,7 +442,9 @@ public final class TJapaneseChronology extends TChronology implements Serializab
         return null;
     }
 
-    private TJapaneseDate resolveEYMD(Map<TTemporalField, Long> fieldValues, TResolverStyle resolverStyle, TJapaneseEra era, int yoe) {
+    private TJapaneseDate resolveEYMD(Map<TTemporalField, Long> fieldValues, TResolverStyle resolverStyle,
+            TJapaneseEra era, int yoe) {
+
         if (resolverStyle == TResolverStyle.LENIENT) {
             int y = era.startDate().getYear() + yoe - 1;
             long months = TJdk8Methods.safeSubtract(fieldValues.remove(MONTH_OF_YEAR), 1);
@@ -432,7 +453,7 @@ public final class TJapaneseChronology extends TChronology implements Serializab
         }
         int moy = range(MONTH_OF_YEAR).checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR), MONTH_OF_YEAR);
         int dom = range(DAY_OF_MONTH).checkValidIntValue(fieldValues.remove(DAY_OF_MONTH), DAY_OF_MONTH);
-        if (resolverStyle == TResolverStyle.SMART) {  // previous valid
+        if (resolverStyle == TResolverStyle.SMART) { // previous valid
             if (yoe < 1) {
                 throw new TDateTimeException("Invalid YearOfEra: " + yoe);
             }
@@ -444,10 +465,10 @@ public final class TJapaneseChronology extends TChronology implements Serializab
             if (jd.getEra() != era) {
                 // ensure within calendar year of change
                 if (Math.abs(jd.getEra().getValue() - era.getValue()) > 1) {
-                    throw new TDateTimeException("Invalid TEra/YearOfEra: " + era + " " + yoe);
+                    throw new TDateTimeException("Invalid Era/YearOfEra: " + era + " " + yoe);
                 }
                 if (jd.get(YEAR_OF_ERA) != 1 && yoe != 1) {
-                    throw new TDateTimeException("Invalid TEra/YearOfEra: " + era + " " + yoe);
+                    throw new TDateTimeException("Invalid Era/YearOfEra: " + era + " " + yoe);
                 }
             }
             return jd;
@@ -455,14 +476,16 @@ public final class TJapaneseChronology extends TChronology implements Serializab
         return date(era, yoe, moy, dom);
     }
 
-    private TJapaneseDate resolveEYD(Map<TTemporalField, Long> fieldValues, TResolverStyle resolverStyle, TJapaneseEra era, int yoe) {
+    private TJapaneseDate resolveEYD(Map<TTemporalField, Long> fieldValues, TResolverStyle resolverStyle,
+            TJapaneseEra era, int yoe) {
+
         if (resolverStyle == TResolverStyle.LENIENT) {
             int y = era.startDate().getYear() + yoe - 1;
             long days = TJdk8Methods.safeSubtract(fieldValues.remove(DAY_OF_YEAR), 1);
             return dateYearDay(y, 1).plus(days, DAYS);
         }
         int doy = range(DAY_OF_YEAR).checkValidIntValue(fieldValues.remove(DAY_OF_YEAR), DAY_OF_YEAR);
-        return dateYearDay(era, yoe, doy);  // smart is same as strict
+        return dateYearDay(era, yoe, doy); // smart is same as strict
     }
 
 }

@@ -39,15 +39,8 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_DAY;
 import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
-
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.format.TDateTimeParseException;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
@@ -64,50 +57,54 @@ import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 import org.teavm.classlib.java.time.zone.TZoneRules;
 
-public final class TOffsetTime
-        extends TDefaultInterfaceTemporalAccessor
-        implements TTemporal, TTemporalAdjuster, Comparable<TOffsetTime>, Serializable {
+public final class TOffsetTime extends TDefaultInterfaceTemporalAccessor
+        implements TTemporal, TTemporalAdjuster, Comparable<TOffsetTime>, TSerializable {
 
     public static final TOffsetTime MIN = TLocalTime.MIN.atOffset(TZoneOffset.MAX);
+
     public static final TOffsetTime MAX = TLocalTime.MAX.atOffset(TZoneOffset.MIN);
+
     public static final TTemporalQuery<TOffsetTime> FROM = new TTemporalQuery<TOffsetTime>() {
         @Override
         public TOffsetTime queryFrom(TTemporalAccessor temporal) {
+
             return TOffsetTime.from(temporal);
         }
     };
 
-    private static final long serialVersionUID = 7264499704384272492L;
-
     private final TLocalTime time;
+
     private final TZoneOffset offset;
 
-    //-----------------------------------------------------------------------
     public static TOffsetTime now() {
+
         return now(TClock.systemDefaultZone());
     }
 
     public static TOffsetTime now(TZoneId zone) {
+
         return now(TClock.system(zone));
     }
 
     public static TOffsetTime now(TClock clock) {
+
         TJdk8Methods.requireNonNull(clock, "clock");
-        final TInstant now = clock.instant();  // called once
+        final TInstant now = clock.instant(); // called once
         return ofInstant(now, clock.getZone().getRules().getOffset(now));
     }
 
-    //-----------------------------------------------------------------------
     public static TOffsetTime of(TLocalTime time, TZoneOffset offset) {
+
         return new TOffsetTime(time, offset);
     }
 
     public static TOffsetTime of(int hour, int minute, int second, int nanoOfSecond, TZoneOffset offset) {
+
         return new TOffsetTime(TLocalTime.of(hour, minute, second, nanoOfSecond), offset);
     }
 
-    //-----------------------------------------------------------------------
     public static TOffsetTime ofInstant(TInstant instant, TZoneId zone) {
+
         TJdk8Methods.requireNonNull(instant, "instant");
         TJdk8Methods.requireNonNull(zone, "zone");
         TZoneRules rules = zone.getRules();
@@ -121,8 +118,8 @@ public final class TOffsetTime
         return new TOffsetTime(time, offset);
     }
 
-    //-----------------------------------------------------------------------
     public static TOffsetTime from(TTemporalAccessor temporal) {
+
         if (temporal instanceof TOffsetTime) {
             return (TOffsetTime) temporal;
         }
@@ -131,37 +128,39 @@ public final class TOffsetTime
             TZoneOffset offset = TZoneOffset.from(temporal);
             return new TOffsetTime(time, offset);
         } catch (TDateTimeException ex) {
-            throw new TDateTimeException("Unable to obtain TOffsetTime from TTemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new TDateTimeException("Unable to obtain TOffsetTime from TTemporalAccessor: " + temporal + ", type "
+                    + temporal.getClass().getName());
         }
     }
 
-    //-----------------------------------------------------------------------
     public static TOffsetTime parse(CharSequence text) {
+
         return parse(text, TDateTimeFormatter.ISO_OFFSET_TIME);
     }
 
     public static TOffsetTime parse(CharSequence text, TDateTimeFormatter formatter) {
+
         TJdk8Methods.requireNonNull(formatter, "formatter");
         return formatter.parse(text, TOffsetTime.FROM);
     }
 
-    //-----------------------------------------------------------------------
     private TOffsetTime(TLocalTime time, TZoneOffset offset) {
+
         this.time = TJdk8Methods.requireNonNull(time, "time");
         this.offset = TJdk8Methods.requireNonNull(offset, "offset");
     }
 
     private TOffsetTime with(TLocalTime time, TZoneOffset offset) {
+
         if (this.time == time && this.offset.equals(offset)) {
             return this;
         }
         return new TOffsetTime(time, offset);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isSupported(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             return field.isTimeBased() || field == OFFSET_SECONDS;
         }
@@ -170,6 +169,7 @@ public final class TOffsetTime
 
     @Override
     public boolean isSupported(TTemporalUnit unit) {
+
         if (unit instanceof TChronoUnit) {
             return unit.isTimeBased();
         }
@@ -178,74 +178,82 @@ public final class TOffsetTime
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             if (field == OFFSET_SECONDS) {
                 return field.range();
             }
-            return time.range(field);
+            return this.time.range(field);
         }
         return field.rangeRefinedBy(this);
     }
 
-    @Override  // override for Javadoc
+    @Override
     public int get(TTemporalField field) {
+
         return super.get(field);
     }
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             if (field == OFFSET_SECONDS) {
                 return getOffset().getTotalSeconds();
             }
-            return time.getLong(field);
+            return this.time.getLong(field);
         }
         return field.getFrom(this);
     }
 
-    //-----------------------------------------------------------------------
     public TZoneOffset getOffset() {
-        return offset;
+
+        return this.offset;
     }
 
     public TOffsetTime withOffsetSameLocal(TZoneOffset offset) {
-        return offset != null && offset.equals(this.offset) ? this : new TOffsetTime(time, offset);
+
+        return offset != null && offset.equals(this.offset) ? this : new TOffsetTime(this.time, offset);
     }
 
     public TOffsetTime withOffsetSameInstant(TZoneOffset offset) {
+
         if (offset.equals(this.offset)) {
             return this;
         }
         int difference = offset.getTotalSeconds() - this.offset.getTotalSeconds();
-        TLocalTime adjusted = time.plusSeconds(difference);
+        TLocalTime adjusted = this.time.plusSeconds(difference);
         return new TOffsetTime(adjusted, offset);
     }
 
-    //-----------------------------------------------------------------------
     public int getHour() {
-        return time.getHour();
+
+        return this.time.getHour();
     }
 
     public int getMinute() {
-        return time.getMinute();
+
+        return this.time.getMinute();
     }
 
     public int getSecond() {
-        return time.getSecond();
+
+        return this.time.getSecond();
     }
 
     public int getNano() {
-        return time.getNano();
+
+        return this.time.getNano();
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TOffsetTime with(TTemporalAdjuster adjuster) {
+
         // optimizations
         if (adjuster instanceof TLocalTime) {
-            return with((TLocalTime) adjuster, offset);
+            return with((TLocalTime) adjuster, this.offset);
         } else if (adjuster instanceof TZoneOffset) {
-            return with(time, (TZoneOffset) adjuster);
+            return with(this.time, (TZoneOffset) adjuster);
         } else if (adjuster instanceof TOffsetTime) {
             return (TOffsetTime) adjuster;
         }
@@ -254,108 +262,122 @@ public final class TOffsetTime
 
     @Override
     public TOffsetTime with(TTemporalField field, long newValue) {
+
         if (field instanceof TChronoField) {
             if (field == OFFSET_SECONDS) {
                 TChronoField f = (TChronoField) field;
-                return with(time, TZoneOffset.ofTotalSeconds(f.checkValidIntValue(newValue)));
+                return with(this.time, TZoneOffset.ofTotalSeconds(f.checkValidIntValue(newValue)));
             }
-            return with(time.with(field, newValue), offset);
+            return with(this.time.with(field, newValue), this.offset);
         }
         return field.adjustInto(this, newValue);
     }
 
-    //-----------------------------------------------------------------------
     public TOffsetTime withHour(int hour) {
-        return with(time.withHour(hour), offset);
+
+        return with(this.time.withHour(hour), this.offset);
     }
 
     public TOffsetTime withMinute(int minute) {
-        return with(time.withMinute(minute), offset);
+
+        return with(this.time.withMinute(minute), this.offset);
     }
 
     public TOffsetTime withSecond(int second) {
-        return with(time.withSecond(second), offset);
+
+        return with(this.time.withSecond(second), this.offset);
     }
 
     public TOffsetTime withNano(int nanoOfSecond) {
-        return with(time.withNano(nanoOfSecond), offset);
+
+        return with(this.time.withNano(nanoOfSecond), this.offset);
     }
 
-    //-----------------------------------------------------------------------
     public TOffsetTime truncatedTo(TTemporalUnit unit) {
-        return with(time.truncatedTo(unit), offset);
+
+        return with(this.time.truncatedTo(unit), this.offset);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TOffsetTime plus(TTemporalAmount amount) {
+
         return (TOffsetTime) amount.addTo(this);
     }
 
     @Override
     public TOffsetTime plus(long amountToAdd, TTemporalUnit unit) {
+
         if (unit instanceof TChronoUnit) {
-            return with(time.plus(amountToAdd, unit), offset);
+            return with(this.time.plus(amountToAdd, unit), this.offset);
         }
         return unit.addTo(this, amountToAdd);
     }
 
-    //-----------------------------------------------------------------------
     public TOffsetTime plusHours(long hours) {
-        return with(time.plusHours(hours), offset);
+
+        return with(this.time.plusHours(hours), this.offset);
     }
 
     public TOffsetTime plusMinutes(long minutes) {
-        return with(time.plusMinutes(minutes), offset);
+
+        return with(this.time.plusMinutes(minutes), this.offset);
     }
 
     public TOffsetTime plusSeconds(long seconds) {
-        return with(time.plusSeconds(seconds), offset);
+
+        return with(this.time.plusSeconds(seconds), this.offset);
     }
 
     public TOffsetTime plusNanos(long nanos) {
-        return with(time.plusNanos(nanos), offset);
+
+        return with(this.time.plusNanos(nanos), this.offset);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TOffsetTime minus(TTemporalAmount amount) {
+
         return (TOffsetTime) amount.subtractFrom(this);
     }
 
     @Override
     public TOffsetTime minus(long amountToSubtract, TTemporalUnit unit) {
-        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
+
+        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit));
     }
 
-    //-----------------------------------------------------------------------
     public TOffsetTime minusHours(long hours) {
-        return with(time.minusHours(hours), offset);
+
+        return with(this.time.minusHours(hours), this.offset);
     }
 
     public TOffsetTime minusMinutes(long minutes) {
-        return with(time.minusMinutes(minutes), offset);
+
+        return with(this.time.minusMinutes(minutes), this.offset);
     }
 
     public TOffsetTime minusSeconds(long seconds) {
-        return with(time.minusSeconds(seconds), offset);
+
+        return with(this.time.minusSeconds(seconds), this.offset);
     }
 
     public TOffsetTime minusNanos(long nanos) {
-        return with(time.minusNanos(nanos), offset);
+
+        return with(this.time.minusNanos(nanos), this.offset);
     }
 
-    //-----------------------------------------------------------------------
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
+
         if (query == TTemporalQueries.precision()) {
             return (R) NANOS;
         } else if (query == TTemporalQueries.offset() || query == TTemporalQueries.zone()) {
             return (R) getOffset();
         } else if (query == TTemporalQueries.localTime()) {
-            return (R) time;
-        } else if (query == TTemporalQueries.chronology() || query == TTemporalQueries.localDate() || query == TTemporalQueries.zoneId()) {
+            return (R) this.time;
+        } else if (query == TTemporalQueries.chronology() || query == TTemporalQueries.localDate()
+                || query == TTemporalQueries.zoneId()) {
             return null;
         }
         return super.query(query);
@@ -363,120 +385,111 @@ public final class TOffsetTime
 
     @Override
     public TTemporal adjustInto(TTemporal temporal) {
-        return temporal
-                .with(NANO_OF_DAY, time.toNanoOfDay())
-                .with(OFFSET_SECONDS, getOffset().getTotalSeconds());
+
+        return temporal.with(NANO_OF_DAY, this.time.toNanoOfDay()).with(OFFSET_SECONDS, getOffset().getTotalSeconds());
     }
 
     @Override
     public long until(TTemporal endExclusive, TTemporalUnit unit) {
+
         TOffsetTime end = TOffsetTime.from(endExclusive);
         if (unit instanceof TChronoUnit) {
-            long nanosUntil = end.toEpochNano() - toEpochNano();  // no overflow
+            long nanosUntil = end.toEpochNano() - toEpochNano(); // no overflow
             switch ((TChronoUnit) unit) {
-                case NANOS: return nanosUntil;
-                case MICROS: return nanosUntil / 1000;
-                case MILLIS: return nanosUntil / 1000000;
-                case SECONDS: return nanosUntil / NANOS_PER_SECOND;
-                case MINUTES: return nanosUntil / NANOS_PER_MINUTE;
-                case HOURS: return nanosUntil / NANOS_PER_HOUR;
-                case HALF_DAYS: return nanosUntil / (12 * NANOS_PER_HOUR);
+                case NANOS:
+                    return nanosUntil;
+                case MICROS:
+                    return nanosUntil / 1000;
+                case MILLIS:
+                    return nanosUntil / 1000000;
+                case SECONDS:
+                    return nanosUntil / NANOS_PER_SECOND;
+                case MINUTES:
+                    return nanosUntil / NANOS_PER_MINUTE;
+                case HOURS:
+                    return nanosUntil / NANOS_PER_HOUR;
+                case HALF_DAYS:
+                    return nanosUntil / (12 * NANOS_PER_HOUR);
             }
             throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
         return unit.between(this, end);
     }
 
-    //-----------------------------------------------------------------------
     public TOffsetDateTime atDate(TLocalDate date) {
-        return TOffsetDateTime.of(date, time, offset);
+
+        return TOffsetDateTime.of(date, this.time, this.offset);
     }
 
-    //-----------------------------------------------------------------------
     public TLocalTime toLocalTime() {
-        return time;
+
+        return this.time;
     }
 
-    //-----------------------------------------------------------------------
     private long toEpochNano() {
-        long nod = time.toNanoOfDay();
-        long offsetNanos = offset.getTotalSeconds() * NANOS_PER_SECOND;
+
+        long nod = this.time.toNanoOfDay();
+        long offsetNanos = this.offset.getTotalSeconds() * NANOS_PER_SECOND;
         return nod - offsetNanos;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public int compareTo(TOffsetTime other) {
-        if (offset.equals(other.offset)) {
-            return time.compareTo(other.time);
+
+        if (this.offset.equals(other.offset)) {
+            return this.time.compareTo(other.time);
         }
         int compare = TJdk8Methods.compareLongs(toEpochNano(), other.toEpochNano());
         if (compare == 0) {
-            compare = time.compareTo(other.time);
+            compare = this.time.compareTo(other.time);
         }
         return compare;
     }
 
-    //-----------------------------------------------------------------------
     public boolean isAfter(TOffsetTime other) {
+
         return toEpochNano() > other.toEpochNano();
     }
 
     public boolean isBefore(TOffsetTime other) {
+
         return toEpochNano() < other.toEpochNano();
     }
 
     public boolean isEqual(TOffsetTime other) {
+
         return toEpochNano() == other.toEpochNano();
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
             return true;
         }
         if (obj instanceof TOffsetTime) {
             TOffsetTime other = (TOffsetTime) obj;
-            return time.equals(other.time) && offset.equals(other.offset);
+            return this.time.equals(other.time) && this.offset.equals(other.offset);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return time.hashCode() ^ offset.hashCode();
+
+        return this.time.hashCode() ^ this.offset.hashCode();
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
-        return time.toString() + offset.toString();
+
+        return this.time.toString() + this.offset.toString();
     }
 
     public String format(TDateTimeFormatter formatter) {
+
         TJdk8Methods.requireNonNull(formatter, "formatter");
         return formatter.format(this);
-    }
-
-    // -----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.OFFSET_TIME_TYPE, this);
-    }
-
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        time.writeExternal(out);
-        offset.writeExternal(out);
-    }
-
-    static TOffsetTime readExternal(DataInput in) throws IOException {
-        TLocalTime time = TLocalTime.readExternal(in);
-        TZoneOffset offset = TZoneOffset.readExternal(in);
-        return TOffsetTime.of(time, offset);
     }
 
 }

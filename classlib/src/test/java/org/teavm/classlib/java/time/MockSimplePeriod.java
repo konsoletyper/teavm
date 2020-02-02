@@ -43,20 +43,23 @@ import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAmount;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 
-public final class MockSimplePeriod
-        implements TTemporalAmount, Comparable<MockSimplePeriod> {
+public final class MockSimplePeriod implements TTemporalAmount, Comparable<MockSimplePeriod> {
 
     public static final MockSimplePeriod ZERO_DAYS = new MockSimplePeriod(0, DAYS);
+
     public static final MockSimplePeriod ZERO_SECONDS = new MockSimplePeriod(0, SECONDS);
 
     private final long amount;
+
     private final TTemporalUnit unit;
 
     public static MockSimplePeriod of(long amount, TTemporalUnit unit) {
+
         return new MockSimplePeriod(amount, unit);
     }
 
     private MockSimplePeriod(long amount, TTemporalUnit unit) {
+
         TJdk8Methods.requireNonNull(unit, "unit");
         if (unit == FOREVER) {
             throw new TDateTimeException("Cannot create a period of the Forever unit");
@@ -65,70 +68,76 @@ public final class MockSimplePeriod
         this.unit = unit;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public List<TTemporalUnit> getUnits() {
-        return Collections.singletonList(unit);
+
+        return Collections.singletonList(this.unit);
     }
 
     @Override
     public long get(TTemporalUnit unit) {
+
         if (this.unit.equals(unit)) {
-            return amount;
+            return this.amount;
         }
         throw new TDateTimeException("Unsupported unit: " + unit);
     }
 
-    //-----------------------------------------------------------------------
     public long getAmount() {
-        return amount;
+
+        return this.amount;
     }
 
     public TTemporalUnit getUnit() {
-        return unit;
+
+        return this.unit;
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public TTemporal addTo(TTemporal dateTime) {
-        return dateTime.plus(amount, unit);
+
+        return dateTime.plus(this.amount, this.unit);
     }
 
     @Override
     public TTemporal subtractFrom(TTemporal dateTime) {
-        return dateTime.minus(amount, unit);
+
+        return dateTime.minus(this.amount, this.unit);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public int compareTo(MockSimplePeriod otherPeriod) {
-        if (unit.equals(otherPeriod.getUnit()) == false) {
-            throw new IllegalArgumentException("Units cannot be compared: " + unit + " and " + otherPeriod.getUnit());
+
+        if (this.unit.equals(otherPeriod.getUnit()) == false) {
+            throw new IllegalArgumentException(
+                    "Units cannot be compared: " + this.unit + " and " + otherPeriod.getUnit());
         }
-        return TJdk8Methods.compareLongs(amount, otherPeriod.amount);
+        return TJdk8Methods.compareLongs(this.amount, otherPeriod.amount);
     }
 
     @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
-           return true;
+            return true;
         }
         if (obj instanceof MockSimplePeriod) {
             MockSimplePeriod other = (MockSimplePeriod) obj;
-            return this.amount == other.amount &&
-                    this.unit.equals(other.unit);
+            return this.amount == other.amount && this.unit.equals(other.unit);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return unit.hashCode() ^ (int) (amount ^ (amount >>> 32));
+
+        return this.unit.hashCode() ^ (int) (this.amount ^ (this.amount >>> 32));
     }
 
     @Override
     public String toString() {
-        return amount + " " + unit;
+
+        return this.amount + " " + this.unit;
     }
 
 }

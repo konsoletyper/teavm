@@ -36,7 +36,6 @@ import static org.junit.Assert.assertTrue;
 
 import java.util.Set;
 
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.TZoneId;
 import org.teavm.classlib.java.time.TZoneOffset;
@@ -44,70 +43,84 @@ import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.ZoneIdPrint
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.zone.TZoneRulesProvider;
 
-@Test
 public class TestZoneIdParser extends AbstractTestPrinterParser {
 
     private static final String AMERICA_DENVER = "America/Denver";
+
     private static final TZoneId TIME_ZONE_DENVER = TZoneId.of(AMERICA_DENVER);
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="error")
     Object[][] data_error() {
+
         return new Object[][] {
-            {new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null), "hello", -1, IndexOutOfBoundsException.class},
-            {new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null), "hello", 6, IndexOutOfBoundsException.class},
-        };
+        { new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null), "hello", -1, IndexOutOfBoundsException.class },
+        { new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null), "hello", 6, IndexOutOfBoundsException.class }, };
     }
 
-    @Test(dataProvider="error")
-    public void test_parse_error(ZoneIdPrinterParser pp, String text, int pos, Class<?> expected) {
-        try {
-            pp.parse(parseContext, text, pos);
-        } catch (RuntimeException ex) {
-            assertTrue(expected.isInstance(ex));
-            assertEquals(parseContext.toParsed().fieldValues.size(), 0);
+    @Test
+    public void test_parse_error() {
+
+        for (Object[] data : data_error()) {
+            ZoneIdPrinterParser pp = (ZoneIdPrinterParser) data[0];
+            String text = (String) data[1];
+            int pos = (int) data[2];
+            Class<?> expected = (Class<?>) data[3];
+
+            try {
+                pp.parse(this.parseContext, text, pos);
+            } catch (RuntimeException ex) {
+                assertTrue(expected.isInstance(ex));
+                assertEquals(this.parseContext.toParsed().fieldValues.size(), 0);
+            }
         }
     }
 
-    //-----------------------------------------------------------------------
-    public void test_parse_exactMatch_Denver() throws Exception {
+    @Test
+    public void test_parse_exactMatch_Denver() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        int result = pp.parse(parseContext, AMERICA_DENVER, 0);
+        int result = pp.parse(this.parseContext, AMERICA_DENVER, 0);
         assertEquals(result, AMERICA_DENVER.length());
         assertParsed(TIME_ZONE_DENVER);
     }
 
-    public void test_parse_startStringMatch_Denver() throws Exception {
+    @Test
+    public void test_parse_startStringMatch_Denver() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        int result = pp.parse(parseContext, AMERICA_DENVER + "OTHER", 0);
+        int result = pp.parse(this.parseContext, AMERICA_DENVER + "OTHER", 0);
         assertEquals(result, AMERICA_DENVER.length());
         assertParsed(TIME_ZONE_DENVER);
     }
 
-    public void test_parse_midStringMatch_Denver() throws Exception {
+    @Test
+    public void test_parse_midStringMatch_Denver() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        int result = pp.parse(parseContext, "OTHER" + AMERICA_DENVER + "OTHER", 5);
+        int result = pp.parse(this.parseContext, "OTHER" + AMERICA_DENVER + "OTHER", 5);
         assertEquals(result, 5 + AMERICA_DENVER.length());
         assertParsed(TIME_ZONE_DENVER);
     }
 
-    public void test_parse_endStringMatch_Denver() throws Exception {
+    @Test
+    public void test_parse_endStringMatch_Denver() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        int result = pp.parse(parseContext, "OTHER" + AMERICA_DENVER, 5);
-        assertEquals(result, 5+ AMERICA_DENVER.length());
+        int result = pp.parse(this.parseContext, "OTHER" + AMERICA_DENVER, 5);
+        assertEquals(result, 5 + AMERICA_DENVER.length());
         assertParsed(TIME_ZONE_DENVER);
     }
 
-    public void test_parse_partialMatch() throws Exception {
+    @Test
+    public void test_parse_partialMatch() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        int result = pp.parse(parseContext, "OTHERAmerica/Bogusville", 5);
+        int result = pp.parse(this.parseContext, "OTHERAmerica/Bogusville", 5);
         assertEquals(result, -6);
         assertParsed(null);
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="zones")
     Object[][] populateTestData() {
+
         Set<String> ids = TZoneRulesProvider.getAvailableZoneIds();
         Object[][] rtnval = new Object[ids.size()][];
         int i = 0;
@@ -117,61 +130,76 @@ public class TestZoneIdParser extends AbstractTestPrinterParser {
         return rtnval;
     }
 
-    @Test(dataProvider="zones")
-    public void test_parse_exactMatch(String parse, TZoneId expected) throws Exception {
-        ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        int result = pp.parse(parseContext, parse, 0);
-        assertEquals(result, parse.length());
-        assertParsed(expected);
+    @Test
+    public void test_parse_exactMatch() {
+
+        for (Object[] data : populateTestData()) {
+            String parse = (String) data[0];
+            TZoneId expected = (TZoneId) data[0];
+
+            ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
+            int result = pp.parse(this.parseContext, parse, 0);
+            assertEquals(result, parse.length());
+            assertParsed(expected);
+        }
     }
 
     @Test
-    public void test_parse_lowerCase() throws Exception {
+    public void test_parse_lowerCase() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        parseContext.setCaseSensitive(false);
-        int result = pp.parse(parseContext, "europe/london", 0);
+        this.parseContext.setCaseSensitive(false);
+        int result = pp.parse(this.parseContext, "europe/london", 0);
         assertEquals(result, 13);
         assertParsed(TZoneId.of("Europe/London"));
     }
 
-    //-----------------------------------------------------------------------
-    public void test_parse_endStringMatch_utc() throws Exception {
+    @Test
+    public void test_parse_endStringMatch_utc() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        int result = pp.parse(parseContext, "OTHERZ", 5);
+        int result = pp.parse(this.parseContext, "OTHERZ", 5);
         assertEquals(result, 6);
         assertParsed(TZoneOffset.UTC);
     }
 
-    public void test_parse_endStringMatch_utc_plus1() throws Exception {
+    @Test
+    public void test_parse_endStringMatch_utc_plus1() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        int result = pp.parse(parseContext, "OTHER+01:00", 5);
+        int result = pp.parse(this.parseContext, "OTHER+01:00", 5);
         assertEquals(result, 11);
         assertParsed(TZoneId.of("+01:00"));
     }
 
-    //-----------------------------------------------------------------------
-    public void test_parse_midStringMatch_utc() throws Exception {
+    @Test
+    public void test_parse_midStringMatch_utc() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        int result = pp.parse(parseContext, "OTHERZOTHER", 5);
+        int result = pp.parse(this.parseContext, "OTHERZOTHER", 5);
         assertEquals(result, 6);
         assertParsed(TZoneOffset.UTC);
     }
 
-    public void test_parse_midStringMatch_utc_plus1() throws Exception {
+    @Test
+    public void test_parse_midStringMatch_utc_plus1() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
-        int result = pp.parse(parseContext, "OTHER+01:00OTHER", 5);
+        int result = pp.parse(this.parseContext, "OTHER+01:00OTHER", 5);
         assertEquals(result, 11);
         assertParsed(TZoneId.of("+01:00"));
     }
 
-    //-----------------------------------------------------------------------
+    @Test
     public void test_toString_id() {
+
         ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), "TZoneId()");
         assertEquals(pp.toString(), "TZoneId()");
     }
 
     private void assertParsed(TZoneId expectedZone) {
-        assertEquals(parseContext.toParsed().zone, expectedZone);
+
+        assertEquals(this.parseContext.toParsed().zone, expectedZone);
     }
 
 }

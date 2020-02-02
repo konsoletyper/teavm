@@ -34,7 +34,7 @@ package org.teavm.classlib.java.time;
 import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
 
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
@@ -52,36 +52,28 @@ import org.teavm.classlib.java.time.temporal.TValueRange;
 
 public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
 
-    JANUARY,
-    FEBRUARY,
-    MARCH,
-    APRIL,
-    MAY,
-    JUNE,
-    JULY,
-    AUGUST,
-    SEPTEMBER,
-    OCTOBER,
-    NOVEMBER,
-    DECEMBER;
+    JANUARY, FEBRUARY, MARCH, APRIL, MAY, JUNE, JULY, AUGUST, SEPTEMBER, OCTOBER, NOVEMBER, DECEMBER;
+
     public static final TTemporalQuery<TMonth> FROM = new TTemporalQuery<TMonth>() {
         @Override
         public TMonth queryFrom(TTemporalAccessor temporal) {
+
             return TMonth.from(temporal);
         }
     };
+
     private static final TMonth[] ENUMS = TMonth.values();
 
-    //-----------------------------------------------------------------------
     public static TMonth of(int month) {
+
         if (month < 1 || month > 12) {
             throw new TDateTimeException("Invalid value for MonthOfYear: " + month);
         }
         return ENUMS[month - 1];
     }
 
-    //-----------------------------------------------------------------------
     public static TMonth from(TTemporalAccessor temporal) {
+
         if (temporal instanceof TMonth) {
             return (TMonth) temporal;
         }
@@ -91,24 +83,24 @@ public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
             }
             return of(temporal.get(MONTH_OF_YEAR));
         } catch (TDateTimeException ex) {
-            throw new TDateTimeException("Unable to obtain TMonth from TTemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName(), ex);
+            throw new TDateTimeException("Unable to obtain TMonth from TTemporalAccessor: " + temporal + ", type "
+                    + temporal.getClass().getName(), ex);
         }
     }
 
-    //-----------------------------------------------------------------------
     public int getValue() {
+
         return ordinal() + 1;
     }
 
-    //-----------------------------------------------------------------------
-    public String getDisplayName(TTextStyle style, TLocale locale) {
+    public String getDisplayName(TTextStyle style, Locale locale) {
+
         return new TDateTimeFormatterBuilder().appendText(MONTH_OF_YEAR, style).toFormatter(locale).format(this);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isSupported(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             return field == MONTH_OF_YEAR;
         }
@@ -117,6 +109,7 @@ public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field == MONTH_OF_YEAR) {
             return field.range();
         } else if (field instanceof TChronoField) {
@@ -127,6 +120,7 @@ public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
 
     @Override
     public int get(TTemporalField field) {
+
         if (field == MONTH_OF_YEAR) {
             return getValue();
         }
@@ -135,6 +129,7 @@ public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field == MONTH_OF_YEAR) {
             return getValue();
         } else if (field instanceof TChronoField) {
@@ -143,18 +138,19 @@ public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
         return field.getFrom(this);
     }
 
-    //-----------------------------------------------------------------------
     public TMonth plus(long months) {
+
         int amount = (int) (months % 12);
         return ENUMS[(ordinal() + (amount + 12)) % 12];
     }
 
     public TMonth minus(long months) {
+
         return plus(-(months % 12));
     }
 
-    //-----------------------------------------------------------------------
     public int length(boolean leapYear) {
+
         switch (this) {
             case FEBRUARY:
                 return (leapYear ? 29 : 28);
@@ -169,6 +165,7 @@ public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
     }
 
     public int minLength() {
+
         switch (this) {
             case FEBRUARY:
                 return 28;
@@ -183,6 +180,7 @@ public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
     }
 
     public int maxLength() {
+
         switch (this) {
             case FEBRUARY:
                 return 29;
@@ -196,8 +194,8 @@ public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
         }
     }
 
-    //-----------------------------------------------------------------------
     public int firstDayOfYear(boolean leapYear) {
+
         int leap = leapYear ? 1 : 0;
         switch (this) {
             case JANUARY:
@@ -229,19 +227,21 @@ public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
     }
 
     public TMonth firstMonthOfQuarter() {
+
         return ENUMS[(ordinal() / 3) * 3];
     }
 
-    //-----------------------------------------------------------------------
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
+
         if (query == TTemporalQueries.chronology()) {
             return (R) TIsoChronology.INSTANCE;
         } else if (query == TTemporalQueries.precision()) {
             return (R) MONTHS;
-        } else if (query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime() ||
-                query == TTemporalQueries.zone() || query == TTemporalQueries.zoneId() || query == TTemporalQueries.offset()) {
+        } else if (query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime()
+                || query == TTemporalQueries.zone() || query == TTemporalQueries.zoneId()
+                || query == TTemporalQueries.offset()) {
             return null;
         }
         return query.queryFrom(this);
@@ -249,6 +249,7 @@ public enum TMonth implements TTemporalAccessor, TTemporalAdjuster {
 
     @Override
     public TTemporal adjustInto(TTemporal temporal) {
+
         if (TChronology.from(temporal).equals(TIsoChronology.INSTANCE) == false) {
             throw new TDateTimeException("Adjustment only supported on ISO date-time");
         }

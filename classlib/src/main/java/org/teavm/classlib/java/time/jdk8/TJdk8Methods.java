@@ -34,10 +34,11 @@ package org.teavm.classlib.java.time.jdk8;
 public final class TJdk8Methods {
 
     private TJdk8Methods() {
+
     }
 
-    //-----------------------------------------------------------------------
     public static <T> T requireNonNull(T value) {
+
         if (value == null) {
             throw new NullPointerException("Value must not be null");
         }
@@ -45,14 +46,15 @@ public final class TJdk8Methods {
     }
 
     public static <T> T requireNonNull(T value, String parameterName) {
+
         if (value == null) {
             throw new NullPointerException(parameterName + " must not be null");
         }
         return value;
     }
 
-    //-----------------------------------------------------------------------
     public static boolean equals(Object a, Object b) {
+
         if (a == null) {
             return b == null;
         }
@@ -63,6 +65,7 @@ public final class TJdk8Methods {
     }
 
     public static int compareInts(int a, int b) {
+
         if (a < b) {
             return -1;
         }
@@ -73,6 +76,7 @@ public final class TJdk8Methods {
     }
 
     public static int compareLongs(long a, long b) {
+
         if (a < b) {
             return -1;
         }
@@ -82,8 +86,8 @@ public final class TJdk8Methods {
         return 0;
     }
 
-    //-----------------------------------------------------------------------
     public static int safeAdd(int a, int b) {
+
         int sum = a + b;
         // check for a change of sign in the result when the inputs have the same sign
         if ((a ^ sum) < 0 && (a ^ b) >= 0) {
@@ -93,6 +97,7 @@ public final class TJdk8Methods {
     }
 
     public static long safeAdd(long a, long b) {
+
         long sum = a + b;
         // check for a change of sign in the result when the inputs have the same sign
         if ((a ^ sum) < 0 && (a ^ b) >= 0) {
@@ -101,8 +106,8 @@ public final class TJdk8Methods {
         return sum;
     }
 
-    //-----------------------------------------------------------------------
     public static int safeSubtract(int a, int b) {
+
         int result = a - b;
         // check for a change of sign in the result when the inputs have the different signs
         if ((a ^ result) < 0 && (a ^ b) < 0) {
@@ -112,6 +117,7 @@ public final class TJdk8Methods {
     }
 
     public static long safeSubtract(long a, long b) {
+
         long result = a - b;
         // check for a change of sign in the result when the inputs have the different signs
         if ((a ^ result) < 0 && (a ^ b) < 0) {
@@ -120,8 +126,8 @@ public final class TJdk8Methods {
         return result;
     }
 
-    //-----------------------------------------------------------------------
     public static int safeMultiply(int a, int b) {
+
         long total = (long) a * (long) b;
         if (total < Integer.MIN_VALUE || total > Integer.MAX_VALUE) {
             throw new ArithmeticException("Multiplication overflows an int: " + a + " * " + b);
@@ -130,6 +136,7 @@ public final class TJdk8Methods {
     }
 
     public static long safeMultiply(long a, int b) {
+
         switch (b) {
             case -1:
                 if (a == Long.MIN_VALUE) {
@@ -149,6 +156,7 @@ public final class TJdk8Methods {
     }
 
     public static long safeMultiply(long a, long b) {
+
         if (b == 1) {
             return a;
         }
@@ -165,32 +173,36 @@ public final class TJdk8Methods {
         return total;
     }
 
-    //-----------------------------------------------------------------------
     public static int safeToInt(long value) {
+
         if (value > Integer.MAX_VALUE || value < Integer.MIN_VALUE) {
             throw new ArithmeticException("Calculation overflows an int: " + value);
         }
         return (int) value;
     }
 
-    //-----------------------------------------------------------------------
     public static long floorDiv(long a, long b) {
+
         return (a >= 0 ? a / b : ((a + 1) / b) - 1);
     }
 
     public static long floorMod(long a, long b) {
+
         return ((a % b) + b) % b;
     }
 
     public static int floorMod(long a, int b) {
+
         return (int) (((a % b) + b) % b);
     }
 
     public static int floorDiv(int a, int b) {
+
         return (a >= 0 ? a / b : ((a + 1) / b) - 1);
     }
 
     public static int floorMod(int a, int b) {
+
         return ((a % b) + b) % b;
     }
 

@@ -72,7 +72,6 @@ public abstract class TChronoLocalDate
         }
     };
 
-    //-----------------------------------------------------------------------
     public static TChronoLocalDate from(TTemporalAccessor temporal) {
         TJdk8Methods.requireNonNull(temporal, "temporal");
         if (temporal instanceof TChronoLocalDate) {
@@ -85,14 +84,12 @@ public abstract class TChronoLocalDate
         return chrono.date(temporal);
     }
 
-    //-----------------------------------------------------------------------
     public abstract TChronology getChronology();
 
     public TEra getEra() {
         return getChronology().eraOf(get(ERA));
     }
 
-    //-----------------------------------------------------------------------
     public boolean isLeapYear() {
         return getChronology().isLeapYear(getLong(YEAR));
     }
@@ -119,8 +116,6 @@ public abstract class TChronoLocalDate
         return unit != null && unit.isSupportedBy(this);
     }
 
-    //-------------------------------------------------------------------------
-    // override for covariant return type
     @Override
     public TChronoLocalDate with(TTemporalAdjuster adjuster) {
         return getChronology().ensureChronoLocalDate(super.with(adjuster));
@@ -147,7 +142,6 @@ public abstract class TChronoLocalDate
         return getChronology().ensureChronoLocalDate(super.minus(amountToSubtract, unit));
     }
 
-    //-----------------------------------------------------------------------
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
@@ -169,7 +163,6 @@ public abstract class TChronoLocalDate
         return temporal.with(EPOCH_DAY, toEpochDay());
     }
 
-    //-----------------------------------------------------------------------
     public abstract TChronoPeriod until(TChronoLocalDate endDateExclusive);
 
     public String format(TDateTimeFormatter formatter) {
@@ -177,17 +170,14 @@ public abstract class TChronoLocalDate
         return formatter.format(this);
     }
 
-    //-----------------------------------------------------------------------
     public TChronoLocalDateTime<?> atTime(TLocalTime localTime) {
         return TChronoLocalDateTimeImpl.of(this, localTime);
     }
 
-    //-----------------------------------------------------------------------
     public long toEpochDay() {
         return getLong(EPOCH_DAY);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public int compareTo(TChronoLocalDate other) {
         int cmp = TJdk8Methods.compareLongs(toEpochDay(), other.toEpochDay());
@@ -197,7 +187,6 @@ public abstract class TChronoLocalDate
         return cmp;
     }
 
-    //-----------------------------------------------------------------------
     public boolean isAfter(TChronoLocalDate other) {
         return this.toEpochDay() > other.toEpochDay();
     }
@@ -210,7 +199,6 @@ public abstract class TChronoLocalDate
         return this.toEpochDay() == other.toEpochDay();
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object obj) {
         if (this == obj) {
@@ -228,7 +216,6 @@ public abstract class TChronoLocalDate
         return getChronology().hashCode() ^ ((int) (epDay ^ (epDay >>> 32)));
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
         // getLong() reduces chances of exceptions in toString()

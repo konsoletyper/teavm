@@ -31,20 +31,21 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import java.io.Serializable;
-
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDateTimeException;
 
-public final class TValueRange implements Serializable {
-
-    private static final long serialVersionUID = -7317881728594519368L;
+public final class TValueRange implements TSerializable {
 
     private final long minSmallest;
+
     private final long minLargest;
+
     private final long maxSmallest;
+
     private final long maxLargest;
 
     public static TValueRange of(long min, long max) {
+
         if (min > max) {
             throw new IllegalArgumentException("Minimum value must be less than maximum value");
         }
@@ -52,10 +53,12 @@ public final class TValueRange implements Serializable {
     }
 
     public static TValueRange of(long min, long maxSmallest, long maxLargest) {
+
         return of(min, min, maxSmallest, maxLargest);
     }
 
     public static TValueRange of(long minSmallest, long minLargest, long maxSmallest, long maxLargest) {
+
         if (minSmallest > minLargest) {
             throw new IllegalArgumentException("Smallest minimum value must be less than largest minimum value");
         }
@@ -69,48 +72,55 @@ public final class TValueRange implements Serializable {
     }
 
     private TValueRange(long minSmallest, long minLargest, long maxSmallest, long maxLargest) {
+
         this.minSmallest = minSmallest;
         this.minLargest = minLargest;
         this.maxSmallest = maxSmallest;
         this.maxLargest = maxLargest;
     }
 
-    //-----------------------------------------------------------------------
     public boolean isFixed() {
-        return minSmallest == minLargest && maxSmallest == maxLargest;
+
+        return this.minSmallest == this.minLargest && this.maxSmallest == this.maxLargest;
     }
 
-    //-----------------------------------------------------------------------
     public long getMinimum() {
-        return minSmallest;
+
+        return this.minSmallest;
     }
 
     public long getLargestMinimum() {
-        return minLargest;
+
+        return this.minLargest;
     }
 
     public long getSmallestMaximum() {
-        return maxSmallest;
+
+        return this.maxSmallest;
     }
 
     public long getMaximum() {
-        return maxLargest;
+
+        return this.maxLargest;
     }
 
-    //-----------------------------------------------------------------------
     public boolean isIntValue() {
+
         return getMinimum() >= Integer.MIN_VALUE && getMaximum() <= Integer.MAX_VALUE;
     }
 
     public boolean isValidValue(long value) {
+
         return (value >= getMinimum() && value <= getMaximum());
     }
 
     public boolean isValidIntValue(long value) {
+
         return isIntValue() && isValidValue(value);
     }
 
     public long checkValidValue(long value, TTemporalField field) {
+
         if (isValidValue(value) == false) {
             if (field != null) {
                 throw new TDateTimeException("Invalid value for " + field + " (valid values " + this + "): " + value);
@@ -122,44 +132,46 @@ public final class TValueRange implements Serializable {
     }
 
     public int checkValidIntValue(long value, TTemporalField field) {
+
         if (isValidIntValue(value) == false) {
             throw new TDateTimeException("Invalid int value for " + field + ": " + value);
         }
         return (int) value;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object obj) {
+
         if (obj == this) {
             return true;
         }
         if (obj instanceof TValueRange) {
             TValueRange other = (TValueRange) obj;
-           return minSmallest == other.minSmallest && minLargest == other.minLargest &&
-                   maxSmallest == other.maxSmallest && maxLargest == other.maxLargest;
+            return this.minSmallest == other.minSmallest && this.minLargest == other.minLargest
+                    && this.maxSmallest == other.maxSmallest && this.maxLargest == other.maxLargest;
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        long hash = minSmallest + minLargest << 16 + minLargest >> 48 + maxSmallest << 32 +
-            maxSmallest >> 32 + maxLargest << 48 + maxLargest >> 16;
+
+        long hash = this.minSmallest + this.minLargest << 16 + this.minLargest >> 48 + this.maxSmallest << 32
+                + this.maxSmallest >> 32 + this.maxLargest << 48 + this.maxLargest >> 16;
         return (int) (hash ^ (hash >>> 32));
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
+
         StringBuilder buf = new StringBuilder();
-        buf.append(minSmallest);
-        if (minSmallest != minLargest) {
-            buf.append('/').append(minLargest);
+        buf.append(this.minSmallest);
+        if (this.minSmallest != this.minLargest) {
+            buf.append('/').append(this.minLargest);
         }
-        buf.append(" - ").append(maxSmallest);
-        if (maxSmallest != maxLargest) {
-            buf.append('/').append(maxLargest);
+        buf.append(" - ").append(this.maxSmallest);
+        if (this.maxSmallest != this.maxLargest) {
+            buf.append('/').append(this.maxLargest);
         }
         return buf.toString();
     }

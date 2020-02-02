@@ -31,15 +31,10 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.concurrent.atomic.AtomicReference;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceEra;
@@ -48,21 +43,21 @@ import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TJapaneseEra
-        extends TDefaultInterfaceEra
-        implements Serializable {
+public final class TJapaneseEra extends TDefaultInterfaceEra implements TSerializable {
 
     // The offset value to 0-based index from the era value.
     // i.e., getValue() + ERA_OFFSET == 0-based index; except that -999 is mapped to zero
     static final int ERA_OFFSET = 2;
 
     public static final TJapaneseEra MEIJI = new TJapaneseEra(-1, TLocalDate.of(1868, 9, 8), "Meiji");
-    public static final TJapaneseEra TAISHO = new TJapaneseEra(0, TLocalDate.of(1912, 7, 30), "Taisho");
-    public static final TJapaneseEra SHOWA = new TJapaneseEra(1, TLocalDate.of(1926, 12, 25), "Showa");
-    public static final TJapaneseEra HEISEI = new TJapaneseEra(2, TLocalDate.of(1989, 1, 8), "Heisei");
-    private static final int ADDITIONAL_VALUE = 3;
 
-    private static final long serialVersionUID = 1466499369062886794L;
+    public static final TJapaneseEra TAISHO = new TJapaneseEra(0, TLocalDate.of(1912, 7, 30), "Taisho");
+
+    public static final TJapaneseEra SHOWA = new TJapaneseEra(1, TLocalDate.of(1926, 12, 25), "Showa");
+
+    public static final TJapaneseEra HEISEI = new TJapaneseEra(2, TLocalDate.of(1989, 1, 8), "Heisei");
+
+    private static final int ADDITIONAL_VALUE = 3;
 
     // array for the singleton TJapaneseEra instances
     private static final AtomicReference<TJapaneseEra[]> KNOWN_ERAS;
@@ -73,34 +68,26 @@ public final class TJapaneseEra
         array[1] = TAISHO;
         array[2] = SHOWA;
         array[3] = HEISEI;
-        KNOWN_ERAS = new AtomicReference<TJapaneseEra[]>(array);
+        KNOWN_ERAS = new AtomicReference<>(array);
     }
 
     private final int eraValue;
 
     // the first day of the era
     private final transient TLocalDate since;
+
     // the name of the era
     private final transient String name;
 
     private TJapaneseEra(int eraValue, TLocalDate since, String name) {
+
         this.eraValue = eraValue;
         this.since = since;
         this.name = name;
     }
 
-    private Object readResolve() throws ObjectStreamException {
-        try {
-            return of(eraValue);
-        } catch (TDateTimeException e) {
-            InvalidObjectException ex = new InvalidObjectException("Invalid era");
-            ex.initCause(e);
-            throw ex;
-        }
-    }
-
-    //-----------------------------------------------------------------------
     public static TJapaneseEra registerEra(TLocalDate since, String name) {
+
         TJapaneseEra[] known = KNOWN_ERAS.get();
         if (known.length > 4) {
             throw new TDateTimeException("Only one additional Japanese era can be added");
@@ -120,6 +107,7 @@ public final class TJapaneseEra
     }
 
     public static TJapaneseEra of(int japaneseEra) {
+
         TJapaneseEra[] known = KNOWN_ERAS.get();
         if (japaneseEra < MEIJI.eraValue || japaneseEra > known[known.length - 1].eraValue) {
             throw new TDateTimeException("japaneseEra is invalid");
@@ -128,6 +116,7 @@ public final class TJapaneseEra
     }
 
     public static TJapaneseEra valueOf(String japaneseEra) {
+
         TJdk8Methods.requireNonNull(japaneseEra, "japaneseEra");
         TJapaneseEra[] known = KNOWN_ERAS.get();
         for (TJapaneseEra era : known) {
@@ -139,12 +128,13 @@ public final class TJapaneseEra
     }
 
     public static TJapaneseEra[] values() {
+
         TJapaneseEra[] known = KNOWN_ERAS.get();
         return Arrays.copyOf(known, known.length);
     }
 
-    //-----------------------------------------------------------------------
     static TJapaneseEra from(TLocalDate date) {
+
         if (date.isBefore(MEIJI.since)) {
             throw new TDateTimeException("TDate too early: " + date);
         }
@@ -159,15 +149,18 @@ public final class TJapaneseEra
     }
 
     private static int ordinal(int eraValue) {
+
         return eraValue + 1;
     }
 
     TLocalDate startDate() {
-        return since;
+
+        return this.since;
     }
 
     TLocalDate endDate() {
-        int ordinal = ordinal(eraValue);
+
+        int ordinal = ordinal(this.eraValue);
         TJapaneseEra[] eras = values();
         if (ordinal >= eras.length - 1) {
             return TLocalDate.MAX;
@@ -175,38 +168,25 @@ public final class TJapaneseEra
         return eras[ordinal + 1].startDate().minusDays(1);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public int getValue() {
-        return eraValue;
+
+        return this.eraValue;
     }
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field == TChronoField.ERA) {
             return TJapaneseChronology.INSTANCE.range(TChronoField.ERA);
         }
         return super.range(field);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
-        return name;
-    }
 
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.JAPANESE_ERA_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeByte(this.getValue());
-    }
-
-    static TJapaneseEra readExternal(DataInput in) throws IOException {
-        byte eraValue = in.readByte();
-        return TJapaneseEra.of(eraValue);
+        return this.name;
     }
 
 }

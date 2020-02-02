@@ -36,122 +36,119 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.AMPM_OF_DAY;
 import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
 import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
-import org.junit.Before;
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 
-@Test
 public class TestSimpleDateTimeTextProvider {
 
-    TLocale enUS = new TLocale("en", "US");
-    TLocale ptBR = new TLocale("pt", "BR");
-    TLocale frFR = new TLocale("fr", "FR");
+    Locale enUS = new Locale("en", "US");
 
-    @Before
-    public void setUp() {
-    }
+    Locale ptBR = new Locale("pt", "BR");
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name = "Text")
+    Locale frFR = new Locale("fr", "FR");
+
     Object[][] data_text() {
-        return new Object[][] {
-            {DAY_OF_WEEK, 1, TTextStyle.SHORT, enUS, "Mon"},
-            {DAY_OF_WEEK, 2, TTextStyle.SHORT, enUS, "Tue"},
-            {DAY_OF_WEEK, 3, TTextStyle.SHORT, enUS, "Wed"},
-            {DAY_OF_WEEK, 4, TTextStyle.SHORT, enUS, "Thu"},
-            {DAY_OF_WEEK, 5, TTextStyle.SHORT, enUS, "Fri"},
-            {DAY_OF_WEEK, 6, TTextStyle.SHORT, enUS, "Sat"},
-            {DAY_OF_WEEK, 7, TTextStyle.SHORT, enUS, "Sun"},
 
-            {DAY_OF_WEEK, 1, TTextStyle.SHORT, ptBR, "Seg"},
-            {DAY_OF_WEEK, 2, TTextStyle.SHORT, ptBR, "Ter"},
-            {DAY_OF_WEEK, 3, TTextStyle.SHORT, ptBR, "Qua"},
-            {DAY_OF_WEEK, 4, TTextStyle.SHORT, ptBR, "Qui"},
-            {DAY_OF_WEEK, 5, TTextStyle.SHORT, ptBR, "Sex"},
-            {DAY_OF_WEEK, 6, TTextStyle.SHORT, ptBR, "S\u00E1b"},
-            {DAY_OF_WEEK, 7, TTextStyle.SHORT, ptBR, "Dom"},
+        return new Object[][] { { DAY_OF_WEEK, 1, TTextStyle.SHORT, this.enUS, "Mon" },
+        { DAY_OF_WEEK, 2, TTextStyle.SHORT, this.enUS, "Tue" }, { DAY_OF_WEEK, 3, TTextStyle.SHORT, this.enUS, "Wed" },
+        { DAY_OF_WEEK, 4, TTextStyle.SHORT, this.enUS, "Thu" }, { DAY_OF_WEEK, 5, TTextStyle.SHORT, this.enUS, "Fri" },
+        { DAY_OF_WEEK, 6, TTextStyle.SHORT, this.enUS, "Sat" }, { DAY_OF_WEEK, 7, TTextStyle.SHORT, this.enUS, "Sun" },
 
-            {DAY_OF_WEEK, 1, TTextStyle.FULL, enUS, "Monday"},
-            {DAY_OF_WEEK, 2, TTextStyle.FULL, enUS, "Tuesday"},
-            {DAY_OF_WEEK, 3, TTextStyle.FULL, enUS, "Wednesday"},
-            {DAY_OF_WEEK, 4, TTextStyle.FULL, enUS, "Thursday"},
-            {DAY_OF_WEEK, 5, TTextStyle.FULL, enUS, "Friday"},
-            {DAY_OF_WEEK, 6, TTextStyle.FULL, enUS, "Saturday"},
-            {DAY_OF_WEEK, 7, TTextStyle.FULL, enUS, "Sunday"},
+        { DAY_OF_WEEK, 1, TTextStyle.SHORT, this.ptBR, "Seg" }, { DAY_OF_WEEK, 2, TTextStyle.SHORT, this.ptBR, "Ter" },
+        { DAY_OF_WEEK, 3, TTextStyle.SHORT, this.ptBR, "Qua" }, { DAY_OF_WEEK, 4, TTextStyle.SHORT, this.ptBR, "Qui" },
+        { DAY_OF_WEEK, 5, TTextStyle.SHORT, this.ptBR, "Sex" },
+        { DAY_OF_WEEK, 6, TTextStyle.SHORT, this.ptBR, "S\u00E1b" },
+        { DAY_OF_WEEK, 7, TTextStyle.SHORT, this.ptBR, "Dom" },
 
-            {DAY_OF_WEEK, 1, TTextStyle.FULL, ptBR, "Segunda-feira"},
-            {DAY_OF_WEEK, 2, TTextStyle.FULL, ptBR, "Ter\u00E7a-feira"},
-            {DAY_OF_WEEK, 3, TTextStyle.FULL, ptBR, "Quarta-feira"},
-            {DAY_OF_WEEK, 4, TTextStyle.FULL, ptBR, "Quinta-feira"},
-            {DAY_OF_WEEK, 5, TTextStyle.FULL, ptBR, "Sexta-feira"},
-            {DAY_OF_WEEK, 6, TTextStyle.FULL, ptBR, "S\u00E1bado"},
-            {DAY_OF_WEEK, 7, TTextStyle.FULL, ptBR, "Domingo"},
+        { DAY_OF_WEEK, 1, TTextStyle.FULL, this.enUS, "Monday" },
+        { DAY_OF_WEEK, 2, TTextStyle.FULL, this.enUS, "Tuesday" },
+        { DAY_OF_WEEK, 3, TTextStyle.FULL, this.enUS, "Wednesday" },
+        { DAY_OF_WEEK, 4, TTextStyle.FULL, this.enUS, "Thursday" },
+        { DAY_OF_WEEK, 5, TTextStyle.FULL, this.enUS, "Friday" },
+        { DAY_OF_WEEK, 6, TTextStyle.FULL, this.enUS, "Saturday" },
+        { DAY_OF_WEEK, 7, TTextStyle.FULL, this.enUS, "Sunday" },
 
-            {MONTH_OF_YEAR, 1, TTextStyle.SHORT, enUS, "Jan"},
-            {MONTH_OF_YEAR, 2, TTextStyle.SHORT, enUS, "Feb"},
-            {MONTH_OF_YEAR, 3, TTextStyle.SHORT, enUS, "Mar"},
-            {MONTH_OF_YEAR, 4, TTextStyle.SHORT, enUS, "Apr"},
-            {MONTH_OF_YEAR, 5, TTextStyle.SHORT, enUS, "May"},
-            {MONTH_OF_YEAR, 6, TTextStyle.SHORT, enUS, "Jun"},
-            {MONTH_OF_YEAR, 7, TTextStyle.SHORT, enUS, "Jul"},
-            {MONTH_OF_YEAR, 8, TTextStyle.SHORT, enUS, "Aug"},
-            {MONTH_OF_YEAR, 9, TTextStyle.SHORT, enUS, "Sep"},
-            {MONTH_OF_YEAR, 10, TTextStyle.SHORT, enUS, "Oct"},
-            {MONTH_OF_YEAR, 11, TTextStyle.SHORT, enUS, "Nov"},
-            {MONTH_OF_YEAR, 12, TTextStyle.SHORT, enUS, "Dec"},
+        { DAY_OF_WEEK, 1, TTextStyle.FULL, this.ptBR, "Segunda-feira" },
+        { DAY_OF_WEEK, 2, TTextStyle.FULL, this.ptBR, "Ter\u00E7a-feira" },
+        { DAY_OF_WEEK, 3, TTextStyle.FULL, this.ptBR, "Quarta-feira" },
+        { DAY_OF_WEEK, 4, TTextStyle.FULL, this.ptBR, "Quinta-feira" },
+        { DAY_OF_WEEK, 5, TTextStyle.FULL, this.ptBR, "Sexta-feira" },
+        { DAY_OF_WEEK, 6, TTextStyle.FULL, this.ptBR, "S\u00E1bado" },
+        { DAY_OF_WEEK, 7, TTextStyle.FULL, this.ptBR, "Domingo" },
 
-            {MONTH_OF_YEAR, 1, TTextStyle.SHORT, frFR, "janv."},
-            {MONTH_OF_YEAR, 2, TTextStyle.SHORT, frFR, "f\u00E9vr."},
-            {MONTH_OF_YEAR, 3, TTextStyle.SHORT, frFR, "mars"},
-            {MONTH_OF_YEAR, 4, TTextStyle.SHORT, frFR, "avr."},
-            {MONTH_OF_YEAR, 5, TTextStyle.SHORT, frFR, "mai"},
-            {MONTH_OF_YEAR, 6, TTextStyle.SHORT, frFR, "juin"},
-            {MONTH_OF_YEAR, 7, TTextStyle.SHORT, frFR, "juil."},
-            {MONTH_OF_YEAR, 8, TTextStyle.SHORT, frFR, "ao\u00FBt"},
-            {MONTH_OF_YEAR, 9, TTextStyle.SHORT, frFR, "sept."},
-            {MONTH_OF_YEAR, 10, TTextStyle.SHORT, frFR, "oct."},
-            {MONTH_OF_YEAR, 11, TTextStyle.SHORT, frFR, "nov."},
-            {MONTH_OF_YEAR, 12, TTextStyle.SHORT, frFR, "d\u00E9c."},
+        { MONTH_OF_YEAR, 1, TTextStyle.SHORT, this.enUS, "Jan" },
+        { MONTH_OF_YEAR, 2, TTextStyle.SHORT, this.enUS, "Feb" },
+        { MONTH_OF_YEAR, 3, TTextStyle.SHORT, this.enUS, "Mar" },
+        { MONTH_OF_YEAR, 4, TTextStyle.SHORT, this.enUS, "Apr" },
+        { MONTH_OF_YEAR, 5, TTextStyle.SHORT, this.enUS, "May" },
+        { MONTH_OF_YEAR, 6, TTextStyle.SHORT, this.enUS, "Jun" },
+        { MONTH_OF_YEAR, 7, TTextStyle.SHORT, this.enUS, "Jul" },
+        { MONTH_OF_YEAR, 8, TTextStyle.SHORT, this.enUS, "Aug" },
+        { MONTH_OF_YEAR, 9, TTextStyle.SHORT, this.enUS, "Sep" },
+        { MONTH_OF_YEAR, 10, TTextStyle.SHORT, this.enUS, "Oct" },
+        { MONTH_OF_YEAR, 11, TTextStyle.SHORT, this.enUS, "Nov" },
+        { MONTH_OF_YEAR, 12, TTextStyle.SHORT, this.enUS, "Dec" },
 
-            {MONTH_OF_YEAR, 1, TTextStyle.FULL, enUS, "January"},
-            {MONTH_OF_YEAR, 2, TTextStyle.FULL, enUS, "February"},
-            {MONTH_OF_YEAR, 3, TTextStyle.FULL, enUS, "March"},
-            {MONTH_OF_YEAR, 4, TTextStyle.FULL, enUS, "April"},
-            {MONTH_OF_YEAR, 5, TTextStyle.FULL, enUS, "May"},
-            {MONTH_OF_YEAR, 6, TTextStyle.FULL, enUS, "June"},
-            {MONTH_OF_YEAR, 7, TTextStyle.FULL, enUS, "July"},
-            {MONTH_OF_YEAR, 8, TTextStyle.FULL, enUS, "August"},
-            {MONTH_OF_YEAR, 9, TTextStyle.FULL, enUS, "September"},
-            {MONTH_OF_YEAR, 10, TTextStyle.FULL, enUS, "October"},
-            {MONTH_OF_YEAR, 11, TTextStyle.FULL, enUS, "November"},
-            {MONTH_OF_YEAR, 12, TTextStyle.FULL, enUS, "December"},
+        { MONTH_OF_YEAR, 1, TTextStyle.SHORT, this.frFR, "janv." },
+        { MONTH_OF_YEAR, 2, TTextStyle.SHORT, this.frFR, "f\u00E9vr." },
+        { MONTH_OF_YEAR, 3, TTextStyle.SHORT, this.frFR, "mars" },
+        { MONTH_OF_YEAR, 4, TTextStyle.SHORT, this.frFR, "avr." },
+        { MONTH_OF_YEAR, 5, TTextStyle.SHORT, this.frFR, "mai" },
+        { MONTH_OF_YEAR, 6, TTextStyle.SHORT, this.frFR, "juin" },
+        { MONTH_OF_YEAR, 7, TTextStyle.SHORT, this.frFR, "juil." },
+        { MONTH_OF_YEAR, 8, TTextStyle.SHORT, this.frFR, "ao\u00FBt" },
+        { MONTH_OF_YEAR, 9, TTextStyle.SHORT, this.frFR, "sept." },
+        { MONTH_OF_YEAR, 10, TTextStyle.SHORT, this.frFR, "oct." },
+        { MONTH_OF_YEAR, 11, TTextStyle.SHORT, this.frFR, "nov." },
+        { MONTH_OF_YEAR, 12, TTextStyle.SHORT, this.frFR, "d\u00E9c." },
 
-            {MONTH_OF_YEAR, 1, TTextStyle.FULL, ptBR, "Janeiro"},
-            {MONTH_OF_YEAR, 2, TTextStyle.FULL, ptBR, "Fevereiro"},
-            {MONTH_OF_YEAR, 3, TTextStyle.FULL, ptBR, "Mar\u00E7o"},
-            {MONTH_OF_YEAR, 4, TTextStyle.FULL, ptBR, "Abril"},
-            {MONTH_OF_YEAR, 5, TTextStyle.FULL, ptBR, "Maio"},
-            {MONTH_OF_YEAR, 6, TTextStyle.FULL, ptBR, "Junho"},
-            {MONTH_OF_YEAR, 7, TTextStyle.FULL, ptBR, "Julho"},
-            {MONTH_OF_YEAR, 8, TTextStyle.FULL, ptBR, "Agosto"},
-            {MONTH_OF_YEAR, 9, TTextStyle.FULL, ptBR, "Setembro"},
-            {MONTH_OF_YEAR, 10, TTextStyle.FULL, ptBR, "Outubro"},
-            {MONTH_OF_YEAR, 11, TTextStyle.FULL, ptBR, "Novembro"},
-            {MONTH_OF_YEAR, 12, TTextStyle.FULL, ptBR, "Dezembro"},
+        { MONTH_OF_YEAR, 1, TTextStyle.FULL, this.enUS, "January" },
+        { MONTH_OF_YEAR, 2, TTextStyle.FULL, this.enUS, "February" },
+        { MONTH_OF_YEAR, 3, TTextStyle.FULL, this.enUS, "March" },
+        { MONTH_OF_YEAR, 4, TTextStyle.FULL, this.enUS, "April" },
+        { MONTH_OF_YEAR, 5, TTextStyle.FULL, this.enUS, "May" },
+        { MONTH_OF_YEAR, 6, TTextStyle.FULL, this.enUS, "June" },
+        { MONTH_OF_YEAR, 7, TTextStyle.FULL, this.enUS, "July" },
+        { MONTH_OF_YEAR, 8, TTextStyle.FULL, this.enUS, "August" },
+        { MONTH_OF_YEAR, 9, TTextStyle.FULL, this.enUS, "September" },
+        { MONTH_OF_YEAR, 10, TTextStyle.FULL, this.enUS, "October" },
+        { MONTH_OF_YEAR, 11, TTextStyle.FULL, this.enUS, "November" },
+        { MONTH_OF_YEAR, 12, TTextStyle.FULL, this.enUS, "December" },
 
-            {AMPM_OF_DAY, 0, TTextStyle.SHORT, enUS, "AM"},
-            {AMPM_OF_DAY, 1, TTextStyle.SHORT, enUS, "PM"},
+        { MONTH_OF_YEAR, 1, TTextStyle.FULL, this.ptBR, "Janeiro" },
+        { MONTH_OF_YEAR, 2, TTextStyle.FULL, this.ptBR, "Fevereiro" },
+        { MONTH_OF_YEAR, 3, TTextStyle.FULL, this.ptBR, "Mar\u00E7o" },
+        { MONTH_OF_YEAR, 4, TTextStyle.FULL, this.ptBR, "Abril" },
+        { MONTH_OF_YEAR, 5, TTextStyle.FULL, this.ptBR, "Maio" },
+        { MONTH_OF_YEAR, 6, TTextStyle.FULL, this.ptBR, "Junho" },
+        { MONTH_OF_YEAR, 7, TTextStyle.FULL, this.ptBR, "Julho" },
+        { MONTH_OF_YEAR, 8, TTextStyle.FULL, this.ptBR, "Agosto" },
+        { MONTH_OF_YEAR, 9, TTextStyle.FULL, this.ptBR, "Setembro" },
+        { MONTH_OF_YEAR, 10, TTextStyle.FULL, this.ptBR, "Outubro" },
+        { MONTH_OF_YEAR, 11, TTextStyle.FULL, this.ptBR, "Novembro" },
+        { MONTH_OF_YEAR, 12, TTextStyle.FULL, this.ptBR, "Dezembro" },
+
+        { AMPM_OF_DAY, 0, TTextStyle.SHORT, this.enUS, "AM" }, { AMPM_OF_DAY, 1, TTextStyle.SHORT, this.enUS, "PM" },
 
         };
     }
 
-    @Test(dataProvider = "Text")
-    public void test_getText(TTemporalField field, Number value, TTextStyle style, TLocale locale, String expected) {
-        TDateTimeTextProvider tp = TDateTimeTextProvider.getInstance();
-        assertEquals(tp.getText(field, value.longValue(), style, locale).equalsIgnoreCase(expected), true, expected);
+    @Test
+    public void test_getText() {
+
+        for (Object[] data : data_text()) {
+            TTemporalField field = (TTemporalField) data[0];
+            Number value = (Number) data[1];
+            TTextStyle style = (TTextStyle) data[2];
+            Locale locale = (Locale) data[3];
+            String expected = (String) data[4];
+
+            TDateTimeTextProvider tp = TDateTimeTextProvider.getInstance();
+            assertEquals(expected, tp.getText(field, value.longValue(), style, locale).equalsIgnoreCase(expected),
+                    true);
+        }
     }
 
 }

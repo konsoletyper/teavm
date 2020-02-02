@@ -31,9 +31,6 @@
  */
 package org.teavm.classlib.java.time.zone;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -53,23 +50,27 @@ import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 final class TStandardZoneRules extends TZoneRules implements Serializable {
 
     private static final long serialVersionUID = 3044319355680032515L;
+
     private static final int LAST_CACHED_YEAR = 2100;
 
     private final long[] standardTransitions;
-    private final TZoneOffset[] standardOffsets;
-    private final long[] savingsInstantTransitions;
-    private final TLocalDateTime[] savingsLocalTransitions;
-    private final TZoneOffset[] wallOffsets;
-    private final TZoneOffsetTransitionRule[] lastRules;
-    private final ConcurrentMap<Integer, TZoneOffsetTransition[]> lastRulesCache =
-                new ConcurrentHashMap<Integer, TZoneOffsetTransition[]>();
 
-    TStandardZoneRules(
-            TZoneOffset baseStandardOffset,
-            TZoneOffset baseWallOffset,
-            List<TZoneOffsetTransition> standardOffsetTransitionList,
-            List<TZoneOffsetTransition> transitionList,
+    private final TZoneOffset[] standardOffsets;
+
+    private final long[] savingsInstantTransitions;
+
+    private final TLocalDateTime[] savingsLocalTransitions;
+
+    private final TZoneOffset[] wallOffsets;
+
+    private final TZoneOffsetTransitionRule[] lastRules;
+
+    private final ConcurrentMap<Integer, TZoneOffsetTransition[]> lastRulesCache = new ConcurrentHashMap<Integer, TZoneOffsetTransition[]>();
+
+    TStandardZoneRules(TZoneOffset baseStandardOffset, TZoneOffset baseWallOffset,
+            List<TZoneOffsetTransition> standardOffsetTransitionList, List<TZoneOffsetTransition> transitionList,
             List<TZoneOffsetTransitionRule> lastRules) {
+
         super();
 
         // convert standard transitions
@@ -82,8 +83,8 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
         }
 
         // convert savings transitions to locals
-        List<TLocalDateTime> localTransitionList = new ArrayList<TLocalDateTime>();
-        List<TZoneOffset> localTransitionOffsetList = new ArrayList<TZoneOffset>();
+        List<TLocalDateTime> localTransitionList = new ArrayList<>();
+        List<TZoneOffset> localTransitionOffsetList = new ArrayList<>();
         localTransitionOffsetList.add(baseWallOffset);
         for (TZoneOffsetTransition trans : transitionList) {
             if (trans.isGap()) {
@@ -111,12 +112,9 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
         this.lastRules = lastRules.toArray(new TZoneOffsetTransitionRule[lastRules.size()]);
     }
 
-    private TStandardZoneRules(
-            long[] standardTransitions,
-            TZoneOffset[] standardOffsets,
-            long[] savingsInstantTransitions,
-            TZoneOffset[] wallOffsets,
-            TZoneOffsetTransitionRule[] lastRules) {
+    private TStandardZoneRules(long[] standardTransitions, TZoneOffset[] standardOffsets,
+            long[] savingsInstantTransitions, TZoneOffset[] wallOffsets, TZoneOffsetTransitionRule[] lastRules) {
+
         super();
 
         this.standardTransitions = standardTransitions;
@@ -126,7 +124,7 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
         this.lastRules = lastRules;
 
         // convert savings transitions to locals
-        List<TLocalDateTime> localTransitionList = new ArrayList<TLocalDateTime>();
+        List<TLocalDateTime> localTransitionList = new ArrayList<>();
         for (int i = 0; i < savingsInstantTransitions.length; i++) {
             TZoneOffset before = wallOffsets[i];
             TZoneOffset after = wallOffsets[i + 1];
@@ -142,74 +140,37 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
         this.savingsLocalTransitions = localTransitionList.toArray(new TLocalDateTime[localTransitionList.size()]);
     }
 
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.SZR, this);
+    TStandardZoneRules(long[] standardTransitions, int[] standardOffsets, long[] savingsInstantTransitions,
+            int[] wallOffsets, TZoneOffsetTransitionRule... lastRules) {
+
+        this(standardTransitions, toZoneOffset(standardOffsets), savingsInstantTransitions, toZoneOffset(wallOffsets),
+                lastRules);
     }
 
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeInt(standardTransitions.length);
-        for (long trans : standardTransitions) {
-            Ser.writeEpochSec(trans, out);
+    private static TZoneOffset[] toZoneOffset(int[] totalSeconds) {
+
+        TZoneOffset[] result = new TZoneOffset[totalSeconds.length];
+        for (int i = 0; i < totalSeconds.length; i++) {
+            result[i] = TZoneOffset.ofTotalSeconds(totalSeconds[i]);
         }
-        for (TZoneOffset offset : standardOffsets) {
-            Ser.writeOffset(offset, out);
-        }
-        out.writeInt(savingsInstantTransitions.length);
-        for (long trans : savingsInstantTransitions) {
-            Ser.writeEpochSec(trans, out);
-        }
-        for (TZoneOffset offset : wallOffsets) {
-            Ser.writeOffset(offset, out);
-        }
-        out.writeByte(lastRules.length);
-        for (TZoneOffsetTransitionRule rule : lastRules) {
-            rule.writeExternal(out);
-        }
+        return result;
     }
 
-    static TStandardZoneRules readExternal(DataInput in) throws IOException, ClassNotFoundException {
-        int stdSize = in.readInt();
-        long[] stdTrans = new long[stdSize];
-        for (int i = 0; i < stdSize; i++) {
-            stdTrans[i] = Ser.readEpochSec(in);
-        }
-        TZoneOffset[] stdOffsets = new TZoneOffset[stdSize + 1];
-        for (int i = 0; i < stdOffsets.length; i++) {
-            stdOffsets[i] = Ser.readOffset(in);
-        }
-        int savSize = in.readInt();
-        long[] savTrans = new long[savSize];
-        for (int i = 0; i < savSize; i++) {
-            savTrans[i] = Ser.readEpochSec(in);
-        }
-        TZoneOffset[] savOffsets = new TZoneOffset[savSize + 1];
-        for (int i = 0; i < savOffsets.length; i++) {
-            savOffsets[i] = Ser.readOffset(in);
-        }
-        int ruleSize = in.readByte();
-        TZoneOffsetTransitionRule[] rules = new TZoneOffsetTransitionRule[ruleSize];
-        for (int i = 0; i < ruleSize; i++) {
-            rules[i] = TZoneOffsetTransitionRule.readExternal(in);
-        }
-        return new TStandardZoneRules(stdTrans, stdOffsets, savTrans, savOffsets, rules);
-    }
-
-    //-----------------------------------------------------------------------
     @Override
     public boolean isFixedOffset() {
-        return savingsInstantTransitions.length == 0;
+
+        return this.savingsInstantTransitions.length == 0;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TZoneOffset getOffset(TInstant instant) {
+
         long epochSec = instant.getEpochSecond();
 
         // check if using last rules
-        if (lastRules.length > 0 &&
-                epochSec > savingsInstantTransitions[savingsInstantTransitions.length - 1]) {
-            int year = findYear(epochSec, wallOffsets[wallOffsets.length - 1]);
+        if (this.lastRules.length > 0
+                && epochSec > this.savingsInstantTransitions[this.savingsInstantTransitions.length - 1]) {
+            int year = findYear(epochSec, this.wallOffsets[this.wallOffsets.length - 1]);
             TZoneOffsetTransition[] transArray = findTransitionArray(year);
             TZoneOffsetTransition trans = null;
             for (int i = 0; i < transArray.length; i++) {
@@ -222,17 +183,17 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
         }
 
         // using historic rules
-        int index  = Arrays.binarySearch(savingsInstantTransitions, epochSec);
+        int index = Arrays.binarySearch(this.savingsInstantTransitions, epochSec);
         if (index < 0) {
             // switch negative insert position to start of matched range
             index = -index - 2;
         }
-        return wallOffsets[index + 1];
+        return this.wallOffsets[index + 1];
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TZoneOffset getOffset(TLocalDateTime localDateTime) {
+
         Object info = getOffsetInfo(localDateTime);
         if (info instanceof TZoneOffsetTransition) {
             return ((TZoneOffsetTransition) info).getOffsetBefore();
@@ -242,6 +203,7 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
 
     @Override
     public List<TZoneOffset> getValidOffsets(TLocalDateTime localDateTime) {
+
         // should probably be optimized
         Object info = getOffsetInfo(localDateTime);
         if (info instanceof TZoneOffsetTransition) {
@@ -252,14 +214,16 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
 
     @Override
     public TZoneOffsetTransition getTransition(TLocalDateTime localDateTime) {
+
         Object info = getOffsetInfo(localDateTime);
         return (info instanceof TZoneOffsetTransition ? (TZoneOffsetTransition) info : null);
     }
 
     private Object getOffsetInfo(TLocalDateTime dt) {
+
         // check if using last rules
-        if (lastRules.length > 0 &&
-                dt.isAfter(savingsLocalTransitions[savingsLocalTransitions.length - 1])) {
+        if (this.lastRules.length > 0
+                && dt.isAfter(this.savingsLocalTransitions[this.savingsLocalTransitions.length - 1])) {
             TZoneOffsetTransition[] transArray = findTransitionArray(dt.getYear());
             Object info = null;
             for (TZoneOffsetTransition trans : transArray) {
@@ -272,25 +236,25 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
         }
 
         // using historic rules
-        int index  = Arrays.binarySearch(savingsLocalTransitions, dt);
+        int index = Arrays.binarySearch(this.savingsLocalTransitions, dt);
         if (index == -1) {
             // before first transition
-            return wallOffsets[0];
+            return this.wallOffsets[0];
         }
         if (index < 0) {
             // switch negative insert position to start of matched range
             index = -index - 2;
-        } else if (index < savingsLocalTransitions.length - 1 &&
-                savingsLocalTransitions[index].equals(savingsLocalTransitions[index + 1])) {
+        } else if (index < this.savingsLocalTransitions.length - 1
+                && this.savingsLocalTransitions[index].equals(this.savingsLocalTransitions[index + 1])) {
             // handle overlap immediately following gap
             index++;
         }
         if ((index & 1) == 0) {
             // gap or overlap
-            TLocalDateTime dtBefore = savingsLocalTransitions[index];
-            TLocalDateTime dtAfter = savingsLocalTransitions[index + 1];
-            TZoneOffset offsetBefore = wallOffsets[index / 2];
-            TZoneOffset offsetAfter = wallOffsets[index / 2 + 1];
+            TLocalDateTime dtBefore = this.savingsLocalTransitions[index];
+            TLocalDateTime dtAfter = this.savingsLocalTransitions[index + 1];
+            TZoneOffset offsetBefore = this.wallOffsets[index / 2];
+            TZoneOffset offsetAfter = this.wallOffsets[index / 2 + 1];
             if (offsetAfter.getTotalSeconds() > offsetBefore.getTotalSeconds()) {
                 // gap
                 return new TZoneOffsetTransition(dtBefore, offsetBefore, offsetAfter);
@@ -300,11 +264,12 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
             }
         } else {
             // normal (neither gap or overlap)
-            return wallOffsets[index / 2 + 1];
+            return this.wallOffsets[index / 2 + 1];
         }
     }
 
     private Object findOffsetInfo(TLocalDateTime dt, TZoneOffsetTransition trans) {
+
         TLocalDateTime localTransition = trans.getDateTimeBefore();
         if (trans.isGap()) {
             if (dt.isBefore(localTransition)) {
@@ -329,41 +294,43 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
 
     @Override
     public boolean isValidOffset(TLocalDateTime localDateTime, TZoneOffset offset) {
+
         return getValidOffsets(localDateTime).contains(offset);
     }
 
-    //-----------------------------------------------------------------------
     private TZoneOffsetTransition[] findTransitionArray(int year) {
-        Integer yearObj = year;  // should use TYear class, but this saves a class load
-        TZoneOffsetTransition[] transArray = lastRulesCache.get(yearObj);
+
+        Integer yearObj = year; // should use TYear class, but this saves a class load
+        TZoneOffsetTransition[] transArray = this.lastRulesCache.get(yearObj);
         if (transArray != null) {
             return transArray;
         }
-        TZoneOffsetTransitionRule[] ruleArray = lastRules;
-        transArray  = new TZoneOffsetTransition[ruleArray.length];
+        TZoneOffsetTransitionRule[] ruleArray = this.lastRules;
+        transArray = new TZoneOffsetTransition[ruleArray.length];
         for (int i = 0; i < ruleArray.length; i++) {
             transArray[i] = ruleArray[i].createTransition(year);
         }
         if (year < LAST_CACHED_YEAR) {
-            lastRulesCache.putIfAbsent(yearObj, transArray);
+            this.lastRulesCache.putIfAbsent(yearObj, transArray);
         }
         return transArray;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TZoneOffset getStandardOffset(TInstant instant) {
+
         long epochSec = instant.getEpochSecond();
-        int index  = Arrays.binarySearch(standardTransitions, epochSec);
+        int index = Arrays.binarySearch(this.standardTransitions, epochSec);
         if (index < 0) {
             // switch negative insert position to start of matched range
             index = -index - 2;
         }
-        return standardOffsets[index + 1];
+        return this.standardOffsets[index + 1];
     }
 
     @Override
     public TDuration getDaylightSavings(TInstant instant) {
+
         TZoneOffset standardOffset = getStandardOffset(instant);
         TZoneOffset actualOffset = getOffset(instant);
         return TDuration.ofSeconds(actualOffset.getTotalSeconds() - standardOffset.getTotalSeconds());
@@ -371,25 +338,26 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
 
     @Override
     public boolean isDaylightSavings(TInstant instant) {
+
         return (getStandardOffset(instant).equals(getOffset(instant)) == false);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TZoneOffsetTransition nextTransition(TInstant instant) {
-        if (savingsInstantTransitions.length == 0) {
+
+        if (this.savingsInstantTransitions.length == 0) {
             return null;
         }
-        
+
         long epochSec = instant.getEpochSecond();
 
         // check if using last rules
-        if (epochSec >= savingsInstantTransitions[savingsInstantTransitions.length - 1]) {
-            if (lastRules.length == 0) {
+        if (epochSec >= this.savingsInstantTransitions[this.savingsInstantTransitions.length - 1]) {
+            if (this.lastRules.length == 0) {
                 return null;
             }
             // search year the instant is in
-            int year = findYear(epochSec, wallOffsets[wallOffsets.length - 1]);
+            int year = findYear(epochSec, this.wallOffsets[this.wallOffsets.length - 1]);
             TZoneOffsetTransition[] transArray = findTransitionArray(year);
             for (TZoneOffsetTransition trans : transArray) {
                 if (epochSec < trans.toEpochSecond()) {
@@ -405,31 +373,33 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
         }
 
         // using historic rules
-        int index  = Arrays.binarySearch(savingsInstantTransitions, epochSec);
+        int index = Arrays.binarySearch(this.savingsInstantTransitions, epochSec);
         if (index < 0) {
-            index = -index - 1;  // switched value is the next transition
+            index = -index - 1; // switched value is the next transition
         } else {
-            index += 1;  // exact match, so need to add one to get the next
+            index += 1; // exact match, so need to add one to get the next
         }
-        return new TZoneOffsetTransition(savingsInstantTransitions[index], wallOffsets[index], wallOffsets[index + 1]);
+        return new TZoneOffsetTransition(this.savingsInstantTransitions[index], this.wallOffsets[index],
+                this.wallOffsets[index + 1]);
     }
 
     @Override
     public TZoneOffsetTransition previousTransition(TInstant instant) {
-        if (savingsInstantTransitions.length == 0) {
+
+        if (this.savingsInstantTransitions.length == 0) {
             return null;
         }
-        
+
         long epochSec = instant.getEpochSecond();
         if (instant.getNano() > 0 && epochSec < Long.MAX_VALUE) {
-            epochSec += 1;  // allow rest of method to only use seconds
+            epochSec += 1; // allow rest of method to only use seconds
         }
 
         // check if using last rules
-        long lastHistoric = savingsInstantTransitions[savingsInstantTransitions.length - 1];
-        if (lastRules.length > 0 && epochSec > lastHistoric) {
+        long lastHistoric = this.savingsInstantTransitions[this.savingsInstantTransitions.length - 1];
+        if (this.lastRules.length > 0 && epochSec > lastHistoric) {
             // search year the instant is in
-            TZoneOffset lastHistoricOffset = wallOffsets[wallOffsets.length - 1];
+            TZoneOffset lastHistoricOffset = this.wallOffsets[this.wallOffsets.length - 1];
             int year = findYear(epochSec, lastHistoricOffset);
             TZoneOffsetTransition[] transArray = findTransitionArray(year);
             for (int i = transArray.length - 1; i >= 0; i--) {
@@ -447,51 +417,55 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
         }
 
         // using historic rules
-        int index  = Arrays.binarySearch(savingsInstantTransitions, epochSec);
+        int index = Arrays.binarySearch(this.savingsInstantTransitions, epochSec);
         if (index < 0) {
             index = -index - 1;
         }
         if (index <= 0) {
             return null;
         }
-        return new TZoneOffsetTransition(savingsInstantTransitions[index - 1], wallOffsets[index - 1], wallOffsets[index]);
+        return new TZoneOffsetTransition(this.savingsInstantTransitions[index - 1], this.wallOffsets[index - 1],
+                this.wallOffsets[index]);
     }
 
     private int findYear(long epochSecond, TZoneOffset offset) {
+
         // inline for performance
         long localSecond = epochSecond + offset.getTotalSeconds();
         long localEpochDay = TJdk8Methods.floorDiv(localSecond, 86400);
         return TLocalDate.ofEpochDay(localEpochDay).getYear();
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public List<TZoneOffsetTransition> getTransitions() {
-        List<TZoneOffsetTransition> list = new ArrayList<TZoneOffsetTransition>();
-        for (int i = 0; i < savingsInstantTransitions.length; i++) {
-            list.add(new TZoneOffsetTransition(savingsInstantTransitions[i], wallOffsets[i], wallOffsets[i + 1]));
+
+        List<TZoneOffsetTransition> list = new ArrayList<>();
+        for (int i = 0; i < this.savingsInstantTransitions.length; i++) {
+            list.add(new TZoneOffsetTransition(this.savingsInstantTransitions[i], this.wallOffsets[i],
+                    this.wallOffsets[i + 1]));
         }
         return Collections.unmodifiableList(list);
     }
 
     @Override
     public List<TZoneOffsetTransitionRule> getTransitionRules() {
-        return Collections.unmodifiableList(Arrays.asList(lastRules));
+
+        return Collections.unmodifiableList(Arrays.asList(this.lastRules));
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
-           return true;
+            return true;
         }
         if (obj instanceof TStandardZoneRules) {
             TStandardZoneRules other = (TStandardZoneRules) obj;
-            return Arrays.equals(standardTransitions, other.standardTransitions) &&
-                    Arrays.equals(standardOffsets, other.standardOffsets) &&
-                    Arrays.equals(savingsInstantTransitions, other.savingsInstantTransitions) &&
-                    Arrays.equals(wallOffsets, other.wallOffsets) &&
-                    Arrays.equals(lastRules, other.lastRules);
+            return Arrays.equals(this.standardTransitions, other.standardTransitions)
+                    && Arrays.equals(this.standardOffsets, other.standardOffsets)
+                    && Arrays.equals(this.savingsInstantTransitions, other.savingsInstantTransitions)
+                    && Arrays.equals(this.wallOffsets, other.wallOffsets)
+                    && Arrays.equals(this.lastRules, other.lastRules);
         }
         if (obj instanceof Fixed) {
             return isFixedOffset() && getOffset(TInstant.EPOCH).equals(((Fixed) obj).getOffset(TInstant.EPOCH));
@@ -501,17 +475,16 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
 
     @Override
     public int hashCode() {
-        return Arrays.hashCode(standardTransitions) ^
-                Arrays.hashCode(standardOffsets) ^
-                Arrays.hashCode(savingsInstantTransitions) ^
-                Arrays.hashCode(wallOffsets) ^
-                Arrays.hashCode(lastRules);
+
+        return Arrays.hashCode(this.standardTransitions) ^ Arrays.hashCode(this.standardOffsets)
+                ^ Arrays.hashCode(this.savingsInstantTransitions) ^ Arrays.hashCode(this.wallOffsets)
+                ^ Arrays.hashCode(this.lastRules);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
-        return "TStandardZoneRules[currentStandardOffset=" + standardOffsets[standardOffsets.length - 1] + "]";
+
+        return "StandardZoneRules[currentStandardOffset=" + this.standardOffsets[this.standardOffsets.length - 1] + "]";
     }
 
 }

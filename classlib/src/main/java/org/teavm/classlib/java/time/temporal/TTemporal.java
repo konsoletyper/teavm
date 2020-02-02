@@ -31,13 +31,6 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.TDuration;
-import org.teavm.classlib.java.time.TPeriod;
-import org.teavm.classlib.java.time.TZoneId;
-import org.teavm.classlib.java.time.chrono.TChronoLocalDate;
-import org.teavm.classlib.java.time.chrono.TChronology;
-
 public interface TTemporal extends TTemporalAccessor {
 
     boolean isSupported(TTemporalUnit unit);
@@ -46,17 +39,14 @@ public interface TTemporal extends TTemporalAccessor {
 
     TTemporal with(TTemporalField field, long newValue);
 
-    //-----------------------------------------------------------------------
     TTemporal plus(TTemporalAmount amount);
 
     TTemporal plus(long amountToAdd, TTemporalUnit unit);
 
-    //-----------------------------------------------------------------------
     TTemporal minus(TTemporalAmount amount);
 
     TTemporal minus(long amountToSubtract, TTemporalUnit unit);
 
-    //-----------------------------------------------------------------------
     long until(TTemporal endTemporal, TTemporalUnit unit);
 
 }

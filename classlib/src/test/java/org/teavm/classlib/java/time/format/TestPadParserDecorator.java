@@ -40,61 +40,75 @@ import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.NumberPrint
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.PadPrinterParserDecorator;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 
-@Test
 public class TestPadParserDecorator extends AbstractTestPrinterParser {
 
-    //-----------------------------------------------------------------------
-    @Test(expectedExceptions=IndexOutOfBoundsException.class)
-    public void test_parse_negativePosition() throws Exception {
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void test_parse_negativePosition() {
+
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new CharLiteralPrinterParser('Z'), 3, '-');
-        pp.parse(parseContext, "--Z", -1);
+        pp.parse(this.parseContext, "--Z", -1);
     }
 
-    @Test(expectedExceptions=IndexOutOfBoundsException.class)
-    public void test_parse_offEndPosition() throws Exception {
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void test_parse_offEndPosition() {
+
         PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new CharLiteralPrinterParser('Z'), 3, '-');
-        pp.parse(parseContext, "--Z", 4);
+        pp.parse(this.parseContext, "--Z", 4);
     }
 
-    //-----------------------------------------------------------------------
-    public void test_parse() throws Exception {
-        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
-        int result = pp.parse(parseContext, "--2", 0);
+    @Test
+    public void test_parse() {
+
+        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(
+                new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
+        int result = pp.parse(this.parseContext, "--2", 0);
         assertEquals(result, 3);
         assertParsed(MONTH_OF_YEAR, 2L);
     }
 
-    public void test_parse_noReadBeyond() throws Exception {
-        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
-        int result = pp.parse(parseContext, "--22", 0);
+    @Test
+    public void test_parse_noReadBeyond() {
+
+        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(
+                new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
+        int result = pp.parse(this.parseContext, "--22", 0);
         assertEquals(result, 3);
         assertParsed(MONTH_OF_YEAR, 2L);
     }
 
-    public void test_parse_textLessThanPadWidth() throws Exception {
-        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
-        int result = pp.parse(parseContext, "-1", 0);
+    @Test
+    public void test_parse_textLessThanPadWidth() {
+
+        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(
+                new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
+        int result = pp.parse(this.parseContext, "-1", 0);
         assertEquals(result, ~0);
     }
 
-    public void test_parse_decoratedErrorPassedBack() throws Exception {
-        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
-        int result = pp.parse(parseContext, "--A", 0);
+    @Test
+    public void test_parse_decoratedErrorPassedBack() {
+
+        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(
+                new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
+        int result = pp.parse(this.parseContext, "--A", 0);
         assertEquals(result, ~2);
     }
 
-    public void test_parse_decoratedDidNotParseToPadWidth() throws Exception {
-        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
-        int result = pp.parse(parseContext, "-1X", 0);
+    @Test
+    public void test_parse_decoratedDidNotParseToPadWidth() {
+
+        PadPrinterParserDecorator pp = new PadPrinterParserDecorator(
+                new NumberPrinterParser(MONTH_OF_YEAR, 1, 3, TSignStyle.NEVER), 3, '-');
+        int result = pp.parse(this.parseContext, "-1X", 0);
         assertEquals(result, ~1);
     }
 
-    //-----------------------------------------------------------------------
     private void assertParsed(TTemporalField field, Long value) {
+
         if (value == null) {
-            assertEquals(parseContext.getParsed(field), null);
+            assertEquals(this.parseContext.getParsed(field), null);
         } else {
-            assertEquals(parseContext.getParsed(field), value);
+            assertEquals(this.parseContext.getParsed(field), value);
         }
     }
 

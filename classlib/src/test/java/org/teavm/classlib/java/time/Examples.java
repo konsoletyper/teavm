@@ -38,7 +38,7 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 import static org.teavm.classlib.java.time.temporal.TTemporalAdjusters.lastDayOfMonth;
 
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
@@ -47,74 +47,68 @@ import org.teavm.classlib.java.time.format.TSignStyle;
 public class Examples {
 
     public static void main(String[] args) {
+
         TClock clock = TClock.systemDefaultZone();
 
         TZonedDateTime zdt = TZonedDateTime.now(clock);
-        TSystem.out.println("Current date-time: " + zdt);
+        System.out.println("Current date-time: " + zdt);
 
         TZonedDateTime zdtNewYork = TZonedDateTime.now(TClock.system(TZoneId.of("America/New_York")));
-        TSystem.out.println("Current date-time in New York: " + zdtNewYork);
+        System.out.println("Current date-time in New York: " + zdtNewYork);
 
         TZonedDateTime zdtParis = TZonedDateTime.now(TClock.system(TZoneId.of("Europe/Paris")));
-        TSystem.out.println("Current date-time in Paris: " + zdtParis);
+        System.out.println("Current date-time in Paris: " + zdtParis);
 
         TLocalDateTime ldt = TLocalDateTime.now(clock);
-        TSystem.out.println("Current local date-time: " + ldt);
+        System.out.println("Current local date-time: " + ldt);
 
         TYear year = TYear.now(clock);
-        TSystem.out.println("TYear: " + year.getValue());
+        System.out.println("TYear: " + year.getValue());
 
         TLocalDate today = TLocalDate.now(clock);
-        TSystem.out.println("Today: " + today);
+        System.out.println("Today: " + today);
 
-        TSystem.out.println("Current day-of-year: " + today.get(DAY_OF_YEAR));
+        System.out.println("Current day-of-year: " + today.get(DAY_OF_YEAR));
 
         TLocalTime time = TLocalTime.now(clock);
-        TSystem.out.println("Current time of day: " + time);
+        System.out.println("Current time of day: " + time);
 
         TLocalDate later = TLocalDate.now(clock).plusMonths(2).plusDays(3);
-        TSystem.out.println("Two months three days after today: " + later);
+        System.out.println("Two months three days after today: " + later);
 
-//        ISOPeriod period = ISOPeriod.of(3, MONTHS);
-//        TLocalDate moreLater = TLocalDate.now(clock).plus(period);
-//        TSystem.out.println("TPeriod " + period + " after today : " + moreLater);
+        // ISOPeriod period = ISOPeriod.of(3, MONTHS);
+        // TLocalDate moreLater = TLocalDate.now(clock).plus(period);
+        // System.out.println("TPeriod " + period + " after today : " + moreLater);
 
         TLocalDate dec = TLocalDate.now(clock).with(DECEMBER);
-        TSystem.out.println("Change to same day in December: " + dec);
+        System.out.println("Change to same day in December: " + dec);
 
         TLocalDate lastDayOfMonth = TLocalDate.now(clock).with(lastDayOfMonth());
-        TSystem.out.println("Last day of month: " + lastDayOfMonth);
+        System.out.println("Last day of month: " + lastDayOfMonth);
 
-///        TLocalDate tempDate = TLocalDate.now(clock);
-//        DateTimeFields fri13matcher = DateTimeFields.of(
-//                DAY_OF_WEEK, FRIDAY.getValue(), DAY_OF_MONTH, 13);
-//        boolean fri13 = fri13matcher.matches(tempDate);
-//        TSystem.out.println("Is Friday the Thirteenth: " + fri13);
+        /// TLocalDate tempDate = TLocalDate.now(clock);
+        // DateTimeFields fri13matcher = DateTimeFields.of(
+        // DAY_OF_WEEK, FRIDAY.getValue(), DAY_OF_MONTH, 13);
+        // boolean fri13 = fri13matcher.matches(tempDate);
+        // System.out.println("Is Friday the Thirteenth: " + fri13);
 
         TLocalDateTime dt = TLocalDateTime.of(2008, 3, 30, 1, 30);
-        TSystem.out.println("Local date-time in Spring DST gap: " + dt);
+        System.out.println("Local date-time in Spring DST gap: " + dt);
 
         TZonedDateTime resolved = TZonedDateTime.of(dt, TZoneId.of("Europe/London"));
-        TSystem.out.println("...resolved to valid date-time in Europe/London: " + resolved);
+        System.out.println("...resolved to valid date-time in Europe/London: " + resolved);
 
         String formattedRFC = TDateTimeFormatter.RFC_1123_DATE_TIME.format(resolved);
-        TSystem.out.println("...printed as RFC1123: " + formattedRFC);
+        System.out.println("...printed as RFC1123: " + formattedRFC);
 
-        TDateTimeFormatter f = new TDateTimeFormatterBuilder()
-            .appendValue(YEAR, 4, 10, TSignStyle.ALWAYS)
-            .appendLiteral(' ')
-            .appendText(MONTH_OF_YEAR)
-            .appendLiteral('(')
-            .appendValue(MONTH_OF_YEAR)
-            .appendLiteral(')')
-            .appendLiteral(' ')
-            .appendValue(DAY_OF_MONTH, 2)
-            .toFormatter(TLocale.ENGLISH);
+        TDateTimeFormatter f = new TDateTimeFormatterBuilder().appendValue(YEAR, 4, 10, TSignStyle.ALWAYS)
+                .appendLiteral(' ').appendText(MONTH_OF_YEAR).appendLiteral('(').appendValue(MONTH_OF_YEAR)
+                .appendLiteral(')').appendLiteral(' ').appendValue(DAY_OF_MONTH, 2).toFormatter(Locale.ENGLISH);
         String formatted = f.format(resolved);
-        TSystem.out.println("...printed using complex format: " + formatted);
+        System.out.println("...printed using complex format: " + formatted);
 
         TMonthDay bday = TMonthDay.of(DECEMBER, 3);
-        TSystem.out.println("Brazillian birthday (no year): " + bday);
+        System.out.println("Brazillian birthday (no year): " + bday);
     }
 
 }

@@ -32,24 +32,21 @@
 package org.teavm.classlib.java.time.format;
 
 public enum TTextStyle {
-    // ordered from large to small
 
-    FULL,
-    FULL_STANDALONE,
-    SHORT,
-    SHORT_STANDALONE,
-    NARROW,
-    NARROW_STANDALONE;
+    FULL, FULL_STANDALONE, SHORT, SHORT_STANDALONE, NARROW, NARROW_STANDALONE;
 
     public boolean isStandalone() {
+
         return (ordinal() & 1) == 1;
     }
 
     public TTextStyle asStandalone() {
-        return TTextStyle.values()[ordinal()  | 1];
+
+        return TTextStyle.values()[ordinal() | 1];
     }
 
     public TTextStyle asNormal() {
+
         return TTextStyle.values()[ordinal() & ~1];
     }
 

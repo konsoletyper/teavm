@@ -31,9 +31,7 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TDuration;
-import org.teavm.classlib.java.time.TPeriod;
 
 public interface TTemporalUnit {
 
@@ -41,21 +39,14 @@ public interface TTemporalUnit {
 
     boolean isDurationEstimated();
 
-    //-----------------------------------------------------------------------
     boolean isDateBased();
 
     boolean isTimeBased();
 
-    //-----------------------------------------------------------------------
     boolean isSupportedBy(TTemporal temporal);
 
     <R extends TTemporal> R addTo(R dateTime, long periodToAdd);
 
-    //-----------------------------------------------------------------------
     long between(TTemporal temporal1, TTemporal temporal2);
-
-    //-----------------------------------------------------------------------
-    @Override
-    String toString();
 
 }

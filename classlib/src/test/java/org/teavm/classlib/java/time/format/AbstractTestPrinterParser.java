@@ -31,10 +31,9 @@
  */
 package org.teavm.classlib.java.time.format;
 
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
 import org.junit.Before;
-import org.junit.Test;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDateTime;
 import org.teavm.classlib.java.time.TZoneId;
@@ -44,29 +43,36 @@ import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 
-@Test
 public class AbstractTestPrinterParser {
 
     protected TDateTimePrintContext printEmptyContext;
+
     protected TDateTimePrintContext printContext;
+
     protected TDateTimeParseContext parseContext;
+
     protected StringBuilder buf;
 
     @Before
     public void setUp() {
-        printEmptyContext = new TDateTimePrintContext(EMPTY, TLocale.ENGLISH, TDecimalStyle.STANDARD);
+
+        this.printEmptyContext = new TDateTimePrintContext(EMPTY, Locale.ENGLISH, TDecimalStyle.STANDARD);
         TZonedDateTime zdt = TLocalDateTime.of(2011, 6, 30, 12, 30, 40, 0).atZone(TZoneId.of("Europe/Paris"));
-        printContext = new TDateTimePrintContext(zdt, TLocale.ENGLISH, TDecimalStyle.STANDARD);
-        parseContext = new TDateTimeParseContext(TLocale.ENGLISH, TDecimalStyle.STANDARD, TIsoChronology.INSTANCE);
-        buf = new StringBuilder();
+        this.printContext = new TDateTimePrintContext(zdt, Locale.ENGLISH, TDecimalStyle.STANDARD);
+        this.parseContext = new TDateTimeParseContext(Locale.ENGLISH, TDecimalStyle.STANDARD, TIsoChronology.INSTANCE);
+        this.buf = new StringBuilder();
     }
 
     private static final TTemporalAccessor EMPTY = new TDefaultInterfaceTemporalAccessor() {
+        @Override
         public boolean isSupported(TTemporalField field) {
+
             return true;
         }
+
         @Override
         public long getLong(TTemporalField field) {
+
             throw new TDateTimeException("Mock");
         }
     };

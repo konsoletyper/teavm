@@ -34,7 +34,7 @@ package org.teavm.classlib.java.time.format;
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
 import java.util.HashSet;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -44,24 +44,30 @@ import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 public final class TDecimalStyle {
 
     public static final TDecimalStyle STANDARD = new TDecimalStyle('0', '+', '-', '.');
-    private static final ConcurrentMap<TLocale, TDecimalStyle> CACHE = new ConcurrentHashMap<TLocale, TDecimalStyle>(16, 0.75f, 2);
+
+    private static final ConcurrentMap<Locale, TDecimalStyle> CACHE = new ConcurrentHashMap<>(16, 0.75f, 2);
 
     private final char zeroDigit;
+
     private final char positiveSign;
+
     private final char negativeSign;
+
     private final char decimalSeparator;
 
-    //-----------------------------------------------------------------------
-    public static Set<TLocale> getAvailableLocales() {
-        TLocale[] l = DecimalFormatSymbols.getAvailableLocales();
-        return new HashSet<TLocale>(Arrays.asList(l));
+    public static Set<Locale> getAvailableLocales() {
+
+        Locale[] l = DecimalFormatSymbols.getAvailableLocales();
+        return new HashSet<>(Arrays.asList(l));
     }
 
     public static TDecimalStyle ofDefaultLocale() {
-        return of(TLocale.getDefault());
+
+        return of(Locale.getDefault());
     }
 
-    public static TDecimalStyle of(TLocale locale) {
+    public static TDecimalStyle of(Locale locale) {
+
         TJdk8Methods.requireNonNull(locale, "locale");
         TDecimalStyle info = CACHE.get(locale);
         if (info == null) {
@@ -72,7 +78,8 @@ public final class TDecimalStyle {
         return info;
     }
 
-    private static TDecimalStyle create(TLocale locale) {
+    private static TDecimalStyle create(Locale locale) {
+
         DecimalFormatSymbols oldSymbols = DecimalFormatSymbols.getInstance(locale);
         char zeroDigit = oldSymbols.getZeroDigit();
         char positiveSign = '+';
@@ -84,73 +91,78 @@ public final class TDecimalStyle {
         return new TDecimalStyle(zeroDigit, positiveSign, negativeSign, decimalSeparator);
     }
 
-    //-----------------------------------------------------------------------
     private TDecimalStyle(char zeroChar, char positiveSignChar, char negativeSignChar, char decimalPointChar) {
+
         this.zeroDigit = zeroChar;
         this.positiveSign = positiveSignChar;
         this.negativeSign = negativeSignChar;
         this.decimalSeparator = decimalPointChar;
     }
 
-    //-----------------------------------------------------------------------
     public char getZeroDigit() {
-        return zeroDigit;
+
+        return this.zeroDigit;
     }
 
     public TDecimalStyle withZeroDigit(char zeroDigit) {
+
         if (zeroDigit == this.zeroDigit) {
             return this;
         }
-        return new TDecimalStyle(zeroDigit, positiveSign, negativeSign, decimalSeparator);
+        return new TDecimalStyle(zeroDigit, this.positiveSign, this.negativeSign, this.decimalSeparator);
     }
 
-    //-----------------------------------------------------------------------
     public char getPositiveSign() {
-        return positiveSign;
+
+        return this.positiveSign;
     }
 
     public TDecimalStyle withPositiveSign(char positiveSign) {
+
         if (positiveSign == this.positiveSign) {
             return this;
         }
-        return new TDecimalStyle(zeroDigit, positiveSign, negativeSign, decimalSeparator);
+        return new TDecimalStyle(this.zeroDigit, positiveSign, this.negativeSign, this.decimalSeparator);
     }
 
-    //-----------------------------------------------------------------------
     public char getNegativeSign() {
-        return negativeSign;
+
+        return this.negativeSign;
     }
 
     public TDecimalStyle withNegativeSign(char negativeSign) {
+
         if (negativeSign == this.negativeSign) {
             return this;
         }
-        return new TDecimalStyle(zeroDigit, positiveSign, negativeSign, decimalSeparator);
+        return new TDecimalStyle(this.zeroDigit, this.positiveSign, negativeSign, this.decimalSeparator);
     }
 
-    //-----------------------------------------------------------------------
     public char getDecimalSeparator() {
-        return decimalSeparator;
+
+        return this.decimalSeparator;
     }
 
     public TDecimalStyle withDecimalSeparator(char decimalSeparator) {
+
         if (decimalSeparator == this.decimalSeparator) {
             return this;
         }
-        return new TDecimalStyle(zeroDigit, positiveSign, negativeSign, decimalSeparator);
+        return new TDecimalStyle(this.zeroDigit, this.positiveSign, this.negativeSign, decimalSeparator);
     }
 
-    //-----------------------------------------------------------------------
     int convertToDigit(char ch) {
-        int val = ch - zeroDigit;
+
+        int val = ch - this.zeroDigit;
         return (val >= 0 && val <= 9) ? val : -1;
     }
 
     String convertNumberToI18N(String numericText) {
-        if (zeroDigit == '0') {
+
+        if (this.zeroDigit == '0') {
             return numericText;
         }
-        int diff = zeroDigit - '0';
+        int diff = this.zeroDigit - '0';
         char[] array = numericText.toCharArray();
         for (int i = 0; i < array.length; i++) {
             array[i] = (char) (array[i] + diff);
@@ -158,29 +170,30 @@ public final class TDecimalStyle {
         return new String(array);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
             return true;
         }
         if (obj instanceof TDecimalStyle) {
             TDecimalStyle other = (TDecimalStyle) obj;
-            return (zeroDigit == other.zeroDigit && positiveSign == other.positiveSign &&
-                    negativeSign == other.negativeSign && decimalSeparator == other.decimalSeparator);
+            return (this.zeroDigit == other.zeroDigit && this.positiveSign == other.positiveSign
+                    && this.negativeSign == other.negativeSign && this.decimalSeparator == other.decimalSeparator);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return zeroDigit + positiveSign + negativeSign + decimalSeparator;
+
+        return this.zeroDigit + this.positiveSign + this.negativeSign + this.decimalSeparator;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
-        return "TDecimalStyle[" + zeroDigit + positiveSign + negativeSign + decimalSeparator + "]";
+
+        return "TDecimalStyle[" + this.zeroDigit + this.positiveSign + this.negativeSign + this.decimalSeparator + "]";
     }
 
 }

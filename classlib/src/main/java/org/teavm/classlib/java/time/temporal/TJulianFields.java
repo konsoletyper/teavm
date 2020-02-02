@@ -35,36 +35,42 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.FOREVER;
 
-import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.format.TResolverStyle;
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import org.teavm.classlib.java.util.TLocale;
 
 public final class TJulianFields {
 
     public static final TTemporalField JULIAN_DAY = Field.JULIAN_DAY;
+
     public static final TTemporalField MODIFIED_JULIAN_DAY = Field.MODIFIED_JULIAN_DAY;
+
     public static final TTemporalField RATA_DIE = Field.RATA_DIE;
 
     private static enum Field implements TTemporalField {
         // 719163L + 1721425L = 2440588L
         JULIAN_DAY("JulianDay", DAYS, FOREVER, 2440588L),
         // 719163L - 678576L = 40587L
-        MODIFIED_JULIAN_DAY("ModifiedJulianDay", DAYS, FOREVER, 40587L),
-        RATA_DIE("RataDie", DAYS, FOREVER, 719163L),
+        MODIFIED_JULIAN_DAY("ModifiedJulianDay", DAYS, FOREVER, 40587L), RATA_DIE("RataDie", DAYS, FOREVER, 719163L),
         // lots of others Truncated,Lilian, ANSI COBOL (also dotnet related), Excel?
         ;
 
         private final String name;
+
         private final TTemporalUnit baseUnit;
+
         private final TTemporalUnit rangeUnit;
+
         private final TValueRange range;
+
         private final long offset;
 
         private Field(String name, TTemporalUnit baseUnit, TTemporalUnit rangeUnit, long offset) {
+
             this.name = name;
             this.baseUnit = baseUnit;
             this.rangeUnit = rangeUnit;
@@ -72,40 +78,45 @@ public final class TJulianFields {
             this.offset = offset;
         }
 
-        //-----------------------------------------------------------------------
         @Override
         public TTemporalUnit getBaseUnit() {
-            return baseUnit;
+
+            return this.baseUnit;
         }
 
         @Override
         public TTemporalUnit getRangeUnit() {
-            return rangeUnit;
+
+            return this.rangeUnit;
         }
 
         @Override
         public TValueRange range() {
-            return range;
+
+            return this.range;
         }
 
         @Override
         public boolean isDateBased() {
+
             return true;
         }
 
         @Override
         public boolean isTimeBased() {
+
             return false;
         }
 
-        //-----------------------------------------------------------------------
         @Override
         public boolean isSupportedBy(TTemporalAccessor temporal) {
+
             return temporal.isSupported(EPOCH_DAY);
         }
 
         @Override
         public TValueRange rangeRefinedBy(TTemporalAccessor temporal) {
+
             if (isSupportedBy(temporal) == false) {
                 throw new TUnsupportedTemporalTypeException("Unsupported field: " + this);
             }
@@ -114,37 +125,40 @@ public final class TJulianFields {
 
         @Override
         public long getFrom(TTemporalAccessor temporal) {
-            return temporal.getLong(EPOCH_DAY) + offset;
+
+            return temporal.getLong(EPOCH_DAY) + this.offset;
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public <R extends TTemporal> R adjustInto(R dateTime, long newValue) {
+
             if (range().isValidValue(newValue) == false) {
-                throw new TDateTimeException("Invalid value: " + name + " " + newValue);
+                throw new TDateTimeException("Invalid value: " + this.name + " " + newValue);
             }
-            return (R) dateTime.with(EPOCH_DAY, TJdk8Methods.safeSubtract(newValue, offset));
+            return (R) dateTime.with(EPOCH_DAY, TJdk8Methods.safeSubtract(newValue, this.offset));
         }
 
         @Override
         public String getDisplayName(TLocale locale) {
+
             TJdk8Methods.requireNonNull(locale, "locale");
             return toString();
         }
 
-        //-----------------------------------------------------------------------
         @Override
-        public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues,
-                        TTemporalAccessor partialTemporal, TResolverStyle resolverStyle) {
+        public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues, TTemporalAccessor partialTemporal,
+                TResolverStyle resolverStyle) {
+
             long value = fieldValues.remove(this);
             TChronology chrono = TChronology.from(partialTemporal);
-            return chrono.dateEpochDay(TJdk8Methods.safeSubtract(value, offset));
+            return chrono.dateEpochDay(TJdk8Methods.safeSubtract(value, this.offset));
         }
 
-        //-----------------------------------------------------------------------
         @Override
         public String toString() {
-            return name;
+
+            return this.name;
         }
 
     }

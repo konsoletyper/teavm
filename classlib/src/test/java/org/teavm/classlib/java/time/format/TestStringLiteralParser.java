@@ -34,67 +34,79 @@ package org.teavm.classlib.java.time.format;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.StringLiteralPrinterParser;
 import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 
-@Test
 public class TestStringLiteralParser extends AbstractTestPrinterParser {
 
-    @DataProvider(name="success")
     Object[][] data_success() {
+
         return new Object[][] {
-            // match
-            {new StringLiteralPrinterParser("hello"), true, "hello", 0, 5},
-            {new StringLiteralPrinterParser("hello"), true, "helloOTHER", 0, 5},
-            {new StringLiteralPrinterParser("hello"), true, "OTHERhelloOTHER", 5, 10},
-            {new StringLiteralPrinterParser("hello"), true, "OTHERhello", 5, 10},
+        // match
+        { new StringLiteralPrinterParser("hello"), true, "hello", 0, 5 },
+        { new StringLiteralPrinterParser("hello"), true, "helloOTHER", 0, 5 },
+        { new StringLiteralPrinterParser("hello"), true, "OTHERhelloOTHER", 5, 10 },
+        { new StringLiteralPrinterParser("hello"), true, "OTHERhello", 5, 10 },
 
-            // no match
-            {new StringLiteralPrinterParser("hello"), true, "", 0, ~0},
-            {new StringLiteralPrinterParser("hello"), true, "a", 1, ~1},
-            {new StringLiteralPrinterParser("hello"), true, "HELLO", 0, ~0},
-            {new StringLiteralPrinterParser("hello"), true, "hlloo", 0, ~0},
-            {new StringLiteralPrinterParser("hello"), true, "OTHERhllooOTHER", 5, ~5},
-            {new StringLiteralPrinterParser("hello"), true, "OTHERhlloo", 5, ~5},
-            {new StringLiteralPrinterParser("hello"), true, "h", 0, ~0},
-            {new StringLiteralPrinterParser("hello"), true, "OTHERh", 5, ~5},
+        // no match
+        { new StringLiteralPrinterParser("hello"), true, "", 0, ~0 },
+        { new StringLiteralPrinterParser("hello"), true, "a", 1, ~1 },
+        { new StringLiteralPrinterParser("hello"), true, "HELLO", 0, ~0 },
+        { new StringLiteralPrinterParser("hello"), true, "hlloo", 0, ~0 },
+        { new StringLiteralPrinterParser("hello"), true, "OTHERhllooOTHER", 5, ~5 },
+        { new StringLiteralPrinterParser("hello"), true, "OTHERhlloo", 5, ~5 },
+        { new StringLiteralPrinterParser("hello"), true, "h", 0, ~0 },
+        { new StringLiteralPrinterParser("hello"), true, "OTHERh", 5, ~5 },
 
-            // case insensitive
-            {new StringLiteralPrinterParser("hello"), false, "hello", 0, 5},
-            {new StringLiteralPrinterParser("hello"), false, "HELLO", 0, 5},
-            {new StringLiteralPrinterParser("hello"), false, "HelLo", 0, 5},
-            {new StringLiteralPrinterParser("hello"), false, "HelLO", 0, 5},
-        };
+        // case insensitive
+        { new StringLiteralPrinterParser("hello"), false, "hello", 0, 5 },
+        { new StringLiteralPrinterParser("hello"), false, "HELLO", 0, 5 },
+        { new StringLiteralPrinterParser("hello"), false, "HelLo", 0, 5 },
+        { new StringLiteralPrinterParser("hello"), false, "HelLO", 0, 5 }, };
     }
 
-    @Test(dataProvider="success")
-    public void test_parse_success(StringLiteralPrinterParser pp, boolean caseSensitive, String text, int pos, int expectedPos) {
-        parseContext.setCaseSensitive(caseSensitive);
-        int result = pp.parse(parseContext, text, pos);
-        assertEquals(result, expectedPos);
-        assertEquals(parseContext.toParsed().query(TTemporalQueries.chronology()), null);
-        assertEquals(parseContext.toParsed().query(TTemporalQueries.zoneId()), null);
+    @Test
+    public void test_parse_success() {
+
+        for (Object[] data : data_success()) {
+            StringLiteralPrinterParser pp = (StringLiteralPrinterParser) data[0];
+            boolean caseSensitive = (boolean) data[1];
+            String text = (String) data[2];
+            int pos = (int) data[3];
+            int expectedPos = (int) data[4];
+
+            this.parseContext.setCaseSensitive(caseSensitive);
+            int result = pp.parse(this.parseContext, text, pos);
+            assertEquals(result, expectedPos);
+            assertEquals(this.parseContext.toParsed().query(TTemporalQueries.chronology()), null);
+            assertEquals(this.parseContext.toParsed().query(TTemporalQueries.zoneId()), null);
+        }
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="error")
     Object[][] data_error() {
+
         return new Object[][] {
-            {new StringLiteralPrinterParser("hello"), "hello", -1, IndexOutOfBoundsException.class},
-            {new StringLiteralPrinterParser("hello"), "hello", 6, IndexOutOfBoundsException.class},
-        };
+        { new StringLiteralPrinterParser("hello"), "hello", -1, IndexOutOfBoundsException.class },
+        { new StringLiteralPrinterParser("hello"), "hello", 6, IndexOutOfBoundsException.class }, };
     }
 
-    @Test(dataProvider="error")
-    public void test_parse_error(StringLiteralPrinterParser pp, String text, int pos, Class<?> expected) {
-        try {
-            pp.parse(parseContext, text, pos);
-        } catch (RuntimeException ex) {
-            assertTrue(expected.isInstance(ex));
-            assertEquals(parseContext.toParsed().query(TTemporalQueries.chronology()), null);
-            assertEquals(parseContext.toParsed().query(TTemporalQueries.zoneId()), null);
+    @Test
+    public void test_parse_error() {
+
+        for (Object[] data : data_error()) {
+            StringLiteralPrinterParser pp = (StringLiteralPrinterParser) data[0];
+            String text = (String) data[1];
+            int pos = (int) data[2];
+            Class<?> expected = (Class<?>) data[3];
+
+            try {
+                pp.parse(this.parseContext, text, pos);
+            } catch (RuntimeException ex) {
+                assertTrue(expected.isInstance(ex));
+                assertEquals(this.parseContext.toParsed().query(TTemporalQueries.chronology()), null);
+                assertEquals(this.parseContext.toParsed().query(TTemporalQueries.zoneId()), null);
+            }
         }
     }
 

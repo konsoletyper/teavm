@@ -38,54 +38,60 @@ import org.teavm.classlib.java.time.chrono.TChronoZonedDateTime;
 
 public enum TChronoUnit implements TTemporalUnit {
 
-    NANOS("Nanos", TDuration.ofNanos(1)),
-    MICROS("Micros", TDuration.ofNanos(1000)),
-    MILLIS("Millis", TDuration.ofNanos(1000000)),
-    SECONDS("Seconds", TDuration.ofSeconds(1)),
-    MINUTES("Minutes", TDuration.ofSeconds(60)),
-    HOURS("Hours", TDuration.ofSeconds(3600)),
-    HALF_DAYS("HalfDays", TDuration.ofSeconds(43200)),
-    DAYS("Days", TDuration.ofSeconds(86400)),
-    WEEKS("Weeks", TDuration.ofSeconds(7 * 86400L)),
-    MONTHS("Months", TDuration.ofSeconds(31556952L / 12)),
-    YEARS("Years", TDuration.ofSeconds(31556952L)),
-    DECADES("Decades", TDuration.ofSeconds(31556952L * 10L)),
-    CENTURIES("Centuries", TDuration.ofSeconds(31556952L * 100L)),
-    MILLENNIA("Millennia", TDuration.ofSeconds(31556952L * 1000L)),
-    ERAS("Eras", TDuration.ofSeconds(31556952L * 1000000000L)),
-    FOREVER("Forever", TDuration.ofSeconds(Long.MAX_VALUE, 999999999));
+    NANOS("Nanos", TDuration.ofNanos(1)), //
+    MICROS("Micros", TDuration.ofNanos(1000)), //
+    MILLIS("Millis", TDuration.ofNanos(1000000)), //
+    SECONDS("Seconds", TDuration.ofSeconds(1)), //
+    MINUTES("Minutes", TDuration.ofSeconds(60)), //
+    HOURS("Hours", TDuration.ofSeconds(3600)), //
+    HALF_DAYS("HalfDays", TDuration.ofSeconds(43200)), //
+    DAYS("Days", TDuration.ofSeconds(86400)), //
+    WEEKS("Weeks", TDuration.ofSeconds(7 * 86400L)), //
+    MONTHS("Months", TDuration.ofSeconds(31556952L / 12)), //
+    YEARS("Years", TDuration.ofSeconds(31556952L)), //
+    DECADES("Decades", TDuration.ofSeconds(31556952L * 10L)), //
+    CENTURIES("Centuries", TDuration.ofSeconds(31556952L * 100L)), //
+    MILLENNIA("Millennia", TDuration.ofSeconds(31556952L * 1000L)), //
+    ERAS("Eras", TDuration.ofSeconds(31556952L * 1000000000L)), //
+    FOREVER("Forever", TDuration.ofSeconds(Long.MAX_VALUE, 999999999)); //
 
     private final String name;
+
     private final TDuration duration;
 
     private TChronoUnit(String name, TDuration estimatedDuration) {
+
         this.name = name;
         this.duration = estimatedDuration;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TDuration getDuration() {
-        return duration;
+
+        return this.duration;
     }
 
     @Override
     public boolean isDurationEstimated() {
+
         return isDateBased() || this == FOREVER;
     }
 
-    //-----------------------------------------------------------------------
+    @Override
     public boolean isDateBased() {
-        return this.compareTo(DAYS) >= 0 && this != FOREVER;
+
+        return compareTo(DAYS) >= 0 && this != FOREVER;
     }
 
+    @Override
     public boolean isTimeBased() {
-        return this.compareTo(DAYS) < 0;
+
+        return compareTo(DAYS) < 0;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isSupportedBy(TTemporal temporal) {
+
         if (this == FOREVER) {
             return false;
         }
@@ -111,19 +117,20 @@ public enum TChronoUnit implements TTemporalUnit {
     @SuppressWarnings("unchecked")
     @Override
     public <R extends TTemporal> R addTo(R dateTime, long periodToAdd) {
+
         return (R) dateTime.plus(periodToAdd, this);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public long between(TTemporal temporal1, TTemporal temporal2) {
+
         return temporal1.until(temporal2, this);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
-        return name;
+
+        return this.name;
     }
 
 }

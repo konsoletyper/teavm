@@ -33,10 +33,7 @@ package org.teavm.classlib.java.time.chrono;
 
 import static org.teavm.classlib.java.time.temporal.TChronoField.ERA;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
@@ -52,11 +49,10 @@ import org.teavm.classlib.java.time.temporal.TValueRange;
 
 public enum THijrahEra implements TEra {
 
-    BEFORE_AH,
-    AH;
+    BEFORE_AH, AH;
 
-    //-----------------------------------------------------------------------
     public static THijrahEra of(int hijrahEra) {
+
         switch (hijrahEra) {
             case 0:
                 return BEFORE_AH;
@@ -67,15 +63,15 @@ public enum THijrahEra implements TEra {
         }
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public int getValue() {
+
         return ordinal();
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isSupported(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             return field == ERA;
         }
@@ -84,6 +80,7 @@ public enum THijrahEra implements TEra {
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field == ERA) {
             return TValueRange.of(1, 1);
         } else if (field instanceof TChronoField) {
@@ -94,6 +91,7 @@ public enum THijrahEra implements TEra {
 
     @Override
     public int get(TTemporalField field) {
+
         if (field == ERA) {
             return getValue();
         }
@@ -102,6 +100,7 @@ public enum THijrahEra implements TEra {
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field == ERA) {
             return getValue();
         } else if (field instanceof TChronoField) {
@@ -110,48 +109,36 @@ public enum THijrahEra implements TEra {
         return field.getFrom(this);
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public TTemporal adjustInto(TTemporal temporal) {
+
         return temporal.with(ERA, getValue());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
+
         if (query == TTemporalQueries.precision()) {
             return (R) TChronoUnit.ERAS;
         }
-        if (query == TTemporalQueries.chronology() || query == TTemporalQueries.zone() ||
-                query == TTemporalQueries.zoneId() || query == TTemporalQueries.offset() ||
-                query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime()) {
+        if (query == TTemporalQueries.chronology() || query == TTemporalQueries.zone()
+                || query == TTemporalQueries.zoneId() || query == TTemporalQueries.offset()
+                || query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime()) {
             return null;
         }
         return query.queryFrom(this);
     }
 
-    //-----------------------------------------------------------------------
     @Override
-    public String getDisplayName(TTextStyle style, TLocale locale) {
+    public String getDisplayName(TTextStyle style, Locale locale) {
+
         return new TDateTimeFormatterBuilder().appendText(ERA, style).toFormatter(locale).format(this);
     }
 
     int prolepticYear(int yearOfEra) {
+
         return (this == THijrahEra.AH ? yearOfEra : 1 - yearOfEra);
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.HIJRAH_ERA_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeByte(this.getValue());
-    }
-
-    static THijrahEra readExternal(DataInput in) throws IOException {
-        byte eraValue = in.readByte();
-        return THijrahEra.of(eraValue);
     }
 
 }

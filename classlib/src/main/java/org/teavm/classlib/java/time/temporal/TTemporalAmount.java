@@ -33,10 +33,6 @@ package org.teavm.classlib.java.time.temporal;
 
 import java.util.List;
 
-import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.TDuration;
-import org.teavm.classlib.java.time.TPeriod;
-
 public interface TTemporalAmount {
 
     List<TTemporalUnit> getUnits();

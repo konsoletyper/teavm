@@ -33,7 +33,7 @@ package org.teavm.classlib.java.time.format;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 
@@ -42,17 +42,18 @@ import org.teavm.classlib.java.time.chrono.TChronology;
 final class TSimpleDateTimeFormatStyleProvider extends TDateTimeFormatStyleProvider {
     // TODO: Better implementation based on CLDR
 
-    private static final ConcurrentMap<String, Object> FORMATTER_CACHE =
-                        new ConcurrentHashMap<String, Object>(16, 0.75f, 2);
+    private static final ConcurrentMap<String, Object> FORMATTER_CACHE = new ConcurrentHashMap<>(16, 0.75f, 2);
 
     @Override
-    public TLocale[] getAvailableLocales() {
+    public Locale[] getAvailableLocales() {
+
         return DateFormat.getAvailableLocales();
     }
 
     @Override
-    public TDateTimeFormatter getFormatter(
-            TFormatStyle dateStyle, TFormatStyle timeStyle, TChronology chrono, TLocale locale) {
+    public TDateTimeFormatter getFormatter(TFormatStyle dateStyle, TFormatStyle timeStyle, TChronology chrono,
+            Locale locale) {
+
         if (dateStyle == null && timeStyle == null) {
             throw new IllegalArgumentException("TDate and Time style must not both be null");
         }
@@ -85,7 +86,8 @@ final class TSimpleDateTimeFormatStyleProvider extends TDateTimeFormatStyleProvi
     }
 
     private int convertStyle(TFormatStyle style) {
-        return style.ordinal();  // indices happen to align
+
+        return style.ordinal(); // indices happen to align
     }
 
 }

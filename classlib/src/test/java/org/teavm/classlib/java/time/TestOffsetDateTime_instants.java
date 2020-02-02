@@ -35,26 +35,30 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-@Test
 public class TestOffsetDateTime_instants {
 
     private static final TZoneOffset OFFSET_PONE = TZoneOffset.ofHours(1);
+
     private static final TZoneOffset OFFSET_MAX = TZoneOffset.ofHours(18);
+
     private static final TZoneOffset OFFSET_MIN = TZoneOffset.ofHours(-18);
 
-    //-----------------------------------------------------------------------
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void factory_ofInstant_nullInstant() {
+
         TOffsetDateTime.ofInstant((TInstant) null, OFFSET_PONE);
     }
 
-    @Test(expectedExceptions=NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void factory_ofInstant_nullOffset() {
+
         TInstant instant = TInstant.ofEpochSecond(0L);
         TOffsetDateTime.ofInstant(instant, (TZoneOffset) null);
     }
 
+    @Test
     public void factory_ofInstant_allSecsInDay() {
+
         for (int i = 0; i < (24 * 60 * 60); i++) {
             TInstant instant = TInstant.ofEpochSecond(i);
             TOffsetDateTime test = TOffsetDateTime.ofInstant(instant, OFFSET_PONE);
@@ -67,9 +71,12 @@ public class TestOffsetDateTime_instants {
         }
     }
 
+    @Test
     public void factory_ofInstant_allDaysInCycle() {
+
         // sanity check using different algorithm
-        TOffsetDateTime expected = TOffsetDateTime.of(TLocalDate.of(1970, 1, 1), TLocalTime.of(0, 0, 0, 0), TZoneOffset.UTC);
+        TOffsetDateTime expected = TOffsetDateTime.of(TLocalDate.of(1970, 1, 1), TLocalTime.of(0, 0, 0, 0),
+                TZoneOffset.UTC);
         for (long i = 0; i < 146097; i++) {
             TInstant instant = TInstant.ofEpochSecond(i * 24L * 60L * 60L);
             TOffsetDateTime test = TOffsetDateTime.ofInstant(instant, TZoneOffset.UTC);
@@ -78,17 +85,21 @@ public class TestOffsetDateTime_instants {
         }
     }
 
+    @Test
     public void factory_ofInstant_history() {
+
         doTest_factory_ofInstant_all(-2820, 2820);
     }
 
-    //-----------------------------------------------------------------------
+    @Test
     public void factory_ofInstant_minYear() {
+
         doTest_factory_ofInstant_all(TYear.MIN_VALUE, TYear.MIN_VALUE + 420);
     }
 
-    @Test(expectedExceptions=TDateTimeException.class)
+    @Test(expected = TDateTimeException.class)
     public void factory_ofInstant_tooLow() {
+
         long days_0000_to_1970 = (146097 * 5) - (30 * 365 + 7);
         int year = TYear.MIN_VALUE - 1;
         long days = (year * 365L + (year / 4 - year / 100 + year / 400)) - days_0000_to_1970;
@@ -96,12 +107,15 @@ public class TestOffsetDateTime_instants {
         TOffsetDateTime.ofInstant(instant, TZoneOffset.UTC);
     }
 
+    @Test
     public void factory_ofInstant_maxYear() {
+
         doTest_factory_ofInstant_all(TYear.MAX_VALUE - 420, TYear.MAX_VALUE);
     }
 
-    @Test(expectedExceptions=TDateTimeException.class)
+    @Test(expected = TDateTimeException.class)
     public void factory_ofInstant_tooBig() {
+
         long days_0000_to_1970 = (146097 * 5) - (30 * 365 + 7);
         long year = TYear.MAX_VALUE + 1L;
         long days = (year * 365L + (year / 4 - year / 100 + year / 400)) - days_0000_to_1970;
@@ -109,8 +123,9 @@ public class TestOffsetDateTime_instants {
         TOffsetDateTime.ofInstant(instant, TZoneOffset.UTC);
     }
 
-    //-----------------------------------------------------------------------
+    @Test
     public void factory_ofInstant_minWithMinOffset() {
+
         long days_0000_to_1970 = (146097 * 5) - (30 * 365 + 7);
         int year = TYear.MIN_VALUE;
         long days = (year * 365L + (year / 4 - year / 100 + year / 400)) - days_0000_to_1970;
@@ -126,7 +141,9 @@ public class TestOffsetDateTime_instants {
         assertEquals(test.getNano(), 0);
     }
 
+    @Test
     public void factory_ofInstant_minWithMaxOffset() {
+
         long days_0000_to_1970 = (146097 * 5) - (30 * 365 + 7);
         int year = TYear.MIN_VALUE;
         long days = (year * 365L + (year / 4 - year / 100 + year / 400)) - days_0000_to_1970;
@@ -142,7 +159,9 @@ public class TestOffsetDateTime_instants {
         assertEquals(test.getNano(), 0);
     }
 
+    @Test
     public void factory_ofInstant_maxWithMinOffset() {
+
         long days_0000_to_1970 = (146097 * 5) - (30 * 365 + 7);
         int year = TYear.MAX_VALUE;
         long days = (year * 365L + (year / 4 - year / 100 + year / 400)) + 365 - days_0000_to_1970;
@@ -158,7 +177,9 @@ public class TestOffsetDateTime_instants {
         assertEquals(test.getNano(), 0);
     }
 
+    @Test
     public void factory_ofInstant_maxWithMaxOffset() {
+
         long days_0000_to_1970 = (146097 * 5) - (30 * 365 + 7);
         int year = TYear.MAX_VALUE;
         long days = (year * 365L + (year / 4 - year / 100 + year / 400)) + 365 - days_0000_to_1970;
@@ -174,29 +195,35 @@ public class TestOffsetDateTime_instants {
         assertEquals(test.getNano(), 0);
     }
 
-    //-----------------------------------------------------------------------
-    @Test(expectedExceptions=TDateTimeException.class)
+    @Test(expected = TDateTimeException.class)
     public void factory_ofInstant_maxInstantWithMaxOffset() {
+
         TInstant instant = TInstant.ofEpochSecond(Long.MAX_VALUE);
         TOffsetDateTime.ofInstant(instant, OFFSET_MAX);
     }
 
-    @Test(expectedExceptions=TDateTimeException.class)
+    @Test(expected = TDateTimeException.class)
     public void factory_ofInstant_maxInstantWithMinOffset() {
+
         TInstant instant = TInstant.ofEpochSecond(Long.MAX_VALUE);
         TOffsetDateTime.ofInstant(instant, OFFSET_MIN);
     }
 
-    //-----------------------------------------------------------------------
     private void doTest_factory_ofInstant_all(long minYear, long maxYear) {
+
         long days_0000_to_1970 = (146097 * 5) - (30 * 365 + 7);
         int minOffset = (minYear <= 0 ? 0 : 3);
         int maxOffset = (maxYear <= 0 ? 0 : 3);
-        long minDays = (minYear * 365L + ((minYear + minOffset) / 4L - (minYear + minOffset) / 100L + (minYear + minOffset) / 400L)) - days_0000_to_1970;
-        long maxDays = (maxYear * 365L + ((maxYear + maxOffset) / 4L - (maxYear + maxOffset) / 100L + (maxYear + maxOffset) / 400L)) + 365L - days_0000_to_1970;
+        long minDays = (minYear * 365L
+                + ((minYear + minOffset) / 4L - (minYear + minOffset) / 100L + (minYear + minOffset) / 400L))
+                - days_0000_to_1970;
+        long maxDays = (maxYear * 365L
+                + ((maxYear + maxOffset) / 4L - (maxYear + maxOffset) / 100L + (maxYear + maxOffset) / 400L)) + 365L
+                - days_0000_to_1970;
 
         final TLocalDate maxDate = TLocalDate.of(TYear.MAX_VALUE, 12, 31);
-        TOffsetDateTime expected = TOffsetDateTime.of(TLocalDate.of((int) minYear, 1, 1), TLocalTime.of(0, 0, 0, 0), TZoneOffset.UTC);
+        TOffsetDateTime expected = TOffsetDateTime.of(TLocalDate.of((int) minYear, 1, 1), TLocalTime.of(0, 0, 0, 0),
+                TZoneOffset.UTC);
         for (long i = minDays; i < maxDays; i++) {
             TInstant instant = TInstant.ofEpochSecond(i * 24L * 60L * 60L);
             try {
@@ -206,103 +233,96 @@ public class TestOffsetDateTime_instants {
                     expected = expected.plusDays(1);
                 }
             } catch (RuntimeException ex) {
-                TSystem.out.println("RuntimeException: " + i + " " + expected);
+                System.out.println("RuntimeException: " + i + " " + expected);
                 throw ex;
             } catch (Error ex) {
-                TSystem.out.println("Error: " + i + " " + expected);
+                System.out.println("Error: " + i + " " + expected);
                 throw ex;
             }
         }
     }
 
-    // for performance testing
-    //    private void doTest_factory_ofInstant_all(int minYear, int maxYear) {
-    //        long days_0000_to_1970 = (146097 * 5) - (30 * 365 + 7);
-    //        int minOffset = (minYear <= 0 ? 0 : 3);
-    //        int maxOffset = (maxYear <= 0 ? 0 : 3);
-    //        long minDays = (long) (minYear * 365L + ((minYear + minOffset) / 4L - (minYear + minOffset) / 100L + (minYear + minOffset) / 400L)) - days_0000_to_1970;
-    //        long maxDays = (long) (maxYear * 365L + ((maxYear + maxOffset) / 4L - (maxYear + maxOffset) / 100L + (maxYear + maxOffset) / 400L)) + 365L - days_0000_to_1970;
-    //
-    //        TOffsetDateTime expected = TOffsetDateTime.dateTime(minYear, 1, 1, 0, 0, 0, 0, TZoneOffset.UTC);
-    //        TDate cutover = new TDate(Long.MIN_VALUE);
-    //        TGregorianCalendar cal = new TGregorianCalendar(TTimeZone.getTimeZone("UTC"));
-    //        cal.setGregorianChange(cutover);
-    //        for (long i = minDays; i < maxDays; i++) {
-    //            TInstant instant = TInstant.instant(i * 24L * 60L * 60L);
-    //            try {
-    //                cal.setTimeInMillis(instant.getEpochSecond() * 1000L);
-    //                assertEquals(cal.get(TGregorianCalendar.MONTH), expected.getMonth().getValue() - 1);
-    //                assertEquals(cal.get(TGregorianCalendar.DAY_OF_MONTH), expected.getDayOfMonth().getValue());
-    //                expected = expected.plusDays(1);
-    //            } catch (RuntimeException ex) {
-    //                TSystem.out.println("Error: " + i + " " + expected);
-    //                throw ex;
-    //            } catch (Error ex) {
-    //                TSystem.out.println("Error: " + i + " " + expected);
-    //                throw ex;
-    //            }
-    //        }
-    //    }
-
-    //-----------------------------------------------------------------------
+    @Test
     public void test_toInstant_19700101() {
+
         TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1970, 1, 1), TLocalTime.of(0, 0, 0, 0), TZoneOffset.UTC);
         TInstant test = dt.toInstant();
         assertEquals(test.getEpochSecond(), 0);
         assertEquals(test.getNano(), 0);
     }
 
+    @Test
     public void test_toInstant_19700101_oneNano() {
+
         TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1970, 1, 1), TLocalTime.of(0, 0, 0, 1), TZoneOffset.UTC);
         TInstant test = dt.toInstant();
         assertEquals(test.getEpochSecond(), 0);
         assertEquals(test.getNano(), 1);
     }
 
+    @Test
     public void test_toInstant_19700101_minusOneNano() {
-        TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1969, 12, 31), TLocalTime.of(23, 59, 59, 999999999), TZoneOffset.UTC);
+
+        TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1969, 12, 31), TLocalTime.of(23, 59, 59, 999999999),
+                TZoneOffset.UTC);
         TInstant test = dt.toInstant();
         assertEquals(test.getEpochSecond(), -1);
         assertEquals(test.getNano(), 999999999);
     }
 
+    @Test
     public void test_toInstant_19700102() {
+
         TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1970, 1, 2), TLocalTime.of(0, 0, 0, 0), TZoneOffset.UTC);
         TInstant test = dt.toInstant();
         assertEquals(test.getEpochSecond(), 24L * 60L * 60L);
         assertEquals(test.getNano(), 0);
     }
 
+    @Test
     public void test_toInstant_19691231() {
-        TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1969, 12, 31), TLocalTime.of(0, 0, 0, 0), TZoneOffset.UTC);
+
+        TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1969, 12, 31), TLocalTime.of(0, 0, 0, 0),
+                TZoneOffset.UTC);
         TInstant test = dt.toInstant();
         assertEquals(test.getEpochSecond(), -24L * 60L * 60L);
         assertEquals(test.getNano(), 0);
     }
 
-    //-----------------------------------------------------------------------
+    @Test
     public void test_toEpochSecond_19700101() {
+
         TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1970, 1, 1), TLocalTime.of(0, 0, 0, 0), TZoneOffset.UTC);
         assertEquals(dt.toEpochSecond(), 0);
     }
 
+    @Test
     public void test_toEpochSecond_19700101_oneNano() {
-        TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1970, 1, 1), TLocalTime.of( 0, 0, 0, 1), TZoneOffset.UTC);
+
+        TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1970, 1, 1), TLocalTime.of(0, 0, 0, 1), TZoneOffset.UTC);
         assertEquals(dt.toEpochSecond(), 0);
     }
 
+    @Test
     public void test_toEpochSecond_19700101_minusOneNano() {
-        TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1969, 12, 31), TLocalTime.of(23, 59, 59, 999999999), TZoneOffset.UTC);
+
+        TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1969, 12, 31), TLocalTime.of(23, 59, 59, 999999999),
+                TZoneOffset.UTC);
         assertEquals(dt.toEpochSecond(), -1);
     }
 
+    @Test
     public void test_toEpochSecond_19700102() {
+
         TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1970, 1, 2), TLocalTime.of(0, 0, 0, 0), TZoneOffset.UTC);
         assertEquals(dt.toEpochSecond(), 24L * 60L * 60L);
     }
 
+    @Test
     public void test_toEpochSecond_19691231() {
-        TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1969, 12, 31), TLocalTime.of(0, 0, 0, 0), TZoneOffset.UTC);
+
+        TOffsetDateTime dt = TOffsetDateTime.of(TLocalDate.of(1969, 12, 31), TLocalTime.of(0, 0, 0, 0),
+                TZoneOffset.UTC);
         assertEquals(dt.toEpochSecond(), -24L * 60L * 60L);
     }
 

@@ -31,12 +31,6 @@
  */
 package org.teavm.classlib.java.time;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
 import java.util.regex.Pattern;
 
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
@@ -44,23 +38,24 @@ import org.teavm.classlib.java.time.zone.TZoneRules;
 import org.teavm.classlib.java.time.zone.TZoneRulesException;
 import org.teavm.classlib.java.time.zone.TZoneRulesProvider;
 
-final class TZoneRegion extends TZoneId implements Serializable {
+final class TZoneRegion extends TZoneId {
 
-    private static final long serialVersionUID = 8386373296231747096L;
     private static final Pattern PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9~/._+-]+");
 
     private final String id;
+
     private final transient TZoneRules rules;
 
     private static TZoneRegion ofLenient(String zoneId) {
+
         if (zoneId.equals("Z") || zoneId.startsWith("+") || zoneId.startsWith("-")) {
             throw new TDateTimeException("Invalid ID for region-based TZoneId, invalid format: " + zoneId);
         }
         if (zoneId.equals("UTC") || zoneId.equals("GMT") || zoneId.equals("UT")) {
             return new TZoneRegion(zoneId, TZoneOffset.UTC.getRules());
         }
-        if (zoneId.startsWith("UTC+") || zoneId.startsWith("GMT+") ||
-                zoneId.startsWith("UTC-") || zoneId.startsWith("GMT-")) {
+        if (zoneId.startsWith("UTC+") || zoneId.startsWith("GMT+") || zoneId.startsWith("UTC-")
+                || zoneId.startsWith("GMT-")) {
             TZoneOffset offset = TZoneOffset.of(zoneId.substring(3));
             if (offset.getTotalSeconds() == 0) {
                 return new TZoneRegion(zoneId.substring(0, 3), offset.getRules());
@@ -78,6 +73,7 @@ final class TZoneRegion extends TZoneId implements Serializable {
     }
 
     static TZoneRegion ofId(String zoneId, boolean checkAvailable) {
+
         TJdk8Methods.requireNonNull(zoneId, "zoneId");
         if (zoneId.length() < 2 || PATTERN.matcher(zoneId).matches() == false) {
             throw new TDateTimeException("Invalid ID for region-based TZoneId, invalid format: " + zoneId);
@@ -97,47 +93,24 @@ final class TZoneRegion extends TZoneId implements Serializable {
         return new TZoneRegion(zoneId, rules);
     }
 
-    //-------------------------------------------------------------------------
     TZoneRegion(String id, TZoneRules rules) {
+
         this.id = id;
         this.rules = rules;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String getId() {
-        return id;
+
+        return this.id;
     }
 
     @Override
     public TZoneRules getRules() {
+
         // additional query for group provider when null allows for possibility
         // that the provider was added after the TZoneId was created
-        return (rules != null ? rules : TZoneRulesProvider.getRules(id, false));
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.ZONE_REGION_TYPE, this);
-    }
-
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    @Override
-    void write(DataOutput out) throws IOException {
-        out.writeByte(Ser.ZONE_REGION_TYPE);
-        writeExternal(out);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeUTF(id);
-    }
-
-    static TZoneId readExternal(DataInput in) throws IOException {
-        String id = in.readUTF();
-        return ofLenient(id);
+        return (this.rules != null ? this.rules : TZoneRulesProvider.getRules(this.id, false));
     }
 
 }

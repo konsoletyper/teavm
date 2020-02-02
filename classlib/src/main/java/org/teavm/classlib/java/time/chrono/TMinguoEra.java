@@ -33,10 +33,7 @@ package org.teavm.classlib.java.time.chrono;
 
 import static org.teavm.classlib.java.time.temporal.TChronoField.ERA;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
@@ -50,13 +47,12 @@ import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public enum TMinguoEra implements TEra  {
+public enum TMinguoEra implements TEra {
 
-    BEFORE_ROC,
-    ROC;
+    BEFORE_ROC, ROC;
 
-    //-----------------------------------------------------------------------
     public static TMinguoEra of(int era) {
+
         switch (era) {
             case 0:
                 return BEFORE_ROC;
@@ -67,15 +63,15 @@ public enum TMinguoEra implements TEra  {
         }
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public int getValue() {
+
         return ordinal();
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isSupported(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             return field == ERA;
         }
@@ -84,6 +80,7 @@ public enum TMinguoEra implements TEra  {
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field == ERA) {
             return field.range();
         } else if (field instanceof TChronoField) {
@@ -94,6 +91,7 @@ public enum TMinguoEra implements TEra  {
 
     @Override
     public int get(TTemporalField field) {
+
         if (field == ERA) {
             return getValue();
         }
@@ -102,6 +100,7 @@ public enum TMinguoEra implements TEra  {
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field == ERA) {
             return getValue();
         } else if (field instanceof TChronoField) {
@@ -110,44 +109,31 @@ public enum TMinguoEra implements TEra  {
         return field.getFrom(this);
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public TTemporal adjustInto(TTemporal temporal) {
+
         return temporal.with(ERA, getValue());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
+
         if (query == TTemporalQueries.precision()) {
             return (R) TChronoUnit.ERAS;
         }
-        if (query == TTemporalQueries.chronology() || query == TTemporalQueries.zone() ||
-                query == TTemporalQueries.zoneId() || query == TTemporalQueries.offset() ||
-                query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime()) {
+        if (query == TTemporalQueries.chronology() || query == TTemporalQueries.zone()
+                || query == TTemporalQueries.zoneId() || query == TTemporalQueries.offset()
+                || query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime()) {
             return null;
         }
         return query.queryFrom(this);
     }
 
-    //-----------------------------------------------------------------------
     @Override
-    public String getDisplayName(TTextStyle style, TLocale locale) {
+    public String getDisplayName(TTextStyle style, Locale locale) {
+
         return new TDateTimeFormatterBuilder().appendText(ERA, style).toFormatter(locale).format(this);
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.MINGUO_ERA_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeByte(this.getValue());
-    }
-
-    static TMinguoEra readExternal(DataInput in) throws IOException {
-        byte eraValue = in.readByte();
-        return TMinguoEra.of(eraValue);
     }
 
 }

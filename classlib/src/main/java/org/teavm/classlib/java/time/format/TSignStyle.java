@@ -33,13 +33,10 @@ package org.teavm.classlib.java.time.format;
 
 public enum TSignStyle {
 
-    NORMAL,
-    ALWAYS,
-    NEVER,
-    NOT_NEGATIVE,
-    EXCEEDS_PAD;
+    NORMAL, ALWAYS, NEVER, NOT_NEGATIVE, EXCEEDS_PAD;
 
     boolean parse(boolean positive, boolean strict, boolean fixedWidth) {
+
         switch (ordinal()) {
             case 0: // NORMAL
                 // valid if negative or (positive and lenient)

@@ -31,17 +31,15 @@
  */
 package org.teavm.classlib.java.time;
 
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import org.teavm.classlib.java.util.TTimeZone;
+import java.util.TimeZone;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
 import org.teavm.classlib.java.time.format.TTextStyle;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
@@ -55,14 +53,16 @@ import org.teavm.classlib.java.time.zone.TZoneRules;
 import org.teavm.classlib.java.time.zone.TZoneRulesException;
 import org.teavm.classlib.java.time.zone.TZoneRulesProvider;
 
-public abstract class TZoneId implements Serializable {
+public abstract class TZoneId implements TSerializable {
 
     public static final TTemporalQuery<TZoneId> FROM = new TTemporalQuery<TZoneId>() {
         @Override
         public TZoneId queryFrom(TTemporalAccessor temporal) {
+
             return TZoneId.from(temporal);
         }
     };
+
     public static final Map<String, String> SHORT_IDS;
     static {
         Map<String, String> base = new HashMap<String, String>();
@@ -96,19 +96,19 @@ public abstract class TZoneId implements Serializable {
         base.put("HST", "-10:00");
         SHORT_IDS = Collections.unmodifiableMap(base);
     }
-    private static final long serialVersionUID = 8352817235686L;
 
-    //-----------------------------------------------------------------------
     public static TZoneId systemDefault() {
-        return TZoneId.of(TTimeZone.getDefault().getID(), SHORT_IDS);
+
+        return TZoneId.of(TimeZone.getDefault().getID(), SHORT_IDS);
     }
 
     public static Set<String> getAvailableZoneIds() {
-        return new HashSet<String>(TZoneRulesProvider.getAvailableZoneIds());
+
+        return new HashSet<>(TZoneRulesProvider.getAvailableZoneIds());
     }
 
-    //-----------------------------------------------------------------------
     public static TZoneId of(String zoneId, Map<String, String> aliasMap) {
+
         TJdk8Methods.requireNonNull(zoneId, "zoneId");
         TJdk8Methods.requireNonNull(aliasMap, "aliasMap");
         String id = aliasMap.get(zoneId);
@@ -117,6 +117,7 @@ public abstract class TZoneId implements Serializable {
     }
 
     public static TZoneId of(String zoneId) {
+
         TJdk8Methods.requireNonNull(zoneId, "zoneId");
         if (zoneId.equals("Z")) {
             return TZoneOffset.UTC;
@@ -130,8 +131,8 @@ public abstract class TZoneId implements Serializable {
         if (zoneId.equals("UTC") || zoneId.equals("GMT") || zoneId.equals("UT")) {
             return new TZoneRegion(zoneId, TZoneOffset.UTC.getRules());
         }
-        if (zoneId.startsWith("UTC+") || zoneId.startsWith("GMT+") ||
-                zoneId.startsWith("UTC-") || zoneId.startsWith("GMT-")) {
+        if (zoneId.startsWith("UTC+") || zoneId.startsWith("GMT+") || zoneId.startsWith("UTC-")
+                || zoneId.startsWith("GMT-")) {
             TZoneOffset offset = TZoneOffset.of(zoneId.substring(3));
             if (offset.getTotalSeconds() == 0) {
                 return new TZoneRegion(zoneId.substring(0, 3), offset.getRules());
@@ -149,6 +150,7 @@ public abstract class TZoneId implements Serializable {
     }
 
     public static TZoneId ofOffset(String prefix, TZoneOffset offset) {
+
         TJdk8Methods.requireNonNull(prefix, "prefix");
         TJdk8Methods.requireNonNull(offset, "offset");
         if (prefix.length() == 0) {
@@ -163,52 +165,57 @@ public abstract class TZoneId implements Serializable {
         throw new IllegalArgumentException("Invalid prefix, must be GMT, UTC or UT: " + prefix);
     }
 
-    //-----------------------------------------------------------------------
     public static TZoneId from(TTemporalAccessor temporal) {
+
         TZoneId obj = temporal.query(TTemporalQueries.zone());
         if (obj == null) {
-            throw new TDateTimeException("Unable to obtain TZoneId from TTemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new TDateTimeException("Unable to obtain TZoneId from TTemporalAccessor: " + temporal + ", type "
+                    + temporal.getClass().getName());
         }
         return obj;
     }
 
-    //-----------------------------------------------------------------------
     TZoneId() {
+
         if (getClass() != TZoneOffset.class && getClass() != TZoneRegion.class) {
             throw new AssertionError("Invalid subclass");
         }
     }
 
-    //-----------------------------------------------------------------------
     public abstract String getId();
 
-    //-----------------------------------------------------------------------
     public abstract TZoneRules getRules();
 
-    //-----------------------------------------------------------------------
-    public String getDisplayName(TTextStyle style, TLocale locale) {
-        return new TDateTimeFormatterBuilder().appendZoneText(style).toFormatter(locale).format(new TDefaultInterfaceTemporalAccessor() {
-            @Override
-            public boolean isSupported(TTemporalField field) {
-                return false;
-            }
-            @Override
-            public long getLong(TTemporalField field) {
-                throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
-            }
-            @SuppressWarnings("unchecked")
-            @Override
-            public <R> R query(TTemporalQuery<R> query) {
-                if (query == TTemporalQueries.zoneId()) {
-                    return (R) TZoneId.this;
-                }
-                return super.query(query);
-            }
-        });
+    public String getDisplayName(TTextStyle style, Locale locale) {
+
+        return new TDateTimeFormatterBuilder().appendZoneText(style).toFormatter(locale)
+                .format(new TDefaultInterfaceTemporalAccessor() {
+                    @Override
+                    public boolean isSupported(TTemporalField field) {
+
+                        return false;
+                    }
+
+                    @Override
+                    public long getLong(TTemporalField field) {
+
+                        throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
+                    }
+
+                    @SuppressWarnings("unchecked")
+                    @Override
+                    public <R> R query(TTemporalQuery<R> query) {
+
+                        if (query == TTemporalQueries.zoneId()) {
+                            return (R) TZoneId.this;
+                        }
+                        return super.query(query);
+                    }
+                });
     }
 
     public TZoneId normalized() {
+
         try {
             TZoneRules rules = getRules();
             if (rules.isFixedOffset()) {
@@ -220,11 +227,11 @@ public abstract class TZoneId implements Serializable {
         return this;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
-           return true;
+            return true;
         }
         if (obj instanceof TZoneId) {
             TZoneId other = (TZoneId) obj;
@@ -235,16 +242,14 @@ public abstract class TZoneId implements Serializable {
 
     @Override
     public int hashCode() {
+
         return getId().hashCode();
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
+
         return getId();
     }
-
-    //-----------------------------------------------------------------------
-    abstract void write(DataOutput out) throws IOException;
 
 }

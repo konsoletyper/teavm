@@ -32,7 +32,7 @@
 package org.teavm.classlib.java.time.format;
 
 import java.util.Iterator;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicReference;
 
@@ -40,30 +40,32 @@ import org.teavm.classlib.java.time.temporal.TTemporalField;
 
 public abstract class TDateTimeTextProvider {
 
-    private static final AtomicReference<TDateTimeTextProvider> MUTABLE_PROVIDER = new AtomicReference<TDateTimeTextProvider>();
+    private static final AtomicReference<TDateTimeTextProvider> MUTABLE_PROVIDER = new AtomicReference<>();
 
     static TDateTimeTextProvider getInstance() {
+
         return ProviderSingleton.PROVIDER;
     }
 
     public static void setInitializer(TDateTimeTextProvider provider) {
+
         if (!MUTABLE_PROVIDER.compareAndSet(null, provider)) {
             throw new IllegalStateException("Provider was already set, possibly with a default during initialization");
         }
     }
 
-    //-----------------------------------------------------------------------
-    public abstract String getText(TTemporalField field, long value, TTextStyle style, TLocale locale);
+    public abstract String getText(TTemporalField field, long value, TTextStyle style, Locale locale);
 
-    public abstract Iterator<Entry<String, Long>> getTextIterator(TTemporalField field, TTextStyle style, TLocale locale);
+    public abstract Iterator<Entry<String, Long>> getTextIterator(TTemporalField field, TTextStyle style,
+            Locale locale);
 
-    //-----------------------------------------------------------------------
     // use JVM class initializtion to lock the singleton without additional synchronization
     static class ProviderSingleton {
         static final TDateTimeTextProvider PROVIDER = initialize();
 
         // initialize the provider
         static TDateTimeTextProvider initialize() {
+
             // Set the default initializer if none has been provided yet
             MUTABLE_PROVIDER.compareAndSet(null, new TSimpleDateTimeTextProvider());
             return MUTABLE_PROVIDER.get();

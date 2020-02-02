@@ -34,18 +34,12 @@ package org.teavm.classlib.java.time;
 import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
 import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
-import java.io.Serializable;
-
+import org.teavm.classlib.java.io.TSerializable;
+import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
-import org.teavm.classlib.java.time.format.TDateTimeParseException;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
@@ -58,59 +52,58 @@ import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TMonthDay
-        extends TDefaultInterfaceTemporalAccessor
-        implements TTemporalAccessor, TTemporalAdjuster, Comparable<TMonthDay>, Serializable {
+public final class TMonthDay extends TDefaultInterfaceTemporalAccessor
+        implements TTemporalAccessor, TTemporalAdjuster, TComparable<TMonthDay>, TSerializable {
 
     public static final TTemporalQuery<TMonthDay> FROM = new TTemporalQuery<TMonthDay>() {
         @Override
         public TMonthDay queryFrom(TTemporalAccessor temporal) {
+
             return TMonthDay.from(temporal);
         }
     };
 
-    private static final long serialVersionUID = -939150713474957432L;
-    private static final TDateTimeFormatter PARSER = new TDateTimeFormatterBuilder()
-        .appendLiteral("--")
-        .appendValue(MONTH_OF_YEAR, 2)
-        .appendLiteral('-')
-        .appendValue(DAY_OF_MONTH, 2)
-        .toFormatter();
+    private static final TDateTimeFormatter PARSER = new TDateTimeFormatterBuilder().appendLiteral("--")
+            .appendValue(MONTH_OF_YEAR, 2).appendLiteral('-').appendValue(DAY_OF_MONTH, 2).toFormatter();
 
     private final int month;
+
     private final int day;
 
-    //-----------------------------------------------------------------------
     public static TMonthDay now() {
+
         return now(TClock.systemDefaultZone());
     }
 
     public static TMonthDay now(TZoneId zone) {
+
         return now(TClock.system(zone));
     }
 
     public static TMonthDay now(TClock clock) {
-        final TLocalDate now = TLocalDate.now(clock);  // called once
+
+        final TLocalDate now = TLocalDate.now(clock); // called once
         return TMonthDay.of(now.getMonth(), now.getDayOfMonth());
     }
 
-    //-----------------------------------------------------------------------
     public static TMonthDay of(TMonth month, int dayOfMonth) {
+
         TJdk8Methods.requireNonNull(month, "month");
         DAY_OF_MONTH.checkValidValue(dayOfMonth);
         if (dayOfMonth > month.maxLength()) {
-            throw new TDateTimeException("Illegal value for DayOfMonth field, value " + dayOfMonth +
-                    " is not valid for month " + month.name());
+            throw new TDateTimeException("Illegal value for DayOfMonth field, value " + dayOfMonth
+                    + " is not valid for month " + month.name());
         }
         return new TMonthDay(month.getValue(), dayOfMonth);
     }
 
     public static TMonthDay of(int month, int dayOfMonth) {
+
         return of(TMonth.of(month), dayOfMonth);
     }
 
-    //-----------------------------------------------------------------------
     public static TMonthDay from(TTemporalAccessor temporal) {
+
         if (temporal instanceof TMonthDay) {
             return (TMonthDay) temporal;
         }
@@ -120,30 +113,31 @@ public final class TMonthDay
             }
             return of(temporal.get(MONTH_OF_YEAR), temporal.get(DAY_OF_MONTH));
         } catch (TDateTimeException ex) {
-            throw new TDateTimeException("Unable to obtain TMonthDay from TTemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new TDateTimeException("Unable to obtain TMonthDay from TTemporalAccessor: " + temporal + ", type "
+                    + temporal.getClass().getName());
         }
     }
 
-    //-----------------------------------------------------------------------
     public static TMonthDay parse(CharSequence text) {
+
         return parse(text, PARSER);
     }
 
     public static TMonthDay parse(CharSequence text, TDateTimeFormatter formatter) {
+
         TJdk8Methods.requireNonNull(formatter, "formatter");
         return formatter.parse(text, TMonthDay.FROM);
     }
 
-    //-----------------------------------------------------------------------
     private TMonthDay(int month, int dayOfMonth) {
+
         this.month = month;
         this.day = dayOfMonth;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isSupported(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             return field == MONTH_OF_YEAR || field == DAY_OF_MONTH;
         }
@@ -152,6 +146,7 @@ public final class TMonthDay
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field == MONTH_OF_YEAR) {
             return field.range();
         } else if (field == DAY_OF_MONTH) {
@@ -160,48 +155,55 @@ public final class TMonthDay
         return super.range(field);
     }
 
-    @Override  // override for Javadoc
+    @Override
     public int get(TTemporalField field) {
+
         return range(field).checkValidIntValue(getLong(field), field);
     }
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             switch ((TChronoField) field) {
                 // alignedDOW and alignedWOM not supported because they cannot be set in with()
-                case DAY_OF_MONTH: return day;
-                case MONTH_OF_YEAR: return month;
+                case DAY_OF_MONTH:
+                    return this.day;
+                case MONTH_OF_YEAR:
+                    return this.month;
             }
             throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.getFrom(this);
     }
 
-    //-----------------------------------------------------------------------
     public int getMonthValue() {
-        return month;
+
+        return this.month;
     }
 
     public TMonth getMonth() {
-        return TMonth.of(month);
+
+        return TMonth.of(this.month);
     }
 
     public int getDayOfMonth() {
-        return day;
+
+        return this.day;
     }
 
-    //-----------------------------------------------------------------------
     public boolean isValidYear(int year) {
-        return (day == 29 && month == 2 && TYear.isLeap(year) == false) == false;
+
+        return (this.day == 29 && this.month == 2 && TYear.isLeap(year) == false) == false;
     }
 
-    //-----------------------------------------------------------------------
     public TMonthDay withMonth(int month) {
+
         return with(TMonth.of(month));
     }
 
     public TMonthDay with(TMonth month) {
+
         TJdk8Methods.requireNonNull(month, "month");
         if (month.getValue() == this.month) {
             return this;
@@ -211,16 +213,17 @@ public final class TMonthDay
     }
 
     public TMonthDay withDayOfMonth(int dayOfMonth) {
+
         if (dayOfMonth == this.day) {
             return this;
         }
-        return of(month, dayOfMonth);
+        return of(this.month, dayOfMonth);
     }
 
-    //-----------------------------------------------------------------------
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
+
         if (query == TTemporalQueries.chronology()) {
             return (R) TIsoChronology.INSTANCE;
         }
@@ -229,85 +232,69 @@ public final class TMonthDay
 
     @Override
     public TTemporal adjustInto(TTemporal temporal) {
+
         if (TChronology.from(temporal).equals(TIsoChronology.INSTANCE) == false) {
             throw new TDateTimeException("Adjustment only supported on ISO date-time");
         }
-        temporal = temporal.with(MONTH_OF_YEAR, month);
-        return temporal.with(DAY_OF_MONTH, Math.min(temporal.range(DAY_OF_MONTH).getMaximum(), day));
+        temporal = temporal.with(MONTH_OF_YEAR, this.month);
+        return temporal.with(DAY_OF_MONTH, Math.min(temporal.range(DAY_OF_MONTH).getMaximum(), this.day));
     }
 
-    //-----------------------------------------------------------------------
     public TLocalDate atYear(int year) {
-        return TLocalDate.of(year, month, isValidYear(year) ? day : 28);
+
+        return TLocalDate.of(year, this.month, isValidYear(year) ? this.day : 28);
     }
 
-    //-----------------------------------------------------------------------
+    @Override
     public int compareTo(TMonthDay other) {
-        int cmp = (month - other.month);
+
+        int cmp = (this.month - other.month);
         if (cmp == 0) {
-            cmp = (day - other.day);
+            cmp = (this.day - other.day);
         }
         return cmp;
     }
 
     public boolean isAfter(TMonthDay other) {
+
         return compareTo(other) > 0;
     }
 
     public boolean isBefore(TMonthDay other) {
+
         return compareTo(other) < 0;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
             return true;
         }
         if (obj instanceof TMonthDay) {
             TMonthDay other = (TMonthDay) obj;
-            return month == other.month && day == other.day;
+            return this.month == other.month && this.day == other.day;
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return (month << 6) + day;
+
+        return (this.month << 6) + this.day;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
-        return new StringBuilder(10).append("--")
-            .append(month < 10 ? "0" : "").append(month)
-            .append(day < 10 ? "-0" : "-").append(day)
-            .toString();
+
+        return new StringBuilder(10).append("--").append(this.month < 10 ? "0" : "").append(this.month)
+                .append(this.day < 10 ? "-0" : "-").append(this.day).toString();
     }
 
     public String format(TDateTimeFormatter formatter) {
+
         TJdk8Methods.requireNonNull(formatter, "formatter");
         return formatter.format(this);
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.MONTH_DAY_TYPE, this);
-    }
-
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeByte(month);
-        out.writeByte(day);
-    }
-
-    static TMonthDay readExternal(DataInput in) throws IOException {
-        byte month = in.readByte();
-        byte day = in.readByte();
-        return TMonthDay.of(month, day);
     }
 
 }

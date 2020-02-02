@@ -34,7 +34,7 @@ package org.teavm.classlib.java.time.format;
 import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
 import static org.teavm.classlib.java.time.temporal.TChronoField.INSTANT_SECONDS;
 
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TInstant;
@@ -55,11 +55,15 @@ import org.teavm.classlib.java.time.temporal.TValueRange;
 final class TDateTimePrintContext {
 
     private TTemporalAccessor temporal;
-    private TLocale locale;
+
+    private Locale locale;
+
     private TDecimalStyle symbols;
+
     private int optional;
 
     TDateTimePrintContext(TTemporalAccessor temporal, TDateTimeFormatter formatter) {
+
         super();
         this.temporal = adjust(temporal, formatter);
         this.locale = formatter.getLocale();
@@ -67,13 +71,15 @@ final class TDateTimePrintContext {
     }
 
     // for testing
-    TDateTimePrintContext(TTemporalAccessor temporal, TLocale locale, TDecimalStyle symbols) {
+    TDateTimePrintContext(TTemporalAccessor temporal, Locale locale, TDecimalStyle symbols) {
+
         this.temporal = temporal;
         this.locale = locale;
         this.symbols = symbols;
     }
 
     private static TTemporalAccessor adjust(final TTemporalAccessor temporal, TDateTimeFormatter formatter) {
+
         // normal case first
         TChronology overrideChrono = formatter.getChronology();
         TZoneId overrideZone = formatter.getZone();
@@ -95,7 +101,7 @@ final class TDateTimePrintContext {
         }
         final TChronology effectiveChrono = (overrideChrono != null ? overrideChrono : temporalChrono);
         final TZoneId effectiveZone = (overrideZone != null ? overrideZone : temporalZone);
-        
+
         // use overrides
         if (overrideZone != null) {
             // handle instant
@@ -106,7 +112,8 @@ final class TDateTimePrintContext {
             // block changing zone on TOffsetTime, and similar problem cases
             TZoneId normalizedOffset = overrideZone.normalized();
             TZoneOffset temporalOffset = temporal.query(TTemporalQueries.offset());
-            if (normalizedOffset instanceof TZoneOffset && temporalOffset != null && normalizedOffset.equals(temporalOffset) == false) {
+            if (normalizedOffset instanceof TZoneOffset && temporalOffset != null
+                    && normalizedOffset.equals(temporalOffset) == false) {
                 throw new TDateTimeException("Invalid override zone for temporal: " + overrideZone + " " + temporal);
             }
         }
@@ -119,7 +126,8 @@ final class TDateTimePrintContext {
                 if (!(overrideChrono == TIsoChronology.INSTANCE && temporalChrono == null)) {
                     for (TChronoField f : TChronoField.values()) {
                         if (f.isDateBased() && temporal.isSupported(f)) {
-                            throw new TDateTimeException("Invalid override chronology for temporal: " + overrideChrono + " " + temporal);
+                            throw new TDateTimeException(
+                                    "Invalid override chronology for temporal: " + overrideChrono + " " + temporal);
                         }
                     }
                 }
@@ -133,28 +141,35 @@ final class TDateTimePrintContext {
         return new TDefaultInterfaceTemporalAccessor() {
             @Override
             public boolean isSupported(TTemporalField field) {
+
                 if (effectiveDate != null && field.isDateBased()) {
                     return effectiveDate.isSupported(field);
                 }
                 return temporal.isSupported(field);
             }
+
             @Override
             public TValueRange range(TTemporalField field) {
+
                 if (effectiveDate != null && field.isDateBased()) {
                     return effectiveDate.range(field);
                 }
                 return temporal.range(field);
             }
+
             @Override
             public long getLong(TTemporalField field) {
+
                 if (effectiveDate != null && field.isDateBased()) {
                     return effectiveDate.getLong(field);
                 }
                 return temporal.getLong(field);
             }
+
             @SuppressWarnings("unchecked")
             @Override
             public <R> R query(TTemporalQuery<R> query) {
+
                 if (query == TTemporalQueries.chronology()) {
                     return (R) effectiveChrono;
                 }
@@ -169,61 +184,67 @@ final class TDateTimePrintContext {
         };
     }
 
-    //-----------------------------------------------------------------------
     TTemporalAccessor getTemporal() {
-        return temporal;
+
+        return this.temporal;
     }
 
-    TLocale getLocale() {
-        return locale;
+    Locale getLocale() {
+
+        return this.locale;
     }
 
     TDecimalStyle getSymbols() {
-        return symbols;
+
+        return this.symbols;
     }
 
-    //-----------------------------------------------------------------------
     void startOptional() {
+
         this.optional++;
     }
 
     void endOptional() {
+
         this.optional--;
     }
 
     <R> R getValue(TTemporalQuery<R> query) {
-        R result = temporal.query(query);
-        if (result == null && optional == 0) {
-            throw new TDateTimeException("Unable to extract value: " + temporal.getClass());
+
+        R result = this.temporal.query(query);
+        if (result == null && this.optional == 0) {
+            throw new TDateTimeException("Unable to extract value: " + this.temporal.getClass());
         }
         return result;
     }
 
     Long getValue(TTemporalField field) {
+
         try {
-            return temporal.getLong(field);
+            return this.temporal.getLong(field);
         } catch (TDateTimeException ex) {
-            if (optional > 0) {
+            if (this.optional > 0) {
                 return null;
             }
             throw ex;
         }
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
-        return temporal.toString();
+
+        return this.temporal.toString();
     }
 
-    //-------------------------------------------------------------------------
     // for testing
     void setDateTime(TTemporalAccessor temporal) {
+
         TJdk8Methods.requireNonNull(temporal, "temporal");
         this.temporal = temporal;
     }
 
-    void setLocale(TLocale locale) {
+    void setLocale(Locale locale) {
+
         TJdk8Methods.requireNonNull(locale, "locale");
         this.locale = locale;
     }

@@ -34,116 +34,123 @@ package org.teavm.classlib.java.time.format;
 import static org.junit.Assert.assertEquals;
 import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
 
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.OffsetIdPrinterParser;
 
-@Test
 public class TestZoneOffsetPrinter extends AbstractTestPrinterParser {
 
     private static final TZoneOffset OFFSET_0130 = TZoneOffset.of("+01:30");
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="offsets")
     Object[][] provider_offsets() {
-        return new Object[][] {
-            {"+HH", "NO-OFFSET", TZoneOffset.UTC},
-            {"+HH", "+01", TZoneOffset.ofHours(1)},
-            {"+HH", "-01", TZoneOffset.ofHours(-1)},
 
-            {"+HHMM", "NO-OFFSET", TZoneOffset.UTC},
-            {"+HHMM", "+0102", TZoneOffset.ofHoursMinutes(1, 2)},
-            {"+HHMM", "-0102", TZoneOffset.ofHoursMinutes(-1, -2)},
+        return new Object[][] { { "+HH", "NO-OFFSET", TZoneOffset.UTC }, { "+HH", "+01", TZoneOffset.ofHours(1) },
+        { "+HH", "-01", TZoneOffset.ofHours(-1) },
 
-            {"+HH:MM", "NO-OFFSET", TZoneOffset.UTC},
-            {"+HH:MM", "+01:02", TZoneOffset.ofHoursMinutes(1, 2)},
-            {"+HH:MM", "-01:02", TZoneOffset.ofHoursMinutes(-1, -2)},
+        { "+HHMM", "NO-OFFSET", TZoneOffset.UTC }, { "+HHMM", "+0102", TZoneOffset.ofHoursMinutes(1, 2) },
+        { "+HHMM", "-0102", TZoneOffset.ofHoursMinutes(-1, -2) },
 
-            {"+HHMMss", "NO-OFFSET", TZoneOffset.UTC},
-            {"+HHMMss", "+0100", TZoneOffset.ofHoursMinutesSeconds(1, 0, 0)},
-            {"+HHMMss", "+0102", TZoneOffset.ofHoursMinutesSeconds(1, 2, 0)},
-            {"+HHMMss", "+0159", TZoneOffset.ofHoursMinutesSeconds(1, 59, 0)},
-            {"+HHMMss", "+0200", TZoneOffset.ofHoursMinutesSeconds(2, 0, 0)},
-            {"+HHMMss", "+1800", TZoneOffset.ofHoursMinutesSeconds(18, 0, 0)},
-            {"+HHMMss", "+010215", TZoneOffset.ofHoursMinutesSeconds(1, 2, 15)},
-            {"+HHMMss", "-0100", TZoneOffset.ofHoursMinutesSeconds(-1, 0, 0)},
-            {"+HHMMss", "-0200", TZoneOffset.ofHoursMinutesSeconds(-2, 0, 0)},
-            {"+HHMMss", "-1800", TZoneOffset.ofHoursMinutesSeconds(-18, 0, 0)},
+        { "+HH:MM", "NO-OFFSET", TZoneOffset.UTC }, { "+HH:MM", "+01:02", TZoneOffset.ofHoursMinutes(1, 2) },
+        { "+HH:MM", "-01:02", TZoneOffset.ofHoursMinutes(-1, -2) },
 
-            {"+HHMMss", "NO-OFFSET", TZoneOffset.UTC},
-            {"+HHMMss", "+0100", TZoneOffset.ofHoursMinutesSeconds(1, 0, 0)},
-            {"+HHMMss", "+010203", TZoneOffset.ofHoursMinutesSeconds(1, 2, 3)},
-            {"+HHMMss", "+015959", TZoneOffset.ofHoursMinutesSeconds(1, 59, 59)},
-            {"+HHMMss", "+0200", TZoneOffset.ofHoursMinutesSeconds(2, 0, 0)},
-            {"+HHMMss", "+1800", TZoneOffset.ofHoursMinutesSeconds(18, 0, 0)},
-            {"+HHMMss", "-0100", TZoneOffset.ofHoursMinutesSeconds(-1, 0, 0)},
-            {"+HHMMss", "-0200", TZoneOffset.ofHoursMinutesSeconds(-2, 0, 0)},
-            {"+HHMMss", "-1800", TZoneOffset.ofHoursMinutesSeconds(-18, 0, 0)},
+        { "+HHMMss", "NO-OFFSET", TZoneOffset.UTC }, { "+HHMMss", "+0100", TZoneOffset.ofHoursMinutesSeconds(1, 0, 0) },
+        { "+HHMMss", "+0102", TZoneOffset.ofHoursMinutesSeconds(1, 2, 0) },
+        { "+HHMMss", "+0159", TZoneOffset.ofHoursMinutesSeconds(1, 59, 0) },
+        { "+HHMMss", "+0200", TZoneOffset.ofHoursMinutesSeconds(2, 0, 0) },
+        { "+HHMMss", "+1800", TZoneOffset.ofHoursMinutesSeconds(18, 0, 0) },
+        { "+HHMMss", "+010215", TZoneOffset.ofHoursMinutesSeconds(1, 2, 15) },
+        { "+HHMMss", "-0100", TZoneOffset.ofHoursMinutesSeconds(-1, 0, 0) },
+        { "+HHMMss", "-0200", TZoneOffset.ofHoursMinutesSeconds(-2, 0, 0) },
+        { "+HHMMss", "-1800", TZoneOffset.ofHoursMinutesSeconds(-18, 0, 0) },
 
-            {"+HH:MM:ss", "NO-OFFSET", TZoneOffset.UTC},
-            {"+HH:MM:ss", "+01:00", TZoneOffset.ofHoursMinutesSeconds(1, 0, 0)},
-            {"+HH:MM:ss", "+01:02", TZoneOffset.ofHoursMinutesSeconds(1, 2, 0)},
-            {"+HH:MM:ss", "+01:59", TZoneOffset.ofHoursMinutesSeconds(1, 59, 0)},
-            {"+HH:MM:ss", "+02:00", TZoneOffset.ofHoursMinutesSeconds(2, 0, 0)},
-            {"+HH:MM:ss", "+18:00", TZoneOffset.ofHoursMinutesSeconds(18, 0, 0)},
-            {"+HH:MM:ss", "+01:02:15", TZoneOffset.ofHoursMinutesSeconds(1, 2, 15)},
-            {"+HH:MM:ss", "-01:00", TZoneOffset.ofHoursMinutesSeconds(-1, 0, 0)},
-            {"+HH:MM:ss", "-02:00", TZoneOffset.ofHoursMinutesSeconds(-2, 0, 0)},
-            {"+HH:MM:ss", "-18:00", TZoneOffset.ofHoursMinutesSeconds(-18, 0, 0)},
+        { "+HHMMss", "NO-OFFSET", TZoneOffset.UTC }, { "+HHMMss", "+0100", TZoneOffset.ofHoursMinutesSeconds(1, 0, 0) },
+        { "+HHMMss", "+010203", TZoneOffset.ofHoursMinutesSeconds(1, 2, 3) },
+        { "+HHMMss", "+015959", TZoneOffset.ofHoursMinutesSeconds(1, 59, 59) },
+        { "+HHMMss", "+0200", TZoneOffset.ofHoursMinutesSeconds(2, 0, 0) },
+        { "+HHMMss", "+1800", TZoneOffset.ofHoursMinutesSeconds(18, 0, 0) },
+        { "+HHMMss", "-0100", TZoneOffset.ofHoursMinutesSeconds(-1, 0, 0) },
+        { "+HHMMss", "-0200", TZoneOffset.ofHoursMinutesSeconds(-2, 0, 0) },
+        { "+HHMMss", "-1800", TZoneOffset.ofHoursMinutesSeconds(-18, 0, 0) },
 
-            {"+HH:MM:ss", "NO-OFFSET", TZoneOffset.UTC},
-            {"+HH:MM:ss", "+01:00", TZoneOffset.ofHoursMinutesSeconds(1, 0, 0)},
-            {"+HH:MM:ss", "+01:02:03", TZoneOffset.ofHoursMinutesSeconds(1, 2, 3)},
-            {"+HH:MM:ss", "+01:59:59", TZoneOffset.ofHoursMinutesSeconds(1, 59, 59)},
-            {"+HH:MM:ss", "+02:00", TZoneOffset.ofHoursMinutesSeconds(2, 0, 0)},
-            {"+HH:MM:ss", "+18:00", TZoneOffset.ofHoursMinutesSeconds(18, 0, 0)},
-            {"+HH:MM:ss", "-01:00", TZoneOffset.ofHoursMinutesSeconds(-1, 0, 0)},
-            {"+HH:MM:ss", "-02:00", TZoneOffset.ofHoursMinutesSeconds(-2, 0, 0)},
-            {"+HH:MM:ss", "-18:00", TZoneOffset.ofHoursMinutesSeconds(-18, 0, 0)},
+        { "+HH:MM:ss", "NO-OFFSET", TZoneOffset.UTC },
+        { "+HH:MM:ss", "+01:00", TZoneOffset.ofHoursMinutesSeconds(1, 0, 0) },
+        { "+HH:MM:ss", "+01:02", TZoneOffset.ofHoursMinutesSeconds(1, 2, 0) },
+        { "+HH:MM:ss", "+01:59", TZoneOffset.ofHoursMinutesSeconds(1, 59, 0) },
+        { "+HH:MM:ss", "+02:00", TZoneOffset.ofHoursMinutesSeconds(2, 0, 0) },
+        { "+HH:MM:ss", "+18:00", TZoneOffset.ofHoursMinutesSeconds(18, 0, 0) },
+        { "+HH:MM:ss", "+01:02:15", TZoneOffset.ofHoursMinutesSeconds(1, 2, 15) },
+        { "+HH:MM:ss", "-01:00", TZoneOffset.ofHoursMinutesSeconds(-1, 0, 0) },
+        { "+HH:MM:ss", "-02:00", TZoneOffset.ofHoursMinutesSeconds(-2, 0, 0) },
+        { "+HH:MM:ss", "-18:00", TZoneOffset.ofHoursMinutesSeconds(-18, 0, 0) },
 
-            {"+HHMMSS", "NO-OFFSET", TZoneOffset.UTC},
-            {"+HHMMSS", "+010203", TZoneOffset.ofHoursMinutesSeconds(1, 2, 3)},
-            {"+HHMMSS", "-010203", TZoneOffset.ofHoursMinutesSeconds(-1, -2, -3)},
-            {"+HHMMSS", "+010200", TZoneOffset.ofHoursMinutesSeconds(1, 2, 0)},
-            {"+HHMMSS", "-010200", TZoneOffset.ofHoursMinutesSeconds(-1, -2, 0)},
+        { "+HH:MM:ss", "NO-OFFSET", TZoneOffset.UTC },
+        { "+HH:MM:ss", "+01:00", TZoneOffset.ofHoursMinutesSeconds(1, 0, 0) },
+        { "+HH:MM:ss", "+01:02:03", TZoneOffset.ofHoursMinutesSeconds(1, 2, 3) },
+        { "+HH:MM:ss", "+01:59:59", TZoneOffset.ofHoursMinutesSeconds(1, 59, 59) },
+        { "+HH:MM:ss", "+02:00", TZoneOffset.ofHoursMinutesSeconds(2, 0, 0) },
+        { "+HH:MM:ss", "+18:00", TZoneOffset.ofHoursMinutesSeconds(18, 0, 0) },
+        { "+HH:MM:ss", "-01:00", TZoneOffset.ofHoursMinutesSeconds(-1, 0, 0) },
+        { "+HH:MM:ss", "-02:00", TZoneOffset.ofHoursMinutesSeconds(-2, 0, 0) },
+        { "+HH:MM:ss", "-18:00", TZoneOffset.ofHoursMinutesSeconds(-18, 0, 0) },
 
-            {"+HH:MM:SS", "NO-OFFSET", TZoneOffset.UTC},
-            {"+HH:MM:SS", "+01:02:03", TZoneOffset.ofHoursMinutesSeconds(1, 2, 3)},
-            {"+HH:MM:SS", "-01:02:03", TZoneOffset.ofHoursMinutesSeconds(-1, -2, -3)},
-            {"+HH:MM:SS", "+01:02:00", TZoneOffset.ofHoursMinutesSeconds(1, 2, 0)},
-            {"+HH:MM:SS", "-01:02:00", TZoneOffset.ofHoursMinutesSeconds(-1, -2, 0)},
-        };
+        { "+HHMMSS", "NO-OFFSET", TZoneOffset.UTC },
+        { "+HHMMSS", "+010203", TZoneOffset.ofHoursMinutesSeconds(1, 2, 3) },
+        { "+HHMMSS", "-010203", TZoneOffset.ofHoursMinutesSeconds(-1, -2, -3) },
+        { "+HHMMSS", "+010200", TZoneOffset.ofHoursMinutesSeconds(1, 2, 0) },
+        { "+HHMMSS", "-010200", TZoneOffset.ofHoursMinutesSeconds(-1, -2, 0) },
+
+        { "+HH:MM:SS", "NO-OFFSET", TZoneOffset.UTC },
+        { "+HH:MM:SS", "+01:02:03", TZoneOffset.ofHoursMinutesSeconds(1, 2, 3) },
+        { "+HH:MM:SS", "-01:02:03", TZoneOffset.ofHoursMinutesSeconds(-1, -2, -3) },
+        { "+HH:MM:SS", "+01:02:00", TZoneOffset.ofHoursMinutesSeconds(1, 2, 0) },
+        { "+HH:MM:SS", "-01:02:00", TZoneOffset.ofHoursMinutesSeconds(-1, -2, 0) }, };
     }
 
-    @Test(dataProvider="offsets")
-    public void test_print(String pattern, String expected, TZoneOffset offset) throws Exception {
-        buf.append("EXISTING");
-        printContext.setDateTime(new TDateTimeBuilder(OFFSET_SECONDS, offset.getTotalSeconds()));
-        OffsetIdPrinterParser pp = new OffsetIdPrinterParser("NO-OFFSET", pattern);
-        pp.print(printContext, buf);
-        assertEquals(buf.toString(), "EXISTING" + expected);
+    @Test
+    public void test_print() {
+
+        for (Object[] data : provider_offsets()) {
+            String pattern = (String) data[0];
+            String expected = (String) data[1];
+            TZoneOffset offset = (TZoneOffset) data[2];
+
+            StringBuilder sb = new StringBuilder();
+            sb.append("EXISTING");
+            this.printContext.setDateTime(new TDateTimeBuilder(OFFSET_SECONDS, offset.getTotalSeconds()));
+            OffsetIdPrinterParser pp = new OffsetIdPrinterParser("NO-OFFSET", pattern);
+            pp.print(this.printContext, sb);
+            assertEquals(sb.toString(), "EXISTING" + expected);
+        }
     }
 
-    @Test(dataProvider="offsets")
-    public void test_toString(String pattern, String expected, TZoneOffset offset) throws Exception {
-        OffsetIdPrinterParser pp = new OffsetIdPrinterParser("NO-OFFSET", pattern);
-        assertEquals(pp.toString(), "Offset(" + pattern + ",'NO-OFFSET')");
+    @Test
+    public void test_toString() {
+
+        for (Object[] data : provider_offsets()) {
+            String pattern = (String) data[0];
+            String expected = (String) data[1];
+            TZoneOffset offset = (TZoneOffset) data[2];
+
+            OffsetIdPrinterParser pp = new OffsetIdPrinterParser("NO-OFFSET", pattern);
+            assertEquals(pp.toString(), "Offset(" + pattern + ",'NO-OFFSET')");
+        }
     }
 
-    //-----------------------------------------------------------------------
-    @Test(expectedExceptions=TDateTimeException.class)
-    public void test_print_emptyCalendrical() throws Exception {
+    @Test(expected = TDateTimeException.class)
+    public void test_print_emptyCalendrical() {
+
         OffsetIdPrinterParser pp = new OffsetIdPrinterParser("Z", "+HH:MM:ss");
-        pp.print(printEmptyContext, buf);
+        pp.print(this.printEmptyContext, this.buf);
     }
 
-    public void test_print_emptyAppendable() throws Exception {
-        printContext.setDateTime(new TDateTimeBuilder(OFFSET_SECONDS, OFFSET_0130.getTotalSeconds()));
+    @Test
+    public void test_print_emptyAppendable() {
+
+        this.printContext.setDateTime(new TDateTimeBuilder(OFFSET_SECONDS, OFFSET_0130.getTotalSeconds()));
         OffsetIdPrinterParser pp = new OffsetIdPrinterParser("Z", "+HH:MM:ss");
-        pp.print(printContext, buf);
-        assertEquals(buf.toString(), "+01:30");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "+01:30");
     }
 
 }

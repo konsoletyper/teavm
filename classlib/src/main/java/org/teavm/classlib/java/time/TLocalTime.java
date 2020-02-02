@@ -40,15 +40,9 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_DAY;
 import static org.teavm.classlib.java.time.temporal.TChronoField.SECOND_OF_MINUTE;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.format.TDateTimeParseException;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
@@ -64,20 +58,25 @@ import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TLocalTime
-        extends TDefaultInterfaceTemporalAccessor
+public final class TLocalTime extends TDefaultInterfaceTemporalAccessor
         implements TTemporal, TTemporalAdjuster, Comparable<TLocalTime>, Serializable {
 
     public static final TLocalTime MIN;
+
     public static final TLocalTime MAX;
+
     public static final TLocalTime MIDNIGHT;
+
     public static final TLocalTime NOON;
+
     public static final TTemporalQuery<TLocalTime> FROM = new TTemporalQuery<TLocalTime>() {
         @Override
         public TLocalTime queryFrom(TTemporalAccessor temporal) {
+
             return TLocalTime.from(temporal);
         }
     };
+
     private static final TLocalTime[] HOURS = new TLocalTime[24];
     static {
         for (int i = 0; i < HOURS.length; i++) {
@@ -90,38 +89,52 @@ public final class TLocalTime
     }
 
     static final int HOURS_PER_DAY = 24;
+
     static final int MINUTES_PER_HOUR = 60;
+
     static final int MINUTES_PER_DAY = MINUTES_PER_HOUR * HOURS_PER_DAY;
+
     static final int SECONDS_PER_MINUTE = 60;
+
     static final int SECONDS_PER_HOUR = SECONDS_PER_MINUTE * MINUTES_PER_HOUR;
+
     static final int SECONDS_PER_DAY = SECONDS_PER_HOUR * HOURS_PER_DAY;
+
     static final long MILLIS_PER_DAY = SECONDS_PER_DAY * 1000L;
+
     static final long MICROS_PER_DAY = SECONDS_PER_DAY * 1000000L;
+
     static final long NANOS_PER_SECOND = 1000000000L;
+
     static final long NANOS_PER_MINUTE = NANOS_PER_SECOND * SECONDS_PER_MINUTE;
+
     static final long NANOS_PER_HOUR = NANOS_PER_MINUTE * MINUTES_PER_HOUR;
+
     static final long NANOS_PER_DAY = NANOS_PER_HOUR * HOURS_PER_DAY;
 
-    private static final long serialVersionUID = 6414437269572265201L;
-
     private final byte hour;
+
     private final byte minute;
+
     private final byte second;
+
     private final int nano;
 
-    //-----------------------------------------------------------------------
     public static TLocalTime now() {
+
         return now(TClock.systemDefaultZone());
     }
 
     public static TLocalTime now(TZoneId zone) {
+
         return now(TClock.system(zone));
     }
 
     public static TLocalTime now(TClock clock) {
+
         TJdk8Methods.requireNonNull(clock, "clock");
         // inline TOffsetTime factory to avoid creating object and InstantProvider checks
-        final TInstant now = clock.instant();  // called once
+        final TInstant now = clock.instant(); // called once
         TZoneOffset offset = clock.getZone().getRules().getOffset(now);
         long secsOfDay = now.getEpochSecond() % SECONDS_PER_DAY;
         secsOfDay = (secsOfDay + offset.getTotalSeconds()) % SECONDS_PER_DAY;
@@ -131,20 +144,21 @@ public final class TLocalTime
         return TLocalTime.ofSecondOfDay(secsOfDay, now.getNano());
     }
 
-    //------------------------get-----------------------------------------------
     public static TLocalTime of(int hour, int minute) {
+
         HOUR_OF_DAY.checkValidValue(hour);
         if (minute == 0) {
-            return HOURS[hour];  // for performance
+            return HOURS[hour]; // for performance
         }
         MINUTE_OF_HOUR.checkValidValue(minute);
         return new TLocalTime(hour, minute, 0, 0);
     }
 
     public static TLocalTime of(int hour, int minute, int second) {
+
         HOUR_OF_DAY.checkValidValue(hour);
         if ((minute | second) == 0) {
-            return HOURS[hour];  // for performance
+            return HOURS[hour]; // for performance
         }
         MINUTE_OF_HOUR.checkValidValue(minute);
         SECOND_OF_MINUTE.checkValidValue(second);
@@ -152,6 +166,7 @@ public final class TLocalTime
     }
 
     public static TLocalTime of(int hour, int minute, int second, int nanoOfSecond) {
+
         HOUR_OF_DAY.checkValidValue(hour);
         MINUTE_OF_HOUR.checkValidValue(minute);
         SECOND_OF_MINUTE.checkValidValue(second);
@@ -159,8 +174,8 @@ public final class TLocalTime
         return create(hour, minute, second, nanoOfSecond);
     }
 
-    //-----------------------------------------------------------------------
     public static TLocalTime ofSecondOfDay(long secondOfDay) {
+
         SECOND_OF_DAY.checkValidValue(secondOfDay);
         int hours = (int) (secondOfDay / SECONDS_PER_HOUR);
         secondOfDay -= hours * SECONDS_PER_HOUR;
@@ -170,6 +185,7 @@ public final class TLocalTime
     }
 
     static TLocalTime ofSecondOfDay(long secondOfDay, int nanoOfSecond) {
+
         SECOND_OF_DAY.checkValidValue(secondOfDay);
         NANO_OF_SECOND.checkValidValue(nanoOfSecond);
         int hours = (int) (secondOfDay / SECONDS_PER_HOUR);
@@ -180,6 +196,7 @@ public final class TLocalTime
     }
 
     public static TLocalTime ofNanoOfDay(long nanoOfDay) {
+
         NANO_OF_DAY.checkValidValue(nanoOfDay);
         int hours = (int) (nanoOfDay / NANOS_PER_HOUR);
         nanoOfDay -= hours * NANOS_PER_HOUR;
@@ -190,28 +207,29 @@ public final class TLocalTime
         return create(hours, minutes, seconds, (int) nanoOfDay);
     }
 
-    //-----------------------------------------------------------------------
     public static TLocalTime from(TTemporalAccessor temporal) {
+
         TLocalTime time = temporal.query(TTemporalQueries.localTime());
         if (time == null) {
-            throw new TDateTimeException("Unable to obtain TLocalTime from TTemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName());
+            throw new TDateTimeException("Unable to obtain TLocalTime from TTemporalAccessor: " + temporal + ", type "
+                    + temporal.getClass().getName());
         }
         return time;
     }
 
-    //-----------------------------------------------------------------------
     public static TLocalTime parse(CharSequence text) {
+
         return parse(text, TDateTimeFormatter.ISO_LOCAL_TIME);
     }
 
     public static TLocalTime parse(CharSequence text, TDateTimeFormatter formatter) {
+
         TJdk8Methods.requireNonNull(formatter, "formatter");
         return formatter.parse(text, TLocalTime.FROM);
     }
 
-    //-----------------------------------------------------------------------
     private static TLocalTime create(int hour, int minute, int second, int nanoOfSecond) {
+
         if ((minute | second | nanoOfSecond) == 0) {
             return HOURS[hour];
         }
@@ -219,15 +237,16 @@ public final class TLocalTime
     }
 
     private TLocalTime(int hour, int minute, int second, int nanoOfSecond) {
+
         this.hour = (byte) hour;
         this.minute = (byte) minute;
         this.second = (byte) second;
         this.nano = nanoOfSecond;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isSupported(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             return field.isTimeBased();
         }
@@ -236,19 +255,22 @@ public final class TLocalTime
 
     @Override
     public boolean isSupported(TTemporalUnit unit) {
+
         if (unit instanceof TChronoUnit) {
             return unit.isTimeBased();
         }
         return unit != null && unit.isSupportedBy(this);
     }
 
-    @Override  // override for Javadoc
+    @Override
     public TValueRange range(TTemporalField field) {
+
         return super.range(field);
     }
 
-    @Override  // override for Javadoc and performance
+    @Override
     public int get(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             return get0(field);
         }
@@ -257,6 +279,7 @@ public final class TLocalTime
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             if (field == NANO_OF_DAY) {
                 return toNanoOfDay();
@@ -270,46 +293,66 @@ public final class TLocalTime
     }
 
     private int get0(TTemporalField field) {
+
         switch ((TChronoField) field) {
-            case NANO_OF_SECOND: return nano;
-            case NANO_OF_DAY: throw new TDateTimeException("Field too large for an int: " + field);
-            case MICRO_OF_SECOND: return nano / 1000;
-            case MICRO_OF_DAY: throw new TDateTimeException("Field too large for an int: " + field);
-            case MILLI_OF_SECOND: return nano / 1000000;
-            case MILLI_OF_DAY: return (int) (toNanoOfDay() / 1000000);
-            case SECOND_OF_MINUTE: return second;
-            case SECOND_OF_DAY: return toSecondOfDay();
-            case MINUTE_OF_HOUR: return minute;
-            case MINUTE_OF_DAY: return hour * 60 + minute;
-            case HOUR_OF_AMPM: return hour % 12;
-            case CLOCK_HOUR_OF_AMPM: int ham = hour % 12; return (ham % 12 == 0 ? 12 : ham);
-            case HOUR_OF_DAY: return hour;
-            case CLOCK_HOUR_OF_DAY: return (hour == 0 ? 24 : hour);
-            case AMPM_OF_DAY: return hour / 12;
+            case NANO_OF_SECOND:
+                return this.nano;
+            case NANO_OF_DAY:
+                throw new TDateTimeException("Field too large for an int: " + field);
+            case MICRO_OF_SECOND:
+                return this.nano / 1000;
+            case MICRO_OF_DAY:
+                throw new TDateTimeException("Field too large for an int: " + field);
+            case MILLI_OF_SECOND:
+                return this.nano / 1000000;
+            case MILLI_OF_DAY:
+                return (int) (toNanoOfDay() / 1000000);
+            case SECOND_OF_MINUTE:
+                return this.second;
+            case SECOND_OF_DAY:
+                return toSecondOfDay();
+            case MINUTE_OF_HOUR:
+                return this.minute;
+            case MINUTE_OF_DAY:
+                return this.hour * 60 + this.minute;
+            case HOUR_OF_AMPM:
+                return this.hour % 12;
+            case CLOCK_HOUR_OF_AMPM:
+                int ham = this.hour % 12;
+                return (ham % 12 == 0 ? 12 : ham);
+            case HOUR_OF_DAY:
+                return this.hour;
+            case CLOCK_HOUR_OF_DAY:
+                return (this.hour == 0 ? 24 : this.hour);
+            case AMPM_OF_DAY:
+                return this.hour / 12;
         }
         throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
     }
 
-    //-----------------------------------------------------------------------
     public int getHour() {
-        return hour;
+
+        return this.hour;
     }
 
     public int getMinute() {
-        return minute;
+
+        return this.minute;
     }
 
     public int getSecond() {
-        return second;
+
+        return this.second;
     }
 
     public int getNano() {
-        return nano;
+
+        return this.nano;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TLocalTime with(TTemporalAdjuster adjuster) {
+
         // optimizations
         if (adjuster instanceof TLocalTime) {
             return (TLocalTime) adjuster;
@@ -319,66 +362,85 @@ public final class TLocalTime
 
     @Override
     public TLocalTime with(TTemporalField field, long newValue) {
+
         if (field instanceof TChronoField) {
             TChronoField f = (TChronoField) field;
             f.checkValidValue(newValue);
             switch (f) {
-                case NANO_OF_SECOND: return withNano((int) newValue);
-                case NANO_OF_DAY: return TLocalTime.ofNanoOfDay(newValue);
-                case MICRO_OF_SECOND: return withNano((int) newValue * 1000);
-                case MICRO_OF_DAY: return TLocalTime.ofNanoOfDay(newValue * 1000);
-                case MILLI_OF_SECOND: return withNano((int) newValue * 1000000);
-                case MILLI_OF_DAY: return TLocalTime.ofNanoOfDay(newValue * 1000000);
-                case SECOND_OF_MINUTE: return withSecond((int) newValue);
-                case SECOND_OF_DAY: return plusSeconds(newValue - toSecondOfDay());
-                case MINUTE_OF_HOUR: return withMinute((int) newValue);
-                case MINUTE_OF_DAY: return plusMinutes(newValue - (hour * 60 + minute));
-                case HOUR_OF_AMPM: return plusHours(newValue - (hour % 12));
-                case CLOCK_HOUR_OF_AMPM: return plusHours((newValue == 12 ? 0 : newValue) - (hour % 12));
-                case HOUR_OF_DAY: return withHour((int) newValue);
-                case CLOCK_HOUR_OF_DAY: return withHour((int) (newValue == 24 ? 0 : newValue));
-                case AMPM_OF_DAY: return plusHours((newValue - (hour / 12)) * 12);
+                case NANO_OF_SECOND:
+                    return withNano((int) newValue);
+                case NANO_OF_DAY:
+                    return TLocalTime.ofNanoOfDay(newValue);
+                case MICRO_OF_SECOND:
+                    return withNano((int) newValue * 1000);
+                case MICRO_OF_DAY:
+                    return TLocalTime.ofNanoOfDay(newValue * 1000);
+                case MILLI_OF_SECOND:
+                    return withNano((int) newValue * 1000000);
+                case MILLI_OF_DAY:
+                    return TLocalTime.ofNanoOfDay(newValue * 1000000);
+                case SECOND_OF_MINUTE:
+                    return withSecond((int) newValue);
+                case SECOND_OF_DAY:
+                    return plusSeconds(newValue - toSecondOfDay());
+                case MINUTE_OF_HOUR:
+                    return withMinute((int) newValue);
+                case MINUTE_OF_DAY:
+                    return plusMinutes(newValue - (this.hour * 60 + this.minute));
+                case HOUR_OF_AMPM:
+                    return plusHours(newValue - (this.hour % 12));
+                case CLOCK_HOUR_OF_AMPM:
+                    return plusHours((newValue == 12 ? 0 : newValue) - (this.hour % 12));
+                case HOUR_OF_DAY:
+                    return withHour((int) newValue);
+                case CLOCK_HOUR_OF_DAY:
+                    return withHour((int) (newValue == 24 ? 0 : newValue));
+                case AMPM_OF_DAY:
+                    return plusHours((newValue - (this.hour / 12)) * 12);
             }
             throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.adjustInto(this, newValue);
     }
 
-    //-----------------------------------------------------------------------
     public TLocalTime withHour(int hour) {
+
         if (this.hour == hour) {
             return this;
         }
         HOUR_OF_DAY.checkValidValue(hour);
-        return create(hour, minute, second, nano);
+        return create(hour, this.minute, this.second, this.nano);
     }
 
     public TLocalTime withMinute(int minute) {
+
         if (this.minute == minute) {
             return this;
         }
         MINUTE_OF_HOUR.checkValidValue(minute);
-        return create(hour, minute, second, nano);
+        return create(this.hour, minute, this.second, this.nano);
     }
 
     public TLocalTime withSecond(int second) {
+
         if (this.second == second) {
             return this;
         }
         SECOND_OF_MINUTE.checkValidValue(second);
-        return create(hour, minute, second, nano);
+        return create(this.hour, this.minute, second, this.nano);
     }
 
     public TLocalTime withNano(int nanoOfSecond) {
+
         if (this.nano == nanoOfSecond) {
             return this;
         }
         NANO_OF_SECOND.checkValidValue(nanoOfSecond);
-        return create(hour, minute, second, nanoOfSecond);
+        return create(this.hour, this.minute, this.second, nanoOfSecond);
     }
 
-    //-----------------------------------------------------------------------
     public TLocalTime truncatedTo(TTemporalUnit unit) {
+
         if (unit == TChronoUnit.NANOS) {
             return this;
         }
@@ -394,59 +456,68 @@ public final class TLocalTime
         return ofNanoOfDay((nod / dur) * dur);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TLocalTime plus(TTemporalAmount amount) {
+
         return (TLocalTime) amount.addTo(this);
     }
 
     @Override
     public TLocalTime plus(long amountToAdd, TTemporalUnit unit) {
+
         if (unit instanceof TChronoUnit) {
             TChronoUnit f = (TChronoUnit) unit;
             switch (f) {
-                case NANOS: return plusNanos(amountToAdd);
-                case MICROS: return plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
-                case MILLIS: return plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000000);
-                case SECONDS: return plusSeconds(amountToAdd);
-                case MINUTES: return plusMinutes(amountToAdd);
-                case HOURS: return plusHours(amountToAdd);
-                case HALF_DAYS: return plusHours((amountToAdd % 2) * 12);
+                case NANOS:
+                    return plusNanos(amountToAdd);
+                case MICROS:
+                    return plusNanos((amountToAdd % MICROS_PER_DAY) * 1000);
+                case MILLIS:
+                    return plusNanos((amountToAdd % MILLIS_PER_DAY) * 1000000);
+                case SECONDS:
+                    return plusSeconds(amountToAdd);
+                case MINUTES:
+                    return plusMinutes(amountToAdd);
+                case HOURS:
+                    return plusHours(amountToAdd);
+                case HALF_DAYS:
+                    return plusHours((amountToAdd % 2) * 12);
             }
             throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
         return unit.addTo(this, amountToAdd);
     }
 
-    //-----------------------------------------------------------------------
     public TLocalTime plusHours(long hoursToAdd) {
+
         if (hoursToAdd == 0) {
             return this;
         }
-        int newHour = ((int) (hoursToAdd % HOURS_PER_DAY) + hour + HOURS_PER_DAY) % HOURS_PER_DAY;
-        return create(newHour, minute, second, nano);
+        int newHour = ((int) (hoursToAdd % HOURS_PER_DAY) + this.hour + HOURS_PER_DAY) % HOURS_PER_DAY;
+        return create(newHour, this.minute, this.second, this.nano);
     }
 
     public TLocalTime plusMinutes(long minutesToAdd) {
+
         if (minutesToAdd == 0) {
             return this;
         }
-        int mofd = hour * MINUTES_PER_HOUR + minute;
+        int mofd = this.hour * MINUTES_PER_HOUR + this.minute;
         int newMofd = ((int) (minutesToAdd % MINUTES_PER_DAY) + mofd + MINUTES_PER_DAY) % MINUTES_PER_DAY;
         if (mofd == newMofd) {
             return this;
         }
         int newHour = newMofd / MINUTES_PER_HOUR;
         int newMinute = newMofd % MINUTES_PER_HOUR;
-        return create(newHour, newMinute, second, nano);
+        return create(newHour, newMinute, this.second, this.nano);
     }
 
     public TLocalTime plusSeconds(long secondstoAdd) {
+
         if (secondstoAdd == 0) {
             return this;
         }
-        int sofd = hour * SECONDS_PER_HOUR +
-                    minute * SECONDS_PER_MINUTE + second;
+        int sofd = this.hour * SECONDS_PER_HOUR + this.minute * SECONDS_PER_MINUTE + this.second;
         int newSofd = ((int) (secondstoAdd % SECONDS_PER_DAY) + sofd + SECONDS_PER_DAY) % SECONDS_PER_DAY;
         if (sofd == newSofd) {
             return this;
@@ -454,10 +525,11 @@ public final class TLocalTime
         int newHour = newSofd / SECONDS_PER_HOUR;
         int newMinute = (newSofd / SECONDS_PER_MINUTE) % MINUTES_PER_HOUR;
         int newSecond = newSofd % SECONDS_PER_MINUTE;
-        return create(newHour, newMinute, newSecond, nano);
+        return create(newHour, newMinute, newSecond, this.nano);
     }
 
     public TLocalTime plusNanos(long nanosToAdd) {
+
         if (nanosToAdd == 0) {
             return this;
         }
@@ -473,47 +545,52 @@ public final class TLocalTime
         return create(newHour, newMinute, newSecond, newNano);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TLocalTime minus(TTemporalAmount amount) {
+
         return (TLocalTime) amount.subtractFrom(this);
     }
 
     @Override
     public TLocalTime minus(long amountToSubtract, TTemporalUnit unit) {
-        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
+
+        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit));
     }
 
-    //-----------------------------------------------------------------------
     public TLocalTime minusHours(long hoursToSubtract) {
+
         return plusHours(-(hoursToSubtract % HOURS_PER_DAY));
     }
 
     public TLocalTime minusMinutes(long minutesToSubtract) {
+
         return plusMinutes(-(minutesToSubtract % MINUTES_PER_DAY));
     }
 
     public TLocalTime minusSeconds(long secondsToSubtract) {
+
         return plusSeconds(-(secondsToSubtract % SECONDS_PER_DAY));
     }
 
     public TLocalTime minusNanos(long nanosToSubtract) {
+
         return plusNanos(-(nanosToSubtract % NANOS_PER_DAY));
     }
 
-    //-----------------------------------------------------------------------
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
+
         if (query == TTemporalQueries.precision()) {
             return (R) NANOS;
         } else if (query == TTemporalQueries.localTime()) {
             return (R) this;
         }
         // inline TTemporalAccessor.super.query(query) as an optimization
-        if (query == TTemporalQueries.chronology() || query == TTemporalQueries.zoneId() ||
-                query == TTemporalQueries.zone() || query == TTemporalQueries.offset() ||
-                query == TTemporalQueries.localDate()) {
+        if (query == TTemporalQueries.chronology() || query == TTemporalQueries.zoneId()
+                || query == TTemporalQueries.zone() || query == TTemporalQueries.offset()
+                || query == TTemporalQueries.localDate()) {
             return null;
         }
         return query.queryFrom(this);
@@ -521,63 +598,74 @@ public final class TLocalTime
 
     @Override
     public TTemporal adjustInto(TTemporal temporal) {
+
         return temporal.with(NANO_OF_DAY, toNanoOfDay());
     }
 
     @Override
     public long until(TTemporal endExclusive, TTemporalUnit unit) {
+
         TLocalTime end = TLocalTime.from(endExclusive);
         if (unit instanceof TChronoUnit) {
-            long nanosUntil = end.toNanoOfDay() - toNanoOfDay();  // no overflow
+            long nanosUntil = end.toNanoOfDay() - toNanoOfDay(); // no overflow
             switch ((TChronoUnit) unit) {
-                case NANOS: return nanosUntil;
-                case MICROS: return nanosUntil / 1000;
-                case MILLIS: return nanosUntil / 1000000;
-                case SECONDS: return nanosUntil / NANOS_PER_SECOND;
-                case MINUTES: return nanosUntil / NANOS_PER_MINUTE;
-                case HOURS: return nanosUntil / NANOS_PER_HOUR;
-                case HALF_DAYS: return nanosUntil / (12 * NANOS_PER_HOUR);
+                case NANOS:
+                    return nanosUntil;
+                case MICROS:
+                    return nanosUntil / 1000;
+                case MILLIS:
+                    return nanosUntil / 1000000;
+                case SECONDS:
+                    return nanosUntil / NANOS_PER_SECOND;
+                case MINUTES:
+                    return nanosUntil / NANOS_PER_MINUTE;
+                case HOURS:
+                    return nanosUntil / NANOS_PER_HOUR;
+                case HALF_DAYS:
+                    return nanosUntil / (12 * NANOS_PER_HOUR);
             }
             throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
         return unit.between(this, end);
     }
 
-    //-----------------------------------------------------------------------
     public TLocalDateTime atDate(TLocalDate date) {
+
         return TLocalDateTime.of(date, this);
     }
 
     public TOffsetTime atOffset(TZoneOffset offset) {
+
         return TOffsetTime.of(this, offset);
     }
 
-    //-----------------------------------------------------------------------
     public int toSecondOfDay() {
-        int total = hour * SECONDS_PER_HOUR;
-        total += minute * SECONDS_PER_MINUTE;
-        total += second;
+
+        int total = this.hour * SECONDS_PER_HOUR;
+        total += this.minute * SECONDS_PER_MINUTE;
+        total += this.second;
         return total;
     }
 
     public long toNanoOfDay() {
-        long total = hour * NANOS_PER_HOUR;
-        total += minute * NANOS_PER_MINUTE;
-        total += second * NANOS_PER_SECOND;
-        total += nano;
+
+        long total = this.hour * NANOS_PER_HOUR;
+        total += this.minute * NANOS_PER_MINUTE;
+        total += this.second * NANOS_PER_SECOND;
+        total += this.nano;
         return total;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public int compareTo(TLocalTime other) {
-        int cmp = TJdk8Methods.compareInts(hour, other.hour);
+
+        int cmp = TJdk8Methods.compareInts(this.hour, other.hour);
         if (cmp == 0) {
-            cmp = TJdk8Methods.compareInts(minute, other.minute);
+            cmp = TJdk8Methods.compareInts(this.minute, other.minute);
             if (cmp == 0) {
-                cmp = TJdk8Methods.compareInts(second, other.second);
+                cmp = TJdk8Methods.compareInts(this.second, other.second);
                 if (cmp == 0) {
-                    cmp = TJdk8Methods.compareInts(nano, other.nano);
+                    cmp = TJdk8Methods.compareInts(this.nano, other.nano);
                 }
             }
         }
@@ -585,43 +673,46 @@ public final class TLocalTime
     }
 
     public boolean isAfter(TLocalTime other) {
+
         return compareTo(other) > 0;
     }
 
     public boolean isBefore(TLocalTime other) {
+
         return compareTo(other) < 0;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
             return true;
         }
         if (obj instanceof TLocalTime) {
             TLocalTime other = (TLocalTime) obj;
-            return hour == other.hour && minute == other.minute &&
-                    second == other.second && nano == other.nano;
+            return this.hour == other.hour && this.minute == other.minute && this.second == other.second
+                    && this.nano == other.nano;
         }
         return false;
     }
 
     @Override
     public int hashCode() {
+
         long nod = toNanoOfDay();
         return (int) (nod ^ (nod >>> 32));
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
+
         StringBuilder buf = new StringBuilder(18);
-        int hourValue = hour;
-        int minuteValue = minute;
-        int secondValue = second;
-        int nanoValue = nano;
-        buf.append(hourValue < 10 ? "0" : "").append(hourValue)
-            .append(minuteValue < 10 ? ":0" : ":").append(minuteValue);
+        int hourValue = this.hour;
+        int minuteValue = this.minute;
+        int secondValue = this.second;
+        int nanoValue = this.nano;
+        buf.append(hourValue < 10 ? "0" : "").append(hourValue).append(minuteValue < 10 ? ":0" : ":")
+                .append(minuteValue);
         if (secondValue > 0 || nanoValue > 0) {
             buf.append(secondValue < 10 ? ":0" : ":").append(secondValue);
             if (nanoValue > 0) {
@@ -639,62 +730,9 @@ public final class TLocalTime
     }
 
     public String format(TDateTimeFormatter formatter) {
+
         TJdk8Methods.requireNonNull(formatter, "formatter");
         return formatter.format(this);
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.LOCAL_TIME_TYPE, this);
-    }
-
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        if (nano == 0) {
-            if (second == 0) {
-                if (minute == 0) {
-                    out.writeByte(~hour);
-                } else {
-                    out.writeByte(hour);
-                    out.writeByte(~minute);
-                }
-            } else {
-                out.writeByte(hour);
-                out.writeByte(minute);
-                out.writeByte(~second);
-            }
-        } else {
-            out.writeByte(hour);
-            out.writeByte(minute);
-            out.writeByte(second);
-            out.writeInt(nano);
-        }
-    }
-
-    static TLocalTime readExternal(DataInput in) throws IOException {
-        int hour = in.readByte();
-        int minute = 0;
-        int second = 0;
-        int nano = 0;
-        if (hour < 0) {
-            hour = ~hour;
-        } else {
-            minute = in.readByte();
-            if (minute < 0) {
-                minute = ~minute;
-            } else {
-                second = in.readByte();
-                if (second < 0) {
-                    second = ~second;
-                } else {
-                    nano = in.readInt();
-                }
-            }
-        }
-        return TLocalTime.of(hour, minute, second, nano);
     }
 
 }

@@ -33,12 +33,6 @@ package org.teavm.classlib.java.time.zone;
 
 import static org.junit.Assert.assertEquals;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.TDuration;
 import org.teavm.classlib.java.time.TInstant;
@@ -48,52 +42,32 @@ import org.teavm.classlib.java.time.TMonth;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.zone.TZoneOffsetTransitionRule.TimeDefinition;
 
-@Test
 public class TestFixedZoneRules {
 
     private static final TZoneOffset OFFSET_PONE = TZoneOffset.ofHours(1);
+
     private static final TZoneOffset OFFSET_PTWO = TZoneOffset.ofHours(2);
+
     private static final TZoneOffset OFFSET_M18 = TZoneOffset.ofHours(-18);
+
     private static final TLocalDateTime LDT = TLocalDateTime.of(2010, 12, 3, 11, 30);
+
     private static final TInstant INSTANT = LDT.toInstant(OFFSET_PONE);
 
     private TZoneRules make(TZoneOffset offset) {
+
         return offset.getRules();
     }
 
-    @DataProvider(name="rules")
     Object[][] data_rules() {
-        return new Object[][] {
-            {make(OFFSET_PONE), OFFSET_PONE},
-            {make(OFFSET_PTWO), OFFSET_PTWO},
-            {make(OFFSET_M18), OFFSET_M18},
-        };
+
+        return new Object[][] { { make(OFFSET_PONE), OFFSET_PONE }, { make(OFFSET_PTWO), OFFSET_PTWO },
+        { make(OFFSET_M18), OFFSET_M18 }, };
     }
 
-    //-----------------------------------------------------------------------
-    // Basics
-    //-----------------------------------------------------------------------
-    @Test(dataProvider="rules")
-    public void test_serialization(TZoneRules test, TZoneOffset expectedOffset) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream out = new ObjectOutputStream(baos);
-        out.writeObject(test);
-        baos.close();
-        byte[] bytes = baos.toByteArray();
-
-        ByteArrayInputStream bais = new ByteArrayInputStream(bytes);
-        ObjectInputStream in = new ObjectInputStream(bais);
-        TZoneRules result = (TZoneRules) in.readObject();
-
-        assertEquals(result, test);
-        assertEquals(result.getClass(), test.getClass());
-    }
-
-    //-----------------------------------------------------------------------
-    // basics
-    //-----------------------------------------------------------------------
     @Test
     public void test_data_nullInput() {
+
         TZoneRules test = make(OFFSET_PONE);
         assertEquals(test.getOffset((TInstant) null), OFFSET_PONE);
         assertEquals(test.getOffset((TLocalDateTime) null), OFFSET_PONE);
@@ -107,102 +81,168 @@ public class TestFixedZoneRules {
         assertEquals(test.previousTransition(null), null);
     }
 
-    @Test(dataProvider="rules")
-    public void test_getOffset_Instant(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.getOffset(INSTANT), expectedOffset);
-        assertEquals(test.getOffset((TInstant) null), expectedOffset);
+    @Test
+    public void test_getOffset_Instant() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+            TZoneOffset expectedOffset = (TZoneOffset) data[1];
+
+            assertEquals(test.getOffset(INSTANT), expectedOffset);
+            assertEquals(test.getOffset((TInstant) null), expectedOffset);
+        }
     }
 
-    @Test(dataProvider="rules")
-    public void test_getOffset_LocalDateTime(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.getOffset(LDT), expectedOffset);
-        assertEquals(test.getOffset((TLocalDateTime) null), expectedOffset);
+    @Test
+    public void test_getOffset_LocalDateTime() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+            TZoneOffset expectedOffset = (TZoneOffset) data[1];
+
+            assertEquals(test.getOffset(LDT), expectedOffset);
+            assertEquals(test.getOffset((TLocalDateTime) null), expectedOffset);
+        }
     }
 
-    @Test(dataProvider="rules")
-    public void test_getValidOffsets_LDT(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.getValidOffsets(LDT).size(), 1);
-        assertEquals(test.getValidOffsets(LDT).get(0), expectedOffset);
-        assertEquals(test.getValidOffsets(null).size(), 1);
-        assertEquals(test.getValidOffsets(null).get(0), expectedOffset);
+    @Test
+    public void test_getValidOffsets_LDT() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+            TZoneOffset expectedOffset = (TZoneOffset) data[1];
+
+            assertEquals(test.getValidOffsets(LDT).size(), 1);
+            assertEquals(test.getValidOffsets(LDT).get(0), expectedOffset);
+            assertEquals(test.getValidOffsets(null).size(), 1);
+            assertEquals(test.getValidOffsets(null).get(0), expectedOffset);
+        }
     }
 
-    @Test(dataProvider="rules")
-    public void test_getTransition_LDT(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.getTransition(LDT), null);
-        assertEquals(test.getTransition(null), null);
+    @Test
+    public void test_getTransition_LDT() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+            TZoneOffset expectedOffset = (TZoneOffset) data[1];
+
+            assertEquals(test.getTransition(LDT), null);
+            assertEquals(test.getTransition(null), null);
+        }
     }
 
-    @Test(dataProvider="rules")
-    public void test_isValidOffset_LDT_ZO(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.isValidOffset(LDT, expectedOffset), true);
-        assertEquals(test.isValidOffset(LDT, TZoneOffset.UTC), false);
-        assertEquals(test.isValidOffset(LDT, null), false);
+    @Test
+    public void test_isValidOffset_LDT_ZO() {
 
-        assertEquals(test.isValidOffset(null, expectedOffset), true);
-        assertEquals(test.isValidOffset(null, TZoneOffset.UTC), false);
-        assertEquals(test.isValidOffset(null, null), false);
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+            TZoneOffset expectedOffset = (TZoneOffset) data[1];
+
+            assertEquals(test.isValidOffset(LDT, expectedOffset), true);
+            assertEquals(test.isValidOffset(LDT, TZoneOffset.UTC), false);
+            assertEquals(test.isValidOffset(LDT, null), false);
+
+            assertEquals(test.isValidOffset(null, expectedOffset), true);
+            assertEquals(test.isValidOffset(null, TZoneOffset.UTC), false);
+            assertEquals(test.isValidOffset(null, null), false);
+        }
     }
 
-    @Test(dataProvider="rules")
-    public void test_getStandardOffset_Instant(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.getStandardOffset(INSTANT), expectedOffset);
-        assertEquals(test.getStandardOffset(null), expectedOffset);
+    @Test
+    public void test_getStandardOffset_Instant() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+            TZoneOffset expectedOffset = (TZoneOffset) data[1];
+
+            assertEquals(test.getStandardOffset(INSTANT), expectedOffset);
+            assertEquals(test.getStandardOffset(null), expectedOffset);
+        }
     }
 
-    @Test(dataProvider="rules")
-    public void test_getDaylightSavings_Instant(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.getDaylightSavings(INSTANT), TDuration.ZERO);
-        assertEquals(test.getDaylightSavings(null), TDuration.ZERO);
+    @Test
+    public void test_getDaylightSavings_Instant() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+            TZoneOffset expectedOffset = (TZoneOffset) data[1];
+
+            assertEquals(test.getDaylightSavings(INSTANT), TDuration.ZERO);
+            assertEquals(test.getDaylightSavings(null), TDuration.ZERO);
+        }
     }
 
-    @Test(dataProvider="rules")
-    public void test_isDaylightSavings_Instant(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.isDaylightSavings(INSTANT), false);
-        assertEquals(test.isDaylightSavings(null), false);
+    @Test
+    public void test_isDaylightSavings_Instant() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+
+            assertEquals(test.isDaylightSavings(INSTANT), false);
+            assertEquals(test.isDaylightSavings(null), false);
+        }
     }
 
-    //-------------------------------------------------------------------------
-    @Test(dataProvider="rules")
-    public void test_nextTransition_Instant(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.nextTransition(INSTANT), null);
-        assertEquals(test.nextTransition(null), null);
+    @Test
+    public void test_nextTransition_Instant() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+
+            assertEquals(test.nextTransition(INSTANT), null);
+            assertEquals(test.nextTransition(null), null);
+        }
     }
 
-    @Test(dataProvider="rules")
-    public void test_previousTransition_Instant(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.previousTransition(INSTANT), null);
-        assertEquals(test.previousTransition(null), null);
+    @Test
+    public void test_previousTransition_Instant() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+
+            assertEquals(test.previousTransition(INSTANT), null);
+            assertEquals(test.previousTransition(null), null);
+        }
     }
 
-    //-------------------------------------------------------------------------
-    @Test(dataProvider="rules")
-    public void test_getTransitions(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.getTransitions().size(), 0);
+    @Test
+    public void test_getTransitions() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+
+            assertEquals(test.getTransitions().size(), 0);
+        }
     }
 
-    @Test(expectedExceptions=UnsupportedOperationException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void test_getTransitions_immutable() {
+
         TZoneRules test = make(OFFSET_PTWO);
         test.getTransitions().add(TZoneOffsetTransition.of(LDT, OFFSET_PONE, OFFSET_PTWO));
     }
 
-    @Test(dataProvider="rules")
-    public void test_getTransitionRules(TZoneRules test, TZoneOffset expectedOffset) {
-        assertEquals(test.getTransitionRules().size(), 0);
+    @Test
+    public void test_getTransitionRules() {
+
+        for (Object[] data : data_rules()) {
+            TZoneRules test = (TZoneRules) data[0];
+
+            assertEquals(test.getTransitionRules().size(), 0);
+        }
     }
 
-    @Test(expectedExceptions=UnsupportedOperationException.class)
+    @Test(expected = UnsupportedOperationException.class)
     public void test_getTransitionRules_immutable() {
+
         TZoneRules test = make(OFFSET_PTWO);
-        test.getTransitionRules().add(TZoneOffsetTransitionRule.of(TMonth.JULY, 2, null, TLocalTime.of(12, 30), false, TimeDefinition.STANDARD, OFFSET_PONE, OFFSET_PTWO, OFFSET_PONE));
+        test.getTransitionRules().add(TZoneOffsetTransitionRule.of(TMonth.JULY, 2, null, TLocalTime.of(12, 30), false,
+                TimeDefinition.STANDARD, OFFSET_PONE, OFFSET_PTWO, OFFSET_PONE));
     }
 
-    //-----------------------------------------------------------------------
-    // equals() / hashCode()
-    //-----------------------------------------------------------------------
     @Test
     public void test_equalsHashCode() {
+
         TZoneRules a = make(OFFSET_PONE);
         TZoneRules b = make(OFFSET_PTWO);
 

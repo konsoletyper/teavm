@@ -32,44 +32,22 @@
 package org.teavm.classlib.java.time.temporal;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.AbstractTest;
 
-@Test
 public class TestValueRange extends AbstractTest {
 
-    //-----------------------------------------------------------------------
-    // Basics
-    //-----------------------------------------------------------------------
     @Test
     public void test_immutable() {
+
         assertImmutable(TValueRange.class);
     }
 
-    //-----------------------------------------------------------------------
-    // Serialization
-    //-----------------------------------------------------------------------
-    public void test_serialization() throws Exception {
-        Object obj = TValueRange.of(1, 2, 3, 4);
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(obj);
-        oos.close();
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
-        assertEquals(ois.readObject(), obj);
-    }
-
-    //-----------------------------------------------------------------------
-    // of(long,long)
-    //-----------------------------------------------------------------------
+    @Test
     public void test_of_longlong() {
+
         TValueRange test = TValueRange.of(1, 12);
         assertEquals(test.getMinimum(), 1);
         assertEquals(test.getLargestMinimum(), 1);
@@ -79,7 +57,9 @@ public class TestValueRange extends AbstractTest {
         assertEquals(test.isIntValue(), true);
     }
 
+    @Test
     public void test_of_longlong_big() {
+
         TValueRange test = TValueRange.of(1, 123456789012345L);
         assertEquals(test.getMinimum(), 1);
         assertEquals(test.getLargestMinimum(), 1);
@@ -89,15 +69,15 @@ public class TestValueRange extends AbstractTest {
         assertEquals(test.isIntValue(), false);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void test_of_longlong_minGtMax() {
+
         TValueRange.of(12, 1);
     }
 
-    //-----------------------------------------------------------------------
-    // of(long,long,long)
-    //-----------------------------------------------------------------------
+    @Test
     public void test_of_longlonglong() {
+
         TValueRange test = TValueRange.of(1, 28, 31);
         assertEquals(test.getMinimum(), 1);
         assertEquals(test.getLargestMinimum(), 1);
@@ -107,68 +87,70 @@ public class TestValueRange extends AbstractTest {
         assertEquals(test.isIntValue(), true);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void test_of_longlonglong_minGtMax() {
+
         TValueRange.of(12, 1, 2);
     }
 
-    @Test(expectedExceptions = IllegalArgumentException.class)
+    @Test(expected = IllegalArgumentException.class)
     public void test_of_longlonglong_smallestmaxminGtMax() {
+
         TValueRange.of(1, 31, 28);
     }
 
-    //-----------------------------------------------------------------------
-    // of(long,long,long,long)
-    //-----------------------------------------------------------------------
-    @DataProvider(name="valid")
     Object[][] data_valid() {
-        return new Object[][] {
-                {1, 1, 1, 1},
-                {1, 1, 1, 2},
-                {1, 1, 2, 2},
-                {1, 2, 3, 4},
-                {1, 1, 28, 31},
-                {1, 3, 31, 31},
-                {-5, -4, -3, -2},
-                {-5, -4, 3, 4},
-                {1, 20, 10, 31},
-        };
+
+        return new Object[][] { { 1, 1, 1, 1 }, { 1, 1, 1, 2 }, { 1, 1, 2, 2 }, { 1, 2, 3, 4 }, { 1, 1, 28, 31 },
+        { 1, 3, 31, 31 }, { -5, -4, -3, -2 }, { -5, -4, 3, 4 }, { 1, 20, 10, 31 }, };
     }
 
-    @Test(dataProvider="valid")
-    public void test_of_longlonglonglong(long sMin, long lMin, long sMax, long lMax) {
-        TValueRange test = TValueRange.of(sMin, lMin, sMax, lMax);
-        assertEquals(test.getMinimum(), sMin);
-        assertEquals(test.getLargestMinimum(), lMin);
-        assertEquals(test.getSmallestMaximum(), sMax);
-        assertEquals(test.getMaximum(), lMax);
-        assertEquals(test.isFixed(), sMin == lMin && sMax == lMax);
-        assertEquals(test.isIntValue(), true);
+    @Test
+    public void test_of_longlonglonglong() {
+
+        for (Object[] data : data_valid()) {
+            long sMin = ((Number) data[0]).longValue();
+            long lMin = ((Number) data[1]).longValue();
+            long sMax = ((Number) data[2]).longValue();
+            long lMax = ((Number) data[3]).longValue();
+
+            TValueRange test = TValueRange.of(sMin, lMin, sMax, lMax);
+            assertEquals(test.getMinimum(), sMin);
+            assertEquals(test.getLargestMinimum(), lMin);
+            assertEquals(test.getSmallestMaximum(), sMax);
+            assertEquals(test.getMaximum(), lMax);
+            assertEquals(test.isFixed(), sMin == lMin && sMax == lMax);
+            assertEquals(test.isIntValue(), true);
+        }
     }
 
-    @DataProvider(name="invalid")
     Object[][] data_invalid() {
-        return new Object[][] {
-                {1, 2, 31, 28},
-                {1, 31, 2, 28},
-                {31, 2, 1, 28},
-                {31, 2, 3, 28},
 
-                {2, 1, 28, 31},
-                {2, 1, 31, 28},
-                {12, 13, 1, 2},
-        };
+        return new Object[][] { { 1, 2, 31, 28 }, { 1, 31, 2, 28 }, { 31, 2, 1, 28 }, { 31, 2, 3, 28 },
+
+        { 2, 1, 28, 31 }, { 2, 1, 31, 28 }, { 12, 13, 1, 2 }, };
     }
 
-    @Test(dataProvider="invalid", expectedExceptions=IllegalArgumentException.class)
-    public void test_of_longlonglonglong_invalid(long sMin, long lMin, long sMax, long lMax) {
-        TValueRange.of(sMin, lMin, sMax, lMax);
+    @Test
+    public void test_of_longlonglonglong_invalid() {
+
+        for (Object[] data : data_invalid()) {
+            long sMin = ((Number) data[0]).longValue();
+            long lMin = ((Number) data[1]).longValue();
+            long sMax = ((Number) data[2]).longValue();
+            long lMax = ((Number) data[3]).longValue();
+            try {
+                TValueRange.of(sMin, lMin, sMax, lMax);
+                fail("Expected IllegalArgumentException");
+            } catch (IllegalArgumentException e) {
+                // expected
+            }
+        }
     }
 
-    //-----------------------------------------------------------------------
-    // isValidValue(long)
-    //-----------------------------------------------------------------------
+    @Test
     public void test_isValidValue_long() {
+
         TValueRange test = TValueRange.of(1, 28, 31);
         assertEquals(test.isValidValue(0), false);
         assertEquals(test.isValidValue(1), true);
@@ -178,10 +160,9 @@ public class TestValueRange extends AbstractTest {
         assertEquals(test.isValidValue(32), false);
     }
 
-    //-----------------------------------------------------------------------
-    // isValidIntValue(long)
-    //-----------------------------------------------------------------------
+    @Test
     public void test_isValidValue_long_int() {
+
         TValueRange test = TValueRange.of(1, 28, 31);
         assertEquals(test.isValidValue(0), false);
         assertEquals(test.isValidValue(1), true);
@@ -189,7 +170,9 @@ public class TestValueRange extends AbstractTest {
         assertEquals(test.isValidValue(32), false);
     }
 
+    @Test
     public void test_isValidValue_long_long() {
+
         TValueRange test = TValueRange.of(1, 28, Integer.MAX_VALUE + 1L);
         assertEquals(test.isValidIntValue(0), false);
         assertEquals(test.isValidIntValue(1), false);
@@ -197,10 +180,9 @@ public class TestValueRange extends AbstractTest {
         assertEquals(test.isValidIntValue(32), false);
     }
 
-    //-----------------------------------------------------------------------
-    // equals() / hashCode()
-    //-----------------------------------------------------------------------
+    @Test
     public void test_equals1() {
+
         TValueRange a = TValueRange.of(1, 2, 3, 4);
         TValueRange b = TValueRange.of(1, 2, 3, 4);
         assertEquals(a.equals(a), true);
@@ -210,7 +192,9 @@ public class TestValueRange extends AbstractTest {
         assertEquals(a.hashCode() == b.hashCode(), true);
     }
 
+    @Test
     public void test_equals2() {
+
         TValueRange a = TValueRange.of(1, 2, 3, 4);
         assertEquals(a.equals(TValueRange.of(0, 2, 3, 4)), false);
         assertEquals(a.equals(TValueRange.of(1, 3, 3, 4)), false);
@@ -218,20 +202,23 @@ public class TestValueRange extends AbstractTest {
         assertEquals(a.equals(TValueRange.of(1, 2, 3, 5)), false);
     }
 
+    @Test
     public void test_equals_otherType() {
+
         TValueRange a = TValueRange.of(1, 12);
         assertEquals(a.equals("Rubbish"), false);
     }
 
+    @Test
     public void test_equals_null() {
+
         TValueRange a = TValueRange.of(1, 12);
         assertEquals(a.equals(null), false);
     }
 
-    //-----------------------------------------------------------------------
-    // toString()
-    //-----------------------------------------------------------------------
+    @Test
     public void test_toString() {
+
         assertEquals(TValueRange.of(1, 1, 4, 4).toString(), "1 - 4");
         assertEquals(TValueRange.of(1, 1, 3, 4).toString(), "1 - 3/4");
         assertEquals(TValueRange.of(1, 2, 3, 4).toString(), "1/2 - 3/4");

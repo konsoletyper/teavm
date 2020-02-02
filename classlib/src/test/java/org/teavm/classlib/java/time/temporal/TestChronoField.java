@@ -35,12 +35,11 @@ import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
 
-@Test
 public class TestChronoField {
 
-    //-------------------------------------------------------------------------
     @Test
     public void test_isDateBased() {
+
         for (TChronoField field : TChronoField.values()) {
             if (field == TChronoField.INSTANT_SECONDS || field == TChronoField.OFFSET_SECONDS) {
                 assertEquals(field.isTimeBased(), false);
@@ -52,6 +51,7 @@ public class TestChronoField {
 
     @Test
     public void test_isTimeBased() {
+
         for (TChronoField field : TChronoField.values()) {
             if (field == TChronoField.INSTANT_SECONDS || field == TChronoField.OFFSET_SECONDS) {
                 assertEquals(field.isTimeBased(), false);

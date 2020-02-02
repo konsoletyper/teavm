@@ -33,13 +33,13 @@ package org.teavm.classlib.java.time;
 
 public class TDateTimeException extends RuntimeException {
 
-    private static final long serialVersionUID = -1632418723876261839L;
-
     public TDateTimeException(String message) {
+
         super(message);
     }
 
     public TDateTimeException(String message, Throwable cause) {
+
         super(message, cause);
     }
 

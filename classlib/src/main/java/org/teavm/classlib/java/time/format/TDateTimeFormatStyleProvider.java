@@ -31,21 +31,23 @@
  */
 package org.teavm.classlib.java.time.format;
 
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
 import org.teavm.classlib.java.time.chrono.TChronology;
 
- abstract class TDateTimeFormatStyleProvider {
+abstract class TDateTimeFormatStyleProvider {
 
-     static TDateTimeFormatStyleProvider getInstance() {
-         return new TSimpleDateTimeFormatStyleProvider();
-     }
+    static TDateTimeFormatStyleProvider getInstance() {
 
-     public TLocale[] getAvailableLocales() {
-         throw new UnsupportedOperationException();
-     }
+        return new TSimpleDateTimeFormatStyleProvider();
+    }
 
-    public abstract TDateTimeFormatter getFormatter(
-            TFormatStyle dateStyle, TFormatStyle timeStyle, TChronology chrono, TLocale locale);
+    public Locale[] getAvailableLocales() {
+
+        throw new UnsupportedOperationException();
+    }
+
+    public abstract TDateTimeFormatter getFormatter(TFormatStyle dateStyle, TFormatStyle timeStyle, TChronology chrono,
+            Locale locale);
 
 }

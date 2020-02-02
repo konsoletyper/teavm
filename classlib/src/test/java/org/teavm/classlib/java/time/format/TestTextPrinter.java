@@ -36,9 +36,8 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
 import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
 import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
@@ -46,102 +45,100 @@ import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.TextPrinter
 import org.teavm.classlib.java.time.temporal.MockFieldValue;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 
-@Test
 public class TestTextPrinter extends AbstractTestPrinterParser {
 
     private static final TDateTimeTextProvider PROVIDER = TDateTimeTextProvider.getInstance();
 
-    //-----------------------------------------------------------------------
-    @Test(expectedExceptions=TDateTimeException.class)
-    public void test_print_emptyCalendrical() throws Exception {
+    @Test(expected = TDateTimeException.class)
+    public void test_print_emptyCalendrical() {
+
         TextPrinterParser pp = new TextPrinterParser(DAY_OF_WEEK, TTextStyle.FULL, PROVIDER);
-        pp.print(printEmptyContext, buf);
+        pp.print(this.printEmptyContext, this.buf);
     }
 
-    public void test_print_append() throws Exception {
-        printContext.setDateTime(TLocalDate.of(2012, 4, 18));
+    public void test_print_append() {
+
+        this.printContext.setDateTime(TLocalDate.of(2012, 4, 18));
         TextPrinterParser pp = new TextPrinterParser(DAY_OF_WEEK, TTextStyle.FULL, PROVIDER);
-        buf.append("EXISTING");
-        pp.print(printContext, buf);
-        assertEquals(buf.toString(), "EXISTINGWednesday");
+        this.buf.append("EXISTING");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "EXISTINGWednesday");
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="print")
     Object[][] provider_dow() {
-        return new Object[][] {
-            {DAY_OF_WEEK, TTextStyle.FULL, 1, "Monday"},
-            {DAY_OF_WEEK, TTextStyle.FULL, 2, "Tuesday"},
-            {DAY_OF_WEEK, TTextStyle.FULL, 3, "Wednesday"},
-            {DAY_OF_WEEK, TTextStyle.FULL, 4, "Thursday"},
-            {DAY_OF_WEEK, TTextStyle.FULL, 5, "Friday"},
-            {DAY_OF_WEEK, TTextStyle.FULL, 6, "Saturday"},
-            {DAY_OF_WEEK, TTextStyle.FULL, 7, "Sunday"},
 
-            {DAY_OF_WEEK, TTextStyle.SHORT, 1, "Mon"},
-            {DAY_OF_WEEK, TTextStyle.SHORT, 2, "Tue"},
-            {DAY_OF_WEEK, TTextStyle.SHORT, 3, "Wed"},
-            {DAY_OF_WEEK, TTextStyle.SHORT, 4, "Thu"},
-            {DAY_OF_WEEK, TTextStyle.SHORT, 5, "Fri"},
-            {DAY_OF_WEEK, TTextStyle.SHORT, 6, "Sat"},
-            {DAY_OF_WEEK, TTextStyle.SHORT, 7, "Sun"},
+        return new Object[][] { { DAY_OF_WEEK, TTextStyle.FULL, 1, "Monday" },
+        { DAY_OF_WEEK, TTextStyle.FULL, 2, "Tuesday" }, { DAY_OF_WEEK, TTextStyle.FULL, 3, "Wednesday" },
+        { DAY_OF_WEEK, TTextStyle.FULL, 4, "Thursday" }, { DAY_OF_WEEK, TTextStyle.FULL, 5, "Friday" },
+        { DAY_OF_WEEK, TTextStyle.FULL, 6, "Saturday" }, { DAY_OF_WEEK, TTextStyle.FULL, 7, "Sunday" },
 
-            {DAY_OF_MONTH, TTextStyle.FULL, 1, "1"},
-            {DAY_OF_MONTH, TTextStyle.FULL, 2, "2"},
-            {DAY_OF_MONTH, TTextStyle.FULL, 3, "3"},
-            {DAY_OF_MONTH, TTextStyle.FULL, 28, "28"},
-            {DAY_OF_MONTH, TTextStyle.FULL, 29, "29"},
-            {DAY_OF_MONTH, TTextStyle.FULL, 30, "30"},
-            {DAY_OF_MONTH, TTextStyle.FULL, 31, "31"},
+        { DAY_OF_WEEK, TTextStyle.SHORT, 1, "Mon" }, { DAY_OF_WEEK, TTextStyle.SHORT, 2, "Tue" },
+        { DAY_OF_WEEK, TTextStyle.SHORT, 3, "Wed" }, { DAY_OF_WEEK, TTextStyle.SHORT, 4, "Thu" },
+        { DAY_OF_WEEK, TTextStyle.SHORT, 5, "Fri" }, { DAY_OF_WEEK, TTextStyle.SHORT, 6, "Sat" },
+        { DAY_OF_WEEK, TTextStyle.SHORT, 7, "Sun" },
 
-            {DAY_OF_MONTH, TTextStyle.SHORT, 1, "1"},
-            {DAY_OF_MONTH, TTextStyle.SHORT, 2, "2"},
-            {DAY_OF_MONTH, TTextStyle.SHORT, 3, "3"},
-            {DAY_OF_MONTH, TTextStyle.SHORT, 28, "28"},
-            {DAY_OF_MONTH, TTextStyle.SHORT, 29, "29"},
-            {DAY_OF_MONTH, TTextStyle.SHORT, 30, "30"},
-            {DAY_OF_MONTH, TTextStyle.SHORT, 31, "31"},
+        { DAY_OF_MONTH, TTextStyle.FULL, 1, "1" }, { DAY_OF_MONTH, TTextStyle.FULL, 2, "2" },
+        { DAY_OF_MONTH, TTextStyle.FULL, 3, "3" }, { DAY_OF_MONTH, TTextStyle.FULL, 28, "28" },
+        { DAY_OF_MONTH, TTextStyle.FULL, 29, "29" }, { DAY_OF_MONTH, TTextStyle.FULL, 30, "30" },
+        { DAY_OF_MONTH, TTextStyle.FULL, 31, "31" },
 
-            {MONTH_OF_YEAR, TTextStyle.FULL, 1, "January"},
-            {MONTH_OF_YEAR, TTextStyle.FULL, 12, "December"},
+        { DAY_OF_MONTH, TTextStyle.SHORT, 1, "1" }, { DAY_OF_MONTH, TTextStyle.SHORT, 2, "2" },
+        { DAY_OF_MONTH, TTextStyle.SHORT, 3, "3" }, { DAY_OF_MONTH, TTextStyle.SHORT, 28, "28" },
+        { DAY_OF_MONTH, TTextStyle.SHORT, 29, "29" }, { DAY_OF_MONTH, TTextStyle.SHORT, 30, "30" },
+        { DAY_OF_MONTH, TTextStyle.SHORT, 31, "31" },
 
-            {MONTH_OF_YEAR, TTextStyle.SHORT, 1, "Jan"},
-            {MONTH_OF_YEAR, TTextStyle.SHORT, 12, "Dec"},
-       };
+        { MONTH_OF_YEAR, TTextStyle.FULL, 1, "January" }, { MONTH_OF_YEAR, TTextStyle.FULL, 12, "December" },
+
+        { MONTH_OF_YEAR, TTextStyle.SHORT, 1, "Jan" }, { MONTH_OF_YEAR, TTextStyle.SHORT, 12, "Dec" }, };
     }
 
-    @Test(dataProvider="print")
-    public void test_print(TTemporalField field, TTextStyle style, int value, String expected) throws Exception {
-        printContext.setDateTime(new MockFieldValue(field, value));
-        TextPrinterParser pp = new TextPrinterParser(field, style, PROVIDER);
-        pp.print(printContext, buf);
-        assertEquals(buf.toString(), expected);
+    @Test
+    public void test_print() {
+
+        for (Object[] data : provider_dow()) {
+            StringBuilder sb = new StringBuilder();
+            TTemporalField field = (TTemporalField) data[0];
+            TTextStyle style = (TTextStyle) data[1];
+            int value = (int) data[2];
+            String expected = (String) data[3];
+
+            this.printContext.setDateTime(new MockFieldValue(field, value));
+            TextPrinterParser pp = new TextPrinterParser(field, style, PROVIDER);
+            pp.print(this.printContext, sb);
+            assertEquals(sb.toString(), expected);
+        }
     }
 
-    //-----------------------------------------------------------------------
-    public void test_print_french_long() throws Exception {
-        printContext.setLocale(TLocale.FRENCH);
-        printContext.setDateTime(TLocalDate.of(2012, 1, 1));
+    @Test
+    public void test_print_french_long() {
+
+        this.printContext.setLocale(Locale.FRENCH);
+        this.printContext.setDateTime(TLocalDate.of(2012, 1, 1));
         TextPrinterParser pp = new TextPrinterParser(MONTH_OF_YEAR, TTextStyle.FULL, PROVIDER);
-        pp.print(printContext, buf);
-        assertEquals(buf.toString(), "janvier");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "janvier");
     }
 
-    public void test_print_french_short() throws Exception {
-        printContext.setLocale(TLocale.FRENCH);
-        printContext.setDateTime(TLocalDate.of(2012, 1, 1));
+    @Test
+    public void test_print_french_short() {
+
+        this.printContext.setLocale(Locale.FRENCH);
+        this.printContext.setDateTime(TLocalDate.of(2012, 1, 1));
         TextPrinterParser pp = new TextPrinterParser(MONTH_OF_YEAR, TTextStyle.SHORT, PROVIDER);
-        pp.print(printContext, buf);
-        assertEquals(buf.toString(), "janv.");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "janv.");
     }
 
-    //-----------------------------------------------------------------------
-    public void test_toString1() throws Exception {
+    @Test
+    public void test_toString1() {
+
         TextPrinterParser pp = new TextPrinterParser(MONTH_OF_YEAR, TTextStyle.FULL, PROVIDER);
         assertEquals(pp.toString(), "Text(MonthOfYear)");
     }
 
-    public void test_toString2() throws Exception {
+    @Test
+    public void test_toString2() {
+
         TextPrinterParser pp = new TextPrinterParser(MONTH_OF_YEAR, TTextStyle.SHORT, PROVIDER);
         assertEquals(pp.toString(), "Text(MonthOfYear,SHORT)");
     }

@@ -41,15 +41,9 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_SECOND;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.InvalidObjectException;
-import java.io.ObjectStreamException;
 import java.io.Serializable;
 
 import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.format.TDateTimeParseException;
 import org.teavm.classlib.java.time.jdk8.TDefaultInterfaceTemporalAccessor;
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 import org.teavm.classlib.java.time.temporal.TChronoField;
@@ -65,76 +59,86 @@ import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TInstant
-        extends TDefaultInterfaceTemporalAccessor
+public final class TInstant extends TDefaultInterfaceTemporalAccessor
         implements TTemporal, TTemporalAdjuster, Comparable<TInstant>, Serializable {
 
     public static final TInstant EPOCH = new TInstant(0, 0);
+
     private static final long MIN_SECOND = -31557014167219200L;
+
     private static final long MAX_SECOND = 31556889864403199L;
+
     public static final TInstant MIN = TInstant.ofEpochSecond(MIN_SECOND, 0);
+
     public static final TInstant MAX = TInstant.ofEpochSecond(MAX_SECOND, 999999999);
+
     public static final TTemporalQuery<TInstant> FROM = new TTemporalQuery<TInstant>() {
         @Override
         public TInstant queryFrom(TTemporalAccessor temporal) {
+
             return TInstant.from(temporal);
         }
     };
 
-    private static final long serialVersionUID = -665713676816604388L;
     private static final int NANOS_PER_SECOND = 1000000000;
+
     private static final int NANOS_PER_MILLI = 1000000;
+
     private static final long MILLIS_PER_SEC = 1000;
 
     private final long seconds;
+
     private final int nanos;
 
-    //-----------------------------------------------------------------------
     public static TInstant now() {
+
         return TClock.systemUTC().instant();
     }
 
     public static TInstant now(TClock clock) {
+
         TJdk8Methods.requireNonNull(clock, "clock");
         return clock.instant();
     }
 
-    //-----------------------------------------------------------------------
     public static TInstant ofEpochSecond(long epochSecond) {
+
         return create(epochSecond, 0);
     }
 
     public static TInstant ofEpochSecond(long epochSecond, long nanoAdjustment) {
+
         long secs = TJdk8Methods.safeAdd(epochSecond, TJdk8Methods.floorDiv(nanoAdjustment, NANOS_PER_SECOND));
         int nos = TJdk8Methods.floorMod(nanoAdjustment, NANOS_PER_SECOND);
         return create(secs, nos);
     }
 
     public static TInstant ofEpochMilli(long epochMilli) {
+
         long secs = TJdk8Methods.floorDiv(epochMilli, 1000);
         int mos = TJdk8Methods.floorMod(epochMilli, 1000);
         return create(secs, mos * NANOS_PER_MILLI);
     }
 
-    //-----------------------------------------------------------------------
     public static TInstant from(TTemporalAccessor temporal) {
+
         try {
             long instantSecs = temporal.getLong(INSTANT_SECONDS);
             int nanoOfSecond = temporal.get(NANO_OF_SECOND);
             return TInstant.ofEpochSecond(instantSecs, nanoOfSecond);
         } catch (TDateTimeException ex) {
-            throw new TDateTimeException("Unable to obtain TInstant from TTemporalAccessor: " +
-                    temporal + ", type " + temporal.getClass().getName(), ex);
+            throw new TDateTimeException("Unable to obtain TInstant from TTemporalAccessor: " + temporal + ", type "
+                    + temporal.getClass().getName(), ex);
         }
     }
 
-    //-----------------------------------------------------------------------
     public static TInstant parse(final CharSequence text) {
+
         return TDateTimeFormatter.ISO_INSTANT.parse(text, TInstant.FROM);
     }
 
-    //-----------------------------------------------------------------------
     private static TInstant create(long seconds, int nanoOfSecond) {
+
         if ((seconds | nanoOfSecond) == 0) {
             return EPOCH;
         }
@@ -145,40 +149,48 @@ public final class TInstant
     }
 
     private TInstant(long epochSecond, int nanos) {
+
         super();
         this.seconds = epochSecond;
         this.nanos = nanos;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isSupported(TTemporalField field) {
+
         if (field instanceof TChronoField) {
-            return field == INSTANT_SECONDS || field == NANO_OF_SECOND || field == MICRO_OF_SECOND || field == MILLI_OF_SECOND;
+            return field == INSTANT_SECONDS || field == NANO_OF_SECOND || field == MICRO_OF_SECOND
+                    || field == MILLI_OF_SECOND;
         }
         return field != null && field.isSupportedBy(this);
     }
 
     @Override
     public boolean isSupported(TTemporalUnit unit) {
+
         if (unit instanceof TChronoUnit) {
             return unit.isTimeBased() || unit == DAYS;
         }
         return unit != null && unit.isSupportedBy(this);
     }
 
-    @Override  // override for Javadoc
+    @Override // override for Javadoc
     public TValueRange range(TTemporalField field) {
+
         return super.range(field);
     }
 
-    @Override  // override for Javadoc and performance
+    @Override // override for Javadoc and performance
     public int get(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             switch ((TChronoField) field) {
-                case NANO_OF_SECOND: return nanos;
-                case MICRO_OF_SECOND: return nanos / 1000;
-                case MILLI_OF_SECOND: return nanos / NANOS_PER_MILLI;
+                case NANO_OF_SECOND:
+                    return this.nanos;
+                case MICRO_OF_SECOND:
+                    return this.nanos / 1000;
+                case MILLI_OF_SECOND:
+                    return this.nanos / NANOS_PER_MILLI;
             }
             throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
@@ -187,57 +199,66 @@ public final class TInstant
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             switch ((TChronoField) field) {
-                case NANO_OF_SECOND: return nanos;
-                case MICRO_OF_SECOND: return nanos / 1000;
-                case MILLI_OF_SECOND: return nanos / NANOS_PER_MILLI;
-                case INSTANT_SECONDS: return seconds;
+                case NANO_OF_SECOND:
+                    return this.nanos;
+                case MICRO_OF_SECOND:
+                    return this.nanos / 1000;
+                case MILLI_OF_SECOND:
+                    return this.nanos / NANOS_PER_MILLI;
+                case INSTANT_SECONDS:
+                    return this.seconds;
             }
             throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.getFrom(this);
     }
 
-    //-----------------------------------------------------------------------
     public long getEpochSecond() {
-        return seconds;
+
+        return this.seconds;
     }
 
     public int getNano() {
-        return nanos;
+
+        return this.nanos;
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public TInstant with(TTemporalAdjuster adjuster) {
+
         return (TInstant) adjuster.adjustInto(this);
     }
 
     @Override
     public TInstant with(TTemporalField field, long newValue) {
+
         if (field instanceof TChronoField) {
             TChronoField f = (TChronoField) field;
             f.checkValidValue(newValue);
             switch (f) {
                 case MILLI_OF_SECOND: {
                     int nval = (int) newValue * NANOS_PER_MILLI;
-                    return (nval != nanos ? create(seconds, nval) : this);
+                    return (nval != this.nanos ? create(this.seconds, nval) : this);
                 }
                 case MICRO_OF_SECOND: {
                     int nval = (int) newValue * 1000;
-                    return (nval != nanos ? create(seconds, nval) : this);
+                    return (nval != this.nanos ? create(this.seconds, nval) : this);
                 }
-                case NANO_OF_SECOND: return (newValue != nanos ? create(seconds, (int) newValue) : this);
-                case INSTANT_SECONDS: return (newValue != seconds ? create(newValue, nanos) : this);
+                case NANO_OF_SECOND:
+                    return (newValue != this.nanos ? create(this.seconds, (int) newValue) : this);
+                case INSTANT_SECONDS:
+                    return (newValue != this.seconds ? create(newValue, this.nanos) : this);
             }
             throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
         }
         return field.adjustInto(this, newValue);
     }
 
-    //-----------------------------------------------------------------------
     public TInstant truncatedTo(TTemporalUnit unit) {
+
         if (unit == TChronoUnit.NANOS) {
             return this;
         }
@@ -249,72 +270,86 @@ public final class TInstant
         if ((TLocalTime.NANOS_PER_DAY % dur) != 0) {
             throw new TDateTimeException("Unit must divide into a standard day without remainder");
         }
-        long nod = (seconds % TLocalTime.SECONDS_PER_DAY) * TLocalTime.NANOS_PER_SECOND + nanos;
+        long nod = (this.seconds % TLocalTime.SECONDS_PER_DAY) * TLocalTime.NANOS_PER_SECOND + this.nanos;
         long result = TJdk8Methods.floorDiv(nod, dur) * dur;
         return plusNanos(result - nod);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TInstant plus(TTemporalAmount amount) {
+
         return (TInstant) amount.addTo(this);
     }
 
     @Override
     public TInstant plus(long amountToAdd, TTemporalUnit unit) {
+
         if (unit instanceof TChronoUnit) {
             switch ((TChronoUnit) unit) {
-                case NANOS: return plusNanos(amountToAdd);
-                case MICROS: return plus(amountToAdd / 1000000, (amountToAdd % 1000000) * 1000);
-                case MILLIS: return plusMillis(amountToAdd);
-                case SECONDS: return plusSeconds(amountToAdd);
-                case MINUTES: return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_MINUTE));
-                case HOURS: return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_HOUR));
-                case HALF_DAYS: return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_DAY / 2));
-                case DAYS: return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_DAY));
+                case NANOS:
+                    return plusNanos(amountToAdd);
+                case MICROS:
+                    return plus(amountToAdd / 1000000, (amountToAdd % 1000000) * 1000);
+                case MILLIS:
+                    return plusMillis(amountToAdd);
+                case SECONDS:
+                    return plusSeconds(amountToAdd);
+                case MINUTES:
+                    return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_MINUTE));
+                case HOURS:
+                    return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_HOUR));
+                case HALF_DAYS:
+                    return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_DAY / 2));
+                case DAYS:
+                    return plusSeconds(TJdk8Methods.safeMultiply(amountToAdd, SECONDS_PER_DAY));
             }
             throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
         return unit.addTo(this, amountToAdd);
     }
 
-    //-----------------------------------------------------------------------
     public TInstant plusSeconds(long secondsToAdd) {
+
         return plus(secondsToAdd, 0);
     }
 
     public TInstant plusMillis(long millisToAdd) {
+
         return plus(millisToAdd / 1000, (millisToAdd % 1000) * NANOS_PER_MILLI);
     }
 
     public TInstant plusNanos(long nanosToAdd) {
+
         return plus(0, nanosToAdd);
     }
 
     private TInstant plus(long secondsToAdd, long nanosToAdd) {
+
         if ((secondsToAdd | nanosToAdd) == 0) {
             return this;
         }
-        long epochSec = TJdk8Methods.safeAdd(seconds, secondsToAdd);
+        long epochSec = TJdk8Methods.safeAdd(this.seconds, secondsToAdd);
         epochSec = TJdk8Methods.safeAdd(epochSec, nanosToAdd / NANOS_PER_SECOND);
         nanosToAdd = nanosToAdd % NANOS_PER_SECOND;
-        long nanoAdjustment = nanos + nanosToAdd;  // safe int+NANOS_PER_SECOND
+        long nanoAdjustment = this.nanos + nanosToAdd; // safe int+NANOS_PER_SECOND
         return ofEpochSecond(epochSec, nanoAdjustment);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TInstant minus(TTemporalAmount amount) {
+
         return (TInstant) amount.subtractFrom(this);
     }
 
     @Override
     public TInstant minus(long amountToSubtract, TTemporalUnit unit) {
-        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit) : plus(-amountToSubtract, unit));
+
+        return (amountToSubtract == Long.MIN_VALUE ? plus(Long.MAX_VALUE, unit).plus(1, unit)
+                : plus(-amountToSubtract, unit));
     }
 
-    //-----------------------------------------------------------------------
     public TInstant minusSeconds(long secondsToSubtract) {
+
         if (secondsToSubtract == Long.MIN_VALUE) {
             return plusSeconds(Long.MAX_VALUE).plusSeconds(1);
         }
@@ -322,6 +357,7 @@ public final class TInstant
     }
 
     public TInstant minusMillis(long millisToSubtract) {
+
         if (millisToSubtract == Long.MIN_VALUE) {
             return plusMillis(Long.MAX_VALUE).plusMillis(1);
         }
@@ -329,23 +365,24 @@ public final class TInstant
     }
 
     public TInstant minusNanos(long nanosToSubtract) {
+
         if (nanosToSubtract == Long.MIN_VALUE) {
             return plusNanos(Long.MAX_VALUE).plusNanos(1);
         }
         return plusNanos(-nanosToSubtract);
     }
 
-    //-------------------------------------------------------------------------
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
+
         if (query == TTemporalQueries.precision()) {
             return (R) NANOS;
         }
         // inline TTemporalAccessor.super.query(query) as an optimization
-        if (query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime() ||
-                query == TTemporalQueries.chronology() || query == TTemporalQueries.zoneId() ||
-                query == TTemporalQueries.zone() || query == TTemporalQueries.offset()) {
+        if (query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime()
+                || query == TTemporalQueries.chronology() || query == TTemporalQueries.zoneId()
+                || query == TTemporalQueries.zone() || query == TTemporalQueries.offset()) {
             return null;
         }
         return query.queryFrom(this);
@@ -353,23 +390,33 @@ public final class TInstant
 
     @Override
     public TTemporal adjustInto(TTemporal temporal) {
-        return temporal.with(INSTANT_SECONDS, seconds).with(NANO_OF_SECOND, nanos);
+
+        return temporal.with(INSTANT_SECONDS, this.seconds).with(NANO_OF_SECOND, this.nanos);
     }
 
     @Override
     public long until(TTemporal endExclusive, TTemporalUnit unit) {
+
         TInstant end = TInstant.from(endExclusive);
         if (unit instanceof TChronoUnit) {
             TChronoUnit f = (TChronoUnit) unit;
             switch (f) {
-                case NANOS: return nanosUntil(end);
-                case MICROS: return nanosUntil(end) / 1000;
-                case MILLIS: return TJdk8Methods.safeSubtract(end.toEpochMilli(), toEpochMilli());
-                case SECONDS: return secondsUntil(end);
-                case MINUTES: return secondsUntil(end) / SECONDS_PER_MINUTE;
-                case HOURS: return secondsUntil(end) / SECONDS_PER_HOUR;
-                case HALF_DAYS: return secondsUntil(end) / (12 * SECONDS_PER_HOUR);
-                case DAYS: return secondsUntil(end) / (SECONDS_PER_DAY);
+                case NANOS:
+                    return nanosUntil(end);
+                case MICROS:
+                    return nanosUntil(end) / 1000;
+                case MILLIS:
+                    return TJdk8Methods.safeSubtract(end.toEpochMilli(), toEpochMilli());
+                case SECONDS:
+                    return secondsUntil(end);
+                case MINUTES:
+                    return secondsUntil(end) / SECONDS_PER_MINUTE;
+                case HOURS:
+                    return secondsUntil(end) / SECONDS_PER_HOUR;
+                case HALF_DAYS:
+                    return secondsUntil(end) / (12 * SECONDS_PER_HOUR);
+                case DAYS:
+                    return secondsUntil(end) / (SECONDS_PER_DAY);
             }
             throw new TUnsupportedTemporalTypeException("Unsupported unit: " + unit);
         }
@@ -377,14 +424,16 @@ public final class TInstant
     }
 
     private long nanosUntil(TInstant end) {
-        long secsDiff = TJdk8Methods.safeSubtract(end.seconds, seconds);
+
+        long secsDiff = TJdk8Methods.safeSubtract(end.seconds, this.seconds);
         long totalNanos = TJdk8Methods.safeMultiply(secsDiff, NANOS_PER_SECOND);
-        return TJdk8Methods.safeAdd(totalNanos, end.nanos - nanos);
+        return TJdk8Methods.safeAdd(totalNanos, end.nanos - this.nanos);
     }
 
     private long secondsUntil(TInstant end) {
-        long secsDiff = TJdk8Methods.safeSubtract(end.seconds, seconds);
-        long nanosDiff = end.nanos - nanos;
+
+        long secsDiff = TJdk8Methods.safeSubtract(end.seconds, this.seconds);
+        long nanosDiff = end.nanos - this.nanos;
         if (secsDiff > 0 && nanosDiff < 0) {
             secsDiff--;
         } else if (secsDiff < 0 && nanosDiff > 0) {
@@ -392,20 +441,22 @@ public final class TInstant
         }
         return secsDiff;
     }
-    //-----------------------------------------------------------------------
+
     public TOffsetDateTime atOffset(TZoneOffset offset) {
+
         return TOffsetDateTime.ofInstant(this, offset);
     }
 
     public TZonedDateTime atZone(TZoneId zone) {
+
         return TZonedDateTime.ofInstant(this, zone);
     }
 
-    //-----------------------------------------------------------------------
     public long toEpochMilli() {
-        if (seconds >= 0) {
-            long millis = TJdk8Methods.safeMultiply(seconds, MILLIS_PER_SEC);
-            return TJdk8Methods.safeAdd(millis, nanos / NANOS_PER_MILLI);
+
+        if (this.seconds >= 0) {
+            long millis = TJdk8Methods.safeMultiply(this.seconds, MILLIS_PER_SEC);
+            return TJdk8Methods.safeAdd(millis, this.nanos / NANOS_PER_MILLI);
         } else {
             // prevent an overflow in seconds * 1000
             // instead of going form the second farther away from 0
@@ -413,72 +464,54 @@ public final class TInstant
             // we go from the second closer to 0 away from 0
             // that way we always stay in the valid long range
             // seconds + 1 can not overflow because it is negative
-            long millis = TJdk8Methods.safeMultiply(seconds + 1, MILLIS_PER_SEC);
-            return TJdk8Methods.safeSubtract(millis, (MILLIS_PER_SEC - nanos / NANOS_PER_MILLI));
+            long millis = TJdk8Methods.safeMultiply(this.seconds + 1, MILLIS_PER_SEC);
+            return TJdk8Methods.safeSubtract(millis, (MILLIS_PER_SEC - this.nanos / NANOS_PER_MILLI));
         }
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public int compareTo(TInstant otherInstant) {
-        int cmp = TJdk8Methods.compareLongs(seconds, otherInstant.seconds);
+
+        int cmp = TJdk8Methods.compareLongs(this.seconds, otherInstant.seconds);
         if (cmp != 0) {
             return cmp;
         }
-        return nanos - otherInstant.nanos;
+        return this.nanos - otherInstant.nanos;
     }
 
     public boolean isAfter(TInstant otherInstant) {
+
         return compareTo(otherInstant) > 0;
     }
 
     public boolean isBefore(TInstant otherInstant) {
+
         return compareTo(otherInstant) < 0;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object otherInstant) {
+
         if (this == otherInstant) {
             return true;
         }
         if (otherInstant instanceof TInstant) {
             TInstant other = (TInstant) otherInstant;
-            return this.seconds == other.seconds &&
-                   this.nanos == other.nanos;
+            return this.seconds == other.seconds && this.nanos == other.nanos;
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return ((int) (seconds ^ (seconds >>> 32))) + 51 * nanos;
+
+        return ((int) (this.seconds ^ (this.seconds >>> 32))) + 51 * this.nanos;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
+
         return TDateTimeFormatter.ISO_INSTANT.format(this);
-    }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.INSTANT_TYPE, this);
-    }
-
-    private Object readResolve() throws ObjectStreamException {
-        throw new InvalidObjectException("Deserialization via serialization delegate");
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        out.writeLong(seconds);
-        out.writeInt(nanos);
-    }
-
-    static TInstant readExternal(DataInput in) throws IOException {
-        long seconds = in.readLong();
-        int nanos = in.readInt();
-        return TInstant.ofEpochSecond(seconds, nanos);
     }
 
 }

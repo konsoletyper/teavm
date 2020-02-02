@@ -31,30 +31,28 @@
  */
 package org.teavm.classlib.java.time.zone;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDuration;
 import org.teavm.classlib.java.time.TInstant;
 import org.teavm.classlib.java.time.TLocalDateTime;
 import org.teavm.classlib.java.time.TZoneOffset;
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
 
-public final class TZoneOffsetTransition
-        implements Comparable<TZoneOffsetTransition>, Serializable {
+public final class TZoneOffsetTransition implements Comparable<TZoneOffsetTransition>, TSerializable {
 
-    private static final long serialVersionUID = -6946044323557704546L;
     private final TLocalDateTime transition;
+
     private final TZoneOffset offsetBefore;
+
     private final TZoneOffset offsetAfter;
 
-    //-----------------------------------------------------------------------
-    public static TZoneOffsetTransition of(TLocalDateTime transition, TZoneOffset offsetBefore, TZoneOffset offsetAfter) {
+    public static TZoneOffsetTransition of(TLocalDateTime transition, TZoneOffset offsetBefore,
+            TZoneOffset offsetAfter) {
+
         TJdk8Methods.requireNonNull(transition, "transition");
         TJdk8Methods.requireNonNull(offsetBefore, "offsetBefore");
         TJdk8Methods.requireNonNull(offsetAfter, "offsetAfter");
@@ -68,128 +66,115 @@ public final class TZoneOffsetTransition
     }
 
     TZoneOffsetTransition(TLocalDateTime transition, TZoneOffset offsetBefore, TZoneOffset offsetAfter) {
+
         this.transition = transition;
         this.offsetBefore = offsetBefore;
         this.offsetAfter = offsetAfter;
     }
 
     TZoneOffsetTransition(long epochSecond, TZoneOffset offsetBefore, TZoneOffset offsetAfter) {
+
         this.transition = TLocalDateTime.ofEpochSecond(epochSecond, 0, offsetBefore);
         this.offsetBefore = offsetBefore;
         this.offsetAfter = offsetAfter;
     }
 
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.ZOT, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        Ser.writeEpochSec(toEpochSecond(), out);
-        Ser.writeOffset(offsetBefore, out);
-        Ser.writeOffset(offsetAfter, out);
-    }
-
-    static TZoneOffsetTransition readExternal(DataInput in) throws IOException {
-        long epochSecond = Ser.readEpochSec(in);
-        TZoneOffset before = Ser.readOffset(in);
-        TZoneOffset after = Ser.readOffset(in);
-        if (before.equals(after)) {
-            throw new IllegalArgumentException("Offsets must not be equal");
-        }
-        return new TZoneOffsetTransition(epochSecond, before, after);
-    }
-
-    //-----------------------------------------------------------------------
     public TInstant getInstant() {
-        return transition.toInstant(offsetBefore);
+
+        return this.transition.toInstant(this.offsetBefore);
     }
 
     public long toEpochSecond() {
-        return transition.toEpochSecond(offsetBefore);
+
+        return this.transition.toEpochSecond(this.offsetBefore);
     }
 
-    //-------------------------------------------------------------------------
     public TLocalDateTime getDateTimeBefore() {
-        return transition;
+
+        return this.transition;
     }
 
     public TLocalDateTime getDateTimeAfter() {
-        return transition.plusSeconds(getDurationSeconds());
+
+        return this.transition.plusSeconds(getDurationSeconds());
     }
 
     public TZoneOffset getOffsetBefore() {
-        return offsetBefore;
+
+        return this.offsetBefore;
     }
 
     public TZoneOffset getOffsetAfter() {
-        return offsetAfter;
+
+        return this.offsetAfter;
     }
 
     public TDuration getDuration() {
+
         return TDuration.ofSeconds(getDurationSeconds());
     }
 
     private int getDurationSeconds() {
+
         return getOffsetAfter().getTotalSeconds() - getOffsetBefore().getTotalSeconds();
     }
 
     public boolean isGap() {
+
         return getOffsetAfter().getTotalSeconds() > getOffsetBefore().getTotalSeconds();
     }
 
     public boolean isOverlap() {
+
         return getOffsetAfter().getTotalSeconds() < getOffsetBefore().getTotalSeconds();
     }
 
     public boolean isValidOffset(TZoneOffset offset) {
+
         return isGap() ? false : (getOffsetBefore().equals(offset) || getOffsetAfter().equals(offset));
     }
 
     List<TZoneOffset> getValidOffsets() {
+
         if (isGap()) {
             return Collections.emptyList();
         }
         return Arrays.asList(getOffsetBefore(), getOffsetAfter());
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public int compareTo(TZoneOffsetTransition transition) {
-        return this.getInstant().compareTo(transition.getInstant());
+
+        return getInstant().compareTo(transition.getInstant());
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean equals(Object other) {
+
         if (other == this) {
             return true;
         }
         if (other instanceof TZoneOffsetTransition) {
             TZoneOffsetTransition d = (TZoneOffsetTransition) other;
-            return transition.equals(d.transition) &&
-                offsetBefore.equals(d.offsetBefore) && offsetAfter.equals(d.offsetAfter);
+            return this.transition.equals(d.transition) && this.offsetBefore.equals(d.offsetBefore)
+                    && this.offsetAfter.equals(d.offsetAfter);
         }
         return false;
     }
 
     @Override
     public int hashCode() {
-        return transition.hashCode() ^ offsetBefore.hashCode() ^ Integer.rotateLeft(offsetAfter.hashCode(), 16);
+
+        return this.transition.hashCode() ^ this.offsetBefore.hashCode()
+                ^ Integer.rotateLeft(this.offsetAfter.hashCode(), 16);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
+
         StringBuilder buf = new StringBuilder();
-        buf.append("Transition[")
-            .append(isGap() ? "Gap" : "Overlap")
-            .append(" at ")
-            .append(transition)
-            .append(offsetBefore)
-            .append(" to ")
-            .append(offsetAfter)
-            .append(']');
+        buf.append("Transition[").append(isGap() ? "Gap" : "Overlap").append(" at ").append(this.transition)
+                .append(this.offsetBefore).append(" to ").append(this.offsetAfter).append(']');
         return buf.toString();
     }
 

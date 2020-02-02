@@ -31,85 +31,50 @@
  */
 package org.teavm.classlib.java.time.zone;
 
-import java.util.Collections;
 import java.util.NavigableMap;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.CopyOnWriteArrayList;
 
-import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.TZoneId;
-import org.teavm.classlib.java.time.TZonedDateTime;
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import org.teavm.classlib.java.util.TObjects;
 
 public abstract class TZoneRulesProvider {
 
-    private static final CopyOnWriteArrayList<TZoneRulesProvider> PROVIDERS = new CopyOnWriteArrayList<TZoneRulesProvider>();
-    private static final ConcurrentMap<String, TZoneRulesProvider> ZONES = new ConcurrentHashMap<String, TZoneRulesProvider>(512, 0.75f, 2);
-    static {
-        TZoneRulesInitializer.initialize();
-    }
-
-    //-------------------------------------------------------------------------
     public static Set<String> getAvailableZoneIds() {
-        return Collections.unmodifiableSet(ZONES.keySet());
+
+        return TTzdbZoneRulesProvider.INSTANCE.provideZoneIds();
     }
 
     public static TZoneRules getRules(String zoneId, boolean forCaching) {
+
         TJdk8Methods.requireNonNull(zoneId, "zoneId");
         return getProvider(zoneId).provideRules(zoneId, forCaching);
     }
 
     public static NavigableMap<String, TZoneRules> getVersions(String zoneId) {
-        TJdk8Methods.requireNonNull(zoneId, "zoneId");
+
+        TObjects.requireNonNull(zoneId, "zoneId");
         return getProvider(zoneId).provideVersions(zoneId);
     }
 
     private static TZoneRulesProvider getProvider(String zoneId) {
-        TZoneRulesProvider provider = ZONES.get(zoneId);
-        if (provider == null) {
-            if (ZONES.isEmpty()) {
-                throw new TZoneRulesException("No time-zone data files registered");
-            }
-            throw new TZoneRulesException("Unknown time-zone ID: " + zoneId);
-        }
-        return provider;
+
+        return TTzdbZoneRulesProvider.INSTANCE;
     }
 
-    //-------------------------------------------------------------------------
     public static void registerProvider(TZoneRulesProvider provider) {
-        TJdk8Methods.requireNonNull(provider, "provider");
-        registerProvider0(provider);
-        PROVIDERS.add(provider);
+
+        throw new UnsupportedOperationException();
     }
 
-    private static void registerProvider0(TZoneRulesProvider provider) {
-        for (String zoneId : provider.provideZoneIds()) {
-            TJdk8Methods.requireNonNull(zoneId, "zoneId");
-            TZoneRulesProvider old = ZONES.putIfAbsent(zoneId, provider);
-            if (old != null) {
-                throw new TZoneRulesException(
-                    "Unable to register zone as one already registered with that ID: " + zoneId +
-                    ", currently loading from provider: " + provider);
-            }
-        }
-    }
-
-    //-------------------------------------------------------------------------
     public static boolean refresh() {
-        boolean changed = false;
-        for (TZoneRulesProvider provider : PROVIDERS) {
-            changed |= provider.provideRefresh();
-        }
-        return changed;
+
+        return false;
     }
 
-    //-----------------------------------------------------------------------
     protected TZoneRulesProvider() {
+
     }
 
-    //-----------------------------------------------------------------------
     protected abstract Set<String> provideZoneIds();
 
     protected abstract TZoneRules provideRules(String regionId, boolean forCaching);
@@ -117,6 +82,7 @@ public abstract class TZoneRulesProvider {
     protected abstract NavigableMap<String, TZoneRules> provideVersions(String zoneId);
 
     protected boolean provideRefresh() {
+
         return false;
     }
 

@@ -44,7 +44,6 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
-import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
 import org.teavm.classlib.java.time.TDuration;
@@ -53,46 +52,63 @@ import org.teavm.classlib.java.time.chrono.TChronology;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
 import org.teavm.classlib.java.time.format.TResolverStyle;
 import org.teavm.classlib.java.time.jdk8.TJdk8Methods;
+import org.teavm.classlib.java.util.TLocale;
 
 public final class TIsoFields {
 
     public static final TTemporalField DAY_OF_QUARTER = Field.DAY_OF_QUARTER;
+
     public static final TTemporalField QUARTER_OF_YEAR = Field.QUARTER_OF_YEAR;
+
     public static final TTemporalField WEEK_OF_WEEK_BASED_YEAR = Field.WEEK_OF_WEEK_BASED_YEAR;
+
     public static final TTemporalField WEEK_BASED_YEAR = Field.WEEK_BASED_YEAR;
+
     public static final TTemporalUnit WEEK_BASED_YEARS = Unit.WEEK_BASED_YEARS;
+
     public static final TTemporalUnit QUARTER_YEARS = Unit.QUARTER_YEARS;
 
     private TIsoFields() {
+
         throw new AssertionError("Not instantiable");
     }
 
-    //-----------------------------------------------------------------------
     private static enum Field implements TTemporalField {
         DAY_OF_QUARTER {
             @Override
             public String toString() {
+
                 return "DayOfQuarter";
             }
+
             @Override
             public TTemporalUnit getBaseUnit() {
+
                 return DAYS;
             }
+
             @Override
             public TTemporalUnit getRangeUnit() {
+
                 return QUARTER_YEARS;
             }
+
             @Override
             public TValueRange range() {
+
                 return TValueRange.of(1, 90, 92);
             }
+
             @Override
             public boolean isSupportedBy(TTemporalAccessor temporal) {
-                return temporal.isSupported(DAY_OF_YEAR) && temporal.isSupported(MONTH_OF_YEAR) &&
-                        temporal.isSupported(YEAR) && isIso(temporal);
+
+                return temporal.isSupported(DAY_OF_YEAR) && temporal.isSupported(MONTH_OF_YEAR)
+                        && temporal.isSupported(YEAR) && isIso(temporal);
             }
+
             @Override
             public TValueRange rangeRefinedBy(TTemporalAccessor temporal) {
+
                 if (temporal.isSupported(this) == false) {
                     throw new TUnsupportedTemporalTypeException("Unsupported field: DayOfQuarter");
                 }
@@ -107,8 +123,10 @@ public final class TIsoFields {
                 } // else value not from 1 to 4, so drop through
                 return range();
             }
+
             @Override
             public long getFrom(TTemporalAccessor temporal) {
+
                 if (temporal.isSupported(this) == false) {
                     throw new TUnsupportedTemporalTypeException("Unsupported field: DayOfQuarter");
                 }
@@ -117,16 +135,20 @@ public final class TIsoFields {
                 long year = temporal.getLong(YEAR);
                 return doy - QUARTER_DAYS[((moy - 1) / 3) + (TIsoChronology.INSTANCE.isLeapYear(year) ? 4 : 0)];
             }
+
             @SuppressWarnings("unchecked")
             @Override
             public <R extends TTemporal> R adjustInto(R temporal, long newValue) {
+
                 long curValue = getFrom(temporal);
                 range().checkValidValue(newValue, this);
                 return (R) temporal.with(DAY_OF_YEAR, temporal.getLong(DAY_OF_YEAR) + (newValue - curValue));
             }
+
             @Override
-            public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues,
-                            TTemporalAccessor partialTemporal, TResolverStyle resolverStyle) {
+            public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues, TTemporalAccessor partialTemporal,
+                    TResolverStyle resolverStyle) {
+
                 Long yearLong = fieldValues.get(YEAR);
                 Long qoyLong = fieldValues.get(QUARTER_OF_YEAR);
                 if (yearLong == null || qoyLong == null) {
@@ -151,7 +173,7 @@ public final class TIsoFields {
                         }
                         TValueRange.of(1, max).checkValidValue(doq, this);
                     } else {
-                        range().checkValidValue(doq, this);  // leniently check from 1 to 92
+                        range().checkValidValue(doq, this); // leniently check from 1 to 92
                     }
                     date = TLocalDate.of(y, ((qoy - 1) * 3) + 1, 1).plusDays(doq - 1);
                 }
@@ -164,39 +186,54 @@ public final class TIsoFields {
         QUARTER_OF_YEAR {
             @Override
             public String toString() {
+
                 return "QuarterOfYear";
             }
+
             @Override
             public TTemporalUnit getBaseUnit() {
+
                 return QUARTER_YEARS;
             }
+
             @Override
             public TTemporalUnit getRangeUnit() {
+
                 return YEARS;
             }
+
             @Override
             public TValueRange range() {
+
                 return TValueRange.of(1, 4);
             }
+
             @Override
             public boolean isSupportedBy(TTemporalAccessor temporal) {
+
                 return temporal.isSupported(MONTH_OF_YEAR) && isIso(temporal);
             }
+
             @Override
             public TValueRange rangeRefinedBy(TTemporalAccessor temporal) {
+
                 return range();
             }
+
             @Override
             public long getFrom(TTemporalAccessor temporal) {
+
                 if (temporal.isSupported(this) == false) {
                     throw new TUnsupportedTemporalTypeException("Unsupported field: QuarterOfYear");
                 }
                 long moy = temporal.getLong(MONTH_OF_YEAR);
                 return ((moy + 2) / 3);
             }
+
             @SuppressWarnings("unchecked")
             @Override
             public <R extends TTemporal> R adjustInto(R temporal, long newValue) {
+
                 long curValue = getFrom(temporal);
                 range().checkValidValue(newValue, this);
                 return (R) temporal.with(MONTH_OF_YEAR, temporal.getLong(MONTH_OF_YEAR) + (newValue - curValue) * 3);
@@ -205,53 +242,71 @@ public final class TIsoFields {
         WEEK_OF_WEEK_BASED_YEAR {
             @Override
             public String toString() {
+
                 return "WeekOfWeekBasedYear";
             }
+
             @Override
             public TTemporalUnit getBaseUnit() {
+
                 return WEEKS;
             }
+
             @Override
             public TTemporalUnit getRangeUnit() {
+
                 return WEEK_BASED_YEARS;
             }
+
             @Override
             public String getDisplayName(TLocale locale) {
+
                 TJdk8Methods.requireNonNull(locale, "locale");
                 return "Week";
             }
 
             @Override
             public TValueRange range() {
+
                 return TValueRange.of(1, 52, 53);
             }
+
             @Override
             public boolean isSupportedBy(TTemporalAccessor temporal) {
+
                 return temporal.isSupported(EPOCH_DAY) && isIso(temporal);
             }
+
             @Override
             public TValueRange rangeRefinedBy(TTemporalAccessor temporal) {
+
                 if (temporal.isSupported(this) == false) {
                     throw new TUnsupportedTemporalTypeException("Unsupported field: WeekOfWeekBasedYear");
                 }
                 return getWeekRange(TLocalDate.from(temporal));
             }
+
             @Override
             public long getFrom(TTemporalAccessor temporal) {
+
                 if (temporal.isSupported(this) == false) {
                     throw new TUnsupportedTemporalTypeException("Unsupported field: WeekOfWeekBasedYear");
                 }
                 return getWeek(TLocalDate.from(temporal));
             }
+
             @SuppressWarnings("unchecked")
             @Override
             public <R extends TTemporal> R adjustInto(R temporal, long newValue) {
+
                 range().checkValidValue(newValue, this);
                 return (R) temporal.plus(TJdk8Methods.safeSubtract(newValue, getFrom(temporal)), WEEKS);
             }
+
             @Override
-            public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues,
-                            TTemporalAccessor partialTemporal, TResolverStyle resolverStyle) {
+            public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues, TTemporalAccessor partialTemporal,
+                    TResolverStyle resolverStyle) {
+
                 Long wbyLong = fieldValues.get(WEEK_BASED_YEAR);
                 Long dowLong = fieldValues.get(DAY_OF_WEEK);
                 if (wbyLong == null || dowLong == null) {
@@ -278,7 +333,7 @@ public final class TIsoFields {
                         TValueRange range = getWeekRange(temp);
                         range.checkValidValue(wowby, this);
                     } else {
-                        range().checkValidValue(wowby, this);  // leniently check from 1 to 53
+                        range().checkValidValue(wowby, this); // leniently check from 1 to 53
                     }
                     date = TLocalDate.of(wby, 1, 4).plusWeeks(wowby - 1).with(DAY_OF_WEEK, dow);
                 }
@@ -291,49 +346,64 @@ public final class TIsoFields {
         WEEK_BASED_YEAR {
             @Override
             public String toString() {
+
                 return "WeekBasedYear";
             }
+
             @Override
             public TTemporalUnit getBaseUnit() {
+
                 return WEEK_BASED_YEARS;
             }
+
             @Override
             public TTemporalUnit getRangeUnit() {
+
                 return FOREVER;
             }
+
             @Override
             public TValueRange range() {
+
                 return YEAR.range();
             }
+
             @Override
             public boolean isSupportedBy(TTemporalAccessor temporal) {
+
                 return temporal.isSupported(EPOCH_DAY) && isIso(temporal);
             }
+
             @Override
             public TValueRange rangeRefinedBy(TTemporalAccessor temporal) {
+
                 return YEAR.range();
             }
+
             @Override
             public long getFrom(TTemporalAccessor temporal) {
+
                 if (temporal.isSupported(this) == false) {
                     throw new TUnsupportedTemporalTypeException("Unsupported field: WeekBasedYear");
                 }
                 return getWeekBasedYear(TLocalDate.from(temporal));
             }
+
             @SuppressWarnings("unchecked")
             @Override
             public <R extends TTemporal> R adjustInto(R temporal, long newValue) {
+
                 if (isSupportedBy(temporal) == false) {
                     throw new TUnsupportedTemporalTypeException("Unsupported field: WeekBasedYear");
                 }
-                int newWby = range().checkValidIntValue(newValue, WEEK_BASED_YEAR);  // strict check
+                int newWby = range().checkValidIntValue(newValue, WEEK_BASED_YEAR); // strict check
                 TLocalDate date = TLocalDate.from(temporal);
                 int dow = date.get(DAY_OF_WEEK);
                 int week = getWeek(date);
                 if (week == 53 && getWeekRange(newWby) == 52) {
                     week = 52;
                 }
-                TLocalDate resolved = TLocalDate.of(newWby, 1, 4);  // 4th is guaranteed to be in week one
+                TLocalDate resolved = TLocalDate.of(newWby, 1, 4); // 4th is guaranteed to be in week one
                 int days = (dow - resolved.get(DAY_OF_WEEK)) + ((week - 1) * 7);
                 resolved = resolved.plusDays(days);
                 return (R) temporal.with(resolved);
@@ -342,38 +412,45 @@ public final class TIsoFields {
 
         @Override
         public String getDisplayName(TLocale locale) {
+
             TJdk8Methods.requireNonNull(locale, "locale");
             return toString();
         }
 
         @Override
-        public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues,
-                        TTemporalAccessor partialTemporal, TResolverStyle resolverStyle) {
+        public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues, TTemporalAccessor partialTemporal,
+                TResolverStyle resolverStyle) {
+
             return null;
         }
 
-        //-------------------------------------------------------------------------
-        private static final int[] QUARTER_DAYS = {0, 90, 181, 273, 0, 91, 182, 274};
+        private static final int[] QUARTER_DAYS = { 0, 90, 181, 273, 0, 91, 182, 274 };
 
         @Override
         public boolean isDateBased() {
+
             return true;
         }
+
         @Override
         public boolean isTimeBased() {
+
             return false;
         }
 
         private static boolean isIso(TTemporalAccessor temporal) {
+
             return TChronology.from(temporal).equals(TIsoChronology.INSTANCE);
         }
 
         private static TValueRange getWeekRange(TLocalDate date) {
+
             int wby = getWeekBasedYear(date);
             return TValueRange.of(1, getWeekRange(wby));
         }
 
         private static int getWeekRange(int wby) {
+
             TLocalDate date = TLocalDate.of(wby, 1, 1);
             // 53 weeks if standard year starts on Thursday, or Wed in a leap year
             if (date.getDayOfWeek() == THURSDAY || (date.getDayOfWeek() == WEDNESDAY && date.isLeapYear())) {
@@ -383,9 +460,10 @@ public final class TIsoFields {
         }
 
         private static int getWeek(TLocalDate date) {
+
             int dow0 = date.getDayOfWeek().ordinal();
             int doy0 = date.getDayOfYear() - 1;
-            int doyThu0 = doy0 + (3 - dow0);  // adjust to mid-week Thursday (which is 3 indexed from zero)
+            int doyThu0 = doy0 + (3 - dow0); // adjust to mid-week Thursday (which is 3 indexed from zero)
             int alignedWeek = doyThu0 / 7;
             int firstThuDoy0 = doyThu0 - (alignedWeek * 7);
             int firstMonDoy0 = firstThuDoy0 - 3;
@@ -405,6 +483,7 @@ public final class TIsoFields {
         }
 
         private static int getWeekBasedYear(TLocalDate date) {
+
             int year = date.getYear();
             int doy = date.getDayOfYear();
             if (doy <= 3) {
@@ -423,48 +502,55 @@ public final class TIsoFields {
         }
     }
 
-    //-----------------------------------------------------------------------
     private static enum Unit implements TTemporalUnit {
-        WEEK_BASED_YEARS("WeekBasedYears", TDuration.ofSeconds(31556952L)),
+        WEEK_BASED_YEARS("WeekBasedYears", TDuration.ofSeconds(31556952L)), //
         QUARTER_YEARS("QuarterYears", TDuration.ofSeconds(31556952L / 4));
 
         private final String name;
+
         private final TDuration duration;
 
         private Unit(String name, TDuration estimatedDuration) {
+
             this.name = name;
             this.duration = estimatedDuration;
         }
 
         @Override
         public TDuration getDuration() {
-            return duration;
+
+            return this.duration;
         }
 
         @Override
         public boolean isDurationEstimated() {
+
             return true;
         }
 
         @Override
         public boolean isDateBased() {
+
             return true;
         }
 
         @Override
         public boolean isTimeBased() {
+
             return false;
         }
 
         @Override
         public boolean isSupportedBy(TTemporal temporal) {
+
             return temporal.isSupported(EPOCH_DAY);
         }
 
         @SuppressWarnings("unchecked")
         @Override
         public <R extends TTemporal> R addTo(R temporal, long periodToAdd) {
-            switch(this) {
+
+            switch (this) {
                 case WEEK_BASED_YEARS:
                     long added = TJdk8Methods.safeAdd(temporal.get(WEEK_BASED_YEAR), periodToAdd);
                     return (R) temporal.with(WEEK_BASED_YEAR, added);
@@ -478,9 +564,11 @@ public final class TIsoFields {
 
         @Override
         public long between(TTemporal temporal1, TTemporal temporal2) {
-            switch(this) {
+
+            switch (this) {
                 case WEEK_BASED_YEARS:
-                    return TJdk8Methods.safeSubtract(temporal2.getLong(WEEK_BASED_YEAR), temporal1.getLong(WEEK_BASED_YEAR));
+                    return TJdk8Methods.safeSubtract(temporal2.getLong(WEEK_BASED_YEAR),
+                            temporal1.getLong(WEEK_BASED_YEAR));
                 case QUARTER_YEARS:
                     return temporal1.until(temporal2, MONTHS) / 3;
                 default:
@@ -490,7 +578,8 @@ public final class TIsoFields {
 
         @Override
         public String toString() {
-            return name;
+
+            return this.name;
         }
     }
 }

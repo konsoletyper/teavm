@@ -33,7 +33,7 @@ package org.teavm.classlib.java.time.jdk8;
 
 import static org.teavm.classlib.java.time.temporal.TChronoField.ERA;
 
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 
 import org.teavm.classlib.java.time.chrono.TEra;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
@@ -46,13 +46,11 @@ import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 
-public abstract class TDefaultInterfaceEra
-        extends TDefaultInterfaceTemporalAccessor
-        implements TEra {
+public abstract class TDefaultInterfaceEra extends TDefaultInterfaceTemporalAccessor implements TEra {
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isSupported(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             return field == ERA;
         }
@@ -61,6 +59,7 @@ public abstract class TDefaultInterfaceEra
 
     @Override
     public int get(TTemporalField field) {
+
         if (field == ERA) {
             return getValue();
         }
@@ -69,6 +68,7 @@ public abstract class TDefaultInterfaceEra
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field == ERA) {
             return getValue();
         } else if (field instanceof TChronoField) {
@@ -77,29 +77,30 @@ public abstract class TDefaultInterfaceEra
         return field.getFrom(this);
     }
 
-    //-------------------------------------------------------------------------
     @Override
     public TTemporal adjustInto(TTemporal temporal) {
+
         return temporal.with(ERA, getValue());
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public <R> R query(TTemporalQuery<R> query) {
+
         if (query == TTemporalQueries.precision()) {
             return (R) TChronoUnit.ERAS;
         }
-        if (query == TTemporalQueries.chronology() || query == TTemporalQueries.zone() ||
-                query == TTemporalQueries.zoneId() || query == TTemporalQueries.offset() ||
-                query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime()) {
+        if (query == TTemporalQueries.chronology() || query == TTemporalQueries.zone()
+                || query == TTemporalQueries.zoneId() || query == TTemporalQueries.offset()
+                || query == TTemporalQueries.localDate() || query == TTemporalQueries.localTime()) {
             return null;
         }
         return query.queryFrom(this);
     }
 
-    //-----------------------------------------------------------------------
     @Override
-    public String getDisplayName(TTextStyle style, TLocale locale) {
+    public String getDisplayName(TTextStyle style, Locale locale) {
+
         return new TDateTimeFormatterBuilder().appendText(ERA, style).toFormatter(locale).format(this);
     }
 

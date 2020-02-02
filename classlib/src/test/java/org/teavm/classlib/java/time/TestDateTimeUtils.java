@@ -33,40 +33,48 @@ package org.teavm.classlib.java.time;
 
 import static org.junit.Assert.assertEquals;
 
-import org.teavm.classlib.java.util.TCalendar;
-import org.teavm.classlib.java.util.TDate;
-import org.teavm.classlib.java.util.TGregorianCalendar;
-import org.teavm.classlib.java.util.TTimeZone;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.GregorianCalendar;
+import java.util.TimeZone;
 
 import org.junit.Test;
+import org.teavm.classlib.java.util.TCalendar;
+import org.teavm.classlib.java.util.TDate;
 
-@Test
 public class TestDateTimeUtils {
 
     private static final TZoneId PARIS = TZoneId.of("Europe/Paris");
-    private static final TTimeZone PARIS_TZ = TTimeZone.getTimeZone("Europe/Paris");
 
-    //-----------------------------------------------------------------------
+    private static final TimeZone PARIS_TZ = TimeZone.getTimeZone("Europe/Paris");
+
+    @Test
     public void test_toInstant_Date() {
+
         TDate date = new TDate(123456);
         assertEquals(TDateTimeUtils.toInstant(date), TInstant.ofEpochMilli(123456));
     }
 
+    @Test
     public void test_toDate_Instant() {
+
         TInstant instant = TInstant.ofEpochMilli(123456);
         assertEquals(TDateTimeUtils.toDate(instant), new TDate(123456));
     }
 
-    //-----------------------------------------------------------------------
+    @Test
     public void test_toInstant_Calendar() {
-        TCalendar calendar = TGregorianCalendar.getInstance();
+
+        Calendar calendar = GregorianCalendar.getInstance();
         calendar.setTimeInMillis(123456);
         assertEquals(TDateTimeUtils.toInstant(calendar), TInstant.ofEpochMilli(123456));
     }
 
+    @Test
     public void test_toZDT_Calendar() {
+
         TZonedDateTime zdt = TZonedDateTime.of(2012, 6, 30, 11, 30, 40, 0, PARIS);
-        TCalendar calendar = TGregorianCalendar.getInstance(PARIS_TZ);
+        Calendar calendar = GregorianCalendar.getInstance(PARIS_TZ);
         calendar.setFirstDayOfWeek(TCalendar.MONDAY);
         calendar.setMinimalDaysInFirstWeek(4);
         calendar.clear();
@@ -74,84 +82,31 @@ public class TestDateTimeUtils {
         assertEquals(TDateTimeUtils.toZonedDateTime(calendar), zdt);
     }
 
+    @Test
     public void test_toCalendar_ZDT() {
+
         TZonedDateTime zdt = TZonedDateTime.of(2012, 6, 30, 11, 30, 40, 0, PARIS);
-        TGregorianCalendar calendar = new TGregorianCalendar(PARIS_TZ);
+        GregorianCalendar calendar = new GregorianCalendar(PARIS_TZ);
         calendar.setFirstDayOfWeek(TCalendar.MONDAY);
         calendar.setMinimalDaysInFirstWeek(4);
         calendar.set(2012, 6 - 1, 30, 11, 30, 40);
         calendar.set(TCalendar.MILLISECOND, 0);
         calendar.setTimeInMillis(calendar.getTimeInMillis());
-        calendar.setGregorianChange(new TDate(Long.MIN_VALUE));
-        TGregorianCalendar test = TDateTimeUtils.toGregorianCalendar(zdt);
+        calendar.setGregorianChange(new Date(Long.MIN_VALUE));
+        GregorianCalendar test = TDateTimeUtils.toGregorianCalendar(zdt);
         assertEquals(test, calendar);
     }
 
-    //-----------------------------------------------------------------------
+    @Test
     public void test_toZoneId_TimeZone() {
+
         assertEquals(TDateTimeUtils.toZoneId(PARIS_TZ), PARIS);
     }
 
+    @Test
     public void test_toTimeZone_ZoneId() {
+
         assertEquals(TDateTimeUtils.toTimeZone(PARIS), PARIS_TZ);
-    }
-
-    //-----------------------------------------------------------------------
-    public void test_toLocalDate_SqlDate() {
-        @SuppressWarnings("deprecation")
-        java.sql.TDate sqlDate = new java.sql.TDate(2012 - 1900, 6 - 1, 30);
-        TLocalDate localDate = TLocalDate.of(2012, 6, 30);
-        assertEquals(TDateTimeUtils.toLocalDate(sqlDate), localDate);
-    }
-
-    public void test_toSqlDate_LocalDate() {
-        @SuppressWarnings("deprecation")
-        java.sql.TDate sqlDate = new java.sql.TDate(2012 - 1900, 6 - 1, 30);
-        TLocalDate localDate = TLocalDate.of(2012, 6, 30);
-        assertEquals(TDateTimeUtils.toSqlDate(localDate), sqlDate);
-    }
-
-    //-----------------------------------------------------------------------
-    public void test_toLocalTime_SqlTime() {
-        @SuppressWarnings("deprecation")
-        java.sql.Time sqlTime = new java.sql.Time(11, 30, 40);
-        TLocalTime localTime = TLocalTime.of(11, 30, 40);
-        assertEquals(TDateTimeUtils.toLocalTime(sqlTime), localTime);
-    }
-
-    public void test_toSqlTime_LocalTime() {
-        @SuppressWarnings("deprecation")
-        java.sql.Time sqlTime = new java.sql.Time(11, 30, 40);
-        TLocalTime localTime = TLocalTime.of(11, 30, 40);
-        assertEquals(TDateTimeUtils.toSqlTime(localTime), sqlTime);
-    }
-
-    //-----------------------------------------------------------------------
-    public void test_toLocalDateTime_SqlTimestamp() {
-        @SuppressWarnings("deprecation")
-        java.sql.TTimestamp sqlDateTime = new java.sql.TTimestamp(2012 - 1900, 6 - 1, 30, 11, 30, 40, 0);
-        TLocalDateTime localDateTime = TLocalDateTime.of(2012, 6, 30, 11, 30, 40, 0);
-        assertEquals(TDateTimeUtils.toLocalDateTime(sqlDateTime), localDateTime);
-    }
-
-    public void test_toSqlTimestamp_LocalDateTime() {
-        @SuppressWarnings("deprecation")
-        java.sql.TTimestamp sqlDateTime = new java.sql.TTimestamp(2012 - 1900, 6 - 1, 30, 11, 30, 40, 0);
-        TLocalDateTime localDateTime = TLocalDateTime.of(2012, 6, 30, 11, 30, 40, 0);
-        assertEquals(TDateTimeUtils.toSqlTimestamp(localDateTime), sqlDateTime);
-    }
-
-    //-----------------------------------------------------------------------
-    public void test_toInstant_SqlTimestamp() {
-        @SuppressWarnings("deprecation")
-        java.sql.TTimestamp sqlDateTime = new java.sql.TTimestamp(2012 - 1900, 6 - 1, 30, 11, 30, 40, 0);
-        assertEquals(TDateTimeUtils.toInstant(sqlDateTime), TInstant.ofEpochMilli(sqlDateTime.getTime()));
-    }
-
-    public void test_toSqlTimestamp_Instant() {
-        TInstant instant = TInstant.ofEpochMilli(123456);
-        java.sql.TTimestamp sqlDateTime = new java.sql.TTimestamp(instant.toEpochMilli());
-        assertEquals(TDateTimeUtils.toSqlTimestamp(instant), sqlDateTime);
     }
 
 }

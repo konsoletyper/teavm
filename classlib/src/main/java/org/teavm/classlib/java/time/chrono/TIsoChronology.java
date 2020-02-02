@@ -46,12 +46,11 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR_OF_ERA;
 import static org.teavm.classlib.java.time.temporal.TTemporalAdjusters.nextOrSame;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.List;
-import org.teavm.classlib.java.util.TLocale;
 import java.util.Map;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TClock;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TDayOfWeek;
@@ -69,126 +68,135 @@ import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TIsoChronology extends TChronology implements Serializable {
+public final class TIsoChronology extends TChronology implements TSerializable {
 
     public static final TIsoChronology INSTANCE = new TIsoChronology();
 
-    private static final long serialVersionUID = -1440403870442975015L;
-
     private TIsoChronology() {
+
     }
 
-    private Object readResolve() {
-        return INSTANCE;
-    }
-
-    //-----------------------------------------------------------------------
     @Override
     public String getId() {
+
         return "ISO";
     }
 
     @Override
     public String getCalendarType() {
+
         return "iso8601";
     }
 
-    //-----------------------------------------------------------------------
-    @Override  // override with covariant return type
+    @Override
     public TLocalDate date(TEra era, int yearOfEra, int month, int dayOfMonth) {
+
         return date(prolepticYear(era, yearOfEra), month, dayOfMonth);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TLocalDate date(int prolepticYear, int month, int dayOfMonth) {
+
         return TLocalDate.of(prolepticYear, month, dayOfMonth);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TLocalDate dateYearDay(TEra era, int yearOfEra, int dayOfYear) {
+
         return dateYearDay(prolepticYear(era, yearOfEra), dayOfYear);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TLocalDate dateYearDay(int prolepticYear, int dayOfYear) {
+
         return TLocalDate.ofYearDay(prolepticYear, dayOfYear);
     }
 
     @Override
     public TLocalDate dateEpochDay(long epochDay) {
+
         return TLocalDate.ofEpochDay(epochDay);
     }
 
-    //-----------------------------------------------------------------------
-    @Override  // override with covariant return type
+    @Override
     public TLocalDate date(TTemporalAccessor temporal) {
+
         return TLocalDate.from(temporal);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TLocalDateTime localDateTime(TTemporalAccessor temporal) {
+
         return TLocalDateTime.from(temporal);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TZonedDateTime zonedDateTime(TTemporalAccessor temporal) {
+
         return TZonedDateTime.from(temporal);
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TZonedDateTime zonedDateTime(TInstant instant, TZoneId zone) {
+
         return TZonedDateTime.ofInstant(instant, zone);
     }
 
-    //-----------------------------------------------------------------------
-    @Override  // override with covariant return type
+    @Override
     public TLocalDate dateNow() {
+
         return dateNow(TClock.systemDefaultZone());
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TLocalDate dateNow(TZoneId zone) {
+
         return dateNow(TClock.system(zone));
     }
 
-    @Override  // override with covariant return type
+    @Override
     public TLocalDate dateNow(TClock clock) {
+
         TJdk8Methods.requireNonNull(clock, "clock");
         return date(TLocalDate.now(clock));
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public boolean isLeapYear(long prolepticYear) {
+
         return ((prolepticYear & 3) == 0) && ((prolepticYear % 100) != 0 || (prolepticYear % 400) == 0);
     }
 
     @Override
     public int prolepticYear(TEra era, int yearOfEra) {
+
         if (era instanceof TIsoEra == false) {
-            throw new ClassCastException("TEra must be TIsoEra");
+            throw new ClassCastException("Era must be IsoEra");
         }
         return (era == TIsoEra.CE ? yearOfEra : 1 - yearOfEra);
     }
 
     @Override
     public TIsoEra eraOf(int eraValue) {
+
         return TIsoEra.of(eraValue);
     }
 
     @Override
     public List<TEra> eras() {
-        return Arrays.<TEra>asList(TIsoEra.values());
+
+        return Arrays.<TEra> asList(TIsoEra.values());
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TValueRange range(TChronoField field) {
+
         return field.range();
     }
 
     @Override
     public TLocalDate resolveDate(Map<TTemporalField, Long> fieldValues, TResolverStyle resolverStyle) {
+
         if (fieldValues.containsKey(EPOCH_DAY)) {
             return TLocalDate.ofEpochDay(fieldValues.remove(EPOCH_DAY));
         }
@@ -215,14 +223,16 @@ public final class TIsoChronology extends TChronology implements Serializable {
                 if (resolverStyle == TResolverStyle.STRICT) {
                     // do not invent era if strict, but do cross-check with year
                     if (year != null) {
-                        updateResolveMap(fieldValues, YEAR, (year > 0 ? yoeLong: TJdk8Methods.safeSubtract(1, yoeLong)));
+                        updateResolveMap(fieldValues, YEAR,
+                                (year > 0 ? yoeLong : TJdk8Methods.safeSubtract(1, yoeLong)));
                     } else {
                         // reinstate the field removed earlier, no cross-check issues
                         fieldValues.put(YEAR_OF_ERA, yoeLong);
                     }
                 } else {
                     // invent era
-                    updateResolveMap(fieldValues, YEAR, (year == null || year > 0 ? yoeLong: TJdk8Methods.safeSubtract(1, yoeLong)));
+                    updateResolveMap(fieldValues, YEAR,
+                            (year == null || year > 0 ? yoeLong : TJdk8Methods.safeSubtract(1, yoeLong)));
                 }
             } else if (era.longValue() == 1L) {
                 updateResolveMap(fieldValues, YEAR, yoeLong);
@@ -232,7 +242,7 @@ public final class TIsoChronology extends TChronology implements Serializable {
                 throw new TDateTimeException("Invalid value for era: " + era);
             }
         } else if (fieldValues.containsKey(ERA)) {
-            ERA.checkValidValue(fieldValues.get(ERA));  // always validated
+            ERA.checkValidValue(fieldValues.get(ERA)); // always validated
         }
 
         // build date
@@ -246,7 +256,7 @@ public final class TIsoChronology extends TChronology implements Serializable {
                         long months = TJdk8Methods.safeSubtract(moy, 1);
                         long days = TJdk8Methods.safeSubtract(dom, 1);
                         return TLocalDate.of(y, 1, 1).plusMonths(months).plusDays(days);
-                    } else if (resolverStyle == TResolverStyle.SMART){
+                    } else if (resolverStyle == TResolverStyle.SMART) {
                         DAY_OF_MONTH.checkValidValue(dom);
                         if (moy == 4 || moy == 6 || moy == 9 || moy == 11) {
                             dom = Math.min(dom, 30);
@@ -269,7 +279,8 @@ public final class TIsoChronology extends TChronology implements Serializable {
                         }
                         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
                         int aw = ALIGNED_WEEK_OF_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH));
-                        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
+                        int ad = ALIGNED_DAY_OF_WEEK_IN_MONTH
+                                .checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_MONTH));
                         TLocalDate date = TLocalDate.of(y, moy, 1).plusDays((aw - 1) * 7 + (ad - 1));
                         if (resolverStyle == TResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
                             throw new TDateTimeException("Strict mode rejected date parsed to a different month");
@@ -287,7 +298,8 @@ public final class TIsoChronology extends TChronology implements Serializable {
                         int moy = MONTH_OF_YEAR.checkValidIntValue(fieldValues.remove(MONTH_OF_YEAR));
                         int aw = ALIGNED_WEEK_OF_MONTH.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_MONTH));
                         int dow = DAY_OF_WEEK.checkValidIntValue(fieldValues.remove(DAY_OF_WEEK));
-                        TLocalDate date = TLocalDate.of(y, moy, 1).plusWeeks(aw - 1).with(nextOrSame(TDayOfWeek.of(dow)));
+                        TLocalDate date = TLocalDate.of(y, moy, 1).plusWeeks(aw - 1)
+                                .with(nextOrSame(TDayOfWeek.of(dow)));
                         if (resolverStyle == TResolverStyle.STRICT && date.get(MONTH_OF_YEAR) != moy) {
                             throw new TDateTimeException("Strict mode rejected date parsed to a different month");
                         }
@@ -313,7 +325,8 @@ public final class TIsoChronology extends TChronology implements Serializable {
                         return TLocalDate.of(y, 1, 1).plusWeeks(weeks).plusDays(days);
                     }
                     int aw = ALIGNED_WEEK_OF_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_WEEK_OF_YEAR));
-                    int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR.checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
+                    int ad = ALIGNED_DAY_OF_WEEK_IN_YEAR
+                            .checkValidIntValue(fieldValues.remove(ALIGNED_DAY_OF_WEEK_IN_YEAR));
                     TLocalDate date = TLocalDate.of(y, 1, 1).plusDays((aw - 1) * 7 + (ad - 1));
                     if (resolverStyle == TResolverStyle.STRICT && date.get(YEAR) != y) {
                         throw new TDateTimeException("Strict mode rejected date parsed to a different year");

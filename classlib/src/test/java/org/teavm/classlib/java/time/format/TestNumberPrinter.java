@@ -36,229 +36,217 @@ import static org.junit.Assert.fail;
 import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
 import static org.teavm.classlib.java.time.temporal.TChronoField.HOUR_OF_DAY;
 
-import org.testng.annotations.DataProvider;
 import org.junit.Test;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder.NumberPrinterParser;
 import org.teavm.classlib.java.time.temporal.MockFieldValue;
 
-@Test
 public class TestNumberPrinter extends AbstractTestPrinterParser {
 
-    //-----------------------------------------------------------------------
-    @Test(expectedExceptions=TDateTimeException.class)
-    public void test_print_emptyCalendrical() throws Exception {
+    @Test(expected = TDateTimeException.class)
+    public void test_print_emptyCalendrical() {
+
         NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, 1, 2, TSignStyle.NEVER);
-        pp.print(printEmptyContext, buf);
+        pp.print(this.printEmptyContext, this.buf);
     }
 
-    public void test_print_append() throws Exception {
-        printContext.setDateTime(TLocalDate.of(2012, 1, 3));
+    @Test
+    public void test_print_append() {
+
+        this.printContext.setDateTime(TLocalDate.of(2012, 1, 3));
         NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, 1, 2, TSignStyle.NEVER);
-        buf.append("EXISTING");
-        pp.print(printContext, buf);
-        assertEquals(buf.toString(), "EXISTING3");
+        this.buf.append("EXISTING");
+        pp.print(this.printContext, this.buf);
+        assertEquals(this.buf.toString(), "EXISTING3");
     }
 
-    //-----------------------------------------------------------------------
-    @DataProvider(name="Pad")
     Object[][] provider_pad() {
-        return new Object[][] {
-            {1, 1, -10, null},
-            {1, 1, -9, "9"},
-            {1, 1, -1, "1"},
-            {1, 1, 0, "0"},
-            {1, 1, 3, "3"},
-            {1, 1, 9, "9"},
-            {1, 1, 10, null},
 
-            {1, 2, -100, null},
-            {1, 2, -99, "99"},
-            {1, 2, -10, "10"},
-            {1, 2, -9, "9"},
-            {1, 2, -1, "1"},
-            {1, 2, 0, "0"},
-            {1, 2, 3, "3"},
-            {1, 2, 9, "9"},
-            {1, 2, 10, "10"},
-            {1, 2, 99, "99"},
-            {1, 2, 100, null},
+        return new Object[][] { { 1, 1, -10, null }, { 1, 1, -9, "9" }, { 1, 1, -1, "1" }, { 1, 1, 0, "0" },
+        { 1, 1, 3, "3" }, { 1, 1, 9, "9" }, { 1, 1, 10, null },
 
-            {2, 2, -100, null},
-            {2, 2, -99, "99"},
-            {2, 2, -10, "10"},
-            {2, 2, -9, "09"},
-            {2, 2, -1, "01"},
-            {2, 2, 0, "00"},
-            {2, 2, 3, "03"},
-            {2, 2, 9, "09"},
-            {2, 2, 10, "10"},
-            {2, 2, 99, "99"},
-            {2, 2, 100, null},
+        { 1, 2, -100, null }, { 1, 2, -99, "99" }, { 1, 2, -10, "10" }, { 1, 2, -9, "9" }, { 1, 2, -1, "1" },
+        { 1, 2, 0, "0" }, { 1, 2, 3, "3" }, { 1, 2, 9, "9" }, { 1, 2, 10, "10" }, { 1, 2, 99, "99" },
+        { 1, 2, 100, null },
 
-            {1, 3, -1000, null},
-            {1, 3, -999, "999"},
-            {1, 3, -100, "100"},
-            {1, 3, -99, "99"},
-            {1, 3, -10, "10"},
-            {1, 3, -9, "9"},
-            {1, 3, -1, "1"},
-            {1, 3, 0, "0"},
-            {1, 3, 3, "3"},
-            {1, 3, 9, "9"},
-            {1, 3, 10, "10"},
-            {1, 3, 99, "99"},
-            {1, 3, 100, "100"},
-            {1, 3, 999, "999"},
-            {1, 3, 1000, null},
+        { 2, 2, -100, null }, { 2, 2, -99, "99" }, { 2, 2, -10, "10" }, { 2, 2, -9, "09" }, { 2, 2, -1, "01" },
+        { 2, 2, 0, "00" }, { 2, 2, 3, "03" }, { 2, 2, 9, "09" }, { 2, 2, 10, "10" }, { 2, 2, 99, "99" },
+        { 2, 2, 100, null },
 
-            {2, 3, -1000, null},
-            {2, 3, -999, "999"},
-            {2, 3, -100, "100"},
-            {2, 3, -99, "99"},
-            {2, 3, -10, "10"},
-            {2, 3, -9, "09"},
-            {2, 3, -1, "01"},
-            {2, 3, 0, "00"},
-            {2, 3, 3, "03"},
-            {2, 3, 9, "09"},
-            {2, 3, 10, "10"},
-            {2, 3, 99, "99"},
-            {2, 3, 100, "100"},
-            {2, 3, 999, "999"},
-            {2, 3, 1000, null},
+        { 1, 3, -1000, null }, { 1, 3, -999, "999" }, { 1, 3, -100, "100" }, { 1, 3, -99, "99" }, { 1, 3, -10, "10" },
+        { 1, 3, -9, "9" }, { 1, 3, -1, "1" }, { 1, 3, 0, "0" }, { 1, 3, 3, "3" }, { 1, 3, 9, "9" }, { 1, 3, 10, "10" },
+        { 1, 3, 99, "99" }, { 1, 3, 100, "100" }, { 1, 3, 999, "999" }, { 1, 3, 1000, null },
 
-            {3, 3, -1000, null},
-            {3, 3, -999, "999"},
-            {3, 3, -100, "100"},
-            {3, 3, -99, "099"},
-            {3, 3, -10, "010"},
-            {3, 3, -9, "009"},
-            {3, 3, -1, "001"},
-            {3, 3, 0, "000"},
-            {3, 3, 3, "003"},
-            {3, 3, 9, "009"},
-            {3, 3, 10, "010"},
-            {3, 3, 99, "099"},
-            {3, 3, 100, "100"},
-            {3, 3, 999, "999"},
-            {3, 3, 1000, null},
+        { 2, 3, -1000, null }, { 2, 3, -999, "999" }, { 2, 3, -100, "100" }, { 2, 3, -99, "99" }, { 2, 3, -10, "10" },
+        { 2, 3, -9, "09" }, { 2, 3, -1, "01" }, { 2, 3, 0, "00" }, { 2, 3, 3, "03" }, { 2, 3, 9, "09" },
+        { 2, 3, 10, "10" }, { 2, 3, 99, "99" }, { 2, 3, 100, "100" }, { 2, 3, 999, "999" }, { 2, 3, 1000, null },
 
-            {1, 10, Integer.MAX_VALUE - 1, "2147483646"},
-            {1, 10, Integer.MAX_VALUE, "2147483647"},
-            {1, 10, Integer.MIN_VALUE + 1, "2147483647"},
-            {1, 10, Integer.MIN_VALUE, "2147483648"},
-       };
+        { 3, 3, -1000, null }, { 3, 3, -999, "999" }, { 3, 3, -100, "100" }, { 3, 3, -99, "099" }, { 3, 3, -10, "010" },
+        { 3, 3, -9, "009" }, { 3, 3, -1, "001" }, { 3, 3, 0, "000" }, { 3, 3, 3, "003" }, { 3, 3, 9, "009" },
+        { 3, 3, 10, "010" }, { 3, 3, 99, "099" }, { 3, 3, 100, "100" }, { 3, 3, 999, "999" }, { 3, 3, 1000, null },
+
+        { 1, 10, Integer.MAX_VALUE - 1, "2147483646" }, { 1, 10, Integer.MAX_VALUE, "2147483647" },
+        { 1, 10, Integer.MIN_VALUE + 1, "2147483647" }, { 1, 10, Integer.MIN_VALUE, "2147483648" }, };
     }
 
-    @Test(dataProvider="Pad")
-    public void test_pad_NOT_NEGATIVE(int minPad, int maxPad, long value, String result) throws Exception {
-        printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.NOT_NEGATIVE);
-        try {
-            pp.print(printContext, buf);
-            if (result == null || value < 0) {
-                fail("Expected exception");
+    @Test
+    public void test_pad_NOT_NEGATIVE() {
+
+        for (Object[] data : provider_pad()) {
+            int minPad = (int) data[0];
+            int maxPad = (int) data[1];
+            long value = ((Number) data[2]).longValue();
+            String result = (String) data[3];
+
+            this.printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
+            NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.NOT_NEGATIVE);
+            StringBuilder sb = new StringBuilder();
+            try {
+                pp.print(this.printContext, sb);
+                if (result == null || value < 0) {
+                    fail("Expected exception");
+                }
+                assertEquals(sb.toString(), result);
+            } catch (TDateTimeException ex) {
+                if (result == null || value < 0) {
+                    assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
+                } else {
+                    throw ex;
+                }
             }
-            assertEquals(buf.toString(), result);
-        } catch (TDateTimeException ex) {
-            if (result == null || value < 0) {
+        }
+    }
+
+    @Test
+    public void test_pad_NEVER() {
+
+        for (Object[] data : provider_pad()) {
+            int minPad = (int) data[0];
+            int maxPad = (int) data[1];
+            long value = ((Number) data[2]).longValue();
+            String result = (String) data[3];
+
+            this.printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
+            NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.NEVER);
+            StringBuilder sb = new StringBuilder();
+            try {
+                pp.print(this.printContext, sb);
+                if (result == null) {
+                    fail("Expected exception");
+                }
+                assertEquals(sb.toString(), result);
+            } catch (TDateTimeException ex) {
+                if (result != null) {
+                    throw ex;
+                }
                 assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
-            } else {
-                throw ex;
             }
         }
     }
 
-    @Test(dataProvider="Pad")
-    public void test_pad_NEVER(int minPad, int maxPad, long value, String result) throws Exception {
-        printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.NEVER);
-        try {
-            pp.print(printContext, buf);
-            if (result == null) {
-                fail("Expected exception");
+    @Test
+    public void test_pad_NORMAL() {
+
+        for (Object[] data : provider_pad()) {
+            int minPad = (int) data[0];
+            int maxPad = (int) data[1];
+            long value = ((Number) data[2]).longValue();
+            String result = (String) data[3];
+
+            this.printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
+            NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.NORMAL);
+            StringBuilder sb = new StringBuilder();
+            try {
+                pp.print(this.printContext, sb);
+                if (result == null) {
+                    fail("Expected exception");
+                }
+                assertEquals(sb.toString(), (value < 0 ? "-" + result : result));
+            } catch (TDateTimeException ex) {
+                if (result != null) {
+                    throw ex;
+                }
+                assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
             }
-            assertEquals(buf.toString(), result);
-        } catch (TDateTimeException ex) {
-            if (result != null) {
-                throw ex;
-            }
-            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
         }
     }
 
-    @Test(dataProvider="Pad")
-    public void test_pad_NORMAL(int minPad, int maxPad, long value, String result) throws Exception {
-        printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.NORMAL);
-        try {
-            pp.print(printContext, buf);
-            if (result == null) {
-                fail("Expected exception");
+    @Test
+    public void test_pad_ALWAYS() {
+
+        for (Object[] data : provider_pad()) {
+            int minPad = (int) data[0];
+            int maxPad = (int) data[1];
+            long value = ((Number) data[2]).longValue();
+            String result = (String) data[3];
+
+            this.printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
+            NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.ALWAYS);
+            StringBuilder sb = new StringBuilder();
+            try {
+                pp.print(this.printContext, sb);
+                if (result == null) {
+                    fail("Expected exception");
+                }
+                assertEquals(sb.toString(), (value < 0 ? "-" + result : "+" + result));
+            } catch (TDateTimeException ex) {
+                if (result != null) {
+                    throw ex;
+                }
+                assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
             }
-            assertEquals(buf.toString(), (value < 0 ? "-" + result : result));
-        } catch (TDateTimeException ex) {
-            if (result != null) {
-                throw ex;
-            }
-            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
         }
     }
 
-    @Test(dataProvider="Pad")
-    public void test_pad_ALWAYS(int minPad, int maxPad, long value, String result) throws Exception {
-        printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.ALWAYS);
-        try {
-            pp.print(printContext, buf);
-            if (result == null) {
-                fail("Expected exception");
+    @Test
+    public void test_pad_EXCEEDS_PAD() {
+
+        for (Object[] data : provider_pad()) {
+            int minPad = (int) data[0];
+            int maxPad = (int) data[1];
+            long value = ((Number) data[2]).longValue();
+            String result = (String) data[3];
+
+            this.printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
+            NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.EXCEEDS_PAD);
+            StringBuilder sb = new StringBuilder();
+            try {
+                pp.print(this.printContext, sb);
+                if (result == null) {
+                    fail("Expected exception");
+                    return; // unreachable
+                }
+                if (result.length() > minPad || value < 0) {
+                    result = (value < 0 ? "-" + result : "+" + result);
+                }
+                assertEquals(sb.toString(), result);
+            } catch (TDateTimeException ex) {
+                if (result != null) {
+                    throw ex;
+                }
+                assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
             }
-            assertEquals(buf.toString(), (value < 0 ? "-" + result : "+" + result));
-        } catch (TDateTimeException ex) {
-            if (result != null) {
-                throw ex;
-            }
-            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
         }
     }
 
-    @Test(dataProvider="Pad")
-    public void test_pad_EXCEEDS_PAD(int minPad, int maxPad, long value, String result) throws Exception {
-        printContext.setDateTime(new MockFieldValue(DAY_OF_MONTH, value));
-        NumberPrinterParser pp = new NumberPrinterParser(DAY_OF_MONTH, minPad, maxPad, TSignStyle.EXCEEDS_PAD);
-        try {
-            pp.print(printContext, buf);
-            if (result == null) {
-                fail("Expected exception");
-                return;  // unreachable
-            }
-            if (result.length() > minPad || value < 0) {
-                result = (value < 0 ? "-" + result : "+" + result);
-            }
-            assertEquals(buf.toString(), result);
-        } catch (TDateTimeException ex) {
-            if (result != null) {
-                throw ex;
-            }
-            assertEquals(ex.getMessage().contains(DAY_OF_MONTH.toString()), true);
-        }
-    }
+    @Test
+    public void test_toString1() {
 
-    //-----------------------------------------------------------------------
-    public void test_toString1() throws Exception {
         NumberPrinterParser pp = new NumberPrinterParser(HOUR_OF_DAY, 1, 19, TSignStyle.NORMAL);
         assertEquals(pp.toString(), "Value(HourOfDay)");
     }
 
-    public void test_toString2() throws Exception {
+    @Test
+    public void test_toString2() {
+
         NumberPrinterParser pp = new NumberPrinterParser(HOUR_OF_DAY, 2, 2, TSignStyle.NOT_NEGATIVE);
         assertEquals(pp.toString(), "Value(HourOfDay,2)");
     }
 
-    public void test_toString3() throws Exception {
+    @Test
+    public void test_toString3() {
+
         NumberPrinterParser pp = new NumberPrinterParser(HOUR_OF_DAY, 1, 2, TSignStyle.NOT_NEGATIVE);
         assertEquals(pp.toString(), "Value(HourOfDay,1,2,NOT_NEGATIVE)");
     }

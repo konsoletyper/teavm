@@ -35,13 +35,13 @@ import org.teavm.classlib.java.time.TDateTimeException;
 
 public class TUnsupportedTemporalTypeException extends TDateTimeException {
 
-    private static final long serialVersionUID = -189676278478L;
-
     public TUnsupportedTemporalTypeException(String message) {
+
         super(message);
     }
 
     public TUnsupportedTemporalTypeException(String message, Throwable cause) {
+
         super(message, cause);
     }
 

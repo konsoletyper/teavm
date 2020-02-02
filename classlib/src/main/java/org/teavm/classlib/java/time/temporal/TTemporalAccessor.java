@@ -31,11 +31,6 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.TZoneId;
-import org.teavm.classlib.java.time.chrono.TChronoLocalDate;
-import org.teavm.classlib.java.time.chrono.TChronology;
-
 public interface TTemporalAccessor {
 
     boolean isSupported(TTemporalField field);

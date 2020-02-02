@@ -34,61 +34,63 @@ package org.teavm.classlib.java.time;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 
-import java.io.IOException;
-
 import org.junit.Test;
 
-@Test
 public class TestClock_Fixed extends AbstractTest {
 
     private static final TZoneId MOSCOW = TZoneId.of("Europe/Moscow");
+
     private static final TZoneId PARIS = TZoneId.of("Europe/Paris");
-    private static final TInstant INSTANT = TLocalDateTime.of(2008, 6, 30, 11, 30, 10, 500).atZone(TZoneOffset.ofHours(2)).toInstant();
 
-    //-----------------------------------------------------------------------
-    public void test_isSerializable() throws IOException, ClassNotFoundException {
-        assertSerializable(TClock.fixed(INSTANT, TZoneOffset.UTC));
-        assertSerializable(TClock.fixed(INSTANT, PARIS));
-    }
+    private static final TInstant INSTANT = TLocalDateTime.of(2008, 6, 30, 11, 30, 10, 500)
+            .atZone(TZoneOffset.ofHours(2)).toInstant();
 
-    //-------------------------------------------------------------------------
+    @Test
     public void test_fixed_InstantZoneId() {
+
         TClock test = TClock.fixed(INSTANT, PARIS);
         assertEquals(test.instant(), INSTANT);
         assertEquals(test.getZone(), PARIS);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_fixed_InstantZoneId_nullInstant() {
+
         TClock.fixed(null, PARIS);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_fixed_InstantZoneId_nullZoneId() {
+
         TClock.fixed(INSTANT, null);
     }
 
-    //-------------------------------------------------------------------------
+    @Test
     public void test_withZone() {
+
         TClock test = TClock.fixed(INSTANT, PARIS);
         TClock changed = test.withZone(MOSCOW);
         assertEquals(test.getZone(), PARIS);
         assertEquals(changed.getZone(), MOSCOW);
     }
 
+    @Test
     public void test_withZone_same() {
+
         TClock test = TClock.fixed(INSTANT, PARIS);
         TClock changed = test.withZone(PARIS);
         assertSame(test, changed);
     }
 
-    @Test(expectedExceptions = NullPointerException.class)
+    @Test(expected = NullPointerException.class)
     public void test_withZone_null() {
+
         TClock.fixed(INSTANT, PARIS).withZone(null);
     }
 
-    //-----------------------------------------------------------------------
+    @Test
     public void test_equals() {
+
         TClock a = TClock.fixed(INSTANT, TZoneOffset.UTC);
         TClock b = TClock.fixed(INSTANT, TZoneOffset.UTC);
         assertEquals(a.equals(a), true);
@@ -107,7 +109,9 @@ public class TestClock_Fixed extends AbstractTest {
         assertEquals(a.equals(TClock.systemUTC()), false);
     }
 
+    @Test
     public void test_hashCode() {
+
         TClock a = TClock.fixed(INSTANT, TZoneOffset.UTC);
         TClock b = TClock.fixed(INSTANT, TZoneOffset.UTC);
         assertEquals(a.hashCode(), a.hashCode());
@@ -120,8 +124,9 @@ public class TestClock_Fixed extends AbstractTest {
         assertEquals(a.hashCode() == d.hashCode(), false);
     }
 
-    //-----------------------------------------------------------------------
+    @Test
     public void test_toString() {
+
         TClock test = TClock.fixed(INSTANT, PARIS);
         assertEquals(test.toString(), "FixedClock[2008-06-30T09:30:10.000000500Z,Europe/Paris]");
     }

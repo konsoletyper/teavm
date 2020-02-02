@@ -34,7 +34,7 @@ package org.teavm.classlib.java.time.format;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import org.teavm.classlib.java.util.TLocale;
+import java.util.Locale;
 import java.util.Map;
 
 import org.teavm.classlib.java.time.TPeriod;
@@ -51,34 +51,43 @@ import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 
 final class TDateTimeParseContext {
 
-    private TLocale locale;
+    private Locale locale;
+
     private TDecimalStyle symbols;
+
     private TChronology overrideChronology;
+
     private TZoneId overrideZone;
+
     private boolean caseSensitive = true;
+
     private boolean strict = true;
-    private final ArrayList<Parsed> parsed = new ArrayList<Parsed>();
+
+    private final ArrayList<Parsed> parsed = new ArrayList<>();
 
     TDateTimeParseContext(TDateTimeFormatter formatter) {
+
         super();
         this.locale = formatter.getLocale();
         this.symbols = formatter.getDecimalStyle();
         this.overrideChronology = formatter.getChronology();
         this.overrideZone = formatter.getZone();
-        parsed.add(new Parsed());
+        this.parsed.add(new Parsed());
     }
 
     // for testing
-    TDateTimeParseContext(TLocale locale, TDecimalStyle symbols, TChronology chronology) {
+    TDateTimeParseContext(Locale locale, TDecimalStyle symbols, TChronology chronology) {
+
         super();
         this.locale = locale;
         this.symbols = symbols;
         this.overrideChronology = chronology;
         this.overrideZone = null;
-        parsed.add(new Parsed());
+        this.parsed.add(new Parsed());
     }
 
     TDateTimeParseContext(TDateTimeParseContext other) {
+
         super();
         this.locale = other.locale;
         this.symbols = other.symbols;
@@ -86,26 +95,29 @@ final class TDateTimeParseContext {
         this.overrideZone = other.overrideZone;
         this.caseSensitive = other.caseSensitive;
         this.strict = other.strict;
-        parsed.add(new Parsed());
+        this.parsed.add(new Parsed());
     }
 
     TDateTimeParseContext copy() {
+
         return new TDateTimeParseContext(this);
     }
 
-    //-----------------------------------------------------------------------
-    TLocale getLocale() {
-        return locale;
+    Locale getLocale() {
+
+        return this.locale;
     }
 
     TDecimalStyle getSymbols() {
-        return symbols;
+
+        return this.symbols;
     }
 
     TChronology getEffectiveChronology() {
+
         TChronology chrono = currentParsed().chrono;
         if (chrono == null) {
-            chrono = overrideChronology;
+            chrono = this.overrideChronology;
             if (chrono == null) {
                 chrono = TIsoChronology.INSTANCE;
             }
@@ -113,16 +125,18 @@ final class TDateTimeParseContext {
         return chrono;
     }
 
-    //-----------------------------------------------------------------------
     boolean isCaseSensitive() {
-        return caseSensitive;
+
+        return this.caseSensitive;
     }
 
     void setCaseSensitive(boolean caseSensitive) {
+
         this.caseSensitive = caseSensitive;
     }
 
     boolean subSequenceEquals(CharSequence cs1, int offset1, CharSequence cs2, int offset2, int length) {
+
         if (offset1 + length > cs1.length() || offset2 + length > cs2.length()) {
             return false;
         }
@@ -138,8 +152,8 @@ final class TDateTimeParseContext {
             for (int i = 0; i < length; i++) {
                 char ch1 = cs1.charAt(offset1 + i);
                 char ch2 = cs2.charAt(offset2 + i);
-                if (ch1 != ch2 && Character.toUpperCase(ch1) != Character.toUpperCase(ch2) &&
-                        Character.toLowerCase(ch1) != Character.toLowerCase(ch2)) {
+                if (ch1 != ch2 && Character.toUpperCase(ch1) != Character.toUpperCase(ch2)
+                        && Character.toLowerCase(ch1) != Character.toLowerCase(ch2)) {
                     return false;
                 }
             }
@@ -148,6 +162,7 @@ final class TDateTimeParseContext {
     }
 
     boolean charEquals(char ch1, char ch2) {
+
         if (isCaseSensitive()) {
             return ch1 == ch2;
         }
@@ -155,50 +170,54 @@ final class TDateTimeParseContext {
     }
 
     static boolean charEqualsIgnoreCase(char c1, char c2) {
-        return c1 == c2 ||
-                Character.toUpperCase(c1) == Character.toUpperCase(c2) ||
-                Character.toLowerCase(c1) == Character.toLowerCase(c2);
+
+        return c1 == c2 || Character.toUpperCase(c1) == Character.toUpperCase(c2)
+                || Character.toLowerCase(c1) == Character.toLowerCase(c2);
     }
 
-    //-----------------------------------------------------------------------
     boolean isStrict() {
-        return strict;
+
+        return this.strict;
     }
 
     void setStrict(boolean strict) {
+
         this.strict = strict;
     }
 
-    //-----------------------------------------------------------------------
     void startOptional() {
-        parsed.add(currentParsed().copy());
+
+        this.parsed.add(currentParsed().copy());
     }
 
     void endOptional(boolean successful) {
+
         if (successful) {
-            parsed.remove(parsed.size() - 2);
+            this.parsed.remove(this.parsed.size() - 2);
         } else {
-            parsed.remove(parsed.size() - 1);
+            this.parsed.remove(this.parsed.size() - 1);
         }
     }
 
-    //-----------------------------------------------------------------------
     private Parsed currentParsed() {
-        return parsed.get(parsed.size() - 1);
+
+        return this.parsed.get(this.parsed.size() - 1);
     }
 
-    //-----------------------------------------------------------------------
     Long getParsed(TTemporalField field) {
+
         return currentParsed().fieldValues.get(field);
     }
 
     int setParsedField(TTemporalField field, long value, int errorPos, int successPos) {
+
         TJdk8Methods.requireNonNull(field, "field");
         Long old = currentParsed().fieldValues.put(field, value);
         return (old != null && old.longValue() != value) ? ~errorPos : successPos;
     }
 
     void setParsed(TChronology chrono) {
+
         TJdk8Methods.requireNonNull(chrono, "chrono");
         Parsed currentParsed = currentParsed();
         currentParsed.chrono = chrono;
@@ -212,46 +231,57 @@ final class TDateTimeParseContext {
         }
     }
 
-    void addChronologyChangedParser(ReducedPrinterParser reducedPrinterParser, long value, int errorPos, int successPos) {
+    void addChronologyChangedParser(ReducedPrinterParser reducedPrinterParser, long value, int errorPos,
+            int successPos) {
+
         Parsed currentParsed = currentParsed();
         if (currentParsed.callbacks == null) {
             currentParsed.callbacks = new ArrayList<Object[]>(2);
         }
-        currentParsed.callbacks.add(new Object[] {reducedPrinterParser, value, errorPos, successPos});
+        currentParsed.callbacks.add(new Object[] { reducedPrinterParser, value, errorPos, successPos });
     }
 
     void setParsed(TZoneId zone) {
+
         TJdk8Methods.requireNonNull(zone, "zone");
         currentParsed().zone = zone;
     }
 
     void setParsedLeapSecond() {
+
         currentParsed().leapSecond = true;
     }
 
-    //-----------------------------------------------------------------------
     Parsed toParsed() {
+
         return currentParsed();
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public String toString() {
+
         return currentParsed().toString();
     }
 
-    //-----------------------------------------------------------------------
     final class Parsed extends TDefaultInterfaceTemporalAccessor {
         TChronology chrono = null;
+
         TZoneId zone = null;
+
         final Map<TTemporalField, Long> fieldValues = new HashMap<TTemporalField, Long>();
+
         boolean leapSecond;
+
         TPeriod excessDays = TPeriod.ZERO;
+
         List<Object[]> callbacks;
 
         private Parsed() {
+
         }
+
         protected Parsed copy() {
+
             Parsed cloned = new Parsed();
             cloned.chrono = this.chrono;
             cloned.zone = this.zone;
@@ -259,59 +289,70 @@ final class TDateTimeParseContext {
             cloned.leapSecond = this.leapSecond;
             return cloned;
         }
+
         @Override
         public String toString() {
-            return fieldValues.toString() + "," + chrono + "," + zone;
+
+            return this.fieldValues.toString() + "," + this.chrono + "," + this.zone;
         }
+
         @Override
         public boolean isSupported(TTemporalField field) {
-            return fieldValues.containsKey(field);
+
+            return this.fieldValues.containsKey(field);
         }
+
         @Override
         public int get(TTemporalField field) {
-            if (fieldValues.containsKey(field) == false) {
+
+            if (this.fieldValues.containsKey(field) == false) {
                 throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
             }
-            long value = fieldValues.get(field);
+            long value = this.fieldValues.get(field);
             return TJdk8Methods.safeToInt(value);
         }
+
         @Override
         public long getLong(TTemporalField field) {
-            if (fieldValues.containsKey(field) == false) {
+
+            if (this.fieldValues.containsKey(field) == false) {
                 throw new TUnsupportedTemporalTypeException("Unsupported field: " + field);
             }
-            return fieldValues.get(field);
+            return this.fieldValues.get(field);
         }
+
         @SuppressWarnings("unchecked")
         @Override
         public <R> R query(TTemporalQuery<R> query) {
+
             if (query == TTemporalQueries.chronology()) {
-                return (R) chrono;
+                return (R) this.chrono;
             }
             if (query == TTemporalQueries.zoneId() || query == TTemporalQueries.zone()) {
-                return (R) zone;
+                return (R) this.zone;
             }
             return super.query(query);
         }
 
         TDateTimeBuilder toBuilder() {
+
             TDateTimeBuilder builder = new TDateTimeBuilder();
-            builder.fieldValues.putAll(fieldValues);
+            builder.fieldValues.putAll(this.fieldValues);
             builder.chrono = getEffectiveChronology();
-            if (zone != null) {
-                builder.zone = zone;
+            if (this.zone != null) {
+                builder.zone = this.zone;
             } else {
-                builder.zone = overrideZone;
+                builder.zone = TDateTimeParseContext.this.overrideZone;
             }
-            builder.leapSecond = leapSecond;
-            builder.excessDays = excessDays;
+            builder.leapSecond = this.leapSecond;
+            builder.excessDays = this.excessDays;
             return builder;
         }
     }
 
-    //-------------------------------------------------------------------------
     // for testing
-    void setLocale(TLocale locale) {
+    void setLocale(Locale locale) {
+
         TJdk8Methods.requireNonNull(locale, "locale");
         this.locale = locale;
     }

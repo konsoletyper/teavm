@@ -32,17 +32,9 @@
 package org.teavm.classlib.java.time.chrono;
 
 import static org.teavm.classlib.java.time.chrono.TMinguoChronology.YEARS_DIFFERENCE;
-import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
-import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 
-import java.io.DataInput;
-import java.io.DataOutput;
-import java.io.IOException;
-import java.io.Serializable;
-
 import org.teavm.classlib.java.time.TClock;
-import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalTime;
 import org.teavm.classlib.java.time.TPeriod;
@@ -53,64 +45,66 @@ import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
 import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
 import org.teavm.classlib.java.time.temporal.TTemporalAmount;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
-import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.classlib.java.time.temporal.TValueRange;
 
-public final class TMinguoDate
-        extends ChronoDateImpl<TMinguoDate>
-        implements Serializable {
-
-    private static final long serialVersionUID = 1300372329181994526L;
+public final class TMinguoDate extends ChronoDateImpl<TMinguoDate> {
 
     private final TLocalDate isoDate;
 
-    //-----------------------------------------------------------------------
     public static TMinguoDate now() {
+
         return now(TClock.systemDefaultZone());
     }
 
     public static TMinguoDate now(TZoneId zone) {
+
         return now(TClock.system(zone));
     }
 
     public static TMinguoDate now(TClock clock) {
+
         return new TMinguoDate(TLocalDate.now(clock));
     }
 
     public static TMinguoDate of(int prolepticYear, int month, int dayOfMonth) {
+
         return TMinguoChronology.INSTANCE.date(prolepticYear, month, dayOfMonth);
     }
 
     public static TMinguoDate from(TTemporalAccessor temporal) {
+
         return TMinguoChronology.INSTANCE.date(temporal);
     }
 
-    //-----------------------------------------------------------------------
     TMinguoDate(TLocalDate date) {
+
         TJdk8Methods.requireNonNull(date, "date");
         this.isoDate = date;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TMinguoChronology getChronology() {
+
         return TMinguoChronology.INSTANCE;
     }
 
     @Override
     public TMinguoEra getEra() {
+
         return (TMinguoEra) super.getEra();
     }
 
     @Override
     public int lengthOfMonth() {
-        return isoDate.lengthOfMonth();
+
+        return this.isoDate.lengthOfMonth();
     }
 
     @Override
     public TValueRange range(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             if (isSupported(field)) {
                 TChronoField f = (TChronoField) field;
@@ -118,10 +112,11 @@ public final class TMinguoDate
                     case DAY_OF_MONTH:
                     case DAY_OF_YEAR:
                     case ALIGNED_WEEK_OF_MONTH:
-                        return isoDate.range(field);
+                        return this.isoDate.range(field);
                     case YEAR_OF_ERA: {
                         TValueRange range = YEAR.range();
-                        long max = (getProlepticYear() <= 0 ? -range.getMinimum() + 1 + YEARS_DIFFERENCE : range.getMaximum() - YEARS_DIFFERENCE);
+                        long max = (getProlepticYear() <= 0 ? -range.getMinimum() + 1 + YEARS_DIFFERENCE
+                                : range.getMaximum() - YEARS_DIFFERENCE);
                         return TValueRange.of(1, max);
                     }
                 }
@@ -134,6 +129,7 @@ public final class TMinguoDate
 
     @Override
     public long getLong(TTemporalField field) {
+
         if (field instanceof TChronoField) {
             switch ((TChronoField) field) {
                 case PROLEPTIC_MONTH:
@@ -147,27 +143,30 @@ public final class TMinguoDate
                 case ERA:
                     return (getProlepticYear() >= 1 ? 1 : 0);
             }
-            return isoDate.getLong(field);
+            return this.isoDate.getLong(field);
         }
         return field.getFrom(this);
     }
 
     private long getProlepticMonth() {
-        return getProlepticYear() * 12L + isoDate.getMonthValue() - 1;
+
+        return getProlepticYear() * 12L + this.isoDate.getMonthValue() - 1;
     }
 
     private int getProlepticYear() {
-        return isoDate.getYear() - YEARS_DIFFERENCE;
+
+        return this.isoDate.getYear() - YEARS_DIFFERENCE;
     }
 
-    //-----------------------------------------------------------------------
     @Override
     public TMinguoDate with(TTemporalAdjuster adjuster) {
+
         return (TMinguoDate) super.with(adjuster);
     }
 
     @Override
     public TMinguoDate with(TTemporalField field, long newValue) {
+
         if (field instanceof TChronoField) {
             TChronoField f = (TChronoField) field;
             if (getLong(f) == newValue) {
@@ -183,79 +182,90 @@ public final class TMinguoDate
                     int nvalue = getChronology().range(f).checkValidIntValue(newValue, f);
                     switch (f) {
                         case YEAR_OF_ERA:
-                            return with(isoDate.withYear(getProlepticYear() >= 1 ? nvalue + YEARS_DIFFERENCE : (1 - nvalue)  + YEARS_DIFFERENCE));
+                            return with(this.isoDate.withYear(getProlepticYear() >= 1 ? nvalue + YEARS_DIFFERENCE
+                                    : (1 - nvalue) + YEARS_DIFFERENCE));
                         case YEAR:
-                            return with(isoDate.withYear(nvalue + YEARS_DIFFERENCE));
+                            return with(this.isoDate.withYear(nvalue + YEARS_DIFFERENCE));
                         case ERA:
-                            return with(isoDate.withYear((1 - getProlepticYear()) + YEARS_DIFFERENCE));
+                            return with(this.isoDate.withYear((1 - getProlepticYear()) + YEARS_DIFFERENCE));
                     }
                 }
             }
-            return with(isoDate.with(field, newValue));
+            return with(this.isoDate.with(field, newValue));
         }
         return field.adjustInto(this, newValue);
     }
 
     @Override
     public TMinguoDate plus(TTemporalAmount amount) {
+
         return (TMinguoDate) super.plus(amount);
     }
 
     @Override
     public TMinguoDate plus(long amountToAdd, TTemporalUnit unit) {
+
         return (TMinguoDate) super.plus(amountToAdd, unit);
     }
 
     @Override
     public TMinguoDate minus(TTemporalAmount amount) {
+
         return (TMinguoDate) super.minus(amount);
     }
 
     @Override
     public TMinguoDate minus(long amountToAdd, TTemporalUnit unit) {
+
         return (TMinguoDate) super.minus(amountToAdd, unit);
     }
 
-    //-----------------------------------------------------------------------
     @Override
     TMinguoDate plusYears(long years) {
-        return with(isoDate.plusYears(years));
+
+        return with(this.isoDate.plusYears(years));
     }
 
     @Override
     TMinguoDate plusMonths(long months) {
-        return with(isoDate.plusMonths(months));
+
+        return with(this.isoDate.plusMonths(months));
     }
 
     @Override
     TMinguoDate plusDays(long days) {
-        return with(isoDate.plusDays(days));
+
+        return with(this.isoDate.plusDays(days));
     }
 
     private TMinguoDate with(TLocalDate newDate) {
-        return (newDate.equals(isoDate) ? this : new TMinguoDate(newDate));
+
+        return (newDate.equals(this.isoDate) ? this : new TMinguoDate(newDate));
     }
 
     @Override
     @SuppressWarnings("unchecked")
     public final TChronoLocalDateTime<TMinguoDate> atTime(TLocalTime localTime) {
+
         return (TChronoLocalDateTime<TMinguoDate>) super.atTime(localTime);
     }
 
     @Override
     public TChronoPeriod until(TChronoLocalDate endDate) {
-        TPeriod period = isoDate.until(endDate);
+
+        TPeriod period = this.isoDate.until(endDate);
         return getChronology().period(period.getYears(), period.getMonths(), period.getDays());
     }
 
-    @Override  // override for performance
+    @Override
     public long toEpochDay() {
-        return isoDate.toEpochDay();
+
+        return this.isoDate.toEpochDay();
     }
 
-    //-------------------------------------------------------------------------
-    @Override  // override for performance
+    @Override
     public boolean equals(Object obj) {
+
         if (this == obj) {
             return true;
         }
@@ -266,30 +276,10 @@ public final class TMinguoDate
         return false;
     }
 
-    @Override  // override for performance
+    @Override
     public int hashCode() {
-        return getChronology().getId().hashCode() ^ isoDate.hashCode();
+
+        return getChronology().getId().hashCode() ^ this.isoDate.hashCode();
     }
-
-    //-----------------------------------------------------------------------
-    private Object writeReplace() {
-        return new Ser(Ser.MINGUO_DATE_TYPE, this);
-    }
-
-    void writeExternal(DataOutput out) throws IOException {
-        // MinguoChrono is implicit in the MINGUO_DATE_TYPE
-        out.writeInt(get(YEAR));
-        out.writeByte(get(MONTH_OF_YEAR));
-        out.writeByte(get(DAY_OF_MONTH));
-
-    }
-
-    static TChronoLocalDate readExternal(DataInput in) throws IOException {
-        int year = in.readInt();
-        int month = in.readByte();
-        int dayOfMonth = in.readByte();
-        return TMinguoChronology.INSTANCE.date(year, month, dayOfMonth);
-    }
-
 
 }
