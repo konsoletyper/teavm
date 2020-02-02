@@ -44,9 +44,9 @@ import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 import static org.teavm.classlib.java.time.temporal.TChronoField.PROLEPTIC_MONTH;
 import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
 
-import java.io.Serializable;
 import java.util.Objects;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.chrono.TChronoLocalDate;
 import org.teavm.classlib.java.time.chrono.TEra;
 import org.teavm.classlib.java.time.chrono.TIsoChronology;
@@ -66,7 +66,7 @@ import org.teavm.classlib.java.time.temporal.TValueRange;
 import org.teavm.classlib.java.time.zone.TZoneOffsetTransition;
 import org.teavm.classlib.java.time.zone.TZoneRules;
 
-public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTemporalAdjuster, Serializable {
+public final class TLocalDate implements TChronoLocalDate, TSerializable {
 
     public static final TLocalDate MIN = TLocalDate.of(TYear.MIN_VALUE, 1, 1);
 
@@ -236,7 +236,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
     @Override
     public boolean isSupported(TTemporalField field) {
 
-        return super.isSupported(field);
+        return TChronoLocalDate.super.isSupported(field);
     }
 
     @Override
@@ -269,7 +269,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
         if (field instanceof TChronoField) {
             return get0(field);
         }
-        return super.get(field);
+        return TChronoLocalDate.super.get(field);
     }
 
     @Override
@@ -334,7 +334,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
     @Override
     public TEra getEra() {
 
-        return super.getEra();
+        return TChronoLocalDate.super.getEra();
     }
 
     public int getYear() {
@@ -591,13 +591,13 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
         if (query == TTemporalQueries.localDate()) {
             return (R) this;
         }
-        return super.query(query);
+        return TChronoLocalDate.super.query(query);
     }
 
     @Override
     public TTemporal adjustInto(TTemporal temporal) {
 
-        return super.adjustInto(temporal);
+        return TChronoLocalDate.super.adjustInto(temporal);
     }
 
     @Override
@@ -735,7 +735,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
         if (other instanceof TLocalDate) {
             return compareTo0((TLocalDate) other);
         }
-        return super.compareTo(other);
+        return TChronoLocalDate.super.compareTo(other);
     }
 
     int compareTo0(TLocalDate otherDate) {
@@ -756,7 +756,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
         if (other instanceof TLocalDate) {
             return compareTo0((TLocalDate) other) > 0;
         }
-        return super.isAfter(other);
+        return TChronoLocalDate.super.isAfter(other);
     }
 
     @Override
@@ -765,7 +765,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
         if (other instanceof TLocalDate) {
             return compareTo0((TLocalDate) other) < 0;
         }
-        return super.isBefore(other);
+        return TChronoLocalDate.super.isBefore(other);
     }
 
     @Override
@@ -774,7 +774,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
         if (other instanceof TLocalDate) {
             return compareTo0((TLocalDate) other) == 0;
         }
-        return super.isEqual(other);
+        return TChronoLocalDate.super.isEqual(other);
     }
 
     @Override
@@ -825,7 +825,7 @@ public final class TLocalDate extends TChronoLocalDate implements TTemporal, TTe
     @Override
     public String format(TDateTimeFormatter formatter) {
 
-        return super.format(formatter);
+        return TChronoLocalDate.super.format(formatter);
     }
 
 }

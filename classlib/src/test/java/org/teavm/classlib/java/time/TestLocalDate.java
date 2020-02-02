@@ -58,11 +58,6 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
 import java.lang.reflect.Field;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
@@ -144,18 +139,6 @@ public class TestLocalDate extends AbstractDateTimeTest {
         List<TTemporalField> list = new ArrayList<>(Arrays.<TTemporalField> asList(TChronoField.values()));
         list.removeAll(validFields());
         return list;
-    }
-
-    @Test
-    public void test_serialization() throws IOException, ClassNotFoundException {
-
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(this.TEST_2007_07_15);
-        oos.close();
-
-        ObjectInputStream ois = new ObjectInputStream(new ByteArrayInputStream(baos.toByteArray()));
-        assertEquals(ois.readObject(), this.TEST_2007_07_15);
     }
 
     @Test

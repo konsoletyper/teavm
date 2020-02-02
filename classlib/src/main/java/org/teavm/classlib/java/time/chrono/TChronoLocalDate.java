@@ -31,12 +31,9 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
-import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
 import static org.teavm.classlib.java.time.temporal.TChronoField.EPOCH_DAY;
 import static org.teavm.classlib.java.time.temporal.TChronoField.ERA;
-import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
-import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR_OF_ERA;
 
 import java.util.Comparator;
 import java.util.Objects;
@@ -56,20 +53,14 @@ import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 
-public abstract class TChronoLocalDate implements TTemporal, TTemporalAdjuster, Comparable<TChronoLocalDate> {
+public interface TChronoLocalDate extends TTemporal, TTemporalAdjuster, Comparable<TChronoLocalDate> {
 
     public static Comparator<TChronoLocalDate> timeLineOrder() {
 
-        return DATE_COMPARATOR;
-    }
-
-    private static final Comparator<TChronoLocalDate> DATE_COMPARATOR = new Comparator<TChronoLocalDate>() {
-        @Override
-        public int compare(TChronoLocalDate date1, TChronoLocalDate date2) {
-
+        return (date1, date2) -> {
             return Long.compare(date1.toEpochDay(), date2.toEpochDay());
-        }
-    };
+        };
+    }
 
     public static TChronoLocalDate from(TTemporalAccessor temporal) {
 
@@ -84,27 +75,27 @@ public abstract class TChronoLocalDate implements TTemporal, TTemporalAdjuster, 
         return chrono.date(temporal);
     }
 
-    public abstract TChronology getChronology();
+    TChronology getChronology();
 
-    public TEra getEra() {
+    default TEra getEra() {
 
         return getChronology().eraOf(get(ERA));
     }
 
-    public boolean isLeapYear() {
+    default boolean isLeapYear() {
 
         return getChronology().isLeapYear(getLong(YEAR));
     }
 
-    public abstract int lengthOfMonth();
+    int lengthOfMonth();
 
-    public int lengthOfYear() {
+    default int lengthOfYear() {
 
         return (isLeapYear() ? 366 : 365);
     }
 
     @Override
-    public boolean isSupported(TTemporalField field) {
+    default boolean isSupported(TTemporalField field) {
 
         if (field instanceof TChronoField) {
             return field.isDateBased();
@@ -113,7 +104,7 @@ public abstract class TChronoLocalDate implements TTemporal, TTemporalAdjuster, 
     }
 
     @Override
-    public boolean isSupported(TTemporalUnit unit) {
+    default boolean isSupported(TTemporalUnit unit) {
 
         if (unit instanceof TChronoUnit) {
             return unit.isDateBased();
@@ -122,38 +113,39 @@ public abstract class TChronoLocalDate implements TTemporal, TTemporalAdjuster, 
     }
 
     @Override
-    public TChronoLocalDate with(TTemporalAdjuster adjuster) {
+    default TChronoLocalDate with(TTemporalAdjuster adjuster) {
 
         return ((TAbstractChronology) getChronology()).ensureChronoLocalDate(TTemporal.super.with(adjuster));
     }
 
     @Override
-    public abstract TChronoLocalDate with(TTemporalField field, long newValue);
+    TChronoLocalDate with(TTemporalField field, long newValue);
 
     @Override
-    public TChronoLocalDate plus(TTemporalAmount amount) {
+    default TChronoLocalDate plus(TTemporalAmount amount) {
 
         return ((TAbstractChronology) getChronology()).ensureChronoLocalDate(TTemporal.super.plus(amount));
     }
 
     @Override
-    public abstract TChronoLocalDate plus(long amountToAdd, TTemporalUnit unit);
+    TChronoLocalDate plus(long amountToAdd, TTemporalUnit unit);
 
     @Override
-    public TChronoLocalDate minus(TTemporalAmount amount) {
+    default TChronoLocalDate minus(TTemporalAmount amount) {
 
         return ((TAbstractChronology) getChronology()).ensureChronoLocalDate(TTemporal.super.minus(amount));
     }
 
     @Override
-    public TChronoLocalDate minus(long amountToSubtract, TTemporalUnit unit) {
+    default TChronoLocalDate minus(long amountToSubtract, TTemporalUnit unit) {
 
-        return ((TAbstractChronology) getChronology()).ensureChronoLocalDate(TTemporal.super.minus(amountToSubtract, unit));
+        return ((TAbstractChronology) getChronology())
+                .ensureChronoLocalDate(TTemporal.super.minus(amountToSubtract, unit));
     }
 
     @SuppressWarnings("unchecked")
     @Override
-    public <R> R query(TTemporalQuery<R> query) {
+    default <R> R query(TTemporalQuery<R> query) {
 
         if (query == TTemporalQueries.chronology()) {
             return (R) getChronology();
@@ -169,31 +161,31 @@ public abstract class TChronoLocalDate implements TTemporal, TTemporalAdjuster, 
     }
 
     @Override
-    public TTemporal adjustInto(TTemporal temporal) {
+    default TTemporal adjustInto(TTemporal temporal) {
 
         return temporal.with(EPOCH_DAY, toEpochDay());
     }
 
-    public abstract TChronoPeriod until(TChronoLocalDate endDateExclusive);
+    TChronoPeriod until(TChronoLocalDate endDateExclusive);
 
-    public String format(TDateTimeFormatter formatter) {
+    default String format(TDateTimeFormatter formatter) {
 
         Objects.requireNonNull(formatter, "formatter");
         return formatter.format(this);
     }
 
-    public TChronoLocalDateTime<?> atTime(TLocalTime localTime) {
+    default TChronoLocalDateTime<?> atTime(TLocalTime localTime) {
 
         return TChronoLocalDateTimeImpl.of(this, localTime);
     }
 
-    public long toEpochDay() {
+    default long toEpochDay() {
 
         return getLong(EPOCH_DAY);
     }
 
     @Override
-    public int compareTo(TChronoLocalDate other) {
+    default int compareTo(TChronoLocalDate other) {
 
         int cmp = Long.compare(toEpochDay(), other.toEpochDay());
         if (cmp == 0) {
@@ -202,51 +194,19 @@ public abstract class TChronoLocalDate implements TTemporal, TTemporalAdjuster, 
         return cmp;
     }
 
-    public boolean isAfter(TChronoLocalDate other) {
+    default boolean isAfter(TChronoLocalDate other) {
 
         return toEpochDay() > other.toEpochDay();
     }
 
-    public boolean isBefore(TChronoLocalDate other) {
+    default boolean isBefore(TChronoLocalDate other) {
 
         return toEpochDay() < other.toEpochDay();
     }
 
-    public boolean isEqual(TChronoLocalDate other) {
+    default boolean isEqual(TChronoLocalDate other) {
 
         return toEpochDay() == other.toEpochDay();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-
-        if (this == obj) {
-            return true;
-        }
-        if (obj instanceof TChronoLocalDate) {
-            return compareTo((TChronoLocalDate) obj) == 0;
-        }
-        return false;
-    }
-
-    @Override
-    public int hashCode() {
-
-        long epDay = toEpochDay();
-        return getChronology().hashCode() ^ ((int) (epDay ^ (epDay >>> 32)));
-    }
-
-    @Override
-    public String toString() {
-
-        // getLong() reduces chances of exceptions in toString()
-        long yoe = getLong(YEAR_OF_ERA);
-        long moy = getLong(MONTH_OF_YEAR);
-        long dom = getLong(DAY_OF_MONTH);
-        StringBuilder buf = new StringBuilder(30);
-        buf.append(getChronology().toString()).append(" ").append(getEra()).append(" ").append(yoe)
-                .append(moy < 10 ? "-0" : "-").append(moy).append(dom < 10 ? "-0" : "-").append(dom);
-        return buf.toString();
     }
 
 }

@@ -31,17 +31,19 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
+import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
+import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
+import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR_OF_ERA;
+
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalTime;
 import org.teavm.classlib.java.time.temporal.TChronoUnit;
 import org.teavm.classlib.java.time.temporal.TTemporal;
-import org.teavm.classlib.java.time.temporal.TTemporalAdjuster;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 
-abstract class TChronoLocalDateImpl<D extends TChronoLocalDate> extends TChronoLocalDate
-        implements TTemporal, TTemporalAdjuster, TSerializable {
+abstract class TChronoLocalDateImpl<D extends TChronoLocalDate> implements TChronoLocalDate, TSerializable {
 
     TChronoLocalDateImpl() {
 
@@ -132,6 +134,38 @@ abstract class TChronoLocalDateImpl<D extends TChronoLocalDate> extends TChronoL
     public TChronoPeriod until(TChronoLocalDate endDate) {
 
         throw new UnsupportedOperationException();
+    }
+
+    @Override
+    public boolean equals(Object obj) {
+
+        if (this == obj) {
+            return true;
+        }
+        if (obj instanceof TChronoLocalDate) {
+            return compareTo((TChronoLocalDate) obj) == 0;
+        }
+        return false;
+    }
+
+    @Override
+    public int hashCode() {
+
+        long epDay = toEpochDay();
+        return getChronology().hashCode() ^ ((int) (epDay ^ (epDay >>> 32)));
+    }
+
+    @Override
+    public String toString() {
+
+        // getLong() reduces chances of exceptions in toString()
+        long yoe = getLong(YEAR_OF_ERA);
+        long moy = getLong(MONTH_OF_YEAR);
+        long dom = getLong(DAY_OF_MONTH);
+        StringBuilder buf = new StringBuilder(30);
+        buf.append(getChronology().toString()).append(" ").append(getEra()).append(" ").append(yoe)
+                .append(moy < 10 ? "-0" : "-").append(moy).append(dom < 10 ? "-0" : "-").append(dom);
+        return buf.toString();
     }
 
 }
