@@ -49,8 +49,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.zone.TZoneOffsetTransition;
 import org.teavm.classlib.java.time.zone.TZoneRules;
 
-final class TChronoZonedDateTimeImpl<D extends TChronoLocalDate> extends TChronoZonedDateTime<D>
-        implements TSerializable {
+final class TChronoZonedDateTimeImpl<D extends TChronoLocalDate> implements TChronoZonedDateTime<D>, TSerializable {
 
     private final TChronoLocalDateTimeImpl<D> dateTime;
 

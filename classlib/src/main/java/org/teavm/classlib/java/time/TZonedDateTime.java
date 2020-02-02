@@ -55,7 +55,7 @@ import org.teavm.classlib.java.time.temporal.TValueRange;
 import org.teavm.classlib.java.time.zone.TZoneOffsetTransition;
 import org.teavm.classlib.java.time.zone.TZoneRules;
 
-public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> implements TTemporal, TSerializable {
+public final class TZonedDateTime implements TChronoZonedDateTime<TLocalDate>, TSerializable {
 
     public static final TTemporalQuery<TZonedDateTime> FROM = new TTemporalQuery<TZonedDateTime>() {
         @Override
@@ -287,7 +287,7 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
             }
             return this.dateTime.get(field);
         }
-        return super.get(field);
+        return TChronoZonedDateTime.super.get(field);
     }
 
     @Override
@@ -614,7 +614,7 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
         if (query == TTemporalQueries.localDate()) {
             return (R) toLocalDate();
         }
-        return super.query(query);
+        return TChronoZonedDateTime.super.query(query);
     }
 
     @Override
@@ -688,7 +688,7 @@ public final class TZonedDateTime extends TChronoZonedDateTime<TLocalDate> imple
     @Override
     public String format(TDateTimeFormatter formatter) {
 
-        return super.format(formatter);
+        return TChronoZonedDateTime.super.format(formatter);
     }
 
 }
