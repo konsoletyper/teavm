@@ -53,7 +53,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalAmount;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 
-public final class TPeriod extends TChronoPeriod implements TSerializable {
+public final class TPeriod implements TChronoPeriod, TSerializable {
 
     public static final TPeriod ZERO = new TPeriod(0, 0, 0);
 

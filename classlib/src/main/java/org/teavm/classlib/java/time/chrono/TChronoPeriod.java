@@ -38,9 +38,9 @@ import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalAmount;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 
-public abstract class TChronoPeriod implements TTemporalAmount {
+public interface TChronoPeriod extends TTemporalAmount {
 
-    public static TChronoPeriod between(TChronoLocalDate startDateInclusive, TChronoLocalDate endDateExclusive) {
+    static TChronoPeriod between(TChronoLocalDate startDateInclusive, TChronoLocalDate endDateExclusive) {
 
         Objects.requireNonNull(startDateInclusive, "startDateInclusive");
         Objects.requireNonNull(endDateExclusive, "endDateExclusive");
@@ -48,14 +48,14 @@ public abstract class TChronoPeriod implements TTemporalAmount {
     }
 
     @Override
-    public abstract long get(TTemporalUnit unit);
+    long get(TTemporalUnit unit);
 
     @Override
-    public abstract List<TTemporalUnit> getUnits();
+    List<TTemporalUnit> getUnits();
 
-    public abstract TChronology getChronology();
+    TChronology getChronology();
 
-    public boolean isZero() {
+    default boolean isZero() {
 
         for (TTemporalUnit unit : getUnits()) {
             if (get(unit) != 0) {
@@ -65,7 +65,7 @@ public abstract class TChronoPeriod implements TTemporalAmount {
         return true;
     }
 
-    public boolean isNegative() {
+    default boolean isNegative() {
 
         for (TTemporalUnit unit : getUnits()) {
             if (get(unit) < 0) {
@@ -75,32 +75,23 @@ public abstract class TChronoPeriod implements TTemporalAmount {
         return false;
     }
 
-    public abstract TChronoPeriod plus(TTemporalAmount amountToAdd);
+    TChronoPeriod plus(TTemporalAmount amountToAdd);
 
-    public abstract TChronoPeriod minus(TTemporalAmount amountToSubtract);
+    TChronoPeriod minus(TTemporalAmount amountToSubtract);
 
-    public abstract TChronoPeriod multipliedBy(int scalar);
+    TChronoPeriod multipliedBy(int scalar);
 
-    public TChronoPeriod negated() {
+    default TChronoPeriod negated() {
 
         return multipliedBy(-1);
     }
 
-    public abstract TChronoPeriod normalized();
+    TChronoPeriod normalized();
 
     @Override
-    public abstract TTemporal addTo(TTemporal temporal);
+    TTemporal addTo(TTemporal temporal);
 
     @Override
-    public abstract TTemporal subtractFrom(TTemporal temporal);
-
-    @Override
-    public abstract boolean equals(Object obj);
-
-    @Override
-    public abstract int hashCode();
-
-    @Override
-    public abstract String toString();
+    TTemporal subtractFrom(TTemporal temporal);
 
 }

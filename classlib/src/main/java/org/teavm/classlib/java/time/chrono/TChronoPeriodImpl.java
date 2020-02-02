@@ -35,12 +35,12 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
-import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporal;
@@ -49,9 +49,7 @@ import org.teavm.classlib.java.time.temporal.TTemporalQueries;
 import org.teavm.classlib.java.time.temporal.TTemporalUnit;
 import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 
-final class TChronoPeriodImpl extends TChronoPeriod implements Serializable {
-
-    private static final long serialVersionUID = 275618735781L;
+final class TChronoPeriodImpl implements TChronoPeriod, TSerializable {
 
     private final TChronology chronology;
 
