@@ -101,7 +101,7 @@ public interface Node extends JSObject {
     String getTextContent();
 
     @JSProperty
-    void getTextContent(String textContent);
+    void setTextContent(String textContent);
     
     @JSProperty
     Document getOwnerDocument();
