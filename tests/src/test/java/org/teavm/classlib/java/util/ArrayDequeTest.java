@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class ArrayDequeTest {
     @Test
     public void addsToFront() {
