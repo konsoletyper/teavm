@@ -179,6 +179,7 @@ public final class ExceptionHandling {
         int size = callStackSize();
 
         ShadowStack.allocStack(1);
+        ShadowStack.removeGCRoot(0);
         StackTraceElement[] target = new StackTraceElement[size];
         ShadowStack.registerGCRoot(0, target);
 
