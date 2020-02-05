@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.text;
 
 import java.util.Arrays;
+import java.util.Locale;
 import java.util.Objects;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.io.TSerializable;
@@ -235,4 +236,13 @@ public class TDateFormatSymbols implements TSerializable, TCloneable {
     public void setZoneStrings(String[][] data) {
         zoneStrings = data.clone();
     }
+    
+    public static final TDateFormatSymbols getInstance() {
+        return new TDateFormatSymbols();
+    }
+
+    public static final TDateFormatSymbols getInstance(TLocale locale) {   
+        return new TDateFormatSymbols(locale);
+    }
+    
 }
