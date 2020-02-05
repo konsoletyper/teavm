@@ -33,35 +33,42 @@ package org.teavm.classlib.java.time;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+
+@RunWith(TeaVMTestRunner.class)
 public class TestClock {
 
-    static class MockInstantClock extends TClock {
+    static class MockInstantClock extends Clock {
         final long millis;
 
-        final TZoneId zone;
+        final ZoneId zone;
 
-        MockInstantClock(long millis, TZoneId zone) {
+        MockInstantClock(long millis, ZoneId zone) {
 
             this.millis = millis;
             this.zone = zone;
         }
 
         @Override
-        public TInstant instant() {
+        public Instant instant() {
 
-            return TInstant.ofEpochMilli(this.millis);
+            return Instant.ofEpochMilli(this.millis);
         }
 
         @Override
-        public TZoneId getZone() {
+        public ZoneId getZone() {
 
             return this.zone;
         }
 
         @Override
-        public TClock withZone(TZoneId timeZone) {
+        public Clock withZone(ZoneId timeZone) {
 
             return new MockInstantClock(this.millis, timeZone);
         }
@@ -85,11 +92,11 @@ public class TestClock {
         }
     }
 
-    private static final TInstant INSTANT = TInstant.ofEpochSecond(1873687, 357000000);
+    private static final Instant INSTANT = Instant.ofEpochSecond(1873687, 357000000);
 
-    private static final TZoneId ZONE = TZoneId.of("Europe/Paris");
+    private static final ZoneId ZONE = ZoneId.of("Europe/Paris");
 
-    private static final TClock MOCK_INSTANT = new MockInstantClock(INSTANT.toEpochMilli(), ZONE);
+    private static final Clock MOCK_INSTANT = new MockInstantClock(INSTANT.toEpochMilli(), ZONE);
 
     @Test
     public void test_mockInstantClock_get() {
@@ -102,8 +109,8 @@ public class TestClock {
     @Test
     public void test_mockInstantClock_withZone() {
 
-        TZoneId london = TZoneId.of("Europe/London");
-        TClock changed = MOCK_INSTANT.withZone(london);
+        ZoneId london = ZoneId.of("Europe/London");
+        Clock changed = MOCK_INSTANT.withZone(london);
         assertEquals(MOCK_INSTANT.instant(), INSTANT);
         assertEquals(MOCK_INSTANT.millis(), INSTANT.toEpochMilli());
         assertEquals(changed.getZone(), london);

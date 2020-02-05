@@ -143,7 +143,7 @@ public class TestZoneIdParser extends AbstractTestPrinterParser {
                     TIsoChronology.INSTANCE);
             ZoneIdPrinterParser pp = new ZoneIdPrinterParser(TTemporalQueries.zoneId(), null);
             int result = pp.parse(this.parseContext, parse, 0);
-            assertEquals(result, parse.length());
+            assertEquals(parse + " expected " + expected, result, parse.length());
             assertParsed(expected);
         }
     }

@@ -35,22 +35,30 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.fail;
 
-import org.junit.Test;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+
+@RunWith(TeaVMTestRunner.class)
 public class TestClock_System extends AbstractTest {
 
-    private static final TZoneId MOSCOW = TZoneId.of("Europe/Moscow");
+    private static final ZoneId MOSCOW = ZoneId.of("Europe/Moscow");
 
-    private static final TZoneId PARIS = TZoneId.of("Europe/Paris");
+    private static final ZoneId PARIS = ZoneId.of("Europe/Paris");
 
     @Test
     public void test_instant() {
 
-        TClock system = TClock.systemUTC();
-        assertEquals(system.getZone(), TZoneOffset.UTC);
+        Clock system = Clock.systemUTC();
+        assertEquals(system.getZone(), ZoneOffset.UTC);
         for (int i = 0; i < 10000; i++) {
             // assume can eventually get these within 10 milliseconds
-            TInstant instant = system.instant();
+            Instant instant = system.instant();
             long systemMillis = System.currentTimeMillis();
             if (systemMillis - instant.toEpochMilli() < 10) {
                 return; // success
@@ -62,8 +70,8 @@ public class TestClock_System extends AbstractTest {
     @Test
     public void test_millis() {
 
-        TClock system = TClock.systemUTC();
-        assertEquals(system.getZone(), TZoneOffset.UTC);
+        Clock system = Clock.systemUTC();
+        assertEquals(system.getZone(), ZoneOffset.UTC);
         for (int i = 0; i < 10000; i++) {
             // assume can eventually get these within 10 milliseconds
             long instant = system.millis();
@@ -78,23 +86,23 @@ public class TestClock_System extends AbstractTest {
     @Test
     public void test_systemUTC() {
 
-        TClock test = TClock.systemUTC();
-        assertEquals(test.getZone(), TZoneOffset.UTC);
-        assertEquals(test, TClock.system(TZoneOffset.UTC));
+        Clock test = Clock.systemUTC();
+        assertEquals(test.getZone(), ZoneOffset.UTC);
+        assertEquals(test, Clock.system(ZoneOffset.UTC));
     }
 
     @Test
     public void test_systemDefaultZone() {
 
-        TClock test = TClock.systemDefaultZone();
-        assertEquals(test.getZone(), TZoneId.systemDefault());
-        assertEquals(test, TClock.system(TZoneId.systemDefault()));
+        Clock test = Clock.systemDefaultZone();
+        assertEquals(test.getZone(), ZoneId.systemDefault());
+        assertEquals(test, Clock.system(ZoneId.systemDefault()));
     }
 
     @Test
     public void test_system_ZoneId() {
 
-        TClock test = TClock.system(PARIS);
+        Clock test = Clock.system(PARIS);
         assertEquals(test.getZone(), PARIS);
     }
 
@@ -107,8 +115,8 @@ public class TestClock_System extends AbstractTest {
     @Test
     public void test_withZone() {
 
-        TClock test = TClock.system(PARIS);
-        TClock changed = test.withZone(MOSCOW);
+        Clock test = Clock.system(PARIS);
+        Clock changed = test.withZone(MOSCOW);
         assertEquals(test.getZone(), PARIS);
         assertEquals(changed.getZone(), MOSCOW);
     }
@@ -116,16 +124,16 @@ public class TestClock_System extends AbstractTest {
     @Test
     public void test_withZone_same() {
 
-        TClock test = TClock.system(PARIS);
-        TClock changed = test.withZone(PARIS);
+        Clock test = Clock.system(PARIS);
+        Clock changed = test.withZone(PARIS);
         assertSame(test, changed);
     }
 
     @Test
     public void test_withZone_fromUTC() {
 
-        TClock test = TClock.systemUTC();
-        TClock changed = test.withZone(PARIS);
+        Clock test = Clock.systemUTC();
+        Clock changed = test.withZone(PARIS);
         assertEquals(changed.getZone(), PARIS);
     }
 
@@ -138,15 +146,15 @@ public class TestClock_System extends AbstractTest {
     @Test
     public void test_equals() {
 
-        TClock a = TClock.systemUTC();
-        TClock b = TClock.systemUTC();
+        Clock a = Clock.systemUTC();
+        Clock b = Clock.systemUTC();
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), true);
         assertEquals(b.equals(a), true);
         assertEquals(b.equals(b), true);
 
-        TClock c = TClock.system(PARIS);
-        TClock d = TClock.system(PARIS);
+        Clock c = Clock.system(PARIS);
+        Clock d = Clock.system(PARIS);
         assertEquals(c.equals(c), true);
         assertEquals(c.equals(d), true);
         assertEquals(d.equals(c), true);
@@ -157,25 +165,25 @@ public class TestClock_System extends AbstractTest {
 
         assertEquals(a.equals(null), false);
         assertEquals(a.equals("other type"), false);
-        assertEquals(a.equals(TClock.fixed(TInstant.now(), TZoneOffset.UTC)), false);
+        assertEquals(a.equals(Clock.fixed(Instant.now(), ZoneOffset.UTC)), false);
     }
 
     @Test
     public void test_hashCode() {
 
-        TClock a = TClock.system(TZoneOffset.UTC);
-        TClock b = TClock.system(TZoneOffset.UTC);
+        Clock a = Clock.system(ZoneOffset.UTC);
+        Clock b = Clock.system(ZoneOffset.UTC);
         assertEquals(a.hashCode(), a.hashCode());
         assertEquals(a.hashCode(), b.hashCode());
 
-        TClock c = TClock.system(PARIS);
+        Clock c = Clock.system(PARIS);
         assertEquals(a.hashCode() == c.hashCode(), false);
     }
 
     @Test
     public void test_toString() {
 
-        TClock test = TClock.system(PARIS);
+        Clock test = Clock.system(PARIS);
         assertEquals(test.toString(), "SystemClock[Europe/Paris]");
     }
 

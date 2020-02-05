@@ -2271,7 +2271,7 @@ public final class TDateTimeFormatterBuilder {
                 synchronized (this) {
                     cached = cachedSubstringTree;
                     if (cached == null || cached.getKey() != regionIdsSize) {
-                        cachedSubstringTree = cached = new SimpleImmutableEntry<Integer, SubstringTree>(regionIdsSize,
+                        cachedSubstringTree = cached = new SimpleImmutableEntry<>(regionIdsSize,
                                 prepareParser(regionIds));
                     }
                 }
