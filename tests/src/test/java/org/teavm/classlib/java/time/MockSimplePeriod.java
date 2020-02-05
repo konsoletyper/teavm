@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -31,19 +46,19 @@
  */
 package org.teavm.classlib.java.time;
 
-import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
-import static org.teavm.classlib.java.time.temporal.TChronoUnit.FOREVER;
-import static org.teavm.classlib.java.time.temporal.TChronoUnit.SECONDS;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.FOREVER;
+import static java.time.temporal.ChronoUnit.SECONDS;
 
+import java.time.DateTimeException;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAmount;
+import java.time.temporal.TemporalUnit;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
-import org.teavm.classlib.java.time.temporal.TTemporal;
-import org.teavm.classlib.java.time.temporal.TTemporalAmount;
-import org.teavm.classlib.java.time.temporal.TTemporalUnit;
-
-public final class MockSimplePeriod implements TTemporalAmount, Comparable<MockSimplePeriod> {
+public final class MockSimplePeriod implements TemporalAmount, Comparable<MockSimplePeriod> {
 
     public static final MockSimplePeriod ZERO_DAYS = new MockSimplePeriod(0, DAYS);
 
@@ -51,36 +66,36 @@ public final class MockSimplePeriod implements TTemporalAmount, Comparable<MockS
 
     private final long amount;
 
-    private final TTemporalUnit unit;
+    private final TemporalUnit unit;
 
-    public static MockSimplePeriod of(long amount, TTemporalUnit unit) {
+    public static MockSimplePeriod of(long amount, TemporalUnit unit) {
 
         return new MockSimplePeriod(amount, unit);
     }
 
-    private MockSimplePeriod(long amount, TTemporalUnit unit) {
+    private MockSimplePeriod(long amount, TemporalUnit unit) {
 
         Objects.requireNonNull(unit, "unit");
         if (unit == FOREVER) {
-            throw new TDateTimeException("Cannot create a period of the Forever unit");
+            throw new DateTimeException("Cannot create a period of the Forever unit");
         }
         this.amount = amount;
         this.unit = unit;
     }
 
     @Override
-    public List<TTemporalUnit> getUnits() {
+    public List<TemporalUnit> getUnits() {
 
         return Collections.singletonList(this.unit);
     }
 
     @Override
-    public long get(TTemporalUnit unit) {
+    public long get(TemporalUnit unit) {
 
         if (this.unit.equals(unit)) {
             return this.amount;
         }
-        throw new TDateTimeException("Unsupported unit: " + unit);
+        throw new DateTimeException("Unsupported unit: " + unit);
     }
 
     public long getAmount() {
@@ -88,19 +103,19 @@ public final class MockSimplePeriod implements TTemporalAmount, Comparable<MockS
         return this.amount;
     }
 
-    public TTemporalUnit getUnit() {
+    public TemporalUnit getUnit() {
 
         return this.unit;
     }
 
     @Override
-    public TTemporal addTo(TTemporal dateTime) {
+    public Temporal addTo(Temporal dateTime) {
 
         return dateTime.plus(this.amount, this.unit);
     }
 
     @Override
-    public TTemporal subtractFrom(TTemporal dateTime) {
+    public Temporal subtractFrom(Temporal dateTime) {
 
         return dateTime.minus(this.amount, this.unit);
     }

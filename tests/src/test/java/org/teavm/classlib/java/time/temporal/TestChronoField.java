@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -33,15 +48,20 @@ package org.teavm.classlib.java.time.temporal;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
+import java.time.temporal.ChronoField;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+
+@RunWith(TeaVMTestRunner.class)
 public class TestChronoField {
 
     @Test
     public void test_isDateBased() {
 
-        for (TChronoField field : TChronoField.values()) {
-            if (field == TChronoField.INSTANT_SECONDS || field == TChronoField.OFFSET_SECONDS) {
+        for (ChronoField field : ChronoField.values()) {
+            if (field == ChronoField.INSTANT_SECONDS || field == ChronoField.OFFSET_SECONDS) {
                 assertEquals(field.isTimeBased(), false);
             } else {
                 assertEquals(field.isDateBased(), field.getBaseUnit().isDateBased());
@@ -52,8 +72,8 @@ public class TestChronoField {
     @Test
     public void test_isTimeBased() {
 
-        for (TChronoField field : TChronoField.values()) {
-            if (field == TChronoField.INSTANT_SECONDS || field == TChronoField.OFFSET_SECONDS) {
+        for (ChronoField field : ChronoField.values()) {
+            if (field == ChronoField.INSTANT_SECONDS || field == ChronoField.OFFSET_SECONDS) {
                 assertEquals(field.isTimeBased(), false);
             } else {
                 assertEquals(field.isTimeBased(), field.getBaseUnit().isTimeBased());

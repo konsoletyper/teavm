@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -31,12 +46,31 @@
  */
 package org.teavm.classlib.java.time;
 
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
-import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
 
+import java.time.Clock;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.MonthDay;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.chrono.IsoChronology;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.JulianFields;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -45,69 +79,53 @@ import java.util.Set;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.teavm.classlib.java.time.TClock;
-import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.TInstant;
-import org.teavm.classlib.java.time.TLocalDate;
-import org.teavm.classlib.java.time.TLocalDateTime;
-import org.teavm.classlib.java.time.TLocalTime;
-import org.teavm.classlib.java.time.TMonth;
-import org.teavm.classlib.java.time.TMonthDay;
-import org.teavm.classlib.java.time.TYearMonth;
-import org.teavm.classlib.java.time.TZoneId;
-import org.teavm.classlib.java.time.TZoneOffset;
-import org.teavm.classlib.java.time.chrono.TIsoChronology;
-import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.format.TDateTimeParseException;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.MockFieldNoValue;
-import org.teavm.classlib.java.time.temporal.TChronoField;
-import org.teavm.classlib.java.time.temporal.TJulianFields;
-import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
-import org.teavm.classlib.java.time.temporal.TTemporalField;
-import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class TestMonthDay extends AbstractDateTimeTest {
 
-    private TMonthDay TEST_07_15;
+    private MonthDay TEST_07_15;
 
     @Before
     public void setUp() {
 
-        this.TEST_07_15 = TMonthDay.of(7, 15);
+        this.TEST_07_15 = MonthDay.of(7, 15);
     }
 
     @Override
-    protected List<TTemporalAccessor> samples() {
+    protected List<TemporalAccessor> samples() {
 
-        TTemporalAccessor[] array = { this.TEST_07_15, };
+        TemporalAccessor[] array = { this.TEST_07_15, };
         return Arrays.asList(array);
     }
 
     @Override
-    protected List<TTemporalField> validFields() {
+    protected List<TemporalField> validFields() {
 
-        TTemporalField[] array = { DAY_OF_MONTH, MONTH_OF_YEAR, };
+        TemporalField[] array = { DAY_OF_MONTH, MONTH_OF_YEAR, };
         return Arrays.asList(array);
     }
 
     @Override
-    protected List<TTemporalField> invalidFields() {
+    protected List<TemporalField> invalidFields() {
 
-        List<TTemporalField> list = new ArrayList<>(Arrays.asList(TChronoField.values()));
+        List<TemporalField> list = new ArrayList<>(Arrays.asList(ChronoField.values()));
         list.removeAll(validFields());
-        list.add(TJulianFields.JULIAN_DAY);
-        list.add(TJulianFields.MODIFIED_JULIAN_DAY);
-        list.add(TJulianFields.RATA_DIE);
+        list.add(JulianFields.JULIAN_DAY);
+        list.add(JulianFields.MODIFIED_JULIAN_DAY);
+        list.add(JulianFields.RATA_DIE);
         return list;
     }
 
     @Test
     public void test_immutable() {
 
-        assertImmutable(TYearMonth.class);
+        assertImmutable(YearMonth.class);
     }
 
-    void check(TMonthDay test, int m, int d) {
+    void check(MonthDay test, int m, int d) {
 
         assertEquals(test.getMonth().getValue(), m);
         assertEquals(test.getDayOfMonth(), d);
@@ -116,14 +134,14 @@ public class TestMonthDay extends AbstractDateTimeTest {
     @Test
     public void now() {
 
-        TMonthDay expected = TMonthDay.now(TClock.systemDefaultZone());
-        TMonthDay test = TMonthDay.now();
+        MonthDay expected = MonthDay.now(Clock.systemDefaultZone());
+        MonthDay test = MonthDay.now();
         for (int i = 0; i < 100; i++) {
             if (expected.equals(test)) {
                 return;
             }
-            expected = TMonthDay.now(TClock.systemDefaultZone());
-            test = TMonthDay.now();
+            expected = MonthDay.now(Clock.systemDefaultZone());
+            test = MonthDay.now();
         }
         assertEquals(test, expected);
     }
@@ -131,21 +149,21 @@ public class TestMonthDay extends AbstractDateTimeTest {
     @Test(expected = NullPointerException.class)
     public void now_ZoneId_nullZoneId() {
 
-        TMonthDay.now((TZoneId) null);
+        MonthDay.now((ZoneId) null);
     }
 
     @Test
     public void now_ZoneId() {
 
-        TZoneId zone = TZoneId.of("UTC+01:02:03");
-        TMonthDay expected = TMonthDay.now(TClock.system(zone));
-        TMonthDay test = TMonthDay.now(zone);
+        ZoneId zone = ZoneId.of("UTC+01:02:03");
+        MonthDay expected = MonthDay.now(Clock.system(zone));
+        MonthDay test = MonthDay.now(zone);
         for (int i = 0; i < 100; i++) {
             if (expected.equals(test)) {
                 return;
             }
-            expected = TMonthDay.now(TClock.system(zone));
-            test = TMonthDay.now(zone);
+            expected = MonthDay.now(Clock.system(zone));
+            test = MonthDay.now(zone);
         }
         assertEquals(test, expected);
     }
@@ -153,41 +171,41 @@ public class TestMonthDay extends AbstractDateTimeTest {
     @Test
     public void now_Clock() {
 
-        TInstant instant = TLocalDateTime.of(2010, 12, 31, 0, 0).toInstant(TZoneOffset.UTC);
-        TClock clock = TClock.fixed(instant, TZoneOffset.UTC);
-        TMonthDay test = TMonthDay.now(clock);
-        assertEquals(test.getMonth(), TMonth.DECEMBER);
+        Instant instant = LocalDateTime.of(2010, 12, 31, 0, 0).toInstant(ZoneOffset.UTC);
+        Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
+        MonthDay test = MonthDay.now(clock);
+        assertEquals(test.getMonth(), Month.DECEMBER);
         assertEquals(test.getDayOfMonth(), 31);
     }
 
     @Test(expected = NullPointerException.class)
     public void now_Clock_nullClock() {
 
-        TMonthDay.now((TClock) null);
+        MonthDay.now((Clock) null);
     }
 
     @Test
     public void factory_intMonth() {
 
-        assertEquals(this.TEST_07_15, TMonthDay.of(TMonth.JULY, 15));
+        assertEquals(this.TEST_07_15, MonthDay.of(Month.JULY, 15));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_intMonth_dayTooLow() {
 
-        TMonthDay.of(TMonth.JANUARY, 0);
+        MonthDay.of(Month.JANUARY, 0);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_intMonth_dayTooHigh() {
 
-        TMonthDay.of(TMonth.JANUARY, 32);
+        MonthDay.of(Month.JANUARY, 32);
     }
 
     @Test(expected = NullPointerException.class)
     public void factory_intMonth_nullMonth() {
 
-        TMonthDay.of(null, 15);
+        MonthDay.of(null, 15);
     }
 
     @Test
@@ -196,59 +214,59 @@ public class TestMonthDay extends AbstractDateTimeTest {
         check(this.TEST_07_15, 7, 15);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_ints_dayTooLow() {
 
-        TMonthDay.of(1, 0);
+        MonthDay.of(1, 0);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_ints_dayTooHigh() {
 
-        TMonthDay.of(1, 32);
+        MonthDay.of(1, 32);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_ints_monthTooLow() {
 
-        TMonthDay.of(0, 1);
+        MonthDay.of(0, 1);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_ints_monthTooHigh() {
 
-        TMonthDay.of(13, 1);
+        MonthDay.of(13, 1);
     }
 
     @Test
     public void test_factory_CalendricalObject() {
 
-        assertEquals(TMonthDay.from(TLocalDate.of(2007, 7, 15)), this.TEST_07_15);
+        assertEquals(MonthDay.from(LocalDate.of(2007, 7, 15)), this.TEST_07_15);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_CalendricalObject_invalid_noDerive() {
 
-        TMonthDay.from(TLocalTime.of(12, 30));
+        MonthDay.from(LocalTime.of(12, 30));
     }
 
     @Test(expected = NullPointerException.class)
     public void test_factory_CalendricalObject_null() {
 
-        TMonthDay.from((TTemporalAccessor) null);
+        MonthDay.from((TemporalAccessor) null);
     }
 
     Object[][] provider_goodParseData() {
 
-        return new Object[][] { { "--01-01", TMonthDay.of(1, 1) }, { "--01-31", TMonthDay.of(1, 31) },
-        { "--02-01", TMonthDay.of(2, 1) }, { "--02-29", TMonthDay.of(2, 29) }, { "--03-01", TMonthDay.of(3, 1) },
-        { "--03-31", TMonthDay.of(3, 31) }, { "--04-01", TMonthDay.of(4, 1) }, { "--04-30", TMonthDay.of(4, 30) },
-        { "--05-01", TMonthDay.of(5, 1) }, { "--05-31", TMonthDay.of(5, 31) }, { "--06-01", TMonthDay.of(6, 1) },
-        { "--06-30", TMonthDay.of(6, 30) }, { "--07-01", TMonthDay.of(7, 1) }, { "--07-31", TMonthDay.of(7, 31) },
-        { "--08-01", TMonthDay.of(8, 1) }, { "--08-31", TMonthDay.of(8, 31) }, { "--09-01", TMonthDay.of(9, 1) },
-        { "--09-30", TMonthDay.of(9, 30) }, { "--10-01", TMonthDay.of(10, 1) }, { "--10-31", TMonthDay.of(10, 31) },
-        { "--11-01", TMonthDay.of(11, 1) }, { "--11-30", TMonthDay.of(11, 30) }, { "--12-01", TMonthDay.of(12, 1) },
-        { "--12-31", TMonthDay.of(12, 31) }, };
+        return new Object[][] { { "--01-01", MonthDay.of(1, 1) }, { "--01-31", MonthDay.of(1, 31) },
+        { "--02-01", MonthDay.of(2, 1) }, { "--02-29", MonthDay.of(2, 29) }, { "--03-01", MonthDay.of(3, 1) },
+        { "--03-31", MonthDay.of(3, 31) }, { "--04-01", MonthDay.of(4, 1) }, { "--04-30", MonthDay.of(4, 30) },
+        { "--05-01", MonthDay.of(5, 1) }, { "--05-31", MonthDay.of(5, 31) }, { "--06-01", MonthDay.of(6, 1) },
+        { "--06-30", MonthDay.of(6, 30) }, { "--07-01", MonthDay.of(7, 1) }, { "--07-31", MonthDay.of(7, 31) },
+        { "--08-01", MonthDay.of(8, 1) }, { "--08-31", MonthDay.of(8, 31) }, { "--09-01", MonthDay.of(9, 1) },
+        { "--09-30", MonthDay.of(9, 30) }, { "--10-01", MonthDay.of(10, 1) }, { "--10-31", MonthDay.of(10, 31) },
+        { "--11-01", MonthDay.of(11, 1) }, { "--11-30", MonthDay.of(11, 30) }, { "--12-01", MonthDay.of(12, 1) },
+        { "--12-31", MonthDay.of(12, 31) }, };
     }
 
     @Test
@@ -256,9 +274,9 @@ public class TestMonthDay extends AbstractDateTimeTest {
 
         for (Object[] data : provider_goodParseData()) {
             String text = (String) data[0];
-            TMonthDay expected = (TMonthDay) data[1];
+            MonthDay expected = (MonthDay) data[1];
 
-            TMonthDay monthDay = TMonthDay.parse(text);
+            MonthDay monthDay = MonthDay.parse(text);
             assertEquals(monthDay, expected);
         }
     }
@@ -276,83 +294,83 @@ public class TestMonthDay extends AbstractDateTimeTest {
             int pos = (int) data[1];
 
             try {
-                TMonthDay.parse(text);
+                MonthDay.parse(text);
                 fail(String.format("Parse should have failed for %s at position %d", text, pos));
-            } catch (TDateTimeParseException ex) {
+            } catch (DateTimeParseException ex) {
                 assertEquals(ex.getParsedString(), text);
                 assertEquals(ex.getErrorIndex(), pos);
             }
         }
     }
 
-    @Test(expected = TDateTimeParseException.class)
+    @Test(expected = DateTimeParseException.class)
     public void factory_parse_illegalValue_Day() {
 
-        TMonthDay.parse("--06-32");
+        MonthDay.parse("--06-32");
     }
 
-    @Test(expected = TDateTimeParseException.class)
+    @Test(expected = DateTimeParseException.class)
     public void factory_parse_invalidValue_Day() {
 
-        TMonthDay.parse("--06-31");
+        MonthDay.parse("--06-31");
     }
 
-    @Test(expected = TDateTimeParseException.class)
+    @Test(expected = DateTimeParseException.class)
     public void factory_parse_illegalValue_Month() {
 
-        TMonthDay.parse("--13-25");
+        MonthDay.parse("--13-25");
     }
 
     @Test(expected = NullPointerException.class)
     public void factory_parse_nullText() {
 
-        TMonthDay.parse(null);
+        MonthDay.parse(null);
     }
 
     @Test
     public void factory_parse_formatter() {
 
-        TDateTimeFormatter f = TDateTimeFormatter.ofPattern("M d");
-        TMonthDay test = TMonthDay.parse("12 3", f);
-        assertEquals(test, TMonthDay.of(12, 3));
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("M d");
+        MonthDay test = MonthDay.parse("12 3", f);
+        assertEquals(test, MonthDay.of(12, 3));
     }
 
     @Test(expected = NullPointerException.class)
     public void factory_parse_formatter_nullText() {
 
-        TDateTimeFormatter f = TDateTimeFormatter.ofPattern("M d");
-        TMonthDay.parse((String) null, f);
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("M d");
+        MonthDay.parse((String) null, f);
     }
 
     @Test(expected = NullPointerException.class)
     public void factory_parse_formatter_nullFormatter() {
 
-        TMonthDay.parse("ANY", null);
+        MonthDay.parse("ANY", null);
     }
 
     @Test
     public void test_get_DateTimeField() {
 
-        assertEquals(this.TEST_07_15.getLong(TChronoField.DAY_OF_MONTH), 15);
-        assertEquals(this.TEST_07_15.getLong(TChronoField.MONTH_OF_YEAR), 7);
+        assertEquals(this.TEST_07_15.getLong(ChronoField.DAY_OF_MONTH), 15);
+        assertEquals(this.TEST_07_15.getLong(ChronoField.MONTH_OF_YEAR), 7);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_get_DateTimeField_null() {
 
-        this.TEST_07_15.getLong((TTemporalField) null);
+        this.TEST_07_15.getLong((TemporalField) null);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_get_DateTimeField_invalidField() {
 
         this.TEST_07_15.getLong(MockFieldNoValue.INSTANCE);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_get_DateTimeField_timeField() {
 
-        this.TEST_07_15.getLong(TChronoField.AMPM_OF_DAY);
+        this.TEST_07_15.getLong(ChronoField.AMPM_OF_DAY);
     }
 
     Object[][] provider_sampleDates() {
@@ -367,8 +385,8 @@ public class TestMonthDay extends AbstractDateTimeTest {
             int m = (int) data[0];
             int d = (int) data[1];
 
-            TMonthDay a = TMonthDay.of(m, d);
-            assertEquals(a.getMonth(), TMonth.of(m));
+            MonthDay a = MonthDay.of(m, d);
+            assertEquals(a.getMonth(), Month.of(m));
             assertEquals(a.getDayOfMonth(), d);
         }
     }
@@ -376,190 +394,190 @@ public class TestMonthDay extends AbstractDateTimeTest {
     @Test
     public void test_with_Month() {
 
-        assertEquals(TMonthDay.of(6, 30).with(TMonth.JANUARY), TMonthDay.of(1, 30));
+        assertEquals(MonthDay.of(6, 30).with(Month.JANUARY), MonthDay.of(1, 30));
     }
 
     @Test
     public void test_with_Month_adjustToValid() {
 
-        assertEquals(TMonthDay.of(7, 31).with(TMonth.JUNE), TMonthDay.of(6, 30));
+        assertEquals(MonthDay.of(7, 31).with(Month.JUNE), MonthDay.of(6, 30));
     }
 
     @Test
     public void test_with_Month_adjustToValidFeb() {
 
-        assertEquals(TMonthDay.of(7, 31).with(TMonth.FEBRUARY), TMonthDay.of(2, 29));
+        assertEquals(MonthDay.of(7, 31).with(Month.FEBRUARY), MonthDay.of(2, 29));
     }
 
     @Test
     public void test_with_Month_noChangeEqual() {
 
-        TMonthDay test = TMonthDay.of(6, 30);
-        assertEquals(test.with(TMonth.JUNE), test);
+        MonthDay test = MonthDay.of(6, 30);
+        assertEquals(test.with(Month.JUNE), test);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_with_Month_null() {
 
-        TMonthDay.of(6, 30).with((TMonth) null);
+        MonthDay.of(6, 30).with((Month) null);
     }
 
     @Test
     public void test_withMonth() {
 
-        assertEquals(TMonthDay.of(6, 30).withMonth(1), TMonthDay.of(1, 30));
+        assertEquals(MonthDay.of(6, 30).withMonth(1), MonthDay.of(1, 30));
     }
 
     @Test
     public void test_withMonth_adjustToValid() {
 
-        assertEquals(TMonthDay.of(7, 31).withMonth(6), TMonthDay.of(6, 30));
+        assertEquals(MonthDay.of(7, 31).withMonth(6), MonthDay.of(6, 30));
     }
 
     @Test
     public void test_withMonth_adjustToValidFeb() {
 
-        assertEquals(TMonthDay.of(7, 31).withMonth(2), TMonthDay.of(2, 29));
+        assertEquals(MonthDay.of(7, 31).withMonth(2), MonthDay.of(2, 29));
     }
 
     @Test
     public void test_withMonth_int_noChangeEqual() {
 
-        TMonthDay test = TMonthDay.of(6, 30);
+        MonthDay test = MonthDay.of(6, 30);
         assertEquals(test.withMonth(6), test);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_withMonth_tooLow() {
 
-        TMonthDay.of(6, 30).withMonth(0);
+        MonthDay.of(6, 30).withMonth(0);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_withMonth_tooHigh() {
 
-        TMonthDay.of(6, 30).withMonth(13);
+        MonthDay.of(6, 30).withMonth(13);
     }
 
     @Test
     public void test_withDayOfMonth() {
 
-        assertEquals(TMonthDay.of(6, 30).withDayOfMonth(1), TMonthDay.of(6, 1));
+        assertEquals(MonthDay.of(6, 30).withDayOfMonth(1), MonthDay.of(6, 1));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_withDayOfMonth_invalid() {
 
-        TMonthDay.of(6, 30).withDayOfMonth(31);
+        MonthDay.of(6, 30).withDayOfMonth(31);
     }
 
     @Test
     public void test_withDayOfMonth_adjustToValidFeb() {
 
-        assertEquals(TMonthDay.of(2, 1).withDayOfMonth(29), TMonthDay.of(2, 29));
+        assertEquals(MonthDay.of(2, 1).withDayOfMonth(29), MonthDay.of(2, 29));
     }
 
     @Test
     public void test_withDayOfMonth_noChangeEqual() {
 
-        TMonthDay test = TMonthDay.of(6, 30);
+        MonthDay test = MonthDay.of(6, 30);
         assertEquals(test.withDayOfMonth(30), test);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_withDayOfMonth_tooLow() {
 
-        TMonthDay.of(6, 30).withDayOfMonth(0);
+        MonthDay.of(6, 30).withDayOfMonth(0);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_withDayOfMonth_tooHigh() {
 
-        TMonthDay.of(6, 30).withDayOfMonth(32);
+        MonthDay.of(6, 30).withDayOfMonth(32);
     }
 
     @Test
     public void test_adjustDate() {
 
-        TMonthDay test = TMonthDay.of(6, 30);
-        TLocalDate date = TLocalDate.of(2007, 1, 1);
-        assertEquals(test.adjustInto(date), TLocalDate.of(2007, 6, 30));
+        MonthDay test = MonthDay.of(6, 30);
+        LocalDate date = LocalDate.of(2007, 1, 1);
+        assertEquals(test.adjustInto(date), LocalDate.of(2007, 6, 30));
     }
 
     @Test
     public void test_adjustDate_resolve() {
 
-        TMonthDay test = TMonthDay.of(2, 29);
-        TLocalDate date = TLocalDate.of(2007, 6, 30);
-        assertEquals(test.adjustInto(date), TLocalDate.of(2007, 2, 28));
+        MonthDay test = MonthDay.of(2, 29);
+        LocalDate date = LocalDate.of(2007, 6, 30);
+        assertEquals(test.adjustInto(date), LocalDate.of(2007, 2, 28));
     }
 
     @Test
     public void test_adjustDate_equal() {
 
-        TMonthDay test = TMonthDay.of(6, 30);
-        TLocalDate date = TLocalDate.of(2007, 6, 30);
+        MonthDay test = MonthDay.of(6, 30);
+        LocalDate date = LocalDate.of(2007, 6, 30);
         assertEquals(test.adjustInto(date), date);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_adjustDate_null() {
 
-        this.TEST_07_15.adjustInto((TLocalDate) null);
+        this.TEST_07_15.adjustInto((LocalDate) null);
     }
 
     @Test
     public void test_isValidYear_june() {
 
-        TMonthDay test = TMonthDay.of(6, 30);
+        MonthDay test = MonthDay.of(6, 30);
         assertEquals(test.isValidYear(2007), true);
     }
 
     @Test
     public void test_isValidYear_febNonLeap() {
 
-        TMonthDay test = TMonthDay.of(2, 29);
+        MonthDay test = MonthDay.of(2, 29);
         assertEquals(test.isValidYear(2007), false);
     }
 
     @Test
     public void test_isValidYear_febLeap() {
 
-        TMonthDay test = TMonthDay.of(2, 29);
+        MonthDay test = MonthDay.of(2, 29);
         assertEquals(test.isValidYear(2008), true);
     }
 
     @Test
     public void test_atYear_int() {
 
-        TMonthDay test = TMonthDay.of(6, 30);
-        assertEquals(test.atYear(2008), TLocalDate.of(2008, 6, 30));
+        MonthDay test = MonthDay.of(6, 30);
+        assertEquals(test.atYear(2008), LocalDate.of(2008, 6, 30));
     }
 
     @Test
     public void test_atYear_int_leapYearAdjust() {
 
-        TMonthDay test = TMonthDay.of(2, 29);
-        assertEquals(test.atYear(2005), TLocalDate.of(2005, 2, 28));
+        MonthDay test = MonthDay.of(2, 29);
+        assertEquals(test.atYear(2005), LocalDate.of(2005, 2, 28));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_atYear_int_invalidYear() {
 
-        TMonthDay test = TMonthDay.of(6, 30);
+        MonthDay test = MonthDay.of(6, 30);
         test.atYear(Integer.MIN_VALUE);
     }
 
     @Test
     public void test_query() {
 
-        assertEquals(this.TEST_07_15.query(TTemporalQueries.chronology()), TIsoChronology.INSTANCE);
-        assertEquals(this.TEST_07_15.query(TTemporalQueries.localDate()), null);
-        assertEquals(this.TEST_07_15.query(TTemporalQueries.localTime()), null);
-        assertEquals(this.TEST_07_15.query(TTemporalQueries.offset()), null);
-        assertEquals(this.TEST_07_15.query(TTemporalQueries.precision()), null);
-        assertEquals(this.TEST_07_15.query(TTemporalQueries.zone()), null);
-        assertEquals(this.TEST_07_15.query(TTemporalQueries.zoneId()), null);
+        assertEquals(this.TEST_07_15.query(TemporalQueries.chronology()), IsoChronology.INSTANCE);
+        assertEquals(this.TEST_07_15.query(TemporalQueries.localDate()), null);
+        assertEquals(this.TEST_07_15.query(TemporalQueries.localTime()), null);
+        assertEquals(this.TEST_07_15.query(TemporalQueries.offset()), null);
+        assertEquals(this.TEST_07_15.query(TemporalQueries.precision()), null);
+        assertEquals(this.TEST_07_15.query(TemporalQueries.zone()), null);
+        assertEquals(this.TEST_07_15.query(TemporalQueries.zoneId()), null);
     }
 
     @Test(expected = NullPointerException.class)
@@ -571,16 +589,16 @@ public class TestMonthDay extends AbstractDateTimeTest {
     @Test
     public void test_comparisons() {
 
-        doTest_comparisons_MonthDay(TMonthDay.of(1, 1), TMonthDay.of(1, 31), TMonthDay.of(2, 1), TMonthDay.of(2, 29),
-                TMonthDay.of(3, 1), TMonthDay.of(12, 31));
+        doTest_comparisons_MonthDay(MonthDay.of(1, 1), MonthDay.of(1, 31), MonthDay.of(2, 1), MonthDay.of(2, 29),
+                MonthDay.of(3, 1), MonthDay.of(12, 31));
     }
 
-    void doTest_comparisons_MonthDay(TMonthDay... localDates) {
+    void doTest_comparisons_MonthDay(MonthDay... localDates) {
 
         for (int i = 0; i < localDates.length; i++) {
-            TMonthDay a = localDates[i];
+            MonthDay a = localDates[i];
             for (int j = 0; j < localDates.length; j++) {
-                TMonthDay b = localDates[j];
+                MonthDay b = localDates[j];
                 if (i < j) {
                     assertTrue(a + " <=> " + b, a.compareTo(b) < 0);
                     assertEquals(a + " <=> " + b, a.isBefore(b), true);
@@ -622,10 +640,10 @@ public class TestMonthDay extends AbstractDateTimeTest {
     @Test
     public void test_equals() {
 
-        TMonthDay a = TMonthDay.of(1, 1);
-        TMonthDay b = TMonthDay.of(1, 1);
-        TMonthDay c = TMonthDay.of(2, 1);
-        TMonthDay d = TMonthDay.of(1, 2);
+        MonthDay a = MonthDay.of(1, 1);
+        MonthDay b = MonthDay.of(1, 1);
+        MonthDay c = MonthDay.of(2, 1);
+        MonthDay d = MonthDay.of(1, 2);
 
         assertEquals(a.equals(a), true);
         assertEquals(a.equals(b), true);
@@ -673,9 +691,9 @@ public class TestMonthDay extends AbstractDateTimeTest {
             int m = (int) data[0];
             int d = (int) data[1];
 
-            TMonthDay a = TMonthDay.of(m, d);
+            MonthDay a = MonthDay.of(m, d);
             assertEquals(a.hashCode(), a.hashCode());
-            TMonthDay b = TMonthDay.of(m, d);
+            MonthDay b = MonthDay.of(m, d);
             assertEquals(a.hashCode(), b.hashCode());
         }
     }
@@ -687,8 +705,8 @@ public class TestMonthDay extends AbstractDateTimeTest {
         Set<Integer> uniques = new HashSet<>(366);
         for (int i = 1; i <= 12; i++) {
             for (int j = 1; j <= 31; j++) {
-                if (TYearMonth.of(leapYear, i).isValidDay(j)) {
-                    assertTrue(uniques.add(TMonthDay.of(i, j).hashCode()));
+                if (YearMonth.of(leapYear, i).isValidDay(j)) {
+                    assertTrue(uniques.add(MonthDay.of(i, j).hashCode()));
                 }
             }
         }
@@ -707,7 +725,7 @@ public class TestMonthDay extends AbstractDateTimeTest {
             int d = (int) data[1];
             String expected = (String) data[2];
 
-            TMonthDay test = TMonthDay.of(m, d);
+            MonthDay test = MonthDay.of(m, d);
             String str = test.toString();
             assertEquals(str, expected);
         }
@@ -716,15 +734,15 @@ public class TestMonthDay extends AbstractDateTimeTest {
     @Test
     public void test_format_formatter() {
 
-        TDateTimeFormatter f = TDateTimeFormatter.ofPattern("M d");
-        String t = TMonthDay.of(12, 3).format(f);
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("M d");
+        String t = MonthDay.of(12, 3).format(f);
         assertEquals(t, "12 3");
     }
 
     @Test(expected = NullPointerException.class)
     public void test_format_formatter_null() {
 
-        TMonthDay.of(12, 3).format(null);
+        MonthDay.of(12, 3).format(null);
     }
 
 }

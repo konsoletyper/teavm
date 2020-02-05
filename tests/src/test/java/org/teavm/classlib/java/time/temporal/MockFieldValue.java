@@ -46,22 +46,49 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import org.teavm.classlib.java.time.TDuration;
+import java.time.DateTimeException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.ValueRange;
 
-public interface TTemporalUnit {
+public final class MockFieldValue implements TemporalAccessor {
 
-    TDuration getDuration();
+    private final TemporalField field;
 
-    boolean isDurationEstimated();
+    private final long value;
 
-    boolean isDateBased();
+    public MockFieldValue(TemporalField field, long value) {
 
-    boolean isTimeBased();
+        this.field = field;
+        this.value = value;
+    }
 
-    boolean isSupportedBy(TTemporal temporal);
+    @Override
+    public boolean isSupported(TemporalField field) {
 
-    <R extends TTemporal> R addTo(R dateTime, long periodToAdd);
+        return field != null && field.equals(this.field);
+    }
 
-    long between(TTemporal temporal1, TTemporal temporal2);
+    @Override
+    public ValueRange range(TemporalField field) {
+
+        if (field instanceof ChronoField) {
+            if (isSupported(field)) {
+                return field.range();
+            }
+            throw new DateTimeException("Unsupported field: " + field);
+        }
+        return field.rangeRefinedBy(this);
+    }
+
+    @Override
+    public long getLong(TemporalField field) {
+
+        if (this.field.equals(field)) {
+            return this.value;
+        }
+        throw new DateTimeException("Unsupported field: " + field);
+    }
 
 }

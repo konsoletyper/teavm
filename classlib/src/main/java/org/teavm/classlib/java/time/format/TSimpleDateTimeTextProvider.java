@@ -47,8 +47,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.teavm.classlib.java.time.temporal.TIsoFields;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
@@ -67,7 +65,7 @@ final class TSimpleDateTimeTextProvider extends TDateTimeTextProvider {
         }
     };
 
-    private final ConcurrentMap<Entry<TTemporalField, Locale>, Object> cache = new ConcurrentHashMap<>(16, 0.75f, 2);
+    private final Map<Entry<TTemporalField, Locale>, Object> cache = new HashMap<>(16, 0.75f);
 
     @Override
     public String getText(TTemporalField field, long value, TTextStyle style, Locale locale) {

@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -31,55 +46,61 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
+import static java.time.DayOfWeek.FRIDAY;
+import static java.time.DayOfWeek.MONDAY;
+import static java.time.DayOfWeek.SATURDAY;
+import static java.time.DayOfWeek.SUNDAY;
+import static java.time.DayOfWeek.THURSDAY;
+import static java.time.DayOfWeek.TUESDAY;
+import static java.time.DayOfWeek.WEDNESDAY;
+import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.teavm.classlib.java.time.TDayOfWeek.FRIDAY;
-import static org.teavm.classlib.java.time.TDayOfWeek.MONDAY;
-import static org.teavm.classlib.java.time.TDayOfWeek.SATURDAY;
-import static org.teavm.classlib.java.time.TDayOfWeek.SUNDAY;
-import static org.teavm.classlib.java.time.TDayOfWeek.THURSDAY;
-import static org.teavm.classlib.java.time.TDayOfWeek.TUESDAY;
-import static org.teavm.classlib.java.time.TDayOfWeek.WEDNESDAY;
-import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
+
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeFormatterBuilder;
+import java.time.temporal.IsoFields;
+import java.time.temporal.ValueRange;
 
 import org.junit.Test;
-import org.teavm.classlib.java.time.TDayOfWeek;
-import org.teavm.classlib.java.time.TLocalDate;
-import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.format.TDateTimeFormatterBuilder;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class TestIsoFields {
 
     public void test_enum() {
 
-        assertTrue(TIsoFields.WEEK_OF_WEEK_BASED_YEAR instanceof Enum);
-        assertTrue(TIsoFields.WEEK_BASED_YEAR instanceof Enum);
-        assertTrue(TIsoFields.WEEK_BASED_YEARS instanceof Enum);
+        assertTrue(IsoFields.WEEK_OF_WEEK_BASED_YEAR instanceof Enum);
+        assertTrue(IsoFields.WEEK_BASED_YEAR instanceof Enum);
+        assertTrue(IsoFields.WEEK_BASED_YEARS instanceof Enum);
     }
 
     Object[][] data_week() {
 
-        return new Object[][] { { TLocalDate.of(1969, 12, 29), MONDAY, 1, 1970 },
-        { TLocalDate.of(2012, 12, 23), SUNDAY, 51, 2012 }, { TLocalDate.of(2012, 12, 24), MONDAY, 52, 2012 },
-        { TLocalDate.of(2012, 12, 27), THURSDAY, 52, 2012 }, { TLocalDate.of(2012, 12, 28), FRIDAY, 52, 2012 },
-        { TLocalDate.of(2012, 12, 29), SATURDAY, 52, 2012 }, { TLocalDate.of(2012, 12, 30), SUNDAY, 52, 2012 },
-        { TLocalDate.of(2012, 12, 31), MONDAY, 1, 2013 }, { TLocalDate.of(2013, 1, 1), TUESDAY, 1, 2013 },
-        { TLocalDate.of(2013, 1, 2), WEDNESDAY, 1, 2013 }, { TLocalDate.of(2013, 1, 6), SUNDAY, 1, 2013 },
-        { TLocalDate.of(2013, 1, 7), MONDAY, 2, 2013 }, };
+        return new Object[][] { { LocalDate.of(1969, 12, 29), MONDAY, 1, 1970 },
+        { LocalDate.of(2012, 12, 23), SUNDAY, 51, 2012 }, { LocalDate.of(2012, 12, 24), MONDAY, 52, 2012 },
+        { LocalDate.of(2012, 12, 27), THURSDAY, 52, 2012 }, { LocalDate.of(2012, 12, 28), FRIDAY, 52, 2012 },
+        { LocalDate.of(2012, 12, 29), SATURDAY, 52, 2012 }, { LocalDate.of(2012, 12, 30), SUNDAY, 52, 2012 },
+        { LocalDate.of(2012, 12, 31), MONDAY, 1, 2013 }, { LocalDate.of(2013, 1, 1), TUESDAY, 1, 2013 },
+        { LocalDate.of(2013, 1, 2), WEDNESDAY, 1, 2013 }, { LocalDate.of(2013, 1, 6), SUNDAY, 1, 2013 },
+        { LocalDate.of(2013, 1, 7), MONDAY, 2, 2013 }, };
     }
 
     @Test
     public void test_WOWBY() {
 
         for (Object[] data : data_week()) {
-            TLocalDate date = (TLocalDate) data[0];
-            TDayOfWeek dow = (TDayOfWeek) data[1];
+            LocalDate date = (LocalDate) data[0];
+            DayOfWeek dow = (DayOfWeek) data[1];
             int week = (int) data[2];
             int wby = (int) data[3];
 
             assertEquals(date.getDayOfWeek(), dow);
-            assertEquals(TIsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date), week);
-            assertEquals(date.get(TIsoFields.WEEK_OF_WEEK_BASED_YEAR), week);
+            assertEquals(IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date), week);
+            assertEquals(date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR), week);
         }
     }
 
@@ -87,14 +108,14 @@ public class TestIsoFields {
     public void test_WBY() {
 
         for (Object[] data : data_week()) {
-            TLocalDate date = (TLocalDate) data[0];
-            TDayOfWeek dow = (TDayOfWeek) data[1];
+            LocalDate date = (LocalDate) data[0];
+            DayOfWeek dow = (DayOfWeek) data[1];
             // int week = (int) data[2];
             int wby = (int) data[3];
 
             assertEquals(date.getDayOfWeek(), dow);
-            assertEquals(TIsoFields.WEEK_BASED_YEAR.getFrom(date), wby);
-            assertEquals(date.get(TIsoFields.WEEK_BASED_YEAR), wby);
+            assertEquals(IsoFields.WEEK_BASED_YEAR.getFrom(date), wby);
+            assertEquals(date.get(IsoFields.WEEK_BASED_YEAR), wby);
         }
     }
 
@@ -102,15 +123,15 @@ public class TestIsoFields {
     public void test_parse_weeks() {
 
         for (Object[] data : data_week()) {
-            TLocalDate date = (TLocalDate) data[0];
-            TDayOfWeek dow = (TDayOfWeek) data[1];
+            LocalDate date = (LocalDate) data[0];
+            DayOfWeek dow = (DayOfWeek) data[1];
             int week = (int) data[2];
             int wby = (int) data[3];
 
-            TDateTimeFormatter f = new TDateTimeFormatterBuilder().appendValue(TIsoFields.WEEK_BASED_YEAR)
-                    .appendLiteral('-').appendValue(TIsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral('-')
+            DateTimeFormatter f = new DateTimeFormatterBuilder().appendValue(IsoFields.WEEK_BASED_YEAR)
+                    .appendLiteral('-').appendValue(IsoFields.WEEK_OF_WEEK_BASED_YEAR).appendLiteral('-')
                     .appendValue(DAY_OF_WEEK).toFormatter();
-            TLocalDate parsed = TLocalDate.parse(wby + "-" + week + "-" + dow.getValue(), f);
+            LocalDate parsed = LocalDate.parse(wby + "-" + week + "-" + dow.getValue(), f);
             assertEquals(parsed, date);
         }
     }
@@ -119,13 +140,13 @@ public class TestIsoFields {
     public void test_loop() {
 
         // loop round at least one 400 year cycle, including before 1970
-        TLocalDate date = TLocalDate.of(1960, 1, 5); // Tuseday of week 1 1960
+        LocalDate date = LocalDate.of(1960, 1, 5); // Tuseday of week 1 1960
         int year = 1960;
         int wby = 1960;
         int weekLen = 52;
         int week = 1;
         while (date.getYear() < 2400) {
-            TDayOfWeek loopDow = date.getDayOfWeek();
+            DayOfWeek loopDow = date.getDayOfWeek();
             if (date.getYear() != year) {
                 year = date.getYear();
             }
@@ -133,8 +154,8 @@ public class TestIsoFields {
                 week++;
                 if ((week == 53 && weekLen == 52) || week == 54) {
                     week = 1;
-                    TLocalDate firstDayOfWeekBasedYear = date.plusDays(14).withDayOfYear(1);
-                    TDayOfWeek firstDay = firstDayOfWeekBasedYear.getDayOfWeek();
+                    LocalDate firstDayOfWeekBasedYear = date.plusDays(14).withDayOfYear(1);
+                    DayOfWeek firstDay = firstDayOfWeekBasedYear.getDayOfWeek();
                     weekLen = (firstDay == THURSDAY || (firstDay == WEDNESDAY && firstDayOfWeekBasedYear.isLeapYear())
                             ? 53
                             : 52);
@@ -142,57 +163,56 @@ public class TestIsoFields {
                 }
             }
             assertEquals("Failed on " + date + " " + date.getDayOfWeek(),
-                    TIsoFields.WEEK_OF_WEEK_BASED_YEAR.rangeRefinedBy(date), TValueRange.of(1, weekLen));
+                    IsoFields.WEEK_OF_WEEK_BASED_YEAR.rangeRefinedBy(date), ValueRange.of(1, weekLen));
             assertEquals("Failed on " + date + " " + date.getDayOfWeek(),
-                    TIsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date), week);
-            assertEquals("Failed on " + date + " " + date.getDayOfWeek(), date.get(TIsoFields.WEEK_OF_WEEK_BASED_YEAR),
+                    IsoFields.WEEK_OF_WEEK_BASED_YEAR.getFrom(date), week);
+            assertEquals("Failed on " + date + " " + date.getDayOfWeek(), date.get(IsoFields.WEEK_OF_WEEK_BASED_YEAR),
                     week);
-            assertEquals("Failed on " + date + " " + date.getDayOfWeek(), TIsoFields.WEEK_BASED_YEAR.getFrom(date),
-                    wby);
-            assertEquals("Failed on " + date + " " + date.getDayOfWeek(), date.get(TIsoFields.WEEK_BASED_YEAR), wby);
+            assertEquals("Failed on " + date + " " + date.getDayOfWeek(), IsoFields.WEEK_BASED_YEAR.getFrom(date), wby);
+            assertEquals("Failed on " + date + " " + date.getDayOfWeek(), date.get(IsoFields.WEEK_BASED_YEAR), wby);
             date = date.plusDays(1);
         }
     }
 
     Object[][] data_quartersBetween() {
 
-        return new Object[][] { { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 1, 1), 0 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 1, 2), 0 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 2, 1), 0 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 3, 1), 0 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 3, 31), 0 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 4, 1), 1 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 4, 2), 1 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 6, 30), 1 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 7, 1), 2 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 10, 1), 3 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2000, 12, 31), 3 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2001, 1, 1), 4 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(2002, 1, 1), 8 },
+        return new Object[][] { { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 1, 1), 0 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 1, 2), 0 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 2, 1), 0 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 3, 1), 0 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 3, 31), 0 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 4, 1), 1 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 4, 2), 1 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 6, 30), 1 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 7, 1), 2 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 10, 1), 3 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2000, 12, 31), 3 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2001, 1, 1), 4 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(2002, 1, 1), 8 },
 
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1999, 12, 31), 0 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1999, 10, 2), 0 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1999, 10, 1), -1 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1999, 7, 2), -1 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1999, 7, 1), -2 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1999, 4, 2), -2 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1999, 4, 1), -3 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1999, 1, 2), -3 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1999, 1, 1), -4 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1998, 12, 31), -4 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1998, 10, 2), -4 },
-        { TLocalDate.of(2000, 1, 1), TLocalDate.of(1998, 10, 1), -5 }, };
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1999, 12, 31), 0 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1999, 10, 2), 0 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1999, 10, 1), -1 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1999, 7, 2), -1 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1999, 7, 1), -2 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1999, 4, 2), -2 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1999, 4, 1), -3 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1999, 1, 2), -3 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1999, 1, 1), -4 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1998, 12, 31), -4 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1998, 10, 2), -4 },
+        { LocalDate.of(2000, 1, 1), LocalDate.of(1998, 10, 1), -5 }, };
     }
 
     @Test
     public void test_quarters_between() {
 
         for (Object[] data : data_quartersBetween()) {
-            TLocalDate start = (TLocalDate) data[0];
-            TLocalDate end = (TLocalDate) data[1];
+            LocalDate start = (LocalDate) data[0];
+            LocalDate end = (LocalDate) data[1];
             long expected = ((Number) data[2]).longValue();
 
-            assertEquals(TIsoFields.QUARTER_YEARS.between(start, end), expected);
+            assertEquals(IsoFields.QUARTER_YEARS.between(start, end), expected);
         }
     }
 

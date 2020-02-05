@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -35,9 +50,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 
 import org.teavm.classlib.java.time.TDuration;
 import org.teavm.classlib.java.time.TInstant;
@@ -64,7 +79,7 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
 
     private final TZoneOffsetTransitionRule[] lastRules;
 
-    private final ConcurrentMap<Integer, TZoneOffsetTransition[]> lastRulesCache = new ConcurrentHashMap<Integer, TZoneOffsetTransition[]>();
+    private final Map<Integer, TZoneOffsetTransition[]> lastRulesCache = new HashMap<>();
 
     TStandardZoneRules(TZoneOffset baseStandardOffset, TZoneOffset baseWallOffset,
             List<TZoneOffsetTransition> standardOffsetTransitionList, List<TZoneOffsetTransition> transitionList,

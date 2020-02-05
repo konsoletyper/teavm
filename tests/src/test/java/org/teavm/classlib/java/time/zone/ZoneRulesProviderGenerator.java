@@ -98,12 +98,12 @@ public class ZoneRulesProviderGenerator {
         writer.write("package org.teavm.classlib.java.time.zone;\n");
         writer.write("\n");
         writer.write("import java.util.Map;\n");
-        writer.write("import org.teavm.classlib.java.time.zone.TZoneOffsetTransitionRule.TimeDefinition;\n");
+        writer.write("import java.time.zone.ZoneOffsetTransitionRule.TimeDefinition;\n");
         writer.write("\n");
         writer.write("final class TTzdbInternal");
         writer.write(group);
         writer.write(" {\n");
-        writer.write("    static void init(Map<String, TZoneRules> map) {\n");
+        writer.write("    static void init(Map<String, ZoneRules> map) {\n");
 
         int count = 0;
         int init = 0;
@@ -152,7 +152,7 @@ public class ZoneRulesProviderGenerator {
             if ((lastRules == null) || (lastRules.length == 0)) {
             } else {
                 for (ZoneOffsetTransitionRule rule : lastRules) {
-                    writer.write(", new TZoneOffsetTransitionRule(");
+                    writer.write(", new ZoneOffsetTransitionRule(");
                     writer.write(Integer.toString(rule.getMonth().getValue()));
                     writer.write(",");
                     writer.write(Integer.toString(rule.getDayOfMonthIndicator()));
@@ -186,7 +186,7 @@ public class ZoneRulesProviderGenerator {
                 writer.write("        init" + init + "(map);\n");
                 writer.write("    }\n");
                 writer.write("\n");
-                writer.write("    private static void init" + init + "(Map<String, TZoneRules> map) {\n");
+                writer.write("    private static void init" + init + "(Map<String, ZoneRules> map) {\n");
             }
 
         }

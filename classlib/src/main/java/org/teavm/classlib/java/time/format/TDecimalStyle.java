@@ -33,18 +33,18 @@ package org.teavm.classlib.java.time.format;
 
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 public final class TDecimalStyle {
 
     public static final TDecimalStyle STANDARD = new TDecimalStyle('0', '+', '-', '.');
 
-    private static final ConcurrentMap<Locale, TDecimalStyle> CACHE = new ConcurrentHashMap<>(16, 0.75f, 2);
+    private static final Map<Locale, TDecimalStyle> CACHE = new HashMap<>(16, 0.75f);
 
     private final char zeroDigit;
 

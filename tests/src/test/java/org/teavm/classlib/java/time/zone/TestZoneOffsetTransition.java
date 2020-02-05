@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -31,63 +46,68 @@
  */
 package org.teavm.classlib.java.time.zone;
 
+import static java.time.temporal.ChronoUnit.HOURS;
 import static org.junit.Assert.assertEquals;
-import static org.teavm.classlib.java.time.temporal.TChronoUnit.HOURS;
+
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.zone.ZoneOffsetTransition;
 
 import org.junit.Test;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.AbstractTest;
-import org.teavm.classlib.java.time.TDuration;
-import org.teavm.classlib.java.time.TLocalDateTime;
-import org.teavm.classlib.java.time.TZoneOffset;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class TestZoneOffsetTransition extends AbstractTest {
 
-    private static final TZoneOffset OFFSET_0100 = TZoneOffset.ofHours(1);
+    private static final ZoneOffset OFFSET_0100 = ZoneOffset.ofHours(1);
 
-    private static final TZoneOffset OFFSET_0200 = TZoneOffset.ofHours(2);
+    private static final ZoneOffset OFFSET_0200 = ZoneOffset.ofHours(2);
 
-    private static final TZoneOffset OFFSET_0230 = TZoneOffset.ofHoursMinutes(2, 30);
+    private static final ZoneOffset OFFSET_0230 = ZoneOffset.ofHoursMinutes(2, 30);
 
-    private static final TZoneOffset OFFSET_0300 = TZoneOffset.ofHours(3);
+    private static final ZoneOffset OFFSET_0300 = ZoneOffset.ofHours(3);
 
-    private static final TZoneOffset OFFSET_0400 = TZoneOffset.ofHours(4);
+    private static final ZoneOffset OFFSET_0400 = ZoneOffset.ofHours(4);
 
     @Test(expected = NullPointerException.class)
     public void test_factory_nullTransition() {
 
-        TZoneOffsetTransition.of(null, OFFSET_0100, OFFSET_0200);
+        ZoneOffsetTransition.of(null, OFFSET_0100, OFFSET_0200);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_factory_nullOffsetBefore() {
 
-        TZoneOffsetTransition.of(TLocalDateTime.of(2010, 12, 3, 11, 30), null, OFFSET_0200);
+        ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30), null, OFFSET_0200);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_factory_nullOffsetAfter() {
 
-        TZoneOffsetTransition.of(TLocalDateTime.of(2010, 12, 3, 11, 30), OFFSET_0200, null);
+        ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30), OFFSET_0200, null);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_factory_sameOffset() {
 
-        TZoneOffsetTransition.of(TLocalDateTime.of(2010, 12, 3, 11, 30), OFFSET_0200, OFFSET_0200);
+        ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30), OFFSET_0200, OFFSET_0200);
     }
 
     @Test(expected = IllegalArgumentException.class)
     public void test_factory_noNanos() {
 
-        TZoneOffsetTransition.of(TLocalDateTime.of(2010, 12, 3, 11, 30, 0, 500), OFFSET_0200, OFFSET_0300);
+        ZoneOffsetTransition.of(LocalDateTime.of(2010, 12, 3, 11, 30, 0, 500), OFFSET_0200, OFFSET_0300);
     }
 
     @Test
     public void test_getters_gap() {
 
-        TLocalDateTime before = TLocalDateTime.of(2010, 3, 31, 1, 0);
-        TLocalDateTime after = TLocalDateTime.of(2010, 3, 31, 2, 0);
-        TZoneOffsetTransition test = TZoneOffsetTransition.of(before, OFFSET_0200, OFFSET_0300);
+        LocalDateTime before = LocalDateTime.of(2010, 3, 31, 1, 0);
+        LocalDateTime after = LocalDateTime.of(2010, 3, 31, 2, 0);
+        ZoneOffsetTransition test = ZoneOffsetTransition.of(before, OFFSET_0200, OFFSET_0300);
         assertEquals(test.isGap(), true);
         assertEquals(test.isOverlap(), false);
         assertEquals(test.getDateTimeBefore(), before);
@@ -95,15 +115,15 @@ public class TestZoneOffsetTransition extends AbstractTest {
         assertEquals(test.getInstant(), before.toInstant(OFFSET_0200));
         assertEquals(test.getOffsetBefore(), OFFSET_0200);
         assertEquals(test.getOffsetAfter(), OFFSET_0300);
-        assertEquals(test.getDuration(), TDuration.of(1, HOURS));
+        assertEquals(test.getDuration(), Duration.of(1, HOURS));
     }
 
     @Test
     public void test_getters_overlap() {
 
-        TLocalDateTime before = TLocalDateTime.of(2010, 10, 31, 1, 0);
-        TLocalDateTime after = TLocalDateTime.of(2010, 10, 31, 0, 0);
-        TZoneOffsetTransition test = TZoneOffsetTransition.of(before, OFFSET_0300, OFFSET_0200);
+        LocalDateTime before = LocalDateTime.of(2010, 10, 31, 1, 0);
+        LocalDateTime after = LocalDateTime.of(2010, 10, 31, 0, 0);
+        ZoneOffsetTransition test = ZoneOffsetTransition.of(before, OFFSET_0300, OFFSET_0200);
         assertEquals(test.isGap(), false);
         assertEquals(test.isOverlap(), true);
         assertEquals(test.getDateTimeBefore(), before);
@@ -111,14 +131,14 @@ public class TestZoneOffsetTransition extends AbstractTest {
         assertEquals(test.getInstant(), before.toInstant(OFFSET_0300));
         assertEquals(test.getOffsetBefore(), OFFSET_0300);
         assertEquals(test.getOffsetAfter(), OFFSET_0200);
-        assertEquals(test.getDuration(), TDuration.of(-1, HOURS));
+        assertEquals(test.getDuration(), Duration.of(-1, HOURS));
     }
 
     @Test
     public void test_isValidOffset_gap() {
 
-        TLocalDateTime ldt = TLocalDateTime.of(2010, 3, 31, 1, 0);
-        TZoneOffsetTransition test = TZoneOffsetTransition.of(ldt, OFFSET_0200, OFFSET_0300);
+        LocalDateTime ldt = LocalDateTime.of(2010, 3, 31, 1, 0);
+        ZoneOffsetTransition test = ZoneOffsetTransition.of(ldt, OFFSET_0200, OFFSET_0300);
         assertEquals(test.isValidOffset(OFFSET_0100), false);
         assertEquals(test.isValidOffset(OFFSET_0200), false);
         assertEquals(test.isValidOffset(OFFSET_0230), false);
@@ -129,8 +149,8 @@ public class TestZoneOffsetTransition extends AbstractTest {
     @Test
     public void test_isValidOffset_overlap() {
 
-        TLocalDateTime ldt = TLocalDateTime.of(2010, 10, 31, 1, 0);
-        TZoneOffsetTransition test = TZoneOffsetTransition.of(ldt, OFFSET_0300, OFFSET_0200);
+        LocalDateTime ldt = LocalDateTime.of(2010, 10, 31, 1, 0);
+        ZoneOffsetTransition test = ZoneOffsetTransition.of(ldt, OFFSET_0300, OFFSET_0200);
         assertEquals(test.isValidOffset(OFFSET_0100), false);
         assertEquals(test.isValidOffset(OFFSET_0200), true);
         assertEquals(test.isValidOffset(OFFSET_0230), false);
@@ -141,11 +161,11 @@ public class TestZoneOffsetTransition extends AbstractTest {
     @Test
     public void test_compareTo() {
 
-        TZoneOffsetTransition a = TZoneOffsetTransition.of(TLocalDateTime.ofEpochSecond(23875287L - 1, 0, OFFSET_0200),
+        ZoneOffsetTransition a = ZoneOffsetTransition.of(LocalDateTime.ofEpochSecond(23875287L - 1, 0, OFFSET_0200),
                 OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransition b = TZoneOffsetTransition.of(TLocalDateTime.ofEpochSecond(23875287L, 0, OFFSET_0300),
+        ZoneOffsetTransition b = ZoneOffsetTransition.of(LocalDateTime.ofEpochSecond(23875287L, 0, OFFSET_0300),
                 OFFSET_0300, OFFSET_0200);
-        TZoneOffsetTransition c = TZoneOffsetTransition.of(TLocalDateTime.ofEpochSecond(23875287L + 1, 0, OFFSET_0100),
+        ZoneOffsetTransition c = ZoneOffsetTransition.of(LocalDateTime.ofEpochSecond(23875287L + 1, 0, OFFSET_0100),
                 OFFSET_0100, OFFSET_0400);
 
         assertEquals(a.compareTo(a) == 0, true);
@@ -164,11 +184,11 @@ public class TestZoneOffsetTransition extends AbstractTest {
     @Test
     public void test_compareTo_sameInstant() {
 
-        TZoneOffsetTransition a = TZoneOffsetTransition.of(TLocalDateTime.ofEpochSecond(23875287L, 0, OFFSET_0200),
+        ZoneOffsetTransition a = ZoneOffsetTransition.of(LocalDateTime.ofEpochSecond(23875287L, 0, OFFSET_0200),
                 OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransition b = TZoneOffsetTransition.of(TLocalDateTime.ofEpochSecond(23875287L, 0, OFFSET_0300),
+        ZoneOffsetTransition b = ZoneOffsetTransition.of(LocalDateTime.ofEpochSecond(23875287L, 0, OFFSET_0300),
                 OFFSET_0300, OFFSET_0200);
-        TZoneOffsetTransition c = TZoneOffsetTransition.of(TLocalDateTime.ofEpochSecond(23875287L, 0, OFFSET_0100),
+        ZoneOffsetTransition c = ZoneOffsetTransition.of(LocalDateTime.ofEpochSecond(23875287L, 0, OFFSET_0100),
                 OFFSET_0100, OFFSET_0400);
 
         assertEquals(a.compareTo(a) == 0, true);
@@ -187,11 +207,11 @@ public class TestZoneOffsetTransition extends AbstractTest {
     @Test
     public void test_equals() {
 
-        TLocalDateTime ldtA = TLocalDateTime.of(2010, 3, 31, 1, 0);
-        TZoneOffsetTransition a1 = TZoneOffsetTransition.of(ldtA, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransition a2 = TZoneOffsetTransition.of(ldtA, OFFSET_0200, OFFSET_0300);
-        TLocalDateTime ldtB = TLocalDateTime.of(2010, 10, 31, 1, 0);
-        TZoneOffsetTransition b = TZoneOffsetTransition.of(ldtB, OFFSET_0300, OFFSET_0200);
+        LocalDateTime ldtA = LocalDateTime.of(2010, 3, 31, 1, 0);
+        ZoneOffsetTransition a1 = ZoneOffsetTransition.of(ldtA, OFFSET_0200, OFFSET_0300);
+        ZoneOffsetTransition a2 = ZoneOffsetTransition.of(ldtA, OFFSET_0200, OFFSET_0300);
+        LocalDateTime ldtB = LocalDateTime.of(2010, 10, 31, 1, 0);
+        ZoneOffsetTransition b = ZoneOffsetTransition.of(ldtB, OFFSET_0300, OFFSET_0200);
 
         assertEquals(a1.equals(a1), true);
         assertEquals(a1.equals(a2), true);
@@ -210,11 +230,11 @@ public class TestZoneOffsetTransition extends AbstractTest {
     @Test
     public void test_hashCode_floatingWeek_gap_notEndOfDay() {
 
-        TLocalDateTime ldtA = TLocalDateTime.of(2010, 3, 31, 1, 0);
-        TZoneOffsetTransition a1 = TZoneOffsetTransition.of(ldtA, OFFSET_0200, OFFSET_0300);
-        TZoneOffsetTransition a2 = TZoneOffsetTransition.of(ldtA, OFFSET_0200, OFFSET_0300);
-        TLocalDateTime ldtB = TLocalDateTime.of(2010, 10, 31, 1, 0);
-        TZoneOffsetTransition b = TZoneOffsetTransition.of(ldtB, OFFSET_0300, OFFSET_0200);
+        LocalDateTime ldtA = LocalDateTime.of(2010, 3, 31, 1, 0);
+        ZoneOffsetTransition a1 = ZoneOffsetTransition.of(ldtA, OFFSET_0200, OFFSET_0300);
+        ZoneOffsetTransition a2 = ZoneOffsetTransition.of(ldtA, OFFSET_0200, OFFSET_0300);
+        LocalDateTime ldtB = LocalDateTime.of(2010, 10, 31, 1, 0);
+        ZoneOffsetTransition b = ZoneOffsetTransition.of(ldtB, OFFSET_0300, OFFSET_0200);
 
         assertEquals(a1.hashCode(), a1.hashCode());
         assertEquals(a1.hashCode(), a2.hashCode());
@@ -224,16 +244,16 @@ public class TestZoneOffsetTransition extends AbstractTest {
     @Test
     public void test_toString_gap() {
 
-        TLocalDateTime ldt = TLocalDateTime.of(2010, 3, 31, 1, 0);
-        TZoneOffsetTransition test = TZoneOffsetTransition.of(ldt, OFFSET_0200, OFFSET_0300);
+        LocalDateTime ldt = LocalDateTime.of(2010, 3, 31, 1, 0);
+        ZoneOffsetTransition test = ZoneOffsetTransition.of(ldt, OFFSET_0200, OFFSET_0300);
         assertEquals(test.toString(), "Transition[Gap at 2010-03-31T01:00+02:00 to +03:00]");
     }
 
     @Test
     public void test_toString_overlap() {
 
-        TLocalDateTime ldt = TLocalDateTime.of(2010, 10, 31, 1, 0);
-        TZoneOffsetTransition test = TZoneOffsetTransition.of(ldt, OFFSET_0300, OFFSET_0200);
+        LocalDateTime ldt = LocalDateTime.of(2010, 10, 31, 1, 0);
+        ZoneOffsetTransition test = ZoneOffsetTransition.of(ldt, OFFSET_0300, OFFSET_0200);
         assertEquals(test.toString(), "Transition[Overlap at 2010-10-31T01:00+03:00 to +02:00]");
     }
 

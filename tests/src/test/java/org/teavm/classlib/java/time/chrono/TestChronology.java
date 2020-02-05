@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -35,26 +50,36 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Chronology;
+import java.time.chrono.HijrahChronology;
+import java.time.chrono.IsoChronology;
+import java.time.chrono.JapaneseChronology;
+import java.time.chrono.MinguoChronology;
+import java.time.chrono.ThaiBuddhistChronology;
+import java.time.temporal.ChronoField;
 import java.util.Locale;
 import java.util.Set;
 
 import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
-import org.teavm.classlib.java.time.temporal.TChronoField;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class TestChronology {
 
     @Before
     public void setUp() {
 
         // Ensure each of the classes are initialized (until initialization is fixed)
-        TChronology c;
-        c = THijrahChronology.INSTANCE;
-        c = TIsoChronology.INSTANCE;
-        c = TJapaneseChronology.INSTANCE;
-        c = TMinguoChronology.INSTANCE;
-        c = TThaiBuddhistChronology.INSTANCE;
+        Chronology c;
+        c = HijrahChronology.INSTANCE;
+        c = IsoChronology.INSTANCE;
+        c = JapaneseChronology.INSTANCE;
+        c = MinguoChronology.INSTANCE;
+        c = ThaiBuddhistChronology.INSTANCE;
         c.toString(); // avoids variable being marked as unused
     }
 
@@ -72,7 +97,7 @@ public class TestChronology {
             String calendarSystemType = (String) data[1];
             String description = (String) data[2];
 
-            TChronology chrono = TChronology.of(chronoId);
+            Chronology chrono = Chronology.of(chronoId);
             assertNotNull("Required calendar not found by ID: " + chronoId, chrono);
             assertEquals(chrono.getId(), chronoId);
             assertEquals(chrono.getCalendarType(), calendarSystemType);
@@ -86,11 +111,11 @@ public class TestChronology {
             String chronoId = (String) data[0];
             String calendarSystemType = (String) data[1];
 
-            TChronology chrono = TChronology.of(chronoId);
+            Chronology chrono = Chronology.of(chronoId);
             assertNotNull("Required calendar not found by ID: " + chronoId, chrono);
-            chrono = TChronology.of(calendarSystemType);
+            chrono = Chronology.of(calendarSystemType);
             assertNotNull("Required calendar not found by ID: " + chronoId, chrono);
-            Set<TChronology> cals = TChronology.getAvailableChronologies();
+            Set<Chronology> cals = Chronology.getAvailableChronologies();
             assertTrue("Required calendar not found in set of available calendars", cals.contains(chrono));
         }
     }
@@ -98,10 +123,10 @@ public class TestChronology {
     @Test
     public void test_calendar_list() {
 
-        Set<TChronology> chronos = TChronology.getAvailableChronologies();
+        Set<Chronology> chronos = Chronology.getAvailableChronologies();
         assertNotNull("Required list of calendars must be non-null", chronos);
-        for (TChronology chrono : chronos) {
-            TChronology lookup = TChronology.of(chrono.getId());
+        for (Chronology chrono : chronos) {
+            Chronology lookup = Chronology.of(chrono.getId());
             assertNotNull("Required calendar not found: " + chrono, lookup);
         }
         assertEquals("Required list of calendars too short", chronos.size() >= data_of_calendars().length, true);
@@ -113,28 +138,28 @@ public class TestChronology {
         for (Object[] data : data_of_calendars()) {
             String name = (String) data[0];
 
-            TChronology chrono = TChronology.of(name); // a chronology. In practice this is rarely hardcoded
-            TChronoLocalDate date1 = chrono.dateNow();
-            long epoch1 = date1.getLong(TChronoField.EPOCH_DAY);
-            TChronoLocalDate date2 = date1.with(TChronoField.EPOCH_DAY, epoch1);
-            assertEquals("TDate from epoch day is not same date: " + date1 + " != " + date2, date1, date2);
-            long epoch2 = date1.getLong(TChronoField.EPOCH_DAY);
+            Chronology chrono = Chronology.of(name); // a chronology. In practice this is rarely hardcoded
+            ChronoLocalDate date1 = chrono.dateNow();
+            long epoch1 = date1.getLong(ChronoField.EPOCH_DAY);
+            ChronoLocalDate date2 = date1.with(ChronoField.EPOCH_DAY, epoch1);
+            assertEquals("Date from epoch day is not same date: " + date1 + " != " + date2, date1, date2);
+            long epoch2 = date1.getLong(ChronoField.EPOCH_DAY);
             assertEquals("Epoch day not the same: " + epoch1 + " != " + epoch2, epoch1, epoch2);
         }
     }
 
     Object[][] data_CalendarType() {
 
-        return new Object[][] { { THijrahChronology.INSTANCE, "islamic-umalqura" },
-        { TIsoChronology.INSTANCE, "iso8601" }, { TJapaneseChronology.INSTANCE, "japanese" },
-        { TMinguoChronology.INSTANCE, "roc" }, { TThaiBuddhistChronology.INSTANCE, "buddhist" }, };
+        return new Object[][] { { HijrahChronology.INSTANCE, "islamic-umalqura" },
+        { IsoChronology.INSTANCE, "iso8601" }, { JapaneseChronology.INSTANCE, "japanese" },
+        { MinguoChronology.INSTANCE, "roc" }, { ThaiBuddhistChronology.INSTANCE, "buddhist" }, };
     }
 
     @Test
     public void test_getCalendarType() {
 
         for (Object[] data : data_CalendarType()) {
-            TChronology chrono = (TChronology) data[0];
+            Chronology chrono = (Chronology) data[0];
             String calendarType = (String) data[1];
 
             assertEquals(chrono.getCalendarType(), calendarType);
@@ -144,17 +169,17 @@ public class TestChronology {
     @Test
     public void test_lookupLocale_jp_JP() {
 
-        TChronology test = TChronology.ofLocale(new Locale("ja", "JP"));
+        Chronology test = Chronology.ofLocale(new Locale("ja", "JP"));
         Assert.assertEquals(test.getId(), "ISO");
-        Assert.assertEquals(test, TIsoChronology.INSTANCE);
+        Assert.assertEquals(test, IsoChronology.INSTANCE);
     }
 
     @Test
     public void test_lookupLocale_jp_JP_JP() {
 
-        TChronology test = TChronology.ofLocale(new Locale("ja", "JP", "JP"));
+        Chronology test = Chronology.ofLocale(new Locale("ja", "JP", "JP"));
         Assert.assertEquals(test.getId(), "Japanese");
-        Assert.assertEquals(test, TJapaneseChronology.INSTANCE);
+        Assert.assertEquals(test, JapaneseChronology.INSTANCE);
     }
 
 }

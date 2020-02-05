@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -31,16 +46,20 @@
  */
 package org.teavm.classlib.java.time.temporal;
 
-import static org.teavm.classlib.java.time.temporal.TChronoUnit.MONTHS;
-import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
+import static java.time.temporal.ChronoUnit.MONTHS;
+import static java.time.temporal.ChronoUnit.WEEKS;
 
+import java.time.DateTimeException;
+import java.time.format.ResolverStyle;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalUnit;
+import java.time.temporal.ValueRange;
+import java.util.Locale;
 import java.util.Map;
 
-import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.format.TResolverStyle;
-import org.teavm.classlib.java.util.TLocale;
-
-public enum MockFieldNoValue implements TTemporalField {
+public enum MockFieldNoValue implements TemporalField {
 
     INSTANCE;
 
@@ -51,21 +70,21 @@ public enum MockFieldNoValue implements TTemporalField {
     }
 
     @Override
-    public TTemporalUnit getBaseUnit() {
+    public TemporalUnit getBaseUnit() {
 
         return WEEKS;
     }
 
     @Override
-    public TTemporalUnit getRangeUnit() {
+    public TemporalUnit getRangeUnit() {
 
         return MONTHS;
     }
 
     @Override
-    public TValueRange range() {
+    public ValueRange range() {
 
-        return TValueRange.of(1, 20);
+        return ValueRange.of(1, 20);
     }
 
     @Override
@@ -81,38 +100,38 @@ public enum MockFieldNoValue implements TTemporalField {
     }
 
     @Override
-    public boolean isSupportedBy(TTemporalAccessor dateTime) {
+    public boolean isSupportedBy(TemporalAccessor dateTime) {
 
         return true;
     }
 
     @Override
-    public TValueRange rangeRefinedBy(TTemporalAccessor dateTime) {
+    public ValueRange rangeRefinedBy(TemporalAccessor dateTime) {
 
-        return TValueRange.of(1, 20);
+        return ValueRange.of(1, 20);
     }
 
     @Override
-    public long getFrom(TTemporalAccessor dateTime) {
+    public long getFrom(TemporalAccessor dateTime) {
 
-        throw new TDateTimeException("Mock");
+        throw new DateTimeException("Mock");
     }
 
     @Override
-    public <R extends TTemporal> R adjustInto(R dateTime, long newValue) {
+    public <R extends Temporal> R adjustInto(R dateTime, long newValue) {
 
-        throw new TDateTimeException("Mock");
+        throw new DateTimeException("Mock");
     }
 
     @Override
-    public String getDisplayName(TLocale locale) {
+    public String getDisplayName(Locale locale) {
 
         return "Mock";
     }
 
     @Override
-    public TTemporalAccessor resolve(Map<TTemporalField, Long> fieldValues, TTemporalAccessor partialTemporal,
-            TResolverStyle resolverStyle) {
+    public TemporalAccessor resolve(Map<TemporalField, Long> fieldValues, TemporalAccessor partialTemporal,
+            ResolverStyle resolverStyle) {
 
         return null;
     }

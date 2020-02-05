@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -31,53 +46,59 @@
  */
 package org.teavm.classlib.java.time;
 
+import static java.time.DayOfWeek.MONDAY;
+import static java.time.DayOfWeek.SUNDAY;
+import static java.time.DayOfWeek.WEDNESDAY;
+import static java.time.temporal.ChronoField.DAY_OF_WEEK;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
-import static org.teavm.classlib.java.time.TDayOfWeek.MONDAY;
-import static org.teavm.classlib.java.time.TDayOfWeek.SUNDAY;
-import static org.teavm.classlib.java.time.TDayOfWeek.WEDNESDAY;
-import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_WEEK;
 
+import java.time.DateTimeException;
+import java.time.DayOfWeek;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.time.format.TextStyle;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.JulianFields;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Locale;
 
 import org.junit.Test;
-import org.teavm.classlib.java.time.format.TTextStyle;
-import org.teavm.classlib.java.time.temporal.TChronoField;
-import org.teavm.classlib.java.time.temporal.TChronoUnit;
-import org.teavm.classlib.java.time.temporal.TJulianFields;
-import org.teavm.classlib.java.time.temporal.TTemporal;
-import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
-import org.teavm.classlib.java.time.temporal.TTemporalField;
-import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class TestDayOfWeek extends AbstractDateTimeTest {
 
     @Override
-    protected List<TTemporalAccessor> samples() {
+    protected List<TemporalAccessor> samples() {
 
-        TTemporalAccessor[] array = { MONDAY, WEDNESDAY, SUNDAY, };
+        TemporalAccessor[] array = { MONDAY, WEDNESDAY, SUNDAY, };
         return Arrays.asList(array);
     }
 
     @Override
-    protected List<TTemporalField> validFields() {
+    protected List<TemporalField> validFields() {
 
-        TTemporalField[] array = { DAY_OF_WEEK, };
+        TemporalField[] array = { DAY_OF_WEEK, };
         return Arrays.asList(array);
     }
 
     @Override
-    protected List<TTemporalField> invalidFields() {
+    protected List<TemporalField> invalidFields() {
 
-        List<TTemporalField> list = new ArrayList<TTemporalField>(
-                Arrays.<TTemporalField> asList(TChronoField.values()));
+        List<TemporalField> list = new ArrayList<>(Arrays.asList(ChronoField.values()));
         list.removeAll(validFields());
-        list.add(TJulianFields.JULIAN_DAY);
-        list.add(TJulianFields.MODIFIED_JULIAN_DAY);
-        list.add(TJulianFields.RATA_DIE);
+        list.add(JulianFields.JULIAN_DAY);
+        list.add(JulianFields.MODIFIED_JULIAN_DAY);
+        list.add(JulianFields.RATA_DIE);
         return list;
     }
 
@@ -85,88 +106,88 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
     public void test_factory_int_singleton() {
 
         for (int i = 1; i <= 7; i++) {
-            TDayOfWeek test = TDayOfWeek.of(i);
+            DayOfWeek test = DayOfWeek.of(i);
             assertEquals(test.getValue(), i);
-            assertSame(TDayOfWeek.of(i), test);
+            assertSame(DayOfWeek.of(i), test);
         }
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_int_valueTooLow() {
 
-        TDayOfWeek.of(0);
+        DayOfWeek.of(0);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_int_valueTooHigh() {
 
-        TDayOfWeek.of(8);
+        DayOfWeek.of(8);
     }
 
     @Test
     public void test_factory_CalendricalObject() {
 
-        assertEquals(TDayOfWeek.from(TLocalDate.of(2011, 6, 6)), TDayOfWeek.MONDAY);
+        assertEquals(DayOfWeek.from(LocalDate.of(2011, 6, 6)), DayOfWeek.MONDAY);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_CalendricalObject_invalid_noDerive() {
 
-        TDayOfWeek.from(TLocalTime.of(12, 30));
+        DayOfWeek.from(LocalTime.of(12, 30));
     }
 
     @Test(expected = NullPointerException.class)
     public void test_factory_CalendricalObject_null() {
 
-        TDayOfWeek.from((TTemporalAccessor) null);
+        DayOfWeek.from((TemporalAccessor) null);
     }
 
     @Test
     public void test_get_TemporalField() {
 
-        assertEquals(TDayOfWeek.WEDNESDAY.getLong(TChronoField.DAY_OF_WEEK), 3);
+        assertEquals(DayOfWeek.WEDNESDAY.getLong(ChronoField.DAY_OF_WEEK), 3);
     }
 
     @Test
     public void test_getLong_TemporalField() {
 
-        assertEquals(TDayOfWeek.WEDNESDAY.getLong(TChronoField.DAY_OF_WEEK), 3);
+        assertEquals(DayOfWeek.WEDNESDAY.getLong(ChronoField.DAY_OF_WEEK), 3);
     }
 
     @Test
     public void test_query() {
 
-        assertEquals(TDayOfWeek.FRIDAY.query(TTemporalQueries.chronology()), null);
-        assertEquals(TDayOfWeek.FRIDAY.query(TTemporalQueries.localDate()), null);
-        assertEquals(TDayOfWeek.FRIDAY.query(TTemporalQueries.localTime()), null);
-        assertEquals(TDayOfWeek.FRIDAY.query(TTemporalQueries.offset()), null);
-        assertEquals(TDayOfWeek.FRIDAY.query(TTemporalQueries.precision()), TChronoUnit.DAYS);
-        assertEquals(TDayOfWeek.FRIDAY.query(TTemporalQueries.zone()), null);
-        assertEquals(TDayOfWeek.FRIDAY.query(TTemporalQueries.zoneId()), null);
+        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.chronology()), null);
+        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.localDate()), null);
+        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.localTime()), null);
+        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.offset()), null);
+        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.precision()), ChronoUnit.DAYS);
+        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.zone()), null);
+        assertEquals(DayOfWeek.FRIDAY.query(TemporalQueries.zoneId()), null);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_query_null() {
 
-        TDayOfWeek.FRIDAY.query(null);
+        DayOfWeek.FRIDAY.query(null);
     }
 
     @Test
     public void test_getDisplayName() {
 
-        assertEquals(TDayOfWeek.MONDAY.getDisplayName(TTextStyle.SHORT, Locale.US), "Mon");
+        assertEquals(DayOfWeek.MONDAY.getDisplayName(TextStyle.SHORT, Locale.US), "Mon");
     }
 
     @Test(expected = NullPointerException.class)
     public void test_getDisplayName_nullStyle() {
 
-        TDayOfWeek.MONDAY.getDisplayName(null, Locale.US);
+        DayOfWeek.MONDAY.getDisplayName(null, Locale.US);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_getDisplayName_nullLocale() {
 
-        TDayOfWeek.MONDAY.getDisplayName(TTextStyle.FULL, null);
+        DayOfWeek.MONDAY.getDisplayName(TextStyle.FULL, null);
     }
 
     Object[][] data_plus() {
@@ -188,7 +209,7 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
             long amount = ((Number) data[1]).longValue();
             int expected = (int) data[2];
 
-            assertEquals(TDayOfWeek.of(base).plus(amount), TDayOfWeek.of(expected));
+            assertEquals(DayOfWeek.of(base).plus(amount), DayOfWeek.of(expected));
         }
     }
 
@@ -207,43 +228,43 @@ public class TestDayOfWeek extends AbstractDateTimeTest {
             long amount = ((Number) data[1]).longValue();
             int expected = (int) data[2];
 
-            assertEquals(TDayOfWeek.of(base).minus(amount), TDayOfWeek.of(expected));
+            assertEquals(DayOfWeek.of(base).minus(amount), DayOfWeek.of(expected));
         }
     }
 
     @Test
     public void test_adjustInto() {
 
-        assertEquals(TDayOfWeek.MONDAY.adjustInto(TLocalDate.of(2012, 9, 2)), TLocalDate.of(2012, 8, 27));
-        assertEquals(TDayOfWeek.MONDAY.adjustInto(TLocalDate.of(2012, 9, 3)), TLocalDate.of(2012, 9, 3));
-        assertEquals(TDayOfWeek.MONDAY.adjustInto(TLocalDate.of(2012, 9, 4)), TLocalDate.of(2012, 9, 3));
-        assertEquals(TDayOfWeek.MONDAY.adjustInto(TLocalDate.of(2012, 9, 10)), TLocalDate.of(2012, 9, 10));
-        assertEquals(TDayOfWeek.MONDAY.adjustInto(TLocalDate.of(2012, 9, 11)), TLocalDate.of(2012, 9, 10));
+        assertEquals(DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 2)), LocalDate.of(2012, 8, 27));
+        assertEquals(DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 3)), LocalDate.of(2012, 9, 3));
+        assertEquals(DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 4)), LocalDate.of(2012, 9, 3));
+        assertEquals(DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 10)), LocalDate.of(2012, 9, 10));
+        assertEquals(DayOfWeek.MONDAY.adjustInto(LocalDate.of(2012, 9, 11)), LocalDate.of(2012, 9, 10));
     }
 
     @Test(expected = NullPointerException.class)
     public void test_adjustInto_null() {
 
-        TDayOfWeek.MONDAY.adjustInto((TTemporal) null);
+        DayOfWeek.MONDAY.adjustInto((Temporal) null);
     }
 
     @Test
     public void test_toString() {
 
-        assertEquals(TDayOfWeek.MONDAY.toString(), "MONDAY");
-        assertEquals(TDayOfWeek.TUESDAY.toString(), "TUESDAY");
-        assertEquals(TDayOfWeek.WEDNESDAY.toString(), "WEDNESDAY");
-        assertEquals(TDayOfWeek.THURSDAY.toString(), "THURSDAY");
-        assertEquals(TDayOfWeek.FRIDAY.toString(), "FRIDAY");
-        assertEquals(TDayOfWeek.SATURDAY.toString(), "SATURDAY");
-        assertEquals(TDayOfWeek.SUNDAY.toString(), "SUNDAY");
+        assertEquals(DayOfWeek.MONDAY.toString(), "MONDAY");
+        assertEquals(DayOfWeek.TUESDAY.toString(), "TUESDAY");
+        assertEquals(DayOfWeek.WEDNESDAY.toString(), "WEDNESDAY");
+        assertEquals(DayOfWeek.THURSDAY.toString(), "THURSDAY");
+        assertEquals(DayOfWeek.FRIDAY.toString(), "FRIDAY");
+        assertEquals(DayOfWeek.SATURDAY.toString(), "SATURDAY");
+        assertEquals(DayOfWeek.SUNDAY.toString(), "SUNDAY");
     }
 
     @Test
     public void test_enum() {
 
-        assertEquals(TDayOfWeek.valueOf("MONDAY"), TDayOfWeek.MONDAY);
-        assertEquals(TDayOfWeek.values()[0], TDayOfWeek.MONDAY);
+        assertEquals(DayOfWeek.valueOf("MONDAY"), DayOfWeek.MONDAY);
+        assertEquals(DayOfWeek.values()[0], DayOfWeek.MONDAY);
     }
 
 }

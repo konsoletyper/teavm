@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -31,26 +46,35 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
+import static java.time.temporal.ChronoField.DAY_OF_MONTH;
+import static java.time.temporal.ChronoField.DAY_OF_YEAR;
+import static java.time.temporal.ChronoField.MONTH_OF_YEAR;
+import static java.time.temporal.ChronoField.YEAR;
+import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_MONTH;
-import static org.teavm.classlib.java.time.temporal.TChronoField.DAY_OF_YEAR;
-import static org.teavm.classlib.java.time.temporal.TChronoField.MONTH_OF_YEAR;
-import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
-import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR_OF_ERA;
+
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.Month;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.Chronology;
+import java.time.chrono.IsoChronology;
+import java.time.chrono.ThaiBuddhistChronology;
+import java.time.chrono.ThaiBuddhistEra;
+import java.time.temporal.ChronoField;
+import java.time.temporal.TemporalAdjusters;
+import java.time.temporal.ValueRange;
 
 import org.junit.Assert;
 import org.junit.Test;
-import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.TLocalDate;
-import org.teavm.classlib.java.time.TLocalDateTime;
-import org.teavm.classlib.java.time.TMonth;
-import org.teavm.classlib.java.time.temporal.TChronoField;
-import org.teavm.classlib.java.time.temporal.TTemporalAdjusters;
-import org.teavm.classlib.java.time.temporal.TValueRange;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class TestThaiBuddhistChronology {
 
     private static final int YDIFF = 543;
@@ -58,8 +82,8 @@ public class TestThaiBuddhistChronology {
     @Test
     public void test_chrono_byName() {
 
-        TChronology c = TThaiBuddhistChronology.INSTANCE;
-        TChronology test = TChronology.of("ThaiBuddhist");
+        Chronology c = ThaiBuddhistChronology.INSTANCE;
+        Chronology test = Chronology.of("ThaiBuddhist");
         Assert.assertNotNull("The ThaiBuddhist calendar could not be found byName", test);
         Assert.assertEquals("ID mismatch", test.getId(), "ThaiBuddhist");
         Assert.assertEquals("Type mismatch", test.getCalendarType(), "buddhist");
@@ -68,31 +92,31 @@ public class TestThaiBuddhistChronology {
 
     Object[][] data_samples() {
 
-        return new Object[][] { { TThaiBuddhistChronology.INSTANCE.date(1 + YDIFF, 1, 1), TLocalDate.of(1, 1, 1) },
-        { TThaiBuddhistChronology.INSTANCE.date(1 + YDIFF, 1, 2), TLocalDate.of(1, 1, 2) },
-        { TThaiBuddhistChronology.INSTANCE.date(1 + YDIFF, 1, 3), TLocalDate.of(1, 1, 3) },
+        return new Object[][] { { ThaiBuddhistChronology.INSTANCE.date(1 + YDIFF, 1, 1), LocalDate.of(1, 1, 1) },
+        { ThaiBuddhistChronology.INSTANCE.date(1 + YDIFF, 1, 2), LocalDate.of(1, 1, 2) },
+        { ThaiBuddhistChronology.INSTANCE.date(1 + YDIFF, 1, 3), LocalDate.of(1, 1, 3) },
 
-        { TThaiBuddhistChronology.INSTANCE.date(2 + YDIFF, 1, 1), TLocalDate.of(2, 1, 1) },
-        { TThaiBuddhistChronology.INSTANCE.date(3 + YDIFF, 1, 1), TLocalDate.of(3, 1, 1) },
-        { TThaiBuddhistChronology.INSTANCE.date(3 + YDIFF, 12, 6), TLocalDate.of(3, 12, 6) },
-        { TThaiBuddhistChronology.INSTANCE.date(4 + YDIFF, 1, 1), TLocalDate.of(4, 1, 1) },
-        { TThaiBuddhistChronology.INSTANCE.date(4 + YDIFF, 7, 3), TLocalDate.of(4, 7, 3) },
-        { TThaiBuddhistChronology.INSTANCE.date(4 + YDIFF, 7, 4), TLocalDate.of(4, 7, 4) },
-        { TThaiBuddhistChronology.INSTANCE.date(5 + YDIFF, 1, 1), TLocalDate.of(5, 1, 1) },
-        { TThaiBuddhistChronology.INSTANCE.date(1662 + YDIFF, 3, 3), TLocalDate.of(1662, 3, 3) },
-        { TThaiBuddhistChronology.INSTANCE.date(1728 + YDIFF, 10, 28), TLocalDate.of(1728, 10, 28) },
-        { TThaiBuddhistChronology.INSTANCE.date(1728 + YDIFF, 10, 29), TLocalDate.of(1728, 10, 29) },
-        { TThaiBuddhistChronology.INSTANCE.date(2555, 8, 29), TLocalDate.of(2012, 8, 29) }, };
+        { ThaiBuddhistChronology.INSTANCE.date(2 + YDIFF, 1, 1), LocalDate.of(2, 1, 1) },
+        { ThaiBuddhistChronology.INSTANCE.date(3 + YDIFF, 1, 1), LocalDate.of(3, 1, 1) },
+        { ThaiBuddhistChronology.INSTANCE.date(3 + YDIFF, 12, 6), LocalDate.of(3, 12, 6) },
+        { ThaiBuddhistChronology.INSTANCE.date(4 + YDIFF, 1, 1), LocalDate.of(4, 1, 1) },
+        { ThaiBuddhistChronology.INSTANCE.date(4 + YDIFF, 7, 3), LocalDate.of(4, 7, 3) },
+        { ThaiBuddhistChronology.INSTANCE.date(4 + YDIFF, 7, 4), LocalDate.of(4, 7, 4) },
+        { ThaiBuddhistChronology.INSTANCE.date(5 + YDIFF, 1, 1), LocalDate.of(5, 1, 1) },
+        { ThaiBuddhistChronology.INSTANCE.date(1662 + YDIFF, 3, 3), LocalDate.of(1662, 3, 3) },
+        { ThaiBuddhistChronology.INSTANCE.date(1728 + YDIFF, 10, 28), LocalDate.of(1728, 10, 28) },
+        { ThaiBuddhistChronology.INSTANCE.date(1728 + YDIFF, 10, 29), LocalDate.of(1728, 10, 29) },
+        { ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29), LocalDate.of(2012, 8, 29) }, };
     }
 
     @Test
     public void test_toLocalDate() {
 
         for (Object[] data : data_samples()) {
-            TChronoLocalDate jdate = (TChronoLocalDate) data[0];
-            TLocalDate iso = (TLocalDate) data[1];
+            ChronoLocalDate jdate = (ChronoLocalDate) data[0];
+            LocalDate iso = (LocalDate) data[1];
 
-            assertEquals(TLocalDate.from(jdate), iso);
+            assertEquals(LocalDate.from(jdate), iso);
         }
     }
 
@@ -100,10 +124,10 @@ public class TestThaiBuddhistChronology {
     public void test_fromCalendrical() {
 
         for (Object[] data : data_samples()) {
-            TChronoLocalDate jdate = (TChronoLocalDate) data[0];
-            TLocalDate iso = (TLocalDate) data[1];
+            ChronoLocalDate jdate = (ChronoLocalDate) data[0];
+            LocalDate iso = (LocalDate) data[1];
 
-            assertEquals(TThaiBuddhistChronology.INSTANCE.date(iso), jdate);
+            assertEquals(ThaiBuddhistChronology.INSTANCE.date(iso), jdate);
         }
     }
 
@@ -127,9 +151,9 @@ public class TestThaiBuddhistChronology {
             int dom = (int) data[2];
 
             try {
-                TThaiBuddhistChronology.INSTANCE.date(year, month, dom);
-                fail("Expected TDateTimeException");
-            } catch (TDateTimeException e) {
+                ThaiBuddhistChronology.INSTANCE.date(year, month, dom);
+                fail("Expected DateTimeException");
+            } catch (DateTimeException e) {
                 // expected
             }
         }
@@ -138,104 +162,104 @@ public class TestThaiBuddhistChronology {
     @Test
     public void test_adjust1() {
 
-        TChronoLocalDate base = TThaiBuddhistChronology.INSTANCE.date(1728, 10, 29);
-        TChronoLocalDate test = base.with(TTemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, TThaiBuddhistChronology.INSTANCE.date(1728, 10, 31));
+        ChronoLocalDate base = ThaiBuddhistChronology.INSTANCE.date(1728, 10, 29);
+        ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
+        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(1728, 10, 31));
     }
 
     @Test
     public void test_adjust2() {
 
-        TChronoLocalDate base = TThaiBuddhistChronology.INSTANCE.date(1728, 12, 2);
-        TChronoLocalDate test = base.with(TTemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, TThaiBuddhistChronology.INSTANCE.date(1728, 12, 31));
+        ChronoLocalDate base = ThaiBuddhistChronology.INSTANCE.date(1728, 12, 2);
+        ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
+        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(1728, 12, 31));
     }
 
     @Test
     public void test_withYear_BE() {
 
-        TChronoLocalDate base = TThaiBuddhistChronology.INSTANCE.date(2555, 8, 29);
-        TChronoLocalDate test = base.with(YEAR, 2554);
-        assertEquals(test, TThaiBuddhistChronology.INSTANCE.date(2554, 8, 29));
+        ChronoLocalDate base = ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29);
+        ChronoLocalDate test = base.with(YEAR, 2554);
+        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(2554, 8, 29));
     }
 
     @Test
     public void test_withYear_BBE() {
 
-        TChronoLocalDate base = TThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29);
-        TChronoLocalDate test = base.with(YEAR_OF_ERA, 2554);
-        assertEquals(test, TThaiBuddhistChronology.INSTANCE.date(-2553, 8, 29));
+        ChronoLocalDate base = ThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29);
+        ChronoLocalDate test = base.with(YEAR_OF_ERA, 2554);
+        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(-2553, 8, 29));
     }
 
     @Test
     public void test_withEra_BE() {
 
-        TChronoLocalDate base = TThaiBuddhistChronology.INSTANCE.date(2555, 8, 29);
-        TChronoLocalDate test = base.with(TChronoField.ERA, TThaiBuddhistEra.BE.getValue());
-        assertEquals(test, TThaiBuddhistChronology.INSTANCE.date(2555, 8, 29));
+        ChronoLocalDate base = ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29);
+        ChronoLocalDate test = base.with(ChronoField.ERA, ThaiBuddhistEra.BE.getValue());
+        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29));
     }
 
     @Test
     public void test_withEra_BBE() {
 
-        TChronoLocalDate base = TThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29);
-        TChronoLocalDate test = base.with(TChronoField.ERA, TThaiBuddhistEra.BEFORE_BE.getValue());
-        assertEquals(test, TThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29));
+        ChronoLocalDate base = ThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29);
+        ChronoLocalDate test = base.with(ChronoField.ERA, ThaiBuddhistEra.BEFORE_BE.getValue());
+        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29));
     }
 
     @Test
     public void test_withEra_swap() {
 
-        TChronoLocalDate base = TThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29);
-        TChronoLocalDate test = base.with(TChronoField.ERA, TThaiBuddhistEra.BE.getValue());
-        assertEquals(test, TThaiBuddhistChronology.INSTANCE.date(2555, 8, 29));
+        ChronoLocalDate base = ThaiBuddhistChronology.INSTANCE.date(-2554, 8, 29);
+        ChronoLocalDate test = base.with(ChronoField.ERA, ThaiBuddhistEra.BE.getValue());
+        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(2555, 8, 29));
     }
 
     @Test
     public void test_adjust_toLocalDate() {
 
-        TChronoLocalDate jdate = TThaiBuddhistChronology.INSTANCE.date(1726, 1, 4);
-        TChronoLocalDate test = jdate.with(TLocalDate.of(2012, 7, 6));
-        assertEquals(test, TThaiBuddhistChronology.INSTANCE.date(2555, 7, 6));
+        ChronoLocalDate jdate = ThaiBuddhistChronology.INSTANCE.date(1726, 1, 4);
+        ChronoLocalDate test = jdate.with(LocalDate.of(2012, 7, 6));
+        assertEquals(test, ThaiBuddhistChronology.INSTANCE.date(2555, 7, 6));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_adjust_toMonth() {
 
-        TChronoLocalDate jdate = TThaiBuddhistChronology.INSTANCE.date(1726, 1, 4);
-        jdate.with(TMonth.APRIL);
+        ChronoLocalDate jdate = ThaiBuddhistChronology.INSTANCE.date(1726, 1, 4);
+        jdate.with(Month.APRIL);
     }
 
     @Test
     public void test_LocalDate_adjustToBuddhistDate() {
 
-        TChronoLocalDate jdate = TThaiBuddhistChronology.INSTANCE.date(2555, 10, 29);
-        TLocalDate test = TLocalDate.MIN.with(jdate);
-        assertEquals(test, TLocalDate.of(2012, 10, 29));
+        ChronoLocalDate jdate = ThaiBuddhistChronology.INSTANCE.date(2555, 10, 29);
+        LocalDate test = LocalDate.MIN.with(jdate);
+        assertEquals(test, LocalDate.of(2012, 10, 29));
     }
 
     @Test
     public void test_LocalDateTime_adjustToBuddhistDate() {
 
-        TChronoLocalDate jdate = TThaiBuddhistChronology.INSTANCE.date(2555, 10, 29);
-        TLocalDateTime test = TLocalDateTime.MIN.with(jdate);
-        assertEquals(test, TLocalDateTime.of(2012, 10, 29, 0, 0));
+        ChronoLocalDate jdate = ThaiBuddhistChronology.INSTANCE.date(2555, 10, 29);
+        LocalDateTime test = LocalDateTime.MIN.with(jdate);
+        assertEquals(test, LocalDateTime.of(2012, 10, 29, 0, 0));
     }
 
     Object[][] data_toString() {
 
-        return new Object[][] { { TThaiBuddhistChronology.INSTANCE.date(544, 1, 1), "ThaiBuddhist BE 544-01-01" },
-        { TThaiBuddhistChronology.INSTANCE.date(2271, 10, 28), "ThaiBuddhist BE 2271-10-28" },
-        { TThaiBuddhistChronology.INSTANCE.date(2271, 10, 29), "ThaiBuddhist BE 2271-10-29" },
-        { TThaiBuddhistChronology.INSTANCE.date(2270, 12, 5), "ThaiBuddhist BE 2270-12-05" },
-        { TThaiBuddhistChronology.INSTANCE.date(2270, 12, 6), "ThaiBuddhist BE 2270-12-06" }, };
+        return new Object[][] { { ThaiBuddhistChronology.INSTANCE.date(544, 1, 1), "ThaiBuddhist BE 544-01-01" },
+        { ThaiBuddhistChronology.INSTANCE.date(2271, 10, 28), "ThaiBuddhist BE 2271-10-28" },
+        { ThaiBuddhistChronology.INSTANCE.date(2271, 10, 29), "ThaiBuddhist BE 2271-10-29" },
+        { ThaiBuddhistChronology.INSTANCE.date(2270, 12, 5), "ThaiBuddhist BE 2270-12-05" },
+        { ThaiBuddhistChronology.INSTANCE.date(2270, 12, 6), "ThaiBuddhist BE 2270-12-06" }, };
     }
 
     @Test
     public void test_toString() {
 
         for (Object[] data : data_toString()) {
-            TChronoLocalDate jdate = (TChronoLocalDate) data[0];
+            ChronoLocalDate jdate = (ChronoLocalDate) data[0];
             String expected = (String) data[1];
 
             assertEquals(jdate.toString(), expected);
@@ -245,26 +269,26 @@ public class TestThaiBuddhistChronology {
     @Test
     public void test_Chrono_range() {
 
-        long minYear = TLocalDate.MIN.getYear() + YDIFF;
-        long maxYear = TLocalDate.MAX.getYear() + YDIFF;
-        assertEquals(TThaiBuddhistChronology.INSTANCE.range(YEAR), TValueRange.of(minYear, maxYear));
-        assertEquals(TThaiBuddhistChronology.INSTANCE.range(YEAR_OF_ERA), TValueRange.of(1, -minYear + 1, maxYear));
+        long minYear = LocalDate.MIN.getYear() + YDIFF;
+        long maxYear = LocalDate.MAX.getYear() + YDIFF;
+        assertEquals(ThaiBuddhistChronology.INSTANCE.range(YEAR), ValueRange.of(minYear, maxYear));
+        assertEquals(ThaiBuddhistChronology.INSTANCE.range(YEAR_OF_ERA), ValueRange.of(1, -minYear + 1, maxYear));
 
-        assertEquals(TThaiBuddhistChronology.INSTANCE.range(DAY_OF_MONTH), DAY_OF_MONTH.range());
-        assertEquals(TThaiBuddhistChronology.INSTANCE.range(DAY_OF_YEAR), DAY_OF_YEAR.range());
-        assertEquals(TThaiBuddhistChronology.INSTANCE.range(MONTH_OF_YEAR), MONTH_OF_YEAR.range());
+        assertEquals(ThaiBuddhistChronology.INSTANCE.range(DAY_OF_MONTH), DAY_OF_MONTH.range());
+        assertEquals(ThaiBuddhistChronology.INSTANCE.range(DAY_OF_YEAR), DAY_OF_YEAR.range());
+        assertEquals(ThaiBuddhistChronology.INSTANCE.range(MONTH_OF_YEAR), MONTH_OF_YEAR.range());
     }
 
     @Test
     public void test_equals_true() {
 
-        assertTrue(TThaiBuddhistChronology.INSTANCE.equals(TThaiBuddhistChronology.INSTANCE));
+        assertTrue(ThaiBuddhistChronology.INSTANCE.equals(ThaiBuddhistChronology.INSTANCE));
     }
 
     @Test
     public void test_equals_false() {
 
-        assertFalse(TThaiBuddhistChronology.INSTANCE.equals(TIsoChronology.INSTANCE));
+        assertFalse(ThaiBuddhistChronology.INSTANCE.equals(IsoChronology.INSTANCE));
     }
 
 }

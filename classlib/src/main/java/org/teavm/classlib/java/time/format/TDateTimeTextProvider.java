@@ -34,13 +34,12 @@ package org.teavm.classlib.java.time.format;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.teavm.classlib.java.time.temporal.TTemporalField;
 
 public abstract class TDateTimeTextProvider {
 
-    private static final AtomicReference<TDateTimeTextProvider> MUTABLE_PROVIDER = new AtomicReference<>();
+    private static TDateTimeTextProvider MUTABLE_PROVIDER = null;
 
     static TDateTimeTextProvider getInstance() {
 
@@ -49,7 +48,7 @@ public abstract class TDateTimeTextProvider {
 
     public static void setInitializer(TDateTimeTextProvider provider) {
 
-        if (!MUTABLE_PROVIDER.compareAndSet(null, provider)) {
+        if (MUTABLE_PROVIDER != null) {
             throw new IllegalStateException("Provider was already set, possibly with a default during initialization");
         }
     }
@@ -67,8 +66,8 @@ public abstract class TDateTimeTextProvider {
         static TDateTimeTextProvider initialize() {
 
             // Set the default initializer if none has been provided yet
-            MUTABLE_PROVIDER.compareAndSet(null, new TSimpleDateTimeTextProvider());
-            return MUTABLE_PROVIDER.get();
+            MUTABLE_PROVIDER = new TSimpleDateTimeTextProvider();
+            return MUTABLE_PROVIDER;
         }
     }
 

@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -36,24 +51,35 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
+import java.time.DateTimeException;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.ZoneOffset;
+import java.time.chrono.ChronoLocalDate;
+import java.time.chrono.ChronoLocalDateTime;
+import java.time.chrono.ChronoZonedDateTime;
+import java.time.chrono.Chronology;
+import java.time.chrono.IsoChronology;
+import java.time.chrono.MinguoChronology;
+import java.time.chrono.MinguoEra;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.TemporalAdjusters;
+
 import org.junit.Assert;
 import org.junit.Test;
-import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.TLocalDate;
-import org.teavm.classlib.java.time.TLocalDateTime;
-import org.teavm.classlib.java.time.TLocalTime;
-import org.teavm.classlib.java.time.TMonth;
-import org.teavm.classlib.java.time.TZoneOffset;
-import org.teavm.classlib.java.time.temporal.TChronoUnit;
-import org.teavm.classlib.java.time.temporal.TTemporalAdjusters;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class TestMinguoChronology {
 
     @Test
     public void test_chrono_byName() {
 
-        TChronology c = TMinguoChronology.INSTANCE;
-        TChronology test = TChronology.of("Minguo");
+        Chronology c = MinguoChronology.INSTANCE;
+        Chronology test = Chronology.of("Minguo");
         Assert.assertNotNull("The Minguo calendar could not be found byName", test);
         Assert.assertEquals("ID mismatch", test.getId(), "Minguo");
         Assert.assertEquals("Type mismatch", test.getCalendarType(), "roc");
@@ -62,30 +88,30 @@ public class TestMinguoChronology {
 
     Object[][] data_samples() {
 
-        return new Object[][] { { TMinguoChronology.INSTANCE.date(1, 1, 1), TLocalDate.of(1912, 1, 1) },
-        { TMinguoChronology.INSTANCE.date(1, 1, 2), TLocalDate.of(1912, 1, 2) },
-        { TMinguoChronology.INSTANCE.date(1, 1, 3), TLocalDate.of(1912, 1, 3) },
+        return new Object[][] { { MinguoChronology.INSTANCE.date(1, 1, 1), LocalDate.of(1912, 1, 1) },
+        { MinguoChronology.INSTANCE.date(1, 1, 2), LocalDate.of(1912, 1, 2) },
+        { MinguoChronology.INSTANCE.date(1, 1, 3), LocalDate.of(1912, 1, 3) },
 
-        { TMinguoChronology.INSTANCE.date(2, 1, 1), TLocalDate.of(1913, 1, 1) },
-        { TMinguoChronology.INSTANCE.date(3, 1, 1), TLocalDate.of(1914, 1, 1) },
-        { TMinguoChronology.INSTANCE.date(3, 12, 6), TLocalDate.of(1914, 12, 6) },
-        { TMinguoChronology.INSTANCE.date(4, 1, 1), TLocalDate.of(1915, 1, 1) },
-        { TMinguoChronology.INSTANCE.date(4, 7, 3), TLocalDate.of(1915, 7, 3) },
-        { TMinguoChronology.INSTANCE.date(4, 7, 4), TLocalDate.of(1915, 7, 4) },
-        { TMinguoChronology.INSTANCE.date(5, 1, 1), TLocalDate.of(1916, 1, 1) },
-        { TMinguoChronology.INSTANCE.date(100, 3, 3), TLocalDate.of(2011, 3, 3) },
-        { TMinguoChronology.INSTANCE.date(101, 10, 28), TLocalDate.of(2012, 10, 28) },
-        { TMinguoChronology.INSTANCE.date(101, 10, 29), TLocalDate.of(2012, 10, 29) }, };
+        { MinguoChronology.INSTANCE.date(2, 1, 1), LocalDate.of(1913, 1, 1) },
+        { MinguoChronology.INSTANCE.date(3, 1, 1), LocalDate.of(1914, 1, 1) },
+        { MinguoChronology.INSTANCE.date(3, 12, 6), LocalDate.of(1914, 12, 6) },
+        { MinguoChronology.INSTANCE.date(4, 1, 1), LocalDate.of(1915, 1, 1) },
+        { MinguoChronology.INSTANCE.date(4, 7, 3), LocalDate.of(1915, 7, 3) },
+        { MinguoChronology.INSTANCE.date(4, 7, 4), LocalDate.of(1915, 7, 4) },
+        { MinguoChronology.INSTANCE.date(5, 1, 1), LocalDate.of(1916, 1, 1) },
+        { MinguoChronology.INSTANCE.date(100, 3, 3), LocalDate.of(2011, 3, 3) },
+        { MinguoChronology.INSTANCE.date(101, 10, 28), LocalDate.of(2012, 10, 28) },
+        { MinguoChronology.INSTANCE.date(101, 10, 29), LocalDate.of(2012, 10, 29) }, };
     }
 
     @Test
     public void test_toLocalDate() {
 
         for (Object[] data : data_samples()) {
-            TChronoLocalDate minguo = (TChronoLocalDate) data[0];
-            TLocalDate iso = (TLocalDate) data[1];
+            ChronoLocalDate minguo = (ChronoLocalDate) data[0];
+            LocalDate iso = (LocalDate) data[1];
 
-            assertEquals(TLocalDate.from(minguo), iso);
+            assertEquals(LocalDate.from(minguo), iso);
         }
     }
 
@@ -93,10 +119,10 @@ public class TestMinguoChronology {
     public void test_fromCalendrical() {
 
         for (Object[] data : data_samples()) {
-            TChronoLocalDate minguo = (TChronoLocalDate) data[0];
-            TLocalDate iso = (TLocalDate) data[1];
+            ChronoLocalDate minguo = (ChronoLocalDate) data[0];
+            LocalDate iso = (LocalDate) data[1];
 
-            assertEquals(TMinguoChronology.INSTANCE.date(iso), minguo);
+            assertEquals(MinguoChronology.INSTANCE.date(iso), minguo);
         }
     }
 
@@ -105,34 +131,34 @@ public class TestMinguoChronology {
     public void test_MinguoDate() {
 
         for (Object[] data : data_samples()) {
-            TChronoLocalDate minguoDate = (TChronoLocalDate) data[0];
-            TLocalDate iso = (TLocalDate) data[1];
+            ChronoLocalDate minguoDate = (ChronoLocalDate) data[0];
+            LocalDate iso = (LocalDate) data[1];
 
-            TChronoLocalDate hd = minguoDate;
-            TChronoLocalDateTime<?> hdt = hd.atTime(TLocalTime.NOON);
-            TZoneOffset zo = TZoneOffset.ofHours(1);
-            TChronoZonedDateTime<?> hzdt = hdt.atZone(zo);
-            hdt = hdt.plus(1, TChronoUnit.YEARS);
-            hdt = hdt.plus(1, TChronoUnit.MONTHS);
-            hdt = hdt.plus(1, TChronoUnit.DAYS);
-            hdt = hdt.plus(1, TChronoUnit.HOURS);
-            hdt = hdt.plus(1, TChronoUnit.MINUTES);
-            hdt = hdt.plus(1, TChronoUnit.SECONDS);
-            hdt = hdt.plus(1, TChronoUnit.NANOS);
-            TChronoLocalDateTime<?> a2 = hzdt.toLocalDateTime();
-            TChronoLocalDate a3 = a2.toLocalDate();
-            TChronoLocalDate a5 = hzdt.toLocalDate();
+            ChronoLocalDate hd = minguoDate;
+            ChronoLocalDateTime<?> hdt = hd.atTime(LocalTime.NOON);
+            ZoneOffset zo = ZoneOffset.ofHours(1);
+            ChronoZonedDateTime<?> hzdt = hdt.atZone(zo);
+            hdt = hdt.plus(1, ChronoUnit.YEARS);
+            hdt = hdt.plus(1, ChronoUnit.MONTHS);
+            hdt = hdt.plus(1, ChronoUnit.DAYS);
+            hdt = hdt.plus(1, ChronoUnit.HOURS);
+            hdt = hdt.plus(1, ChronoUnit.MINUTES);
+            hdt = hdt.plus(1, ChronoUnit.SECONDS);
+            hdt = hdt.plus(1, ChronoUnit.NANOS);
+            ChronoLocalDateTime<?> a2 = hzdt.toLocalDateTime();
+            ChronoLocalDate a3 = a2.toLocalDate();
+            ChronoLocalDate a5 = hzdt.toLocalDate();
         }
     }
 
     @Test()
     public void test_MinguoChrono() {
 
-        TChronoLocalDate h1 = TMinguoChronology.INSTANCE.date(TMinguoEra.ROC, 1, 2, 3);
-        TChronoLocalDate h2 = h1;
-        TChronoLocalDateTime<?> h3 = h2.atTime(TLocalTime.NOON);
+        ChronoLocalDate h1 = MinguoChronology.INSTANCE.date(MinguoEra.ROC, 1, 2, 3);
+        ChronoLocalDate h2 = h1;
+        ChronoLocalDateTime<?> h3 = h2.atTime(LocalTime.NOON);
         @SuppressWarnings("unused")
-        TChronoZonedDateTime<?> h4 = h3.atZone(TZoneOffset.UTC);
+        ChronoZonedDateTime<?> h4 = h3.atZone(ZoneOffset.UTC);
     }
 
     Object[][] data_badDates() {
@@ -155,9 +181,9 @@ public class TestMinguoChronology {
             int dom = (int) data[2];
 
             try {
-                TMinguoChronology.INSTANCE.date(year, month, dom);
-                fail("Expected TDateTimeException");
-            } catch (TDateTimeException e) {
+                MinguoChronology.INSTANCE.date(year, month, dom);
+                fail("Expected DateTimeException");
+            } catch (DateTimeException e) {
                 // expected
             }
         }
@@ -166,64 +192,64 @@ public class TestMinguoChronology {
     @Test
     public void test_adjust1() {
 
-        TChronoLocalDate base = TMinguoChronology.INSTANCE.date(2012, 10, 29);
-        TChronoLocalDate test = base.with(TTemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, TMinguoChronology.INSTANCE.date(2012, 10, 31));
+        ChronoLocalDate base = MinguoChronology.INSTANCE.date(2012, 10, 29);
+        ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
+        assertEquals(test, MinguoChronology.INSTANCE.date(2012, 10, 31));
     }
 
     @Test
     public void test_adjust2() {
 
-        TChronoLocalDate base = TMinguoChronology.INSTANCE.date(1728, 12, 2);
-        TChronoLocalDate test = base.with(TTemporalAdjusters.lastDayOfMonth());
-        assertEquals(test, TMinguoChronology.INSTANCE.date(1728, 12, 31));
+        ChronoLocalDate base = MinguoChronology.INSTANCE.date(1728, 12, 2);
+        ChronoLocalDate test = base.with(TemporalAdjusters.lastDayOfMonth());
+        assertEquals(test, MinguoChronology.INSTANCE.date(1728, 12, 31));
     }
 
     @Test
     public void test_adjust_toLocalDate() {
 
-        TChronoLocalDate minguo = TMinguoChronology.INSTANCE.date(99, 1, 4);
-        TChronoLocalDate test = minguo.with(TLocalDate.of(2012, 7, 6));
-        assertEquals(test, TMinguoChronology.INSTANCE.date(101, 7, 6));
+        ChronoLocalDate minguo = MinguoChronology.INSTANCE.date(99, 1, 4);
+        ChronoLocalDate test = minguo.with(LocalDate.of(2012, 7, 6));
+        assertEquals(test, MinguoChronology.INSTANCE.date(101, 7, 6));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_adjust_toMonth() {
 
-        TChronoLocalDate minguo = TMinguoChronology.INSTANCE.date(1726, 1, 4);
-        minguo.with(TMonth.APRIL);
+        ChronoLocalDate minguo = MinguoChronology.INSTANCE.date(1726, 1, 4);
+        minguo.with(Month.APRIL);
     }
 
     @Test
     public void test_LocalDate_adjustToMinguoDate() {
 
-        TChronoLocalDate minguo = TMinguoChronology.INSTANCE.date(101, 10, 29);
-        TLocalDate test = TLocalDate.MIN.with(minguo);
-        assertEquals(test, TLocalDate.of(2012, 10, 29));
+        ChronoLocalDate minguo = MinguoChronology.INSTANCE.date(101, 10, 29);
+        LocalDate test = LocalDate.MIN.with(minguo);
+        assertEquals(test, LocalDate.of(2012, 10, 29));
     }
 
     @Test
     public void test_LocalDateTime_adjustToMinguoDate() {
 
-        TChronoLocalDate minguo = TMinguoChronology.INSTANCE.date(101, 10, 29);
-        TLocalDateTime test = TLocalDateTime.MIN.with(minguo);
-        assertEquals(test, TLocalDateTime.of(2012, 10, 29, 0, 0));
+        ChronoLocalDate minguo = MinguoChronology.INSTANCE.date(101, 10, 29);
+        LocalDateTime test = LocalDateTime.MIN.with(minguo);
+        assertEquals(test, LocalDateTime.of(2012, 10, 29, 0, 0));
     }
 
     Object[][] data_toString() {
 
-        return new Object[][] { { TMinguoChronology.INSTANCE.date(1, 1, 1), "Minguo ROC 1-01-01" },
-        { TMinguoChronology.INSTANCE.date(1728, 10, 28), "Minguo ROC 1728-10-28" },
-        { TMinguoChronology.INSTANCE.date(1728, 10, 29), "Minguo ROC 1728-10-29" },
-        { TMinguoChronology.INSTANCE.date(1727, 12, 5), "Minguo ROC 1727-12-05" },
-        { TMinguoChronology.INSTANCE.date(1727, 12, 6), "Minguo ROC 1727-12-06" }, };
+        return new Object[][] { { MinguoChronology.INSTANCE.date(1, 1, 1), "Minguo ROC 1-01-01" },
+        { MinguoChronology.INSTANCE.date(1728, 10, 28), "Minguo ROC 1728-10-28" },
+        { MinguoChronology.INSTANCE.date(1728, 10, 29), "Minguo ROC 1728-10-29" },
+        { MinguoChronology.INSTANCE.date(1727, 12, 5), "Minguo ROC 1727-12-05" },
+        { MinguoChronology.INSTANCE.date(1727, 12, 6), "Minguo ROC 1727-12-06" }, };
     }
 
     @Test
     public void test_toString() {
 
         for (Object[] data : data_toString()) {
-            TChronoLocalDate minguo = (TChronoLocalDate) data[0];
+            ChronoLocalDate minguo = (ChronoLocalDate) data[0];
             String expected = (String) data[1];
 
             assertEquals(minguo.toString(), expected);
@@ -233,13 +259,13 @@ public class TestMinguoChronology {
     @Test
     public void test_equals_true() {
 
-        assertTrue(TMinguoChronology.INSTANCE.equals(TMinguoChronology.INSTANCE));
+        assertTrue(MinguoChronology.INSTANCE.equals(MinguoChronology.INSTANCE));
     }
 
     @Test
     public void test_equals_false() {
 
-        assertFalse(TMinguoChronology.INSTANCE.equals(TIsoChronology.INSTANCE));
+        assertFalse(MinguoChronology.INSTANCE.equals(IsoChronology.INSTANCE));
     }
 
 }

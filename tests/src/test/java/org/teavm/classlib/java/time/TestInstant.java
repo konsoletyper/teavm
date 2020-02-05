@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -31,17 +46,30 @@
  */
 package org.teavm.classlib.java.time;
 
+import static java.time.temporal.ChronoField.INSTANT_SECONDS;
+import static java.time.temporal.ChronoField.MICRO_OF_SECOND;
+import static java.time.temporal.ChronoField.MILLI_OF_SECOND;
+import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.NANOS;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
-import static org.teavm.classlib.java.time.temporal.TChronoField.INSTANT_SECONDS;
-import static org.teavm.classlib.java.time.temporal.TChronoField.MICRO_OF_SECOND;
-import static org.teavm.classlib.java.time.temporal.TChronoField.MILLI_OF_SECOND;
-import static org.teavm.classlib.java.time.temporal.TChronoField.NANO_OF_SECOND;
-import static org.teavm.classlib.java.time.temporal.TChronoUnit.DAYS;
-import static org.teavm.classlib.java.time.temporal.TChronoUnit.NANOS;
-import static org.teavm.classlib.java.time.temporal.TChronoUnit.SECONDS;
 
+import java.time.Clock;
+import java.time.DateTimeException;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.JulianFields;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -49,54 +77,50 @@ import java.util.Locale;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.teavm.classlib.java.time.format.TDateTimeParseException;
-import org.teavm.classlib.java.time.temporal.TChronoField;
-import org.teavm.classlib.java.time.temporal.TChronoUnit;
-import org.teavm.classlib.java.time.temporal.TJulianFields;
-import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
-import org.teavm.classlib.java.time.temporal.TTemporalField;
-import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class TestInstant extends AbstractDateTimeTest {
 
-    private static final long MIN_SECOND = TInstant.MIN.getEpochSecond();
+    private static final long MIN_SECOND = Instant.MIN.getEpochSecond();
 
-    private static final long MAX_SECOND = TInstant.MAX.getEpochSecond();
+    private static final long MAX_SECOND = Instant.MAX.getEpochSecond();
 
-    private TInstant TEST_12345_123456789;
+    private Instant TEST_12345_123456789;
 
     @Before
     public void setUp() {
 
-        this.TEST_12345_123456789 = TInstant.ofEpochSecond(12345, 123456789);
+        this.TEST_12345_123456789 = Instant.ofEpochSecond(12345, 123456789);
     }
 
     @Override
-    protected List<TTemporalAccessor> samples() {
+    protected List<TemporalAccessor> samples() {
 
-        TTemporalAccessor[] array = { this.TEST_12345_123456789, TInstant.MIN, TInstant.MAX, TInstant.EPOCH };
+        TemporalAccessor[] array = { this.TEST_12345_123456789, Instant.MIN, Instant.MAX, Instant.EPOCH };
         return Arrays.asList(array);
     }
 
     @Override
-    protected List<TTemporalField> validFields() {
+    protected List<TemporalField> validFields() {
 
-        TTemporalField[] array = { NANO_OF_SECOND, MICRO_OF_SECOND, MILLI_OF_SECOND, INSTANT_SECONDS, };
+        TemporalField[] array = { NANO_OF_SECOND, MICRO_OF_SECOND, MILLI_OF_SECOND, INSTANT_SECONDS, };
         return Arrays.asList(array);
     }
 
     @Override
-    protected List<TTemporalField> invalidFields() {
+    protected List<TemporalField> invalidFields() {
 
-        List<TTemporalField> list = new ArrayList<>(Arrays.<TTemporalField> asList(TChronoField.values()));
+        List<TemporalField> list = new ArrayList<>(Arrays.asList(ChronoField.values()));
         list.removeAll(validFields());
-        list.add(TJulianFields.JULIAN_DAY);
-        list.add(TJulianFields.MODIFIED_JULIAN_DAY);
-        list.add(TJulianFields.RATA_DIE);
+        list.add(JulianFields.JULIAN_DAY);
+        list.add(JulianFields.MODIFIED_JULIAN_DAY);
+        list.add(JulianFields.RATA_DIE);
         return list;
     }
 
-    private void check(TInstant instant, long epochSecs, int nos) {
+    private void check(Instant instant, long epochSecs, int nos) {
 
         assertEquals(instant.getEpochSecond(), epochSecs);
         assertEquals(instant.getNano(), nos);
@@ -107,26 +131,26 @@ public class TestInstant extends AbstractDateTimeTest {
     @Test
     public void constant_EPOCH() {
 
-        check(TInstant.EPOCH, 0, 0);
+        check(Instant.EPOCH, 0, 0);
     }
 
     @Test
     public void constant_MIN() {
 
-        check(TInstant.MIN, -31557014167219200L, 0);
+        check(Instant.MIN, -31557014167219200L, 0);
     }
 
     @Test
     public void constant_MAX() {
 
-        check(TInstant.MAX, 31556889864403199L, 999999999);
+        check(Instant.MAX, 31556889864403199L, 999999999);
     }
 
     @Test
     public void now() {
 
-        TInstant expected = TInstant.now(TClock.systemUTC());
-        TInstant test = TInstant.now();
+        Instant expected = Instant.now(Clock.systemUTC());
+        Instant test = Instant.now();
         long diff = Math.abs(test.toEpochMilli() - expected.toEpochMilli());
         assertTrue(diff < 100); // less than 0.1 secs
     }
@@ -134,16 +158,16 @@ public class TestInstant extends AbstractDateTimeTest {
     @Test(expected = NullPointerException.class)
     public void now_Clock_nullClock() {
 
-        TInstant.now(null);
+        Instant.now(null);
     }
 
     @Test
     public void now_Clock_allSecsInDay_utc() {
 
         for (int i = 0; i < (2 * 24 * 60 * 60); i++) {
-            TInstant expected = TInstant.ofEpochSecond(i).plusNanos(123456789L);
-            TClock clock = TClock.fixed(expected, TZoneOffset.UTC);
-            TInstant test = TInstant.now(clock);
+            Instant expected = Instant.ofEpochSecond(i).plusNanos(123456789L);
+            Clock clock = Clock.fixed(expected, ZoneOffset.UTC);
+            Instant test = Instant.now(clock);
             assertEquals(test, expected);
         }
     }
@@ -152,9 +176,9 @@ public class TestInstant extends AbstractDateTimeTest {
     public void now_Clock_allSecsInDay_beforeEpoch() {
 
         for (int i = -1; i >= -(24 * 60 * 60); i--) {
-            TInstant expected = TInstant.ofEpochSecond(i).plusNanos(123456789L);
-            TClock clock = TClock.fixed(expected, TZoneOffset.UTC);
-            TInstant test = TInstant.now(clock);
+            Instant expected = Instant.ofEpochSecond(i).plusNanos(123456789L);
+            Clock clock = Clock.fixed(expected, ZoneOffset.UTC);
+            Instant test = Instant.now(clock);
             assertEquals(test, expected);
         }
     }
@@ -163,7 +187,7 @@ public class TestInstant extends AbstractDateTimeTest {
     public void factory_seconds_long() {
 
         for (long i = -2; i <= 2; i++) {
-            TInstant t = TInstant.ofEpochSecond(i);
+            Instant t = Instant.ofEpochSecond(i);
             assertEquals(t.getEpochSecond(), i);
             assertEquals(t.getNano(), 0);
         }
@@ -174,17 +198,17 @@ public class TestInstant extends AbstractDateTimeTest {
 
         for (long i = -2; i <= 2; i++) {
             for (int j = 0; j < 10; j++) {
-                TInstant t = TInstant.ofEpochSecond(i, j);
+                Instant t = Instant.ofEpochSecond(i, j);
                 assertEquals(t.getEpochSecond(), i);
                 assertEquals(t.getNano(), j);
             }
             for (int j = -10; j < 0; j++) {
-                TInstant t = TInstant.ofEpochSecond(i, j);
+                Instant t = Instant.ofEpochSecond(i, j);
                 assertEquals(t.getEpochSecond(), i - 1);
                 assertEquals(t.getNano(), j + 1000000000);
             }
             for (int j = 999999990; j < 1000000000; j++) {
-                TInstant t = TInstant.ofEpochSecond(i, j);
+                Instant t = Instant.ofEpochSecond(i, j);
                 assertEquals(t.getEpochSecond(), i);
                 assertEquals(t.getNano(), j);
             }
@@ -194,21 +218,21 @@ public class TestInstant extends AbstractDateTimeTest {
     @Test
     public void factory_seconds_long_long_nanosNegativeAdjusted() {
 
-        TInstant test = TInstant.ofEpochSecond(2L, -1);
+        Instant test = Instant.ofEpochSecond(2L, -1);
         assertEquals(test.getEpochSecond(), 1);
         assertEquals(test.getNano(), 999999999);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void factory_seconds_long_long_tooBig() {
 
-        TInstant.ofEpochSecond(MAX_SECOND, 1000000000);
+        Instant.ofEpochSecond(MAX_SECOND, 1000000000);
     }
 
     @Test(expected = ArithmeticException.class)
     public void factory_seconds_long_long_tooBigBig() {
 
-        TInstant.ofEpochSecond(Long.MAX_VALUE, Long.MAX_VALUE);
+        Instant.ofEpochSecond(Long.MAX_VALUE, Long.MAX_VALUE);
     }
 
     Object[][] provider_factory_millis_long() {
@@ -235,7 +259,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = (long) data[2];
             int expectedNanoOfSecond = (int) data[3];
 
-            TInstant t = TInstant.ofEpochMilli(millis).plusNanos(nanos);
+            Instant t = Instant.ofEpochMilli(millis).plusNanos(nanos);
             assertEquals(t.getEpochSecond(), expectedSeconds);
             assertEquals(t.getNano(), expectedNanoOfSecond);
             assertEquals(t.toEpochMilli(), millis);
@@ -262,7 +286,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedEpochSeconds = ((Number) data[1]).longValue();
             int expectedNanoOfSecond = (int) data[2];
 
-            TInstant t = TInstant.parse(text);
+            Instant t = Instant.parse(text);
             assertEquals(t.getEpochSecond(), expectedEpochSeconds);
             assertEquals(t.getNano(), expectedNanoOfSecond);
         }
@@ -276,7 +300,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedEpochSeconds = ((Number) data[1]).longValue();
             int expectedNanoOfSecond = (int) data[2];
 
-            TInstant t = TInstant.parse(text.toLowerCase(Locale.ENGLISH));
+            Instant t = Instant.parse(text.toLowerCase(Locale.ENGLISH));
             assertEquals(t.getEpochSecond(), expectedEpochSeconds);
             assertEquals(t.getNano(), expectedNanoOfSecond);
         }
@@ -296,9 +320,9 @@ public class TestInstant extends AbstractDateTimeTest {
             String text = (String) data[0];
 
             try {
-                TInstant.parse(text);
-                fail("Expected TDateTimeParseException");
-            } catch (TDateTimeParseException e) {
+                Instant.parse(text);
+                fail("Expected DateTimeParseException");
+            } catch (DateTimeParseException e) {
                 // expected
             }
         }
@@ -313,9 +337,9 @@ public class TestInstant extends AbstractDateTimeTest {
 
             text = text.replace('.', ',');
             try {
-                TInstant.parse(text);
-                fail("Expected TDateTimeParseException");
-            } catch (TDateTimeParseException e) {
+                Instant.parse(text);
+                fail("Expected DateTimeParseException");
+            } catch (DateTimeParseException e) {
                 // expected
             }
         }
@@ -324,38 +348,38 @@ public class TestInstant extends AbstractDateTimeTest {
     @Test(expected = NullPointerException.class)
     public void factory_parse_nullText() {
 
-        TInstant.parse(null);
+        Instant.parse(null);
     }
 
     @Test
     public void test_get_TemporalField() {
 
-        TInstant test = this.TEST_12345_123456789;
-        assertEquals(test.get(TChronoField.NANO_OF_SECOND), 123456789);
-        assertEquals(test.get(TChronoField.MICRO_OF_SECOND), 123456);
-        assertEquals(test.get(TChronoField.MILLI_OF_SECOND), 123);
+        Instant test = this.TEST_12345_123456789;
+        assertEquals(test.get(ChronoField.NANO_OF_SECOND), 123456789);
+        assertEquals(test.get(ChronoField.MICRO_OF_SECOND), 123456);
+        assertEquals(test.get(ChronoField.MILLI_OF_SECOND), 123);
     }
 
     @Test
     public void test_getLong_TemporalField() {
 
-        TInstant test = this.TEST_12345_123456789;
-        assertEquals(test.getLong(TChronoField.NANO_OF_SECOND), 123456789);
-        assertEquals(test.getLong(TChronoField.MICRO_OF_SECOND), 123456);
-        assertEquals(test.getLong(TChronoField.MILLI_OF_SECOND), 123);
-        assertEquals(test.getLong(TChronoField.INSTANT_SECONDS), 12345);
+        Instant test = this.TEST_12345_123456789;
+        assertEquals(test.getLong(ChronoField.NANO_OF_SECOND), 123456789);
+        assertEquals(test.getLong(ChronoField.MICRO_OF_SECOND), 123456);
+        assertEquals(test.getLong(ChronoField.MILLI_OF_SECOND), 123);
+        assertEquals(test.getLong(ChronoField.INSTANT_SECONDS), 12345);
     }
 
     @Test
     public void test_query() {
 
-        assertEquals(this.TEST_12345_123456789.query(TTemporalQueries.chronology()), null);
-        assertEquals(this.TEST_12345_123456789.query(TTemporalQueries.localDate()), null);
-        assertEquals(this.TEST_12345_123456789.query(TTemporalQueries.localTime()), null);
-        assertEquals(this.TEST_12345_123456789.query(TTemporalQueries.offset()), null);
-        assertEquals(this.TEST_12345_123456789.query(TTemporalQueries.precision()), TChronoUnit.NANOS);
-        assertEquals(this.TEST_12345_123456789.query(TTemporalQueries.zone()), null);
-        assertEquals(this.TEST_12345_123456789.query(TTemporalQueries.zoneId()), null);
+        assertEquals(this.TEST_12345_123456789.query(TemporalQueries.chronology()), null);
+        assertEquals(this.TEST_12345_123456789.query(TemporalQueries.localDate()), null);
+        assertEquals(this.TEST_12345_123456789.query(TemporalQueries.localTime()), null);
+        assertEquals(this.TEST_12345_123456789.query(TemporalQueries.offset()), null);
+        assertEquals(this.TEST_12345_123456789.query(TemporalQueries.precision()), ChronoUnit.NANOS);
+        assertEquals(this.TEST_12345_123456789.query(TemporalQueries.zone()), null);
+        assertEquals(this.TEST_12345_123456789.query(TemporalQueries.zoneId()), null);
     }
 
     @Test(expected = NullPointerException.class)
@@ -472,24 +496,24 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[4]).longValue();
             int expectedNanoOfSecond = (int) data[5];
 
-            TInstant i = TInstant.ofEpochSecond(seconds, nanos).plus(TDuration.ofSeconds(otherSeconds, otherNanos));
+            Instant i = Instant.ofEpochSecond(seconds, nanos).plus(Duration.ofSeconds(otherSeconds, otherNanos));
             assertEquals(i.getEpochSecond(), expectedSeconds);
             assertEquals(i.getNano(), expectedNanoOfSecond);
         }
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void plus_Duration_overflowTooBig() {
 
-        TInstant i = TInstant.ofEpochSecond(MAX_SECOND, 999999999);
-        i.plus(TDuration.ofSeconds(0, 1));
+        Instant i = Instant.ofEpochSecond(MAX_SECOND, 999999999);
+        i.plus(Duration.ofSeconds(0, 1));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void plus_Duration_overflowTooSmall() {
 
-        TInstant i = TInstant.ofEpochSecond(MIN_SECOND);
-        i.plus(TDuration.ofSeconds(-1, 999999999));
+        Instant i = Instant.ofEpochSecond(MIN_SECOND);
+        i.plus(Duration.ofSeconds(-1, 999999999));
     }
 
     @Test
@@ -503,23 +527,23 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[4]).longValue();
             int expectedNanoOfSecond = (int) data[5];
 
-            TInstant i = TInstant.ofEpochSecond(seconds, nanos).plus(otherSeconds, SECONDS).plus(otherNanos, NANOS);
+            Instant i = Instant.ofEpochSecond(seconds, nanos).plus(otherSeconds, SECONDS).plus(otherNanos, NANOS);
             assertEquals(i.getEpochSecond(), expectedSeconds);
             assertEquals(i.getNano(), expectedNanoOfSecond);
         }
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void plus_longTemporalUnit_overflowTooBig() {
 
-        TInstant i = TInstant.ofEpochSecond(MAX_SECOND, 999999999);
+        Instant i = Instant.ofEpochSecond(MAX_SECOND, 999999999);
         i.plus(1, NANOS);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void plus_longTemporalUnit_overflowTooSmall() {
 
-        TInstant i = TInstant.ofEpochSecond(MIN_SECOND);
+        Instant i = Instant.ofEpochSecond(MIN_SECOND);
         i.plus(999999999, NANOS);
         i.plus(-1, SECONDS);
     }
@@ -546,7 +570,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[3]).longValue();
             int expectedNanoOfSecond = (int) data[4];
 
-            TInstant t = TInstant.ofEpochSecond(seconds, nanos);
+            Instant t = Instant.ofEpochSecond(seconds, nanos);
             t = t.plusSeconds(amount);
             assertEquals(t.getEpochSecond(), expectedSeconds);
             assertEquals(t.getNano(), expectedNanoOfSecond);
@@ -556,14 +580,14 @@ public class TestInstant extends AbstractDateTimeTest {
     @Test(expected = ArithmeticException.class)
     public void plusSeconds_long_overflowTooBig() {
 
-        TInstant t = TInstant.ofEpochSecond(1, 0);
+        Instant t = Instant.ofEpochSecond(1, 0);
         t.plusSeconds(Long.MAX_VALUE);
     }
 
     @Test(expected = ArithmeticException.class)
     public void plusSeconds_long_overflowTooSmall() {
 
-        TInstant t = TInstant.ofEpochSecond(-1, 0);
+        Instant t = Instant.ofEpochSecond(-1, 0);
         t.plusSeconds(Long.MIN_VALUE);
     }
 
@@ -603,7 +627,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[3]).longValue();
             int expectedNanoOfSecond = (int) data[4];
 
-            TInstant t = TInstant.ofEpochSecond(seconds, nanos);
+            Instant t = Instant.ofEpochSecond(seconds, nanos);
             t = t.plusMillis(amount);
             assertEquals(t.getEpochSecond(), expectedSeconds);
             assertEquals(t.getNano(), expectedNanoOfSecond);
@@ -619,7 +643,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = (long) data[3];
             int expectedNanoOfSecond = (int) data[4];
 
-            TInstant t = TInstant.ofEpochSecond(seconds + 1, nanos);
+            Instant t = Instant.ofEpochSecond(seconds + 1, nanos);
             t = t.plusMillis(amount);
             assertEquals(t.getEpochSecond(), expectedSeconds + 1);
             assertEquals(t.getNano(), expectedNanoOfSecond);
@@ -636,7 +660,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[3]).longValue();
             int expectedNanoOfSecond = (int) data[4];
 
-            TInstant t = TInstant.ofEpochSecond(seconds - 1, nanos);
+            Instant t = Instant.ofEpochSecond(seconds - 1, nanos);
             t = t.plusMillis(amount);
             assertEquals(t.getEpochSecond(), expectedSeconds - 1);
             assertEquals(t.getNano(), expectedNanoOfSecond);
@@ -646,32 +670,32 @@ public class TestInstant extends AbstractDateTimeTest {
     @Test
     public void plusMillis_long_max() {
 
-        TInstant t = TInstant.ofEpochSecond(MAX_SECOND, 998999999);
+        Instant t = Instant.ofEpochSecond(MAX_SECOND, 998999999);
         t = t.plusMillis(1);
         assertEquals(t.getEpochSecond(), MAX_SECOND);
         assertEquals(t.getNano(), 999999999);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void plusMillis_long_overflowTooBig() {
 
-        TInstant t = TInstant.ofEpochSecond(MAX_SECOND, 999000000);
+        Instant t = Instant.ofEpochSecond(MAX_SECOND, 999000000);
         t.plusMillis(1);
     }
 
     @Test
     public void plusMillis_long_min() {
 
-        TInstant t = TInstant.ofEpochSecond(MIN_SECOND, 1000000);
+        Instant t = Instant.ofEpochSecond(MIN_SECOND, 1000000);
         t = t.plusMillis(-1);
         assertEquals(t.getEpochSecond(), MIN_SECOND);
         assertEquals(t.getNano(), 0);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void plusMillis_long_overflowTooSmall() {
 
-        TInstant t = TInstant.ofEpochSecond(MIN_SECOND, 0);
+        Instant t = Instant.ofEpochSecond(MIN_SECOND, 0);
         t.plusMillis(-1);
     }
 
@@ -720,24 +744,24 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[3]).longValue();
             int expectedNanoOfSecond = (int) data[4];
 
-            TInstant t = TInstant.ofEpochSecond(seconds, nanos);
+            Instant t = Instant.ofEpochSecond(seconds, nanos);
             t = t.plusNanos(amount);
             assertEquals(t.getEpochSecond(), expectedSeconds);
             assertEquals(t.getNano(), expectedNanoOfSecond);
         }
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void plusNanos_long_overflowTooBig() {
 
-        TInstant t = TInstant.ofEpochSecond(MAX_SECOND, 999999999);
+        Instant t = Instant.ofEpochSecond(MAX_SECOND, 999999999);
         t.plusNanos(1);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void plusNanos_long_overflowTooSmall() {
 
-        TInstant t = TInstant.ofEpochSecond(MIN_SECOND, 0);
+        Instant t = Instant.ofEpochSecond(MIN_SECOND, 0);
         t.plusNanos(-1);
     }
 
@@ -849,24 +873,24 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[4]).longValue();
             int expectedNanoOfSecond = (int) data[5];
 
-            TInstant i = TInstant.ofEpochSecond(seconds, nanos).minus(TDuration.ofSeconds(otherSeconds, otherNanos));
+            Instant i = Instant.ofEpochSecond(seconds, nanos).minus(Duration.ofSeconds(otherSeconds, otherNanos));
             assertEquals(i.getEpochSecond(), expectedSeconds);
             assertEquals(i.getNano(), expectedNanoOfSecond);
         }
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void minus_Duration_overflowTooSmall() {
 
-        TInstant i = TInstant.ofEpochSecond(MIN_SECOND);
-        i.minus(TDuration.ofSeconds(0, 1));
+        Instant i = Instant.ofEpochSecond(MIN_SECOND);
+        i.minus(Duration.ofSeconds(0, 1));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void minus_Duration_overflowTooBig() {
 
-        TInstant i = TInstant.ofEpochSecond(MAX_SECOND, 999999999);
-        i.minus(TDuration.ofSeconds(-1, 999999999));
+        Instant i = Instant.ofEpochSecond(MAX_SECOND, 999999999);
+        i.minus(Duration.ofSeconds(-1, 999999999));
     }
 
     @Test
@@ -880,23 +904,23 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[4]).longValue();
             int expectedNanoOfSecond = (int) data[5];
 
-            TInstant i = TInstant.ofEpochSecond(seconds, nanos).minus(otherSeconds, SECONDS).minus(otherNanos, NANOS);
+            Instant i = Instant.ofEpochSecond(seconds, nanos).minus(otherSeconds, SECONDS).minus(otherNanos, NANOS);
             assertEquals(i.getEpochSecond(), expectedSeconds);
             assertEquals(i.getNano(), expectedNanoOfSecond);
         }
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void minus_longTemporalUnit_overflowTooSmall() {
 
-        TInstant i = TInstant.ofEpochSecond(MIN_SECOND);
+        Instant i = Instant.ofEpochSecond(MIN_SECOND);
         i.minus(1, NANOS);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void minus_longTemporalUnit_overflowTooBig() {
 
-        TInstant i = TInstant.ofEpochSecond(MAX_SECOND, 999999999);
+        Instant i = Instant.ofEpochSecond(MAX_SECOND, 999999999);
         i.minus(999999999, NANOS);
         i.minus(-1, SECONDS);
     }
@@ -924,7 +948,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[3]).longValue();
             int expectedNanoOfSecond = (int) data[4];
 
-            TInstant i = TInstant.ofEpochSecond(seconds, nanos);
+            Instant i = Instant.ofEpochSecond(seconds, nanos);
             i = i.minusSeconds(amount);
             assertEquals(i.getEpochSecond(), expectedSeconds);
             assertEquals(i.getNano(), expectedNanoOfSecond);
@@ -934,14 +958,14 @@ public class TestInstant extends AbstractDateTimeTest {
     @Test(expected = ArithmeticException.class)
     public void minusSeconds_long_overflowTooBig() {
 
-        TInstant i = TInstant.ofEpochSecond(1, 0);
+        Instant i = Instant.ofEpochSecond(1, 0);
         i.minusSeconds(Long.MIN_VALUE + 1);
     }
 
     @Test(expected = ArithmeticException.class)
     public void minusSeconds_long_overflowTooSmall() {
 
-        TInstant i = TInstant.ofEpochSecond(-2, 0);
+        Instant i = Instant.ofEpochSecond(-2, 0);
         i.minusSeconds(Long.MAX_VALUE);
     }
 
@@ -980,7 +1004,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[3]).longValue();
             int expectedNanoOfSecond = (int) data[4];
 
-            TInstant i = TInstant.ofEpochSecond(seconds, nanos);
+            Instant i = Instant.ofEpochSecond(seconds, nanos);
             i = i.minusMillis(amount);
             assertEquals(i.getEpochSecond(), expectedSeconds);
             assertEquals(i.getNano(), expectedNanoOfSecond);
@@ -997,7 +1021,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[3]).longValue();
             int expectedNanoOfSecond = (int) data[4];
 
-            TInstant i = TInstant.ofEpochSecond(seconds + 1, nanos);
+            Instant i = Instant.ofEpochSecond(seconds + 1, nanos);
             i = i.minusMillis(amount);
             assertEquals(i.getEpochSecond(), expectedSeconds + 1);
             assertEquals(i.getNano(), expectedNanoOfSecond);
@@ -1014,7 +1038,7 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[3]).longValue();
             int expectedNanoOfSecond = (int) data[4];
 
-            TInstant i = TInstant.ofEpochSecond(seconds - 1, nanos);
+            Instant i = Instant.ofEpochSecond(seconds - 1, nanos);
             i = i.minusMillis(amount);
             assertEquals(i.getEpochSecond(), expectedSeconds - 1);
             assertEquals(i.getNano(), expectedNanoOfSecond);
@@ -1024,32 +1048,32 @@ public class TestInstant extends AbstractDateTimeTest {
     @Test
     public void minusMillis_long_max() {
 
-        TInstant i = TInstant.ofEpochSecond(MAX_SECOND, 998999999);
+        Instant i = Instant.ofEpochSecond(MAX_SECOND, 998999999);
         i = i.minusMillis(-1);
         assertEquals(i.getEpochSecond(), MAX_SECOND);
         assertEquals(i.getNano(), 999999999);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void minusMillis_long_overflowTooBig() {
 
-        TInstant i = TInstant.ofEpochSecond(MAX_SECOND, 999000000);
+        Instant i = Instant.ofEpochSecond(MAX_SECOND, 999000000);
         i.minusMillis(-1);
     }
 
     @Test
     public void minusMillis_long_min() {
 
-        TInstant i = TInstant.ofEpochSecond(MIN_SECOND, 1000000);
+        Instant i = Instant.ofEpochSecond(MIN_SECOND, 1000000);
         i = i.minusMillis(1);
         assertEquals(i.getEpochSecond(), MIN_SECOND);
         assertEquals(i.getNano(), 0);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void minusMillis_long_overflowTooSmall() {
 
-        TInstant i = TInstant.ofEpochSecond(MIN_SECOND, 0);
+        Instant i = Instant.ofEpochSecond(MIN_SECOND, 0);
         i.minusMillis(1);
     }
 
@@ -1097,99 +1121,97 @@ public class TestInstant extends AbstractDateTimeTest {
             long expectedSeconds = ((Number) data[3]).longValue();
             int expectedNanoOfSecond = (int) data[4];
 
-            TInstant i = TInstant.ofEpochSecond(seconds, nanos);
+            Instant i = Instant.ofEpochSecond(seconds, nanos);
             i = i.minusNanos(amount);
             assertEquals(i.getEpochSecond(), expectedSeconds);
             assertEquals(i.getNano(), expectedNanoOfSecond);
         }
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void minusNanos_long_overflowTooBig() {
 
-        TInstant i = TInstant.ofEpochSecond(MAX_SECOND, 999999999);
+        Instant i = Instant.ofEpochSecond(MAX_SECOND, 999999999);
         i.minusNanos(-1);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void minusNanos_long_overflowTooSmall() {
 
-        TInstant i = TInstant.ofEpochSecond(MIN_SECOND, 0);
+        Instant i = Instant.ofEpochSecond(MIN_SECOND, 0);
         i.minusNanos(1);
     }
 
     @Test
     public void test_truncatedTo() {
 
-        assertEquals(TInstant.ofEpochSecond(2L, 1000000).truncatedTo(TChronoUnit.SECONDS), TInstant.ofEpochSecond(2L));
-        assertEquals(TInstant.ofEpochSecond(2L, -1000000).truncatedTo(TChronoUnit.SECONDS), TInstant.ofEpochSecond(1L));
-        assertEquals(TInstant.ofEpochSecond(0L, -1000000).truncatedTo(TChronoUnit.SECONDS),
-                TInstant.ofEpochSecond(-1L));
-        assertEquals(TInstant.ofEpochSecond(-1L).truncatedTo(TChronoUnit.SECONDS), TInstant.ofEpochSecond(-1L));
-        assertEquals(TInstant.ofEpochSecond(-1L, -1000000).truncatedTo(TChronoUnit.SECONDS),
-                TInstant.ofEpochSecond(-2L));
-        assertEquals(TInstant.ofEpochSecond(-2L).truncatedTo(TChronoUnit.SECONDS), TInstant.ofEpochSecond(-2L));
+        assertEquals(Instant.ofEpochSecond(2L, 1000000).truncatedTo(ChronoUnit.SECONDS), Instant.ofEpochSecond(2L));
+        assertEquals(Instant.ofEpochSecond(2L, -1000000).truncatedTo(ChronoUnit.SECONDS), Instant.ofEpochSecond(1L));
+        assertEquals(Instant.ofEpochSecond(0L, -1000000).truncatedTo(ChronoUnit.SECONDS), Instant.ofEpochSecond(-1L));
+        assertEquals(Instant.ofEpochSecond(-1L).truncatedTo(ChronoUnit.SECONDS), Instant.ofEpochSecond(-1L));
+        assertEquals(Instant.ofEpochSecond(-1L, -1000000).truncatedTo(ChronoUnit.SECONDS), Instant.ofEpochSecond(-2L));
+        assertEquals(Instant.ofEpochSecond(-2L).truncatedTo(ChronoUnit.SECONDS), Instant.ofEpochSecond(-2L));
     }
 
     @Test
     public void test_toEpochMilli() {
 
-        assertEquals(TInstant.ofEpochSecond(1L, 1000000).toEpochMilli(), 1001L);
-        assertEquals(TInstant.ofEpochSecond(1L, 2000000).toEpochMilli(), 1002L);
-        assertEquals(TInstant.ofEpochSecond(1L, 567).toEpochMilli(), 1000L);
-        assertEquals(TInstant.ofEpochSecond(Long.MAX_VALUE / 1000).toEpochMilli(), (Long.MAX_VALUE / 1000) * 1000);
-        assertEquals(TInstant.ofEpochSecond(Long.MIN_VALUE / 1000).toEpochMilli(), (Long.MIN_VALUE / 1000) * 1000);
-        assertEquals(TInstant.ofEpochSecond(0L, -1000000).toEpochMilli(), -1L);
-        assertEquals(TInstant.ofEpochSecond(0L, 1000000).toEpochMilli(), 1);
-        assertEquals(TInstant.ofEpochSecond(0L, 999999).toEpochMilli(), 0);
-        assertEquals(TInstant.ofEpochSecond(0L, 1).toEpochMilli(), 0);
-        assertEquals(TInstant.ofEpochSecond(0L, 0).toEpochMilli(), 0);
-        assertEquals(TInstant.ofEpochSecond(0L, -1).toEpochMilli(), -1L);
-        assertEquals(TInstant.ofEpochSecond(0L, -999999).toEpochMilli(), -1L);
-        assertEquals(TInstant.ofEpochSecond(0L, -1000000).toEpochMilli(), -1L);
-        assertEquals(TInstant.ofEpochSecond(0L, -1000001).toEpochMilli(), -2L);
+        assertEquals(Instant.ofEpochSecond(1L, 1000000).toEpochMilli(), 1001L);
+        assertEquals(Instant.ofEpochSecond(1L, 2000000).toEpochMilli(), 1002L);
+        assertEquals(Instant.ofEpochSecond(1L, 567).toEpochMilli(), 1000L);
+        assertEquals(Instant.ofEpochSecond(Long.MAX_VALUE / 1000).toEpochMilli(), (Long.MAX_VALUE / 1000) * 1000);
+        assertEquals(Instant.ofEpochSecond(Long.MIN_VALUE / 1000).toEpochMilli(), (Long.MIN_VALUE / 1000) * 1000);
+        assertEquals(Instant.ofEpochSecond(0L, -1000000).toEpochMilli(), -1L);
+        assertEquals(Instant.ofEpochSecond(0L, 1000000).toEpochMilli(), 1);
+        assertEquals(Instant.ofEpochSecond(0L, 999999).toEpochMilli(), 0);
+        assertEquals(Instant.ofEpochSecond(0L, 1).toEpochMilli(), 0);
+        assertEquals(Instant.ofEpochSecond(0L, 0).toEpochMilli(), 0);
+        assertEquals(Instant.ofEpochSecond(0L, -1).toEpochMilli(), -1L);
+        assertEquals(Instant.ofEpochSecond(0L, -999999).toEpochMilli(), -1L);
+        assertEquals(Instant.ofEpochSecond(0L, -1000000).toEpochMilli(), -1L);
+        assertEquals(Instant.ofEpochSecond(0L, -1000001).toEpochMilli(), -2L);
     }
 
     @Test(expected = ArithmeticException.class)
     public void test_toEpochMilli_tooBig() {
 
-        TInstant.ofEpochSecond(Long.MAX_VALUE / 1000 + 1).toEpochMilli();
+        Instant.ofEpochSecond(Long.MAX_VALUE / 1000 + 1).toEpochMilli();
     }
 
     @Test(expected = ArithmeticException.class)
     public void test_toEpochMilli_tooBigDueToNanos() {
 
-        TInstant.ofEpochMilli(Long.MAX_VALUE).plusMillis(1).toEpochMilli();
+        Instant.ofEpochMilli(Long.MAX_VALUE).plusMillis(1).toEpochMilli();
     }
 
     @Test(expected = ArithmeticException.class)
     public void test_toEpochMilli_tooSmall() {
 
-        TInstant.ofEpochSecond(Long.MIN_VALUE / 1000 - 1).toEpochMilli();
+        Instant.ofEpochSecond(Long.MIN_VALUE / 1000 - 1).toEpochMilli();
     }
 
     @Test(expected = ArithmeticException.class)
     public void test_toEpochMilli_tooSmallDueToNanos() {
 
-        TInstant.ofEpochMilli(Long.MIN_VALUE).minusMillis(1).toEpochMilli();
+        Instant.ofEpochMilli(Long.MIN_VALUE).minusMillis(1).toEpochMilli();
     }
 
     @Test
     public void test_comparisons() {
 
-        doTest_comparisons_Instant(TInstant.ofEpochSecond(-2L, 0), TInstant.ofEpochSecond(-2L, 999999998),
-                TInstant.ofEpochSecond(-2L, 999999999), TInstant.ofEpochSecond(-1L, 0), TInstant.ofEpochSecond(-1L, 1),
-                TInstant.ofEpochSecond(-1L, 999999998), TInstant.ofEpochSecond(-1L, 999999999),
-                TInstant.ofEpochSecond(0L, 0), TInstant.ofEpochSecond(0L, 1), TInstant.ofEpochSecond(0L, 2),
-                TInstant.ofEpochSecond(0L, 999999999), TInstant.ofEpochSecond(1L, 0), TInstant.ofEpochSecond(2L, 0));
+        doTest_comparisons_Instant(Instant.ofEpochSecond(-2L, 0), Instant.ofEpochSecond(-2L, 999999998),
+                Instant.ofEpochSecond(-2L, 999999999), Instant.ofEpochSecond(-1L, 0), Instant.ofEpochSecond(-1L, 1),
+                Instant.ofEpochSecond(-1L, 999999998), Instant.ofEpochSecond(-1L, 999999999),
+                Instant.ofEpochSecond(0L, 0), Instant.ofEpochSecond(0L, 1), Instant.ofEpochSecond(0L, 2),
+                Instant.ofEpochSecond(0L, 999999999), Instant.ofEpochSecond(1L, 0), Instant.ofEpochSecond(2L, 0));
     }
 
-    void doTest_comparisons_Instant(TInstant... instants) {
+    void doTest_comparisons_Instant(Instant... instants) {
 
         for (int i = 0; i < instants.length; i++) {
-            TInstant a = instants[i];
+            Instant a = instants[i];
             for (int j = 0; j < instants.length; j++) {
-                TInstant b = instants[j];
+                Instant b = instants[j];
                 if (i < j) {
                     assertEquals(a + " <=> " + b, a.compareTo(b) < 0, true);
                     assertEquals(a + " <=> " + b, a.isBefore(b), true);
@@ -1213,21 +1235,21 @@ public class TestInstant extends AbstractDateTimeTest {
     @Test(expected = NullPointerException.class)
     public void test_compareTo_ObjectNull() {
 
-        TInstant a = TInstant.ofEpochSecond(0L, 0);
+        Instant a = Instant.ofEpochSecond(0L, 0);
         a.compareTo(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_isBefore_ObjectNull() {
 
-        TInstant a = TInstant.ofEpochSecond(0L, 0);
+        Instant a = Instant.ofEpochSecond(0L, 0);
         a.isBefore(null);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_isAfter_ObjectNull() {
 
-        TInstant a = TInstant.ofEpochSecond(0L, 0);
+        Instant a = Instant.ofEpochSecond(0L, 0);
         a.isAfter(null);
     }
 
@@ -1235,17 +1257,17 @@ public class TestInstant extends AbstractDateTimeTest {
     @SuppressWarnings({ "unchecked", "rawtypes" })
     public void compareToNonInstant() {
 
-        Comparable c = TInstant.ofEpochSecond(0L);
+        Comparable c = Instant.ofEpochSecond(0L);
         c.compareTo(new Object());
     }
 
     @Test
     public void test_equals() {
 
-        TInstant test5a = TInstant.ofEpochSecond(5L, 20);
-        TInstant test5b = TInstant.ofEpochSecond(5L, 20);
-        TInstant test5n = TInstant.ofEpochSecond(5L, 30);
-        TInstant test6 = TInstant.ofEpochSecond(6L, 20);
+        Instant test5a = Instant.ofEpochSecond(5L, 20);
+        Instant test5b = Instant.ofEpochSecond(5L, 20);
+        Instant test5n = Instant.ofEpochSecond(5L, 30);
+        Instant test6 = Instant.ofEpochSecond(6L, 20);
 
         assertEquals(test5a.equals(test5a), true);
         assertEquals(test5a.equals(test5b), true);
@@ -1271,24 +1293,24 @@ public class TestInstant extends AbstractDateTimeTest {
     @Test
     public void test_equals_null() {
 
-        TInstant test5 = TInstant.ofEpochSecond(5L, 20);
+        Instant test5 = Instant.ofEpochSecond(5L, 20);
         assertEquals(test5.equals(null), false);
     }
 
     @Test
     public void test_equals_otherClass() {
 
-        TInstant test5 = TInstant.ofEpochSecond(5L, 20);
+        Instant test5 = Instant.ofEpochSecond(5L, 20);
         assertEquals(test5.equals(""), false);
     }
 
     @Test
     public void test_hashCode() {
 
-        TInstant test5a = TInstant.ofEpochSecond(5L, 20);
-        TInstant test5b = TInstant.ofEpochSecond(5L, 20);
-        TInstant test5n = TInstant.ofEpochSecond(5L, 30);
-        TInstant test6 = TInstant.ofEpochSecond(6L, 20);
+        Instant test5a = Instant.ofEpochSecond(5L, 20);
+        Instant test5b = Instant.ofEpochSecond(5L, 20);
+        Instant test5n = Instant.ofEpochSecond(5L, 30);
+        Instant test6 = Instant.ofEpochSecond(6L, 20);
 
         assertEquals(test5a.hashCode() == test5a.hashCode(), true);
         assertEquals(test5a.hashCode() == test5b.hashCode(), true);
@@ -1300,102 +1322,102 @@ public class TestInstant extends AbstractDateTimeTest {
 
     Object[][] data_toString() {
 
-        return new Object[][] { { TInstant.ofEpochSecond(65L, 567), "1970-01-01T00:01:05.000000567Z" },
-        { TInstant.ofEpochSecond(1, 0), "1970-01-01T00:00:01Z" },
-        { TInstant.ofEpochSecond(60, 0), "1970-01-01T00:01:00Z" },
-        { TInstant.ofEpochSecond(3600, 0), "1970-01-01T01:00:00Z" },
-        { TInstant.ofEpochSecond(-1, 0), "1969-12-31T23:59:59Z" },
+        return new Object[][] { { Instant.ofEpochSecond(65L, 567), "1970-01-01T00:01:05.000000567Z" },
+        { Instant.ofEpochSecond(1, 0), "1970-01-01T00:00:01Z" },
+        { Instant.ofEpochSecond(60, 0), "1970-01-01T00:01:00Z" },
+        { Instant.ofEpochSecond(3600, 0), "1970-01-01T01:00:00Z" },
+        { Instant.ofEpochSecond(-1, 0), "1969-12-31T23:59:59Z" },
 
-        { TLocalDateTime.of(0, 1, 2, 0, 0).toInstant(TZoneOffset.UTC), "0000-01-02T00:00:00Z" },
-        { TLocalDateTime.of(0, 1, 1, 12, 30).toInstant(TZoneOffset.UTC), "0000-01-01T12:30:00Z" },
-        { TLocalDateTime.of(0, 1, 1, 0, 0, 0, 1).toInstant(TZoneOffset.UTC), "0000-01-01T00:00:00.000000001Z" },
-        { TLocalDateTime.of(0, 1, 1, 0, 0).toInstant(TZoneOffset.UTC), "0000-01-01T00:00:00Z" },
+        { LocalDateTime.of(0, 1, 2, 0, 0).toInstant(ZoneOffset.UTC), "0000-01-02T00:00:00Z" },
+        { LocalDateTime.of(0, 1, 1, 12, 30).toInstant(ZoneOffset.UTC), "0000-01-01T12:30:00Z" },
+        { LocalDateTime.of(0, 1, 1, 0, 0, 0, 1).toInstant(ZoneOffset.UTC), "0000-01-01T00:00:00.000000001Z" },
+        { LocalDateTime.of(0, 1, 1, 0, 0).toInstant(ZoneOffset.UTC), "0000-01-01T00:00:00Z" },
 
-        { TLocalDateTime.of(-1, 12, 31, 23, 59, 59, 999999999).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(-1, 12, 31, 23, 59, 59, 999999999).toInstant(ZoneOffset.UTC),
         "-0001-12-31T23:59:59.999999999Z" },
-        { TLocalDateTime.of(-1, 12, 31, 12, 30).toInstant(TZoneOffset.UTC), "-0001-12-31T12:30:00Z" },
-        { TLocalDateTime.of(-1, 12, 30, 12, 30).toInstant(TZoneOffset.UTC), "-0001-12-30T12:30:00Z" },
+        { LocalDateTime.of(-1, 12, 31, 12, 30).toInstant(ZoneOffset.UTC), "-0001-12-31T12:30:00Z" },
+        { LocalDateTime.of(-1, 12, 30, 12, 30).toInstant(ZoneOffset.UTC), "-0001-12-30T12:30:00Z" },
 
-        { TLocalDateTime.of(-9999, 1, 2, 12, 30).toInstant(TZoneOffset.UTC), "-9999-01-02T12:30:00Z" },
-        { TLocalDateTime.of(-9999, 1, 1, 12, 30).toInstant(TZoneOffset.UTC), "-9999-01-01T12:30:00Z" },
-        { TLocalDateTime.of(-9999, 1, 1, 0, 0).toInstant(TZoneOffset.UTC), "-9999-01-01T00:00:00Z" },
+        { LocalDateTime.of(-9999, 1, 2, 12, 30).toInstant(ZoneOffset.UTC), "-9999-01-02T12:30:00Z" },
+        { LocalDateTime.of(-9999, 1, 1, 12, 30).toInstant(ZoneOffset.UTC), "-9999-01-01T12:30:00Z" },
+        { LocalDateTime.of(-9999, 1, 1, 0, 0).toInstant(ZoneOffset.UTC), "-9999-01-01T00:00:00Z" },
 
-        { TLocalDateTime.of(-10000, 12, 31, 23, 59, 59, 999999999).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(-10000, 12, 31, 23, 59, 59, 999999999).toInstant(ZoneOffset.UTC),
         "-10000-12-31T23:59:59.999999999Z" },
-        { TLocalDateTime.of(-10000, 12, 31, 12, 30).toInstant(TZoneOffset.UTC), "-10000-12-31T12:30:00Z" },
-        { TLocalDateTime.of(-10000, 12, 30, 12, 30).toInstant(TZoneOffset.UTC), "-10000-12-30T12:30:00Z" },
-        { TLocalDateTime.of(-15000, 12, 31, 12, 30).toInstant(TZoneOffset.UTC), "-15000-12-31T12:30:00Z" },
+        { LocalDateTime.of(-10000, 12, 31, 12, 30).toInstant(ZoneOffset.UTC), "-10000-12-31T12:30:00Z" },
+        { LocalDateTime.of(-10000, 12, 30, 12, 30).toInstant(ZoneOffset.UTC), "-10000-12-30T12:30:00Z" },
+        { LocalDateTime.of(-15000, 12, 31, 12, 30).toInstant(ZoneOffset.UTC), "-15000-12-31T12:30:00Z" },
 
-        { TLocalDateTime.of(-19999, 1, 2, 12, 30).toInstant(TZoneOffset.UTC), "-19999-01-02T12:30:00Z" },
-        { TLocalDateTime.of(-19999, 1, 1, 12, 30).toInstant(TZoneOffset.UTC), "-19999-01-01T12:30:00Z" },
-        { TLocalDateTime.of(-19999, 1, 1, 0, 0).toInstant(TZoneOffset.UTC), "-19999-01-01T00:00:00Z" },
+        { LocalDateTime.of(-19999, 1, 2, 12, 30).toInstant(ZoneOffset.UTC), "-19999-01-02T12:30:00Z" },
+        { LocalDateTime.of(-19999, 1, 1, 12, 30).toInstant(ZoneOffset.UTC), "-19999-01-01T12:30:00Z" },
+        { LocalDateTime.of(-19999, 1, 1, 0, 0).toInstant(ZoneOffset.UTC), "-19999-01-01T00:00:00Z" },
 
-        { TLocalDateTime.of(-20000, 12, 31, 23, 59, 59, 999999999).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(-20000, 12, 31, 23, 59, 59, 999999999).toInstant(ZoneOffset.UTC),
         "-20000-12-31T23:59:59.999999999Z" },
-        { TLocalDateTime.of(-20000, 12, 31, 12, 30).toInstant(TZoneOffset.UTC), "-20000-12-31T12:30:00Z" },
-        { TLocalDateTime.of(-20000, 12, 30, 12, 30).toInstant(TZoneOffset.UTC), "-20000-12-30T12:30:00Z" },
-        { TLocalDateTime.of(-25000, 12, 31, 12, 30).toInstant(TZoneOffset.UTC), "-25000-12-31T12:30:00Z" },
+        { LocalDateTime.of(-20000, 12, 31, 12, 30).toInstant(ZoneOffset.UTC), "-20000-12-31T12:30:00Z" },
+        { LocalDateTime.of(-20000, 12, 30, 12, 30).toInstant(ZoneOffset.UTC), "-20000-12-30T12:30:00Z" },
+        { LocalDateTime.of(-25000, 12, 31, 12, 30).toInstant(ZoneOffset.UTC), "-25000-12-31T12:30:00Z" },
 
-        { TLocalDateTime.of(9999, 12, 30, 12, 30).toInstant(TZoneOffset.UTC), "9999-12-30T12:30:00Z" },
-        { TLocalDateTime.of(9999, 12, 31, 12, 30).toInstant(TZoneOffset.UTC), "9999-12-31T12:30:00Z" },
-        { TLocalDateTime.of(9999, 12, 31, 23, 59, 59, 999999999).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(9999, 12, 30, 12, 30).toInstant(ZoneOffset.UTC), "9999-12-30T12:30:00Z" },
+        { LocalDateTime.of(9999, 12, 31, 12, 30).toInstant(ZoneOffset.UTC), "9999-12-31T12:30:00Z" },
+        { LocalDateTime.of(9999, 12, 31, 23, 59, 59, 999999999).toInstant(ZoneOffset.UTC),
         "9999-12-31T23:59:59.999999999Z" },
 
-        { TLocalDateTime.of(10000, 1, 1, 0, 0).toInstant(TZoneOffset.UTC), "+10000-01-01T00:00:00Z" },
-        { TLocalDateTime.of(10000, 1, 1, 12, 30).toInstant(TZoneOffset.UTC), "+10000-01-01T12:30:00Z" },
-        { TLocalDateTime.of(10000, 1, 2, 12, 30).toInstant(TZoneOffset.UTC), "+10000-01-02T12:30:00Z" },
-        { TLocalDateTime.of(15000, 12, 31, 12, 30).toInstant(TZoneOffset.UTC), "+15000-12-31T12:30:00Z" },
+        { LocalDateTime.of(10000, 1, 1, 0, 0).toInstant(ZoneOffset.UTC), "+10000-01-01T00:00:00Z" },
+        { LocalDateTime.of(10000, 1, 1, 12, 30).toInstant(ZoneOffset.UTC), "+10000-01-01T12:30:00Z" },
+        { LocalDateTime.of(10000, 1, 2, 12, 30).toInstant(ZoneOffset.UTC), "+10000-01-02T12:30:00Z" },
+        { LocalDateTime.of(15000, 12, 31, 12, 30).toInstant(ZoneOffset.UTC), "+15000-12-31T12:30:00Z" },
 
-        { TLocalDateTime.of(19999, 12, 30, 12, 30).toInstant(TZoneOffset.UTC), "+19999-12-30T12:30:00Z" },
-        { TLocalDateTime.of(19999, 12, 31, 12, 30).toInstant(TZoneOffset.UTC), "+19999-12-31T12:30:00Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 999999999).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 30, 12, 30).toInstant(ZoneOffset.UTC), "+19999-12-30T12:30:00Z" },
+        { LocalDateTime.of(19999, 12, 31, 12, 30).toInstant(ZoneOffset.UTC), "+19999-12-31T12:30:00Z" },
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 999999999).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.999999999Z" },
 
-        { TLocalDateTime.of(20000, 1, 1, 0, 0).toInstant(TZoneOffset.UTC), "+20000-01-01T00:00:00Z" },
-        { TLocalDateTime.of(20000, 1, 1, 12, 30).toInstant(TZoneOffset.UTC), "+20000-01-01T12:30:00Z" },
-        { TLocalDateTime.of(20000, 1, 2, 12, 30).toInstant(TZoneOffset.UTC), "+20000-01-02T12:30:00Z" },
-        { TLocalDateTime.of(25000, 12, 31, 12, 30).toInstant(TZoneOffset.UTC), "+25000-12-31T12:30:00Z" },
+        { LocalDateTime.of(20000, 1, 1, 0, 0).toInstant(ZoneOffset.UTC), "+20000-01-01T00:00:00Z" },
+        { LocalDateTime.of(20000, 1, 1, 12, 30).toInstant(ZoneOffset.UTC), "+20000-01-01T12:30:00Z" },
+        { LocalDateTime.of(20000, 1, 2, 12, 30).toInstant(ZoneOffset.UTC), "+20000-01-02T12:30:00Z" },
+        { LocalDateTime.of(25000, 12, 31, 12, 30).toInstant(ZoneOffset.UTC), "+25000-12-31T12:30:00Z" },
 
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 9999999).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 9999999).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.009999999Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 999999000).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 999999000).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.999999Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 9999000).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 9999000).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.009999Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 123000000).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 123000000).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.123Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 100000000).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 100000000).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.100Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 20000000).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 20000000).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.020Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 3000000).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 3000000).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.003Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 400000).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 400000).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.000400Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 50000).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 50000).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.000050Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 6000).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 6000).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.000006Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 700).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 700).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.000000700Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 80).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 80).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.000000080Z" },
-        { TLocalDateTime.of(19999, 12, 31, 23, 59, 59, 9).toInstant(TZoneOffset.UTC),
+        { LocalDateTime.of(19999, 12, 31, 23, 59, 59, 9).toInstant(ZoneOffset.UTC),
         "+19999-12-31T23:59:59.000000009Z" },
-        { TLocalDateTime.of(-999999999, 1, 1, 12, 30).toInstant(TZoneOffset.UTC).minus(1, DAYS),
+        { LocalDateTime.of(-999999999, 1, 1, 12, 30).toInstant(ZoneOffset.UTC).minus(1, DAYS),
         "-1000000000-12-31T12:30:00Z" },
 
-        { TLocalDateTime.of(999999999, 12, 31, 12, 30).toInstant(TZoneOffset.UTC).plus(1, DAYS),
+        { LocalDateTime.of(999999999, 12, 31, 12, 30).toInstant(ZoneOffset.UTC).plus(1, DAYS),
         "+1000000000-01-01T12:30:00Z" },
 
-        { TInstant.MIN, "-1000000000-01-01T00:00:00Z" }, { TInstant.MAX, "+1000000000-12-31T23:59:59.999999999Z" }, };
+        { Instant.MIN, "-1000000000-01-01T00:00:00Z" }, { Instant.MAX, "+1000000000-12-31T23:59:59.999999999Z" }, };
     }
 
     @Test
     public void test_toString() {
 
         for (Object[] data : data_toString()) {
-            TInstant instant = (TInstant) data[0];
+            Instant instant = (Instant) data[0];
             String expected = (String) data[1];
 
             assertEquals(instant.toString(), expected);
@@ -1406,10 +1428,10 @@ public class TestInstant extends AbstractDateTimeTest {
     public void test_parse() {
 
         for (Object[] data : data_toString()) {
-            TInstant instant = (TInstant) data[0];
+            Instant instant = (Instant) data[0];
             String text = (String) data[1];
 
-            assertEquals(TInstant.parse(text), instant);
+            assertEquals(Instant.parse(text), instant);
         }
     }
 
@@ -1417,10 +1439,10 @@ public class TestInstant extends AbstractDateTimeTest {
     public void test_parseLowercase() {
 
         for (Object[] data : data_toString()) {
-            TInstant instant = (TInstant) data[0];
+            Instant instant = (Instant) data[0];
             String text = (String) data[1];
 
-            assertEquals(TInstant.parse(text.toLowerCase(Locale.ENGLISH)), instant);
+            assertEquals(Instant.parse(text.toLowerCase(Locale.ENGLISH)), instant);
         }
     }
 

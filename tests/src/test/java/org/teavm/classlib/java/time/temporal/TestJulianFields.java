@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -33,46 +48,52 @@ package org.teavm.classlib.java.time.temporal;
 
 import static org.junit.Assert.assertEquals;
 
-import org.junit.Test;
-import org.teavm.classlib.java.time.TLocalDate;
+import java.time.LocalDate;
+import java.time.temporal.ChronoField;
+import java.time.temporal.JulianFields;
+import java.time.temporal.TemporalField;
 
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.teavm.junit.TeaVMTestRunner;
+
+@RunWith(TeaVMTestRunner.class)
 public class TestJulianFields {
 
-    private static final TLocalDate JAN01_1970 = TLocalDate.of(1970, 1, 1);
+    private static final LocalDate JAN01_1970 = LocalDate.of(1970, 1, 1);
 
-    private static final TLocalDate DEC31_1969 = TLocalDate.of(1969, 12, 31);
+    private static final LocalDate DEC31_1969 = LocalDate.of(1969, 12, 31);
 
-    private static final TLocalDate NOV12_1945 = TLocalDate.of(1945, 11, 12);
+    private static final LocalDate NOV12_1945 = LocalDate.of(1945, 11, 12);
 
-    private static final TLocalDate JAN01_0001 = TLocalDate.of(1, 1, 1);
+    private static final LocalDate JAN01_0001 = LocalDate.of(1, 1, 1);
 
     Object[][] data_samples() {
 
-        return new Object[][] { { TChronoField.EPOCH_DAY, JAN01_1970, 0L },
-        { TJulianFields.JULIAN_DAY, JAN01_1970, 2400001L + 40587L },
-        { TJulianFields.MODIFIED_JULIAN_DAY, JAN01_1970, 40587L },
-        { TJulianFields.RATA_DIE, JAN01_1970, 710347L + (40587L - 31771L) },
+        return new Object[][] { { ChronoField.EPOCH_DAY, JAN01_1970, 0L },
+        { JulianFields.JULIAN_DAY, JAN01_1970, 2400001L + 40587L },
+        { JulianFields.MODIFIED_JULIAN_DAY, JAN01_1970, 40587L },
+        { JulianFields.RATA_DIE, JAN01_1970, 710347L + (40587L - 31771L) },
 
-        { TChronoField.EPOCH_DAY, DEC31_1969, -1L }, { TJulianFields.JULIAN_DAY, DEC31_1969, 2400001L + 40586L },
-        { TJulianFields.MODIFIED_JULIAN_DAY, DEC31_1969, 40586L },
-        { TJulianFields.RATA_DIE, DEC31_1969, 710347L + (40586L - 31771L) },
+        { ChronoField.EPOCH_DAY, DEC31_1969, -1L }, { JulianFields.JULIAN_DAY, DEC31_1969, 2400001L + 40586L },
+        { JulianFields.MODIFIED_JULIAN_DAY, DEC31_1969, 40586L },
+        { JulianFields.RATA_DIE, DEC31_1969, 710347L + (40586L - 31771L) },
 
-        { TChronoField.EPOCH_DAY, NOV12_1945, (-24 * 365 - 6) - 31 - 30 + 11 },
-        { TJulianFields.JULIAN_DAY, NOV12_1945, 2431772L }, { TJulianFields.MODIFIED_JULIAN_DAY, NOV12_1945, 31771L },
-        { TJulianFields.RATA_DIE, NOV12_1945, 710347L },
+        { ChronoField.EPOCH_DAY, NOV12_1945, (-24 * 365 - 6) - 31 - 30 + 11 },
+        { JulianFields.JULIAN_DAY, NOV12_1945, 2431772L }, { JulianFields.MODIFIED_JULIAN_DAY, NOV12_1945, 31771L },
+        { JulianFields.RATA_DIE, NOV12_1945, 710347L },
 
-        { TChronoField.EPOCH_DAY, JAN01_0001, (-24 * 365 - 6) - 31 - 30 + 11 - 710346L },
-        { TJulianFields.JULIAN_DAY, JAN01_0001, 2431772L - 710346L },
-        { TJulianFields.MODIFIED_JULIAN_DAY, JAN01_0001, 31771L - 710346L },
-        { TJulianFields.RATA_DIE, JAN01_0001, 1 }, };
+        { ChronoField.EPOCH_DAY, JAN01_0001, (-24 * 365 - 6) - 31 - 30 + 11 - 710346L },
+        { JulianFields.JULIAN_DAY, JAN01_0001, 2431772L - 710346L },
+        { JulianFields.MODIFIED_JULIAN_DAY, JAN01_0001, 31771L - 710346L }, { JulianFields.RATA_DIE, JAN01_0001, 1 }, };
     }
 
     @Test
     public void test_samples_get() {
 
         for (Object[] data : data_samples()) {
-            TTemporalField field = (TTemporalField) data[0];
-            TLocalDate date = (TLocalDate) data[1];
+            TemporalField field = (TemporalField) data[0];
+            LocalDate date = (LocalDate) data[1];
             long expected = ((Number) data[2]).longValue();
 
             assertEquals(date.getLong(field), expected);
@@ -83,12 +104,12 @@ public class TestJulianFields {
     public void test_samples_set() {
 
         for (Object[] data : data_samples()) {
-            TTemporalField field = (TTemporalField) data[0];
-            TLocalDate date = (TLocalDate) data[1];
+            TemporalField field = (TemporalField) data[0];
+            LocalDate date = (LocalDate) data[1];
             long value = ((Number) data[2]).longValue();
 
-            assertEquals(field.adjustInto(TLocalDate.MAX, value), date);
-            assertEquals(field.adjustInto(TLocalDate.MIN, value), date);
+            assertEquals(field.adjustInto(LocalDate.MAX, value), date);
+            assertEquals(field.adjustInto(LocalDate.MIN, value), date);
             assertEquals(field.adjustInto(JAN01_1970, value), date);
             assertEquals(field.adjustInto(DEC31_1969, value), date);
             assertEquals(field.adjustInto(NOV12_1945, value), date);
@@ -98,9 +119,9 @@ public class TestJulianFields {
     @Test
     public void test_toString() {
 
-        assertEquals(TJulianFields.JULIAN_DAY.toString(), "JulianDay");
-        assertEquals(TJulianFields.MODIFIED_JULIAN_DAY.toString(), "ModifiedJulianDay");
-        assertEquals(TJulianFields.RATA_DIE.toString(), "RataDie");
+        assertEquals(JulianFields.JULIAN_DAY.toString(), "JulianDay");
+        assertEquals(JulianFields.MODIFIED_JULIAN_DAY.toString(), "ModifiedJulianDay");
+        assertEquals(JulianFields.RATA_DIE.toString(), "RataDie");
     }
 
 }

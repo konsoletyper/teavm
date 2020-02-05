@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -42,11 +57,10 @@ import static org.teavm.classlib.java.time.temporal.TChronoUnit.WEEKS;
 import static org.teavm.classlib.java.time.temporal.TChronoUnit.YEARS;
 
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDateTimeException;
@@ -65,8 +79,7 @@ public final class TWeekFields implements TSerializable {
     // allow week-of-year outer range [0 to 53]
     // this is because callers shouldn't be expected to know the details of validity
 
-    private static final ConcurrentMap<String, TWeekFields> CACHE = new ConcurrentHashMap<String, TWeekFields>(4, 0.75f,
-            2);
+    private static final Map<String, TWeekFields> CACHE = new HashMap<String, TWeekFields>(4, 0.75f);
 
     public static final TWeekFields ISO = new TWeekFields(TDayOfWeek.MONDAY, 4);
 

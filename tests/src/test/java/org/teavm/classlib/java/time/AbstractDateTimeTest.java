@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -34,26 +49,27 @@ package org.teavm.classlib.java.time;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
 
+import java.time.DateTimeException;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQuery;
 import java.util.List;
 
 import org.junit.Test;
-import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
-import org.teavm.classlib.java.time.temporal.TTemporalField;
-import org.teavm.classlib.java.time.temporal.TTemporalQuery;
 
 public abstract class AbstractDateTimeTest extends AbstractTest {
 
-    protected abstract List<TTemporalAccessor> samples();
+    protected abstract List<TemporalAccessor> samples();
 
-    protected abstract List<TTemporalField> validFields();
+    protected abstract List<TemporalField> validFields();
 
-    protected abstract List<TTemporalField> invalidFields();
+    protected abstract List<TemporalField> invalidFields();
 
     @Test
     public void basicTest_isSupported_DateTimeField_supported() {
 
-        for (TTemporalAccessor sample : samples()) {
-            for (TTemporalField field : validFields()) {
+        for (TemporalAccessor sample : samples()) {
+            for (TemporalField field : validFields()) {
                 assertEquals("Failed on " + sample + " " + field, sample.isSupported(field), true);
             }
         }
@@ -62,8 +78,8 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_isSupported_DateTimeField_unsupported() {
 
-        for (TTemporalAccessor sample : samples()) {
-            for (TTemporalField field : invalidFields()) {
+        for (TemporalAccessor sample : samples()) {
+            for (TemporalField field : invalidFields()) {
                 assertEquals("Failed on " + sample + " " + field, sample.isSupported(field), false);
             }
         }
@@ -72,7 +88,7 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_isSupported_DateTimeField_null() {
 
-        for (TTemporalAccessor sample : samples()) {
+        for (TemporalAccessor sample : samples()) {
             assertEquals("Failed on " + sample, sample.isSupported(null), false);
         }
     }
@@ -80,12 +96,12 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_range_DateTimeField_unsupported() {
 
-        for (TTemporalAccessor sample : samples()) {
-            for (TTemporalField field : invalidFields()) {
+        for (TemporalAccessor sample : samples()) {
+            for (TemporalField field : invalidFields()) {
                 try {
                     sample.range(field);
                     fail("Failed on " + sample + " " + field);
-                } catch (TDateTimeException ex) {
+                } catch (DateTimeException ex) {
                     // expected
                 }
             }
@@ -95,7 +111,7 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_range_DateTimeField_null() {
 
-        for (TTemporalAccessor sample : samples()) {
+        for (TemporalAccessor sample : samples()) {
             try {
                 sample.range(null);
                 fail("Failed on " + sample);
@@ -108,12 +124,12 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_get_DateTimeField_unsupported() {
 
-        for (TTemporalAccessor sample : samples()) {
-            for (TTemporalField field : invalidFields()) {
+        for (TemporalAccessor sample : samples()) {
+            for (TemporalField field : invalidFields()) {
                 try {
                     sample.get(field);
                     fail("Failed on " + sample + " " + field);
-                } catch (TDateTimeException ex) {
+                } catch (DateTimeException ex) {
                     // expected
                 }
             }
@@ -123,7 +139,7 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_get_DateTimeField_null() {
 
-        for (TTemporalAccessor sample : samples()) {
+        for (TemporalAccessor sample : samples()) {
             try {
                 sample.get(null);
                 fail("Failed on " + sample);
@@ -136,12 +152,12 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_getLong_DateTimeField_unsupported() {
 
-        for (TTemporalAccessor sample : samples()) {
-            for (TTemporalField field : invalidFields()) {
+        for (TemporalAccessor sample : samples()) {
+            for (TemporalField field : invalidFields()) {
                 try {
                     sample.getLong(field);
                     fail("Failed on " + sample + " " + field);
-                } catch (TDateTimeException ex) {
+                } catch (DateTimeException ex) {
                     // expected
                 }
             }
@@ -151,7 +167,7 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_getLong_DateTimeField_null() {
 
-        for (TTemporalAccessor sample : samples()) {
+        for (TemporalAccessor sample : samples()) {
             try {
                 sample.getLong(null);
                 fail("Failed on " + sample);
@@ -164,10 +180,10 @@ public abstract class AbstractDateTimeTest extends AbstractTest {
     @Test
     public void basicTest_query() {
 
-        for (TTemporalAccessor sample : samples()) {
-            assertEquals(sample.query(new TTemporalQuery<String>() {
+        for (TemporalAccessor sample : samples()) {
+            assertEquals(sample.query(new TemporalQuery<String>() {
                 @Override
-                public String queryFrom(TTemporalAccessor dateTime) {
+                public String queryFrom(TemporalAccessor dateTime) {
 
                     return "foo";
                 }

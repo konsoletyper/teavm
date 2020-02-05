@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -31,45 +46,48 @@
  */
 package org.teavm.classlib.java.time;
 
+import static java.time.temporal.ChronoField.ERA;
+import static java.time.temporal.ChronoField.YEAR;
+import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
-import static org.teavm.classlib.java.time.temporal.TChronoField.ERA;
-import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR;
-import static org.teavm.classlib.java.time.temporal.TChronoField.YEAR_OF_ERA;
 
+import java.time.Clock;
+import java.time.DateTimeException;
+import java.time.Instant;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.Month;
+import java.time.MonthDay;
+import java.time.Year;
+import java.time.YearMonth;
+import java.time.ZoneId;
+import java.time.ZoneOffset;
+import java.time.chrono.IsoChronology;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
+import java.time.temporal.ChronoField;
+import java.time.temporal.ChronoUnit;
+import java.time.temporal.JulianFields;
+import java.time.temporal.Temporal;
+import java.time.temporal.TemporalAccessor;
+import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.teavm.classlib.java.time.TClock;
-import org.teavm.classlib.java.time.TDateTimeException;
-import org.teavm.classlib.java.time.TInstant;
-import org.teavm.classlib.java.time.TLocalDate;
-import org.teavm.classlib.java.time.TLocalDateTime;
-import org.teavm.classlib.java.time.TLocalTime;
-import org.teavm.classlib.java.time.TMonth;
-import org.teavm.classlib.java.time.TMonthDay;
-import org.teavm.classlib.java.time.TYear;
-import org.teavm.classlib.java.time.TYearMonth;
-import org.teavm.classlib.java.time.TZoneId;
-import org.teavm.classlib.java.time.TZoneOffset;
-import org.teavm.classlib.java.time.chrono.TIsoChronology;
-import org.teavm.classlib.java.time.format.TDateTimeFormatter;
-import org.teavm.classlib.java.time.format.TDateTimeParseException;
+import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.MockFieldNoValue;
-import org.teavm.classlib.java.time.temporal.TChronoField;
-import org.teavm.classlib.java.time.temporal.TChronoUnit;
-import org.teavm.classlib.java.time.temporal.TJulianFields;
-import org.teavm.classlib.java.time.temporal.TTemporal;
-import org.teavm.classlib.java.time.temporal.TTemporalAccessor;
-import org.teavm.classlib.java.time.temporal.TTemporalField;
-import org.teavm.classlib.java.time.temporal.TTemporalQueries;
+import org.teavm.junit.TeaVMTestRunner;
 
+@RunWith(TeaVMTestRunner.class)
 public class TestYear extends AbstractDateTimeTest {
 
-    private static final TYear TEST_2008 = TYear.of(2008);
+    private static final Year TEST_2008 = Year.of(2008);
 
     @Before
     public void setUp() {
@@ -77,48 +95,47 @@ public class TestYear extends AbstractDateTimeTest {
     }
 
     @Override
-    protected List<TTemporalAccessor> samples() {
+    protected List<TemporalAccessor> samples() {
 
-        TTemporalAccessor[] array = { TEST_2008, };
+        TemporalAccessor[] array = { TEST_2008, };
         return Arrays.asList(array);
     }
 
     @Override
-    protected List<TTemporalField> validFields() {
+    protected List<TemporalField> validFields() {
 
-        TTemporalField[] array = { YEAR_OF_ERA, YEAR, ERA, };
+        TemporalField[] array = { YEAR_OF_ERA, YEAR, ERA, };
         return Arrays.asList(array);
     }
 
     @Override
-    protected List<TTemporalField> invalidFields() {
+    protected List<TemporalField> invalidFields() {
 
-        List<TTemporalField> list = new ArrayList<TTemporalField>(
-                Arrays.<TTemporalField> asList(TChronoField.values()));
+        List<TemporalField> list = new ArrayList<>(Arrays.asList(ChronoField.values()));
         list.removeAll(validFields());
-        list.add(TJulianFields.JULIAN_DAY);
-        list.add(TJulianFields.MODIFIED_JULIAN_DAY);
-        list.add(TJulianFields.RATA_DIE);
+        list.add(JulianFields.JULIAN_DAY);
+        list.add(JulianFields.MODIFIED_JULIAN_DAY);
+        list.add(JulianFields.RATA_DIE);
         return list;
     }
 
     @Test
     public void test_immutable() {
 
-        assertImmutable(TYear.class);
+        assertImmutable(Year.class);
     }
 
     @Test
     public void now() {
 
-        TYear expected = TYear.now(TClock.systemDefaultZone());
-        TYear test = TYear.now();
+        Year expected = Year.now(Clock.systemDefaultZone());
+        Year test = Year.now();
         for (int i = 0; i < 100; i++) {
             if (expected.equals(test)) {
                 return;
             }
-            expected = TYear.now(TClock.systemDefaultZone());
-            test = TYear.now();
+            expected = Year.now(Clock.systemDefaultZone());
+            test = Year.now();
         }
         assertEquals(test, expected);
     }
@@ -126,21 +143,21 @@ public class TestYear extends AbstractDateTimeTest {
     @Test(expected = NullPointerException.class)
     public void now_ZoneId_nullZoneId() {
 
-        TYear.now((TZoneId) null);
+        Year.now((ZoneId) null);
     }
 
     @Test
     public void now_ZoneId() {
 
-        TZoneId zone = TZoneId.of("UTC+01:02:03");
-        TYear expected = TYear.now(TClock.system(zone));
-        TYear test = TYear.now(zone);
+        ZoneId zone = ZoneId.of("UTC+01:02:03");
+        Year expected = Year.now(Clock.system(zone));
+        Year test = Year.now(zone);
         for (int i = 0; i < 100; i++) {
             if (expected.equals(test)) {
                 return;
             }
-            expected = TYear.now(TClock.system(zone));
-            test = TYear.now(zone);
+            expected = Year.now(Clock.system(zone));
+            test = Year.now(zone);
         }
         assertEquals(test, expected);
     }
@@ -148,66 +165,66 @@ public class TestYear extends AbstractDateTimeTest {
     @Test
     public void now_Clock() {
 
-        TInstant instant = TLocalDateTime.of(2010, 12, 31, 0, 0).toInstant(TZoneOffset.UTC);
-        TClock clock = TClock.fixed(instant, TZoneOffset.UTC);
-        TYear test = TYear.now(clock);
+        Instant instant = LocalDateTime.of(2010, 12, 31, 0, 0).toInstant(ZoneOffset.UTC);
+        Clock clock = Clock.fixed(instant, ZoneOffset.UTC);
+        Year test = Year.now(clock);
         assertEquals(test.getValue(), 2010);
     }
 
     @Test(expected = NullPointerException.class)
     public void now_Clock_nullClock() {
 
-        TYear.now((TClock) null);
+        Year.now((Clock) null);
     }
 
     @Test
     public void test_factory_int_singleton() {
 
         for (int i = -4; i <= 2104; i++) {
-            TYear test = TYear.of(i);
+            Year test = Year.of(i);
             assertEquals(test.getValue(), i);
-            assertEquals(TYear.of(i), test);
+            assertEquals(Year.of(i), test);
         }
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_int_tooLow() {
 
-        TYear.of(TYear.MIN_VALUE - 1);
+        Year.of(Year.MIN_VALUE - 1);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_int_tooHigh() {
 
-        TYear.of(TYear.MAX_VALUE + 1);
+        Year.of(Year.MAX_VALUE + 1);
     }
 
     @Test
     public void test_factory_CalendricalObject() {
 
-        assertEquals(TYear.from(TLocalDate.of(2007, 7, 15)), TYear.of(2007));
+        assertEquals(Year.from(LocalDate.of(2007, 7, 15)), Year.of(2007));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_factory_CalendricalObject_invalid_noDerive() {
 
-        TYear.from(TLocalTime.of(12, 30));
+        Year.from(LocalTime.of(12, 30));
     }
 
     @Test(expected = NullPointerException.class)
     public void test_factory_CalendricalObject_null() {
 
-        TYear.from((TTemporalAccessor) null);
+        Year.from((TemporalAccessor) null);
     }
 
     Object[][] provider_goodParseData() {
 
-        return new Object[][] { { "0000", TYear.of(0) }, { "9999", TYear.of(9999) }, { "2000", TYear.of(2000) },
+        return new Object[][] { { "0000", Year.of(0) }, { "9999", Year.of(9999) }, { "2000", Year.of(2000) },
 
-        { "+12345678", TYear.of(12345678) }, { "+123456", TYear.of(123456) }, { "-1234", TYear.of(-1234) },
-        { "-12345678", TYear.of(-12345678) },
+        { "+12345678", Year.of(12345678) }, { "+123456", Year.of(123456) }, { "-1234", Year.of(-1234) },
+        { "-12345678", Year.of(-12345678) },
 
-        { "+" + TYear.MAX_VALUE, TYear.of(TYear.MAX_VALUE) }, { "" + TYear.MIN_VALUE, TYear.of(TYear.MIN_VALUE) }, };
+        { "+" + Year.MAX_VALUE, Year.of(Year.MAX_VALUE) }, { "" + Year.MIN_VALUE, Year.of(Year.MIN_VALUE) }, };
     }
 
     @Test
@@ -215,9 +232,9 @@ public class TestYear extends AbstractDateTimeTest {
 
         for (Object[] data : provider_goodParseData()) {
             String text = (String) data[0];
-            TYear expected = (TYear) data[1];
+            Year expected = (Year) data[1];
 
-            TYear year = TYear.parse(text);
+            Year year = Year.parse(text);
             assertEquals(year, expected);
         }
     }
@@ -238,9 +255,9 @@ public class TestYear extends AbstractDateTimeTest {
             int pos = (int) data[1];
 
             try {
-                TYear.parse(text);
+                Year.parse(text);
                 fail(String.format("Parse should have failed for %s at position %d", text, pos));
-            } catch (TDateTimeParseException ex) {
+            } catch (DateTimeParseException ex) {
                 assertEquals(ex.getParsedString(), text);
                 assertEquals(ex.getErrorIndex(), pos);
             }
@@ -250,337 +267,337 @@ public class TestYear extends AbstractDateTimeTest {
     @Test(expected = NullPointerException.class)
     public void factory_parse_nullText() {
 
-        TYear.parse(null);
+        Year.parse(null);
     }
 
     @Test
     public void factory_parse_formatter() {
 
-        TDateTimeFormatter f = TDateTimeFormatter.ofPattern("u");
-        TYear test = TYear.parse("2010", f);
-        assertEquals(test, TYear.of(2010));
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("u");
+        Year test = Year.parse("2010", f);
+        assertEquals(test, Year.of(2010));
     }
 
     @Test(expected = NullPointerException.class)
     public void factory_parse_formatter_nullText() {
 
-        TDateTimeFormatter f = TDateTimeFormatter.ofPattern("u");
-        TYear.parse((String) null, f);
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("u");
+        Year.parse((String) null, f);
     }
 
     @Test(expected = NullPointerException.class)
     public void factory_parse_formatter_nullFormatter() {
 
-        TYear.parse("ANY", null);
+        Year.parse("ANY", null);
     }
 
     @Test
     public void test_get_DateTimeField() {
 
-        assertEquals(TEST_2008.getLong(TChronoField.YEAR), 2008);
-        assertEquals(TEST_2008.getLong(TChronoField.YEAR_OF_ERA), 2008);
-        assertEquals(TEST_2008.getLong(TChronoField.ERA), 1);
+        assertEquals(TEST_2008.getLong(ChronoField.YEAR), 2008);
+        assertEquals(TEST_2008.getLong(ChronoField.YEAR_OF_ERA), 2008);
+        assertEquals(TEST_2008.getLong(ChronoField.ERA), 1);
     }
 
     @Test(expected = NullPointerException.class)
     public void test_get_DateTimeField_null() {
 
-        TEST_2008.getLong((TTemporalField) null);
+        TEST_2008.getLong((TemporalField) null);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_get_DateTimeField_invalidField() {
 
         TEST_2008.getLong(MockFieldNoValue.INSTANCE);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_get_DateTimeField_timeField() {
 
-        TEST_2008.getLong(TChronoField.AMPM_OF_DAY);
+        TEST_2008.getLong(ChronoField.AMPM_OF_DAY);
     }
 
     @Test
     public void test_isLeap() {
 
-        assertEquals(TYear.of(1999).isLeap(), false);
-        assertEquals(TYear.of(2000).isLeap(), true);
-        assertEquals(TYear.of(2001).isLeap(), false);
+        assertEquals(Year.of(1999).isLeap(), false);
+        assertEquals(Year.of(2000).isLeap(), true);
+        assertEquals(Year.of(2001).isLeap(), false);
 
-        assertEquals(TYear.of(2007).isLeap(), false);
-        assertEquals(TYear.of(2008).isLeap(), true);
-        assertEquals(TYear.of(2009).isLeap(), false);
-        assertEquals(TYear.of(2010).isLeap(), false);
-        assertEquals(TYear.of(2011).isLeap(), false);
-        assertEquals(TYear.of(2012).isLeap(), true);
+        assertEquals(Year.of(2007).isLeap(), false);
+        assertEquals(Year.of(2008).isLeap(), true);
+        assertEquals(Year.of(2009).isLeap(), false);
+        assertEquals(Year.of(2010).isLeap(), false);
+        assertEquals(Year.of(2011).isLeap(), false);
+        assertEquals(Year.of(2012).isLeap(), true);
 
-        assertEquals(TYear.of(2095).isLeap(), false);
-        assertEquals(TYear.of(2096).isLeap(), true);
-        assertEquals(TYear.of(2097).isLeap(), false);
-        assertEquals(TYear.of(2098).isLeap(), false);
-        assertEquals(TYear.of(2099).isLeap(), false);
-        assertEquals(TYear.of(2100).isLeap(), false);
-        assertEquals(TYear.of(2101).isLeap(), false);
-        assertEquals(TYear.of(2102).isLeap(), false);
-        assertEquals(TYear.of(2103).isLeap(), false);
-        assertEquals(TYear.of(2104).isLeap(), true);
-        assertEquals(TYear.of(2105).isLeap(), false);
+        assertEquals(Year.of(2095).isLeap(), false);
+        assertEquals(Year.of(2096).isLeap(), true);
+        assertEquals(Year.of(2097).isLeap(), false);
+        assertEquals(Year.of(2098).isLeap(), false);
+        assertEquals(Year.of(2099).isLeap(), false);
+        assertEquals(Year.of(2100).isLeap(), false);
+        assertEquals(Year.of(2101).isLeap(), false);
+        assertEquals(Year.of(2102).isLeap(), false);
+        assertEquals(Year.of(2103).isLeap(), false);
+        assertEquals(Year.of(2104).isLeap(), true);
+        assertEquals(Year.of(2105).isLeap(), false);
 
-        assertEquals(TYear.of(-500).isLeap(), false);
-        assertEquals(TYear.of(-400).isLeap(), true);
-        assertEquals(TYear.of(-300).isLeap(), false);
-        assertEquals(TYear.of(-200).isLeap(), false);
-        assertEquals(TYear.of(-100).isLeap(), false);
-        assertEquals(TYear.of(0).isLeap(), true);
-        assertEquals(TYear.of(100).isLeap(), false);
-        assertEquals(TYear.of(200).isLeap(), false);
-        assertEquals(TYear.of(300).isLeap(), false);
-        assertEquals(TYear.of(400).isLeap(), true);
-        assertEquals(TYear.of(500).isLeap(), false);
+        assertEquals(Year.of(-500).isLeap(), false);
+        assertEquals(Year.of(-400).isLeap(), true);
+        assertEquals(Year.of(-300).isLeap(), false);
+        assertEquals(Year.of(-200).isLeap(), false);
+        assertEquals(Year.of(-100).isLeap(), false);
+        assertEquals(Year.of(0).isLeap(), true);
+        assertEquals(Year.of(100).isLeap(), false);
+        assertEquals(Year.of(200).isLeap(), false);
+        assertEquals(Year.of(300).isLeap(), false);
+        assertEquals(Year.of(400).isLeap(), true);
+        assertEquals(Year.of(500).isLeap(), false);
     }
 
     @Test
     public void test_plusYears() {
 
-        assertEquals(TYear.of(2007).plusYears(-1), TYear.of(2006));
-        assertEquals(TYear.of(2007).plusYears(0), TYear.of(2007));
-        assertEquals(TYear.of(2007).plusYears(1), TYear.of(2008));
-        assertEquals(TYear.of(2007).plusYears(2), TYear.of(2009));
+        assertEquals(Year.of(2007).plusYears(-1), Year.of(2006));
+        assertEquals(Year.of(2007).plusYears(0), Year.of(2007));
+        assertEquals(Year.of(2007).plusYears(1), Year.of(2008));
+        assertEquals(Year.of(2007).plusYears(2), Year.of(2009));
 
-        assertEquals(TYear.of(TYear.MAX_VALUE - 1).plusYears(1), TYear.of(TYear.MAX_VALUE));
-        assertEquals(TYear.of(TYear.MAX_VALUE).plusYears(0), TYear.of(TYear.MAX_VALUE));
+        assertEquals(Year.of(Year.MAX_VALUE - 1).plusYears(1), Year.of(Year.MAX_VALUE));
+        assertEquals(Year.of(Year.MAX_VALUE).plusYears(0), Year.of(Year.MAX_VALUE));
 
-        assertEquals(TYear.of(TYear.MIN_VALUE + 1).plusYears(-1), TYear.of(TYear.MIN_VALUE));
-        assertEquals(TYear.of(TYear.MIN_VALUE).plusYears(0), TYear.of(TYear.MIN_VALUE));
+        assertEquals(Year.of(Year.MIN_VALUE + 1).plusYears(-1), Year.of(Year.MIN_VALUE));
+        assertEquals(Year.of(Year.MIN_VALUE).plusYears(0), Year.of(Year.MIN_VALUE));
     }
 
     @Test
     public void test_plusYear_zero_equals() {
 
-        TYear base = TYear.of(2007);
+        Year base = Year.of(2007);
         assertEquals(base.plusYears(0), base);
     }
 
     @Test
     public void test_plusYears_big() {
 
-        long years = 20L + TYear.MAX_VALUE;
-        assertEquals(TYear.of(-40).plusYears(years), TYear.of((int) (-40L + years)));
+        long years = 20L + Year.MAX_VALUE;
+        assertEquals(Year.of(-40).plusYears(years), Year.of((int) (-40L + years)));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_plusYears_max() {
 
-        TYear.of(TYear.MAX_VALUE).plusYears(1);
+        Year.of(Year.MAX_VALUE).plusYears(1);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_plusYears_maxLots() {
 
-        TYear.of(TYear.MAX_VALUE).plusYears(1000);
+        Year.of(Year.MAX_VALUE).plusYears(1000);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_plusYears_min() {
 
-        TYear.of(TYear.MIN_VALUE).plusYears(-1);
+        Year.of(Year.MIN_VALUE).plusYears(-1);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_plusYears_minLots() {
 
-        TYear.of(TYear.MIN_VALUE).plusYears(-1000);
+        Year.of(Year.MIN_VALUE).plusYears(-1000);
     }
 
     @Test
     public void test_minusYears() {
 
-        assertEquals(TYear.of(2007).minusYears(-1), TYear.of(2008));
-        assertEquals(TYear.of(2007).minusYears(0), TYear.of(2007));
-        assertEquals(TYear.of(2007).minusYears(1), TYear.of(2006));
-        assertEquals(TYear.of(2007).minusYears(2), TYear.of(2005));
+        assertEquals(Year.of(2007).minusYears(-1), Year.of(2008));
+        assertEquals(Year.of(2007).minusYears(0), Year.of(2007));
+        assertEquals(Year.of(2007).minusYears(1), Year.of(2006));
+        assertEquals(Year.of(2007).minusYears(2), Year.of(2005));
 
-        assertEquals(TYear.of(TYear.MAX_VALUE - 1).minusYears(-1), TYear.of(TYear.MAX_VALUE));
-        assertEquals(TYear.of(TYear.MAX_VALUE).minusYears(0), TYear.of(TYear.MAX_VALUE));
+        assertEquals(Year.of(Year.MAX_VALUE - 1).minusYears(-1), Year.of(Year.MAX_VALUE));
+        assertEquals(Year.of(Year.MAX_VALUE).minusYears(0), Year.of(Year.MAX_VALUE));
 
-        assertEquals(TYear.of(TYear.MIN_VALUE + 1).minusYears(1), TYear.of(TYear.MIN_VALUE));
-        assertEquals(TYear.of(TYear.MIN_VALUE).minusYears(0), TYear.of(TYear.MIN_VALUE));
+        assertEquals(Year.of(Year.MIN_VALUE + 1).minusYears(1), Year.of(Year.MIN_VALUE));
+        assertEquals(Year.of(Year.MIN_VALUE).minusYears(0), Year.of(Year.MIN_VALUE));
     }
 
     @Test
     public void test_minusYear_zero_equals() {
 
-        TYear base = TYear.of(2007);
+        Year base = Year.of(2007);
         assertEquals(base.minusYears(0), base);
     }
 
     @Test
     public void test_minusYears_big() {
 
-        long years = 20L + TYear.MAX_VALUE;
-        assertEquals(TYear.of(40).minusYears(years), TYear.of((int) (40L - years)));
+        long years = 20L + Year.MAX_VALUE;
+        assertEquals(Year.of(40).minusYears(years), Year.of((int) (40L - years)));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_minusYears_max() {
 
-        TYear.of(TYear.MAX_VALUE).minusYears(-1);
+        Year.of(Year.MAX_VALUE).minusYears(-1);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_minusYears_maxLots() {
 
-        TYear.of(TYear.MAX_VALUE).minusYears(-1000);
+        Year.of(Year.MAX_VALUE).minusYears(-1000);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_minusYears_min() {
 
-        TYear.of(TYear.MIN_VALUE).minusYears(1);
+        Year.of(Year.MIN_VALUE).minusYears(1);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_minusYears_minLots() {
 
-        TYear.of(TYear.MIN_VALUE).minusYears(1000);
+        Year.of(Year.MIN_VALUE).minusYears(1000);
     }
 
     @Test
     public void test_adjustDate() {
 
-        TLocalDate base = TLocalDate.of(2007, 2, 12);
+        LocalDate base = LocalDate.of(2007, 2, 12);
         for (int i = -4; i <= 2104; i++) {
-            TTemporal result = TYear.of(i).adjustInto(base);
-            assertEquals(result, TLocalDate.of(i, 2, 12));
+            Temporal result = Year.of(i).adjustInto(base);
+            assertEquals(result, LocalDate.of(i, 2, 12));
         }
     }
 
     @Test
     public void test_adjustDate_resolve() {
 
-        TYear test = TYear.of(2011);
-        assertEquals(test.adjustInto(TLocalDate.of(2012, 2, 29)), TLocalDate.of(2011, 2, 28));
+        Year test = Year.of(2011);
+        assertEquals(test.adjustInto(LocalDate.of(2012, 2, 29)), LocalDate.of(2011, 2, 28));
     }
 
     @Test(expected = NullPointerException.class)
     public void test_adjustDate_nullLocalDate() {
 
-        TYear test = TYear.of(1);
-        test.adjustInto((TLocalDate) null);
+        Year test = Year.of(1);
+        test.adjustInto((LocalDate) null);
     }
 
     @Test
     public void test_length() {
 
-        assertEquals(TYear.of(1999).length(), 365);
-        assertEquals(TYear.of(2000).length(), 366);
-        assertEquals(TYear.of(2001).length(), 365);
+        assertEquals(Year.of(1999).length(), 365);
+        assertEquals(Year.of(2000).length(), 366);
+        assertEquals(Year.of(2001).length(), 365);
 
-        assertEquals(TYear.of(2007).length(), 365);
-        assertEquals(TYear.of(2008).length(), 366);
-        assertEquals(TYear.of(2009).length(), 365);
-        assertEquals(TYear.of(2010).length(), 365);
-        assertEquals(TYear.of(2011).length(), 365);
-        assertEquals(TYear.of(2012).length(), 366);
+        assertEquals(Year.of(2007).length(), 365);
+        assertEquals(Year.of(2008).length(), 366);
+        assertEquals(Year.of(2009).length(), 365);
+        assertEquals(Year.of(2010).length(), 365);
+        assertEquals(Year.of(2011).length(), 365);
+        assertEquals(Year.of(2012).length(), 366);
 
-        assertEquals(TYear.of(2095).length(), 365);
-        assertEquals(TYear.of(2096).length(), 366);
-        assertEquals(TYear.of(2097).length(), 365);
-        assertEquals(TYear.of(2098).length(), 365);
-        assertEquals(TYear.of(2099).length(), 365);
-        assertEquals(TYear.of(2100).length(), 365);
-        assertEquals(TYear.of(2101).length(), 365);
-        assertEquals(TYear.of(2102).length(), 365);
-        assertEquals(TYear.of(2103).length(), 365);
-        assertEquals(TYear.of(2104).length(), 366);
-        assertEquals(TYear.of(2105).length(), 365);
+        assertEquals(Year.of(2095).length(), 365);
+        assertEquals(Year.of(2096).length(), 366);
+        assertEquals(Year.of(2097).length(), 365);
+        assertEquals(Year.of(2098).length(), 365);
+        assertEquals(Year.of(2099).length(), 365);
+        assertEquals(Year.of(2100).length(), 365);
+        assertEquals(Year.of(2101).length(), 365);
+        assertEquals(Year.of(2102).length(), 365);
+        assertEquals(Year.of(2103).length(), 365);
+        assertEquals(Year.of(2104).length(), 366);
+        assertEquals(Year.of(2105).length(), 365);
 
-        assertEquals(TYear.of(-500).length(), 365);
-        assertEquals(TYear.of(-400).length(), 366);
-        assertEquals(TYear.of(-300).length(), 365);
-        assertEquals(TYear.of(-200).length(), 365);
-        assertEquals(TYear.of(-100).length(), 365);
-        assertEquals(TYear.of(0).length(), 366);
-        assertEquals(TYear.of(100).length(), 365);
-        assertEquals(TYear.of(200).length(), 365);
-        assertEquals(TYear.of(300).length(), 365);
-        assertEquals(TYear.of(400).length(), 366);
-        assertEquals(TYear.of(500).length(), 365);
+        assertEquals(Year.of(-500).length(), 365);
+        assertEquals(Year.of(-400).length(), 366);
+        assertEquals(Year.of(-300).length(), 365);
+        assertEquals(Year.of(-200).length(), 365);
+        assertEquals(Year.of(-100).length(), 365);
+        assertEquals(Year.of(0).length(), 366);
+        assertEquals(Year.of(100).length(), 365);
+        assertEquals(Year.of(200).length(), 365);
+        assertEquals(Year.of(300).length(), 365);
+        assertEquals(Year.of(400).length(), 366);
+        assertEquals(Year.of(500).length(), 365);
     }
 
     @Test
     public void test_isValidMonthDay_june() {
 
-        TYear test = TYear.of(2007);
-        TMonthDay monthDay = TMonthDay.of(6, 30);
+        Year test = Year.of(2007);
+        MonthDay monthDay = MonthDay.of(6, 30);
         assertEquals(test.isValidMonthDay(monthDay), true);
     }
 
     @Test
     public void test_isValidMonthDay_febNonLeap() {
 
-        TYear test = TYear.of(2007);
-        TMonthDay monthDay = TMonthDay.of(2, 29);
+        Year test = Year.of(2007);
+        MonthDay monthDay = MonthDay.of(2, 29);
         assertEquals(test.isValidMonthDay(monthDay), false);
     }
 
     @Test
     public void test_isValidMonthDay_febLeap() {
 
-        TYear test = TYear.of(2008);
-        TMonthDay monthDay = TMonthDay.of(2, 29);
+        Year test = Year.of(2008);
+        MonthDay monthDay = MonthDay.of(2, 29);
         assertEquals(test.isValidMonthDay(monthDay), true);
     }
 
     @Test
     public void test_isValidMonthDay_null() {
 
-        TYear test = TYear.of(2008);
+        Year test = Year.of(2008);
         assertEquals(test.isValidMonthDay(null), false);
     }
 
     @Test
     public void test_atMonth() {
 
-        TYear test = TYear.of(2008);
-        assertEquals(test.atMonth(TMonth.JUNE), TYearMonth.of(2008, 6));
+        Year test = Year.of(2008);
+        assertEquals(test.atMonth(Month.JUNE), YearMonth.of(2008, 6));
     }
 
     @Test(expected = NullPointerException.class)
     public void test_atMonth_nullMonth() {
 
-        TYear test = TYear.of(2008);
-        test.atMonth((TMonth) null);
+        Year test = Year.of(2008);
+        test.atMonth((Month) null);
     }
 
     @Test
     public void test_atMonth_int() {
 
-        TYear test = TYear.of(2008);
-        assertEquals(test.atMonth(6), TYearMonth.of(2008, 6));
+        Year test = Year.of(2008);
+        assertEquals(test.atMonth(6), YearMonth.of(2008, 6));
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_atMonth_int_invalidMonth() {
 
-        TYear test = TYear.of(2008);
+        Year test = Year.of(2008);
         test.atMonth(13);
     }
 
     Object[][] data_atMonthDay() {
 
-        return new Object[][] { { TYear.of(2008), TMonthDay.of(6, 30), TLocalDate.of(2008, 6, 30) },
-        { TYear.of(2008), TMonthDay.of(2, 29), TLocalDate.of(2008, 2, 29) },
-        { TYear.of(2009), TMonthDay.of(2, 29), TLocalDate.of(2009, 2, 28) }, };
+        return new Object[][] { { Year.of(2008), MonthDay.of(6, 30), LocalDate.of(2008, 6, 30) },
+        { Year.of(2008), MonthDay.of(2, 29), LocalDate.of(2008, 2, 29) },
+        { Year.of(2009), MonthDay.of(2, 29), LocalDate.of(2009, 2, 28) }, };
     }
 
     @Test
     public void test_atMonthDay() {
 
         for (Object[] data : data_atMonthDay()) {
-            TYear year = (TYear) data[0];
-            TMonthDay monthDay = (TMonthDay) data[1];
-            TLocalDate expected = (TLocalDate) data[2];
+            Year year = (Year) data[0];
+            MonthDay monthDay = (MonthDay) data[1];
+            LocalDate expected = (LocalDate) data[2];
 
             assertEquals(year.atMonthDay(monthDay), expected);
         }
@@ -589,63 +606,63 @@ public class TestYear extends AbstractDateTimeTest {
     @Test(expected = NullPointerException.class)
     public void test_atMonthDay_nullMonthDay() {
 
-        TYear test = TYear.of(2008);
-        test.atMonthDay((TMonthDay) null);
+        Year test = Year.of(2008);
+        test.atMonthDay((MonthDay) null);
     }
 
     @Test
     public void test_atDay_notLeapYear() {
 
-        TYear test = TYear.of(2007);
-        TLocalDate expected = TLocalDate.of(2007, 1, 1);
+        Year test = Year.of(2007);
+        LocalDate expected = LocalDate.of(2007, 1, 1);
         for (int i = 1; i <= 365; i++) {
             assertEquals(test.atDay(i), expected);
             expected = expected.plusDays(1);
         }
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_atDay_notLeapYear_day366() {
 
-        TYear test = TYear.of(2007);
+        Year test = Year.of(2007);
         test.atDay(366);
     }
 
     @Test
     public void test_atDay_leapYear() {
 
-        TYear test = TYear.of(2008);
-        TLocalDate expected = TLocalDate.of(2008, 1, 1);
+        Year test = Year.of(2008);
+        LocalDate expected = LocalDate.of(2008, 1, 1);
         for (int i = 1; i <= 366; i++) {
             assertEquals(test.atDay(i), expected);
             expected = expected.plusDays(1);
         }
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_atDay_day0() {
 
-        TYear test = TYear.of(2007);
+        Year test = Year.of(2007);
         test.atDay(0);
     }
 
-    @Test(expected = TDateTimeException.class)
+    @Test(expected = DateTimeException.class)
     public void test_atDay_day367() {
 
-        TYear test = TYear.of(2007);
+        Year test = Year.of(2007);
         test.atDay(367);
     }
 
     @Test
     public void test_query() {
 
-        assertEquals(TEST_2008.query(TTemporalQueries.chronology()), TIsoChronology.INSTANCE);
-        assertEquals(TEST_2008.query(TTemporalQueries.localDate()), null);
-        assertEquals(TEST_2008.query(TTemporalQueries.localTime()), null);
-        assertEquals(TEST_2008.query(TTemporalQueries.offset()), null);
-        assertEquals(TEST_2008.query(TTemporalQueries.precision()), TChronoUnit.YEARS);
-        assertEquals(TEST_2008.query(TTemporalQueries.zone()), null);
-        assertEquals(TEST_2008.query(TTemporalQueries.zoneId()), null);
+        assertEquals(TEST_2008.query(TemporalQueries.chronology()), IsoChronology.INSTANCE);
+        assertEquals(TEST_2008.query(TemporalQueries.localDate()), null);
+        assertEquals(TEST_2008.query(TemporalQueries.localTime()), null);
+        assertEquals(TEST_2008.query(TemporalQueries.offset()), null);
+        assertEquals(TEST_2008.query(TemporalQueries.precision()), ChronoUnit.YEARS);
+        assertEquals(TEST_2008.query(TemporalQueries.zone()), null);
+        assertEquals(TEST_2008.query(TemporalQueries.zoneId()), null);
     }
 
     @Test(expected = NullPointerException.class)
@@ -658,9 +675,9 @@ public class TestYear extends AbstractDateTimeTest {
     public void test_compareTo() {
 
         for (int i = -4; i <= 2104; i++) {
-            TYear a = TYear.of(i);
+            Year a = Year.of(i);
             for (int j = -4; j <= 2104; j++) {
-                TYear b = TYear.of(j);
+                Year b = Year.of(j);
                 if (i < j) {
                     assertEquals(a.compareTo(b) < 0, true);
                     assertEquals(b.compareTo(a) > 0, true);
@@ -690,8 +707,8 @@ public class TestYear extends AbstractDateTimeTest {
     @Test(expected = NullPointerException.class)
     public void test_compareTo_nullYear() {
 
-        TYear doy = null;
-        TYear test = TYear.of(1);
+        Year doy = null;
+        Year test = Year.of(1);
         test.compareTo(doy);
     }
 
@@ -699,9 +716,9 @@ public class TestYear extends AbstractDateTimeTest {
     public void test_equals() {
 
         for (int i = -4; i <= 2104; i++) {
-            TYear a = TYear.of(i);
+            Year a = Year.of(i);
             for (int j = -4; j <= 2104; j++) {
-                TYear b = TYear.of(j);
+                Year b = Year.of(j);
                 assertEquals(a.equals(b), i == j);
                 assertEquals(a.hashCode() == b.hashCode(), i == j);
             }
@@ -711,22 +728,22 @@ public class TestYear extends AbstractDateTimeTest {
     @Test
     public void test_equals_same() {
 
-        TYear test = TYear.of(2011);
+        Year test = Year.of(2011);
         assertEquals(test.equals(test), true);
     }
 
     @Test
     public void test_equals_nullYear() {
 
-        TYear doy = null;
-        TYear test = TYear.of(1);
+        Year doy = null;
+        Year test = Year.of(1);
         assertEquals(test.equals(doy), false);
     }
 
     @Test
     public void test_equals_incorrectType() {
 
-        TYear test = TYear.of(1);
+        Year test = Year.of(1);
         assertEquals(test.equals("Incorrect type"), false);
     }
 
@@ -734,7 +751,7 @@ public class TestYear extends AbstractDateTimeTest {
     public void test_toString() {
 
         for (int i = -4; i <= 2104; i++) {
-            TYear a = TYear.of(i);
+            Year a = Year.of(i);
             assertEquals(a.toString(), "" + i);
         }
     }
@@ -742,15 +759,15 @@ public class TestYear extends AbstractDateTimeTest {
     @Test
     public void test_format_formatter() {
 
-        TDateTimeFormatter f = TDateTimeFormatter.ofPattern("y");
-        String t = TYear.of(2010).format(f);
+        DateTimeFormatter f = DateTimeFormatter.ofPattern("y");
+        String t = Year.of(2010).format(f);
         assertEquals(t, "2010");
     }
 
     @Test(expected = NullPointerException.class)
     public void format_formatter_null() {
 
-        TYear.of(2010).format(null);
+        Year.of(2010).format(null);
     }
 
 }

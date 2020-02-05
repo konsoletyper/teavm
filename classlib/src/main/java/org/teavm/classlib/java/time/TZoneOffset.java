@@ -1,4 +1,19 @@
 /*
+ *  Copyright 2020, adopted to TeaVM by Joerg Hohwiller
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
+/*
  * Copyright (c) 2007-present, Stephen Colebourne & Michael Nascimento Santos
  *
  * All rights reserved.
@@ -33,9 +48,9 @@ package org.teavm.classlib.java.time;
 
 import static org.teavm.classlib.java.time.temporal.TChronoField.OFFSET_SECONDS;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.teavm.classlib.java.lang.TComparable;
 import org.teavm.classlib.java.time.temporal.TChronoField;
@@ -60,11 +75,9 @@ public final class TZoneOffset extends TZoneId
         }
     };
 
-    private static final ConcurrentMap<Integer, TZoneOffset> SECONDS_CACHE = new ConcurrentHashMap<Integer, TZoneOffset>(
-            16, 0.75f, 4);
+    private static final Map<Integer, TZoneOffset> SECONDS_CACHE = new HashMap<>(16, 0.75f);
 
-    private static final ConcurrentMap<String, TZoneOffset> ID_CACHE = new ConcurrentHashMap<String, TZoneOffset>(16,
-            0.75f, 4);
+    private static final Map<String, TZoneOffset> ID_CACHE = new HashMap<>(16, 0.75f);
 
     private static final int SECONDS_PER_HOUR = 60 * 60;
 
