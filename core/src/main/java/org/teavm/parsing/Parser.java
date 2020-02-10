@@ -79,23 +79,27 @@ public class Parser {
         ValueType[] signature = MethodDescriptor.parseSignature(node.desc);
         MethodHolder method = new MethodHolder(referenceCache.getCached(new MethodDescriptor(node.name, signature)));
         parseModifiers(node.access, method, DECL_METHOD);
-
-        ProgramParser programParser = new ProgramParser(referenceCache);
-        programParser.setFileName(fileName);
-        Program program = programParser.parse(node);
-        new UnreachableBasicBlockEliminator().optimize(program);
-        PhiUpdater phiUpdater = new PhiUpdater();
-        Variable[] argumentMapping = applySignature(program, method.getParameterTypes());
-        phiUpdater.updatePhis(program, argumentMapping);
-        method.setProgram(program);
-        applyDebugNames(program, phiUpdater, programParser, argumentMapping);
-
         parseAnnotations(method.getAnnotations(), node.visibleAnnotations, node.invisibleAnnotations);
-        applyDebugNames(program, phiUpdater, programParser,
-                applySignature(program, method.getDescriptor().getParameterTypes()));
-        while (program.variableCount() <= method.parameterCount()) {
-            program.createVariable();
+
+        if (node.instructions.size() > 0) {
+            ProgramParser programParser = new ProgramParser(referenceCache);
+            programParser.setFileName(fileName);
+            Program program = programParser.parse(node);
+            new UnreachableBasicBlockEliminator().optimize(program);
+            PhiUpdater phiUpdater = new PhiUpdater();
+            Variable[] argumentMapping = applySignature(program, method.getParameterTypes());
+            phiUpdater.updatePhis(program, argumentMapping);
+            method.setProgram(program);
+            applyDebugNames(program, phiUpdater, programParser, argumentMapping);
+
+            applyDebugNames(program, phiUpdater, programParser,
+                    applySignature(program, method.getDescriptor().getParameterTypes()));
+
+            while (program.variableCount() <= method.parameterCount()) {
+                program.createVariable();
+            }
         }
+
         if (node.annotationDefault != null) {
             method.setAnnotationDefault(parseAnnotationValue(node.annotationDefault));
         }
