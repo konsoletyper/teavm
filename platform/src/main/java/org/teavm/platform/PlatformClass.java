@@ -15,6 +15,7 @@
  */
 package org.teavm.platform;
 
+import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
@@ -22,13 +23,16 @@ import org.teavm.jso.JSProperty;
 public interface PlatformClass extends JSObject {
     @JSProperty("$meta")
     @Unmanaged
+    @NoSideEffects
     PlatformClassMetadata getMetadata();
 
     @JSProperty("classObject")
     @Unmanaged
+    @NoSideEffects
     void setJavaClass(PlatformObject obj);
 
     @JSProperty("classObject")
     @Unmanaged
+    @NoSideEffects
     PlatformObject getJavaClass();
 }

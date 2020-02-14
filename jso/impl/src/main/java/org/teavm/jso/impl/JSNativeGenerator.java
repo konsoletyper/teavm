@@ -98,10 +98,12 @@ public class JSNativeGenerator implements Injector, DependencyPlugin, Generator 
                 writer.append(".data");
                 break;
             case "get":
+            case "getPure":
                 context.writeExpr(context.getArgument(0), Precedence.MEMBER_ACCESS);
                 renderProperty(context.getArgument(1), context);
                 break;
             case "set":
+            case "setPure":
                 context.writeExpr(context.getArgument(0), Precedence.ASSIGNMENT.next());
                 renderProperty(context.getArgument(1), context);
                 writer.ws().append('=').ws();

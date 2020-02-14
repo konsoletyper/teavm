@@ -26,8 +26,12 @@ import org.teavm.model.ValueType;
 final class JSMethods {
     public static final MethodReference GET = new MethodReference(JS.class, "get", JSObject.class,
             JSObject.class, JSObject.class);
+    public static final MethodReference GET_PURE = new MethodReference(JS.class, "getPure", JSObject.class,
+            JSObject.class, JSObject.class);
     public static final MethodReference SET = new MethodReference(JS.class, "set", JSObject.class, JSObject.class,
             JSObject.class, void.class);
+    public static final MethodReference SET_PURE = new MethodReference(JS.class, "setPure", JSObject.class,
+            JSObject.class, JSObject.class, void.class);
     public static final MethodReference FUNCTION = new MethodReference(JS.class, "function", JSObject.class,
             JSObject.class, JSObject.class);
     public static final MethodReference ARRAY_DATA = new MethodReference(JS.class, "arrayData",
