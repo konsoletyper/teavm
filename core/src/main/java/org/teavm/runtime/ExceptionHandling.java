@@ -46,7 +46,7 @@ public final class ExceptionHandling {
         while (stackFrame != null) {
             int callSiteId = ShadowStack.getCallSiteId(stackFrame);
             if (isObfuscated()) {
-                Console.printString("    at Obfuscated.obfuscated(Obfuscated.java:");
+                Console.printString("\tat Obfuscated.obfuscated(Obfuscated.java:");
                 Console.printInt(callSiteId);
                 Console.printString(")\n");
             } else {
@@ -56,7 +56,7 @@ public final class ExceptionHandling {
                     MethodLocation methodLocation = location.method;
 
                     if (methodLocation != null) {
-                        Console.printString("    at ");
+                        Console.printString("\tat ");
                         if (methodLocation.className == null || methodLocation.methodName == null) {
                             Console.printString("(Unknown method)");
                         } else {
