@@ -116,6 +116,11 @@ public class DefaultInliningStrategy implements InliningStrategy {
         }
 
         @Override
+        public void assign(VariableReader receiver, VariableReader assignee) {
+            complexity--;
+        }
+
+        @Override
         public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments, InvocationType type) {
             if (type == InvocationType.SPECIAL && context != null && context.isUsedOnce(method)) {

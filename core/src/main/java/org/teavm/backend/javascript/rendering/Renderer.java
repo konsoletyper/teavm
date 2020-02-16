@@ -27,7 +27,6 @@ import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 import java.util.function.IntFunction;
-import java.util.stream.Collectors;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.MethodNode;
@@ -46,6 +45,7 @@ import org.teavm.debugging.information.DebugInformationEmitter;
 import org.teavm.debugging.information.DummyDebugInformationEmitter;
 import org.teavm.dependency.DependencyInfo;
 import org.teavm.diagnostics.Diagnostics;
+import org.teavm.model.AccessLevel;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ClassReaderSource;
 import org.teavm.model.ElementModifier;
@@ -577,7 +577,8 @@ public class Renderer implements RenderingManager {
 
             List<MethodReference> virtualMethods = new ArrayList<>();
             for (PreparedMethod method : cls.getMethods()) {
-                if (!method.methodHolder.getModifiers().contains(ElementModifier.STATIC)) {
+                if (!method.methodHolder.getModifiers().contains(ElementModifier.STATIC)
+                        && method.methodHolder.getLevel() != AccessLevel.PRIVATE) {
                     virtualMethods.add(method.reference);
                 }
             }
@@ -657,8 +658,17 @@ public class Renderer implements RenderingManager {
 
     private void collectMethodsToCopyFromInterfaces(ClassReader cls, List<MethodReference> targetList) {
         Set<MethodDescriptor> implementedMethods = new HashSet<>();
-        implementedMethods.addAll(targetList.stream().map(method -> method.getDescriptor())
-                .collect(Collectors.toList()));
+        ClassReader superclass = cls;
+        while (superclass != null) {
+            for (MethodReader method : superclass.getMethods()) {
+                if (method.getLevel() != AccessLevel.PRIVATE && !method.hasModifier(ElementModifier.STATIC)
+                        && !method.hasModifier(ElementModifier.ABSTRACT)
+                        && !method.getName().equals("<init>")) {
+                    implementedMethods.add(method.getDescriptor());
+                }
+            }
+            superclass = superclass.getParent() != null ? classSource.get(superclass.getParent()) : null;
+        }
 
         Set<String> visitedClasses = new HashSet<>();
         for (String ifaceName : cls.getInterfaces()) {

@@ -96,6 +96,7 @@ public class FunctionIntrinsic implements Intrinsic {
             return;
         }
 
+        context.importMethod(method, true);
         context.writer().print("&").print(context.names().forMethod(method));
     }
 }

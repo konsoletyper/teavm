@@ -15,7 +15,9 @@
  */
 package org.teavm.classlib.support;
 
+import java.lang.invoke.SerializedLambda;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 import org.teavm.classlib.ReflectionContext;
@@ -29,6 +31,9 @@ public class ReflectionSupplierImpl implements ReflectionSupplier {
     @Override
     public Collection<String> getAccessibleFields(ReflectionContext context, String className) {
         ClassReader cls = context.getClassSource().get(className);
+        if (cls == null) {
+            return Collections.emptyList();
+        }
         Set<String> fields = new HashSet<>();
         for (FieldReader field : cls.getFields()) {
             if (field.getAnnotations().get(Reflectable.class.getName()) != null) {
@@ -41,9 +46,16 @@ public class ReflectionSupplierImpl implements ReflectionSupplier {
     @Override
     public Collection<MethodDescriptor> getAccessibleMethods(ReflectionContext context, String className) {
         ClassReader cls = context.getClassSource().get(className);
+        if (cls == null) {
+            return Collections.emptyList();
+        }
         Set<MethodDescriptor> methods = new HashSet<>();
         for (MethodReader method : cls.getMethods()) {
             if (method.getAnnotations().get(Reflectable.class.getName()) != null) {
+                methods.add(method.getDescriptor());
+            } else if ("writeReplace".equals(method.getName())
+                    && method.getResultType().isObject(SerializedLambda.class)) {
+                //Required by org.teavm.classlib.java.lang.invoke.SerializedLambdaTest.
                 methods.add(method.getDescriptor());
             }
         }

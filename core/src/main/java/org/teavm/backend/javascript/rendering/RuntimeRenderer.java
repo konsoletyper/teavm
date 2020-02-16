@@ -180,7 +180,7 @@ public class RuntimeRenderer {
             return false;
         }
         MethodReader method = cls.getMethod(STRING_INTERN_METHOD);
-        return method != null && method.getProgram() != null;
+        return method != null && method.hasModifier(ElementModifier.NATIVE);
     }
 
     private void renderRuntimeObjcls() throws IOException {

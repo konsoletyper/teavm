@@ -96,7 +96,13 @@ public interface Node extends JSObject {
     String getLocalName();
 
     boolean hasAttributes();
+    
+    @JSProperty
+    String getTextContent();
 
+    @JSProperty
+    void setTextContent(String textContent);
+    
     @JSProperty
     Document getOwnerDocument();
 

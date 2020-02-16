@@ -65,6 +65,18 @@ public interface HTMLInputElement extends HTMLElement {
 
     @JSProperty
     void setValue(String value);
+    
+    void setCustomValidity(String validationFailure);
+    
+    boolean checkValidity();
+    
+    boolean reportValidity();
 
     void select();
+
+    @JSProperty
+    String getPlaceholder();
+
+    @JSProperty
+    void setPlaceholder(String value);
 }

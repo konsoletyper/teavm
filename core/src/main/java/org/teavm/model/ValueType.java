@@ -73,15 +73,21 @@ public abstract class ValueType implements Serializable {
 
     public static class Primitive extends ValueType {
         private PrimitiveType kind;
+        private final ValueType.Object boxedType;
         private int hash;
 
-        private Primitive(PrimitiveType kind) {
+        private Primitive(PrimitiveType kind, ValueType.Object boxedType) {
             this.kind = kind;
+            this.boxedType = boxedType;
             hash = 17988782 ^ (kind.ordinal() * 31);
         }
 
         public PrimitiveType getKind() {
             return kind;
+        }
+
+        public ValueType.Object getBoxedType() {
+            return boxedType;
         }
 
         @Override
@@ -198,21 +204,25 @@ public abstract class ValueType implements Serializable {
 
     public static final Void VOID = new Void();
 
-    public static final Primitive BOOLEAN = new Primitive(PrimitiveType.BOOLEAN);
+    public static final Primitive BOOLEAN =
+            new Primitive(PrimitiveType.BOOLEAN, ValueType.object(Boolean.class.getName()));
 
-    public static final Primitive BYTE = new Primitive(PrimitiveType.BYTE);
+    public static final Primitive BYTE = new Primitive(PrimitiveType.BYTE, ValueType.object(Byte.class.getName()));
 
-    public static final Primitive SHORT = new Primitive(PrimitiveType.SHORT);
+    public static final Primitive SHORT = new Primitive(PrimitiveType.SHORT, ValueType.object(Short.class.getName()));
 
-    public static final Primitive INTEGER = new Primitive(PrimitiveType.INTEGER);
+    public static final Primitive INTEGER =
+            new Primitive(PrimitiveType.INTEGER, ValueType.object(Integer.class.getName()));
 
-    public static final Primitive FLOAT = new Primitive(PrimitiveType.FLOAT);
+    public static final Primitive FLOAT = new Primitive(PrimitiveType.FLOAT, ValueType.object(Float.class.getName()));
 
-    public static final Primitive LONG = new Primitive(PrimitiveType.LONG);
+    public static final Primitive LONG = new Primitive(PrimitiveType.LONG, ValueType.object(Long.class.getName()));
 
-    public static final Primitive DOUBLE = new Primitive(PrimitiveType.DOUBLE);
+    public static final Primitive DOUBLE =
+            new Primitive(PrimitiveType.DOUBLE, ValueType.object(Double.class.getName()));
 
-    public static final Primitive CHARACTER = new Primitive(PrimitiveType.CHARACTER);
+    public static final Primitive CHARACTER =
+            new Primitive(PrimitiveType.CHARACTER, ValueType.object(Character.class.getName()));
 
     static {
         primitiveMap.put(boolean.class, BOOLEAN);
@@ -226,7 +236,7 @@ public abstract class ValueType implements Serializable {
         primitiveMap.put(void.class, VOID);
     }
 
-    public static ValueType object(String cls) {
+    public static ValueType.Object object(String cls) {
         return new Object(cls);
     }
 

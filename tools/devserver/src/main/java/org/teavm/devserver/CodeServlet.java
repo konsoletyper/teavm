@@ -340,6 +340,7 @@ public class CodeServlet extends HttpServlet {
                         resp.setCharacterEncoding("UTF-8");
                         resp.setHeader("Access-Control-Allow-Origin", "*");
                         resp.setContentType(chooseContentType(fileName));
+                        noCache(resp);
                         resp.getOutputStream().write(fileContent);
                         resp.getOutputStream().flush();
                         log.debug("File " + path + " served as generated file");
@@ -382,6 +383,7 @@ public class CodeServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_OK);
         resp.setCharacterEncoding("UTF-8");
         resp.setContentType("application/javascript");
+        noCache(resp);
         try (InputStream input = loader.getResourceAsStream("teavm/devserver/deobfuscator.js")) {
             IOUtils.copy(input, resp.getOutputStream());
         }
@@ -609,6 +611,7 @@ public class CodeServlet extends HttpServlet {
             resp.setStatus(HttpServletResponse.SC_OK);
             resp.setCharacterEncoding("UTF-8");
             resp.setContentType("text/plain");
+            noCache(resp);
             IOUtils.copy(stream, resp.getOutputStream());
             resp.getOutputStream().flush();
             return true;
@@ -1089,5 +1092,9 @@ public class CodeServlet extends HttpServlet {
             path = "/" + path;
         }
         return path;
+    }
+
+    static void noCache(HttpServletResponse response) {
+        response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
     }
 }

@@ -32,6 +32,7 @@ import java.util.Properties;
 import java.util.Set;
 import org.teavm.ast.decompilation.Decompiler;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
+import org.teavm.backend.lowlevel.dependency.StringsDependencyListener;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.lowlevel.generate.NameProviderWithSpecialNames;
 import org.teavm.backend.wasm.binary.BinaryWriter;
@@ -330,6 +331,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
                 dependencyAnalyzer.linkField(field.getReference());
             }
         }
+
+        dependencyAnalyzer.addDependencyListener(new StringsDependencyListener());
     }
 
     @Override

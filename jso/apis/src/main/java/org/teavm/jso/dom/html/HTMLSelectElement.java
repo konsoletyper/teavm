@@ -56,4 +56,8 @@ public interface HTMLSelectElement extends HTMLElement {
 
     @JSProperty
     void setValue(String value);
+
+    void setCustomValidity(String validationFailure);
+    
+    boolean reportValidity();
 }

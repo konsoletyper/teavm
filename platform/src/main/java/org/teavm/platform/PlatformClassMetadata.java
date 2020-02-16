@@ -15,6 +15,7 @@
  */
 package org.teavm.platform;
 
+import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
@@ -22,40 +23,51 @@ import org.teavm.jso.JSProperty;
 public interface PlatformClassMetadata extends JSObject {
     @JSProperty("item")
     @Unmanaged
+    @NoSideEffects
     PlatformClass getArrayItem();
 
     @JSProperty
+    @NoSideEffects
     PlatformSequence<PlatformClass> getSupertypes();
 
     @JSProperty
     @Unmanaged
+    @NoSideEffects
     PlatformClass getSuperclass();
 
     @JSProperty
     @Unmanaged
+    @NoSideEffects
     String getName();
 
     @JSProperty
+    @NoSideEffects
     boolean isPrimitive();
 
     @JSProperty
+    @NoSideEffects
     boolean isEnum();
 
     @JSProperty
+    @NoSideEffects
     int getFlags();
 
     @JSProperty
+    @NoSideEffects
     int getAccessLevel();
 
     @JSProperty
     @Unmanaged
+    @NoSideEffects
     String getSimpleName();
 
     @JSProperty
     @Unmanaged
+    @NoSideEffects
     PlatformClass getEnclosingClass();
 
     @JSProperty
     @Unmanaged
+    @NoSideEffects
     PlatformClass getDeclaringClass();
 }

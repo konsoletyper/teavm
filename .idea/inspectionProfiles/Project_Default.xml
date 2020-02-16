@@ -45,6 +45,7 @@
       <option name="ignoreSwitchStatementsWithDefault" value="true" />
     </inspection_tool>
     <inspection_tool class="FieldCanBeLocal" enabled="true" level="WEAK WARNING" enabled_by_default="true" />
+    <inspection_tool class="FieldMayBeFinal" enabled="true" level="INFORMATION" enabled_by_default="true" />
     <inspection_tool class="ForCanBeForeach" enabled="true" level="WEAK WARNING" enabled_by_default="true">
       <option name="REPORT_INDEXED_LOOP" value="true" />
       <option name="ignoreUntypedCollections" value="false" />
@@ -91,6 +92,7 @@
     <inspection_tool class="MultipleDeclaration" enabled="true" level="ERROR" enabled_by_default="true">
       <option name="ignoreForLoopDeclarations" value="true" />
     </inspection_tool>
+    <inspection_tool class="MultipleVariablesInDeclaration" enabled="true" level="ERROR" enabled_by_default="true" />
     <inspection_tool class="NestedAssignment" enabled="false" level="ERROR" enabled_by_default="false" />
     <inspection_tool class="NonOsgiMavenDependency" enabled="false" level="WARNING" enabled_by_default="false" />
     <inspection_tool class="NullableProblems" enabled="false" level="WEAK WARNING" enabled_by_default="false">

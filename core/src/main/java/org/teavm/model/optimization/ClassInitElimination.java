@@ -71,11 +71,11 @@ public class ClassInitElimination implements MethodOptimization {
         return false;
     }
 
-    class Step {
+    static class Step {
         int node;
         Set<String> initializedClasses = new HashSet<>();
 
-        public Step(int node) {
+        Step(int node) {
             this.node = node;
         }
     }

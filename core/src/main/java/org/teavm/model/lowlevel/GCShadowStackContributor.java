@@ -307,7 +307,7 @@ public class GCShadowStackContributor {
         }
 
         for (int i = 0; i < newStates.length; ++i) {
-            if (newStates[i] >= 0 && autoSpilled[newStates[i]]) {
+            if (newStates[i] >= 0 && autoSpilled[definitionClasses[newStates[i]]]) {
                 comparison[i] = -2;
             }
         }
