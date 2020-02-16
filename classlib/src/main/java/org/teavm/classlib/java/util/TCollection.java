@@ -16,6 +16,7 @@
 package org.teavm.classlib.java.util;
 
 import java.util.Spliterator;
+import java.util.function.Predicate;
 import org.teavm.classlib.java.lang.TIterable;
 import org.teavm.classlib.java.util.stream.TStream;
 import org.teavm.classlib.java.util.stream.impl.TSpliteratorOverCollection;
@@ -54,5 +55,22 @@ public interface TCollection<E> extends TIterable<E> {
     @SuppressWarnings("unchecked")
     default TStream<E> stream() {
         return new TStreamOverSpliterator<>((Spliterator<E>) spliterator());
+    }
+
+    default boolean removeIf(Predicate<? super E> filter) {
+        TIterator<E> iterator = iterator();
+        boolean removed = false;
+
+        while (iterator.hasNext()) {
+            E element = iterator.next();
+            boolean match = filter.test(element);
+
+            if (match) {
+                iterator.remove();
+                removed = true;
+            }
+        }
+
+        return removed;
     }
 }
