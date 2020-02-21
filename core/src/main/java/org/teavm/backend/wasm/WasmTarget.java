@@ -137,12 +137,16 @@ import org.teavm.model.instructions.InvocationType;
 import org.teavm.model.instructions.InvokeInstruction;
 import org.teavm.model.lowlevel.CallSiteDescriptor;
 import org.teavm.model.lowlevel.Characteristics;
+import org.teavm.model.lowlevel.CheckInstructionTransformation;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
+import org.teavm.model.lowlevel.LowLevelNullCheckFilter;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
 import org.teavm.model.lowlevel.WriteBarrierInsertion;
 import org.teavm.model.optimization.InliningFilterFactory;
+import org.teavm.model.transformation.BoundCheckInsertion;
 import org.teavm.model.transformation.ClassPatch;
+import org.teavm.model.transformation.NullCheckInsertion;
 import org.teavm.runtime.Allocator;
 import org.teavm.runtime.ExceptionHandling;
 import org.teavm.runtime.RuntimeArray;
@@ -175,6 +179,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private WriteBarrierInsertion writeBarrierInsertion;
     private WasmBinaryVersion version = WasmBinaryVersion.V_0x1;
     private List<WasmIntrinsicFactory> additionalIntrinsics = new ArrayList<>();
+    private NullCheckInsertion nullCheckInsertion;
+    private BoundCheckInsertion boundCheckInsertion = new BoundCheckInsertion();
+    private CheckInstructionTransformation checkTransformation = new CheckInstructionTransformation();
     private int minHeapSize = 2 * 1024 * 1024;
     private int maxHeapSize = 128 * 1024 * 1024;
 
@@ -185,6 +192,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
         shadowStackTransformer = new ShadowStackTransformer(characteristics, true);
+        nullCheckInsertion = new NullCheckInsertion(new LowLevelNullCheckFilter(characteristics));
         writeBarrierInsertion = new WriteBarrierInsertion(characteristics);
 
         controller.addVirtualMethods(VIRTUAL_METHODS::contains);
@@ -341,12 +349,15 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     @Override
     public void beforeOptimizations(Program program, MethodReader method) {
+        nullCheckInsertion.transformProgram(program, method.getReference());
+        boundCheckInsertion.transformProgram(program, method.getReference());
     }
 
     @Override
     public void afterOptimizations(Program program, MethodReader method) {
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
+        checkTransformation.apply(program, method.getResultType());
         shadowStackTransformer.apply(program, method);
         writeBarrierInsertion.apply(program);
     }
