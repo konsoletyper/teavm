@@ -129,6 +129,7 @@ import org.teavm.model.MethodReader;
 import org.teavm.model.MethodReference;
 import org.teavm.model.Program;
 import org.teavm.model.ValueType;
+import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTableBuilder;
 import org.teavm.model.classes.VirtualTableProvider;
@@ -184,6 +185,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private CheckInstructionTransformation checkTransformation = new CheckInstructionTransformation();
     private int minHeapSize = 2 * 1024 * 1024;
     private int maxHeapSize = 128 * 1024 * 1024;
+    private boolean obfuscated;
 
     @Override
     public void setController(TeaVMTargetController controller) {
@@ -270,6 +272,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
 
     public void setMaxHeapSize(int maxHeapSize) {
         this.maxHeapSize = maxHeapSize;
+    }
+
+    public void setObfuscated(boolean obfuscated) {
+        this.obfuscated = obfuscated;
     }
 
     @Override
@@ -374,8 +380,10 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         BinaryWriter binaryWriter = new BinaryWriter(256);
         NameProvider names = new NameProviderWithSpecialNames(new WasmNameProvider(),
                 controller.getUnprocessedClassSource());
+        ClassMetadataRequirements metadataRequirements = new ClassMetadataRequirements(controller.getDependencyInfo());
         WasmClassGenerator classGenerator = new WasmClassGenerator(classes, controller.getUnprocessedClassSource(),
-                vtableProvider, tagRegistry, binaryWriter, names);
+                vtableProvider, tagRegistry, binaryWriter, names, metadataRequirements,
+                controller.getClassInitializerInfo());
 
         Decompiler decompiler = new Decompiler(classes, new HashSet<>(), false);
         WasmStringPool stringPool = classGenerator.getStringPool();
@@ -417,7 +425,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         context.addIntrinsic(mutatorIntrinsic);
         context.addIntrinsic(new ShadowStackIntrinsic());
         ExceptionHandlingIntrinsic exceptionHandlingIntrinsic = new ExceptionHandlingIntrinsic(binaryWriter,
-                classGenerator, stringPool);
+                classGenerator, stringPool, obfuscated);
         context.addIntrinsic(exceptionHandlingIntrinsic);
 
         WasmGenerator generator = new WasmGenerator(decompiler, classes, context, classGenerator, binaryWriter);
@@ -471,7 +479,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         }
 
         WasmBinaryWriter writer = new WasmBinaryWriter();
-        WasmBinaryRenderer renderer = new WasmBinaryRenderer(writer, version);
+        WasmBinaryRenderer renderer = new WasmBinaryRenderer(writer, version, obfuscated);
         renderer.render(module);
 
         try (OutputStream output = buildTarget.createResource(outputName)) {

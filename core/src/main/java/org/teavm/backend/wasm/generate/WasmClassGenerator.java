@@ -43,6 +43,8 @@ import org.teavm.model.FieldReference;
 import org.teavm.model.MethodDescriptor;
 import org.teavm.model.MethodReference;
 import org.teavm.model.ValueType;
+import org.teavm.model.analysis.ClassInitializerInfo;
+import org.teavm.model.analysis.ClassMetadataRequirements;
 import org.teavm.model.classes.TagRegistry;
 import org.teavm.model.classes.VirtualTable;
 import org.teavm.model.classes.VirtualTableEntry;
@@ -91,6 +93,8 @@ public class WasmClassGenerator {
     private int staticGcRootsAddress;
     private int classesAddress;
     private int classCount;
+    private ClassMetadataRequirements metadataRequirements;
+    private ClassInitializerInfo classInitializerInfo;
 
     private static final int CLASS_SIZE = 1;
     private static final int CLASS_FLAGS = 2;
@@ -110,7 +114,8 @@ public class WasmClassGenerator {
 
     public WasmClassGenerator(ClassReaderSource processedClassSource, ClassReaderSource classSource,
             VirtualTableProvider vtableProvider, TagRegistry tagRegistry, BinaryWriter binaryWriter,
-            NameProvider names) {
+            NameProvider names, ClassMetadataRequirements metadataRequirements,
+            ClassInitializerInfo classInitializerInfo) {
         this.processedClassSource = processedClassSource;
         this.classSource = classSource;
         this.vtableProvider = vtableProvider;
@@ -118,6 +123,8 @@ public class WasmClassGenerator {
         this.binaryWriter = binaryWriter;
         this.stringPool = new WasmStringPool(this, binaryWriter);
         this.names = names;
+        this.metadataRequirements = metadataRequirements;
+        this.classInitializerInfo = classInitializerInfo;
     }
 
     public WasmStringPool getStringPool() {
@@ -259,6 +266,7 @@ public class WasmClassGenerator {
                 : 0;
 
         String name = ((ValueType.Object) binaryData.type).getClassName();
+        ClassMetadataRequirements.Info requirements = metadataRequirements.getInfo(name);
         int flags = 0;
 
         VirtualTable vtable = vtableProvider.lookup(name);
@@ -279,7 +287,8 @@ public class WasmClassGenerator {
         int tag = ranges.stream().mapToInt(range -> range.lower).min().orElse(0);
         header.setInt(CLASS_TAG, tag);
         header.setInt(CLASS_CANARY, RuntimeClass.computeCanary(occupiedSize, tag));
-        header.setAddress(CLASS_NAME, stringPool.getStringPointer(name));
+        int nameAddress = requirements.name() ? stringPool.getStringPointer(name) : 0;
+        header.setAddress(CLASS_NAME, nameAddress);
         header.setInt(CLASS_IS_INSTANCE, functionTable.size());
         functionTable.add(names.forSupertypeFunction(ValueType.object(name)));
         header.setAddress(CLASS_PARENT, parentPtr);
@@ -287,14 +296,16 @@ public class WasmClassGenerator {
         ClassReader cls = processedClassSource.get(name);
 
         if (cls != null) {
-            if (cls.getSimpleName() != null) {
+            if (cls.getSimpleName() != null && requirements.simpleName()) {
                 header.setAddress(CLASS_SIMPLE_NAME, stringPool.getStringPointer(cls.getSimpleName()));
             }
 
-            if (cls.getOwnerName() != null && processedClassSource.get(cls.getOwnerName()) != null) {
+            if (cls.getOwnerName() != null && processedClassSource.get(cls.getOwnerName()) != null
+                    && requirements.enclosingClass()) {
                 header.setAddress(CLASS_ENCLOSING_CLASS, getClassPointer(ValueType.object(cls.getOwnerName())));
             }
-            if (cls.getDeclaringClassName() != null && processedClassSource.get(cls.getDeclaringClassName()) != null) {
+            if (cls.getDeclaringClassName() != null && processedClassSource.get(cls.getDeclaringClassName()) != null
+                    && requirements.declaringClass()) {
                 header.setAddress(CLASS_DECLARING_CLASS,
                         getClassPointer(ValueType.object(cls.getDeclaringClassName())));
             }
@@ -332,7 +343,8 @@ public class WasmClassGenerator {
         }
 
         if (cls != null && binaryData.start >= 0
-                && cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null) {
+                && cls.getMethod(new MethodDescriptor("<clinit>", ValueType.VOID)) != null
+                && classInitializerInfo.isDynamicInitializer(name)) {
             header.setInt(CLASS_INIT, functionTable.size());
             functionTable.add(names.forClassInitializer(name));
         } else {

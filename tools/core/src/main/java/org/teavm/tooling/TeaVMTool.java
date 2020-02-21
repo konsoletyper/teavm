@@ -332,6 +332,7 @@ public class TeaVMTool {
         webAssemblyTarget.setVersion(wasmVersion);
         webAssemblyTarget.setMinHeapSize(minHeapSize);
         webAssemblyTarget.setMaxHeapSize(maxHeapSize);
+        webAssemblyTarget.setObfuscated(minifying);
         return webAssemblyTarget;
     }
 
