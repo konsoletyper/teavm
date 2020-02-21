@@ -41,6 +41,7 @@ import org.teavm.backend.wasm.generate.WasmDependencyListener;
 import org.teavm.backend.wasm.generate.WasmGenerationContext;
 import org.teavm.backend.wasm.generate.WasmGenerator;
 import org.teavm.backend.wasm.generate.WasmNameProvider;
+import org.teavm.backend.wasm.generate.WasmSpecialFunctionGenerator;
 import org.teavm.backend.wasm.generate.WasmStringPool;
 import org.teavm.backend.wasm.generators.ArrayGenerator;
 import org.teavm.backend.wasm.generators.WasmMethodGenerator;
@@ -139,6 +140,7 @@ import org.teavm.model.lowlevel.Characteristics;
 import org.teavm.model.lowlevel.ClassInitializerEliminator;
 import org.teavm.model.lowlevel.ClassInitializerTransformer;
 import org.teavm.model.lowlevel.ShadowStackTransformer;
+import org.teavm.model.lowlevel.WriteBarrierInsertion;
 import org.teavm.model.optimization.InliningFilterFactory;
 import org.teavm.model.transformation.ClassPatch;
 import org.teavm.runtime.Allocator;
@@ -170,6 +172,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
     private ClassInitializerEliminator classInitializerEliminator;
     private ClassInitializerTransformer classInitializerTransformer;
     private ShadowStackTransformer shadowStackTransformer;
+    private WriteBarrierInsertion writeBarrierInsertion;
     private WasmBinaryVersion version = WasmBinaryVersion.V_0x1;
     private List<WasmIntrinsicFactory> additionalIntrinsics = new ArrayList<>();
     private int minHeapSize = 2 * 1024 * 1024;
@@ -182,6 +185,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         classInitializerEliminator = new ClassInitializerEliminator(controller.getUnprocessedClassSource());
         classInitializerTransformer = new ClassInitializerTransformer();
         shadowStackTransformer = new ShadowStackTransformer(characteristics, true);
+        writeBarrierInsertion = new WriteBarrierInsertion(characteristics);
 
         controller.addVirtualMethods(VIRTUAL_METHODS::contains);
     }
@@ -344,6 +348,7 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         classInitializerEliminator.apply(program);
         classInitializerTransformer.transform(program);
         shadowStackTransformer.apply(program, method);
+        writeBarrierInsertion.apply(program);
     }
 
     @Override
@@ -385,7 +390,9 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         context.addIntrinsic(new ObjectIntrinsic());
         context.addIntrinsic(new ConsoleIntrinsic());
         context.addGenerator(new ArrayGenerator());
-        context.addIntrinsic(new MemoryTraceIntrinsic());
+        if (!Boolean.parseBoolean(System.getProperty("teavm.wasm.vmAssertions", "false"))) {
+            context.addIntrinsic(new MemoryTraceIntrinsic());
+        }
         context.addIntrinsic(new WasmHeapIntrinsic());
 
         IntrinsicFactoryContext intrinsicFactoryContext = new IntrinsicFactoryContext();
@@ -408,6 +415,8 @@ public class WasmTarget implements TeaVMTarget, TeaVMWasmHost {
         exceptionHandlingIntrinsic.postProcess(CallSiteDescriptor.extract(classes, classes.getClassNames()));
         generateIsSupertypeFunctions(tagRegistry, module, classGenerator);
         classGenerator.postProcess();
+        new WasmSpecialFunctionGenerator(classGenerator, gcIntrinsic.regionSizeExpressions)
+                .generateSpecialFunctions(module);
         mutatorIntrinsic.setStaticGcRootsAddress(classGenerator.getStaticGcRootsAddress());
         mutatorIntrinsic.setClassesAddress(classGenerator.getClassesAddress());
         mutatorIntrinsic.setClassCount(classGenerator.getClassCount());

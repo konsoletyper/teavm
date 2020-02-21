@@ -67,6 +67,24 @@ TeaVM.wasm = function() {
         };
 
         obj.teavmMath = Math;
+
+        obj.teavmHeapTrace = {
+            allocate: function(address, size) {},
+            free: function(address, size) {},
+            assertFree: function(address, size) {},
+            markStarted: function() {},
+            mark: function(address) {},
+            reportDirtyRegion: function(address) {},
+            markCompleted: function() {},
+            move: function(from, to, size) {},
+            gcStarted: function(full) {},
+            sweepStarted: function() {},
+            sweepCompleted: function() {},
+            defragStarted: function() {},
+            defragCompleted: function() {},
+            gcCompleted: function() {},
+            init: function(maxHeap) {}
+        };
     }
 
     function run(path, options) {

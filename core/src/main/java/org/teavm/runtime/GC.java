@@ -114,7 +114,7 @@ public final class GC {
             return;
         }
         collectGarbageImpl(size);
-        if (currentChunk.size < size && !getNextChunkIfPossible(size)) {
+        if (currentChunk.size < size + 5 && !getNextChunkIfPossible(size)) {
             ExceptionHandling.printStack();
             outOfMemory();
         }
@@ -131,7 +131,7 @@ public final class GC {
             }
             currentChunkPointer = Structure.add(FreeChunkHolder.class, currentChunkPointer, 1);
             currentChunk = currentChunkPointer.value;
-            if (currentChunk.size >= size) {
+            if (currentChunk.size >= size + 5) {
                 currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
                 break;
             }
@@ -786,7 +786,7 @@ public final class GC {
                 if (shouldRelocateObject) {
                     while (true) {
                         nextRelocationTarget = relocationTarget.add(size);
-                        if (!relocationBlock.end.isLessThan(nextRelocationTarget)) {
+                        if (!relocationBlock.end.isLessThan(nextRelocationTarget.add(5))) {
                             break;
                         }
 
@@ -1359,6 +1359,7 @@ public final class GC {
         if (newSize > oldSize) {
             int previousRegionCount = getRegionCount();
             resizeHeap(newSize);
+            currentChunkPointer = gcStorageAddress().toStructure();
             int newRegionCount = getRegionCount();
             for (int i = previousRegionCount; i < newRegionCount; ++i) {
                 Structure.add(Region.class, regionsAddress(), i).start = 0;
@@ -1393,6 +1394,8 @@ public final class GC {
                 lastChunk.size -= (int) (oldSize - newSize);
             }
             resizeHeap(newSize);
+
+            currentChunkPointer = gcStorageAddress().toStructure();
         }
     }
 

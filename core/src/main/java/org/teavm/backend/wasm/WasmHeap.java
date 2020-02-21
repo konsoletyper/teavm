@@ -16,6 +16,7 @@
 package org.teavm.backend.wasm;
 
 import org.teavm.interop.Address;
+import org.teavm.interop.Import;
 import org.teavm.interop.StaticInit;
 import org.teavm.interop.Unmanaged;
 
@@ -24,7 +25,7 @@ import org.teavm.interop.Unmanaged;
 public final class WasmHeap {
     public static final int PAGE_SIZE = 65536;
     public static final int DEFAULT_STACK_SIZE = PAGE_SIZE * 4;
-    public static final int DEFAULT_REGION_SIZE = 4096;
+    public static final int DEFAULT_REGION_SIZE = 1024;
 
     public static int minHeapSize;
     public static int maxHeapSize;
@@ -50,7 +51,7 @@ public final class WasmHeap {
     }
 
     public static int calculateRegionsCount(int heapSize, int regionSize) {
-        return (heapSize + regionSize - 1) / regionSize;
+        return (heapSize / regionSize) + 1;
     }
 
     public static int calculateRegionsSize(int regionsCount) {
@@ -59,7 +60,11 @@ public final class WasmHeap {
 
     public static native void growMemory(int amount);
 
+    @Import(name = "init", module = "teavmHeapTrace")
+    private static native void initHeapTrace(int maxHeap);
+
     public static void initHeap(Address start, int minHeap, int maxHeap, int stackSize) {
+        initHeapTrace(maxHeap);
         stackAddress = start;
         stack = start;
         heapAddress = WasmRuntime.align(stackAddress.add(stackSize), 16);
@@ -80,8 +85,8 @@ public final class WasmHeap {
         int newRegionsSize = calculateRegionsSize(newRegionsCount);
 
         Address newRegionsAddress = WasmRuntime.align(heapAddress.add(newHeapSize), 16);
-        Address newCardTable = WasmRuntime.align(newRegionsAddress.add(newRegionsCount), 16);
-        Address newStorageAddress = WasmRuntime.align(newCardTable.add(newRegionsSize), 16);
+        Address newCardTable = WasmRuntime.align(newRegionsAddress.add(newRegionsSize), 16);
+        Address newStorageAddress = WasmRuntime.align(newCardTable.add(newRegionsCount), 16);
         Address newMemoryLimit = WasmRuntime.align(newStorageAddress.add(newStorageSize), PAGE_SIZE);
         if (newMemoryLimit != memoryLimit) {
             growMemory((int) (newMemoryLimit.toLong() - memoryLimit.toLong()) / PAGE_SIZE);

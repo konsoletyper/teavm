@@ -44,7 +44,7 @@ public class GCIntrinsic implements WasmIntrinsic {
             WasmHeap.class, "resizeHeap", int.class, void.class);
     private static final FieldReference CARD_TABLE = new FieldReference(WasmHeap.class.getName(), "cardTable");
     private static final FieldReference HEAP_ADDRESS = new FieldReference(WasmHeap.class.getName(), "heapAddress");
-    private List<WasmInt32Constant> regionSizeExpressions = new ArrayList<>();
+    public final List<WasmInt32Constant> regionSizeExpressions = new ArrayList<>();
 
     public void setRegionSize(int regionSize) {
         for (WasmInt32Constant constant : regionSizeExpressions) {
