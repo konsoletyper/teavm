@@ -54,7 +54,6 @@ public class WasmSpecialFunctionGenerator {
         return function;
     }
 
-
     private WasmFunction availableBytes() {
         WasmFunction function = new WasmFunction("teavm_availableBytes");
         function.setExportName("teavm_availableBytes");
@@ -65,7 +64,6 @@ public class WasmSpecialFunctionGenerator {
                 new WasmLoadInt32(4, new WasmInt32Constant(address), WasmInt32Subtype.INT32)));
         return function;
     }
-
 
     private WasmFunction regionsAddress() {
         WasmFunction function = new WasmFunction("teavm_regionsAddress");
