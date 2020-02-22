@@ -335,11 +335,11 @@ public final class TMath extends TObject {
     }
     
     public static int floorDiv(int a, int b) {
-        return (a >= 0 ? a / b : ((a + 1) / b) - 1);
+        return a >= 0 ? a / b : ((a + 1) / b) - 1;
     }
 
     public static long floorDiv(long a, long b) {
-        return (a >= 0 ? a / b : ((a + 1) / b) - 1);
+        return a >= 0 ? a / b : ((a + 1) / b) - 1;
     }
 
     public static int floorMod(int a, int b) {

@@ -50,16 +50,16 @@ public class IdentifierReplaceMigrator implements LineMigrator {
         do {
             int index = line.indexOf(this.match, search);
             int end = index + this.matchLength;
-            boolean matches = (index >= 0);
+            boolean matches = index >= 0;
             if (matches) {
                 char c = 0;
                 if (index > 0) {
                     c = line.charAt(index - 1);
                 }
-                matches = (!Character.isJavaIdentifierStart(c));
+                matches = !Character.isJavaIdentifierStart(c);
                 if (matches && (end < length)) {
                     c = line.charAt(end);
-                    matches = (!Character.isJavaIdentifierPart(c));
+                    matches = !Character.isJavaIdentifierPart(c);
                 }
             }
             if (matches) {
