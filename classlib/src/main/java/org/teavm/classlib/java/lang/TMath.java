@@ -338,12 +338,20 @@ public final class TMath extends TObject {
         return a >= 0 ? a / b : ((a + 1) / b) - 1;
     }
 
+    public static long floorDiv(long a, int b) {        
+        return floorDiv(a, (long) b);
+    }
+
     public static long floorDiv(long a, long b) {
         return a >= 0 ? a / b : ((a + 1) / b) - 1;
     }
 
     public static int floorMod(int a, int b) {
         return ((a % b) + b) % b;
+    }
+
+    public static long floorMod(long a, int b) {
+        return floorMod(a, (long) b);
     }
 
     public static long floorMod(long a, long b) {
@@ -399,6 +407,10 @@ public final class TMath extends TObject {
             throw new ArithmeticException("Multiplication overflows an int: " + a + " * " + b);
         }
         return (int) total;
+    }
+
+    public static long multiplyExact(long a, int b) {
+        return multiplyExact(a, (long) b);
     }
 
     public static long multiplyExact(long a, long b) {
