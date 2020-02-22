@@ -16,7 +16,6 @@
 package org.teavm.classlib.java.text;
 
 import java.util.Arrays;
-import java.util.Locale;
 import java.util.Objects;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
 import org.teavm.classlib.java.io.TSerializable;

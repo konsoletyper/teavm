@@ -61,7 +61,7 @@ public interface LineMigrator {
      * @param targetPkg the target package to use as replacement for the source package.
      * @return a new {@link LineMigrator}.
      */
-    public static LineMigrator ofPackage(String sourcePkg, String targetPkg) {
+    static LineMigrator ofPackage(String sourcePkg, String targetPkg) {
 
         return new PatternReplaceMigrator(Pattern.compile("package[ \t]+" + sourcePkg.replace(".", "\\.")),
                 "package " + targetPkg);
@@ -72,7 +72,7 @@ public interface LineMigrator {
      * @param targetType the target type to use as replacement for the source type.
      * @return a new {@link LineMigrator}.
      */
-    public static LineMigrator ofImport(String sourceType, String targetType) {
+    static LineMigrator ofImport(String sourceType, String targetType) {
 
         return new PatternReplaceMigrator(
                 Pattern.compile("import[ \t]+(static[ \t])?[ \t]*" + sourceType.replace(".", "\\.")),
@@ -84,7 +84,7 @@ public interface LineMigrator {
      * @param replacement the identifier used to replace the given {@code match} if found.
      * @return a new {@link LineMigrator}.
      */
-    public static LineMigrator ofIdentifier(String match, String replacement) {
+    static LineMigrator ofIdentifier(String match, String replacement) {
 
         return new IdentifierReplaceMigrator(match, replacement);
     }
@@ -93,7 +93,7 @@ public interface LineMigrator {
      * @param migrators the {@link LineMigrator}s to compose sequentially.
      * @return a new {@link LineMigrator}.
      */
-    public static LineMigrator ofComposed(LineMigrator... migrators) {
+    static LineMigrator ofComposed(LineMigrator... migrators) {
 
         if (migrators.length == 1) {
             return migrators[0];
@@ -105,7 +105,7 @@ public interface LineMigrator {
      * @param types the array with the {@link Class}es of the types to migrate to T* types.
      * @return a new {@link LineMigrator}.
      */
-    public static LineMigrator ofJavaTypes4Classlib(Class<?>[] types) {
+    static LineMigrator ofJavaTypes4Classlib(Class<?>[] types) {
 
         String[] fqns = new String[types.length];
         for (int i = 0; i < types.length; i++) {
@@ -119,7 +119,7 @@ public interface LineMigrator {
      *        types.
      * @return a new {@link LineMigrator}.
      */
-    public static LineMigrator ofJavaTypes4Classlib(String[] types) {
+    static LineMigrator ofJavaTypes4Classlib(String[] types) {
 
         Collection<LineMigrator> result = new ArrayList<>();
         for (int i = 0; i < types.length; i++) {

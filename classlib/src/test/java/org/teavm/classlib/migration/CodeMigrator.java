@@ -1,3 +1,18 @@
+/*
+ *  Copyright 2020 Joerg Hohwiller.
+ *
+ *  Licensed under the Apache License, Version 2.0 (the "License");
+ *  you may not use this file except in compliance with the License.
+ *  You may obtain a copy of the License at
+ *
+ *       http://www.apache.org/licenses/LICENSE-2.0
+ *
+ *  Unless required by applicable law or agreed to in writing, software
+ *  distributed under the License is distributed on an "AS IS" BASIS,
+ *  WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ *  See the License for the specific language governing permissions and
+ *  limitations under the License.
+ */
 package org.teavm.classlib.migration;
 
 import java.io.BufferedReader;
@@ -81,7 +96,8 @@ public class CodeMigrator {
     public static void main(String[] args) {
 
         String[] types = new String[] { "java.lang.Objects", "java.lang.System", //
-        "java.util.Locale", "java.util.Calendar", "java.util.GregorianCalendar", "java.util.Date", "java.util.TimeZone", //
+        "java.util.Locale", "java.util.Date", "java.util.TimeZone", //
+        "java.util.Calendar", "java.util.GregorianCalendar", //
         "java.sql.Date", "java.sql.Timestamp", //
         "java.time.Clock", "java.time.DateTimeException", "java.time.DateTimeUtils", "java.time.DayOfWeek",
         "java.time.Duration", "java.time.Instant", "java.time.LocalDate", "java.time.LocalDateTime",
