@@ -350,8 +350,8 @@ public final class TMath extends TObject {
         return ((a % b) + b) % b;
     }
 
-    public static long floorMod(long a, int b) {
-        return floorMod(a, (long) b);
+    public static int floorMod(long a, int b) {
+        return (int) floorMod(a, (long) b);
     }
 
     public static long floorMod(long a, long b) {
