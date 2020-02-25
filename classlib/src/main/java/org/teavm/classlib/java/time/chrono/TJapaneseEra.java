@@ -48,7 +48,6 @@ package org.teavm.classlib.java.time.chrono;
 
 import java.util.Arrays;
 import java.util.Objects;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TDateTimeException;
@@ -74,7 +73,7 @@ public final class TJapaneseEra implements TEra, TSerializable {
     private static final int ADDITIONAL_VALUE = 3;
 
     // array for the singleton TJapaneseEra instances
-    private static final AtomicReference<TJapaneseEra[]> KNOWN_ERAS;
+    private static final TJapaneseEra[] KNOWN_ERAS;
 
     static {
         TJapaneseEra[] array = new TJapaneseEra[4];
@@ -82,7 +81,7 @@ public final class TJapaneseEra implements TEra, TSerializable {
         array[1] = TAISHO;
         array[2] = SHOWA;
         array[3] = HEISEI;
-        KNOWN_ERAS = new AtomicReference<>(array);
+        KNOWN_ERAS = array;
     }
 
     private final int eraValue;
@@ -102,7 +101,7 @@ public final class TJapaneseEra implements TEra, TSerializable {
 
     public static TJapaneseEra registerEra(TLocalDate since, String name) {
 
-        TJapaneseEra[] known = KNOWN_ERAS.get();
+        TJapaneseEra[] known = KNOWN_ERAS;
         if (known.length > 4) {
             throw new TDateTimeException("Only one additional Japanese era can be added");
         }
@@ -114,7 +113,8 @@ public final class TJapaneseEra implements TEra, TSerializable {
         TJapaneseEra era = new TJapaneseEra(ADDITIONAL_VALUE, since, name);
         TJapaneseEra[] newArray = Arrays.copyOf(known, 5);
         newArray[4] = era;
-        if (!KNOWN_ERAS.compareAndSet(known, newArray)) {
+        // if (!KNOWN_ERAS.compareAndSet(known, newArray)) {
+        if (known != newArray) {
             throw new TDateTimeException("Only one additional Japanese era can be added");
         }
         return era;
@@ -122,7 +122,7 @@ public final class TJapaneseEra implements TEra, TSerializable {
 
     public static TJapaneseEra of(int japaneseEra) {
 
-        TJapaneseEra[] known = KNOWN_ERAS.get();
+        TJapaneseEra[] known = KNOWN_ERAS;
         if (japaneseEra < MEIJI.eraValue || japaneseEra > known[known.length - 1].eraValue) {
             throw new TDateTimeException("japaneseEra is invalid");
         }
@@ -132,7 +132,7 @@ public final class TJapaneseEra implements TEra, TSerializable {
     public static TJapaneseEra valueOf(String japaneseEra) {
 
         Objects.requireNonNull(japaneseEra, "japaneseEra");
-        TJapaneseEra[] known = KNOWN_ERAS.get();
+        TJapaneseEra[] known = KNOWN_ERAS;
         for (TJapaneseEra era : known) {
             if (japaneseEra.equals(era.name)) {
                 return era;
@@ -143,7 +143,7 @@ public final class TJapaneseEra implements TEra, TSerializable {
 
     public static TJapaneseEra[] values() {
 
-        TJapaneseEra[] known = KNOWN_ERAS.get();
+        TJapaneseEra[] known = KNOWN_ERAS;
         return Arrays.copyOf(known, known.length);
     }
 
@@ -152,7 +152,7 @@ public final class TJapaneseEra implements TEra, TSerializable {
         if (date.isBefore(MEIJI.since)) {
             throw new TDateTimeException("TDate too early: " + date);
         }
-        TJapaneseEra[] known = KNOWN_ERAS.get();
+        TJapaneseEra[] known = KNOWN_ERAS;
         for (int i = known.length - 1; i >= 0; i--) {
             TJapaneseEra era = known[i];
             if (date.compareTo(era.since) >= 0) {
