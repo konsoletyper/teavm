@@ -93,22 +93,22 @@ public abstract class TZoneRules {
 
     public abstract TZoneOffset getStandardOffset(TInstant instant);
 
-    public abstract TDuration getDaylightSavings(TInstant instant);
-    // default {
-    // TZoneOffset standardOffset = getStandardOffset(instant);
-    // TZoneOffset actualOffset = getOffset(instant);
-    // return actualOffset.toDuration().minus(standardOffset.toDuration()).normalized();
-    // }
+    public TDuration getDaylightSavings(TInstant instant) {
 
-    public abstract boolean isDaylightSavings(TInstant instant);
-    // default {
-    // return (getStandardOffset(instant).equals(getOffset(instant)) == false);
-    // }
+        TZoneOffset standardOffset = getStandardOffset(instant);
+        TZoneOffset actualOffset = getOffset(instant);
+        return TDuration.ofSeconds(actualOffset.getTotalSeconds() - standardOffset.getTotalSeconds());
+    }
 
-    public abstract boolean isValidOffset(TLocalDateTime localDateTime, TZoneOffset offset);
-    // default {
-    // return getValidOffsets(dateTime).contains(offset);
-    // }
+    public boolean isDaylightSavings(TInstant instant) {
+
+        return (getStandardOffset(instant).equals(getOffset(instant)) == false);
+    }
+
+    public boolean isValidOffset(TLocalDateTime localDateTime, TZoneOffset offset) {
+
+        return getValidOffsets(localDateTime).contains(offset);
+    }
 
     public abstract TZoneOffsetTransition nextTransition(TInstant instant);
 

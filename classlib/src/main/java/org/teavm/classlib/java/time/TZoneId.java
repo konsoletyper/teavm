@@ -79,7 +79,7 @@ public abstract class TZoneId implements TSerializable {
 
     public static final Map<String, String> SHORT_IDS;
     static {
-        Map<String, String> base = new HashMap<String, String>();
+        Map<String, String> base = new HashMap<>();
         base.put("ACT", "Australia/Darwin");
         base.put("AET", "Australia/Sydney");
         base.put("AGT", "America/Argentina/Buenos_Aires");

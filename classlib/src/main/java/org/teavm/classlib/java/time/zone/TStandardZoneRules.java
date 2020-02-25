@@ -46,7 +46,6 @@
  */
 package org.teavm.classlib.java.time.zone;
 
-import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -54,16 +53,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.teavm.classlib.java.time.TDuration;
+import org.teavm.classlib.java.io.TSerializable;
 import org.teavm.classlib.java.time.TInstant;
 import org.teavm.classlib.java.time.TLocalDate;
 import org.teavm.classlib.java.time.TLocalDateTime;
 import org.teavm.classlib.java.time.TYear;
 import org.teavm.classlib.java.time.TZoneOffset;
 
-final class TStandardZoneRules extends TZoneRules implements Serializable {
-
-    private static final long serialVersionUID = 3044319355680032515L;
+final class TStandardZoneRules extends TZoneRules implements TSerializable {
 
     private static final int LAST_CACHED_YEAR = 2100;
 
@@ -306,12 +303,6 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
         }
     }
 
-    @Override
-    public boolean isValidOffset(TLocalDateTime localDateTime, TZoneOffset offset) {
-
-        return getValidOffsets(localDateTime).contains(offset);
-    }
-
     private TZoneOffsetTransition[] findTransitionArray(int year) {
 
         Integer yearObj = year; // should use TYear class, but this saves a class load
@@ -340,20 +331,6 @@ final class TStandardZoneRules extends TZoneRules implements Serializable {
             index = -index - 2;
         }
         return this.standardOffsets[index + 1];
-    }
-
-    @Override
-    public TDuration getDaylightSavings(TInstant instant) {
-
-        TZoneOffset standardOffset = getStandardOffset(instant);
-        TZoneOffset actualOffset = getOffset(instant);
-        return TDuration.ofSeconds(actualOffset.getTotalSeconds() - standardOffset.getTotalSeconds());
-    }
-
-    @Override
-    public boolean isDaylightSavings(TInstant instant) {
-
-        return (getStandardOffset(instant).equals(getOffset(instant)) == false);
     }
 
     @Override
