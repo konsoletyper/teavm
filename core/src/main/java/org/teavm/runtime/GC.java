@@ -33,6 +33,10 @@ public final class GC {
     private static final byte CARD_GAP = 4;
     private static final byte CARD_RELOCATABLE = 8;
 
+    // Add some value greater than 4 to size of last object in a chunk to avoid 4 bytes chunks
+    // that aren't denotable in heap
+    private static final byte GC_OBJECT_GAP = 5;
+
     static Address currentChunkLimit;
     static FreeChunk currentChunk;
     static FreeChunkHolder currentChunkPointer;
@@ -113,8 +117,8 @@ public final class GC {
         if (getNextChunkIfPossible(size)) {
             return;
         }
-        collectGarbageImpl(size);
-        if (currentChunk.size < size + 5 && !getNextChunkIfPossible(size)) {
+        collectGarbageImpl(size + GC_OBJECT_GAP);
+        if (currentChunk.size < size + GC_OBJECT_GAP && !getNextChunkIfPossible(size)) {
             ExceptionHandling.printStack();
             outOfMemory();
         }
@@ -131,7 +135,7 @@ public final class GC {
             }
             currentChunkPointer = Structure.add(FreeChunkHolder.class, currentChunkPointer, 1);
             currentChunk = currentChunkPointer.value;
-            if (currentChunk.size >= size + 5) {
+            if (currentChunk.size >= size + GC_OBJECT_GAP) {
                 currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
                 break;
             }
@@ -786,7 +790,7 @@ public final class GC {
                 if (shouldRelocateObject) {
                     while (true) {
                         nextRelocationTarget = relocationTarget.add(size);
-                        if (!relocationBlock.end.isLessThan(nextRelocationTarget.add(5))) {
+                        if (!relocationBlock.end.isLessThan(nextRelocationTarget.add(GC_OBJECT_GAP))) {
                             break;
                         }
 
