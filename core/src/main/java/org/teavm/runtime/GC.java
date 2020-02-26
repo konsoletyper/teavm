@@ -32,10 +32,7 @@ public final class GC {
     private static final byte CARD_YOUNG_GEN = 2;
     private static final byte CARD_GAP = 4;
     private static final byte CARD_RELOCATABLE = 8;
-
-    // Add some value greater than 4 to size of last object in a chunk to avoid 4 bytes chunks
-    // that aren't denotable in heap
-    private static final byte GC_OBJECT_GAP = 5;
+    private static final int MIN_CHUNK_SIZE = 8;
 
     static Address currentChunkLimit;
     static FreeChunk currentChunk;
@@ -117,8 +114,8 @@ public final class GC {
         if (getNextChunkIfPossible(size)) {
             return;
         }
-        collectGarbageImpl(size + GC_OBJECT_GAP);
-        if (currentChunk.size < size + GC_OBJECT_GAP && !getNextChunkIfPossible(size)) {
+        collectGarbageImpl(size);
+        if (currentChunk.size != size && currentChunk.size <= size + MIN_CHUNK_SIZE && !getNextChunkIfPossible(size)) {
             ExceptionHandling.printStack();
             outOfMemory();
         }
@@ -135,7 +132,7 @@ public final class GC {
             }
             currentChunkPointer = Structure.add(FreeChunkHolder.class, currentChunkPointer, 1);
             currentChunk = currentChunkPointer.value;
-            if (currentChunk.size >= size + GC_OBJECT_GAP) {
+            if (currentChunk.size >= size + MIN_CHUNK_SIZE || currentChunk.size == size) {
                 currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
                 break;
             }
@@ -214,7 +211,7 @@ public final class GC {
         }
         FreeChunkHolder ptr = currentChunkPointer;
         for (int i = 0; i < freeChunks; ++i) {
-            if (size <= ptr.value.size) {
+            if (size == ptr.value.size || size + MIN_CHUNK_SIZE <= ptr.value.size) {
                 return true;
             }
             ptr = Structure.add(FreeChunkHolder.class, ptr, 1);
@@ -790,7 +787,8 @@ public final class GC {
                 if (shouldRelocateObject) {
                     while (true) {
                         nextRelocationTarget = relocationTarget.add(size);
-                        if (!relocationBlock.end.isLessThan(nextRelocationTarget.add(GC_OBJECT_GAP))) {
+                        if (nextRelocationTarget == relocationBlock.end
+                                || nextRelocationTarget.add(MIN_CHUNK_SIZE - 1).isLessThan(relocationBlock.end)) {
                             break;
                         }
 
