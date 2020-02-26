@@ -46,8 +46,6 @@
  */
 package org.teavm.classlib.java.time.chrono;
 
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
@@ -60,7 +58,6 @@ import org.teavm.classlib.java.time.TDateTimeException;
 import org.teavm.classlib.java.time.temporal.TChronoField;
 import org.teavm.classlib.java.time.temporal.TTemporal;
 import org.teavm.classlib.java.time.temporal.TTemporalField;
-import org.teavm.classlib.java.util.TLocale;
 
 public abstract class TAbstractChronology implements TChronology {
 
@@ -68,34 +65,12 @@ public abstract class TAbstractChronology implements TChronology {
 
     private static final Map<String, TChronology> CHRONOS_BY_TYPE = new HashMap<>();
 
-    private static final Method LOCALE_METHOD;
-    static {
-        Method method = null;
-        try {
-            method = TLocale.class.getMethod("getUnicodeLocaleType", String.class);
-        } catch (Throwable ex) {
-            // ignore
-        }
-        LOCALE_METHOD = method;
-    }
-
     public static TChronology ofLocale(Locale locale) {
 
         init();
         Objects.requireNonNull(locale, "locale");
         String type = "iso";
-        if (LOCALE_METHOD != null) {
-            // JDK 7: locale.getUnicodeLocaleType("ca");
-            try {
-                type = (String) LOCALE_METHOD.invoke(locale, "ca");
-            } catch (IllegalArgumentException ex) {
-                // ignore
-            } catch (IllegalAccessException ex) {
-                // ignore
-            } catch (InvocationTargetException ex) {
-                // ignore
-            }
-        } else if (locale.equals(TJapaneseChronology.LOCALE)) {
+        if (locale.equals(TJapaneseChronology.LOCALE)) {
             type = "japanese";
         }
         if (type == null || "iso".equals(type) || "iso8601".equals(type)) {
