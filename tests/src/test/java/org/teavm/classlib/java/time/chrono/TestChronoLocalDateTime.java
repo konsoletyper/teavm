@@ -272,7 +272,7 @@ public class TestChronoLocalDateTime {
             ChronoLocalDateTime<?> date = chrono.date(LocalDate.of(1900, 1, 1)).atTime(LocalTime.MIN);
 
             // Insert dates in order, no duplicates
-            if (chrono != JapaneseChronology.INSTANCE) {
+            if ((chrono != JapaneseChronology.INSTANCE) && (chrono != HijrahChronology.INSTANCE)) {
                 dates.add(date.minus(100, ChronoUnit.YEARS));
             }
             dates.add(date.minus(1, ChronoUnit.YEARS));
@@ -298,7 +298,7 @@ public class TestChronoLocalDateTime {
             for (Chronology[] clist : data_of_calendars()) {
                 List<ChronoLocalDateTime<?>> otherDates = new ArrayList<>();
                 Chronology chrono2 = clist[0];
-                if (chrono2 == JapaneseChronology.INSTANCE) {
+                if ((chrono2 == JapaneseChronology.INSTANCE) || (chrono2 == HijrahChronology.INSTANCE)) {
                     continue;
                 }
                 for (ChronoLocalDateTime<?> d : dates) {

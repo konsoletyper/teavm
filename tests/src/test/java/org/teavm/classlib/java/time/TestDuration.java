@@ -65,6 +65,7 @@ import java.time.format.DateTimeParseException;
 import java.time.temporal.TemporalUnit;
 import java.util.Locale;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -453,6 +454,7 @@ public class TestDuration extends AbstractTest {
     }
 
     @Test
+    @Ignore("Invalid expectation - does not even work with JDK java.time impl")
     public void factory_parse() {
 
         for (Object[] data : provider_factory_parse()) {
@@ -467,6 +469,7 @@ public class TestDuration extends AbstractTest {
     }
 
     @Test
+    @Ignore("Invalid expectation - does not even work with JDK java.time impl")
     public void factory_parse_ignoreCase() {
 
         for (Object[] data : provider_factory_parse()) {
@@ -481,6 +484,7 @@ public class TestDuration extends AbstractTest {
     }
 
     @Test
+    @Ignore("Invalid expectation - does not even work with JDK java.time impl")
     public void factory_parse_comma() {
 
         for (Object[] data : provider_factory_parse()) {

@@ -274,7 +274,7 @@ public class TestChronoZonedDateTime {
                     .atZone(ZoneOffset.UTC);
 
             // Insert dates in order, no duplicates
-            if (chrono != JapaneseChronology.INSTANCE) {
+            if ((chrono != JapaneseChronology.INSTANCE) && (chrono != HijrahChronology.INSTANCE)) {
                 dates.add(date.minus(100, ChronoUnit.YEARS));
             }
             dates.add(date.minus(1, ChronoUnit.YEARS));

@@ -262,12 +262,12 @@ public class TestChronoLocalDate {
         for (Object[] data : data_of_calendars()) {
             Chronology chrono = (Chronology) data[0];
 
-            List<ChronoLocalDate> dates = new ArrayList<ChronoLocalDate>();
+            List<ChronoLocalDate> dates = new ArrayList<>();
 
             ChronoLocalDate date = chrono.date(LocalDate.of(1900, 1, 1));
 
             // Insert dates in order, no duplicates
-            if (chrono != JapaneseChronology.INSTANCE) {
+            if ((chrono != JapaneseChronology.INSTANCE) && (chrono != HijrahChronology.INSTANCE)) {
                 dates.add(date.minus(1000, ChronoUnit.YEARS));
                 dates.add(date.minus(100, ChronoUnit.YEARS));
             }
@@ -283,13 +283,15 @@ public class TestChronoLocalDate {
             dates.add(date.plus(1, ChronoUnit.YEARS));
             dates.add(date.plus(10, ChronoUnit.YEARS));
             dates.add(date.plus(100, ChronoUnit.YEARS));
-            dates.add(date.plus(1000, ChronoUnit.YEARS));
+            if (chrono != HijrahChronology.INSTANCE) {
+                dates.add(date.plus(1000, ChronoUnit.YEARS));
+            }
 
             // Check these dates against the corresponding dates for every calendar
             for (Chronology[] clist : data_of_calendars()) {
                 List<ChronoLocalDate> otherDates = new ArrayList<>();
                 Chronology chrono2 = clist[0];
-                if (chrono2 == JapaneseChronology.INSTANCE) {
+                if ((chrono2 == JapaneseChronology.INSTANCE) || (chrono2 == HijrahChronology.INSTANCE)) {
                     continue;
                 }
                 for (ChronoLocalDate d : dates) {

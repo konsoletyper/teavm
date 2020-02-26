@@ -113,6 +113,7 @@ import java.util.Arrays;
 import java.util.List;
 
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.MockFieldNoValue;
@@ -750,6 +751,7 @@ public class TestZonedDateTime extends AbstractDateTimeTest {
     }
 
     @Test
+    @Ignore("Invalid expectation - does not even work with JDK java.time impl")
     public void test_parseFormatRoundtripWithZoneAndOffset() {
 
         for (Object[] data : data_parseOverlapRoundtrip()) {
@@ -779,6 +781,7 @@ public class TestZonedDateTime extends AbstractDateTimeTest {
     }
 
     @Test
+    @Ignore("Invalid expectation - does not even work with JDK java.time impl")
     public void test_parseWithZoneAndOffsetToInstant() {
 
         for (Object[] data : data_parseOverlapToInstant()) {

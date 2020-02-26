@@ -100,6 +100,7 @@ import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
 import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalUnit;
+import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
@@ -110,7 +111,6 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.MockFieldNoValue;
-import org.teavm.classlib.java.time.temporal.TUnsupportedTemporalTypeException;
 import org.teavm.junit.TeaVMTestRunner;
 
 @RunWith(TeaVMTestRunner.class)
@@ -1158,7 +1158,7 @@ public class TestLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(expected = TUnsupportedTemporalTypeException.class)
+    @Test(expected = UnsupportedTemporalTypeException.class)
     public void test_plus_long_multiples() {
 
         this.TEST_12_30_40_987654321.plus(0, DAYS);
@@ -1702,7 +1702,7 @@ public class TestLocalTime extends AbstractDateTimeTest {
         }
     }
 
-    @Test(expected = TUnsupportedTemporalTypeException.class)
+    @Test(expected = UnsupportedTemporalTypeException.class)
     public void test_minus_long_multiples() {
 
         this.TEST_12_30_40_987654321.minus(0, DAYS);

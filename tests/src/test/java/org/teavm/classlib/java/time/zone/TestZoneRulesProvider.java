@@ -61,6 +61,7 @@ import java.util.NavigableMap;
 import java.util.Set;
 import java.util.TreeMap;
 
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
@@ -69,6 +70,7 @@ import org.teavm.junit.TeaVMTestRunner;
 public class TestZoneRulesProvider {
 
     @Test
+    @Ignore("Wrong expectation. Fails on official JDK java.time implementation.")
     public void test_getAvailableGroupIds() {
 
         Set<String> zoneIds = ZoneRulesProvider.getAvailableZoneIds();
