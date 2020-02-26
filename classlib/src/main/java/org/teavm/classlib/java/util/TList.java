@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.Arrays;
 import org.teavm.classlib.java.util.function.TUnaryOperator;
 
 public interface TList<E> extends TCollection<E> {
@@ -95,6 +96,8 @@ public interface TList<E> extends TCollection<E> {
 
     @SafeVarargs
     static <E> TList<E> of(E... elements) {
-        return CollectionsFactory.createList(elements);
+        // the returned list reuses the given array
+        // create a copy to prevent modifying the list by modifying the original array
+        return CollectionsFactory.createList(Arrays.copyOf(elements, elements.length));
     }
 }

@@ -15,11 +15,11 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.teavm.classlib.java.util.TObjects.requireNonNull;
+import static java.util.Objects.requireNonNull;
 import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
-import org.teavm.classlib.java.util.function.TBiConsumer;
 
 public interface TMap<K, V> {
     interface Entry<K1, V1> {
@@ -146,7 +146,7 @@ public interface TMap<K, V> {
         return newValue;
     }
 
-    default void forEach(TBiConsumer<? super K, ? super V> action) {
+    default void forEach(BiConsumer<? super K, ? super V> action) {
         final TIterator<Entry<K, V>> iterator = entrySet().iterator();
         while (iterator.hasNext()) {
             final Entry<K, V> entry = iterator.next();
@@ -160,7 +160,7 @@ public interface TMap<K, V> {
 
     static <K, V> TMap<K, V> of(K k1, V v1) {
         return CollectionsFactory.createMap(
-                new TMapEntry<>(requireNonNull(k1), requireNonNull(v1))
+                entry(k1, v1)
         );
     }
 

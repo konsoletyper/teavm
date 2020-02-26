@@ -1,5 +1,5 @@
 /*
- *  Copyright 2014 Alexey Andreev.
+ *  Copyright 2020 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -15,9 +15,8 @@
  */
 package org.teavm.classlib.java.util;
 
-import static org.teavm.classlib.java.util.TObjects.requireNonNull;
-import org.teavm.classlib.java.lang.TIllegalArgumentException;
-import org.teavm.classlib.java.lang.TNullPointerException;
+import static java.util.Objects.requireNonNull;
+import java.util.RandomAccess;
 
 /**
  * Factory-methods for List/Set/Map.of(...).
@@ -27,66 +26,70 @@ class CollectionsFactory {
     private CollectionsFactory() {
     }
 
-    /**
-     * Create an immutable list for the {@code List.of(...)} factory methods.
-     *
-     * @throws TNullPointerException if any element is null
-     */
     @SafeVarargs
     static <E> TList<E> createList(E... elements) {
-        if (elements == null || elements.length == 0) {
+        if (elements.length == 0) {
             return TCollections.emptyList();
         }
 
-        final TList<E> list = new TArrayList<>();
+        // don't permit null elements
         for (E element : elements) {
-            list.add(requireNonNull(element, "element"));
+            requireNonNull(element, "element");
         }
 
-        return TCollections.unmodifiableList(list);
+        return new ImmutableArrayList<>(elements);
     }
 
-    /**
-     * Create an immutable set for the {@code Set.of(...)} factory methods.
-     *
-     * @throws TNullPointerException     if any element is null
-     * @throws TIllegalArgumentException if duplicate elements are given
-     */
     @SafeVarargs
     static <E> TSet<E> createSet(E... elements) {
-        if (elements == null || elements.length == 0) {
+        if (elements.length == 0) {
             return TCollections.emptySet();
         }
 
+        // don't permit null or duplicate elements
         final TSet<E> set = new THashSet<>();
         for (E element : elements) {
             if (!set.add(requireNonNull(element, "element"))) {
-                throw new TIllegalArgumentException("duplicate element: " + element);
+                throw new IllegalArgumentException("duplicate element: " + element);
             }
         }
 
         return TCollections.unmodifiableSet(set);
     }
 
-    /**
-     * Create an immutable set for the {@code Map.of(...)} and {@code Map.ofEntries(...)} factory methods.
-     *
-     * @throws TNullPointerException     if any key or value is null
-     * @throws TIllegalArgumentException if duplicate keys are given
-     */
     @SafeVarargs
     static <K, V> TMap<K, V> createMap(TMap.Entry<K, V>... entries) {
-        if (entries == null || entries.length == 0) {
+        if (entries.length == 0) {
             return TCollections.emptyMap();
         }
 
+        // don't permit null or duplicate keys and don't permit null values
         final TMap<K, V> map = new THashMap<>();
         for (TMap.Entry<K, V> entry : entries) {
             if (map.put(requireNonNull(entry.getKey(), "key"), requireNonNull(entry.getValue(), "value")) != null) {
-                throw new TIllegalArgumentException("duplicate key: " + entry.getKey());
+                throw new IllegalArgumentException("duplicate key: " + entry.getKey());
             }
         }
 
         return TCollections.unmodifiableMap(map);
     }
+
+    static class ImmutableArrayList<T> extends TAbstractList<T> implements RandomAccess {
+        private final T[] list;
+
+        public ImmutableArrayList(T[] list) {
+            this.list = list;
+        }
+
+        @Override
+        public T get(int index) {
+            return list[index];
+        }
+
+        @Override
+        public int size() {
+            return list.length;
+        }
+    }
+
 }
