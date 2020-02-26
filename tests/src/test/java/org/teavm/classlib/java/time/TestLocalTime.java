@@ -61,11 +61,14 @@ import static java.time.temporal.ChronoField.NANO_OF_DAY;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
 import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
+import static java.time.temporal.ChronoUnit.CENTURIES;
 import static java.time.temporal.ChronoUnit.DAYS;
+import static java.time.temporal.ChronoUnit.DECADES;
 import static java.time.temporal.ChronoUnit.FOREVER;
 import static java.time.temporal.ChronoUnit.HALF_DAYS;
 import static java.time.temporal.ChronoUnit.HOURS;
 import static java.time.temporal.ChronoUnit.MICROS;
+import static java.time.temporal.ChronoUnit.MILLENNIA;
 import static java.time.temporal.ChronoUnit.MILLIS;
 import static java.time.temporal.ChronoUnit.MINUTES;
 import static java.time.temporal.ChronoUnit.MONTHS;
@@ -103,7 +106,6 @@ import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.List;
 
@@ -118,11 +120,8 @@ public class TestLocalTime extends AbstractDateTimeTest {
 
     private LocalTime TEST_12_30_40_987654321;
 
-    private static final TemporalUnit[] INVALID_UNITS;
-    static {
-        EnumSet<ChronoUnit> set = EnumSet.range(WEEKS, FOREVER);
-        INVALID_UNITS = set.toArray(new TemporalUnit[set.size()]);
-    }
+    private static final TemporalUnit[] INVALID_UNITS = { WEEKS, MONTHS, YEARS, DECADES, CENTURIES, MILLENNIA,
+    FOREVER };
 
     @Before
     public void setUp() {
