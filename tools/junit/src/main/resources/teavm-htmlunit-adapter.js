@@ -1,8 +1,8 @@
 var $rt_decodeStack;
 
-function runMain(stackDecoder, callback) {
+function runMain(argument, stackDecoder, callback) {
     $rt_decodeStack = stackDecoder;
-    main([], function(result) {
+    main(argument !== null ? [argument] : [], function(result) {
         var message = {};
         if (result instanceof Error) {
             makeErrorMessage(message, result);

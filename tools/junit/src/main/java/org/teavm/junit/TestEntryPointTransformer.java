@@ -45,12 +45,10 @@ import org.teavm.model.emit.ValueEmitter;
 import org.teavm.vm.spi.TeaVMHost;
 import org.teavm.vm.spi.TeaVMPlugin;
 
-class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
-    private MethodReference testMethod;
+abstract class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
     private String testClassName;
 
-    TestEntryPointTransformer(MethodReference testMethod, String testClassName) {
-        this.testMethod = testMethod;
+    TestEntryPointTransformer(String testClassName) {
         this.testClassName = testClassName;
     }
 
@@ -91,11 +89,11 @@ class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
                 });
         ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
 
-        if (hierarchy.isSuperType(JUNIT3_BASE_CLASS, testMethod.getClassName(), false)) {
+        if (hierarchy.isSuperType(JUNIT3_BASE_CLASS, testClassName, false)) {
             testCaseVar.cast(ValueType.object(JUNIT3_BASE_CLASS)).invokeVirtual(JUNIT3_BEFORE);
         }
 
-        List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testMethod.getClassName());
+        List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testClassName);
         Collections.reverse(classes);
         classes.stream()
                 .flatMap(cls -> cls.getMethods().stream())
@@ -110,13 +108,13 @@ class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
         ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
         ValueEmitter testCaseVar = pe.getField(TestEntryPoint.class, "testCase", Object.class);
 
-        List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testMethod.getClassName());
+        List<ClassReader> classes = collectSuperClasses(pe.getClassSource(), testClassName);
         classes.stream()
                 .flatMap(cls -> cls.getMethods().stream())
                 .filter(m -> m.getAnnotations().get(JUNIT4_AFTER) != null)
                 .forEach(m -> testCaseVar.cast(ValueType.object(m.getOwnerName())).invokeVirtual(m.getReference()));
 
-        if (hierarchy.isSuperType(JUNIT3_BASE_CLASS, testMethod.getClassName(), false)) {
+        if (hierarchy.isSuperType(JUNIT3_BASE_CLASS, testClassName, false)) {
             testCaseVar.cast(ValueType.object(JUNIT3_BASE_CLASS)).invokeVirtual(JUNIT3_AFTER);
         }
 
@@ -137,8 +135,10 @@ class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
         return result;
     }
 
-    private Program generateLaunchProgram(MethodHolder method, ClassHierarchy hierarchy) {
-        ProgramEmitter pe = ProgramEmitter.create(method, hierarchy);
+    protected abstract Program generateLaunchProgram(MethodHolder method, ClassHierarchy hierarchy);
+
+    protected final void generateSingleMethodLaunchProgram(MethodReference testMethod,
+            ClassHierarchy hierarchy, ProgramEmitter pe) {
         pe.getField(TestEntryPoint.class, "testCase", Object.class)
                 .cast(ValueType.object(testMethod.getClassName()))
                 .invokeSpecial(testMethod);
@@ -163,6 +163,5 @@ class TestEntryPointTransformer implements ClassHolderTransformer, TeaVMPlugin {
         } else {
             pe.exit();
         }
-        return pe.getProgram();
     }
 }

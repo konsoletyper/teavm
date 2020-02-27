@@ -21,10 +21,10 @@ final class TestEntryPoint {
     private TestEntryPoint() {
     }
 
-    public static void run() throws Exception {
+    public static void run(String name) throws Exception {
         before();
         try {
-            launchTest();
+            launchTest(name);
         } finally {
             try {
                 after();
@@ -36,11 +36,11 @@ final class TestEntryPoint {
 
     private static native void before();
 
-    private static native void launchTest() throws Exception;
+    private static native void launchTest(String name) throws Exception;
 
     private static native void after();
 
     public static void main(String[] args) throws Throwable {
-        run();
+        run(args.length == 1 ? args[0] : null);
     }
 }

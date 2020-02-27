@@ -20,11 +20,16 @@ import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedQueue;
+import java.util.concurrent.ConcurrentMap;
 
 class CRunStrategy implements TestRunStrategy {
     private String compilerCommand;
+    private ConcurrentMap<String, Compilation> compilationMap = new ConcurrentHashMap<>();
 
     CRunStrategy(String compilerCommand) {
         this.compilerCommand = compilerCommand;
@@ -47,18 +52,21 @@ class CRunStrategy implements TestRunStrategy {
             }
 
             File outputFile = new File(run.getBaseDirectory(), exeName);
-            List<String> compilerOutput = new ArrayList<>();
-            boolean compilerSuccess = runCompiler(run.getBaseDirectory(), compilerOutput);
+            boolean compilerSuccess = compile(run.getBaseDirectory());
             if (!compilerSuccess) {
-                run.getCallback().error(new RuntimeException("C compiler error:\n" + mergeLines(compilerOutput)));
+                run.getCallback().error(new RuntimeException("C compiler error"));
                 return;
             }
-            writeLines(compilerOutput);
 
             List<String> runtimeOutput = new ArrayList<>();
             List<String> stdout = new ArrayList<>();
             outputFile.setExecutable(true);
-            runProcess(new ProcessBuilder(outputFile.getPath()).start(), runtimeOutput, stdout);
+            List<String> runCommand = new ArrayList<>();
+            runCommand.add(outputFile.getPath());
+            if (run.getArgument() != null) {
+                runCommand.add(run.getArgument());
+            }
+            runProcess(new ProcessBuilder(runCommand.toArray(new String[0])).start(), runtimeOutput, stdout);
             if (!stdout.isEmpty() && stdout.get(stdout.size() - 1).equals("SUCCESS")) {
                 writeLines(runtimeOutput);
                 run.getCallback().complete();
@@ -82,6 +90,24 @@ class CRunStrategy implements TestRunStrategy {
         for (String line : lines) {
             System.out.println(line);
         }
+    }
+
+    private boolean compile(File inputDir) throws IOException, InterruptedException {
+        Compilation compilation = compilationMap.computeIfAbsent(inputDir.getPath(), k -> new Compilation());
+        synchronized (compilation) {
+            if (!compilation.started) {
+                compilation.started = true;
+                compilation.success = doCompile(inputDir);
+            }
+        }
+        return compilation.success;
+    }
+
+    private boolean doCompile(File inputDir) throws IOException, InterruptedException {
+        List<String> compilerOutput = new ArrayList<>();
+        boolean compilerSuccess = runCompiler(inputDir, compilerOutput);
+        writeLines(compilerOutput);
+        return compilerSuccess;
     }
 
     private boolean runCompiler(File inputDir, List<String> output)
@@ -132,5 +158,10 @@ class CRunStrategy implements TestRunStrategy {
         boolean result = process.waitFor() == 0;
         output.addAll(lines);
         return result;
+    }
+
+    static class Compilation {
+        volatile boolean started;
+        volatile boolean success;
     }
 }
