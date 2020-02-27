@@ -982,6 +982,7 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             switch (c) {
                 case '"':
                     writer.write("\\\"");
+                    break;
                 case '\\':
                     writer.write("\\\\");
                     break;
