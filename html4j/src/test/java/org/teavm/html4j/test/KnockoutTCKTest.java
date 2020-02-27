@@ -25,6 +25,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 /**
  *
@@ -32,6 +33,7 @@ import org.teavm.junit.TeaVMTestRunner;
  */
 @RunWith(TeaVMTestRunner.class)
 @SkipJVM
+@WholeClassCompilation
 public class KnockoutTCKTest {
     private final ConvertTypesTest convertTypesTest = new ConvertTypesTest();
     private final JSONTest jsonTest = new JSONTest();

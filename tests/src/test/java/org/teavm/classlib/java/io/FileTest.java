@@ -37,8 +37,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.interop.PlatformMarker;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class FileTest {
     private static String platformId = "JDK" + System.getProperty("java.vm.version").replace('.', '-');
     

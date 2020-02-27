@@ -52,10 +52,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.MapTest2Support;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @SuppressWarnings({ "UnnecessaryUnboxing", "ClassInitializerMayBeStatic", "UnnecessaryTemporaryOnConversionToString",
         "MismatchedQueryAndUpdateOfCollection", "StringEquality" })
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class LinkedHashMapTest {
 
     private LinkedHashMap<Object, Object> hm;

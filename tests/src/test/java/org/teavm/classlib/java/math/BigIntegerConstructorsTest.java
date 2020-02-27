@@ -44,8 +44,10 @@ import java.util.Random;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class BigIntegerConstructorsTest {
     /**
      * Create a number from an array of bytes.

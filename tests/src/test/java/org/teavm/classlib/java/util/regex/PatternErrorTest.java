@@ -37,12 +37,14 @@ import java.util.regex.Pattern;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 /**
  * Test boundary and error conditions in java.util.regex.Pattern
  */
 @SuppressWarnings("nls")
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class PatternErrorTest {
     @Test
     public void testCompileErrors() throws Exception {

@@ -28,8 +28,10 @@ import java.util.Arrays;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class UTF8Test {
     private static char[] hexDigits = "0123456789ABCDEF".toCharArray();
     // Fragment from "The Idiot" by F. Dostoevsky

@@ -67,8 +67,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.support.ListTestSupport;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class VectorTest {
     Object[] objArray;
     private Vector<Object> tVector = new Vector<>();
