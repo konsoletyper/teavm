@@ -36,7 +36,7 @@ public class ExpressionSideEffectDecomposer extends RecursiveVisitor {
     public void visit(ConditionalExpr expr) {
         ConditionalStatement statement = new ConditionalStatement();
         statement.setCondition(expr.getCondition());
-        expr.getCondition().acceptVisitor(new ExpressionSideEffectDecomposer(statement.getConsequent()));
+        expr.getConsequent().acceptVisitor(new ExpressionSideEffectDecomposer(statement.getConsequent()));
         expr.getAlternative().acceptVisitor(new ExpressionSideEffectDecomposer(statement.getAlternative()));
         target.add(statement);
     }
