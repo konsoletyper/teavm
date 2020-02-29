@@ -23,8 +23,10 @@ import java.io.StringReader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class BufferedReaderTest {
     @Test
     public void readsCharacters() throws IOException {

@@ -59,7 +59,7 @@ public class Deobfuscator {
     public String deobfuscate(Reader text) throws IOException {
         StringBuilder result = new StringBuilder();
 
-        String expectedPrefix = "    at Obfuscated.obfuscated(Obfuscated.java:";
+        String expectedPrefix = "\tat Obfuscated.obfuscated(Obfuscated.java:";
         int expectedPrefixPos = 0;
         boolean isInNumber = false;
         boolean expectingLineEnd = false;

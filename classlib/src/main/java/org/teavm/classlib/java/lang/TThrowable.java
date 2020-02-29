@@ -160,7 +160,7 @@ public class TThrowable extends RuntimeException {
         stream.println();
         if (stackTrace != null) {
             for (TStackTraceElement element : stackTrace) {
-                stream.print("    at ");
+                stream.print("\tat ");
                 stream.println(element);
             }
         }
@@ -179,7 +179,7 @@ public class TThrowable extends RuntimeException {
         stream.println();
         if (stackTrace != null) {
             for (TStackTraceElement element : stackTrace) {
-                stream.print("  at ");
+                stream.print("\tat ");
                 stream.println(element);
             }
         }

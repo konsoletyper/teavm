@@ -19,16 +19,6 @@ import * as fs from "./promise-fs.js";
 import * as http from "http";
 import {server as WebSocketServer} from "websocket";
 
-const TEST_FILE_NAME = "test.js";
-const WASM_RUNTIME_FILE_NAME = "test.wasm-runtime.js";
-const TEST_FILES = [
-    { file: TEST_FILE_NAME, name: "simple", type: "js" },
-    { file: "test-min.js", name: "minified", type: "js" },
-    { file: "test-optimized.js", name: "optimized", type: "js" },
-    { file: "test.wasm", name: "wasm", type: "wasm" },
-    { file: "test-optimized.wasm", name: "wasm-optimized", type: "wasm" }
-];
-const SERVER_PREFIX = "http://localhost:9090/";
 let totalTests = 0;
 
 class TestSuite {
@@ -39,10 +29,10 @@ class TestSuite {
     }
 }
 class TestCase {
-    constructor(type, name, files) {
+    constructor(type, file, argument) {
         this.type = type;
-        this.name = name;
-        this.files = files;
+        this.file = file;
+        this.argument = argument
     }
 }
 
@@ -54,7 +44,7 @@ if (rootDir.endsWith("/")) {
 async function runAll() {
     const rootSuite = new TestSuite("root");
     console.log("Searching tests");
-    await walkDir("", "root", rootSuite);
+    await walkDir("", rootSuite);
 
     console.log("Running tests");
 
@@ -119,38 +109,29 @@ async function serveFile(path, response) {
     }
 }
 
-async function walkDir(path, name, suite) {
+async function walkDir(path, suite) {
     const files = await fs.readdir(rootDir + "/" + path);
-    if (files.includes(WASM_RUNTIME_FILE_NAME) || files.includes("test.js")) {
-        for (const { file: fileName, name: profileName, type: type } of TEST_FILES) {
-            if (files.includes(fileName)) {
-                switch (type) {
-                    case "js":
-                        suite.testCases.push(new TestCase(
-                            "js", name + " " + profileName,
-                            [SERVER_PREFIX + path + "/" + fileName]));
-                        break;
-                    case "wasm":
-                        suite.testCases.push(new TestCase(
-                            "wasm", name + " " + profileName,
-                            [SERVER_PREFIX + path + "/" + WASM_RUNTIME_FILE_NAME,
-                                SERVER_PREFIX + path + "/" + fileName]));
-                        break;
-                }
-                totalTests++;
+    if (files.includes("tests.json")) {
+        const descriptor = JSON.parse(await fs.readFile(`${rootDir}/${path}/tests.json`));
+        for (const { baseDir, fileName, kind, argument } of descriptor) {
+            switch (kind) {
+                case "JAVASCRIPT":
+                case "WASM":
+                    suite.testCases.push(new TestCase(kind, `${baseDir}/${fileName}`, argument));
+                    totalTests++;
+                    break;
             }
         }
-    } else if (files) {
-        const childSuite = new TestSuite(name);
-        suite.testSuites.push(childSuite);
-        await Promise.all(files.map(async file => {
-            const filePath = path + "/" + file;
-            const stat = await fs.stat(rootDir + "/" + filePath);
-            if (stat.isDirectory()) {
-                await walkDir(filePath, file, childSuite);
-            }
-        }));
     }
+    await Promise.all(files.map(async file => {
+        const filePath = path + "/" + file;
+        const stat = await fs.stat(rootDir + "/" + filePath);
+        if (stat.isDirectory()) {
+            const childSuite = new TestSuite(file);
+            suite.testSuites.push(childSuite);
+            await walkDir(filePath, childSuite);
+        }
+    }));
 }
 
 class TestRunner {
@@ -182,11 +163,15 @@ class TestRunner {
             const startTime = new Date().getTime();
             let request = { id: this.requestIdGen++ };
             request.tests = suite.testCases.map(testCase => {
-                return {
+                const result = {
                     type: testCase.type,
                     name: testCase.name,
-                    files: testCase.files
+                    file: testCase.file
                 };
+                if (testCase.argument) {
+                    result.argument = testCase.argument;
+                }
+                return result;
             });
             this.testsRun += suite.testCases.length;
 

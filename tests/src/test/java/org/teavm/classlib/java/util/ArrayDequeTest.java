@@ -132,7 +132,7 @@ public class ArrayDequeTest {
 
     @Test
     public void eachRemovedObjectShouldReduceTheSizeByOne() {
-        TArrayDeque<Object> arrayDeque = new TArrayDeque<>();
+        ArrayDeque<Object> arrayDeque = new ArrayDeque<>();
         Object object1 = new Object();
         Object object2 = new Object();
         Object object3 = new Object();
@@ -234,5 +234,24 @@ public class ArrayDequeTest {
         arrayDeque4.removeLast();
         Assert.assertTrue(arrayDeque4.size() == 1);
         Assert.assertTrue(arrayDeque4.contains(object1));
+    }
+
+    @Test
+    public void removeElementInWrappedArray() {
+        TArrayDeque<Object> arrayDeque = new TArrayDeque<>(8);
+        for (int i = 0; i < 4; ++i) {
+            arrayDeque.addLast(0);
+        }
+        for (int i = 0; i < 4; ++i) {
+            arrayDeque.removeFirst();
+        }
+        for (int i = 0; i < 6; ++i) {
+            arrayDeque.addLast(i);
+        }
+        for (int i = 5; i >= 0; --i) {
+            arrayDeque.remove(i);
+            arrayDeque.addLast(23);
+            arrayDeque.removeLast();
+        }
     }
 }

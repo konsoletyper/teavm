@@ -25,6 +25,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import net.sourceforge.htmlunit.corejs.javascript.BaseFunction;
@@ -64,7 +65,6 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
             throw new RuntimeException(e);
         }
         HtmlPage pageRef = page.get();
-
         pageRef.executeJavaScript(readFile(new File(run.getBaseDirectory(), run.getFileName())));
         boolean decodeStack = Boolean.parseBoolean(System.getProperty(TeaVMTestRunner.JS_DECODE_STACK, "true"));
         File debugFile = decodeStack ? new File(run.getBaseDirectory(), run.getFileName() + ".teavmdbg") : null;
@@ -74,6 +74,7 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
         Function function = (Function) page.get().executeJavaScript(readResource("teavm-htmlunit-adapter.js"))
                 .getJavaScriptResult();
         Object[] args = new Object[] {
+                run.getArgument(),
                 decodeStack ? createStackDecoderFunction(resultParser) : null,
                 new NativeJavaObject(function, asyncResult, AsyncResult.class)
         };
@@ -161,7 +162,7 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
 
     private String readFile(File file) throws IOException {
         try (InputStream input = new FileInputStream(file)) {
-            return IOUtils.toString(input, "UTF-8");
+            return IOUtils.toString(input, StandardCharsets.UTF_8);
         }
     }
 
@@ -170,11 +171,11 @@ class HtmlUnitRunStrategy implements TestRunStrategy {
             if (input == null) {
                 return "";
             }
-            return IOUtils.toString(input, "UTF-8");
+            return IOUtils.toString(input, StandardCharsets.UTF_8);
         }
     }
 
-    public class AsyncResult {
+    public static class AsyncResult {
         private CountDownLatch latch = new CountDownLatch(1);
         private Object result;
 

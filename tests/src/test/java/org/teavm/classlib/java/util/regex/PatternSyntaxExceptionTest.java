@@ -39,12 +39,14 @@ import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 /**
  * TODO Type description
  */
 @SuppressWarnings("nls")
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class PatternSyntaxExceptionTest {
     @Test
     public void testCase() {

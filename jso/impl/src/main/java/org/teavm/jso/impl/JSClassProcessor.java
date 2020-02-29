@@ -69,6 +69,7 @@ import org.teavm.model.util.ModelUtils;
 import org.teavm.model.util.ProgramUtils;
 
 class JSClassProcessor {
+    private static final String NO_SIDE_EFFECTS = NoSideEffects.class.getName();
     private final ClassReaderSource classSource;
     private final JSBodyRepository repository;
     private final JavaInvocationProcessor javaInvocationProcessor;
@@ -359,6 +360,7 @@ class JSClassProcessor {
     }
 
     private boolean processProperty(MethodReader method, CallLocation callLocation, InvokeInstruction invoke) {
+        boolean pure = method.getAnnotations().get(NO_SIDE_EFFECTS) != null;
         if (isProperGetter(method)) {
             String propertyName = extractSuggestedPropertyName(method);
             if (propertyName == null) {
@@ -366,7 +368,7 @@ class JSClassProcessor {
                         : cutPrefix(method.getName(), 3);
             }
             Variable result = invoke.getReceiver() != null ? program.createVariable() : null;
-            addPropertyGet(propertyName, invoke.getInstance(), result, invoke.getLocation());
+            addPropertyGet(propertyName, invoke.getInstance(), result, invoke.getLocation(), pure);
             if (result != null) {
                 result = marshaller.unwrapReturnValue(callLocation, result, method.getResultType(), false);
                 copyVar(result, invoke.getReceiver(), invoke.getLocation());
@@ -380,7 +382,7 @@ class JSClassProcessor {
             }
             Variable wrapped = marshaller.wrapArgument(callLocation, invoke.getArguments().get(0),
                     method.parameterType(0), false);
-            addPropertySet(propertyName, invoke.getInstance(), wrapped, invoke.getLocation());
+            addPropertySet(propertyName, invoke.getInstance(), wrapped, invoke.getLocation(), pure);
             return true;
         }
         diagnostics.error(callLocation, "Method {{m0}} is not a proper native JavaScript property "
@@ -674,22 +676,23 @@ class JSClassProcessor {
     }
 
     private void addPropertyGet(String propertyName, Variable instance, Variable receiver,
-            TextLocation location) {
+            TextLocation location, boolean pure) {
         Variable nameVar = marshaller.addStringWrap(marshaller.addString(propertyName, location), location);
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(JSMethods.GET);
+        insn.setMethod(pure ? JSMethods.GET_PURE : JSMethods.GET);
         insn.setReceiver(receiver);
         insn.setArguments(instance, nameVar);
         insn.setLocation(location);
         replacement.add(insn);
     }
 
-    private void addPropertySet(String propertyName, Variable instance, Variable value, TextLocation location) {
+    private void addPropertySet(String propertyName, Variable instance, Variable value, TextLocation location,
+            boolean pure) {
         Variable nameVar = marshaller.addStringWrap(marshaller.addString(propertyName, location), location);
         InvokeInstruction insn = new InvokeInstruction();
         insn.setType(InvocationType.SPECIAL);
-        insn.setMethod(JSMethods.SET);
+        insn.setMethod(pure ? JSMethods.SET_PURE : JSMethods.SET);
         insn.setArguments(instance, nameVar, value);
         insn.setLocation(location);
         replacement.add(insn);

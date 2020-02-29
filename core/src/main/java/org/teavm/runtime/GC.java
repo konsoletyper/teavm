@@ -32,6 +32,7 @@ public final class GC {
     private static final byte CARD_YOUNG_GEN = 2;
     private static final byte CARD_GAP = 4;
     private static final byte CARD_RELOCATABLE = 8;
+    private static final int MIN_CHUNK_SIZE = 8;
 
     static Address currentChunkLimit;
     static FreeChunk currentChunk;
@@ -114,7 +115,7 @@ public final class GC {
             return;
         }
         collectGarbageImpl(size);
-        if (currentChunk.size < size && !getNextChunkIfPossible(size)) {
+        if (currentChunk.size != size && currentChunk.size <= size + MIN_CHUNK_SIZE && !getNextChunkIfPossible(size)) {
             ExceptionHandling.printStack();
             outOfMemory();
         }
@@ -131,7 +132,7 @@ public final class GC {
             }
             currentChunkPointer = Structure.add(FreeChunkHolder.class, currentChunkPointer, 1);
             currentChunk = currentChunkPointer.value;
-            if (currentChunk.size >= size) {
+            if (currentChunk.size >= size + MIN_CHUNK_SIZE || currentChunk.size == size) {
                 currentChunkLimit = currentChunk.toAddress().add(currentChunk.size);
                 break;
             }
@@ -210,7 +211,7 @@ public final class GC {
         }
         FreeChunkHolder ptr = currentChunkPointer;
         for (int i = 0; i < freeChunks; ++i) {
-            if (size <= ptr.value.size) {
+            if (size == ptr.value.size || size + MIN_CHUNK_SIZE <= ptr.value.size) {
                 return true;
             }
             ptr = Structure.add(FreeChunkHolder.class, ptr, 1);
@@ -438,7 +439,9 @@ public final class GC {
                 hasObjectsFromYoungGen |= enqueueMark(object.object);
             }
         }
-        if (object.next == null && object.object != null) {
+        if (object.next != null) {
+            hasObjectsFromYoungGen |= enqueueMark(object.next);
+        } else if (object.object != null) {
             object.next = firstWeakReference;
             firstWeakReference = object;
         }
@@ -448,9 +451,8 @@ public final class GC {
     private static boolean markReferenceQueue(RuntimeReferenceQueue object) {
         RuntimeReference reference = object.first;
         boolean hasObjectsFromYoungGen = false;
-        while (reference != null) {
+        if (reference != null) {
             hasObjectsFromYoungGen |= enqueueMark(reference);
-            reference = reference.next;
         }
         return hasObjectsFromYoungGen;
     }
@@ -519,12 +521,20 @@ public final class GC {
                         queue.first = reference;
                     } else {
                         queue.last.next = reference;
+                        makeInvalid(queue.last);
                     }
                     queue.last = reference;
+                    makeInvalid(queue);
                 }
             }
             reference = next;
         }
+    }
+
+    private static void makeInvalid(RuntimeObject object) {
+        long offset = object.toAddress().toLong() - heapAddress().toLong();
+        Address cardTableItem = cardTable().add(offset / regionSize());
+        cardTableItem.putByte((byte) (cardTableItem.getByte() & ~CARD_VALID));
     }
 
     private static void sweep() {
@@ -777,7 +787,8 @@ public final class GC {
                 if (shouldRelocateObject) {
                     while (true) {
                         nextRelocationTarget = relocationTarget.add(size);
-                        if (!relocationBlock.end.isLessThan(nextRelocationTarget)) {
+                        if (nextRelocationTarget == relocationBlock.end
+                                || nextRelocationTarget.add(MIN_CHUNK_SIZE - 1).isLessThan(relocationBlock.end)) {
                             break;
                         }
 
@@ -1350,6 +1361,7 @@ public final class GC {
         if (newSize > oldSize) {
             int previousRegionCount = getRegionCount();
             resizeHeap(newSize);
+            currentChunkPointer = gcStorageAddress().toStructure();
             int newRegionCount = getRegionCount();
             for (int i = previousRegionCount; i < newRegionCount; ++i) {
                 Structure.add(Region.class, regionsAddress(), i).start = 0;
@@ -1384,6 +1396,8 @@ public final class GC {
                 lastChunk.size -= (int) (oldSize - newSize);
             }
             resizeHeap(newSize);
+
+            currentChunkPointer = gcStorageAddress().toStructure();
         }
     }
 

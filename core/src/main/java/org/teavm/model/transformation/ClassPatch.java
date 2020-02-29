@@ -42,6 +42,9 @@ public class ClassPatch implements ClassHolderTransformer {
     }
     
     private void patchProgram(Program program) {
+        if (program == null) {
+            return;
+        }
         for (int i = 0; i < program.basicBlockCount(); ++i) {
             BasicBlock block = program.basicBlockAt(i);
             for (Instruction instruction : block) {

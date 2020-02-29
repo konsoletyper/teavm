@@ -136,6 +136,12 @@ public interface HTMLElement extends Element, ElementCSSInlineStyle, EventTarget
     @JSProperty
     void setInnerHTML(String content);
 
+    @JSProperty
+    String getInnerText();
+
+    @JSProperty
+    void setInnerText(String content);
+
     TextRectangle getBoundingClientRect();
 
     @JSProperty

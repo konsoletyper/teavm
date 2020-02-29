@@ -700,7 +700,14 @@ class WasmCRenderingVisitor implements WasmExpressionVisitor {
         WasmType type = requiredType;
 
         StringBuilder sb = new StringBuilder();
-        sb.append(expression.getFunctionName()).append('(');
+        if (expression.isImported()) {
+            sb.append(!function.getImportModule().isEmpty()
+                    ? function.getImportModule() + "_" + function.getImportName()
+                    : function.getImportName());
+        } else {
+            sb.append(expression.getFunctionName());
+        }
+        sb.append('(');
         translateArguments(expression.getArguments(), function.getParameters(), result, sb);
         sb.append(')');
         result.setText(sb.toString());

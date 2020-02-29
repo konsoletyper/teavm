@@ -445,8 +445,11 @@ public class CodeServlet extends HttpServlet {
             sent = true;
             resp.setStatus(response.getStatus());
 
+            int length = -1;
+            boolean isGzip = false;
             for (HttpField field : response.getHeaders()) {
-                if (field.getName().toLowerCase().equals("location")) {
+                String name = field.getName().toLowerCase();
+                if (name.equals("location")) {
                     String value = field.getValue();
                     if (value.startsWith(proxyUrl)) {
                         String relLocation = value.substring(proxyUrl.length());
@@ -454,7 +457,22 @@ public class CodeServlet extends HttpServlet {
                         continue;
                     }
                 }
+                if (name.equals("content-encoding")) {
+                    isGzip = true;
+                    continue;
+                } else if (name.equals("content-length")) {
+                    try {
+                        length = Integer.parseInt(field.getValue());
+                    } catch (NumberFormatException e) {
+                        // do nothing
+                    }
+                    continue;
+                }
                 resp.addHeader(field.getName(), field.getValue());
+            }
+
+            if (length > 0 && !isGzip) {
+                resp.addHeader("Content-Length", String.valueOf(length));
             }
         }
     }

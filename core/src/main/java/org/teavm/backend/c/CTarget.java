@@ -75,6 +75,7 @@ import org.teavm.backend.c.intrinsic.StringsIntrinsic;
 import org.teavm.backend.c.intrinsic.StructureIntrinsic;
 import org.teavm.backend.lowlevel.analyze.LowLevelInliningFilterFactory;
 import org.teavm.backend.lowlevel.dependency.ExceptionHandlingDependencyListener;
+import org.teavm.backend.lowlevel.dependency.StringsDependencyListener;
 import org.teavm.backend.lowlevel.dependency.WeakReferenceDependencyListener;
 import org.teavm.backend.lowlevel.generate.NameProvider;
 import org.teavm.backend.lowlevel.generate.NameProviderWithSpecialNames;
@@ -324,6 +325,7 @@ public class CTarget implements TeaVMTarget, TeaVMCHost {
         dependencyAnalyzer.linkClass(CallSiteLocation.class.getName());
 
         dependencyAnalyzer.addDependencyListener(new ExceptionHandlingDependencyListener());
+        dependencyAnalyzer.addDependencyListener(new StringsDependencyListener());
     }
 
     @Override

@@ -49,10 +49,12 @@ public class WasmBinaryRenderer {
     private List<WasmSignature> signatures = new ArrayList<>();
     private Map<WasmSignature, Integer> signatureIndexes = new HashMap<>();
     private Map<String, Integer> functionIndexes = new HashMap<>();
+    private boolean obfuscated;
 
-    public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version) {
+    public WasmBinaryRenderer(WasmBinaryWriter output, WasmBinaryVersion version, boolean obfuscated) {
         this.output = output;
         this.version = version;
+        this.obfuscated = obfuscated;
     }
 
     public void render(WasmModule module) {
@@ -73,7 +75,9 @@ public class WasmBinaryRenderer {
         renderElement(module);
         renderCode(module);
         renderData(module);
-        renderNames(module);
+        if (!obfuscated) {
+            renderNames(module);
+        }
     }
 
     private void renderSignatures(WasmModule module) {

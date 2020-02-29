@@ -43,9 +43,11 @@ import java.io.InputStreamReader;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @SuppressWarnings("resource")
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class BufferedInputStreamTest {
     @Test
     public void test_ConstructorLjava_io_InputStream() {

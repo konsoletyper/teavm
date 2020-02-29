@@ -19,18 +19,20 @@
 window.addEventListener("message", event => {
     let request = event.data;
     switch (request.type) {
-        case "js":
-            appendFiles(request.files, 0, () => {
-                launchTest(response => {
+        case "JAVASCRIPT":
+            appendFiles([request.file], 0, () => {
+                launchTest(request.argument, response => {
                     event.source.postMessage(response, "*");
                 });
             }, error => {
                 event.source.postMessage({ status: "failed", errorMessage: error }, "*");
             });
             break;
-        case "wasm":
-            appendFiles(request.files.filter(f => f.endsWith(".js")), 0, () => {
-                launchWasmTest(request.files.filter(f => f.endsWith(".wasm"))[0], response => {
+
+        case "WASM":
+            const runtimeFile = request.file + "-runtime.js";
+            appendFiles([runtimeFile], 0, () => {
+                launchWasmTest(request.file, equest.argument, response => {
                     event.source.postMessage(response, "*");
                 });
             }, error => {
@@ -57,8 +59,8 @@ function appendFiles(files, index, callback, errorCallback) {
     }
 }
 
-function launchTest(callback) {
-    main([], result => {
+function launchTest(argument, callback) {
+    main(argument ? [argument] : [], result => {
         if (result instanceof Error) {
             callback({
                 status: "failed",
@@ -81,7 +83,7 @@ function launchTest(callback) {
     }
 }
 
-function launchWasmTest(path, callback) {
+function launchWasmTest(path, argument, callback) {
     var output = [];
     var outputBuffer = "";
 

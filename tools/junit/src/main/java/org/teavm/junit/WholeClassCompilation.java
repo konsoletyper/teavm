@@ -1,5 +1,5 @@
 /*
- *  Copyright 2015 Alexey Andreev.
+ *  Copyright 2020 Alexey Andreev.
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,26 +13,14 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.platform;
+package org.teavm.junit;
 
-import org.teavm.interop.NoSideEffects;
-import org.teavm.interop.Unmanaged;
-import org.teavm.jso.JSObject;
-import org.teavm.jso.JSProperty;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
-public interface PlatformClass extends JSObject {
-    @JSProperty("$meta")
-    @Unmanaged
-    @NoSideEffects
-    PlatformClassMetadata getMetadata();
-
-    @JSProperty("classObject")
-    @Unmanaged
-    @NoSideEffects
-    void setJavaClass(PlatformObject obj);
-
-    @JSProperty("classObject")
-    @Unmanaged
-    @NoSideEffects
-    PlatformObject getJavaClass();
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface WholeClassCompilation {
 }

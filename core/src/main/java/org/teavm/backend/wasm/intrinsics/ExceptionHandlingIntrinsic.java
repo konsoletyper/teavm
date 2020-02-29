@@ -39,8 +39,8 @@ public class ExceptionHandlingIntrinsic implements WasmIntrinsic {
     private List<WasmInt32Constant> constants = new ArrayList<>();
 
     public ExceptionHandlingIntrinsic(BinaryWriter binaryWriter, WasmClassGenerator classGenerator,
-            WasmStringPool stringPool) {
-        callSiteBinaryGenerator = new CallSiteBinaryGenerator(binaryWriter, classGenerator, stringPool);
+            WasmStringPool stringPool, boolean obfuscated) {
+        callSiteBinaryGenerator = new CallSiteBinaryGenerator(binaryWriter, classGenerator, stringPool, obfuscated);
         this.classGenerator = classGenerator;
     }
 

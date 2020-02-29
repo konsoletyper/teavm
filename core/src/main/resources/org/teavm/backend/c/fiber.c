@@ -30,7 +30,7 @@ void teavm_initFiber() {
         sigaction(SIGRTMIN, &sigact, NULL);
 
         sigset_t signals;
-        sigemptyset(&signals );
+        sigemptyset(&signals);
         sigaddset(&signals, SIGRTMIN);
         sigprocmask(SIG_BLOCK, &signals, NULL);
 

@@ -27,8 +27,10 @@ import java.nio.ShortBuffer;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class ByteBufferWrapperTest {
     @Test
     public void wrapsIntoShortBuffer() {

@@ -174,6 +174,9 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
     }
 
     private boolean hasSideEffects(MethodReader method) {
+        if (method.hasModifier(ElementModifier.ABSTRACT)) {
+            return false;
+        }
         if (method.getAnnotations().get(NoSideEffects.class.getName()) != null) {
             return false;
         }

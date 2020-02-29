@@ -269,10 +269,10 @@ public class TArrayDeque<E> extends TAbstractCollection<E> implements TDeque<E> 
                 for (int i = index + 1; i < tail; ++i) {
                     array[i - 1] = array[i];
                 }
-                array[--tail] = null;
-                if (tail == 0) {
+                if (--tail < 0) {
                     tail += array.length;
                 }
+                array[tail] = null;
             }
         }
     }

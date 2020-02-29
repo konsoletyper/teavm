@@ -26,14 +26,16 @@ class TestRun {
     private String fileName;
     private RunKind kind;
     private TestRunCallback callback;
+    private String argument;
 
     TestRun(File baseDirectory, Method method, Description description, String fileName, RunKind kind,
-            TestRunCallback callback) {
+            String argument, TestRunCallback callback) {
         this.baseDirectory = baseDirectory;
         this.method = method;
         this.description = description;
         this.fileName = fileName;
         this.kind = kind;
+        this.argument = argument;
         this.callback = callback;
     }
 
@@ -55,6 +57,10 @@ class TestRun {
 
     public RunKind getKind() {
         return kind;
+    }
+
+    public String getArgument() {
+        return argument;
     }
 
     public TestRunCallback getCallback() {

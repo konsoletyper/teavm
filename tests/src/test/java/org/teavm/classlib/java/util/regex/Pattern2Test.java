@@ -38,12 +38,14 @@ import junit.framework.TestCase;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 /**
  * Tests simple Pattern compilation and Matcher methods
  */
 @SuppressWarnings("nls")
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class Pattern2Test extends TestCase {
     @Test
     public void testSimpleMatch() throws PatternSyntaxException {

@@ -15,6 +15,7 @@
  */
 package org.teavm.platform;
 
+import org.teavm.interop.NoSideEffects;
 import org.teavm.interop.Unmanaged;
 import org.teavm.jso.JSObject;
 import org.teavm.jso.JSProperty;
@@ -22,13 +23,16 @@ import org.teavm.jso.JSProperty;
 public interface PlatformObject extends JSObject {
     @JSProperty("constructor")
     @Unmanaged
+    @NoSideEffects
     PlatformClass getPlatformClass();
 
     @JSProperty("$id$")
     @Unmanaged
+    @NoSideEffects
     int getId();
 
     @JSProperty("$id$")
     @Unmanaged
+    @NoSideEffects
     void setId(int id);
 }

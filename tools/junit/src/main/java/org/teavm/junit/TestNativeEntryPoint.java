@@ -25,7 +25,7 @@ final class TestNativeEntryPoint {
 
     public static void main(String[] args) {
         try {
-            TestEntryPoint.run();
+            TestEntryPoint.run(args.length > 0 ? args[0] : null);
             new PrintStream(StdoutOutputStream.INSTANCE).println("SUCCESS");
         } catch (Throwable e) {
             PrintStream out = new PrintStream(StderrOutputStream.INSTANCE);

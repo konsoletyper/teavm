@@ -43,9 +43,11 @@ import java.util.regex.PatternSyntaxException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
 @SuppressWarnings("nls")
+@WholeClassCompilation
 public class Matcher2Test {
     @Test
     public void test_toString() {

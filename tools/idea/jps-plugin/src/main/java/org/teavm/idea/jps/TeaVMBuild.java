@@ -221,7 +221,7 @@ class TeaVMBuild {
         }
     }
 
-    private class ProblemToReport {
+    static class ProblemToReport {
         int line;
         int startOffset;
         int endOffset;
@@ -229,7 +229,7 @@ class TeaVMBuild {
         CallLocationList locations;
     }
 
-    private class CallLocationList {
+    static class CallLocationList {
         final CallLocation value;
         final CallLocationList next;
 

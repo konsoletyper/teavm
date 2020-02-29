@@ -129,7 +129,9 @@ public class ClassRefsRenamer extends AbstractInstructionVisitor {
         renamedMethod.setLevel(method.getLevel());
         renamedMethod.setProgram(method.getProgram());
         rename(method.getAnnotations(), renamedMethod.getAnnotations());
-        rename(renamedMethod.getProgram());
+        if (renamedMethod.getProgram() != null) {
+            rename(renamedMethod.getProgram());
+        }
 
         renamedMethod.setTypeParameters(rename(method.getTypeParameters()));
         GenericValueType genericResultType = method.getGenericResultType();
