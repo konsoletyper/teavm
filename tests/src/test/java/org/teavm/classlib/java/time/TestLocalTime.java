@@ -114,8 +114,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.temporal.MockFieldNoValue;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestLocalTime extends AbstractDateTimeTest {
 
     private LocalTime TEST_12_30_40_987654321;

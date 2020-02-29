@@ -79,8 +79,10 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestInstant extends AbstractDateTimeTest {
 
     private static final long MIN_SECOND = Instant.MIN.getEpochSecond();

@@ -56,8 +56,10 @@ import java.time.temporal.TemporalField;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestJulianFields {
 
     private static final LocalDate JAN01_1970 = LocalDate.of(1970, 1, 1);

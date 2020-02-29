@@ -61,8 +61,10 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.classlib.java.time.AbstractTest;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestZoneOffsetTransitionRule extends AbstractTest {
 
     private static final LocalTime TIME_0100 = LocalTime.of(1, 0);

@@ -67,8 +67,10 @@ import java.time.temporal.ValueRange;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.TeaVMTestRunner;
+import org.teavm.junit.WholeClassCompilation;
 
 @RunWith(TeaVMTestRunner.class)
+@WholeClassCompilation
 public class TestIsoFields {
 
     public void test_enum() {
