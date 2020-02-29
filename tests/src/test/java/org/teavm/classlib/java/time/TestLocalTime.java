@@ -239,8 +239,10 @@ public class TestLocalTime extends AbstractDateTimeTest {
         ZoneId zone = ZoneId.of("UTC+01:02:03");
         LocalTime expected = LocalTime.now(Clock.system(zone));
         LocalTime test = LocalTime.now(zone);
+
         for (int i = 0; i < 100; i++) {
-            if (expected.equals(test)) {
+            long delta = expected.until(test, ChronoUnit.MILLIS);
+            if (delta < 10) {
                 return;
             }
             expected = LocalTime.now(Clock.system(zone));
