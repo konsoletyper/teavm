@@ -83,8 +83,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
 import java.time.Clock;
 import java.time.DateTimeException;
 import java.time.Duration;
@@ -462,32 +460,6 @@ public class TestOffsetDateTime extends AbstractDateTimeTest {
     public void factory_parse_formatter_nullFormatter() {
 
         OffsetDateTime.parse("ANY", null);
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void constructor_nullTime() throws Throwable {
-
-        Constructor<OffsetDateTime> con = OffsetDateTime.class.getDeclaredConstructor(LocalDateTime.class,
-                ZoneOffset.class);
-        con.setAccessible(true);
-        try {
-            con.newInstance(null, OFFSET_PONE);
-        } catch (InvocationTargetException ex) {
-            throw ex.getCause();
-        }
-    }
-
-    @Test(expected = NullPointerException.class)
-    public void constructor_nullOffset() throws Throwable {
-
-        Constructor<OffsetDateTime> con = OffsetDateTime.class.getDeclaredConstructor(LocalDateTime.class,
-                ZoneOffset.class);
-        con.setAccessible(true);
-        try {
-            con.newInstance(LocalDateTime.of(LocalDate.of(2008, 6, 30), LocalTime.of(11, 30)), null);
-        } catch (InvocationTargetException ex) {
-            throw ex.getCause();
-        }
     }
 
     Object[][] provider_sampleTimes() {
