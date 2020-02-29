@@ -57,7 +57,7 @@ import org.teavm.classlib.java.util.TObjects;
 
 public final class TTzdbZoneRulesProvider extends TZoneRulesProvider {
 
-    static final TTzdbZoneRulesProvider INSTANCE = new TTzdbZoneRulesProvider();
+    private static TTzdbZoneRulesProvider INSTANCE;
 
     private static final String VERSION_ID = "v1";
 
@@ -114,6 +114,14 @@ public final class TTzdbZoneRulesProvider extends TZoneRulesProvider {
         }
         map.put(VERSION_ID, rules);
         return map;
+    }
+
+    static TTzdbZoneRulesProvider getInstance() {
+
+        if (INSTANCE == null) {
+            INSTANCE = new TTzdbZoneRulesProvider();
+        }
+        return INSTANCE;
     }
 
     @Override

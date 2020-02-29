@@ -56,7 +56,7 @@ public abstract class TZoneRulesProvider {
 
     public static Set<String> getAvailableZoneIds() {
 
-        return TTzdbZoneRulesProvider.INSTANCE.provideZoneIds();
+        return TTzdbZoneRulesProvider.getInstance().provideZoneIds();
     }
 
     public static TZoneRules getRules(String zoneId, boolean forCaching) {
@@ -73,7 +73,7 @@ public abstract class TZoneRulesProvider {
 
     private static TZoneRulesProvider getProvider(String zoneId) {
 
-        return TTzdbZoneRulesProvider.INSTANCE;
+        return TTzdbZoneRulesProvider.getInstance();
     }
 
     public static void registerProvider(TZoneRulesProvider provider) {
