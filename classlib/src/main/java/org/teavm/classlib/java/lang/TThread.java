@@ -28,6 +28,8 @@ public class TThread extends TObject implements TRunnable {
     private static TThread currentThread = mainThread;
     private static int nextId = 1;
     private static int activeCount = 1;
+    private static UncaughtExceptionHandler defaultUncaughtExceptionHandler = new TDefaultUncaughtExceptionHandler();
+    private UncaughtExceptionHandler uncaughtExceptionHandler;
     private long id;
     private int priority;
     private boolean daemon;
@@ -268,5 +270,25 @@ public class TThread extends TObject implements TRunnable {
 
     public TClassLoader getContextClassLoader() {
         return TClassLoader.getSystemClassLoader();
+    }
+    
+    public UncaughtExceptionHandler getUncaughtExceptionHandler() {
+        return (this.uncaughtExceptionHandler != null) ? this.uncaughtExceptionHandler: defaultUncaughtExceptionHandler;
+    }
+    
+    public void setUncaughtExceptionHandler(UncaughtExceptionHandler uncaughtExceptionHandler) {
+        this.uncaughtExceptionHandler = uncaughtExceptionHandler;
+    }
+    
+    public static UncaughtExceptionHandler getDefaultUncaughtExceptionHandler() {
+        return defaultUncaughtExceptionHandler;
+    }
+    
+    public static void setDefaultUncaughtExceptionHandler(UncaughtExceptionHandler handler) {
+        defaultUncaughtExceptionHandler = handler;
+    }
+    
+    public interface UncaughtExceptionHandler {
+        void uncaughtException(Thread t, Throwable e);
     }
 }
