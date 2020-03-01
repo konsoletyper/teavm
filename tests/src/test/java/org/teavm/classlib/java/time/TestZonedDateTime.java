@@ -217,7 +217,8 @@ public class TestZonedDateTime extends AbstractDateTimeTest {
         ZonedDateTime expected = ZonedDateTime.now(Clock.system(zone));
         ZonedDateTime test = ZonedDateTime.now(zone);
         for (int i = 0; i < 100; i++) {
-            if (expected.equals(test)) {
+            long delta = expected.until(test, ChronoUnit.MILLIS);
+            if (delta < 10) {
                 return;
             }
             expected = ZonedDateTime.now(Clock.system(zone));
