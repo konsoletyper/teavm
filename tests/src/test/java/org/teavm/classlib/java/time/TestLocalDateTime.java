@@ -244,7 +244,8 @@ public class TestLocalDateTime extends AbstractDateTimeTest {
         LocalDateTime expected = LocalDateTime.now(Clock.system(zone));
         LocalDateTime test = LocalDateTime.now(zone);
         for (int i = 0; i < 100; i++) {
-            if (expected.equals(test)) {
+            long delta = expected.until(test, ChronoUnit.MILLIS);
+            if (delta < 10) {
                 return;
             }
             expected = LocalDateTime.now(Clock.system(zone));
