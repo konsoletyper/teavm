@@ -33,6 +33,7 @@ import org.teavm.model.BasicBlockReader;
 import org.teavm.model.ClassHierarchy;
 import org.teavm.model.ClassReader;
 import org.teavm.model.ElementModifier;
+import org.teavm.model.FieldReader;
 import org.teavm.model.FieldReference;
 import org.teavm.model.ListableClassReaderSource;
 import org.teavm.model.MethodDescriptor;
@@ -220,6 +221,13 @@ public class ClassInitializerAnalysis implements ClassInitializerInfo {
         @Override
         public void putField(VariableReader instance, FieldReference field, VariableReader value, ValueType fieldType) {
             if (instance == null) {
+                ClassReader cls = classes.get(field.getClassName());
+                if (cls != null) {
+                    FieldReader fieldReader = cls.getField(field.getFieldName());
+                    if (fieldReader != null && fieldReader.hasModifier(ElementModifier.FINAL)) {
+                        return;
+                    }
+                }
                 touchField(field);
             }
         }
