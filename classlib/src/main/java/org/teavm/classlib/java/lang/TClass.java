@@ -38,6 +38,7 @@ import org.teavm.classlib.java.lang.reflect.TConstructor;
 import org.teavm.classlib.java.lang.reflect.TField;
 import org.teavm.classlib.java.lang.reflect.TMethod;
 import org.teavm.classlib.java.lang.reflect.TModifier;
+import org.teavm.classlib.java.lang.reflect.TType;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
