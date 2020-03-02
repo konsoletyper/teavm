@@ -241,6 +241,10 @@ public class TObject {
         return getClass().getName() + "@" + TInteger.toHexString(identity());
     }
 
+    private String obfuscatedToString() {
+        return "<java_object>@" + Integer.toHexString(identity());
+    }
+
     final int identity() {
         if (PlatformDetector.isLowLevel()) {
             Monitor monitor = this.monitor;

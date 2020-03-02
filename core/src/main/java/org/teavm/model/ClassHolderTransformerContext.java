@@ -24,4 +24,8 @@ public interface ClassHolderTransformerContext {
     Diagnostics getDiagnostics();
 
     IncrementalDependencyRegistration getIncrementalCache();
+
+    boolean isObfuscated();
+
+    boolean isStrict();
 }

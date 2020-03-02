@@ -206,7 +206,7 @@ public class IncrementalTest {
             vm.setOptimizationLevel(TeaVMOptimizationLevel.SIMPLE);
             vm.setProgramCache(programCache);
             target.setAstCache(astCache);
-            target.setMinifying(false);
+            target.setObfuscated(false);
             target.setStrict(true);
             vm.add(new EntryPointTransformer(entryPoint));
             vm.entryPoint(EntryPoint.class.getName());

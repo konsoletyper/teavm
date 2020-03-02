@@ -42,7 +42,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
 
         @Override
         public void apply(JavaScriptTarget target) {
-            target.setMinifying(false);
+            target.setObfuscated(false);
         }
     };
 
@@ -59,7 +59,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
 
         @Override
         public void apply(JavaScriptTarget target) {
-            target.setMinifying(false);
+            target.setObfuscated(false);
         }
     };
 
@@ -76,7 +76,7 @@ interface TeaVMTestConfiguration<T extends TeaVMTarget> {
 
         @Override
         public void apply(JavaScriptTarget target) {
-            target.setMinifying(true);
+            target.setObfuscated(true);
         }
     };
 

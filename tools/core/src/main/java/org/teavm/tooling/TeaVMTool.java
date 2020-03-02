@@ -70,7 +70,8 @@ public class TeaVMTool {
     private File targetDirectory = new File(".");
     private TeaVMTargetType targetType = TeaVMTargetType.JAVASCRIPT;
     private String targetFileName = "";
-    private boolean minifying = true;
+    private boolean obfuscated = true;
+    private boolean strict;
     private int maxTopLevelNames = 10000;
     private String mainClass;
     private String entryPointName = "main";
@@ -116,20 +117,16 @@ public class TeaVMTool {
         this.targetDirectory = targetDirectory;
     }
 
-    public String getTargetFileName() {
-        return targetFileName;
-    }
-
     public void setTargetFileName(String targetFileName) {
         this.targetFileName = targetFileName;
     }
 
-    public boolean isMinifying() {
-        return minifying;
+    public void setObfuscated(boolean obfuscated) {
+        this.obfuscated = obfuscated;
     }
 
-    public void setMinifying(boolean minifying) {
-        this.minifying = minifying;
+    public void setStrict(boolean strict) {
+        this.strict = strict;
     }
 
     public void setMaxTopLevelNames(int maxTopLevelNames) {
@@ -314,7 +311,8 @@ public class TeaVMTool {
 
     private TeaVMTarget prepareJavaScriptTarget() {
         javaScriptTarget = new JavaScriptTarget();
-        javaScriptTarget.setMinifying(minifying);
+        javaScriptTarget.setObfuscated(obfuscated);
+        javaScriptTarget.setStrict(strict);
         javaScriptTarget.setTopLevelNameLimit(maxTopLevelNames);
 
         debugEmitter = debugInformationGenerated || sourceMapsFileGenerated
@@ -332,7 +330,7 @@ public class TeaVMTool {
         webAssemblyTarget.setVersion(wasmVersion);
         webAssemblyTarget.setMinHeapSize(minHeapSize);
         webAssemblyTarget.setMaxHeapSize(maxHeapSize);
-        webAssemblyTarget.setObfuscated(minifying);
+        webAssemblyTarget.setObfuscated(obfuscated);
         return webAssemblyTarget;
     }
 
@@ -343,7 +341,7 @@ public class TeaVMTool {
         cTarget.setLineNumbersGenerated(debugInformationGenerated);
         cTarget.setLongjmpUsed(longjmpSupported);
         cTarget.setHeapDump(heapDump);
-        cTarget.setObfuscated(minifying);
+        cTarget.setObfuscated(obfuscated);
         return cTarget;
     }
 
@@ -390,6 +388,8 @@ public class TeaVMTool {
             vmBuilder.setDependencyAnalyzerFactory(fastDependencyAnalysis
                     ? FastDependencyAnalyzer::new
                     : PreciseDependencyAnalyzer::new);
+            vmBuilder.setObfuscated(obfuscated);
+            vmBuilder.setStrict(strict);
 
             vm = vmBuilder.build();
             if (progressListener != null) {

@@ -334,6 +334,8 @@ public class IncrementalCBuilder {
                 .setClassSource(classSource)
                 .setDependencyAnalyzerFactory(FastDependencyAnalyzer::new)
                 .setClassSourcePacker(this::packClasses)
+                .setStrict(true)
+                .setObfuscated(false)
                 .build();
 
         cTarget.setIncremental(true);

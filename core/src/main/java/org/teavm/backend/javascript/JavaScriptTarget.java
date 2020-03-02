@@ -115,7 +115,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             "currentThread", Thread.class);
 
     private TeaVMTargetController controller;
-    private boolean minifying = true;
+    private boolean obfuscated = true;
     private boolean stackTraceIncluded;
     private final Map<MethodReference, Generator> methodGenerators = new HashMap<>();
     private final Map<MethodReference, Injector> methodInjectors = new HashMap<>();
@@ -174,23 +174,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
     }
 
     /**
-     * Reports whether this TeaVM instance uses obfuscation when generating the JavaScript code.
-     *
-     * @see #setMinifying(boolean)
-     * @return whether TeaVM produces obfuscated code.
-     */
-    public boolean isMinifying() {
-        return minifying;
-    }
-
-    /**
      * Specifies whether this TeaVM instance uses obfuscation when generating the JavaScript code.
      *
-     * @see #isMinifying()
-     * @param minifying whether TeaVM should obfuscate code.
+     * @param obfuscated whether TeaVM should obfuscate code.
      */
-    public void setMinifying(boolean minifying) {
-        this.minifying = minifying;
+    public void setObfuscated(boolean obfuscated) {
+        this.obfuscated = obfuscated;
     }
 
     public MethodNodeCache getAstCache() {
@@ -363,12 +352,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
             return;
         }
 
-        AliasProvider aliasProvider = minifying
+        AliasProvider aliasProvider = obfuscated
                 ? new MinifyingAliasProvider(topLevelNameLimit)
                 : new DefaultAliasProvider(topLevelNameLimit);
         DefaultNamingStrategy naming = new DefaultNamingStrategy(aliasProvider, controller.getUnprocessedClassSource());
         SourceWriterBuilder builder = new SourceWriterBuilder(naming);
-        builder.setMinified(minifying);
+        builder.setMinified(obfuscated);
         SourceWriter sourceWriter = builder.build(writer);
 
         DebugInformationEmitter debugEmitterToUse = debugEmitter;
@@ -382,12 +371,12 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
                 controller.getClassLoader(), controller.getServices(), controller.getProperties(), naming,
                 controller.getDependencyInfo(), m -> isVirtual(virtualMethodContributorContext, m),
                 controller.getClassInitializerInfo());
-        renderingContext.setMinifying(minifying);
+        renderingContext.setMinifying(obfuscated);
         Renderer renderer = new Renderer(sourceWriter, asyncMethods, asyncFamilyMethods,
                 controller.getDiagnostics(), renderingContext);
         RuntimeRenderer runtimeRenderer = new RuntimeRenderer(classes, sourceWriter);
         renderer.setProperties(controller.getProperties());
-        renderer.setMinifying(minifying);
+        renderer.setMinifying(obfuscated);
         renderer.setProgressConsumer(controller::reportProgress);
         if (debugEmitter != null) {
             for (PreparedClass preparedClass : clsNodes) {

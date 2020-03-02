@@ -30,6 +30,8 @@ public class TeaVMBuilder {
     ReferenceCache referenceCache = new ReferenceCache();
     DependencyAnalyzerFactory dependencyAnalyzerFactory = PreciseDependencyAnalyzer::new;
     ClassSourcePacker classSourcePacker = (src, names) -> src;
+    boolean obfuscated;
+    boolean strict;
 
     public TeaVMBuilder(TeaVMTarget target) {
         this.target = target;
@@ -71,6 +73,16 @@ public class TeaVMBuilder {
 
     public TeaVMBuilder setClassSourcePacker(ClassSourcePacker classSourcePacker) {
         this.classSourcePacker = classSourcePacker;
+        return this;
+    }
+
+    public TeaVMBuilder setObfuscated(boolean obfuscated) {
+        this.obfuscated = obfuscated;
+        return this;
+    }
+
+    public TeaVMBuilder setStrict(boolean strict) {
+        this.strict = strict;
         return this;
     }
 

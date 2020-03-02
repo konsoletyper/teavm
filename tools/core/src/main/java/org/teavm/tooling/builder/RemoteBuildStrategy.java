@@ -126,8 +126,13 @@ public class RemoteBuildStrategy implements BuildStrategy {
     }
 
     @Override
-    public void setMinifying(boolean minifying) {
-        request.minifying = minifying;
+    public void setObfuscated(boolean obfuscated) {
+        request.obfuscated = obfuscated;
+    }
+
+    @Override
+    public void setStrict(boolean strict) {
+        request.strict = strict;
     }
 
     @Override

@@ -41,6 +41,8 @@ class DependencyClassSource implements ClassHolderSource {
     private IncrementalDependencyRegistration dependencyRegistration;
     private Map<String, ClassHolder> generatedClasses = new LinkedHashMap<>();
     private List<ClassHolderTransformer> transformers = new ArrayList<>();
+    boolean obfuscated;
+    boolean strict;
     Map<String, Optional<ClassHolder>> cache = new LinkedHashMap<>(1000, 0.5f);
 
     DependencyClassSource(ClassReaderSource innerSource, Diagnostics diagnostics,
@@ -127,6 +129,16 @@ class DependencyClassSource implements ClassHolderSource {
         @Override
         public IncrementalDependencyRegistration getIncrementalCache() {
             return dependencyRegistration;
+        }
+
+        @Override
+        public boolean isObfuscated() {
+            return obfuscated;
+        }
+
+        @Override
+        public boolean isStrict() {
+            return strict;
         }
     };
 }

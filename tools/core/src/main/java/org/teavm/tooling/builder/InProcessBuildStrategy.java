@@ -51,7 +51,8 @@ public class InProcessBuildStrategy implements BuildStrategy {
     private String cacheDirectory;
     private TeaVMOptimizationLevel optimizationLevel = TeaVMOptimizationLevel.ADVANCED;
     private boolean fastDependencyAnalysis;
-    private boolean minifying;
+    private boolean obfuscated;
+    private boolean strict;
     private int maxTopLevelNames;
     private boolean sourceMapsFileGenerated;
     private boolean debugInformationGenerated;
@@ -150,8 +151,13 @@ public class InProcessBuildStrategy implements BuildStrategy {
     }
 
     @Override
-    public void setMinifying(boolean minifying) {
-        this.minifying = minifying;
+    public void setObfuscated(boolean obfuscated) {
+        this.obfuscated = obfuscated;
+    }
+
+    @Override
+    public void setStrict(boolean strict) {
+        this.strict = strict;
     }
 
     @Override
@@ -232,7 +238,8 @@ public class InProcessBuildStrategy implements BuildStrategy {
         tool.setDebugInformationGenerated(debugInformationGenerated);
         tool.setSourceFilesCopied(sourceFilesCopied);
 
-        tool.setMinifying(minifying);
+        tool.setObfuscated(obfuscated);
+        tool.setStrict(strict);
         tool.setMaxTopLevelNames(maxTopLevelNames);
         tool.setIncremental(incremental);
         tool.getTransformers().addAll(Arrays.asList(transformers));
