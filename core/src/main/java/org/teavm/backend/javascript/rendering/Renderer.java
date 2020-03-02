@@ -251,7 +251,8 @@ public class Renderer implements RenderingManager {
         String[] names = { "$rt_throw", "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray",
                 "$rt_isInstance", "$rt_nativeThread", "$rt_suspending", "$rt_resuming", "$rt_invalidPointer",
                 "$rt_s", "$rt_eraseClinit", "$rt_imul", "$rt_wrapException", "$rt_checkBounds",
-                "$rt_checkUpperBound", "$rt_checkLowerBound" };
+                "$rt_checkUpperBound", "$rt_checkLowerBound", "$rt_wrapFunction0", "$rt_wrapFunction1",
+                "$rt_wrapFunction2", "$rt_wrapFunction3", "$rt_wrapFunction4" };
         boolean first = true;
         for (String name : names) {
             if (!first) {
@@ -789,9 +790,20 @@ public class Renderer implements RenderingManager {
     private void emitVirtualDeclaration(MethodReference ref) throws IOException {
         String methodName = naming.getNameFor(ref.getDescriptor());
         writer.append("\"").append(methodName).append("\"");
-        writer.append(",").ws().append("function(");
+        writer.append(",").ws();
+        emitVirtualFunctionWrapper(ref);
+    }
+
+    private void emitVirtualFunctionWrapper(MethodReference method) throws IOException {
+        if (method.parameterCount() <= 4) {
+            writer.appendFunction("$rt_wrapFunction" + method.parameterCount());
+            writer.append("(").appendMethodBody(method).append(")");
+            return;
+        }
+
+        writer.append("function(");
         List<String> args = new ArrayList<>();
-        for (int i = 1; i <= ref.parameterCount(); ++i) {
+        for (int i = 1; i <= method.parameterCount(); ++i) {
             args.add(variableNameForInitializer(i));
         }
         for (int i = 0; i < args.size(); ++i) {
@@ -801,10 +813,10 @@ public class Renderer implements RenderingManager {
             writer.append(args.get(i));
         }
         writer.append(")").ws().append("{").ws();
-        if (ref.getDescriptor().getResultType() != ValueType.VOID) {
+        if (method.getDescriptor().getResultType() != ValueType.VOID) {
             writer.append("return ");
         }
-        writer.appendMethodBody(ref).append("(");
+        writer.appendMethodBody(method).append("(");
         writer.append("this");
         for (String arg : args) {
             writer.append(",").ws().append(arg);

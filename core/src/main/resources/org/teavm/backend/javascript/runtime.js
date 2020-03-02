@@ -500,6 +500,31 @@ function $rt_metadata(data) {
         cls.$array = null;
     }
 }
+function $rt_wrapFunction0(f) {
+    return function() {
+        return f(this);
+    }
+}
+function $rt_wrapFunction1(f) {
+    return function(p1) {
+        return f(this, p1);
+    }
+}
+function $rt_wrapFunction2(f) {
+    return function(p1, p2) {
+        return f(this, p1, p2);
+    }
+}
+function $rt_wrapFunction3(f) {
+    return function(p1, p2, p3) {
+        return f(this, p1, p2, p3, p3);
+    }
+}
+function $rt_wrapFunction4(f) {
+    return function(p1, p2, p3, p4) {
+        return f(this, p1, p2, p3, p4);
+    }
+}
 function $rt_threadStarter(f) {
     return function() {
         var args = Array.prototype.slice.apply(arguments);
