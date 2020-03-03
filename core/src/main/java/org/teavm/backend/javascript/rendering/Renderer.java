@@ -32,6 +32,8 @@ import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.MethodNode;
 import org.teavm.ast.MethodNodeVisitor;
 import org.teavm.ast.RegularMethodNode;
+import org.teavm.ast.ReturnStatement;
+import org.teavm.ast.Statement;
 import org.teavm.ast.VariableNode;
 import org.teavm.backend.javascript.codegen.NamingOrderer;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
@@ -870,12 +872,16 @@ public class Renderer implements RenderingManager {
             }
             writer.append(statementRenderer.variableName(i));
         }
-        writer.append(")").ws().append("{").softNewLine().indent();
+        writer.append(")").ws().append("{").indent();
 
         MethodBodyRenderer renderer = new MethodBodyRenderer(statementRenderer);
         if (method.node != null) {
-            method.node.acceptVisitor(renderer);
+            if (!isTrivialBody(method.node)) {
+                writer.softNewLine();
+                method.node.acceptVisitor(renderer);
+            }
         } else {
+            writer.softNewLine();
             renderer.renderNative(method);
         }
 
@@ -888,6 +894,14 @@ public class Renderer implements RenderingManager {
         debugEmitter.emitMethod(null);
 
         longLibraryUsed |= statementRenderer.isLongLibraryUsed();
+    }
+
+    private static boolean isTrivialBody(MethodNode node) {
+        if (!(node instanceof RegularMethodNode)) {
+            return false;
+        }
+        Statement body = ((RegularMethodNode) node).getBody();
+        return body instanceof ReturnStatement && ((ReturnStatement) body).getResult() == null;
     }
 
     private void renderFunctionDeclaration(ScopedName name) throws IOException {
