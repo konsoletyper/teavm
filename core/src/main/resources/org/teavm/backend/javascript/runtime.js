@@ -700,3 +700,14 @@ function $rt_checkLowerBound(index) {
     }
     return index;
 }
+function $rt_classWithoutFields(superclass) {
+    if (superclass === 0) {
+        return function() {};
+    }
+    if (superclass === void 0) {
+        superclass = $rt_objcls();
+    }
+    return function() {
+        superclass.call(this);
+    };
+}

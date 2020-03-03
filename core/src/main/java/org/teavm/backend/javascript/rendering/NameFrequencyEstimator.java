@@ -129,6 +129,17 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         for (String iface : cls.getClassHolder().getInterfaces()) {
             consumer.consume(iface);
         }
+
+        boolean hasFields = false;
+        for (FieldHolder field : cls.getClassHolder().getFields()) {
+            if (!field.hasModifier(ElementModifier.STATIC)) {
+                hasFields = true;
+                break;
+            }
+        }
+        if (!hasFields) {
+            consumer.consumeFunction("$rt_classWithoutFields");
+        }
     }
 
     @Override

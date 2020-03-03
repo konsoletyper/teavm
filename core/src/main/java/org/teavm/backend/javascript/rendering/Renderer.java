@@ -252,7 +252,8 @@ public class Renderer implements RenderingManager {
                 "$rt_isInstance", "$rt_nativeThread", "$rt_suspending", "$rt_resuming", "$rt_invalidPointer",
                 "$rt_s", "$rt_eraseClinit", "$rt_imul", "$rt_wrapException", "$rt_checkBounds",
                 "$rt_checkUpperBound", "$rt_checkLowerBound", "$rt_wrapFunction0", "$rt_wrapFunction1",
-                "$rt_wrapFunction2", "$rt_wrapFunction3", "$rt_wrapFunction4" };
+                "$rt_wrapFunction2", "$rt_wrapFunction3", "$rt_wrapFunction4",
+                "$rt_classWithoutFields" };
         boolean first = true;
         for (String name : names) {
             if (!first) {
@@ -303,10 +304,6 @@ public class Renderer implements RenderingManager {
         ScopedName jsName = naming.getNameFor(cls.getName());
         debugEmitter.addClass(jsName.value, cls.getName(), cls.getParentName());
         try {
-            renderFunctionDeclaration(jsName);
-            writer.append("()").ws().append("{")
-                    .indent().softNewLine();
-            boolean thisAliased = false;
             List<FieldHolder> nonStaticFields = new ArrayList<>();
             List<FieldHolder> staticFields = new ArrayList<>();
             for (FieldHolder field : cls.getClassHolder().getFields()) {
@@ -316,37 +313,12 @@ public class Renderer implements RenderingManager {
                     nonStaticFields.add(field);
                 }
             }
-            if (nonStaticFields.size() > 1) {
-                thisAliased = true;
-                writer.append("var a").ws().append("=").ws().append("this;").ws();
-            }
-            if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)
-                    && cls.getParentName() != null) {
-                writer.appendClass(cls.getParentName()).append(".call(").append(thisAliased ? "a" : "this")
-                        .append(");").softNewLine();
-            }
-            for (FieldHolder field : nonStaticFields) {
-                Object value = field.getInitialValue();
-                if (value == null) {
-                    value = getDefaultValue(field.getType());
-                }
-                FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
-                writer.append(thisAliased ? "a" : "this").append(".").appendField(fieldRef).ws()
-                        .append("=").ws();
-                context.constantToString(writer, value);
-                writer.append(";").softNewLine();
-                debugEmitter.addField(field.getName(), naming.getNameFor(fieldRef));
-            }
 
-            if (cls.getName().equals("java.lang.Object")) {
-                writer.append("this.$id$").ws().append('=').ws().append("0;").softNewLine();
+            if (nonStaticFields.isEmpty() && !cls.getClassHolder().getName().equals("java.lang.Object")) {
+                renderShortClassFunctionDeclaration(cls, jsName);
+            } else {
+                renderFullClassFunctionDeclaration(cls, jsName, nonStaticFields);
             }
-
-            writer.outdent().append("}");
-            if (jsName.scoped) {
-                writer.append(";");
-            }
-            writer.newLine();
 
             for (FieldHolder field : staticFields) {
                 Object value = field.getInitialValue();
@@ -373,6 +345,59 @@ public class Renderer implements RenderingManager {
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
         }
+    }
+
+    private void renderFullClassFunctionDeclaration(PreparedClass cls, ScopedName jsName,
+            List<FieldHolder> nonStaticFields) throws IOException {
+        boolean thisAliased = false;
+        renderFunctionDeclaration(jsName);
+        writer.append("()").ws().append("{").indent().softNewLine();
+        if (nonStaticFields.size() > 1) {
+            thisAliased = true;
+            writer.append("var a").ws().append("=").ws().append("this;").ws();
+        }
+        if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)
+                && cls.getParentName() != null) {
+            writer.appendClass(cls.getParentName()).append(".call(").append(thisAliased ? "a" : "this")
+                    .append(");").softNewLine();
+        }
+        for (FieldHolder field : nonStaticFields) {
+            Object value = field.getInitialValue();
+            if (value == null) {
+                value = getDefaultValue(field.getType());
+            }
+            FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
+            writer.append(thisAliased ? "a" : "this").append(".").appendField(fieldRef).ws()
+                    .append("=").ws();
+            context.constantToString(writer, value);
+            writer.append(";").softNewLine();
+            debugEmitter.addField(field.getName(), naming.getNameFor(fieldRef));
+        }
+
+        if (cls.getName().equals("java.lang.Object")) {
+            writer.append("this.$id$").ws().append('=').ws().append("0;").softNewLine();
+        }
+
+        writer.outdent().append("}");
+        if (jsName.scoped) {
+            writer.append(";");
+        }
+        writer.newLine();
+    }
+
+    private void renderShortClassFunctionDeclaration(PreparedClass cls, ScopedName jsName) throws IOException {
+        if (jsName.scoped) {
+            writer.append(naming.getScopeName()).append(".");
+        } else {
+            writer.append("var ");
+        }
+        writer.append(jsName.value).ws().append("=").ws().appendFunction("$rt_classWithoutFields").append("(");
+        if (cls.getClassHolder().hasModifier(ElementModifier.INTERFACE)) {
+            writer.append("0");
+        } else if (!cls.getParentName().equals("java.lang.Object")) {
+            writer.appendClass(cls.getParentName());
+        }
+        writer.append(");").newLine();
     }
 
     private void renderMethodBodies(PreparedClass cls) throws RenderingException {
