@@ -16,6 +16,7 @@
 package org.teavm.backend.javascript.rendering;
 
 import java.util.Set;
+import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
@@ -292,6 +293,42 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         visitType(expr.getType());
         if (!(expr.getType() instanceof ValueType.Primitive)) {
             consumer.consumeFunction("$rt_createArray");
+        }
+    }
+
+    @Override
+    public void visit(ArrayFromDataExpr expr) {
+        super.visit(expr);
+        visitType(expr.getType());
+        if (expr.getType() instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) expr.getType()).getKind()) {
+                case BOOLEAN:
+                    consumer.consumeFunction("$rt_createBooleanArrayFromData");
+                    break;
+                case BYTE:
+                    consumer.consumeFunction("$rt_createByteArrayFromData");
+                    break;
+                case SHORT:
+                    consumer.consumeFunction("$rt_createShortArrayFromData");
+                    break;
+                case CHARACTER:
+                    consumer.consumeFunction("$rt_createCharArrayFromData");
+                    break;
+                case INTEGER:
+                    consumer.consumeFunction("$rt_createIntArrayFromData");
+                    break;
+                case LONG:
+                    consumer.consumeFunction("$rt_createLongArrayFromData");
+                    break;
+                case FLOAT:
+                    consumer.consumeFunction("$rt_createFloatArrayFromData");
+                    break;
+                case DOUBLE:
+                    consumer.consumeFunction("$rt_createDoubleArrayFromData");
+                    break;
+            }
+        } else {
+            consumer.consumeFunction("$rt_createArrayFromData");
         }
     }
 

@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <time.h>
 #include <math.h>
+#include <stdarg.h>
 
 #if TEAVM_INCREMENTAL
     #include "virtcall.h"
@@ -71,3 +72,25 @@ void teavm_initClasses() {
         teavm_classReferences[i]->parent.header = classHeader;
     }
 }
+
+#define TEAVM_FILL_ARRAY_F(name, type, arrayType) \
+    void* name(void* array, ...) { \
+        type* data = TEAVM_ARRAY_DATA(array, type); \
+        int32_t size = TEAVM_ARRAY_LENGTH(array); \
+        va_list args; \
+        va_start(args, array); \
+        for (int32_t i = 0; i < size; ++i) { \
+            *data++ = (type) va_arg(args, arrayType); \
+        } \
+        va_end(args); \
+    }
+
+TEAVM_FILL_ARRAY_F(teavm_fillArray, void*, void*)
+TEAVM_FILL_ARRAY_F(teavm_fillBooleanArray, int8_t, int)
+TEAVM_FILL_ARRAY_F(teavm_fillByteArray, int8_t, int)
+TEAVM_FILL_ARRAY_F(teavm_fillShortArray, int16_t, int)
+TEAVM_FILL_ARRAY_F(teavm_fillCharArray, char16_t, int)
+TEAVM_FILL_ARRAY_F(teavm_fillIntArray, int32_t, int)
+TEAVM_FILL_ARRAY_F(teavm_fillLongArray, int64_t, int64_t)
+TEAVM_FILL_ARRAY_F(teavm_fillFloatArray, float, double)
+TEAVM_FILL_ARRAY_F(teavm_fillDoubleArray, double, double)

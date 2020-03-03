@@ -62,9 +62,11 @@ Array.prototype.fill = Array.prototype.fill || function(value,start,end) {
 };
 function $rt_createArray(cls, sz) {
     var data = new Array(sz);
-    var arr = new $rt_array(cls, data);
     data.fill(null);
-    return arr;
+    return new $rt_array(cls, data);
+}
+function $rt_createArrayFromData(cls, init) {
+    return $rt_wrapArray(cls, init);
 }
 function $rt_wrapArray(cls, data) {
     return new $rt_array(cls, data);
@@ -78,29 +80,67 @@ function $rt_createLongArray(sz) {
     data.fill(Long_ZERO);
     return arr;
 }
+function $rt_createLongArrayFromData(init) {
+    return new $rt_array($rt_longcls(), init);
+}
 function $rt_createNumericArray(cls, nativeArray) {
     return new $rt_array(cls, nativeArray);
 }
 function $rt_createCharArray(sz) {
     return $rt_createNumericArray($rt_charcls(), new Uint16Array(sz));
 }
+function $rt_createCharArrayFromData(data) {
+    var buffer = new Uint16Array(data.length);
+    buffer.set(data);
+    return $rt_createNumericArray($rt_charcls(), buffer);
+}
 function $rt_createByteArray(sz) {
     return $rt_createNumericArray($rt_bytecls(), new Int8Array(sz));
+}
+function $rt_createByteArrayFromData(data) {
+    var buffer = new Int8Array(data.length);
+    buffer.set(data);
+    return $rt_createNumericArray($rt_bytecls(), buffer);
 }
 function $rt_createShortArray(sz) {
     return $rt_createNumericArray($rt_shortcls(), new Int16Array(sz));
 }
+function $rt_createShortArrayFromData(data) {
+    var buffer = new Int16Array(data.length);
+    buffer.set(data);
+    return $rt_createNumericArray($rt_shortcls(), buffer);
+}
 function $rt_createIntArray(sz) {
     return $rt_createNumericArray($rt_intcls(), new Int32Array(sz));
+}
+function $rt_createIntArrayFromData(data) {
+    var buffer = new Int32Array(data.length);
+    buffer.set(data);
+    return $rt_createNumericArray($rt_intcls(), buffer);
 }
 function $rt_createBooleanArray(sz) {
     return $rt_createNumericArray($rt_booleancls(), new Int8Array(sz));
 }
+function $rt_createBooleanArrayFromData(data) {
+    var buffer = new Int8Array(data.length);
+    buffer.set(data);
+    return $rt_createNumericArray($rt_booleancls(), buffer);
+}
 function $rt_createFloatArray(sz) {
     return $rt_createNumericArray($rt_floatcls(), new Float32Array(sz));
 }
+function $rt_createFloatArrayFromData(data) {
+    var buffer = new Float32Array(data.length);
+    buffer.set(data);
+    return $rt_createNumericArray($rt_floatcls(), buffer);
+}
 function $rt_createDoubleArray(sz) {
     return $rt_createNumericArray($rt_doublecls(), new Float64Array(sz));
+}
+function $rt_createDoubleArrayFromData(data) {
+    var buffer = new Float64Array(data.length);
+    buffer.set(data);
+    return $rt_createNumericArray($rt_doublecls(), buffer);
 }
 
 function $rt_arraycls(cls) {

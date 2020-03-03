@@ -26,6 +26,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
+import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BinaryOperation;
@@ -1323,6 +1324,71 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             }
         } catch (IOException e) {
             throw new RenderingException("IO error occurred", e);
+        }
+    }
+
+    @Override
+    public void visit(ArrayFromDataExpr expr) {
+        try {
+            if (expr.getLocation() != null) {
+                pushLocation(expr.getLocation());
+            }
+            ValueType type = expr.getType();
+            if (type instanceof ValueType.Primitive) {
+                switch (((ValueType.Primitive) type).getKind()) {
+                    case BOOLEAN:
+                        writer.appendFunction("$rt_createBooleanArrayFromData");
+                        break;
+                    case BYTE:
+                        writer.appendFunction("$rt_createByteArrayFromData");
+                        break;
+                    case SHORT:
+                        writer.appendFunction("$rt_createShortArrayFromData");
+                        break;
+                    case INTEGER:
+                        writer.appendFunction("$rt_createIntArrayFromData");
+                        break;
+                    case LONG:
+                        writer.appendFunction("$rt_createLongArrayFromData");
+                        break;
+                    case FLOAT:
+                        writer.appendFunction("$rt_createFloatArrayFromData");
+                        break;
+                    case DOUBLE:
+                        writer.appendFunction("$rt_createDoubleArrayFromData");
+                        break;
+                    case CHARACTER:
+                        writer.appendFunction("$rt_createCharArrayFromData");
+                        break;
+                }
+                writer.append("(");
+            } else {
+                writer.appendFunction("$rt_createArrayFromData").append("(");
+                context.typeToClsString(writer, expr.getType());
+                writer.append(",").ws();
+            }
+
+            writer.append("[");
+            writeCommaSeparated(expr.getData());
+            writer.append("])");
+
+            if (expr.getLocation() != null) {
+                popLocation();
+            }
+        } catch (IOException e) {
+            throw new RenderingException("IO error occurred", e);
+        }
+    }
+
+    private void writeCommaSeparated(List<Expr> expressions) throws IOException {
+        boolean first = true;
+        for (Expr element : expressions) {
+            if (!first) {
+                writer.append(",").ws();
+            }
+            first = false;
+            precedence = Precedence.min();
+            element.acceptVisitor(this);
         }
     }
 

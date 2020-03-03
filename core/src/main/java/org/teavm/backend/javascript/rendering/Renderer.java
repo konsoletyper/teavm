@@ -255,7 +255,10 @@ public class Renderer implements RenderingManager {
                 "$rt_s", "$rt_eraseClinit", "$rt_imul", "$rt_wrapException", "$rt_checkBounds",
                 "$rt_checkUpperBound", "$rt_checkLowerBound", "$rt_wrapFunction0", "$rt_wrapFunction1",
                 "$rt_wrapFunction2", "$rt_wrapFunction3", "$rt_wrapFunction4",
-                "$rt_classWithoutFields" };
+                "$rt_classWithoutFields", "$rt_createArrayFromData", "$rt_createCharArrayFromData",
+                "$rt_createByteArrayFromData", "$rt_createShortArrayFromData", "$rt_createIntArrayFromData",
+                "$rt_createBooleanArrayFromData", "$rt_createFloatArrayFromData", "$rt_createDoubleArrayFromData",
+                "$rt_createLongArrayFromData" };
         boolean first = true;
         for (String name : names) {
             if (!first) {
