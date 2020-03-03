@@ -837,7 +837,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     boolean isVirtual(MethodReference method) {
-        if (method.getName().equals("<init>") || method.getName().equals("<clinit>")) {
+        if (method.getName().equals("<clinit>")) {
             return false;
         }
         return virtualMethods == null || virtualMethods.contains(method)

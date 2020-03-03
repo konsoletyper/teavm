@@ -124,26 +124,37 @@ public class DefaultInliningStrategy implements InliningStrategy {
         public void invoke(VariableReader receiver, VariableReader instance, MethodReference method,
                 List<? extends VariableReader> arguments, InvocationType type) {
             if (type == InvocationType.SPECIAL && context != null && context.isUsedOnce(method)) {
-                callsToUsedOnceMethods = true;
+                ProgramReader program = context.getProgram(method);
+                if (!isTrivialCall(program)) {
+                    callsToUsedOnceMethods = true;
+                }
             }
+        }
+
+        private boolean isTrivialCall(ProgramReader program) {
+            if (program == null) {
+               return false;
+            }
+            Complexity complexity = getComplexity(program, context);
+            return complexity.score <= 1 && !complexity.callsToUsedOnceMethods;
         }
 
         @Override
         public void choose(VariableReader condition, List<? extends SwitchTableEntryReader> table,
                 BasicBlockReader defaultTarget) {
-            complexity += 3;
+            complexity += 2;
         }
 
         @Override
         public void jumpIf(BranchingCondition cond, VariableReader operand, BasicBlockReader consequent,
                 BasicBlockReader alternative) {
-            complexity += 2;
+            complexity += 1;
         }
 
         @Override
         public void jumpIf(BinaryBranchingCondition cond, VariableReader first, VariableReader second,
                 BasicBlockReader consequent, BasicBlockReader alternative) {
-            complexity += 2;
+            complexity += 1;
         }
 
         @Override
@@ -153,6 +164,11 @@ public class DefaultInliningStrategy implements InliningStrategy {
 
         @Override
         public void exit(VariableReader valueToReturn) {
+            complexity--;
+        }
+
+        @Override
+        public void raise(VariableReader exception) {
             complexity--;
         }
     }

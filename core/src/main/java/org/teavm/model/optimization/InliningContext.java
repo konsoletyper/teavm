@@ -16,9 +16,12 @@
 package org.teavm.model.optimization;
 
 import org.teavm.model.MethodReference;
+import org.teavm.model.ProgramReader;
 
 public interface InliningContext {
     boolean isUsedOnce(MethodReference method);
+
+    ProgramReader getProgram(MethodReference method);
 
     int getDepth();
 }

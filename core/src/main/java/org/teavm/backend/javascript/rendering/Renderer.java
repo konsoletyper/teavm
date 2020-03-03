@@ -408,7 +408,8 @@ public class Renderer implements RenderingManager {
             if (clinit != null && context.isDynamicInitializer(cls.getName())) {
                 renderCallClinit(clinit, cls);
             }
-            if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)) {
+            if (!cls.getClassHolder().hasModifier(ElementModifier.INTERFACE)
+                    && !cls.getClassHolder().hasModifier(ElementModifier.ABSTRACT)) {
                 for (PreparedMethod method : cls.getMethods()) {
                     if (!method.methodHolder.getModifiers().contains(ElementModifier.STATIC)) {
                         if (method.reference.getName().equals("<init>")) {
