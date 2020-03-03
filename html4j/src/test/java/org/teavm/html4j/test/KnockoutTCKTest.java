@@ -21,7 +21,6 @@ import net.java.html.json.tests.KnockoutTest;
 import net.java.html.json.tests.MinesTest;
 import net.java.html.json.tests.OperationsTest;
 import net.java.html.json.tests.WebSocketTest;
-import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.teavm.junit.SkipJVM;
@@ -323,7 +322,6 @@ public class KnockoutTCKTest {
     }
 
     @Test
-    @Ignore
     public void deserializeWrongEnum() throws Exception {
         jsonTest.deserializeWrongEnum();
     }

@@ -25,7 +25,7 @@ import org.teavm.model.util.ProgramUtils;
 public class ObfuscationHacks implements ClassHolderTransformer {
     @Override
     public void transformClass(ClassHolder cls, ClassHolderTransformerContext context) {
-        if (cls.getName().equals("java.lang.Object")) {
+        if (cls.getName().equals("java.lang.Object") || cls.getName().equals("java.lang.Class")) {
             if (context.isObfuscated() && !context.isStrict()) {
                 processObjectClass(cls);
             }

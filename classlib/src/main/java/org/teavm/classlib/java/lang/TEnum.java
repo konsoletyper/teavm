@@ -65,7 +65,7 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
     public final int compareTo(E o) {
         if (o.getDeclaringClass() != getDeclaringClass()) {
             throw new TIllegalArgumentException("Can't compare "
-                    + getDeclaringClass().getName() + " to " + o.getDeclaringClass().getName());
+                    + getDeclaringClass() + " to " + o.getDeclaringClass());
         }
         return TInteger.compare(ordinal, o.ordinal());
     }
@@ -81,6 +81,6 @@ public abstract class TEnum<E extends TEnum<E>> extends TObject implements TComp
                 return constant;
             }
         }
-        throw new TIllegalArgumentException("Enum does not have the " + name + "constant");
+        throw new TIllegalArgumentException("Enum " + enumType + " does not have the " + name + "constant");
     }
 }
