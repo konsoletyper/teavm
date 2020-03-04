@@ -20,6 +20,7 @@ import java.util.Map;
 import java.util.function.Function;
 import org.teavm.model.optimization.GlobalValueNumbering;
 import org.teavm.model.optimization.UnusedVariableElimination;
+import org.teavm.model.transformation.NoSuchFieldCatchElimination;
 
 public class PreOptimizingClassHolderSource implements ClassHolderSource {
     private ClassHolderSource innerClassSource;
@@ -48,8 +49,10 @@ public class PreOptimizingClassHolderSource implements ClassHolderSource {
         if (cls == null) {
             return cls;
         }
+        NoSuchFieldCatchElimination noSuchFieldCatchElimination = new NoSuchFieldCatchElimination();
         for (MethodHolder method : cls.getMethods()) {
             if (method.getProgram() != null) {
+                noSuchFieldCatchElimination.apply(method.getProgram());
                 new GlobalValueNumbering(true).optimize(method.getProgram());
                 new UnusedVariableElimination().optimize(method, method.getProgram());
             }

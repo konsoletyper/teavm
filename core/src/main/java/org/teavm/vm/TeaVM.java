@@ -769,7 +769,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             //optimizations.add(new LoopInversion());
             optimizations.add(new LoopInvariantMotion());
         }
-        if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.FULL.ordinal()) {
+        if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
             optimizations.add(new RepeatedFieldReadElimination());
         }
         optimizations.add(new GlobalValueNumbering(optimizationLevel == TeaVMOptimizationLevel.SIMPLE));
