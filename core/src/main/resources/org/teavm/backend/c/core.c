@@ -83,6 +83,7 @@ void teavm_initClasses() {
             *data++ = (type) va_arg(args, arrayType); \
         } \
         va_end(args); \
+        return array; \
     }
 
 TEAVM_FILL_ARRAY_F(teavm_fillArray, void*, void*)
