@@ -417,6 +417,7 @@ public class JavaScriptTarget implements TeaVMTarget, TeaVMJavaScriptHost {
 
             if (renderer.isLongLibraryUsed()) {
                 runtimeRenderer.renderHandWrittenRuntime("long.js");
+                renderer.renderLongRuntimeAliases();
             }
             if (renderer.isThreadLibraryUsed()) {
                 runtimeRenderer.renderHandWrittenRuntime("thread.js");

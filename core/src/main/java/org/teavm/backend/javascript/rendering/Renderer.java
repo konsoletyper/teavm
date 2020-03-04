@@ -249,8 +249,8 @@ public class Renderer implements RenderingManager {
         sizeByClass.put(className, sizeByClass.getOrDefault(className, 0) + sz);
     }
 
-    private void renderRuntimeAliases() throws IOException {
-        String[] names = { "$rt_throw", "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray",
+    private void renderCommonRuntimeAliases() throws IOException {
+        renderRuntimeAliases("$rt_throw", "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray",
                 "$rt_isInstance", "$rt_nativeThread", "$rt_suspending", "$rt_resuming", "$rt_invalidPointer",
                 "$rt_s", "$rt_eraseClinit", "$rt_imul", "$rt_wrapException", "$rt_checkBounds",
                 "$rt_checkUpperBound", "$rt_checkLowerBound", "$rt_wrapFunction0", "$rt_wrapFunction1",
@@ -258,7 +258,19 @@ public class Renderer implements RenderingManager {
                 "$rt_classWithoutFields", "$rt_createArrayFromData", "$rt_createCharArrayFromData",
                 "$rt_createByteArrayFromData", "$rt_createShortArrayFromData", "$rt_createIntArrayFromData",
                 "$rt_createBooleanArrayFromData", "$rt_createFloatArrayFromData", "$rt_createDoubleArrayFromData",
-                "$rt_createLongArrayFromData" };
+                "$rt_createLongArrayFromData", "$rt_createBooleanArray", "$rt_createByteArray",
+                "$rt_createShortArray", "$rt_createCharArray", "$rt_createIntArray", "$rt_createLongArray",
+                "$rt_createFloatArray", "$rt_createDoubleArray", "$rt_compare",
+                "Long_toNumber", "Long_fromInt", "Long_fromNumber", "Long", "Long_ZERO");
+    }
+
+    public void renderLongRuntimeAliases() throws IOException {
+        renderRuntimeAliases("Long_add", "Long_sub", "Long_mul", "Long_div", "Long_rem", "Long_or", "Long_and",
+                "Long_xor", "Long_shl", "Long_shr", "Long_shru", "Long_compare", "Long_eq", "Long_ne",
+                "Long_lt", "Long_le", "Long_gt", "Long_ge", "Long_not", "Long_neg");
+    }
+
+    private void renderRuntimeAliases(String... names) throws IOException {
         boolean first = true;
         for (String name : names) {
             if (!first) {
@@ -286,7 +298,7 @@ public class Renderer implements RenderingManager {
     public boolean render(List<PreparedClass> classes) throws RenderingException {
         if (minifying) {
             try {
-                renderRuntimeAliases();
+                renderCommonRuntimeAliases();
             } catch (IOException e) {
                 throw new RenderingException(e);
             }

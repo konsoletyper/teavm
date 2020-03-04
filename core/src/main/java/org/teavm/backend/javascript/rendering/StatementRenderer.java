@@ -644,7 +644,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             if (expr.getLocation() != null) {
                 pushLocation(expr.getLocation());
             }
-            writer.append(function);
+            writer.appendFunction(function);
             writer.append('(');
             precedence = Precedence.min();
             expr.getFirstOperand().acceptVisitor(this);
@@ -656,7 +656,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -735,7 +735,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                             || RenderingUtil.isSmallInteger(expr.getSecondOperand())) {
                         visitBinary(expr, "*", expr.getType() == OperationType.INT);
                     } else {
-                        visitBinaryFunction(expr, naming.getNameForFunction("$rt_imul"));
+                        visitBinaryFunction(expr, "$rt_imul");
                     }
                     break;
                 case DIVIDE:
@@ -771,7 +771,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                     visitBinary(expr, "<=", false);
                     break;
                 case COMPARE:
-                    visitBinaryFunction(expr, naming.getNameForFunction("$rt_compare"));
+                    visitBinaryFunction(expr, "$rt_compare");
                     break;
                 case OR:
                     visitBinary(expr, "||", false);
@@ -812,7 +812,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 case NOT: {
                     if (expr.getType() == OperationType.LONG) {
                         longLibraryUsed = true;
-                        writer.append("Long_not(");
+                        writer.appendFunction("Long_not").append("(");
                         precedence = Precedence.min();
                         expr.getOperand().acceptVisitor(this);
                         writer.append(')');
@@ -832,7 +832,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 case NEGATE:
                     if (expr.getType() == OperationType.LONG) {
                         longLibraryUsed = true;
-                        writer.append("Long_neg(");
+                        writer.appendFunction("Long_neg").append("(");
                         precedence = Precedence.min();
                         expr.getOperand().acceptVisitor(this);
                         writer.append(')');
@@ -897,7 +897,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -915,7 +915,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             switch (expr.getSource()) {
                 case INT:
                     if (expr.getTarget() == OperationType.LONG) {
-                        writer.append("Long_fromInt(");
+                        writer.appendFunction("Long_fromInt").append("(");
                         precedence = Precedence.min();
                         expr.getValue().acceptVisitor(this);
                         writer.append(')');
@@ -938,7 +938,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                             break;
                         case FLOAT:
                         case DOUBLE:
-                            writer.append("Long_toNumber(");
+                            writer.appendFunction("Long_toNumber").append("(");
                             precedence = Precedence.min();
                             expr.getValue().acceptVisitor(this);
                             writer.append(')');
@@ -951,7 +951,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 case DOUBLE:
                     switch (expr.getTarget()) {
                         case LONG:
-                            writer.append("Long_fromNumber(");
+                            writer.appendFunction("Long_fromNumber").append("(");
                             precedence = Precedence.min();
                             expr.getValue().acceptVisitor(this);
                             writer.append(')');
@@ -975,7 +975,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1033,7 +1033,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1048,7 +1048,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1063,7 +1063,7 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
                 popLocation();
             }
         } catch (IOException e) {
-            throw new RenderingException("IO error occured", e);
+            throw new RenderingException("IO error occurred", e);
         }
     }
 
@@ -1263,49 +1263,49 @@ public class StatementRenderer implements ExprVisitor, StatementVisitor {
             if (type instanceof ValueType.Primitive) {
                 switch (((ValueType.Primitive) type).getKind()) {
                     case BOOLEAN:
-                        writer.append("$rt_createBooleanArray(");
+                        writer.appendFunction("$rt_createBooleanArray").append("(");
                         precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case BYTE:
-                        writer.append("$rt_createByteArray(");
+                        writer.appendFunction("$rt_createByteArray").append("(");
                         precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case SHORT:
-                        writer.append("$rt_createShortArray(");
+                        writer.appendFunction("$rt_createShortArray").append("(");
                         precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case INTEGER:
-                        writer.append("$rt_createIntArray(");
+                        writer.appendFunction("$rt_createIntArray").append("(");
                         precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case LONG:
-                        writer.append("$rt_createLongArray(");
+                        writer.appendFunction("$rt_createLongArray").append("(");
                         precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case FLOAT:
-                        writer.append("$rt_createFloatArray(");
+                        writer.appendFunction("$rt_createFloatArray").append("(");
                         precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case DOUBLE:
-                        writer.append("$rt_createDoubleArray(");
+                        writer.appendFunction("$rt_createDoubleArray").append("(");
                         precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");
                         break;
                     case CHARACTER:
-                        writer.append("$rt_createCharArray(");
+                        writer.appendFunction("$rt_createCharArray").append("(");
                         precedence = Precedence.min();
                         expr.getLength().acceptVisitor(this);
                         writer.append(")");

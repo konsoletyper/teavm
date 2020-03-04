@@ -295,6 +295,9 @@ function Long_shru(a, b) {
         return new Long((a.hi >>> (b - 32)), 0);
     }
 }
+function Long_not(a) {
+    return new Long(~a.hi, ~a.lo);
+}
 
 // Represents a mutable 80-bit unsigned integer
 function LongInt(lo, hi, sup) {
