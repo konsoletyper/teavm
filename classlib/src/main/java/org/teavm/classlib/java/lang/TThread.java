@@ -275,7 +275,10 @@ public class TThread extends TObject implements TRunnable {
     }
     
     public UncaughtExceptionHandler getUncaughtExceptionHandler() {
-        return (this.uncaughtExceptionHandler != null) ? this.uncaughtExceptionHandler : defaultUncaughtExceptionHandler;
+        if (this.uncaughtExceptionHandler != null) {
+            return this.uncaughtExceptionHandler;
+        }
+        return defaultUncaughtExceptionHandler;
     }
     
     public void setUncaughtExceptionHandler(UncaughtExceptionHandler uncaughtExceptionHandler) {
