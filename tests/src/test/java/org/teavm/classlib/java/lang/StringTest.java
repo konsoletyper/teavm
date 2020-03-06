@@ -17,6 +17,7 @@ package org.teavm.classlib.java.lang;
 
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
@@ -311,4 +312,12 @@ public class StringTest {
         assertEquals(0, str.length());
         assertEquals("", str);
     }
+    
+    @Test
+    public void testIsBlank() {
+        assertTrue(new String(new char[0]).isBlank());
+        assertTrue(new String(new char[] { ' ', ' ' }).isBlank());
+        assertFalse(new String(new char[] { ' ', 'x', ' ' }).isBlank());
+        assertFalse(new String(new char[] { 'a', ' ' }).isBlank());
+    }    
 }
