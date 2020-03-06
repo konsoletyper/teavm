@@ -37,6 +37,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
@@ -938,6 +939,69 @@ public class CodeGenerationVisitor implements ExprVisitor, StatementVisitor {
         classContext.importMethod(ALLOC_ARRAY_METHOD, true);
         includes.includeType(type);
         expr.getLength().acceptVisitor(this);
+        writer.print(")");
+
+        if (needParenthesis) {
+            writer.print(")");
+        }
+
+        popLocation(expr.getLocation());
+    }
+
+    @Override
+    public void visit(ArrayFromDataExpr expr) {
+        pushLocation(expr.getLocation());
+
+        boolean needParenthesis = false;
+        if (needsCallSiteId()) {
+            needParenthesis = true;
+            withCallSite();
+        }
+
+        if (expr.getType() instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) expr.getType()).getKind()) {
+                case BOOLEAN:
+                    writer.print("teavm_fillBooleanArray");
+                    break;
+                case BYTE:
+                    writer.print("teavm_fillByteArray");
+                    break;
+                case SHORT:
+                    writer.print("teavm_fillShortArray");
+                    break;
+                case CHARACTER:
+                    writer.print("teavm_fillCharArray");
+                    break;
+                case INTEGER:
+                    writer.print("teavm_fillIntArray");
+                    break;
+                case LONG:
+                    writer.print("teavm_fillLongArray");
+                    break;
+                case FLOAT:
+                    writer.print("teavm_fillFloatArray");
+                    break;
+                case DOUBLE:
+                    writer.print("teavm_fillDoubleArray");
+                    break;
+            }
+        } else {
+            writer.print("teavm_fillArray");
+        }
+        writer.print("(");
+
+        ValueType type = ValueType.arrayOf(expr.getType());
+        writer.print(names.forMethod(ALLOC_ARRAY_METHOD)).print("(&")
+                .print(names.forClassInstance(type)).print(", ");
+        classContext.importMethod(ALLOC_ARRAY_METHOD, true);
+        includes.includeType(type);
+        writer.print(expr.getData().size() + ")");
+
+        for (Expr element : expr.getData()) {
+            writer.print(", ");
+            element.acceptVisitor(this);
+        }
+
         writer.print(")");
 
         if (needParenthesis) {

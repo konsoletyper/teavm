@@ -80,6 +80,9 @@ public class TeaVMCompileMojo extends AbstractMojo {
     @Parameter(property = "teavm.minifying", defaultValue = "true")
     private boolean minifying = true;
 
+    @Parameter(property = "teavm.strict", defaultValue = "false")
+    private boolean strict;
+
     @Parameter(property = "teavm.maxTopLevelNames", defaultValue = "10000")
     private int maxTopLevelNames = 10000;
 
@@ -159,7 +162,8 @@ public class TeaVMCompileMojo extends AbstractMojo {
         builder.setLog(new MavenTeaVMToolLog(getLog()));
         try {
             builder.setClassPathEntries(prepareClassPath());
-            builder.setMinifying(minifying);
+            builder.setObfuscated(minifying);
+            builder.setStrict(strict);
             builder.setMaxTopLevelNames(maxTopLevelNames);
             builder.setTargetDirectory(targetDirectory.getAbsolutePath());
             if (transformers != null) {

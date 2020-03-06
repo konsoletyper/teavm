@@ -359,49 +359,59 @@ public class TeaVMTestRunner extends Runner implements Filterable {
     private void runTestsFromWholeClass(Method child, RunNotifier notifier, List<TestRun> runs,
             Consumer<Boolean> onSuccess) {
         File outputPath = getOutputPathForClass();
+        File outputPathForMethod = getOutputPath(child);
         MethodDescriptor descriptor = getDescriptor(child);
         MethodReference reference = new MethodReference(testClass.getName(), descriptor);
 
         File testFilePath = getOutputPath(child);
         testFilePath.mkdirs();
 
-        boolean hasJsOrWasm = false;
+        Map<String, String> properties = new HashMap<>();
         for (TeaVMTestConfiguration<JavaScriptTarget> configuration : getJavaScriptConfigurations()) {
             File testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false, ".js");
             runs.add(createTestRun(testPath, child, RunKind.JAVASCRIPT, reference.toString(), notifier, onSuccess));
-            hasJsOrWasm = true;
+            File htmlPath = getOutputFile(outputPathForMethod, "test", configuration.getSuffix(), false, ".html");
+            properties.put("SCRIPT", "../" + testPath.getName());
+            properties.put("IDENTIFIER", reference.toString());
+            try {
+                resourceToFile("teavm-run-test.html", htmlPath, properties);
+            } catch (IOException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         for (TeaVMTestConfiguration<WasmTarget> configuration : getWasmConfigurations()) {
             File testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), false, ".wasm");
             runs.add(createTestRun(testPath, child, RunKind.WASM, reference.toString(), notifier, onSuccess));
-            hasJsOrWasm = true;
         }
 
         for (TeaVMTestConfiguration<CTarget> configuration : getCConfigurations()) {
             File testPath = getOutputFile(outputPath, "classTest", configuration.getSuffix(), true, ".c");
             runs.add(createTestRun(testPath, child, RunKind.C, reference.toString(), notifier, onSuccess));
         }
-
-        if (hasJsOrWasm) {
-            try {
-                copyJsFilesTo(testFilePath);
-            } catch (IOException e) {
-                throw new AssertionError(e);
-            }
-        }
     }
 
     private void runCompiledTest(Method child, RunNotifier notifier, List<TestRun> runs, Consumer<Boolean> onSuccess) {
         try {
             File outputPath = getOutputPath(child);
-            copyJsFilesTo(outputPath);
 
+            Map<String, String> properties = new HashMap<>();
             for (TeaVMTestConfiguration<JavaScriptTarget> configuration : getJavaScriptConfigurations()) {
                 CompileResult compileResult = compileToJs(singleTest(child), "test", configuration, outputPath);
                 TestRun run = prepareRun(child, compileResult, notifier, RunKind.JAVASCRIPT, onSuccess);
                 if (run != null) {
                     runs.add(run);
+
+                    File testPath = getOutputFile(outputPath, "test", configuration.getSuffix(), false, ".js");
+                    File htmlPath = getOutputFile(outputPath, "test", configuration.getSuffix(), false, ".html");
+                    properties.put("SCRIPT", testPath.getName());
+                    properties.put("IDENTIFIER", "");
+
+                    try {
+                        resourceToFile("teavm-run-test.html", htmlPath, properties);
+                    } catch (IOException e) {
+                        throw new RuntimeException(e);
+                    }
                 }
             }
 
@@ -660,11 +670,6 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         return path;
     }
 
-    private void copyJsFilesTo(File path) throws IOException {
-        resourceToFile("teavm-run-test.html", new File(path, "run-test.html"));
-        resourceToFile("teavm-run-test-wasm.html", new File(path, "run-test-wasm.html"));
-    }
-
     private CompileResult compileToJs(Consumer<TeaVM> additionalProcessing, String baseName,
             TeaVMTestConfiguration<JavaScriptTarget> configuration, File path) {
         boolean decodeStack = Boolean.parseBoolean(System.getProperty(JS_DECODE_STACK, "true"));
@@ -710,7 +715,8 @@ public class TeaVMTestRunner extends Runner implements Filterable {
             TeaVMTestConfiguration<CTarget> configuration, File path) {
         CompilePostProcessor postBuild = (vm, file) -> {
             try {
-                resourceToFile("teavm-CMakeLists.txt", new File(file.getParent(), "CMakeLists.txt"));
+                resourceToFile("teavm-CMakeLists.txt", new File(file.getParent(), "CMakeLists.txt"),
+                        Collections.emptyMap());
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -912,11 +918,54 @@ public class TeaVMTestRunner extends Runner implements Filterable {
         return sb.toString();
     }
 
-    private void resourceToFile(String resource, File fileName) throws IOException {
-        try (InputStream input = TeaVMTestRunner.class.getClassLoader().getResourceAsStream(resource);
-                OutputStream output = new FileOutputStream(fileName)) {
-            IOUtils.copy(input, output);
+    private void resourceToFile(String resource, File file, Map<String, String> properties) throws IOException {
+        if (properties.isEmpty()) {
+            try (InputStream input = TeaVMTestRunner.class.getClassLoader().getResourceAsStream(resource);
+                    OutputStream output = new BufferedOutputStream(new FileOutputStream(file))) {
+                IOUtils.copy(input, output);
+            }
+        } else {
+            String content;
+            try (InputStream input = TeaVMTestRunner.class.getClassLoader().getResourceAsStream(resource)) {
+                content = IOUtils.toString(input, UTF_8);
+            }
+            content = replaceProperties(content, properties);
+            try (OutputStream output = new BufferedOutputStream(new FileOutputStream(file));
+                    Writer writer = new OutputStreamWriter(output)) {
+                 writer.write(content);
+            }
         }
+    }
+
+    private static String replaceProperties(String s, Map<String, String> properties) {
+        int i = 0;
+        StringBuilder sb = new StringBuilder();
+        while (i < s.length()) {
+            int next = s.indexOf("${", i);
+            if (next < 0) {
+                break;
+            }
+            int end = s.indexOf('}', next + 2);
+            if (end < 0) {
+                break;
+            }
+
+            sb.append(s, i, next);
+            String property = s.substring(next + 2, end);
+            String value = properties.get(property);
+            if (value == null) {
+                sb.append(s, next, end + 1);
+            } else {
+                sb.append(value);
+            }
+            i = end + 1;
+        }
+
+        if (i == 0) {
+            return s;
+        }
+
+        return sb.append(s.substring(i)).toString();
     }
 
     private ClassHolderSource getClassSource(ClassLoader classLoader) {

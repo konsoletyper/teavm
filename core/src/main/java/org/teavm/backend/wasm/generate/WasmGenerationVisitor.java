@@ -25,6 +25,8 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import org.teavm.ast.ArrayFromDataExpr;
+import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.BinaryExpr;
 import org.teavm.ast.BlockStatement;
@@ -524,32 +526,34 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private void storeArrayItem(SubscriptExpr leftValue, Expr rightValue) {
-        WasmExpression ptr = getArrayElementPointer(leftValue);
-        accept(rightValue);
+        leftValue.getArray().acceptVisitor(this);
+        WasmExpression array = result;
+        leftValue.getIndex().acceptVisitor(this);
+        WasmExpression index = result;
+        rightValue.acceptVisitor(this);
+        WasmExpression value = result;
+        result = storeArrayItem(getArrayElementPointer(array, index, leftValue.getType()), value, leftValue.getType());
+    }
 
-        switch (leftValue.getType()) {
+    private static WasmExpression storeArrayItem(WasmExpression array, WasmExpression value, ArrayType type) {
+        switch (type) {
             case BYTE:
-                result = new WasmStoreInt32(1, ptr, result, WasmInt32Subtype.INT8);
-                break;
+                return new WasmStoreInt32(1, array, value, WasmInt32Subtype.INT8);
             case SHORT:
-                result = new WasmStoreInt32(2, ptr, result, WasmInt32Subtype.INT16);
-                break;
+                return new WasmStoreInt32(2, array, value, WasmInt32Subtype.INT16);
             case CHAR:
-                result = new WasmStoreInt32(2, ptr, result, WasmInt32Subtype.UINT16);
-                break;
+                return new WasmStoreInt32(2, array, value, WasmInt32Subtype.UINT16);
             case INT:
             case OBJECT:
-                result = new WasmStoreInt32(4, ptr, result, WasmInt32Subtype.INT32);
-                break;
+                return new WasmStoreInt32(4, array, value, WasmInt32Subtype.INT32);
             case LONG:
-                result = new WasmStoreInt64(8, ptr, result, WasmInt64Subtype.INT64);
-                break;
+                return new WasmStoreInt64(8, array, value, WasmInt64Subtype.INT64);
             case FLOAT:
-                result = new WasmStoreFloat32(4, ptr, result);
-                break;
+                return new WasmStoreFloat32(4, array, value);
             case DOUBLE:
-                result = new WasmStoreFloat64(8, ptr, result);
-                break;
+                return new WasmStoreFloat64(8, array, value);
+            default:
+                throw new IllegalArgumentException();
         }
     }
 
@@ -666,14 +670,16 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
     }
 
     private WasmExpression getArrayElementPointer(SubscriptExpr expr) {
-        accept(expr.getArray());
+        expr.getArray().acceptVisitor(this);
         WasmExpression array = result;
-
-        accept(expr.getIndex());
+        expr.getIndex().acceptVisitor(this);
         WasmExpression index = result;
+        return getArrayElementPointer(array, index, expr.getType());
+    }
 
+    private WasmExpression getArrayElementPointer(WasmExpression array, WasmExpression index, ArrayType type) {
         int size = -1;
-        switch (expr.getType()) {
+        switch (type) {
             case BYTE:
                 size = 0;
                 break;
@@ -1234,6 +1240,62 @@ class WasmGenerationVisitor implements StatementVisitor, ExprVisitor {
         call.setLocation(expr.getLocation());
 
         result = call;
+    }
+
+    @Override
+    public void visit(ArrayFromDataExpr expr) {
+        ValueType type = expr.getType();
+
+        ArrayType arrayType = ArrayType.OBJECT;
+        if (type instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) type).getKind()) {
+                case BOOLEAN:
+                case BYTE:
+                    arrayType = ArrayType.BYTE;
+                    break;
+                case SHORT:
+                    arrayType = ArrayType.SHORT;
+                    break;
+                case CHARACTER:
+                    arrayType = ArrayType.CHAR;
+                    break;
+                case INTEGER:
+                    arrayType = ArrayType.INT;
+                    break;
+                case LONG:
+                    arrayType = ArrayType.LONG;
+                    break;
+                case FLOAT:
+                    arrayType = ArrayType.FLOAT;
+                    break;
+                case DOUBLE:
+                    arrayType = ArrayType.DOUBLE;
+                    break;
+            }
+        }
+
+        WasmBlock block = new WasmBlock(false);
+
+        WasmLocal array = getTemporary(WasmType.INT32);
+        int classPointer = classGenerator.getClassPointer(ValueType.arrayOf(type));
+        String allocName = context.names.forMethod(new MethodReference(Allocator.class, "allocateArray",
+                RuntimeClass.class, int.class, Address.class));
+        WasmCall call = new WasmCall(allocName);
+        call.getArguments().add(new WasmInt32Constant(classPointer));
+        call.getArguments().add(new WasmInt32Constant(expr.getData().size()));
+        call.setLocation(expr.getLocation());
+        block.getBody().add(new WasmSetLocal(array, call));
+
+        for (int i = 0; i < expr.getData().size(); ++i) {
+            WasmExpression ptr = getArrayElementPointer(new WasmGetLocal(array), new WasmInt32Constant(i), arrayType);
+            expr.getData().get(i).acceptVisitor(this);
+            block.getBody().add(storeArrayItem(ptr, result, arrayType));
+        }
+
+        block.getBody().add(new WasmGetLocal(array));
+        block.setLocation(expr.getLocation());
+
+        result = block;
     }
 
     @Override

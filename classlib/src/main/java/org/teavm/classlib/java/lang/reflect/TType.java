@@ -1,5 +1,5 @@
 /*
- *  Copyright 2018 Alexey Andreev.
+ *  Copyright 2020 by Joerg Hohwiller
  *
  *  Licensed under the Apache License, Version 2.0 (the "License");
  *  you may not use this file except in compliance with the License.
@@ -13,19 +13,8 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  */
-package org.teavm.model;
+package org.teavm.classlib.java.lang.reflect;
 
-import org.teavm.cache.IncrementalDependencyRegistration;
-import org.teavm.diagnostics.Diagnostics;
+public interface TType {
 
-public interface ClassHolderTransformerContext {
-    ClassHierarchy getHierarchy();
-
-    Diagnostics getDiagnostics();
-
-    IncrementalDependencyRegistration getIncrementalCache();
-
-    boolean isObfuscated();
-
-    boolean isStrict();
 }

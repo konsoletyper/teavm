@@ -15,6 +15,9 @@
  */
 package org.teavm.classlib.java.util;
 
+import static java.util.Objects.requireNonNull;
+import java.util.Objects;
+import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 
@@ -45,6 +48,14 @@ public interface TMap<K, V> {
 
     V remove(Object key);
 
+    default boolean remove(Object key, Object value) {
+        if (containsKey(key) && Objects.equals(get(key), value)) {
+            remove(key);
+            return true;
+        }
+        return false;
+    }
+
     void putAll(TMap<? extends K, ? extends V> m);
 
     void clear();
@@ -54,7 +65,7 @@ public interface TMap<K, V> {
     TCollection<V> values();
 
     TSet<Entry<K, V>> entrySet();
-    
+
     default boolean replace(K key, V value, V newValue) {
         if (containsKey(key) && TObjects.equals(get(key), value)) {
             put(key, newValue);
@@ -133,5 +144,135 @@ public interface TMap<K, V> {
             put(key, newValue);
         }
         return newValue;
+    }
+
+    default void forEach(BiConsumer<? super K, ? super V> action) {
+        final TIterator<Entry<K, V>> iterator = entrySet().iterator();
+        while (iterator.hasNext()) {
+            final Entry<K, V> entry = iterator.next();
+            action.accept(entry.getKey(), entry.getValue());
+        }
+    }
+
+    static <K, V> TMap<K, V> of() {
+        return TCollections.emptyMap();
+    }
+
+    static <K, V> TMap<K, V> of(K k1, V v1) {
+        return CollectionsFactory.createMap(
+                entry(k1, v1)
+        );
+    }
+
+    static <K, V> TMap<K, V> of(K k1, V v1, K k2, V v2) {
+        return CollectionsFactory.createMap(
+                entry(k1, v1),
+                entry(k2, v2)
+        );
+    }
+
+    static <K, V> TMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3) {
+        return CollectionsFactory.createMap(
+                entry(k1, v1),
+                entry(k2, v2),
+                entry(k3, v3)
+        );
+    }
+
+    static <K, V> TMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4) {
+        return CollectionsFactory.createMap(
+                entry(k1, v1),
+                entry(k2, v2),
+                entry(k3, v3),
+                entry(k4, v4)
+        );
+    }
+
+    static <K, V> TMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5) {
+        return CollectionsFactory.createMap(
+                entry(k1, v1),
+                entry(k2, v2),
+                entry(k3, v3),
+                entry(k4, v4),
+                entry(k5, v5)
+        );
+    }
+
+    static <K, V> TMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5, K k6, V v6) {
+        return CollectionsFactory.createMap(
+                entry(k1, v1),
+                entry(k2, v2),
+                entry(k3, v3),
+                entry(k4, v4),
+                entry(k5, v5),
+                entry(k6, v6)
+        );
+    }
+
+    static <K, V> TMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+            K k6, V v6, K k7, V v7) {
+        return CollectionsFactory.createMap(
+                entry(k1, v1),
+                entry(k2, v2),
+                entry(k3, v3),
+                entry(k4, v4),
+                entry(k5, v5),
+                entry(k6, v6),
+                entry(k7, v7)
+        );
+    }
+
+    static <K, V> TMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+            K k6, V v6, K k7, V v7, K k8, V v8) {
+        return CollectionsFactory.createMap(
+                entry(k1, v1),
+                entry(k2, v2),
+                entry(k3, v3),
+                entry(k4, v4),
+                entry(k5, v5),
+                entry(k6, v6),
+                entry(k7, v7),
+                entry(k8, v8)
+        );
+    }
+
+    static <K, V> TMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+            K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9) {
+        return CollectionsFactory.createMap(
+                entry(k1, v1),
+                entry(k2, v2),
+                entry(k3, v3),
+                entry(k4, v4),
+                entry(k5, v5),
+                entry(k6, v6),
+                entry(k7, v7),
+                entry(k8, v8),
+                entry(k9, v9)
+        );
+    }
+
+    static <K, V> TMap<K, V> of(K k1, V v1, K k2, V v2, K k3, V v3, K k4, V v4, K k5, V v5,
+            K k6, V v6, K k7, V v7, K k8, V v8, K k9, V v9, K k10, V v10) {
+        return CollectionsFactory.createMap(
+                entry(k1, v1),
+                entry(k2, v2),
+                entry(k3, v3),
+                entry(k4, v4),
+                entry(k5, v5),
+                entry(k6, v6),
+                entry(k7, v7),
+                entry(k8, v8),
+                entry(k9, v9),
+                entry(k10, v10)
+        );
+    }
+
+    @SafeVarargs
+    static <K, V> TMap<K, V> ofEntries(TMap.Entry<K, V>... entries) {
+        return CollectionsFactory.createMap(entries);
+    }
+
+    static <K, V> TMap.Entry<K, V> entry(K k, V v) {
+        return new TMapEntry<>(requireNonNull(k), requireNonNull(v));
     }
 }

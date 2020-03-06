@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.ArrayType;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.AsyncMethodNode;
@@ -683,6 +684,20 @@ public class AstIO {
         }
 
         @Override
+        public void visit(ArrayFromDataExpr expr) {
+            try {
+                output.writeUnsigned(28);
+                output.writeUnsigned(symbolTable.lookup(expr.getType().toString()));
+                output.writeUnsigned(expr.getData().size());
+                for (Expr element : expr.getData()) {
+                    writeExpr(element);
+                }
+            } catch (IOException e) {
+                throw new IOExceptionWrapper(e);
+            }
+        }
+
+        @Override
         public void visit(InstanceOfExpr expr) {
             try {
                 output.writeUnsigned(22);
@@ -1115,6 +1130,15 @@ public class AstIO {
                 expr.setLocation(lastReadLocation);
                 expr.setIndex(readExpr(input));
                 expr.setLower(true);
+                return expr;
+            }
+            case 28: {
+                ArrayFromDataExpr expr = new ArrayFromDataExpr();
+                expr.setType(ValueType.parse(symbolTable.at(input.readUnsigned())));
+                int count = input.readUnsigned();
+                for (int i = 0; i < count; ++i) {
+                    expr.getData().add(readExpr(input));
+                }
                 return expr;
             }
             default:

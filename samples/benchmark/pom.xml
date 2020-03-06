@@ -151,7 +151,7 @@
               <mainClass>org.teavm.samples.benchmark.teavm.BenchmarkStarter</mainClass>
               <minifying>true</minifying>
               <debugInformationGenerated>true</debugInformationGenerated>
-              <optimizationLevel>FULL</optimizationLevel>
+              <optimizationLevel>ADVANCED</optimizationLevel>
             </configuration>
           </execution>
           <execution>

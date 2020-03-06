@@ -186,3 +186,13 @@ inline static void teavm_gc_writeBarrier(void* object) {
     intptr_t offset = (intptr_t) ((char*) object - (char*) teavm_gc_heapAddress) / teavm_gc_regionSize;
     ((char*) teavm_gc_cardTable)[offset] = 0;
 }
+
+extern void* teavm_fillArray(void* array, ...);
+extern void* teavm_fillBooleanArray(void* array, ...);
+extern void* teavm_fillByteArray(void* array, ...);
+extern void* teavm_fillShortArray(void* array, ...);
+extern void* teavm_fillCharArray(void* array, ...);
+extern void* teavm_fillIntArray(void* array, ...);
+extern void* teavm_fillLongArray(void* array, ...);
+extern void* teavm_fillFloatArray(void* array, ...);
+extern void* teavm_fillDoubleArray(void* array, ...);

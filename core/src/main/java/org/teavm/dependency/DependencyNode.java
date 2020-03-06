@@ -271,8 +271,13 @@ public class DependencyNode implements ValueDependencyInfo {
         if (connectWithoutChildNodes(node, filter)) {
             connectArrayItemNodes(node);
 
-            if (classValueNode != null && classValueNode != this) {
-                classValueNode.connect(node.getClassValueNode());
+            if (classNodeParent == null) {
+                if (classValueNode != null && classValueNode != this) {
+                    if (filter(dependencyAnalyzer.classType) && node.filter(dependencyAnalyzer.classType)
+                            && (filter == null || filter.match(dependencyAnalyzer.classType))) {
+                        classValueNode.connect(node.getClassValueNode());
+                    }
+                }
             }
         }
     }
@@ -354,15 +359,6 @@ public class DependencyNode implements ValueDependencyInfo {
         return type instanceof ValueType.Array;
     }
 
-    void connectClassValueNodesForDomain() {
-        if (typeSet == null) {
-            return;
-        }
-        for (DependencyNode node : typeSet.domain) {
-            node.connectClassValueNodes();
-        }
-    }
-
     private void connectClassValueNodes() {
         if (classNodeComplete) {
             return;
@@ -373,8 +369,18 @@ public class DependencyNode implements ValueDependencyInfo {
             return;
         }
 
+        if (!classNodeParent.filter(dependencyAnalyzer.classType)) {
+            return;
+        }
+
         for (Transition transition : classNodeParent.transitionList.toArray(Transition.class)) {
-            connect(transition.destination.getClassValueNode());
+            if (transition.destination.classNodeParent != null) {
+                continue;
+            }
+            if (transition.destination.filter(dependencyAnalyzer.classType)
+                    && (transition.filter == null || transition.filter.match(dependencyAnalyzer.classType))) {
+                connect(transition.destination.getClassValueNode());
+            }
         }
     }
 
@@ -400,6 +406,7 @@ public class DependencyNode implements ValueDependencyInfo {
     public DependencyNode getClassValueNode() {
         if (classValueNode == null) {
             classValueNode = dependencyAnalyzer.createClassValueNode(degree, this);
+            classValueNode.connectClassValueNodes();
         }
         return classValueNode;
     }
@@ -484,7 +491,6 @@ public class DependencyNode implements ValueDependencyInfo {
             for (DependencyNode node : domain) {
                 node.typeSet = typeSet;
             }
-            connectClassValueNodesForDomain();
             return;
         }
 

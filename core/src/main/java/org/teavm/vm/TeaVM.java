@@ -171,6 +171,8 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
         classSourcePacker = builder.classSourcePacker;
         dependencyAnalyzer = builder.dependencyAnalyzerFactory.create(builder.classSource, classLoader,
                 this, diagnostics, builder.referenceCache);
+        dependencyAnalyzer.setObfuscated(builder.obfuscated);
+        dependencyAnalyzer.setStrict(builder.strict);
         progressListener = new TeaVMProgressListener() {
             @Override public TeaVMProgressFeedback progressReached(int progress) {
                 return TeaVMProgressFeedback.CONTINUE;
@@ -767,7 +769,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
             //optimizations.add(new LoopInversion());
             optimizations.add(new LoopInvariantMotion());
         }
-        if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.FULL.ordinal()) {
+        if (optimizationLevel.ordinal() >= TeaVMOptimizationLevel.ADVANCED.ordinal()) {
             optimizations.add(new RepeatedFieldReadElimination());
         }
         optimizations.add(new GlobalValueNumbering(optimizationLevel == TeaVMOptimizationLevel.SIMPLE));
@@ -835,7 +837,7 @@ public class TeaVM implements TeaVMHost, ServiceRepository {
     }
 
     boolean isVirtual(MethodReference method) {
-        if (method.getName().equals("<init>") || method.getName().equals("<clinit>")) {
+        if (method.getName().equals("<clinit>")) {
             return false;
         }
         return virtualMethods == null || virtualMethods.contains(method)

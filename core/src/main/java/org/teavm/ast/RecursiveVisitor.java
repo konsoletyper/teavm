@@ -172,6 +172,15 @@ public class RecursiveVisitor implements ExprVisitor, StatementVisitor {
     }
 
     @Override
+    public void visit(ArrayFromDataExpr expr) {
+        beforeVisit(expr);
+        for (Expr element : expr.getData()) {
+            element.acceptVisitor(this);
+        }
+        afterVisit(expr);
+    }
+
+    @Override
     public void visit(ReturnStatement statement) {
         if (statement.getResult() != null) {
             statement.getResult().acceptVisitor(this);

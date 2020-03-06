@@ -501,6 +501,16 @@ public class Inlining {
         }
 
         @Override
+        public ProgramReader getProgram(MethodReference method) {
+            ClassReader cls = dependencyInfo.getClassSource().get(method.getClassName());
+            if (cls == null) {
+                return null;
+            }
+            MethodReader methodReader = cls.getMethod(method.getDescriptor());
+            return methodReader != null ? methodReader.getProgram() : null;
+        }
+
+        @Override
         public int getDepth() {
             return depth;
         }

@@ -15,12 +15,14 @@
  */
 package org.teavm.ast;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import org.teavm.model.ValueType;
 
-public class NewArrayExpr extends Expr {
+public class ArrayFromDataExpr extends Expr {
     private ValueType type;
-    private Expr length;
+    private final List<Expr> data = new ArrayList<>();
 
     public ValueType getType() {
         return type;
@@ -30,12 +32,8 @@ public class NewArrayExpr extends Expr {
         this.type = type;
     }
 
-    public Expr getLength() {
-        return length;
-    }
-
-    public void setLength(Expr length) {
-        this.length = length;
+    public List<Expr> getData() {
+        return data;
     }
 
     @Override
@@ -49,10 +47,12 @@ public class NewArrayExpr extends Expr {
         if (known != null) {
             return known;
         }
-        NewArrayExpr copy = new NewArrayExpr();
+        ArrayFromDataExpr copy = new ArrayFromDataExpr();
         cache.put(this, copy);
         copy.setType(type);
-        copy.setLength(length != null ? length.clone(cache) : null);
+        for (Expr elem : data) {
+            copy.data.add(elem.clone(cache));
+        }
         return copy;
     }
 }

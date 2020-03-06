@@ -38,6 +38,7 @@ import org.teavm.classlib.java.lang.reflect.TConstructor;
 import org.teavm.classlib.java.lang.reflect.TField;
 import org.teavm.classlib.java.lang.reflect.TMethod;
 import org.teavm.classlib.java.lang.reflect.TModifier;
+import org.teavm.classlib.java.lang.reflect.TType;
 import org.teavm.dependency.PluggableDependency;
 import org.teavm.interop.Address;
 import org.teavm.interop.DelegateTo;
@@ -50,7 +51,7 @@ import org.teavm.platform.PlatformSequence;
 import org.teavm.runtime.RuntimeClass;
 import org.teavm.runtime.RuntimeObject;
 
-public class TClass<T> extends TObject implements TAnnotatedElement {
+public class TClass<T> extends TObject implements TAnnotatedElement, TType {
     String name;
     String simpleName;
     String canonicalName;
@@ -81,8 +82,11 @@ public class TClass<T> extends TObject implements TAnnotatedElement {
 
     @Override
     public String toString() {
-        return (isInterface() ? "interface " : (isPrimitive() ? "" : "class "))
-                + getName();
+        return (isInterface() ? "interface " : (isPrimitive() ? "" : "class ")) + getName();
+    }
+
+    private String obfuscatedToString() {
+        return "javaClass@" + identity();
     }
 
     public PlatformClass getPlatformClass() {

@@ -114,6 +114,7 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
     boolean asyncSupported;
     private ReferenceCache referenceCache;
     private Set<String> generatedClassNames = new HashSet<>();
+    DependencyType classType;
 
     DependencyAnalyzer(ClassReaderSource classSource, ClassLoader classLoader, ServiceRepository services,
             Diagnostics diagnostics, ReferenceCache referenceCache) {
@@ -140,6 +141,15 @@ public abstract class DependencyAnalyzer implements DependencyInfo {
         classCache = new CachedFunction<>(this::createClassDependency);
 
         agent = new DependencyAgent(this);
+        classType = getType("java.lang.Class");
+    }
+
+    public void setObfuscated(boolean obfuscated) {
+        classSource.obfuscated = obfuscated;
+    }
+
+    public void setStrict(boolean strict) {
+        classSource.strict = strict;
     }
 
     public void setAsyncSupported(boolean asyncSupported) {

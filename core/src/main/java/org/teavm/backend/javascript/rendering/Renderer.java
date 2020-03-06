@@ -32,6 +32,8 @@ import org.teavm.ast.AsyncMethodPart;
 import org.teavm.ast.MethodNode;
 import org.teavm.ast.MethodNodeVisitor;
 import org.teavm.ast.RegularMethodNode;
+import org.teavm.ast.ReturnStatement;
+import org.teavm.ast.Statement;
 import org.teavm.ast.VariableNode;
 import org.teavm.backend.javascript.codegen.NamingOrderer;
 import org.teavm.backend.javascript.codegen.NamingStrategy;
@@ -247,11 +249,28 @@ public class Renderer implements RenderingManager {
         sizeByClass.put(className, sizeByClass.getOrDefault(className, 0) + sz);
     }
 
-    private void renderRuntimeAliases() throws IOException {
-        String[] names = { "$rt_throw", "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray",
+    private void renderCommonRuntimeAliases() throws IOException {
+        renderRuntimeAliases("$rt_throw", "$rt_compare", "$rt_nullCheck", "$rt_cls", "$rt_createArray",
                 "$rt_isInstance", "$rt_nativeThread", "$rt_suspending", "$rt_resuming", "$rt_invalidPointer",
                 "$rt_s", "$rt_eraseClinit", "$rt_imul", "$rt_wrapException", "$rt_checkBounds",
-                "$rt_checkUpperBound", "$rt_checkLowerBound" };
+                "$rt_checkUpperBound", "$rt_checkLowerBound", "$rt_wrapFunction0", "$rt_wrapFunction1",
+                "$rt_wrapFunction2", "$rt_wrapFunction3", "$rt_wrapFunction4",
+                "$rt_classWithoutFields", "$rt_createArrayFromData", "$rt_createCharArrayFromData",
+                "$rt_createByteArrayFromData", "$rt_createShortArrayFromData", "$rt_createIntArrayFromData",
+                "$rt_createBooleanArrayFromData", "$rt_createFloatArrayFromData", "$rt_createDoubleArrayFromData",
+                "$rt_createLongArrayFromData", "$rt_createBooleanArray", "$rt_createByteArray",
+                "$rt_createShortArray", "$rt_createCharArray", "$rt_createIntArray", "$rt_createLongArray",
+                "$rt_createFloatArray", "$rt_createDoubleArray", "$rt_compare",
+                "Long_toNumber", "Long_fromInt", "Long_fromNumber", "Long", "Long_ZERO");
+    }
+
+    public void renderLongRuntimeAliases() throws IOException {
+        renderRuntimeAliases("Long_add", "Long_sub", "Long_mul", "Long_div", "Long_rem", "Long_or", "Long_and",
+                "Long_xor", "Long_shl", "Long_shr", "Long_shru", "Long_compare", "Long_eq", "Long_ne",
+                "Long_lt", "Long_le", "Long_gt", "Long_ge", "Long_not", "Long_neg");
+    }
+
+    private void renderRuntimeAliases(String... names) throws IOException {
         boolean first = true;
         for (String name : names) {
             if (!first) {
@@ -279,7 +298,7 @@ public class Renderer implements RenderingManager {
     public boolean render(List<PreparedClass> classes) throws RenderingException {
         if (minifying) {
             try {
-                renderRuntimeAliases();
+                renderCommonRuntimeAliases();
             } catch (IOException e) {
                 throw new RenderingException(e);
             }
@@ -302,10 +321,6 @@ public class Renderer implements RenderingManager {
         ScopedName jsName = naming.getNameFor(cls.getName());
         debugEmitter.addClass(jsName.value, cls.getName(), cls.getParentName());
         try {
-            renderFunctionDeclaration(jsName);
-            writer.append("()").ws().append("{")
-                    .indent().softNewLine();
-            boolean thisAliased = false;
             List<FieldHolder> nonStaticFields = new ArrayList<>();
             List<FieldHolder> staticFields = new ArrayList<>();
             for (FieldHolder field : cls.getClassHolder().getFields()) {
@@ -315,37 +330,12 @@ public class Renderer implements RenderingManager {
                     nonStaticFields.add(field);
                 }
             }
-            if (nonStaticFields.size() > 1) {
-                thisAliased = true;
-                writer.append("var a").ws().append("=").ws().append("this;").ws();
-            }
-            if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)
-                    && cls.getParentName() != null) {
-                writer.appendClass(cls.getParentName()).append(".call(").append(thisAliased ? "a" : "this")
-                        .append(");").softNewLine();
-            }
-            for (FieldHolder field : nonStaticFields) {
-                Object value = field.getInitialValue();
-                if (value == null) {
-                    value = getDefaultValue(field.getType());
-                }
-                FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
-                writer.append(thisAliased ? "a" : "this").append(".").appendField(fieldRef).ws()
-                        .append("=").ws();
-                context.constantToString(writer, value);
-                writer.append(";").softNewLine();
-                debugEmitter.addField(field.getName(), naming.getNameFor(fieldRef));
-            }
 
-            if (cls.getName().equals("java.lang.Object")) {
-                writer.append("this.$id$").ws().append('=').ws().append("0;").softNewLine();
+            if (nonStaticFields.isEmpty() && !cls.getClassHolder().getName().equals("java.lang.Object")) {
+                renderShortClassFunctionDeclaration(cls, jsName);
+            } else {
+                renderFullClassFunctionDeclaration(cls, jsName, nonStaticFields);
             }
-
-            writer.outdent().append("}");
-            if (jsName.scoped) {
-                writer.append(";");
-            }
-            writer.newLine();
 
             for (FieldHolder field : staticFields) {
                 Object value = field.getInitialValue();
@@ -374,6 +364,59 @@ public class Renderer implements RenderingManager {
         }
     }
 
+    private void renderFullClassFunctionDeclaration(PreparedClass cls, ScopedName jsName,
+            List<FieldHolder> nonStaticFields) throws IOException {
+        boolean thisAliased = false;
+        renderFunctionDeclaration(jsName);
+        writer.append("()").ws().append("{").indent().softNewLine();
+        if (nonStaticFields.size() > 1) {
+            thisAliased = true;
+            writer.append("var a").ws().append("=").ws().append("this;").ws();
+        }
+        if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)
+                && cls.getParentName() != null) {
+            writer.appendClass(cls.getParentName()).append(".call(").append(thisAliased ? "a" : "this")
+                    .append(");").softNewLine();
+        }
+        for (FieldHolder field : nonStaticFields) {
+            Object value = field.getInitialValue();
+            if (value == null) {
+                value = getDefaultValue(field.getType());
+            }
+            FieldReference fieldRef = new FieldReference(cls.getName(), field.getName());
+            writer.append(thisAliased ? "a" : "this").append(".").appendField(fieldRef).ws()
+                    .append("=").ws();
+            context.constantToString(writer, value);
+            writer.append(";").softNewLine();
+            debugEmitter.addField(field.getName(), naming.getNameFor(fieldRef));
+        }
+
+        if (cls.getName().equals("java.lang.Object")) {
+            writer.append("this.$id$").ws().append('=').ws().append("0;").softNewLine();
+        }
+
+        writer.outdent().append("}");
+        if (jsName.scoped) {
+            writer.append(";");
+        }
+        writer.newLine();
+    }
+
+    private void renderShortClassFunctionDeclaration(PreparedClass cls, ScopedName jsName) throws IOException {
+        if (jsName.scoped) {
+            writer.append(naming.getScopeName()).append(".");
+        } else {
+            writer.append("var ");
+        }
+        writer.append(jsName.value).ws().append("=").ws().appendFunction("$rt_classWithoutFields").append("(");
+        if (cls.getClassHolder().hasModifier(ElementModifier.INTERFACE)) {
+            writer.append("0");
+        } else if (!cls.getParentName().equals("java.lang.Object")) {
+            writer.appendClass(cls.getParentName());
+        }
+        writer.append(");").newLine();
+    }
+
     private void renderMethodBodies(PreparedClass cls) throws RenderingException {
         debugEmitter.emitClass(cls.getName());
         try {
@@ -382,7 +425,8 @@ public class Renderer implements RenderingManager {
             if (clinit != null && context.isDynamicInitializer(cls.getName())) {
                 renderCallClinit(clinit, cls);
             }
-            if (!cls.getClassHolder().getModifiers().contains(ElementModifier.INTERFACE)) {
+            if (!cls.getClassHolder().hasModifier(ElementModifier.INTERFACE)
+                    && !cls.getClassHolder().hasModifier(ElementModifier.ABSTRACT)) {
                 for (PreparedMethod method : cls.getMethods()) {
                     if (!method.methodHolder.getModifiers().contains(ElementModifier.STATIC)) {
                         if (method.reference.getName().equals("<init>")) {
@@ -789,9 +833,20 @@ public class Renderer implements RenderingManager {
     private void emitVirtualDeclaration(MethodReference ref) throws IOException {
         String methodName = naming.getNameFor(ref.getDescriptor());
         writer.append("\"").append(methodName).append("\"");
-        writer.append(",").ws().append("function(");
+        writer.append(",").ws();
+        emitVirtualFunctionWrapper(ref);
+    }
+
+    private void emitVirtualFunctionWrapper(MethodReference method) throws IOException {
+        if (method.parameterCount() <= 4) {
+            writer.appendFunction("$rt_wrapFunction" + method.parameterCount());
+            writer.append("(").appendMethodBody(method).append(")");
+            return;
+        }
+
+        writer.append("function(");
         List<String> args = new ArrayList<>();
-        for (int i = 1; i <= ref.parameterCount(); ++i) {
+        for (int i = 1; i <= method.parameterCount(); ++i) {
             args.add(variableNameForInitializer(i));
         }
         for (int i = 0; i < args.size(); ++i) {
@@ -801,10 +856,10 @@ public class Renderer implements RenderingManager {
             writer.append(args.get(i));
         }
         writer.append(")").ws().append("{").ws();
-        if (ref.getDescriptor().getResultType() != ValueType.VOID) {
+        if (method.getDescriptor().getResultType() != ValueType.VOID) {
             writer.append("return ");
         }
-        writer.appendMethodBody(ref).append("(");
+        writer.appendMethodBody(method).append("(");
         writer.append("this");
         for (String arg : args) {
             writer.append(",").ws().append(arg);
@@ -832,12 +887,16 @@ public class Renderer implements RenderingManager {
             }
             writer.append(statementRenderer.variableName(i));
         }
-        writer.append(")").ws().append("{").softNewLine().indent();
+        writer.append(")").ws().append("{").indent();
 
         MethodBodyRenderer renderer = new MethodBodyRenderer(statementRenderer);
         if (method.node != null) {
-            method.node.acceptVisitor(renderer);
+            if (!isTrivialBody(method.node)) {
+                writer.softNewLine();
+                method.node.acceptVisitor(renderer);
+            }
         } else {
+            writer.softNewLine();
             renderer.renderNative(method);
         }
 
@@ -850,6 +909,14 @@ public class Renderer implements RenderingManager {
         debugEmitter.emitMethod(null);
 
         longLibraryUsed |= statementRenderer.isLongLibraryUsed();
+    }
+
+    private static boolean isTrivialBody(MethodNode node) {
+        if (!(node instanceof RegularMethodNode)) {
+            return false;
+        }
+        Statement body = ((RegularMethodNode) node).getBody();
+        return body instanceof ReturnStatement && ((ReturnStatement) body).getResult() == null;
     }
 
     private void renderFunctionDeclaration(ScopedName name) throws IOException {

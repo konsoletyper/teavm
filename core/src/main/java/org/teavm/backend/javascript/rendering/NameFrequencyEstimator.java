@@ -16,6 +16,7 @@
 package org.teavm.backend.javascript.rendering;
 
 import java.util.Set;
+import org.teavm.ast.ArrayFromDataExpr;
 import org.teavm.ast.AssignmentStatement;
 import org.teavm.ast.AsyncMethodNode;
 import org.teavm.ast.AsyncMethodPart;
@@ -32,6 +33,7 @@ import org.teavm.ast.NewArrayExpr;
 import org.teavm.ast.NewExpr;
 import org.teavm.ast.NewMultiArrayExpr;
 import org.teavm.ast.OperationType;
+import org.teavm.ast.PrimitiveCastExpr;
 import org.teavm.ast.QualificationExpr;
 import org.teavm.ast.RecursiveVisitor;
 import org.teavm.ast.RegularMethodNode;
@@ -129,6 +131,17 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
         for (String iface : cls.getClassHolder().getInterfaces()) {
             consumer.consume(iface);
         }
+
+        boolean hasFields = false;
+        for (FieldHolder field : cls.getClassHolder().getFields()) {
+            if (!field.hasModifier(ElementModifier.STATIC)) {
+                hasFields = true;
+                break;
+            }
+        }
+        if (!hasFields) {
+            consumer.consumeFunction("$rt_classWithoutFields");
+        }
     }
 
     @Override
@@ -197,6 +210,65 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
     @Override
     public void visit(BinaryExpr expr) {
         super.visit(expr);
+        if (expr.getType() == OperationType.LONG) {
+            switch (expr.getOperation()) {
+                case ADD:
+                    consumer.consumeFunction("Long_add");
+                    break;
+                case SUBTRACT:
+                    consumer.consumeFunction("Long_sub");
+                    break;
+                case MULTIPLY:
+                    consumer.consumeFunction("Long_mul");
+                    break;
+                case DIVIDE:
+                    consumer.consumeFunction("Long_div");
+                    break;
+                case MODULO:
+                    consumer.consumeFunction("Long_rem");
+                    break;
+                case BITWISE_OR:
+                    consumer.consumeFunction("Long_or");
+                    break;
+                case BITWISE_AND:
+                    consumer.consumeFunction("Long_and");
+                    break;
+                case BITWISE_XOR:
+                    consumer.consumeFunction("Long_xor");
+                    break;
+                case LEFT_SHIFT:
+                    consumer.consumeFunction("Long_shl");
+                    break;
+                case RIGHT_SHIFT:
+                    consumer.consumeFunction("Long_shr");
+                    break;
+                case UNSIGNED_RIGHT_SHIFT:
+                    consumer.consumeFunction("Long_shru");
+                    break;
+                case COMPARE:
+                    consumer.consumeFunction("Long_compare");
+                    break;
+                case EQUALS:
+                    consumer.consumeFunction("Long_eq");
+                    break;
+                case NOT_EQUALS:
+                    consumer.consumeFunction("Long_ne");
+                    break;
+                case LESS:
+                    consumer.consumeFunction("Long_lt");
+                    break;
+                case LESS_OR_EQUALS:
+                    consumer.consumeFunction("Long_le");
+                    break;
+                case GREATER:
+                    consumer.consumeFunction("Long_gt");
+                    break;
+                case GREATER_OR_EQUALS:
+                    consumer.consumeFunction("Long_ge");
+                    break;
+            }
+            return;
+        }
         switch (expr.getOperation()) {
             case COMPARE:
                 consumer.consumeFunction("$rt_compare");
@@ -219,8 +291,38 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
             case NULL_CHECK:
                 consumer.consumeFunction("$rt_nullCheck");
                 break;
+            case NEGATE:
+                if (expr.getType() == OperationType.LONG) {
+                    consumer.consumeFunction("Long_neg");
+                }
+                break;
+            case NOT:
+                if (expr.getType() == OperationType.LONG) {
+                    consumer.consumeFunction("Long_not");
+                }
+                break;
             default:
                 break;
+        }
+    }
+
+    @Override
+    public void visit(PrimitiveCastExpr expr) {
+        super.visit(expr);
+        if (expr.getSource() == OperationType.LONG) {
+            if (expr.getTarget() == OperationType.DOUBLE || expr.getTarget() == OperationType.FLOAT) {
+                consumer.consumeFunction("Long_toNumber");
+            }
+        } else {
+            switch (expr.getSource()) {
+                case INT:
+                    consumer.consumeFunction("Long_fromInt");
+                    break;
+                case FLOAT:
+                case DOUBLE:
+                    consumer.consumeFunction("Long_fromNUmber");
+                    break;
+            }
         }
     }
 
@@ -230,6 +332,15 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
             visitType((ValueType) expr.getValue());
         } else if (expr.getValue() instanceof String) {
             consumer.consumeFunction("$rt_s");
+        } else if (expr.getValue() instanceof Long) {
+            long value = (Long) expr.getValue();
+            if (value == 0) {
+                consumer.consumeFunction("Long_ZERO");
+            } else if ((int) value == value) {
+                consumer.consumeFunction("Long_fromInt");
+            } else {
+                consumer.consumeFunction("Long");
+            }
         }
     }
 
@@ -279,8 +390,71 @@ class NameFrequencyEstimator extends RecursiveVisitor implements MethodNodeVisit
     public void visit(NewArrayExpr expr) {
         super.visit(expr);
         visitType(expr.getType());
-        if (!(expr.getType() instanceof ValueType.Primitive)) {
+        if (expr.getType() instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) expr.getType()).getKind()) {
+                case BOOLEAN:
+                    consumer.consumeFunction("$rt_createBooleanArray");
+                    break;
+                case BYTE:
+                    consumer.consumeFunction("$rt_createByteArray");
+                    break;
+                case SHORT:
+                    consumer.consumeFunction("$rt_createShortArray");
+                    break;
+                case CHARACTER:
+                    consumer.consumeFunction("$rt_createCharArray");
+                    break;
+                case INTEGER:
+                    consumer.consumeFunction("$rt_createIntArray");
+                    break;
+                case LONG:
+                    consumer.consumeFunction("$rt_createLongArray");
+                    break;
+                case FLOAT:
+                    consumer.consumeFunction("$rt_createFloatArray");
+                    break;
+                case DOUBLE:
+                    consumer.consumeFunction("$rt_createDoubleArray");
+                    break;
+            }
+        } else {
             consumer.consumeFunction("$rt_createArray");
+        }
+    }
+
+    @Override
+    public void visit(ArrayFromDataExpr expr) {
+        super.visit(expr);
+        visitType(expr.getType());
+        if (expr.getType() instanceof ValueType.Primitive) {
+            switch (((ValueType.Primitive) expr.getType()).getKind()) {
+                case BOOLEAN:
+                    consumer.consumeFunction("$rt_createBooleanArrayFromData");
+                    break;
+                case BYTE:
+                    consumer.consumeFunction("$rt_createByteArrayFromData");
+                    break;
+                case SHORT:
+                    consumer.consumeFunction("$rt_createShortArrayFromData");
+                    break;
+                case CHARACTER:
+                    consumer.consumeFunction("$rt_createCharArrayFromData");
+                    break;
+                case INTEGER:
+                    consumer.consumeFunction("$rt_createIntArrayFromData");
+                    break;
+                case LONG:
+                    consumer.consumeFunction("$rt_createLongArrayFromData");
+                    break;
+                case FLOAT:
+                    consumer.consumeFunction("$rt_createFloatArrayFromData");
+                    break;
+                case DOUBLE:
+                    consumer.consumeFunction("$rt_createDoubleArrayFromData");
+                    break;
+            }
+        } else {
+            consumer.consumeFunction("$rt_createArrayFromData");
         }
     }
 

@@ -797,10 +797,12 @@ public class CodeServlet extends HttpServlet {
                 .setClassSource(classSource)
                 .setDependencyAnalyzerFactory(FastDependencyAnalyzer::new)
                 .setClassSourcePacker(this::packClasses)
+                .setStrict(true)
+                .setObfuscated(false)
                 .build();
 
         jsTarget.setStackTraceIncluded(true);
-        jsTarget.setMinifying(false);
+        jsTarget.setObfuscated(false);
         jsTarget.setAstCache(astCache);
         jsTarget.setDebugEmitter(debugInformationBuilder);
         jsTarget.setTopLevelNameLimit(2000);

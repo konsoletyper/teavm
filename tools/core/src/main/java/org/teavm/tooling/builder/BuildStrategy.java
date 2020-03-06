@@ -52,7 +52,9 @@ public interface BuildStrategy {
 
     void setIncremental(boolean incremental);
 
-    void setMinifying(boolean minifying);
+    void setObfuscated(boolean obfuscated);
+
+    void setStrict(boolean strict);
 
     void setMaxTopLevelNames(int maxTopLevelNames);
 

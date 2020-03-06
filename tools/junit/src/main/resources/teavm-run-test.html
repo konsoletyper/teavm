@@ -5,10 +5,9 @@
   <meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/>
 </head>
 <body>
-<script type="text/javascript" src="classTest.js"></script>
-<script type="text/javascript" src="test.js"></script>
+<script type="text/javascript" src="${SCRIPT}"></script>
 <script type="text/javascript">
-    main([], function(result) {
+    main(["${IDENTIFIER}"], function(result) {
         var message = result instanceof Error ? buildErrorMessage(result) : "OK";
         document.body.appendChild(document.createTextNode(message))
     });

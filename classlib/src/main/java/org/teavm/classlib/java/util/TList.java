@@ -15,6 +15,7 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.Arrays;
 import org.teavm.classlib.java.util.function.TUnaryOperator;
 
 public interface TList<E> extends TCollection<E> {
@@ -47,5 +48,56 @@ public interface TList<E> extends TCollection<E> {
 
     default void sort(TComparator<? super E> c) {
         TCollections.sort(this, c);
+    }
+
+    static <E> TList<E> of() {
+        return TCollections.emptyList();
+    }
+
+    static <E> TList<E> of(E e) {
+        return CollectionsFactory.createList(e);
+    }
+
+    static <E> TList<E> of(E e1, E e2) {
+        return CollectionsFactory.createList(e1, e2);
+    }
+
+    static <E> TList<E> of(E e1, E e2, E e3) {
+        return CollectionsFactory.createList(e1, e2, e3);
+    }
+
+    static <E> TList<E> of(E e1, E e2, E e3, E e4) {
+        return CollectionsFactory.createList(e1, e2, e3, e4);
+    }
+
+    static <E> TList<E> of(E e1, E e2, E e3, E e4, E e5) {
+        return CollectionsFactory.createList(e1, e2, e3, e4, e5);
+    }
+
+    static <E> TList<E> of(E e1, E e2, E e3, E e4, E e5, E e6) {
+        return CollectionsFactory.createList(e1, e2, e3, e4, e5, e6);
+    }
+
+    static <E> TList<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7) {
+        return CollectionsFactory.createList(e1, e2, e3, e4, e5, e6, e7);
+    }
+
+    static <E> TList<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8) {
+        return CollectionsFactory.createList(e1, e2, e3, e4, e5, e6, e7, e8);
+    }
+
+    static <E> TList<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9) {
+        return CollectionsFactory.createList(e1, e2, e3, e4, e5, e6, e7, e8, e9);
+    }
+
+    static <E> TList<E> of(E e1, E e2, E e3, E e4, E e5, E e6, E e7, E e8, E e9, E e10) {
+        return CollectionsFactory.createList(e1, e2, e3, e4, e5, e6, e7, e8, e9, e10);
+    }
+
+    @SafeVarargs
+    static <E> TList<E> of(E... elements) {
+        // the returned list reuses the given array
+        // create a copy to prevent modifying the list by modifying the original array
+        return CollectionsFactory.createList(Arrays.copyOf(elements, elements.length));
     }
 }

@@ -235,11 +235,12 @@ public class RenderingContext {
         } else if (cst instanceof Long) {
             long value = (Long) cst;
             if (value == 0) {
-                writer.append("Long_ZERO");
+                writer.appendFunction("Long_ZERO");
             } else if ((int) value == value) {
-                writer.append("Long_fromInt(" + value + ")");
+                writer.appendFunction("Long_fromInt").append("(").append(String.valueOf(value)).append(")");
             } else {
-                writer.append("new Long(" + (value & 0xFFFFFFFFL) + ", " + (value >>> 32) + ")");
+                writer.append("new ").appendFunction("Long").append("(" + (value & 0xFFFFFFFFL)
+                        + ", " + (value >>> 32) + ")");
             }
         } else if (cst instanceof Character) {
             writer.append(Integer.toString((Character) cst));

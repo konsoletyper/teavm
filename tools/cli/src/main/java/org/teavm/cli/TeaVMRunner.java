@@ -78,6 +78,10 @@ public final class TeaVMRunner {
                 .withLongOpt("minify")
                 .create("m"));
         options.addOption(OptionBuilder
+                .withDescription("causes TeaVM to produce code that is as close to Java semantics as possible "
+                        + "(in cost of performance)")
+                .create("strict"));
+        options.addOption(OptionBuilder
                 .withDescription("optimization level (1-3)")
                 .hasArg()
                 .withArgName("number")
@@ -185,7 +189,7 @@ public final class TeaVMRunner {
         parsePreserveClassOptions();
         parseOptimizationOption();
         parseIncrementalOptions();
-        parseJavaScriptOptions();
+        parseGenerationOptions();
         parseWasmOptions();
         parseCOptions();
         parseHeap();
@@ -232,8 +236,9 @@ public final class TeaVMRunner {
         }
     }
 
-    private void parseJavaScriptOptions() {
-        tool.setMinifying(commandLine.hasOption("m"));
+    private void parseGenerationOptions() {
+        tool.setObfuscated(commandLine.hasOption("m"));
+        tool.setStrict(commandLine.hasOption("strict"));
 
         if (commandLine.hasOption("max-toplevel-names")) {
             try {

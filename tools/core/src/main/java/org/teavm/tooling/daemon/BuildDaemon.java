@@ -155,7 +155,8 @@ public class BuildDaemon extends UnicastRemoteObject implements RemoteBuildServi
 
         tool.setOptimizationLevel(request.optimizationLevel);
         tool.setFastDependencyAnalysis(request.fastDependencyAnalysis);
-        tool.setMinifying(request.minifying);
+        tool.setObfuscated(request.obfuscated);
+        tool.setStrict(request.strict);
         tool.setMaxTopLevelNames(request.maxTopLevelNames);
         tool.setWasmVersion(request.wasmVersion);
         tool.setMinHeapSize(request.minHeapSize);
