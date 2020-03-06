@@ -20,7 +20,7 @@ import org.teavm.classlib.java.lang.TThread.UncaughtExceptionHandler;
 public class TDefaultUncaughtExceptionHandler implements UncaughtExceptionHandler {
 
     @Override
-    public void uncaughtException(Thread t, Throwable e) {
+    public void uncaughtException(TThread t, Throwable e) {
 
         // print to browser console by default
         e.printStackTrace();

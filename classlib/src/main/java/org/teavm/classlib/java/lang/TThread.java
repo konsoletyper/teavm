@@ -78,6 +78,8 @@ public class TThread extends TObject implements TRunnable {
             activeCount++;
             setCurrentThread(TThread.this);
             TThread.this.run();
+        } catch (Throwable t) {
+            getUncaughtExceptionHandler().uncaughtException(this, t);
         } finally {
             synchronized (finishedLock) {
                 finishedLock.notifyAll();
@@ -273,7 +275,7 @@ public class TThread extends TObject implements TRunnable {
     }
     
     public UncaughtExceptionHandler getUncaughtExceptionHandler() {
-        return (this.uncaughtExceptionHandler != null) ? this.uncaughtExceptionHandler: defaultUncaughtExceptionHandler;
+        return (this.uncaughtExceptionHandler != null) ? this.uncaughtExceptionHandler : defaultUncaughtExceptionHandler;
     }
     
     public void setUncaughtExceptionHandler(UncaughtExceptionHandler uncaughtExceptionHandler) {
@@ -289,6 +291,6 @@ public class TThread extends TObject implements TRunnable {
     }
     
     public interface UncaughtExceptionHandler {
-        void uncaughtException(Thread t, Throwable e);
+        void uncaughtException(TThread t, Throwable e);
     }
 }
