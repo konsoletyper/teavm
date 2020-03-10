@@ -28,6 +28,8 @@ public class TThread extends TObject implements TRunnable {
     private static TThread currentThread = mainThread;
     private static int nextId = 1;
     private static int activeCount = 1;
+    private static UncaughtExceptionHandler defaultUncaughtExceptionHandler = new TDefaultUncaughtExceptionHandler();
+    private UncaughtExceptionHandler uncaughtExceptionHandler;
     private long id;
     private int priority;
     private boolean daemon;
@@ -76,6 +78,8 @@ public class TThread extends TObject implements TRunnable {
             activeCount++;
             setCurrentThread(TThread.this);
             TThread.this.run();
+        } catch (Throwable t) {
+            getUncaughtExceptionHandler().uncaughtException(this, t);
         } finally {
             synchronized (finishedLock) {
                 finishedLock.notifyAll();
@@ -268,5 +272,28 @@ public class TThread extends TObject implements TRunnable {
 
     public TClassLoader getContextClassLoader() {
         return TClassLoader.getSystemClassLoader();
+    }
+    
+    public UncaughtExceptionHandler getUncaughtExceptionHandler() {
+        if (this.uncaughtExceptionHandler != null) {
+            return this.uncaughtExceptionHandler;
+        }
+        return defaultUncaughtExceptionHandler;
+    }
+    
+    public void setUncaughtExceptionHandler(UncaughtExceptionHandler uncaughtExceptionHandler) {
+        this.uncaughtExceptionHandler = uncaughtExceptionHandler;
+    }
+    
+    public static UncaughtExceptionHandler getDefaultUncaughtExceptionHandler() {
+        return defaultUncaughtExceptionHandler;
+    }
+    
+    public static void setDefaultUncaughtExceptionHandler(UncaughtExceptionHandler handler) {
+        defaultUncaughtExceptionHandler = handler;
+    }
+    
+    public interface UncaughtExceptionHandler {
+        void uncaughtException(TThread t, Throwable e);
     }
 }
