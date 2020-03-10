@@ -146,6 +146,16 @@ public class TString extends TObject implements TSerializable, TComparable<TStri
     public boolean isEmpty() {
         return characters.length == 0;
     }
+    
+    public boolean isBlank() {
+        
+        for (int i = 0; i < characters.length; i++) {
+            if (characters[i] != ' ') {
+                return false;
+            }
+        }
+        return true;
+    }
 
     public void getChars(int srcBegin, int srcEnd, char[] dst, int dstBegin) {
         if (srcBegin < 0 || srcBegin > srcEnd || srcEnd > length() || dstBegin < 0
