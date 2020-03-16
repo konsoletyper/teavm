@@ -285,15 +285,6 @@ public class TLinkedHashMap<K, V> extends THashMap<K, V> implements TMap<K, V> {
     }
 
     @Override
-    HashEntry<K, V> createEntry(K key, int index, V value) {
-        LinkedHashMapEntry<K, V> m = new LinkedHashMapEntry<>(key, value);
-        m.next = elementData[index];
-        elementData[index] = m;
-        linkEntry(m);
-        return m;
-    }
-
-    @Override
     HashEntry<K, V> createHashedEntry(K key, int index, int hash) {
         LinkedHashMapEntry<K, V> m = new LinkedHashMapEntry<>(key, hash);
         m.next = elementData[index];
