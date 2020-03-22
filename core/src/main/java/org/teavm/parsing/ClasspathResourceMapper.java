@@ -20,53 +20,69 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.ServiceLoader;
 import java.util.function.Function;
 import org.teavm.common.CachedFunction;
 import org.teavm.model.ClassHolder;
 import org.teavm.model.FieldHolder;
 import org.teavm.model.MethodHolder;
 import org.teavm.model.ReferenceCache;
+import org.teavm.parsing.substitution.ClassExclusions;
+import org.teavm.parsing.substitution.ClassMappings;
+import org.teavm.parsing.substitution.OrderedProperties;
+import org.teavm.parsing.substitution.PrefixMapping;
 import org.teavm.vm.spi.ElementFilter;
 
 public class ClasspathResourceMapper implements Function<String, ClassHolder>, ClassDateProvider {
-    private static final String PACKAGE_PREFIX = "packagePrefix.";
-    private static final String CLASS_PREFIX = "classPrefix.";
+    private static final String STRIP_PREFIX_FROM_PREFIX = "stripPrefixFrom";
+    private static final String STRIP_PREFIX_FROM_PACKAGE_HIERARCHY_PREFIX =
+            STRIP_PREFIX_FROM_PREFIX + "PackageHierarchyClasses";
+    private static final String STRIP_PREFIX_FROM_PACKAGE_PREFIX = STRIP_PREFIX_FROM_PREFIX + "PackageClasses";
+    private static final String MAP_PREFIX = "map";
+    private static final String MAP_PACKAGE_HIERARCHY_PREFIX = MAP_PREFIX + "PackageHierarchy";
+    private static final String MAP_PACKAGE_PREFIX = MAP_PREFIX + "Package";
+    private static final String MAP_CLASS_PREFIX = MAP_PREFIX + "Class";
+    private static final String INCLUDE_PREFIX = "include";
+    private static final String INCLUDE_PACKAGE_HIERARCHY_PREFIX = INCLUDE_PREFIX + "PackageHierarchy";
+    private static final String INCLUDE_PACKAGE_PREFIX = INCLUDE_PREFIX + "Package";
+    private static final String INCLUDE_CLASS_PREFIX = INCLUDE_PREFIX + "Class";
+    private static final Date VOID_DATE = new Date(0);
     private Function<String, ClassHolder> innerMapper;
-    private List<Transformation> transformations = new ArrayList<>();
     private ClassRefsRenamer renamer;
     private ClassLoader classLoader;
-    private Map<String, ModificationDate> modificationDates = new HashMap<>();
-    private ReferenceCache referenceCache;
+    private Map<String, Date> modificationDates = new HashMap<>();
     private List<ElementFilter> elementFilters = new ArrayList<>();
-
-    private static class Transformation {
-        String packageName;
-        String packagePrefix = "";
-        String fullPrefix = "";
-        String classPrefix = "";
-    }
+    private ClassMappings classMappings = new ClassMappings();
+    private PrefixMapping prefixMapping = new PrefixMapping();
+    private ClassMappings packageMappings = new ClassMappings();
+    private ClassExclusions classExclusions = new ClassExclusions();
+    private ClassMappings reverseClassMappings = new ClassMappings();
+    private ClassMappings reversePackageMappings = new ClassMappings();
 
     public ClasspathResourceMapper(ClassLoader classLoader, ReferenceCache referenceCache,
             Function<String, ClassHolder> provider) {
         this.innerMapper = provider;
-        this.referenceCache = referenceCache;
         try {
             Enumeration<URL> resources = classLoader.getResources("META-INF/teavm.properties");
-            Map<String, Transformation> transformationMap = new HashMap<>();
             while (resources.hasMoreElements()) {
                 URL resource = resources.nextElement();
-                Properties properties = new Properties();
+                Properties properties = new OrderedProperties();
                 try (InputStream input = resource.openStream()) {
                     properties.load(input);
                 }
-                loadProperties(properties, transformationMap);
+                loadProperties(properties);
             }
-            transformations.addAll(transformationMap.values());
         } catch (IOException e) {
             throw new RuntimeException("Error reading resources", e);
         }
-        renamer = new ClassRefsRenamer(referenceCache, new CachedFunction<>(classNameMapper));
+        renamer = new ClassRefsRenamer(referenceCache, new CachedFunction<>(this::toUnmappedClassName));
 
         for (ElementFilter elementFilter : ServiceLoader.load(ElementFilter.class)) {
             elementFilters.add(elementFilter);
@@ -78,61 +94,57 @@ public class ClasspathResourceMapper implements Function<String, ClassHolder>, C
     public ClasspathResourceMapper(Properties properties, ReferenceCache referenceCache,
             Function<String, ClassHolder> innerMapper) {
         this.innerMapper = innerMapper;
-        this.referenceCache = referenceCache;
-        Map<String, Transformation> transformationMap = new HashMap<>();
-        loadProperties(properties, transformationMap);
-        transformations.addAll(transformationMap.values());
-        renamer = new ClassRefsRenamer(referenceCache, new CachedFunction<>(classNameMapper));
-    }
-
-    private void loadProperties(Properties properties, Map<String, Transformation> cache) {
-        for (String propertyName : properties.stringPropertyNames()) {
-            if (propertyName.startsWith(PACKAGE_PREFIX)) {
-                String packageName = propertyName.substring(PACKAGE_PREFIX.length());
-                Transformation transformation = getTransformation(cache, packageName);
-                transformation.packagePrefix = properties.getProperty(propertyName) + ".";
-                transformation.fullPrefix = transformation.packagePrefix + transformation.packageName;
-            } else if (propertyName.startsWith(CLASS_PREFIX)) {
-                String packageName = propertyName.substring(CLASS_PREFIX.length());
-                Transformation transformation = getTransformation(cache, packageName);
-                transformation.classPrefix = properties.getProperty(propertyName);
-            }
-        }
-    }
-
-    private Transformation getTransformation(Map<String, Transformation> cache, String packageName) {
-        Transformation transformation = cache.get(packageName);
-        if (transformation == null) {
-            transformation = new Transformation();
-            transformation.packageName = packageName + ".";
-            transformation.fullPrefix = packageName + ".";
-            cache.put(packageName, transformation);
-        }
-        return transformation;
+        loadProperties(properties);
+        renamer = new ClassRefsRenamer(referenceCache, new CachedFunction<>(this::toUnmappedClassName));
     }
 
     @Override
     public ClassHolder apply(String name) {
-        for (ElementFilter filter : elementFilters) {
-            if (!filter.acceptClass(name)) {
-                return null;
+        ClassHolder cls = null;
+        for (String mappedClassName : classMappings.apply(name)) {
+            if (classExclusions.apply(mappedClassName)) {
+                continue;
+            }
+            ClassHolder classHolder = innerMapper.apply(mappedClassName);
+            if (classHolder == null) {
+                continue;
+            }
+            cls = renamer.rename(classHolder);
+            break;
+        }
+        if (cls == null) {
+            for (String mappedClassName : packageMappings.apply(name)) {
+                mappedClassName = prefixMapping.apply(mappedClassName);
+                if (classExclusions.apply(mappedClassName)) {
+                    continue;
+                }
+                ClassHolder classHolder = innerMapper.apply(mappedClassName);
+                if (classHolder == null) {
+                    continue;
+                }
+                cls = renamer.rename(classHolder);
+                break;
             }
         }
-
-        ClassHolder cls = find(name);
-
-        if (cls != null) {
-            for (MethodHolder method : cls.getMethods().toArray(new MethodHolder[0])) {
-                for (ElementFilter filter : elementFilters) {
+        if (cls == null) {
+            cls = innerMapper.apply(name);
+        }
+        if (cls != null && !elementFilters.isEmpty()) {
+            for (ElementFilter filter : elementFilters) {
+                if (!filter.acceptClass(name)) {
+                    return null;
+                }
+            }
+            MethodHolder[] methodHolders = cls.getMethods().toArray(new MethodHolder[0]);
+            FieldHolder[] fieldHolders = cls.getFields().toArray(new FieldHolder[0]);
+            for (ElementFilter filter : elementFilters) {
+                for (MethodHolder method : methodHolders) {
                     if (!filter.acceptMethod(method.getReference())) {
                         cls.removeMethod(method);
                         break;
                     }
                 }
-            }
-
-            for (FieldHolder field : cls.getFields().toArray(new FieldHolder[0])) {
-                for (ElementFilter filter : elementFilters) {
+                for (FieldHolder field : fieldHolders) {
                     if (!filter.acceptField(field.getReference())) {
                         cls.removeField(field);
                         break;
@@ -140,77 +152,31 @@ public class ClasspathResourceMapper implements Function<String, ClassHolder>, C
                 }
             }
         }
-
         return cls;
     }
 
-    private ClassHolder find(String name) {
-        for (Transformation transformation : transformations) {
-            if (name.startsWith(transformation.packageName)) {
-                int index = name.lastIndexOf('.');
-                String className = name.substring(index + 1);
-                String packageName = index > 0 ? name.substring(0, index) : "";
-                ClassHolder classHolder = innerMapper.apply(transformation.packagePrefix + packageName
-                        + "." + transformation.classPrefix + className);
-                if (classHolder != null) {
-                    classHolder = renamer.rename(classHolder);
-                }
-                return classHolder;
-            }
-        }
-        return innerMapper.apply(name);
-    }
-
-    private String renameClass(String name) {
-        for (Transformation transformation : transformations) {
-            if (name.startsWith(transformation.fullPrefix)) {
-                int index = name.lastIndexOf('.');
-                String className = name.substring(index + 1);
-                String packageName = name.substring(0, index);
-                if (className.startsWith(transformation.classPrefix)) {
-                    String newName = packageName.substring(transformation.packagePrefix.length()) + "."
-                            + className.substring(transformation.classPrefix.length());
-                    return referenceCache.getCached(newName);
-                }
-            }
-        }
-        return name;
-    }
-
-    private Function<String, String> classNameMapper = this::renameClass;
-
     @Override
     public Date getModificationDate(String className) {
-        ModificationDate mdate = modificationDates.get(className);
+        Date mdate = modificationDates.get(className);
         if (mdate == null) {
-            mdate = new ModificationDate();
+            mdate = getOriginalModificationDate(toUnmappedClassName(className));
             modificationDates.put(className, mdate);
-            mdate.date = calculateModificationDate(className);
         }
-        return mdate.date;
+        return mdate == VOID_DATE ? null : mdate;
     }
 
-    private Date calculateModificationDate(String className) {
-        int dotIndex = className.lastIndexOf('.');
-        String packageName;
-        String simpleName;
-        if (dotIndex > 0) {
-            packageName = className.substring(0, dotIndex + 1);
-            simpleName = className.substring(dotIndex + 1);
-        } else {
-            packageName = "";
-            simpleName = className;
+    private String toUnmappedClassName(String name) {
+        if (classExclusions.apply(name)) {
+            return name;
         }
-        for (Transformation transformation : transformations) {
-            if (packageName.startsWith(transformation.packageName)) {
-                String fullName = transformation.packagePrefix + packageName + transformation.classPrefix + simpleName;
-                Date date = getOriginalModificationDate(fullName);
-                if (date != null) {
-                    return date;
-                }
-            }
+        name = prefixMapping.revert(name);
+        for (String originalClassName : reverseClassMappings.apply(name)) {
+            return originalClassName;
         }
-        return getOriginalModificationDate(className);
+        for (String originalClassName : reversePackageMappings.apply(name)) {
+            return originalClassName;
+        }
+        return name;
     }
 
     private Date getOriginalModificationDate(String className) {
@@ -239,7 +205,48 @@ public class ClasspathResourceMapper implements Function<String, ClassHolder>, C
         }
     }
 
-    static class ModificationDate {
-        Date date;
+    private void loadProperties(Properties properties) {
+        for (String propertyName : properties.stringPropertyNames()) {
+            final String[] instruction = propertyName.split("\\|", 2);
+            switch (instruction[0]) {
+                case STRIP_PREFIX_FROM_PACKAGE_HIERARCHY_PREFIX:
+                    prefixMapping.setPackageHierarchyClassPrefixRule(instruction[1].split("\\."),
+                            properties.getProperty(propertyName));
+                    continue;
+                case STRIP_PREFIX_FROM_PACKAGE_PREFIX:
+                    prefixMapping.setPackageClassPrefixRule(instruction[1].split("\\."),
+                            properties.getProperty(propertyName));
+                    continue;
+                case MAP_PACKAGE_HIERARCHY_PREFIX:
+                    packageMappings.addPackageHierarchyMappingRule(properties.getProperty(propertyName).split("\\."),
+                            instruction[1]);
+                    reversePackageMappings.addPackageHierarchyMappingRule(instruction[1].split("\\."),
+                            properties.getProperty(propertyName));
+                    continue;
+                case MAP_PACKAGE_PREFIX:
+                    packageMappings
+                            .addPackageMappingRule(properties.getProperty(propertyName).split("\\."), instruction[1]);
+                    reversePackageMappings
+                            .addPackageMappingRule(instruction[1].split("\\."), properties.getProperty(propertyName));
+                    continue;
+                case MAP_CLASS_PREFIX:
+                    classMappings
+                            .addClassMappingRule(properties.getProperty(propertyName).split("\\."), instruction[1]);
+                    reverseClassMappings
+                            .addClassMappingRule(instruction[1].split("\\."), properties.getProperty(propertyName));
+                    continue;
+                case INCLUDE_PACKAGE_HIERARCHY_PREFIX:
+                    classExclusions.setPackageHierarchyExclusion(instruction[1].split("\\."),
+                            !Boolean.parseBoolean(properties.getProperty(propertyName)));
+                    continue;
+                case INCLUDE_PACKAGE_PREFIX:
+                    classExclusions.setPackageExclusion(instruction[1].split("\\."),
+                            !Boolean.parseBoolean(properties.getProperty(propertyName)));
+                    continue;
+                case INCLUDE_CLASS_PREFIX:
+                    classExclusions.setClassExclusion(instruction[1].split("\\."),
+                            !Boolean.parseBoolean(properties.getProperty(propertyName)));
+            }
+        }
     }
 }
