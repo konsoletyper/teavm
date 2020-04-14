@@ -15,20 +15,35 @@
  */
 package org.teavm.classlib.java.util;
 
+import java.util.Date;
+import java.util.Objects;
 import org.teavm.classlib.java.lang.TIllegalStateException;
 import org.teavm.classlib.java.lang.TObject;
-import org.teavm.classlib.java.lang.TString;
 import org.teavm.jso.browser.TimerHandler;
 import org.teavm.jso.browser.Window;
 
 public class TTimer extends TObject {
     TSet<TTimerTask> tasks = new THashSet<>();
     private volatile boolean cancelled;
+    private String threadName;
+    private boolean daemon;
 
     public TTimer() {
     }
 
-    public TTimer(@SuppressWarnings("unused") TString name) {
+    public TTimer(String name) {
+        Objects.requireNonNull(name);
+        threadName = name;
+    }
+
+    public TTimer(boolean daemon) {
+        this.daemon = daemon;
+    }
+
+    public TTimer(String name, boolean daemon) {
+        Objects.requireNonNull(name);
+        threadName = name;
+        this.daemon = daemon;
     }
 
     public void cancel() {
@@ -41,29 +56,39 @@ public class TTimer extends TObject {
         }
     }
 
-    public void schedule(final TTimerTask task, long delay) {
+    public void schedule(TTimerTask task, Date time) {
+        long delay = Math.max(0, time.getTime() - System.currentTimeMillis());
+        schedule(task, delay);
+    }
+
+    public void schedule(TTimerTask task, long delay) {
         if (cancelled || task.timer != null || task.nativeTimerId >= 0) {
             throw new TIllegalStateException();
         }
         task.timer = this;
         task.nativeTimerId = Window.setTimeout(() -> {
-            new Thread(() -> {
+            runThread(new Thread(() -> {
                 if (cancelled || task.timer == null) {
                     return;
                 }
                 TTimerTask.performOnce(task);
-            }).start();
+            }));
         }, (int) delay);
     }
 
-    public void schedule(final TTimerTask task, long delay, final long period) {
+    public void schedule(TTimerTask task, Date time, long period) {
+        long delay = Math.max(0, time.getTime() - System.currentTimeMillis());
+        schedule(task, delay, period);
+    }
+
+    public void schedule(TTimerTask task, long delay, long period) {
         if (cancelled || task.timer != null || task.nativeTimerId >= 0) {
             throw new TIllegalStateException();
         }
         task.timer = this;
         TimerHandler handler = new TimerHandler() {
             @Override public void onTimer() {
-                new Thread(() -> {
+                runThread(new Thread(() -> {
                     if (cancelled || task.timer == null) {
                         return;
                     }
@@ -72,13 +97,18 @@ public class TTimer extends TObject {
                     if (!cancelled) {
                         task.timer = TTimer.this;
                     }
-                }).start();
+                }));
             }
         };
         task.nativeTimerId = Window.setTimeout(handler, (int) delay);
     }
+
+    public void scheduleAtFixedRate(TTimerTask task, Date time, long period) {
+        long delay = Math.max(0, time.getTime() - System.currentTimeMillis());
+        scheduleAtFixedRate(task, delay, period);
+    }
     
-    public void scheduleAtFixedRate(final TTimerTask task, long delay, long period) {
+    public void scheduleAtFixedRate(TTimerTask task, long delay, long period) {
         if (cancelled || task.timer != null || task.nativeTimerId >= 0) {
             throw new TIllegalStateException();
         }
@@ -86,7 +116,7 @@ public class TTimer extends TObject {
         task.timer = this;
         TimerHandler handler = new TimerHandler() {
             @Override public void onTimer() {
-                new Thread(() -> {
+                runThread(new Thread(() -> {
                     if (cancelled || task.timer == null) {
                         return;
                     }
@@ -100,10 +130,18 @@ public class TTimer extends TObject {
                     if (!cancelled) {
                         task.timer = TTimer.this;
                     }
-                }).start();
+                }));
             }
         };
         task.nativeTimerId = Window.setTimeout(handler, (int) delay);
         nextStartTime[0] += period;
+    }
+
+    private void runThread(Thread thread) {
+        if (threadName != null) {
+            thread.setName(threadName);
+            thread.setDaemon(daemon);
+        }
+        thread.start();
     }
 }
