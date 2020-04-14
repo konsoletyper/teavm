@@ -17,8 +17,6 @@ package org.teavm.classlib.java.util.concurrent.atomic;
 
 import java.io.Serializable;
 import java.util.function.BinaryOperator;
-import java.util.function.LongBinaryOperator;
-import java.util.function.LongUnaryOperator;
 import java.util.function.UnaryOperator;
 
 @SuppressWarnings("NonAtomicOperationOnVolatileField")
