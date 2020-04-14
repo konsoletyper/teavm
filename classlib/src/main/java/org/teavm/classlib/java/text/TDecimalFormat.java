@@ -75,6 +75,10 @@ public class TDecimalFormat extends TNumberFormat {
         return (DecimalFormatSymbols) symbols.clone();
     }
 
+    public void setDecimalFormatSymbols(DecimalFormatSymbols symbols) {
+        this.symbols = (TDecimalFormatSymbols) symbols.clone();
+    }
+
     private StringBuffer fieldsToText(FormatField[] fields, StringBuffer buffer) {
         for (FormatField field : fields) {
             field.render(this, buffer);
