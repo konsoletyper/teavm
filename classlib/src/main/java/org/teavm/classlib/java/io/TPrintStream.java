@@ -202,6 +202,16 @@ public class TPrintStream extends TFilterOutputStream {
         printSB();
     }
 
+    public void println(char c) {
+        sb.append(c);
+        printSB();
+    }
+
+    public void println(boolean b) {
+        sb.append(b);
+        printSB();
+    }
+
     public void println(String s) {
         sb.append(s).append('\n');
         printSB();

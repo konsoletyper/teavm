@@ -31,6 +31,8 @@ public class CharacterMetadataGenerator implements MetadataGenerator {
                 return generateObtainDigitMapping(context);
             case "obtainClasses":
                 return generateObtainClasses(context);
+            case "acquireTitleCaseMapping":
+                return generateObtainTitleCaseMapping(context);
             default:
                 return null;
         }
@@ -38,13 +40,19 @@ public class CharacterMetadataGenerator implements MetadataGenerator {
 
     private Resource generateObtainDigitMapping(MetadataGeneratorContext context) {
         StringResource res = context.createResource(StringResource.class);
-        res.setValue(UnicodeHelper.encodeIntByte(UnicodeSupport.getDigitValues()));
+        res.setValue(UnicodeHelper.encodeIntPairsDiff(UnicodeSupport.getDigitValues()));
         return res;
     }
 
     private Resource generateObtainClasses(MetadataGeneratorContext context) {
         StringResource res = context.createResource(StringResource.class);
         res.setValue(UnicodeHelper.compressRle(UnicodeSupport.getClasses()));
+        return res;
+    }
+
+    private Resource generateObtainTitleCaseMapping(MetadataGeneratorContext context) {
+        StringResource res = context.createResource(StringResource.class);
+        res.setValue(UnicodeHelper.encodeIntDiff(UnicodeSupport.getTitleCaseMapping()));
         return res;
     }
 }

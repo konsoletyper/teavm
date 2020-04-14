@@ -91,6 +91,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     public static final int SIZE = 16;
     static final int ERROR = 0xFFFFFFFF;
     private static int[] digitMapping;
+    private static int[] titleCaseMapping;
     private static UnicodeHelper.Range[] classMapping;
     private char value;
     private static TCharacter[] characterCache = new TCharacter[128];
@@ -266,6 +267,37 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
     @Unmanaged
     private static native int toUpperCaseSystem(int codePoint);
 
+    public static int toTitleCase(int codePoint) {
+        int[] mapping = getTitleCaseMapping();
+        int l = 0;
+        int u = (mapping.length / 2) - 1;
+        while (u >= l) {
+            int idx = (l + u) / 2;
+            int val = mapping[idx * 2];
+            if (codePoint > val) {
+                l = idx + 1;
+            } else if (codePoint < val) {
+                u = idx - 1;
+            } else {
+                return mapping[idx * 2 + 1];
+            }
+        }
+        return toUpperCase(codePoint);
+    }
+
+    public static char toTitleCase(char c) {
+        return (char) toTitleCase((int) c);
+    }
+
+    private static int[] getTitleCaseMapping() {
+        if (titleCaseMapping == null) {
+            titleCaseMapping = UnicodeHelper.decodeIntDiff(acquireTitleCaseMapping().getValue());
+        }
+        return titleCaseMapping;
+    }
+
+    private static native StringResource acquireTitleCaseMapping();
+
     public static int digit(char ch, int radix) {
         return digit((int) ch, radix);
     }
@@ -317,7 +349,7 @@ public class TCharacter extends TObject implements TComparable<TCharacter> {
 
     private static int[] getDigitMapping() {
         if (digitMapping == null) {
-            digitMapping = UnicodeHelper.decodeIntByte(obtainDigitMapping().getValue());
+            digitMapping = UnicodeHelper.decodeIntPairsDiff(obtainDigitMapping().getValue());
         }
         return digitMapping;
     }
