@@ -17,8 +17,11 @@ package org.teavm.classlib.java.util;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.PrimitiveIterator;
 import java.util.function.Consumer;
+import java.util.function.DoubleConsumer;
 import java.util.function.IntConsumer;
+import java.util.function.LongConsumer;
 
 public class TSpliterators {
 
@@ -118,6 +121,211 @@ public class TSpliterators {
             @Override
             public long estimateSize() {
                 return size;
+            }
+
+            @Override
+            public int characteristics() {
+                return characteristics;
+            }
+        };
+    }
+
+    public static <T> TSpliterator<T> spliteratorUnknownSize(Iterator<? extends T> iterator, int characteristics) {
+        return new TSpliterator<T>() {
+            @Override
+            public boolean tryAdvance(Consumer<? super T> action) {
+                if (iterator.hasNext()) {
+                    action.accept(iterator.next());
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public TSpliterator<T> trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return Long.MAX_VALUE;
+            }
+
+            @Override
+            public int characteristics() {
+                return characteristics;
+            }
+        };
+    }
+
+    public static TSpliterator.OfInt spliterator(PrimitiveIterator.OfInt iterator, long size, int characteristics) {
+        return new TSpliterator.OfInt() {
+            @Override
+            public boolean tryAdvance(IntConsumer action) {
+                if (iterator.hasNext()) {
+                    action.accept(iterator.next());
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public OfInt trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return size;
+            }
+
+            @Override
+            public int characteristics() {
+                return characteristics;
+            }
+        };
+    }
+
+    public static TSpliterator.OfInt spliteratorUnknownSize(PrimitiveIterator.OfInt iterator, int characteristics) {
+        return new TSpliterator.OfInt() {
+            @Override
+            public boolean tryAdvance(IntConsumer action) {
+                if (iterator.hasNext()) {
+                    action.accept(iterator.next());
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public OfInt trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return Long.MAX_VALUE;
+            }
+
+            @Override
+            public int characteristics() {
+                return characteristics;
+            }
+        };
+    }
+
+    public static TSpliterator.OfLong spliterator(PrimitiveIterator.OfLong iterator, long size, int characteristics) {
+        return new TSpliterator.OfLong() {
+            @Override
+            public boolean tryAdvance(LongConsumer action) {
+                if (iterator.hasNext()) {
+                    action.accept(iterator.next());
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public OfLong trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return size;
+            }
+
+            @Override
+            public int characteristics() {
+                return characteristics;
+            }
+        };
+    }
+
+    public static TSpliterator.OfLong spliteratorUnknownSize(PrimitiveIterator.OfLong iterator, int characteristics) {
+        return new TSpliterator.OfLong() {
+            @Override
+            public boolean tryAdvance(LongConsumer action) {
+                if (iterator.hasNext()) {
+                    action.accept(iterator.next());
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public OfLong trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return Long.MAX_VALUE;
+            }
+
+            @Override
+            public int characteristics() {
+                return characteristics;
+            }
+        };
+    }
+
+    public static TSpliterator.OfDouble spliterator(PrimitiveIterator.OfDouble iterator, long size,
+            int characteristics) {
+        return new TSpliterator.OfDouble() {
+            @Override
+            public boolean tryAdvance(DoubleConsumer action) {
+                if (iterator.hasNext()) {
+                    action.accept(iterator.next());
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public OfDouble trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return size;
+            }
+
+            @Override
+            public int characteristics() {
+                return characteristics;
+            }
+        };
+    }
+
+    public static TSpliterator.OfDouble spliteratorUnknownSize(PrimitiveIterator.OfDouble iterator,
+            int characteristics) {
+        return new TSpliterator.OfDouble() {
+            @Override
+            public boolean tryAdvance(DoubleConsumer action) {
+                if (iterator.hasNext()) {
+                    action.accept(iterator.next());
+                    return true;
+                } else {
+                    return false;
+                }
+            }
+
+            @Override
+            public OfDouble trySplit() {
+                return null;
+            }
+
+            @Override
+            public long estimateSize() {
+                return Long.MAX_VALUE;
             }
 
             @Override

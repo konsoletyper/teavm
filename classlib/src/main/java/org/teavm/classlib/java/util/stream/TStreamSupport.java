@@ -16,7 +16,9 @@
 package org.teavm.classlib.java.util.stream;
 
 import java.util.Spliterator;
+import java.util.function.Supplier;
 import org.teavm.classlib.java.util.stream.impl.TStreamOverSpliterator;
+import org.teavm.classlib.java.util.stream.impl.TStreamOverSpliteratorSupplier;
 
 public final class TStreamSupport {
     private TStreamSupport() {
@@ -24,5 +26,9 @@ public final class TStreamSupport {
 
     public static <T> TStream<T> stream(Spliterator<T> spliterator, boolean parallel) {
         return new TStreamOverSpliterator<>(spliterator);
+    }
+
+    public static <T> TStream<T> stream(Supplier<Spliterator<T>> spliterator, int characteristics, boolean parallel) {
+        return new TStreamOverSpliteratorSupplier<>(spliterator, characteristics);
     }
 }
