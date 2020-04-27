@@ -34,7 +34,6 @@ package org.threeten.bp.format;
 import java.util.Iterator;
 import java.util.Locale;
 import java.util.Map.Entry;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.threeten.bp.temporal.TemporalField;
 
@@ -51,7 +50,7 @@ import org.threeten.bp.temporal.TemporalField;
  */
 public abstract class DateTimeTextProvider {
 
-    private static final AtomicReference<DateTimeTextProvider> MUTABLE_PROVIDER = new AtomicReference<DateTimeTextProvider>();
+    private static DateTimeTextProvider MUTABLE_PROVIDER;
 
     /**
      * Gets the provider.
@@ -72,9 +71,10 @@ public abstract class DateTimeTextProvider {
      * @throws IllegalStateException if initialization has already occurred or another provider has been set
      */
     public static void setInitializer(DateTimeTextProvider provider) {
-        if (!MUTABLE_PROVIDER.compareAndSet(null, provider)) {
+        if (MUTABLE_PROVIDER != null) {
             throw new IllegalStateException("Provider was already set, possibly with a default during initialization");
         }
+        MUTABLE_PROVIDER = provider;
     }
 
     //-----------------------------------------------------------------------
@@ -120,8 +120,8 @@ public abstract class DateTimeTextProvider {
         // initialize the provider
         static DateTimeTextProvider initialize() {
             // Set the default initializer if none has been provided yet
-            MUTABLE_PROVIDER.compareAndSet(null, new SimpleDateTimeTextProvider());
-            return MUTABLE_PROVIDER.get();
+            MUTABLE_PROVIDER = new SimpleDateTimeTextProvider();
+            return MUTABLE_PROVIDER;
         }
     }
 

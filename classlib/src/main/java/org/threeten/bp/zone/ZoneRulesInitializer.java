@@ -33,8 +33,6 @@ package org.threeten.bp.zone;
 
 import java.util.ServiceConfigurationError;
 import java.util.ServiceLoader;
-import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicReference;
 
 /**
  * Controls how the time-zone rules are initialized.
@@ -57,8 +55,8 @@ public abstract class ZoneRulesInitializer {
      */
     public static final ZoneRulesInitializer DO_NOTHING = new DoNothingZoneRulesInitializer();
 
-    private static final AtomicBoolean INITIALIZED = new AtomicBoolean(false);
-    private static final AtomicReference<ZoneRulesInitializer> INITIALIZER = new AtomicReference<ZoneRulesInitializer>();
+    private static boolean INITIALIZED;
+    private static ZoneRulesInitializer INITIALIZER;
 
     /**
      * Sets the initializer to use.
@@ -70,23 +68,27 @@ public abstract class ZoneRulesInitializer {
      * @throws IllegalStateException if initialization has already occurred or another initializer has been set
      */
     public static void setInitializer(ZoneRulesInitializer initializer) {
-        if (INITIALIZED.get()) {
+        if (INITIALIZED) {
             throw new IllegalStateException("Already initialized");
         }
-        if (!INITIALIZER.compareAndSet(null, initializer)) {
+        if (INITIALIZER != null) {
             throw new IllegalStateException("Initializer was already set, possibly with a default during initialization");
         }
+        INITIALIZER = initializer;
     }
 
     //-----------------------------------------------------------------------
     // initialize the providers
     static void initialize() {
-        if (INITIALIZED.getAndSet(true)) {
+        if (INITIALIZED) {
             throw new IllegalStateException("Already initialized");
         }
+        INITIALIZED = true;
         // Set the default initializer if none has been provided yet.
-        INITIALIZER.compareAndSet(null, new ServiceLoaderZoneRulesInitializer());
-        INITIALIZER.get().initializeProviders();
+        if (INITIALIZER ==  null) {
+            INITIALIZER = new ServiceLoaderZoneRulesInitializer();
+        }
+        INITIALIZER.initializeProviders();
     }
 
     /**

@@ -38,9 +38,9 @@ import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 
 import org.threeten.bp.Duration;
 import org.threeten.bp.Instant;
@@ -98,8 +98,7 @@ final class StandardZoneRules extends ZoneRules implements Serializable {
     /**
      * The map of recent transitions.
      */
-    private final ConcurrentMap<Integer, ZoneOffsetTransition[]> lastRulesCache =
-                new ConcurrentHashMap<Integer, ZoneOffsetTransition[]>();
+    private final Map<Integer, ZoneOffsetTransition[]> lastRulesCache =  new HashMap<>();
 
     /**
      * Creates an instance.

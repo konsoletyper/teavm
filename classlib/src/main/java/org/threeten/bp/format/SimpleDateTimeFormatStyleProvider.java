@@ -33,9 +33,9 @@ package org.threeten.bp.format;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
+import java.util.HashMap;
 import java.util.Locale;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
+import java.util.Map;
 
 import org.threeten.bp.chrono.Chronology;
 
@@ -51,8 +51,7 @@ final class SimpleDateTimeFormatStyleProvider extends DateTimeFormatStyleProvide
     // TODO: Better implementation based on CLDR
 
     /** Cache of formatters. */
-    private static final ConcurrentMap<String, Object> FORMATTER_CACHE =
-                        new ConcurrentHashMap<String, Object>(16, 0.75f, 2);
+    private static final Map<String, Object> FORMATTER_CACHE = new HashMap<>();
 
     @Override
     public Locale[] getAvailableLocales() {

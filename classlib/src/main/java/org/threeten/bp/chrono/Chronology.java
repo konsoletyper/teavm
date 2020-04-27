@@ -36,15 +36,13 @@ import java.io.DataOutput;
 import java.io.IOException;
 import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
-import java.lang.reflect.InvocationTargetException;
-import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.ServiceLoader;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
 
 import org.threeten.bp.Clock;
 import org.threeten.bp.DateTimeException;
@@ -153,24 +151,11 @@ public abstract class Chronology implements Comparable<Chronology> {
     /**
      * Map of available calendars by ID.
      */
-    private static final ConcurrentHashMap<String, Chronology> CHRONOS_BY_ID = new ConcurrentHashMap<String, Chronology>();
+    private static final Map<String, Chronology> CHRONOS_BY_ID = new HashMap<>();
     /**
      * Map of available calendars by calendar type.
      */
-    private static final ConcurrentHashMap<String, Chronology> CHRONOS_BY_TYPE = new ConcurrentHashMap<String, Chronology>();
-    /**
-     * Access JDK 7 method if on JDK 7.
-     */
-    private static final Method LOCALE_METHOD;
-    static {
-        Method method = null;
-        try {
-            method = Locale.class.getMethod("getUnicodeLocaleType", String.class);
-        } catch (Throwable ex) {
-            // ignore
-        }
-        LOCALE_METHOD = method;
-    }
+    private static final Map<String, Chronology> CHRONOS_BY_TYPE = new HashMap<>();
 
     //-----------------------------------------------------------------------
     /**
@@ -240,18 +225,7 @@ public abstract class Chronology implements Comparable<Chronology> {
         init();
         Jdk8Methods.requireNonNull(locale, "locale");
         String type = "iso";
-        if (LOCALE_METHOD != null) {
-            // JDK 7: locale.getUnicodeLocaleType("ca");
-            try {
-                type = (String) LOCALE_METHOD.invoke(locale, "ca");
-            } catch (IllegalArgumentException ex) {
-                // ignore
-            } catch (IllegalAccessException ex) {
-                // ignore
-            } catch (InvocationTargetException ex) {
-                // ignore
-            }
-        } else if (locale.equals(JapaneseChronology.LOCALE)) {
+        if (locale.equals(JapaneseChronology.LOCALE)) {
             type = "japanese";
         }
         if (type == null || "iso".equals(type) || "iso8601".equals(type)) {

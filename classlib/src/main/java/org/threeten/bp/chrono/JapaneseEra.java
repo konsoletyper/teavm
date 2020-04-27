@@ -38,7 +38,6 @@ import java.io.InvalidObjectException;
 import java.io.ObjectStreamException;
 import java.io.Serializable;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicReference;
 
 import org.threeten.bp.DateTimeException;
 import org.threeten.bp.LocalDate;
@@ -106,7 +105,7 @@ public final class JapaneseEra
     private static final long serialVersionUID = 1466499369062886794L;
 
     // array for the singleton JapaneseEra instances
-    private static final AtomicReference<JapaneseEra[]> KNOWN_ERAS;
+    private static JapaneseEra[] KNOWN_ERAS;
 
     static {
         JapaneseEra[] array = new JapaneseEra[5];
@@ -115,7 +114,7 @@ public final class JapaneseEra
         array[2] = SHOWA;
         array[3] = HEISEI;
         array[4] = REIWA;
-        KNOWN_ERAS = new AtomicReference<JapaneseEra[]>(array);
+        KNOWN_ERAS = array;
     }
 
     /**
@@ -177,7 +176,7 @@ public final class JapaneseEra
      * @throws DateTimeException if an additional era has already been registered
      */
     public static JapaneseEra registerEra(LocalDate since, String name) {
-        JapaneseEra[] known = KNOWN_ERAS.get();
+        JapaneseEra[] known = KNOWN_ERAS;
         if (known.length > 5) {
             throw new DateTimeException("Only one additional Japanese era can be added");
         }
@@ -189,9 +188,7 @@ public final class JapaneseEra
         JapaneseEra era = new JapaneseEra(ADDITIONAL_VALUE, since, name);
         JapaneseEra[] newArray = Arrays.copyOf(known, 6);
         newArray[5] = era;
-        if (!KNOWN_ERAS.compareAndSet(known, newArray)) {
-            throw new DateTimeException("Only one additional Japanese era can be added");
-        }
+        KNOWN_ERAS = newArray;
         return era;
     }
 
@@ -207,7 +204,7 @@ public final class JapaneseEra
      * @throws DateTimeException if the value is invalid
      */
     public static JapaneseEra of(int japaneseEra) {
-        JapaneseEra[] known = KNOWN_ERAS.get();
+        JapaneseEra[] known = KNOWN_ERAS;
         if (japaneseEra < MEIJI.eraValue || japaneseEra > known[known.length - 1].eraValue) {
             throw new DateTimeException("japaneseEra is invalid");
         }
@@ -226,7 +223,7 @@ public final class JapaneseEra
      */
     public static JapaneseEra valueOf(String japaneseEra) {
         Jdk8Methods.requireNonNull(japaneseEra, "japaneseEra");
-        JapaneseEra[] known = KNOWN_ERAS.get();
+        JapaneseEra[] known = KNOWN_ERAS;
         for (JapaneseEra era : known) {
             if (japaneseEra.equals(era.name)) {
                 return era;
@@ -247,7 +244,7 @@ public final class JapaneseEra
      * @return an array of JapaneseEras
      */
     public static JapaneseEra[] values() {
-        JapaneseEra[] known = KNOWN_ERAS.get();
+        JapaneseEra[] known = KNOWN_ERAS;
         return Arrays.copyOf(known, known.length);
     }
 
@@ -262,7 +259,7 @@ public final class JapaneseEra
         if (date.isBefore(MEIJI.since)) {
             throw new DateTimeException("Date too early: " + date);
         }
-        JapaneseEra[] known = KNOWN_ERAS.get();
+        JapaneseEra[] known = KNOWN_ERAS;
         for (int i = known.length - 1; i >= 0; i--) {
             JapaneseEra era = known[i];
             if (date.compareTo(era.since) >= 0) {

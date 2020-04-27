@@ -49,8 +49,6 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.threeten.bp.temporal.IsoFields;
 import org.threeten.bp.temporal.TemporalField;
@@ -75,8 +73,7 @@ final class SimpleDateTimeTextProvider extends DateTimeTextProvider {
     };
 
     /** Cache. */
-    private final ConcurrentMap<Entry<TemporalField, Locale>, Object> cache =
-            new ConcurrentHashMap<Entry<TemporalField, Locale>, Object>(16, 0.75f, 2);
+    private final Map<Entry<TemporalField, Locale>, Object> cache =  new HashMap<>();
 
     //-----------------------------------------------------------------------
     @Override

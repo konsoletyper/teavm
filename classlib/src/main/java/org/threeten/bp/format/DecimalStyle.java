@@ -33,11 +33,11 @@ package org.threeten.bp.format;
 
 import java.text.DecimalFormatSymbols;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.concurrent.ConcurrentMap;
 
 import org.threeten.bp.jdk8.Jdk8Methods;
 
@@ -61,7 +61,7 @@ public final class DecimalStyle {
     /**
      * The cache of symbols instances.
      */
-    private static final ConcurrentMap<Locale, DecimalStyle> CACHE = new ConcurrentHashMap<Locale, DecimalStyle>(16, 0.75f, 2);
+    private static final Map<Locale, DecimalStyle> CACHE = new HashMap<>();
 
     /**
      * The zero digit.
