@@ -483,10 +483,10 @@ function $rt_createOutputFunction(printFunction) {
 
 var $rt_putStdout = typeof $rt_putStdoutCustom === "function"
     ? $rt_putStdoutCustom
-    : console ? $rt_createOutputFunction(function(msg) { console.info(msg); }) : function() {};
+    : typeof console === "object" ? $rt_createOutputFunction(function(msg) { console.info(msg); }) : function() {};
 var $rt_putStderr = typeof $rt_putStderrCustom === "function"
     ? $rt_putStderrCustom
-    : console ? $rt_createOutputFunction(function(msg) { console.error(msg); }) : function() {};
+    : typeof console === "object" ? $rt_createOutputFunction(function(msg) { console.error(msg); }) : function() {};
 
 var $rt_packageData = null;
 function $rt_packages(data) {
