@@ -436,28 +436,56 @@ function $rt_assertNotNaN(value) {
     }
     return value;
 }
-var $rt_stdoutBuffer = "";
-var $rt_putStdout = typeof $rt_putStdoutCustom === "function" ? $rt_putStdoutCustom : function(ch) {
-    if (ch === 0xA) {
-        if (console) {
-            console.info($rt_stdoutBuffer);
+function $rt_createOutputFunction(printFunction) {
+    var buffer = "";
+    var utf8Buffer = 0;
+    var utf8Remaining = 0;
+
+    function putCodePoint(ch) {
+        if (ch === 0xA) {
+            printFunction(buffer);
+            buffer = "";
+        } else if (ch < 0x10000) {
+            buffer += String.fromCharCode(ch);
+        } else {
+            ch = (ch - 0x10000) | 0;
+            var hi = (ch >> 10) + 0xD800;
+            var lo = (ch & 0x3FF) + 0xDC00;
+            buffer += String.fromCharCode(hi, lo);
         }
-        $rt_stdoutBuffer = "";
-    } else {
-        $rt_stdoutBuffer += String.fromCharCode(ch);
     }
-};
-var $rt_stderrBuffer = "";
-var $rt_putStderr = typeof $rt_putStderrCustom === "function" ? $rt_putStderrCustom : function(ch) {
-    if (ch === 0xA) {
-        if (console) {
-            console.error($rt_stderrBuffer);
+
+    return function(ch) {
+        if ((ch & 0x80) === 0) {
+            putCodePoint(ch);
+        } else if ((ch & 0xC0) === 0x80) {
+            if (utf8Buffer > 0) {
+                utf8Remaining <<= 6;
+                utf8Remaining |= ch & 0x3F;
+                if (--utf8Buffer === 0) {
+                    putCodePoint(utf8Remaining);
+                }
+            }
+        } else if ((ch & 0xE0) === 0xC0) {
+            utf8Remaining = ch & 0x1F;
+            utf8Buffer = 1;
+        } else if ((ch & 0xF0) === 0xE0) {
+            utf8Remaining = ch & 0x0F;
+            utf8Buffer = 2;
+        } else if ((ch & 0xF8) === 0xF0) {
+            utf8Remaining = ch & 0x07;
+            utf8Buffer = 3;
         }
-        $rt_stderrBuffer = "";
-    } else {
-        $rt_stderrBuffer += String.fromCharCode(ch);
-    }
-};
+    };
+}
+
+var $rt_putStdout = typeof $rt_putStdoutCustom === "function"
+    ? $rt_putStdoutCustom
+    : console ? $rt_createOutputFunction(function(msg) { console.info(msg); }) : function() {};
+var $rt_putStderr = typeof $rt_putStderrCustom === "function"
+    ? $rt_putStderrCustom
+    : console ? $rt_createOutputFunction(function(msg) { console.error(msg); }) : function() {};
+
 var $rt_packageData = null;
 function $rt_packages(data) {
     var i = 0;
