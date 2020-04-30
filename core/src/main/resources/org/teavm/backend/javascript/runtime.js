@@ -255,6 +255,7 @@ function $rt_voidcls() {
 function $rt_throw(ex) {
     throw $rt_exception(ex);
 }
+var $rt_exceptionTag = Symbol("teavmException")
 function $rt_exception(ex) {
     var err = ex.$jsException;
     if (!err) {
@@ -263,6 +264,7 @@ function $rt_exception(ex) {
             Error.captureStackTrace(err);
         }
         err.$javaException = ex;
+        err[$rt_exceptionTag] = true;
         ex.$jsException = err;
         $rt_fillStack(err, ex);
     }
@@ -648,16 +650,18 @@ function $rt_intBitsToFloat(n) {
 }
 
 function $rt_javaException(e) {
-    return e instanceof Error && typeof e.$javaException === 'object' ? e.$javaException : null;
+    return e instanceof Error && $rt_exceptionTag in e
+            && typeof e.$javaException === 'object' ? e.$javaException : null;
 }
 function $rt_jsException(e) {
     return typeof e.$jsException === 'object' ? e.$jsException : null;
 }
 function $rt_wrapException(err) {
     var ex = err.$javaException;
-    if (!ex) {
+    if (!ex || !($rt_exceptionTag in err)) {
         ex = $rt_createException($rt_str("(JavaScript) " + err.toString()));
         err.$javaException = ex;
+        err[$rt_exceptionTag] = true;
         ex.$jsException = err;
         $rt_fillStack(err, ex);
     }
