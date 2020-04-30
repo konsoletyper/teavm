@@ -152,14 +152,17 @@ public abstract class TTimeZone implements Serializable, Cloneable {
      */
     public static TTimeZone getDefault() {
         if (defaultTz == null) {
-            DateTimeZone innerTz = DateTimeZoneProvider.detectTimezone();
-            if (innerTz != null) {
-                defaultTz = new TIANATimeZone(innerTz);
-            } else {
-                defaultTz = TTimeZone.getTimeZone("UTC");
+            defaultTz = detectTimezone();
+            if (defaultTz == null) {
+                defaultTz = TTimeZone.GMT;
             }
         }
         return (TTimeZone) defaultTz.clone();
+    }
+
+    private static TTimeZone detectTimezone() {
+        DateTimeZone innerTz = DateTimeZoneProvider.detectTimezone();
+        return innerTz != null ? new TIANATimeZone(innerTz) : null;
     }
 
     /**

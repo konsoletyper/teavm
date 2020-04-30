@@ -23,7 +23,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.PriorityQueue;
 import java.util.Set;
-import org.teavm.backend.javascript.spi.GeneratedBy;
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
 import org.teavm.interop.Import;
@@ -73,14 +72,7 @@ public final class DateTimeZoneProvider {
         return ids.toArray(new String[ids.size()]);
     }
 
-    @GeneratedBy(DateTimeZoneProviderGenerator.class)
-    private static native boolean timeZoneDetectionEnabled();
-
     public static DateTimeZone detectTimezone() {
-        if (!timeZoneDetectionEnabled()) {
-            return null;
-        }
-
         List<Score> zones = new ArrayList<>();
         long time = System.currentTimeMillis();
         int offset = -getNativeOffset(System.currentTimeMillis());

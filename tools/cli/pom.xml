@@ -136,6 +136,7 @@
                   <exclude>junit:junit</exclude>
                   <exclude>com.fasterxml.jackson.core:jackson-annotations</exclude>
                   <exclude>org.mozilla:rhino</exclude>
+                  <exclude>joda-time:joda-time</exclude>
                 </excludes>
               </artifactSet>
               <transformers>

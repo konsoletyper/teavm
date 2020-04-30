@@ -119,6 +119,7 @@
               <atrifactSet>
                 <excludes>
                   <exclude>com.jetbrains.intellij.idea:ideaIC:zip:*</exclude>
+                  <exclude>joda-time:joda-time</exclude>
                 </excludes>
               </atrifactSet>
               <createDependencyReducedPom>false</createDependencyReducedPom>

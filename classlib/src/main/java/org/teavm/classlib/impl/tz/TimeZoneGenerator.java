@@ -71,13 +71,13 @@ public class TimeZoneGenerator implements MetadataGenerator {
     public ResourceMap<ResourceMap<TimeZoneResource>> generateMetadata(
             MetadataGeneratorContext context, MethodReference method) {
         ResourceMap<ResourceMap<TimeZoneResource>> result = context.createResourceMap();
-        ZoneInfoCompiler compiler = new ZoneInfoCompiler();
         Collection<StorableDateTimeZone> zones;
         try (InputStream input = context.getClassLoader().getResourceAsStream("org/teavm/classlib/impl/tz/cache")) {
             if (input != null) {
                 TimeZoneCache cache = new TimeZoneCache();
                 zones = cache.read(new BufferedInputStream(input)).values();
             } else {
+                ZoneInfoCompiler compiler = new ZoneInfoCompiler();
                 compile(compiler, context.getClassLoader());
                 zones = compiler.compile().values();
             }

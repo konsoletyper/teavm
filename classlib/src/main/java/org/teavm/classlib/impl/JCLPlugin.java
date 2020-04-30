@@ -29,6 +29,7 @@ import org.teavm.classlib.impl.currency.CurrencyHelper;
 import org.teavm.classlib.impl.lambda.LambdaMetafactorySubstitutor;
 import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 import org.teavm.classlib.impl.tz.DateTimeZoneProviderIntrinsic;
+import org.teavm.classlib.impl.tz.DateTimeZoneProviderPatch;
 import org.teavm.classlib.impl.tz.TimeZoneGenerator;
 import org.teavm.classlib.impl.unicode.AvailableLocalesMetadataGenerator;
 import org.teavm.classlib.impl.unicode.CLDRHelper;
@@ -147,6 +148,15 @@ public class JCLPlugin implements TeaVMPlugin {
 
         installMetadata(host.getService(MetadataRegistration.class));
         host.add(new DeclaringClassDependencyListener());
+        applyTimeZoneDetection(host);
+    }
+
+    private void applyTimeZoneDetection(TeaVMHost host) {
+        boolean autodetect = Boolean.parseBoolean(
+                host.getProperties().getProperty("java.util.TimeZone.autodetect", "false"));
+        if (!autodetect) {
+            host.add(new DateTimeZoneProviderPatch());
+        }
     }
 
     private void installMetadata(MetadataRegistration reg) {
