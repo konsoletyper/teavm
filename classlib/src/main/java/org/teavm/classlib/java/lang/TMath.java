@@ -188,11 +188,45 @@ public final class TMath extends TObject {
     }
 
     public static double ulp(double d) {
-        return pow(2, getExponent(d) - 52);
+        if (TDouble.isNaN(d)) {
+            return d;
+        } else if (TDouble.isInfinite(d)) {
+            return TDouble.POSITIVE_INFINITY;
+        }
+
+        if (TDouble.isNaN(d)) {
+            return d;
+        } else if (TDouble.isInfinite(d)) {
+            return TDouble.POSITIVE_INFINITY;
+        }
+
+        long bits = TDouble.doubleToLongBits(d);
+        bits &= 0xEFF0000000000000L;
+        if (bits >= 53L << 52L) {
+            bits -= 52L << 52L;
+        } else {
+            int exponent = (int) (bits >> 52);
+            bits = 1 << Math.max(0, exponent - 1);
+        }
+        return TDouble.longBitsToDouble(bits);
     }
 
     public static float ulp(float d) {
-        return (float) pow(2, getExponent(d) - 23);
+        if (TFloat.isNaN(d)) {
+            return d;
+        } else if (TFloat.isInfinite(d)) {
+            return TFloat.POSITIVE_INFINITY;
+        }
+
+        int bits = TFloat.floatToIntBits(d);
+        bits &= 0x7F800000;
+        if (bits >= 24L << 23L) {
+            bits -= 23L << 23L;
+        } else {
+            int exponent = bits >> 23;
+            bits = 1 << Math.max(0, exponent - 1);
+        }
+        return TFloat.intBitsToFloat(bits);
     }
 
     public static double signum(double d) {
@@ -245,109 +279,96 @@ public final class TMath extends TObject {
     }
 
     public static int getExponent(double d) {
-        d = abs(d);
-        int exp = 0;
-        double[] exponents = ExponentConstants.exponents;
-        double[] negativeExponents = ExponentConstants.negativeExponents;
-        double[] negativeExponents2 = ExponentConstants.negativeExponents2;
-        if (d > 1) {
-            int expBit = 1 << (exponents.length - 1);
-            for (int i = exponents.length - 1; i >= 0; --i) {
-                if (d >= exponents[i]) {
-                    d *= negativeExponents[i];
-                    exp |= expBit;
-                }
-                expBit >>>= 1;
-            }
-        } else if (d < 1) {
-            int expBit = 1 << (negativeExponents.length - 1);
-            int offset = 0;
-            if (d < 0x1p-1022) {
-                d *= 0x1p52;
-                offset = 52;
-            }
-            for (int i = negativeExponents2.length - 1; i >= 0; --i) {
-                if (d < negativeExponents2[i]) {
-                    d *= exponents[i];
-                    exp |= expBit;
-                }
-                expBit >>>= 1;
-            }
-            exp = -(exp + offset);
-        }
-        return exp;
+        long bits = TDouble.doubleToLongBits(d);
+        int exponent = (int) ((bits >> 52) & 0x7FF);
+        return exponent - 1023;
     }
 
     public static int getExponent(float f) {
-        f = abs(f);
-        int exp = 0;
-        float[] exponents = FloatExponents.exponents;
-        float[] negativeExponents = FloatExponents.negativeExponents;
-        float[] negativeExponents2 = FloatExponents.negativeExponents2;
-        if (f > 1) {
-            int expBit = 1 << (exponents.length - 1);
-            for (int i = exponents.length - 1; i >= 0; --i) {
-                if (f >= exponents[i]) {
-                    f *= negativeExponents[i];
-                    exp |= expBit;
-                }
-                expBit >>>= 1;
-            }
-        } else if (f < 1) {
-            int expBit = 1 << (negativeExponents.length - 1);
-            int offset = 0;
-            if (f < 0x1p-126) {
-                f *= 0x1p23f;
-                offset = 23;
-            }
-            for (int i = negativeExponents2.length - 1; i >= 0; --i) {
-                if (f < negativeExponents2[i]) {
-                    f *= exponents[i];
-                    exp |= expBit;
-                }
-                expBit >>>= 1;
-            }
-            exp = -(exp + offset);
-        }
-        return exp;
+        int bits = TFloat.floatToIntBits(f);
+        int exponent = (bits >> 23) & 0xF;
+        return exponent + 128;
     }
 
     public static double nextAfter(double start, double direction) {
         if (start == direction) {
             return direction;
         }
-        return direction > start ? start + ulp(start) : start - ulp(start);
+        return direction > start ? nextUp(start) : nextDown(start);
     }
 
     public static float nextAfter(float start, double direction) {
         if (start == direction) {
             return start;
         }
-        return direction > start ? start + ulp(start) : start - ulp(start);
+        return direction > start ? nextUp(start) : nextDown(start);
     }
 
     public static double nextUp(double d) {
-        return d + ulp(d);
+        if (TDouble.isNaN(d)) {
+            return d;
+        }
+        if (d == TDouble.POSITIVE_INFINITY) {
+            return d;
+        }
+        long bits = TDouble.doubleToLongBits(d);
+        boolean negative = (bits & (1L << 63)) != 0;
+        if (negative) {
+            bits--;
+        } else {
+            bits++;
+        }
+        return TDouble.longBitsToDouble(bits);
     }
 
     public static float nextUp(float d) {
-        return d + ulp(d);
+        if (TFloat.isNaN(d)) {
+            return d;
+        }
+        if (d == TFloat.POSITIVE_INFINITY) {
+            return d;
+        }
+        int bits = TFloat.floatToIntBits(d);
+        boolean negative = (bits & (1L << 31)) != 0;
+        if (negative) {
+            bits--;
+        } else {
+            bits++;
+        }
+        return TFloat.intBitsToFloat(bits);
     }
 
-    private static class ExponentConstants {
-        public static double[] exponents = { 0x1p1, 0x1p2, 0x1p4, 0x1p8, 0x1p16, 0x1p32, 0x1p64, 0x1p128,
-                0x1p256, 0x1p512 };
-        public static double[] negativeExponents = { 0x1p-1, 0x1p-2, 0x1p-4, 0x1p-8, 0x1p-16, 0x1p-32,
-                0x1p-64, 0x1p-128, 0x1p-256, 0x1p-512 };
-        public static double[] negativeExponents2 = { 0x1p-0, 0x1p-1, 0x1p-3, 0x1p-7, 0x1p-15, 0x1p-31,
-                0x1p-63, 0x1p-127, 0x1p-255, 0x1p-511 };
+    public static double nextDown(double d) {
+        if (TDouble.isNaN(d)) {
+            return d;
+        }
+        if (d == TDouble.NEGATIVE_INFINITY) {
+            return d;
+        }
+        long bits = TDouble.doubleToLongBits(d);
+        boolean negative = (bits & (1L << 63)) != 0;
+        if (negative) {
+            bits++;
+        } else {
+            bits--;
+        }
+        return TDouble.longBitsToDouble(bits);
     }
 
-    private static class FloatExponents {
-        public static float[] exponents = { 0x1p1f, 0x1p2f, 0x1p4f, 0x1p8f, 0x1p16f, 0x1p32f, 0x1p64f };
-        public static float[] negativeExponents = { 0x1p-1f, 0x1p-2f, 0x1p-4f, 0x1p-8f, 0x1p-16f, 0x1p-32f,
-                0x1p-64f };
-        public static float[] negativeExponents2 = { 0x1p-0f, 0x1p-1f, 0x1p-3f, 0x1p-7f, 0x1p-15f, 0x1p-31f,
-                0x1p-63f };
+    public static float nextDown(float d) {
+        if (TFloat.isNaN(d)) {
+            return d;
+        }
+        if (d == TFloat.POSITIVE_INFINITY) {
+            return d;
+        }
+        int bits = TFloat.floatToIntBits(d);
+        boolean negative = (bits & (1L << 31)) != 0;
+        if (negative) {
+            bits++;
+        } else {
+            bits--;
+        }
+        return TFloat.intBitsToFloat(bits);
     }
 }
