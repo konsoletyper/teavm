@@ -17,6 +17,8 @@ package org.teavm.classlib.impl.tz;
 
 import org.teavm.classlib.impl.Base46;
 import org.teavm.classlib.impl.CharFlow;
+import org.teavm.classlib.java.time.TZoneId;
+import org.teavm.classlib.java.time.TZoneOffset;
 
 /**
  * Basic DateTimeZone implementation that has a fixed name key and offsets.
@@ -29,6 +31,7 @@ import org.teavm.classlib.impl.CharFlow;
 public final class FixedDateTimeZone extends StorableDateTimeZone {
     private final int iWallOffset;
     private final int iStandardOffset;
+    private TZoneId zoneId;
 
     public FixedDateTimeZone(String id, int wallOffset, int standardOffset) {
         super(id);
@@ -77,5 +80,13 @@ public final class FixedDateTimeZone extends StorableDateTimeZone {
         int wallOffset = (int) readTime(flow);
         int standardOffset = (int) readTime(flow);
         return new FixedDateTimeZone(id, wallOffset, standardOffset);
+    }
+    
+    @Override
+    public TZoneId getZoneId() {
+        if (this.zoneId == null) {
+            this.zoneId = TZoneOffset.ofTotalSeconds(this.iStandardOffset / 1000);
+        }
+        return this.zoneId;
     }
 }

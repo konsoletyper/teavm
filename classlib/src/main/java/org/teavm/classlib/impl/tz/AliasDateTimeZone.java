@@ -16,9 +16,12 @@
 package org.teavm.classlib.impl.tz;
 
 import org.teavm.classlib.impl.Base46;
+import org.teavm.classlib.java.time.TZoneId;
+import org.teavm.classlib.java.time.TZoneRegion;
 
 public class AliasDateTimeZone extends StorableDateTimeZone {
     private DateTimeZone innerZone;
+    private TZoneId zoneId;
 
     public AliasDateTimeZone(String id, DateTimeZone innerZone) {
         super(id);
@@ -54,5 +57,14 @@ public class AliasDateTimeZone extends StorableDateTimeZone {
     public void write(StringBuilder sb) {
         Base46.encodeUnsigned(sb, ALIAS);
         sb.append(innerZone.getID());
+    }
+    
+    @Override
+    public TZoneId getZoneId() {
+    
+        if (this.zoneId == null) {
+            this.zoneId = new TZoneRegion(getID(), this.innerZone.getZoneId().getRules());
+        }
+        return this.zoneId;
     }
 }

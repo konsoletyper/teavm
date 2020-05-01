@@ -47,15 +47,13 @@
 package org.teavm.classlib.java.time;
 
 import java.util.Objects;
-import java.util.regex.Pattern;
 
+import org.teavm.classlib.impl.tz.DateTimeZone;
+import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 import org.teavm.classlib.java.time.zone.TZoneRules;
-import org.teavm.classlib.java.time.zone.TZoneRulesException;
 import org.teavm.classlib.java.time.zone.TZoneRulesProvider;
 
-final class TZoneRegion extends TZoneId {
-
-    private static final Pattern PATTERN = Pattern.compile("[A-Za-z][A-Za-z0-9~/._+-]+");
+public final class TZoneRegion extends TZoneId {
 
     private final String id;
 
@@ -90,25 +88,21 @@ final class TZoneRegion extends TZoneId {
     static TZoneRegion ofId(String zoneId, boolean checkAvailable) {
 
         Objects.requireNonNull(zoneId, "zoneId");
-        if (zoneId.length() < 2 || PATTERN.matcher(zoneId).matches() == false) {
+        if (zoneId.length() < 2) {
             throw new TDateTimeException("Invalid ID for region-based TZoneId, invalid format: " + zoneId);
         }
-        TZoneRules rules = null;
-        try {
-            // always attempt load for better behavior after deserialization
-            rules = TZoneRulesProvider.getRules(zoneId, true);
-        } catch (TZoneRulesException ex) {
-            // special case as removed from data file
-            if (zoneId.equals("GMT0")) {
-                rules = TZoneOffset.UTC.getRules();
-            } else if (checkAvailable) {
-                throw ex;
-            }
+        DateTimeZone timeZone = DateTimeZoneProvider.getTimeZone(zoneId);
+        if (timeZone == null) {
+            throw new IllegalArgumentException(zoneId);
         }
-        return new TZoneRegion(zoneId, rules);
+        TZoneId result = timeZone.getZoneId();
+        if (result instanceof TZoneRegion) {
+            return (TZoneRegion) result;
+        }
+        return new TZoneRegion(zoneId, result.getRules());
     }
 
-    TZoneRegion(String id, TZoneRules rules) {
+    public TZoneRegion(String id, TZoneRules rules) {
 
         this.id = id;
         this.rules = rules;

@@ -60,7 +60,7 @@ import org.teavm.classlib.java.time.TLocalDateTime;
 import org.teavm.classlib.java.time.TYear;
 import org.teavm.classlib.java.time.TZoneOffset;
 
-final class TStandardZoneRules extends TZoneRules implements TSerializable {
+public final class TStandardZoneRules extends TZoneRules implements TSerializable {
 
     private static final int LAST_CACHED_YEAR = 2100;
 
@@ -151,18 +151,22 @@ final class TStandardZoneRules extends TZoneRules implements TSerializable {
         this.savingsLocalTransitions = localTransitionList.toArray(new TLocalDateTime[localTransitionList.size()]);
     }
 
-    TStandardZoneRules(long[] standardTransitions, int[] standardOffsets, long[] savingsInstantTransitions,
+    public TStandardZoneRules(long[] standardTransitions, int[] standardOffsets, long[] savingsInstantTransitions,
             int[] wallOffsets, TZoneOffsetTransitionRule... lastRules) {
 
         this(standardTransitions, toZoneOffset(standardOffsets), savingsInstantTransitions, toZoneOffset(wallOffsets),
                 lastRules);
     }
 
-    private static TZoneOffset[] toZoneOffset(int[] totalSeconds) {
+    private static TZoneOffset[] toZoneOffset(int[] totalMillis) {
 
-        TZoneOffset[] result = new TZoneOffset[totalSeconds.length];
-        for (int i = 0; i < totalSeconds.length; i++) {
-            result[i] = TZoneOffset.ofTotalSeconds(totalSeconds[i]);
+        TZoneOffset[] result = new TZoneOffset[totalMillis.length];
+        for (int i = 0; i < totalMillis.length; i++) {
+            if (totalMillis[i] == 0) {
+                result[i] = TZoneOffset.UTC;
+            } else {
+                result[i] = TZoneOffset.ofTotalSeconds(totalMillis[i] / 1000);
+            }
         }
         return result;
     }

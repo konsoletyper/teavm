@@ -46,34 +46,58 @@
  */
 package org.teavm.classlib.java.time.zone;
 
+import java.util.HashSet;
 import java.util.NavigableMap;
-import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 
+import org.teavm.classlib.impl.tz.DateTimeZone;
+import org.teavm.classlib.impl.tz.DateTimeZoneProvider;
 import org.teavm.classlib.java.util.TObjects;
 
 public abstract class TZoneRulesProvider {
 
+    private static final String VERSION_ID = "v1";
+
+    private static final Set<String> REMOVED_IDS = new HashSet<>();
+    static {
+        REMOVED_IDS.add("GMT-0");
+        REMOVED_IDS.add("GMT+0");
+        REMOVED_IDS.add("Canada/East-Saskatchewan");
+        REMOVED_IDS.add("EST");
+        REMOVED_IDS.add("HST");
+        REMOVED_IDS.add("MST");
+        REMOVED_IDS.add("ROC");
+    }
+
     public static Set<String> getAvailableZoneIds() {
 
-        return TTzdbZoneRulesProvider.getInstance().provideZoneIds();
+        String[] ids = DateTimeZoneProvider.getIds();
+        Set<String> set = new HashSet<>(ids.length);
+        for (String id : ids) {
+            if (!REMOVED_IDS.contains(id)) {
+                set.add(id);
+            }
+        }
+        return set;
     }
 
     public static TZoneRules getRules(String zoneId, boolean forCaching) {
 
-        Objects.requireNonNull(zoneId, "zoneId");
-        return getProvider(zoneId).provideRules(zoneId, forCaching);
+        TObjects.requireNonNull(zoneId, "zoneId");
+        DateTimeZone timeZone = DateTimeZoneProvider.getTimeZone(zoneId);
+        if (timeZone == null) {
+            throw new TZoneRulesException("Unknown time-zone ID: " + zoneId);
+        }
+        return timeZone.getZoneId().getRules();
     }
 
     public static NavigableMap<String, TZoneRules> getVersions(String zoneId) {
 
-        TObjects.requireNonNull(zoneId, "zoneId");
-        return getProvider(zoneId).provideVersions(zoneId);
-    }
-
-    private static TZoneRulesProvider getProvider(String zoneId) {
-
-        return TTzdbZoneRulesProvider.getInstance();
+        TZoneRules rules = getRules(zoneId, false);
+        TreeMap<String, TZoneRules> map = new TreeMap<>();
+        map.put(VERSION_ID, rules);
+        return map;
     }
 
     public static void registerProvider(TZoneRulesProvider provider) {
